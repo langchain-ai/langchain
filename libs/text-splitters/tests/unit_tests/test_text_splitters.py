@@ -28,9 +28,11 @@ from langchain_text_splitters.html import (
 )
 from langchain_text_splitters.json import RecursiveJsonSplitter
 from langchain_text_splitters.jsx import JSFrameworkTextSplitter
+from langchain_text_splitters.latex import LatexTextSplitter
 from langchain_text_splitters.markdown import (
     ExperimentalMarkdownSyntaxTextSplitter,
     MarkdownHeaderTextSplitter,
+    MarkdownTextSplitter,
 )
 from langchain_text_splitters.python import PythonCodeTextSplitter
 
@@ -4432,3 +4434,31 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+def test_markdown_text_splitter_splits_on_headings() -> None:
+    """Regression: MarkdownTextSplitter must treat language separators as regex.
+
+    Previously the class passed the regex separators without is_separator_regex=True,
+    so re.escape turned them into literals and headings were never used as split points.
+    """
+    md = (
+        "# Title\nintro paragraph\n## Section\n"
+        "section text\n### Subsection\nmore text\n"
+    )
+    splitter = MarkdownTextSplitter(chunk_size=30, chunk_overlap=0)
+    chunks = splitter.split_text(md)
+    # Should split at heading boundaries rather than only on blank lines / spaces.
+    assert any("# Title" in c and "## Section" not in c for c in chunks)
+    assert any("## Section" in c for c in chunks)
+    assert len(chunks) >= 2
+
+
+def test_latex_text_splitter_splits_on_sections() -> None:
+    """Regression: LatexTextSplitter must treat language separators as regex."""
+    tex = "\\section{A} aa bb\n\\section{B} cc dd\n\\section{C} ee ff"
+    splitter = LatexTextSplitter(chunk_size=30, chunk_overlap=0)
+    chunks = splitter.split_text(tex)
+    assert any("\\section{A}" in c and "\\section{B}" not in c for c in chunks)
+    assert any("\\section{B}" in c for c in chunks)
+    assert len(chunks) >= 2
