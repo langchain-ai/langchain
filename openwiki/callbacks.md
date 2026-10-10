@@ -5,7 +5,7 @@ description: "Document the callback handler architecture, integration with runna
 tags: ["callbacks", "observability", "handlers", "tracing", "streaming", "langsmith"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-10T08:25:28.570Z
 sources:
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py
@@ -23,7 +23,7 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/config.py
   - id: openwiki-source-bfd8b1aa6ad00852a2e99762
     resource: repo://libs/core/langchain_core/tracers/context.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-10T08:25:28.570Z" }
 ---
 
 
@@ -39,14 +39,17 @@ The system is built on a hierarchical run structure where parent-child relations
 
 **BaseCallbackHandler** (`repo://libs/core/langchain_core/callbacks/base.py#L496-L546`) is the base class for all callback implementations. It inherits from multiple mixins that define event methods for different operation types:
 
+- **CallbackManagerMixin**: `on_llm_start`, `on_chat_model_start`, `on_chain_start`, `on_tool_start`, `on_retriever_start`
 - **LLMManagerMixin**: `on_llm_new_token`, `on_llm_end`, `on_llm_error`, `on_stream_event`
 - **ChainManagerMixin**: `on_chain_end`, `on_chain_error`, `on_agent_action`, `on_agent_finish`
 - **ToolManagerMixin**: `on_tool_end`, `on_tool_error`
 - **RetrieverManagerMixin**: `on_retriever_end`, `on_retriever_error`
 - **RunManagerMixin**: `on_text`, `on_retry`, `on_custom_event`
-- **CallbackManagerMixin**: `on_llm_start`, `on_chat_model_start`, `on_chain_start`, `on_tool_start`, `on_retriever_start`
 
-Every handler also supports `raise_error` and `run_inline` attributes to control error propagation and execution context.
+Every handler also supports two control attributes:
+
+- **raise_error** (bool, default `False`): Whether to raise an exception if the callback encounters an error. When `False`, exceptions are logged and swallowed. When `True`, exceptions propagate to the caller.
+- **run_inline** (bool, default `False`): Whether to execute the callback in the current async context. When `True`, executes sequentially in the caller's context. When `False`, executes concurrently on thread pool or via `asyncio.gather()`.
 
 **BaseCallbackManager** (`repo://libs/core/langchain_core/callbacks/base.py#L1004-L1227`) manages a collection of handlers and their lifecycle. It maintains:
 

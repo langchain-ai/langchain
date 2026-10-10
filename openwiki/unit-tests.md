@@ -2,10 +2,10 @@
 type: "Testing & QA"
 title: "Unit Testing and Mocking"
 description: "Guide to writing unit tests: test structure, mocking chat models, fixtures, assertions, and test coverage for agents and components."
-tags: [unit-tests, pytest, testing, fixtures, mocking, chat-models, tools, agents, integration, assertions]
+tags: [unit-tests, pytest, testing, fixtures, mocking, chat-models, tools, agents, integration, assertions, snapshot-testing]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-10T08:25:28.570Z
 sources:
   - id: openwiki-source-8f1875229ad4a704c8e20a06
     resource: repo://libs/core/Makefile
@@ -45,7 +45,7 @@ sources:
     resource: repo://libs/standard-tests/langchain_tests/unit_tests/embeddings.py
   - id: openwiki-source-a6b31954b6df57580d0f3ed0
     resource: repo://libs/standard-tests/langchain_tests/unit_tests/tools.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-10T08:25:28.570Z" }
 ---
 
 ## Overview
@@ -98,6 +98,29 @@ The Makefile test target sets `--disable-socket --allow-unix-socket` and uses `p
 ## Standard Test Classes
 
 The `langchain-tests` package (in `/libs/standard-tests/`) provides reusable base test classes for integrations. These enforce consistent testing across chat models, embeddings, and tools.
+
+### BaseStandardTests Constraint
+
+All standard test classes inherit from `BaseStandardTests`, which enforces critical testing invariants:
+
+1. **No deletions**: All tests from the base class must remain in subclasses
+2. **No modifications** (without xfail): Standard tests cannot be overridden unless explicitly marked `@pytest.mark.xfail(reason="...")`
+3. **Reason required**: xfail marks MUST include a reason string explaining why the test is expected to fail
+
+This prevents accidental test deletion or suppression and ensures consistent coverage across all implementations.
+
+Example of correct xfail usage:
+
+```python
+class TestMyModel(ChatModelUnitTests):
+    # ... required properties ...
+    
+    @pytest.mark.xfail(reason="Feature not yet implemented in model v1")
+    def test_structured_output_with_json_schema(self) -> None:
+        super().test_structured_output_with_json_schema()
+```
+
+If a test is failing, the proper approach is to xfail it with a reason, not delete it or return early.
 
 ### ChatModelUnitTests
 
@@ -318,12 +341,14 @@ The root `conftest.py` in `tests/unit_tests/` provides shared fixtures and pytes
 
 **From `/libs/core/tests/unit_tests/conftest.py`**:
 
+The `blockbuster` fixture (autouse, applied to all tests) prevents blocking I/O in async test code, which can cause hangs and deadlocks. It uses the `blockbuster` library to detect I/O calls in async contexts and raise errors, with allowlists for legitimate blocking operations:
+
 ```python
 @pytest.fixture(autouse=True)
 def blockbuster() -> Iterator[BlockBuster]:
     """Blockbuster fixture prevents blocking I/O in async code."""
     with blockbuster_ctx("langchain_core") as bb:
-        # Allow specific blocking operations in specific locations
+        # Allow os.stat and os.path.abspath in specific internal functions
         bb.functions["os.stat"].can_block_in(
             "langchain_core/_api/internal.py", "is_caller_internal"
         ).can_block_in(
@@ -336,17 +361,23 @@ def blockbuster() -> Iterator[BlockBuster]:
         ).can_block_in(
             "langchain_core/runnables/base.py", "__repr__"
         )
+        # Allow file reads in LangSmith config
         bb.functions["io.TextIOWrapper.read"].can_block_in(
             "langsmith/client.py", "_default_retry_config"
         )
+        # All functions can block in freezegun's internal cache handling
         for bb_function in bb.functions.values():
             bb_function.can_block_in("freezegun/api.py", "_get_cached_module_attributes")
         yield bb
 ```
 
+The fixture whitelists only unavoidable blocking operations (like reading config files or calling `__repr__` for logging) while catching unintended blocking I/O that would break async code.
+
 ### Agent Test Fixtures
 
-Agent test suites use parametrized fixtures to test across multiple checkpoint and state storage backends:
+Agent test suites (`libs/langchain_v1/tests/unit_tests/agents/conftest.py`) use parametrized fixtures to test across multiple checkpoint and state storage backends:
+
+**Parametrized checkpointer fixtures** (test with multiple backends):
 
 ```python
 from collections.abc import AsyncIterator, Iterator
@@ -361,45 +392,70 @@ def deterministic_uuids(mocker: MockerFixture) -> MockerFixture:
     return mocker.patch("uuid.uuid4", side_effect=side_effect)
 
 # Parametrized checkpointer fixture (multiple backends)
-@pytest.fixture(params=["memory", "sqlite", "postgres"])
+@pytest.fixture(params=["memory", "sqlite", "postgres", "postgres_pipe", "postgres_pool"])
 def sync_checkpointer(request: pytest.FixtureRequest) -> Iterator[BaseCheckpointSaver]:
     checkpointer_name = request.param
     # Yield appropriate checkpointer based on backend
     ...
 
 # Parametrized async checkpointer fixture
-@pytest.fixture(params=["memory", "sqlite_aio", "postgres_aio"])
+@pytest.fixture(params=["memory", "sqlite_aio", "postgres_aio", "postgres_aio_pipe", "postgres_aio_pool"])
 async def async_checkpointer(request: pytest.FixtureRequest) -> AsyncIterator[BaseCheckpointSaver]:
     checkpointer_name = request.param
     # Yield appropriate async checkpointer
     ...
 ```
 
-Set `LANGGRAPH_TEST_FAST=true` environment variable to run against only in-memory backends for fast iteration.
+**Performance testing mode**:
 
-**Custom Markers**:
+Set `LANGGRAPH_TEST_FAST=true` environment variable to run against only in-memory backends for fast iteration during development:
+
+```bash
+LANGGRAPH_TEST_FAST=true pytest tests/unit_tests/agents/
+```
+
+When unset or false, tests run against all backends (memory, SQLite, PostgreSQL with connection pooling variants), providing comprehensive coverage but taking longer.
+
+**Store fixtures**:
+
+Similarly, parametrized store fixtures (`sync_store`, `async_store`) allow testing against in-memory and PostgreSQL backends for graph-level state storage.
+
+**@pytest.mark.requires decorator**:
+
+The `@pytest.mark.requires(package_name)` decorator automatically skips tests when optional dependencies are missing. This enables one codebase to support both minimal and comprehensive test suites:
 
 ```python
-def pytest_addoption(parser: pytest.Parser) -> None:
-    parser.addoption(
-        "--only-extended",
-        action="store_true",
-        help="Only run extended tests marked with @pytest.mark.requires",
-    )
-    parser.addoption(
-        "--only-core",
-        action="store_true",
-        help="Only run core tests (skip extended tests)",
-    )
-
-def pytest_collection_modifyitems(config: pytest.Config, items) -> None:
-    """Automatically skip tests marked with @pytest.mark.requires if dependencies are missing."""
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: Sequence[pytest.Function]
+) -> None:
+    """Skip tests marked with @pytest.mark.requires if packages are missing."""
     for item in items:
         requires_marker = item.get_closest_marker("requires")
         if requires_marker:
             for pkg in requires_marker.args:
+                # Check if package is installed
                 if util.find_spec(pkg) is None:
-                    item.add_marker(pytest.mark.skip(reason=f"Requires pkg: {pkg}"))
+                    item.add_marker(
+                        pytest.mark.skip(reason=f"Requires pkg: `{pkg}`")
+                    )
+```
+
+**Command-line flags**:
+
+- `--only-extended`: Run ONLY tests marked with @pytest.mark.requires; fail if dependencies are missing
+- `--only-core`: Run ONLY tests WITHOUT @pytest.mark.requires; skip all extended tests
+
+Example usage:
+
+```bash
+# Run all tests (skip extended if dependencies missing)
+make test
+
+# Run only core tests (no API dependencies)
+make test PYTEST_EXTRA="--only-core"
+
+# Run only extended tests (must have all dependencies installed)
+make extended_tests
 ```
 
 **Fixture for Deterministic UUIDs**:
@@ -620,41 +676,117 @@ def test_agent_state_persistence(sync_checkpointer):
     assert len(result2["messages"]) > len(result1["messages"])
 ```
 
-### Streaming Event Testing
+### Streaming Event Testing (stream_events v3)
 
-Test agent execution traces via stream events (v3 protocol):
+Test agent execution traces via `stream_events(version="v3")` protocol. The agent provides built-in stream projections (transformers) that extract structured data from the execution trace.
+
+**Basic tool call streaming**:
 
 ```python
+from langchain_core.tools import tool
+
+@tool
+def echo(text: str) -> str:
+    """Return the input unchanged."""
+    return text
+
 def test_agent_stream_events():
     model = FakeToolCallingModel(
         tool_calls=[
             [{"name": "echo", "args": {"text": "x"}, "id": "tc1"}],
-            [],
+            [],  # No tool call on second turn (finish)
         ]
     )
     agent = create_agent(model, [echo])
     
-    # Stream events with built-in tool_calls projection
+    # Stream events with built-in tool_calls projection (ToolCallTransformer)
     run = agent.stream_events(
         {"messages": [HumanMessage("hi")]},
         version="v3"
     )
     
-    # Collect tool calls via projection
+    # Collect tool calls via projection (registered by default)
     tool_calls = list(run.tool_calls)  # type: ignore[attr-defined]
     assert len(tool_calls) == 1
-    assert tool_calls[0].tool_name == "echo"
-    assert tool_calls[0].tool_call_id == "tc1"
-    assert tool_calls[0].completed is True
+    
+    tc = tool_calls[0]
+    assert tc.tool_name == "echo"
+    assert tc.tool_call_id == "tc1"
+    assert tc.completed is True
+    assert tc.error is None
 ```
 
-### Message Matching with Any ID
+**Accessing tool output deltas**:
 
-Test message content independently of generated UUIDs:
+Tools can stream output via `ToolRuntime.emit_output_delta()`, and the stream projection captures these:
+
+```python
+from langchain.tools import ToolRuntime
+
+@tool
+def streamer(text: str, runtime: ToolRuntime) -> str:
+    """Stream two chunks, then return the full text."""
+    for chunk in ("one", "two"):
+        runtime.emit_output_delta(chunk)
+    return text
+
+def test_tool_output_deltas():
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [{"name": "streamer", "args": {"text": "x"}, "id": "tc1"}],
+            [],
+        ]
+    )
+    agent = create_agent(model, [streamer])
+    
+    run = agent.stream_events(
+        {"messages": [HumanMessage("hi")]},
+        version="v3"
+    )
+    
+    for tc in run.tool_calls:  # type: ignore[attr-defined]
+        assert list(tc.output_deltas) == ["one", "two"]
+```
+
+**Built-in projections**:
+
+The agent automatically registers these stream projections:
+- `ToolCallTransformer`: Extracts tool calls, errors, and output deltas
+- `SubagentTransformer`: For agents that invoke other agents
+
+User transformers can be added via `add_stream_transformer()` and are applied after built-in transformers.
+
+### Message Matching with AnyStr
+
+Test message content and structure independently of generated UUIDs. The `AnyStr` class from `tests.unit_tests.agents.any_str` matches any string when used as a field value, and `_AnyIdHumanMessage`, `_AnyIdToolMessage` helpers set IDs to AnyStr after creation.
+
+**Using AnyStr directly**:
+
+```python
+from tests.unit_tests.agents.any_str import AnyStr
+
+# AnyStr matches any string value
+assert "anything" == AnyStr()
+assert "" == AnyStr()
+
+# AnyStr with prefix only matches strings starting with that prefix
+prefix_matcher = AnyStr(prefix="thread_")
+assert "thread_123" == prefix_matcher
+assert "other" != prefix_matcher
+
+# AnyStr with regex pattern
+import re
+pattern_matcher = AnyStr(prefix=re.compile(r"^[a-f0-9-]+$"))
+assert "abc123-def" == pattern_matcher
+assert "invalid!" != pattern_matcher
+```
+
+**Using message helpers**:
 
 ```python
 from tests.unit_tests.agents.any_str import AnyStr
 from tests.unit_tests.agents.messages import _AnyIdHumanMessage, _AnyIdToolMessage
+from langchain_core.messages import HumanMessage, ToolMessage
 
 def test_agent_message_flow():
     model = FakeToolCallingModel()
@@ -665,7 +797,16 @@ def test_agent_message_flow():
     # Match messages regardless of their generated IDs
     assert result["messages"][0] == _AnyIdHumanMessage(content="hi")
     assert isinstance(result["messages"][1], AIMessage)
+    
+    # Or use the stubs module for other message types
+    from tests.unit_tests.stubs import _any_id_ai_message
+    assert result["messages"][1] == _any_id_ai_message(content="response")
 ```
+
+In agents, IDs are UUIDs generated per-invocation, so tests must either:
+1. Use snapshot testing with `deterministic_uuids` fixture for stable IDs
+2. Use `AnyStr()` or message helpers to ignore IDs
+3. Use `AnyStr(prefix=...)` or regex patterns to verify ID format without exact values
 
 ### Fixture Usage
 
@@ -815,10 +956,13 @@ async def test_async_streaming():
 
 ### Snapshot Testing with Syrupy
 
-Snapshot tests capture output and compare against baseline snapshots. Useful for complex structures, traces, and serialized objects.
+Snapshot tests capture output and compare against baseline snapshots. Useful for complex structures, traces, serialized objects, and agent execution flows. The Syrupy library manages snapshots automatically, storing them in `__snapshots__/` directories adjacent to test files.
+
+**Basic snapshot test**:
 
 ```python
 from syrupy.assertion import SnapshotAssertion
+from langchain_core.load import dumpd
 
 def test_runnable_serialization(snapshot: SnapshotAssertion):
     prompt = ChatPromptTemplate.from_template("Say {msg}")
@@ -832,15 +976,69 @@ def test_runnable_serialization(snapshot: SnapshotAssertion):
     assert dumped == snapshot
 ```
 
-Snapshots are stored in `__snapshots__/` directories. Update them with:
+**Snapshot updates**:
+
+When test output changes intentionally, update snapshots with:
 
 ```bash
-make test_watch  # Auto-updates snapshots
-# or
+# Auto-update snapshots via watch mode (recommended for iterative development)
+make test_watch
+
+# Or update via command line
 pytest --snapshot-update
+
+# Update snapshots for a specific test file
+pytest tests/unit_tests/runnables/test_runnable.py --snapshot-update
 ```
 
-### Helper Stubs for Message Tests
+**Combining snapshots with deterministic UUIDs**:
+
+To make snapshots stable across test runs, use the `deterministic_uuids` fixture to replace random UUIDs with predictable values:
+
+```python
+def test_agent_trace_snapshot(deterministic_uuids, snapshot: SnapshotAssertion):
+    model = FakeChatModel()
+    agent = create_agent(model, [])
+    
+    result = agent.invoke({"messages": [HumanMessage("test")]})
+    
+    # UUIDs are now deterministic (00000000-0000-4000-8000-{i:012})
+    assert result == snapshot
+```
+
+This ensures traces and serialized messages contain consistent IDs across all test runs.
+
+### Pydantic Version Compatibility
+
+The `pydantic_utils.py` module handles differences between Pydantic v1 and v2 JSON schemas. This is critical for tests that validate schema generation:
+
+```python
+# Skip tests on Python 3.14+ where pydantic.v1 compatibility shim is unavailable
+from tests.unit_tests.pydantic_utils import skip_if_no_pydantic_v1
+
+@skip_if_no_pydantic_v1
+def test_pydantic_v1_schema():
+    from pydantic.v1 import BaseModel
+    # Test with Pydantic v1 compatibility layer
+    ...
+
+# Normalize schemas to handle v1/v2 differences
+from tests.unit_tests.pydantic_utils import _schema
+
+class MyModel(BaseModel):
+    name: str
+
+normalized = _schema(MyModel)
+# Schema is normalized to common format across versions
+```
+
+The normalization handles:
+- allOf → $ref conversion in v2
+- Removal of v2's extra None defaults
+- definitions vs $defs key name changes
+- Schema refactoring for cross-version compatibility
+
+## Helper Stubs for Message Tests
 
 When testing messages with generated IDs, use helper functions from `tests.unit_tests.stubs` to match any ID:
 
@@ -1014,6 +1212,43 @@ my_dict: dict[str, Any] = {}  # type: ignore[assignment]
 # Intentional override
 result = chain.invoke(message)  # type: ignore[return-value]
 ```
+
+## LangSmith Tracing Isolation
+
+Unit tests must be independent of developer LangSmith configuration to avoid flaky tests and false dependencies. The test infrastructure handles this in two ways:
+
+**Root conftest isolation** (`libs/core/tests/unit_tests/conftest.py`):
+
+The root conftest explicitly unsets LangSmith environment variables at test startup:
+
+```python
+env \
+  -u LANGCHAIN_TRACING_V2 \
+  -u LANGCHAIN_API_KEY \
+  -u LANGSMITH_API_KEY \
+  -u LANGSMITH_TRACING \
+  -u LANGCHAIN_PROJECT \
+  uv run pytest ...
+```
+
+**Runnable-specific isolation** (`libs/core/tests/unit_tests/runnables/conftest.py`):
+
+The runnables conftest includes a session-scoped fixture that disables LangSmith at runtime:
+
+```python
+@pytest.fixture(scope="session", autouse=True)
+def _disable_local_langsmith_tracing() -> Iterator[None]:
+    """Keep runnable unit tests independent of developer LangSmith env vars."""
+    os.environ["LANGSMITH_TRACING"] = "false"
+    # Removes LANGCHAIN_TRACING_V2, LANGSMITH_API_KEY, etc.
+    # Clears cached values on langsmith.utils.get_env_var
+```
+
+This two-layer approach ensures:
+- Tests don't accidentally send spans to LangSmith
+- Tests don't read developer credentials
+- Tests remain deterministic regardless of local LangSmith configuration
+- Developers can freely set LangSmith environment variables without affecting test results
 
 ## Test Coverage and Reporting
 

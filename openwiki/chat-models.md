@@ -3,9 +3,6 @@ type: "Architecture"
 title: "Chat Model Interface and Lifecycle"
 description: "Document BaseChatModel protocol, input/output handling, streaming, and integration points with callbacks and model profiling. Covers the init_chat_model() factory, provider registry, and model instantiation."
 tags: [chat-models, llm-integration, streaming, structured-output, model-capabilities, model-initialization]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
 sources:
   - id: openwiki-source-132f3183693cd9cf79d029a5
     resource: repo://libs/core/langchain_core/language_models/base.py
@@ -18,6 +15,9 @@ sources:
   - id: openwiki-source-c479d4fffee5cf62576699e4
     resource: repo://libs/langchain_v1/langchain/chat_models/base.py
 generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-10T08:25:28.570Z
 ---
 
 ## Overview

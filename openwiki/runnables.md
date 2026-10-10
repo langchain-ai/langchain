@@ -14,10 +14,10 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/fallbacks.py
   - id: openwiki-source-ebe3f825462d0b4a14ee3717
     resource: repo://libs/core/langchain_core/runnables/retry.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-10T08:25:28.570Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-10T08:25:28.570Z
 ---
 
 ## Overview
@@ -211,7 +211,7 @@ sequence = runnable_1.pipe(runnable_2, runnable_3)
 
 ### Parallel Composition: Fork with Dict
 
-**Dict literal** or **`RunnableParallel`** (`repo://libs/core/langchain_core/runnables/base.py#L3864-L3990`) invokes multiple Runnables concurrently with the same input:
+**Dict literal** or **`RunnableParallel`** (`repo://libs/core/langchain_core/runnables/base.py#L3868-L4397`) invokes multiple Runnables concurrently with the same input:
 
 ```python
 from langchain_core.runnables import RunnableParallel
@@ -236,7 +236,7 @@ parallel = RunnableParallel(
 
 ### Sequencing with RunnableSequence
 
-**Location**: `repo://libs/core/langchain_core/runnables/base.py#L3075-L3235`
+**Location**: `repo://libs/core/langchain_core/runnables/base.py#L3079-L3866`
 
 `RunnableSequence` is the composition engine for sequential execution. It chains multiple `Runnable` objects where each output feeds into the next input. The `first`, `middle`, and `last` attributes store the steps; the sequence automatically optimizes batch and stream operations by calling each step's batch/stream method in order.
 
@@ -259,7 +259,7 @@ sequence = RunnableSequence(
 
 ### Branching: RunnableBranch
 
-**Location**: `repo://libs/core/langchain_core/runnables/branch.py#L43-L150`
+**Location**: `repo://libs/core/langchain_core/runnables/branch.py#L43-L457`
 
 `RunnableBranch` selects and runs one of several branches based on a condition:
 
@@ -306,7 +306,7 @@ router.invoke({"key": "math", "input": "2 + 2"})  # Uses math_chain
 
 ### Fallback and Retry
 
-**Fallbacks**: `RunnableWithFallbacks` (`repo://libs/core/langchain_core/runnables/fallbacks.py#L37-L150`)
+**Fallbacks**: `RunnableWithFallbacks` (`repo://libs/core/langchain_core/runnables/fallbacks.py#L37-L645`)
 
 ```python
 from langchain_core.runnables import RunnableWithFallbacks
@@ -322,7 +322,7 @@ result = model.invoke("Hello")  # Returns first successful result
 - Proceeds until one succeeds or all fail.
 - Optionally passes exceptions to fallbacks for adaptive recovery.
 
-**Retry**: `RunnableRetry` (`repo://libs/core/langchain_core/runnables/retry.py#L48-L150`)
+**Retry**: `RunnableRetry` (`repo://libs/core/langchain_core/runnables/retry.py#L50-L385`)
 
 ```python
 runnable = ChatOpenAI().with_retry(
@@ -364,7 +364,7 @@ class RunnableConfig(TypedDict, total=False):
 
 ### RunnableLambda
 
-**Location**: `repo://libs/core/langchain_core/runnables/base.py#L4703-L4850`
+**Location**: `repo://libs/core/langchain_core/runnables/base.py#L4707-L5579`
 
 `RunnableLambda` wraps a Python callable into a `Runnable`:
 

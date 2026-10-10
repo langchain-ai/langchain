@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:05e90b9de166a5a7213cee462a99c10236b8c8eba605f2b5a856779baad552a6",
+  "pageVersion": "sha256:ca3418a97e3867e1c555cafc380743cb450d96c15d6de4a2707d53cb08d55a1e",
   "claims": [
     {
       "id": "claim_347664eb68464142b558791c7a95093f",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://libs/partners/openai/langchain_openai/__init__.py",
-          "version": "repo-file-v1:sha256:d08e06dea1f954a477fa8951e2a8387a10396d07b92a3a60fdced307c136a84f"
+          "version": "repo-file-v1:sha256:5673ccbe8f53267c2027dd390051424928a6e1e744c2f8c8a418960a29dccf4d"
         },
         {
           "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2904-L4266",
@@ -255,10 +255,202 @@
           "version": "repo-lines-v1:sha256:4796c14704f049c8340f8cb74976a7f9e7af36bb8fbf9250e8c163d7a4124e0d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwYWIyNjQwNjA4YTZlZGJhZGE4MDJlYTdlYzA1NjYxM2JhOTFhY2Q5ZTdhOGIwZjcxOGRmODQ1Yjg4YzBlMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliY2FkYzRlMjljMmM0NWUyOTI5NjcwZmZiNGJiNDZiY2JjNDRlYWIzNTAyNzAzNWJmNDVmYjFiMTdiYzU1ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhODNkNzQxZTM3NWRlNGMzMWI3Yzc4Mzg3YzdjN2UyNzUxZWY4NTU5MWE3ZWE3ZjkwYzNmN2E3NTQ5NTQ0ZmUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_2c038b9acda54f7fa257ab9f53afddf3",
+      "statement": "OpenAIDecisions is a RunnableSerializable that asks Predicate (probability), Choice (selection), and Score (multi-level) questions about text, images, or messages via OpenAI's Decisions API, returning typed answers with probabilities, confidence, and token usage.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/decisions/base.py#L38-L101",
+          "version": "repo-lines-v1:sha256:cadfd80fbaf6c2be905175d53b6b183841fb157b3039ba06c0843af62da92125:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMjBlZjZlMzkyNDAxZDNhNzE1NTRmZTgwNWNjYjYxZTFhOTkwNzczYTdkNDY5N2JlMmFlMmUzMzczODM1MjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZlNTI1ZTgxNTgyYzNhMDVjZjJlZjJhYjg3M2M5YWQxY2VkYmQyY2M4MDQ3OTczMjU2YWJkYTE4YzZiNzBhNzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3NTNiMzhkNDU5NzEzZDllNDI0NTJlZmQzMzQ0NWM4NzZlNTc1YWJlNzFjYjdjMmRjNzE5ZTg0NGY0MDRiYTMifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/decisions/types.py#L34-L186",
+          "version": "repo-lines-v1:sha256:17f5de435e41731f128107568b803ced1dbe34e31abcdf17163509c9b116cd1c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlMGZkM2RiM2QzOGUyOTNhNzc1ODIzOWY2YjVhMmUyOWYzOGJmZGMxNDRjMzMyNTM3YjA4MmY4NTk2NWVjMTQ2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzOGFlNjBhMDlhNzg0YjQ3ZWEwODUzMTZiZmY5MmM2ODAxMWRkNjcwZDg5ZjI4ZGFmNWRhOWJiNmFlNDFiYzQyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhNzA1OTgwMTc3Yzk5NGE5OTQyNTU1ZTUxOGIwNmUzODYwM2RlYWYzNjRmZDhjZTgwODdkYmVhZWFhNjhmYThmIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_fb349fee50c5449d96be391f8cf28784",
+      "statement": "DecisionRequest contains input (text/messages/state) and a dict of named Question objects; DecisionResponse returns dict of typed Answer objects (PredicateAnswer with probability, ChoiceAnswer with choice/probabilities/confidence, ScoreAnswer with score/legend/probabilities/confidence, RefusalAnswer), plus usage and request_id.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/decisions/types.py#L192-L336",
+          "version": "repo-lines-v1:sha256:5edd47630c6c0150551e108cccf4aff97878d38ed3322e0eb767badb0520c98c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxN2RmODhkZDc2YmU1ZTM4YTQxYTNmYThlYzU5YWFlNDkwODhmMWRhZmY0YTk2MDE4NzdkNmVhYjg4OTI4MGFhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjZDEyMWFmMDNhNjJiMTZlNDEyNDI2ZWYxYjZjZmM2NjY1NTY1ZTRlMGMxYWE2YjIzOTc0NGE5ZmQ2ZGRlZmEwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhNWM1NzhlYjRiODY4MWZiMTdmY2YwNDYyZmJiYWZhMjkyNDk0NmVjZjc4YmY1YzI0OTRmMWNkNWEyZjVhYWNmIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_983f82b66bab4a7ebe52829710cd849c",
+      "statement": "Predicate questions estimate the probability (0.0-1.0) that a condition is true; PredicateAnswer contains probability field used for binary gates, risk assessments, or eligibility checks.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/decisions/types.py#L206-L213",
+          "version": "repo-lines-v1:sha256:2dd446455262f228fb424c42ffb52d9e256473ada10aaaad1ae1d5be23cea14c:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmFlZjljZTA1ODIyZDViYjc5NTI5ZmEyM2UzOWQ0NmU5NDE3ZTAwYzQ2OWJmNTg1NTYwMWQ1ZDM4MTMwYjA2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjM4NWM5OTM2YjY0MTg5NGI3NjNjYWQxMjdlZThiMzhiOTJmY2Q4YjZjMDM5NDUxOWNlZjEwZjc1ZGVkMzMyNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2MwZmZhZGJjMWU0N2I3YjI2ZWQ2MzQ1NWIxOTE5MTQyZjczY2U2MDBjZTU5YmJlMTQ1MjEyZTA5MGZhMDRjNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGE1ZWI2ZTM0MWY2NzYwYmMxY2FmNDZmOTZiMTZjYjIzZDllYjFhZDc5Mjg1YmFhMDI1NzYxMmE0ZjgwOTk1NiJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/decisions/types.py#L34-L63",
+          "version": "repo-lines-v1:sha256:7408dad32728b6d870cbf20e7e6bd6b53154a8250fe1e56294d0f0464b1a4a6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwZmQzZGIzZDM4ZTI5M2E3NzU4MjM5ZjZiNWEyZTI5ZjM4YmZkYzE0NGMzMzI1MzdiMDgyZjg1OTY1ZWMxNDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5YWQzOWM0ZWFlYjc3ODE5ZWVjNmQ1YzI3NjFhNTE1ZGEwOWExZmY3M2NlMGQzODJhYmU4NWQyZDRmOTk5ZjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4YWU2MGEwOWE3ODRiNDdlYTA4NTMxNmJmZjkyYzY4MDExZGQ2NzBkODlmMjhkYWY1ZGE5YmI2YWU0MWJjNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0YTc3NTIyMTE2NWM0ZDY1MmZhMTE5MTJkY2NlM2I3YjE2NTdiYzlmNWFkNjhmNDU3ZTBlYWVlMmU1ZDM3MjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_41185d8eb2b1431e8793c12e9334e8a9",
+      "statement": "Choice questions select one value from a fixed, unordered set of options; ChoiceAnswer contains the selected choice, probability distribution over all choices, and confidence (0.0-1.0) representing distribution concentration, not the choice's own probability.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/decisions/types.py#L216-L233",
+          "version": "repo-lines-v1:sha256:9a867c080fce2bebd14dc901b891a4cb92c928f2619ca8a3a9d246f54dd33134:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2NmI1YzY5ZDM1MmI5MTVhNGQ1M2YxZGNjZmMxMzNhNzIzODljZGM2YzIzZTQ1NTllNGM4NTg5YWJlMTBmNTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlYzQ4MmY4YmJhNzU4ZDYxZDc5NzVhMWU5MGFiNTQ1ZmRlNDc0NTU2NTNhOWZiMTFjOTI4ZjYzOTM3MDQ0NGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxMWI5OTUyYjg3NjNiZWUxYTQ1YmRkY2ExMTM1OGFjNDgxZWMxZDlmMjk0ZGMzMDJlNmRjZWVhMTEwYzFkN2QifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/decisions/types.py#L66-L119",
+          "version": "repo-lines-v1:sha256:4099e060a17f98b72f880d2abbfab3a9b662a9afe3f1a69a9f16e2687be2bcb9:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1MTVkMmUxNjNkMmRhZGIwMjg4YjMxZDgwNGY0ZTI3MGJkNmY3MmUyNjA2NTk5NmY3Mjg4ZmU5YTA1NmVlMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyNDdmZmEzNGM4MmQ1OWQzMTZkOTBlY2EwMWIzMmUyZmI5OTYwYmRkZTUyYWNmOWM4MzdmYzkxOWRhZDM4NjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3NTBiMmNlYjRhODQ0M2Y4MDNiY2RmZTA4MjI3ZWU5OWE5Zjg1OTRjMDgyZTVkMTllNTE1NWI5MjgzNWUzNzUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d39a10525efb4356b4d4b9fb0822bea1",
+      "statement": "Score questions rate input against ordered levels (e.g., Low/Medium/High); ScoreAnswer returns score (probability-weighted average of zero-based indices, may be fractional), legend (level labels keyed by index), probability distribution, and confidence.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/decisions/types.py#L132-L185",
+          "version": "repo-lines-v1:sha256:ab8124b95e10ef8a220a9c85e65736899683fc055f87694b1d3d35692be61f76:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhjNjM3MjkwOTllNzlhYzUwYjIwZmI0ZmMzOGYwOGI3MGU5YjM3Mzk4MTYzNTk1YmNjNjQzYmUzNTgwYzNkYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVkNzcxODhkMDVmMWJjNWRmOTUzNzNmNThjNDM4NmY1M2ZkY2VlNGM3NmIzOWNiNmQ1YzBjMzE3OTQyZTIyMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlMDcwOGJmMjU1YjczNzIzMTg5NTE2YjE1NzE3NTk4MzA5ODJlOWY5OTMxYzAxYmQ5MDA4YmQyMTQ2NWNiMjMifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/decisions/types.py#L236-L252",
+          "version": "repo-lines-v1:sha256:4cc9900c5c773af8a88f1dad0369064a9b9611ed5637eea87437647ed115023a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY0MmY3ZjY0MjIxNWE4MjkzNDdhZGZjYTQ0OTUxY2VjZmM0MjE5NWUxNDNhY2FmYTkyMDU1YjhkNjU1MmZjMzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhMTllYmYyNDRmY2I1ZDc1NTViMTBmZDIwZTgyYjZhOTVkZDk4YWU1NzBiYjIzNTMzOTgxYWU2ODdmZTZkZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyYjI1NzhkODVmMDU0N2ZhOTE3ZGE3YjE4ZDIwNzg5OTE4MjlhNTM4MmM3OTEyOGJlMTZmNmYxMDg4ZjdhYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzMDY5MzQ1OGE1ZDkzMjUyYjY0NjNiNzE1NWVkNTAwNDU0NTUzODU4NjUyNTBiM2Y2OTRhYWUwZTM3NTEwOTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_056fc27ab95b41c19f4883bde085c7b4",
+      "statement": "OpenAIAutoModeMiddleware intercepts configured tool calls, asks a Predicate risk question via the Decisions API, and blocks calls with probability ≥ 0.5 by returning an error ToolMessage without execution; low-risk calls execute normally.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/auto_mode.py#L148-L192",
+          "version": "repo-lines-v1:sha256:81f6a3e54bdb7ab6ccdfb0fa4d520a892f742c88f8c8d2774366beb85ffd40fb:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZGE5MzUwMDE5ZGMxZTY2NzQ1MjY0Mzg3MzE2MTk5NzIyNWU5Y2U2MDEwN2FmN2I2NGY4NDBkZGVjZmRhNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlMmI1MTU4ZjM2YjE4YWUxOTJlOTJkNjBhMDM5NmYxMzk1OWExNWQ3ODlmMDA3NzdjZjlkMmY3ZDUwMWYwNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjODA0NWExNGExNWE5MGYwMmUxZDIyNzRkZWY0M2ZhZjRhMjc2MDA5YTllMjllMGEzZmJiNGY0ZjFkMDZhYzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViMTRlOTlkYmQ5NDhjOWQwNGEyNWYzYzUwMWRkOGUzMDU2NTljNWYwMDAzNjM5ZDhiM2FmZWRiY2Q5YTIxNWQifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/auto_mode.py#L64-L112",
+          "version": "repo-lines-v1:sha256:4ae815082d154bdf464d13bbd1e706d4ed67dd83a254b14e2cb36449d79e6758:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NDA2YWZiY2ZlNjYyMTgxOGU1M2E3OWU2NzU5MzYxNTAxNmE0Y2IyZWUzYTI2M2U5MGYwNDlmZDU4ZGNiOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzNDVlZWM4MjAzZTc3YTFkNjczZWYxMGI0Mzk5YjM5NGYyNGZkOThmNTRjYjMwNjRmMjdhZDJjYThmZjA5OTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d1603370353e474e9020130af57f0a05",
+      "statement": "OpenAIAutoModeMiddleware's default risk instructions ask whether execution would be risky or insufficiently authorized, covering destructive actions, credential access, external sharing, security bypasses, persistence, protected-resource changes, and unauthorized actions; only explicit user messages authorize execution.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/auto_mode.py#L43-L52",
+          "version": "repo-lines-v1:sha256:54d9c42148f9d1b0901867f93a1e9e637b0b27f802803f379b3750c05fb17573:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwMjcyNWJjNGEyZjE3OTUyNTlkNjhiMDk1YTc3NjQxYjIyYmE2ZGY1NDM5OTY5ZjFmMWVmMDczMDIwMjFkNWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0ZmUyZjIxMTcwYTMyYjdkOWFmMDNiYThmYjAzZTgyOTA4YmZkNGZlYTc2ZGQ1ZTYxOTI1NGE0MjA4NmFkYTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4NGM4N2VjZTZkODEyYTgyYmIzOTQwOGIxOGRmZjRmY2IyOWJlZjMxNGI5NDMxM2MzODNjYjkyMGVhY2NkZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxMTI4OTViNDdjNTg2ZTFjNTJjOTZjZTNhNTk1YWQ3Y2NmZDk2ZWYwZjQyMTVkOTAyMDg0MjU3MjZjMDlkODMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_90bab98448044a3283cd7cb653a8fa06",
+      "statement": "OpenAIAutoModeMiddleware includes base64 images in Decisions requests but replaces audio, video, and file content with placeholders ([audio omitted], [video omitted], [file omitted]); if images are rejected (HTTP 400 or 413), retries with all images replaced.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/auto_mode.py#L194-L200",
+          "version": "repo-lines-v1:sha256:00663bec6455befe8c5a9a0fc24600f25659acdc01d629ef4b27048b99827545:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGJlZGJkZGMzNDdhNTE5ZGVhY2RhODg5MWM1NWEyYzEyNjRhNjIwYjljNjdkMGY2ZWM0MGY4MGFkYTE4ZWE5ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdkNzMyMjIzMmFjYTAxMzI0NmQyMDliOGM5M2YzZWI0MWRhZTk1YjY4ZDU3MjIyZTA5MWQ4ODYyODUxZWEyZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjFkYjcwMjg2MzEzOWY3NzIyMGFkZDg0YWYxNWQwOTEwODE5NzRmNmMyZjc4YjllZGU4OTJjZmM3OGZiYWQzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmFmZDIzOTliMmM0YWZiODZlMDMwOGY2OWZlODllOTZhODBlY2I2MWYxYjY0MTNlMzc3ZGJkN2IxZDFmYzI0OSJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/auto_mode.py#L245-L259",
+          "version": "repo-lines-v1:sha256:d076040f4c9699059439d9d1114abe575c259f1e5085c0ba1407671ba7915995:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4MjZmMTU3MTQ0NGM2MTY1YjQ1ODkzMjIzZGU5ZWIxN2JiNDZjNWE2MDAxY2VjODFkNjY0YWYyZjMwZjgyNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4ZjQ4MzA3YTA0Y2QxNDU5NjlmMWY5MGU2ZmNlZTE5MWNlNjBjMzlhYzExOGZmOWM0MWMxN2RiM2YxMWU0MDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzZGYyYWNmMDZlOGMzZjAzYzcxMzVjNmU4YWM1YTljYTU0MzJhYmUwNmE3NGFjYTBmZGQ5YTUzYTAwOGY5ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwOTU5NzdmODY2YzIxZWYxNDE2MDRhMWM3NDJiZTdhMDUwMWYzMmE3ZGJhOGFkYjU2NzQxOTdhZmE0OGVlMTgifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/auto_mode.py#L40-L42",
+          "version": "repo-lines-v1:sha256:284c87ece6d812a82bb39408b18dff4fcb29bef314b94313c383cb920eaccdef:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzk0MTM2N2VmYjM0ZDk5M2EzMzdlZDMxN2Y5NTliMjMxZGI1NzliYmVmYWRiNGJmYWViNDllM2E3Y2U4ZDAwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2IzMjU5YmUyZWJmMzQ4M2JmNzQ1YzI1MjkzZjQ0ZWRjODJlNzBmYTdjMzY4MWQwNmIyMjMwNTIwY2Q3MjE4OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWI5M2ZlNTFmN2IxZjVlZmUxNjFlZDhjMDE5ZjRiZTdkNDI4OWZjOTNlNDMyZGNlYWE5ZWExYWUyN2E0MWZiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmRjODQ3NmYwM2Y0ZmJiNDQ1MjY4NGJhMDhjMGJjMjRkOWE4OWUwMDJjMTQ1MWUxZGViMjI4NTM1OWU1YzYwNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d54d711a83da47f2bd09dbc975c0333c",
+      "statement": "OpenAIAutoModeMiddleware sends up to 30 recent messages, the proposed tool call (id, name, args), and tool description in a structured dict to the Decisions API for risk classification.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/auto_mode.py#L202-L219",
+          "version": "repo-lines-v1:sha256:6da371144e2065ed858be34768ca55954664eb53375c0912e843ab589a6f39bb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4YzU0YjY4NWY5MGQzY2ViNzc0MzQxZWU1ZTI4YWU5NDQ4NWE4NGFhZDA4N2VhNTUyMmI5NjMzZTYxYjU2YjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzMTkxMTBlZTU4ZWRmZGYwMmFmZjMxOWFiYTQ2NDc3MGU1MDY2NGVmYzE4YmI1MDVjNWYzMmYzYjYwYzk4OTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyYzNlOWMzM2Y4MDhlN2NiY2RlOWMwYzFlM2VhMDYzYjU0NTExMzE1YTJmNzMxMzBjNmFhYTQzOTRjZGY3N2YifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/auto_mode.py#L40-L40",
+          "version": "repo-lines-v1:sha256:c941367efb34d993a337ed317f959b231db579bbefadb4bfaeb49e3a7ce8d002:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzk0MTM2N2VmYjM0ZDk5M2EzMzdlZDMxN2Y5NTliMjMxZGI1NzliYmVmYWRiNGJmYWViNDllM2E3Y2U4ZDAwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzk0MTM2N2VmYjM0ZDk5M2EzMzdlZDMxN2Y5NTliMjMxZGI1NzliYmVmYWRiNGJmYWViNDllM2E3Y2U4ZDAwMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWI5M2ZlNTFmN2IxZjVlZmUxNjFlZDhjMDE5ZjRiZTdkNDI4OWZjOTNlNDMyZGNlYWE5ZWExYWUyN2E0MWZiNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODVkNTM5NzFlMTU1MzkzMzUyMzUwMjQyMDczYWE1MzNhNTBmYTM0NzY1N2ZmZWFjNGQzOWZlZDU2MTdiNWU5NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bb7f299b1a1f4096b91bd4067467981b",
+      "statement": "OpenAIAutoModeMiddleware returns blocked tool call messages: 'The tool call `<name>` was blocked because it was classified as risky (probability: X.XX)' for high-risk calls, or 'was blocked because its risk could not be assessed' when the model refused.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/auto_mode.py#L221-L242",
+          "version": "repo-lines-v1:sha256:c3d84f4ccde206a53a2006a1d4dbe5b981f2f7b5b1ef4ab5af5e4efbd5b8b522:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxYWJjZDBjYzY5MTNkNGY1MWViMjFlNGY1YWZjMmU5MGY4NmQzNmE0NTBiYjQyY2IwNWM2ZjNlMGQ3MDZmOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2MGNjMDFhZWRkMTA5OTY4NGE0ZTkwNmZmMjg0YTUwYWJiMGUxYjg3NTdlOTY3NzFiN2M5YWZlNzAyYmNmODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjYTgzZDk3ZGE4OWYwNGYxYjFiOWM1ZDQ2OTk5ZWQzZWU2MDdmNWE5MWEzZDNkZTFmYjUwODNiNTU1YTZiOTEifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/auto_mode.py#L54-L61",
+          "version": "repo-lines-v1:sha256:10e18e71852742df16c6eefbb4ff5c1ff656015ae5145997e4f3937a5d4983bc:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDBjZmUxYzBiZjhjNTdiMzY3ZjFjYTNlMDVjODA4Y2MyY2RmYjVhZjgxYzdmMDJlOGE3YmQ4NWFmZmIxYTNmMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFmYmEwNTI3YzM5NTNjNGI2ZTBlNWI1NzM5YmE4MzYxMmY4MDUzYmNkYzk0NjY3MzAxOTNjZDFkNTkwYjQwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTViNmQxNTNlMjUzMzVlMGI4ODVjN2NkZDM4Zjk2YmU5ZGQ5MjhlZGIwMjdmYjU5ZDlmNTFhYzc0NDM5MDUxYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmU1MjVlODE1ODJjM2EwNWNmMmVmMmFiODczYzlhZDFjZWRiZDJjYzgwNDc5NzMyNTZhYmRhMThjNmI3MGE3NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_e8c1ca7d1f234d2eb77e9a0b58459af1",
+      "statement": "OpenAIModelRouterMiddleware classifies the latest HumanMessage once before agent execution using a Choice question, stores the route (selected model, probabilities, confidence) in agent state, and routes all subsequent model calls to the selected model.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/model_router.py#L176-L216",
+          "version": "repo-lines-v1:sha256:dd753a26e441308a6217a5293ca0f62699b92b013bbe37504f04017c34099d21:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZGE5MzUwMDE5ZGMxZTY2NzQ1MjY0Mzg3MzE2MTk5NzIyNWU5Y2U2MDEwN2FmN2I2NGY4NDBkZGVjZmRhNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzNmU2MjhkOTgzYjliN2FmZDM0ZTAxMTgwOTJkOTc4MTUzYmYwYTI0MTU5YzcyZGUxNDc1MDliMGE0MzI4MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3NWYwOGMwNDMzNmQwNzA4YmMxYjhkN2Y1NDA3ZWU2Mjc4OTViZDY0ZTc4MjJhNTEzNzkzMjllZjE2ZmMwNzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3YTc3NzVkOTBlMDNiNzM3YmEzN2RmY2ZhZmQyMTMwZDk2NGYwMzkwMzUxOTU5Y2M5MWNkZjBmMWViYzdhOTUifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/model_router.py#L80-L133",
+          "version": "repo-lines-v1:sha256:fe35a0a5e1f37c5e83debfe94e6f878004d70a1fe8a4c4eb35a1e578aa95ce35:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NDA2YWZiY2ZlNjYyMTgxOGU1M2E3OWU2NzU5MzYxNTAxNmE0Y2IyZWUzYTI2M2U5MGYwNDlmZDU4ZGNiOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxZmEzNDc0ZTgzOTkyY2VmMjRiMGFmNTM4ZmQzYTc1MGJjMDY5MGMxNWFiZGZiMWNkODY4MmJmMWNmOGY1NTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlMjAyNzllMzAwYmVjODFiOGM0YWQ3YjBkNGI4NWFiNWFhOWNlMjU2ZTg0OWVjNmFjN2YxZjk0NDg5NWViZTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_30d12e4a52b747eaa06b29315088ba3e",
+      "statement": "OpenAIModelRouterMiddleware falls back to the agent's own model if routing fails (model refuses, no human message exists, or API error); when model_route is None, model calls use the agent's default model.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/model_router.py#L237-L241",
+          "version": "repo-lines-v1:sha256:f9eab2222401dc168f8b3b7593e5d3d4d22147c759e60dd6a9884c4520f156b0:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmY5MGZjYjkyN2Q4ZTNmYzY4NzJmMGVjZGIwZjFjMjNhODRkZjA3NGYwY2FjYzQ5MTM2NmNiNmI3N2ZlZjM3MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDYxZmVmMjFlN2MzNWFlODlkYTRlZGZmNDgxY2VhYzhkN2Y1MmFjYjQxYWYwMzg1ODIwMjdlMTQ4MmNiNzY1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZiMTYzZDBlYjAyOTU1NWRmN2Y4NTA4ZDlmMjU2NjdmYzRkZDg2ZWYwOThhYTFmOTc4MjI0MTQzOGQ2MDc5ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDQ1Y2JkMTNhN2U2YTBmZTI0ZGM0ZTQ4NGY5NGUxNGExNTg5ZDQ2N2RkOTU1ODNkYjQ1OWFkZGQzMWQ3NzRhOSJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/model_router.py#L94-L96",
+          "version": "repo-lines-v1:sha256:4f9502103b7d9085a5c447d22ed43335069e14d7caff41babfa0ce0525330275:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGNkNjRiZTkyYzA3MmEzMzEyMDAyMzU2OWYzNjBkMTNmZjZjYjIwZjUxZTE4YWExNzNkOTRmNTc4YWY1MWUxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2U4YjBhYWFiYjE3Y2M5OWM5MjBjOWQ4ZjAwMTdmNTVhODNmODhlNzNlOGMyNWMxMDkxMjY1NDQ4OTM5OGUyYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjE1MjQzMzhmNzg5NjdkZDczNjJjMjE3YTE3Zjg3YThkODY3NTA3NjI3MDAwZGEwZjQzNDc1NWUwYzBlNTNkZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTQ5ZjgyMWMzZTRkNTBiYjZiMmMzNjgwYTVhNmRhZjFiMmI5YTNlYmQ3ZGMzOTljYzE0OWIwMmY5YWExZTllNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_d12432f4784b4dcf888304bdaa9577c6",
+      "statement": "OpenAIModelRouterMiddleware includes base64-encoded images in routing decisions but replaces hosted image URLs, files, and audio with placeholders; if images are rejected (HTTP 400 or 413), retries with all images replaced.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/model_router.py#L218-L235",
+          "version": "repo-lines-v1:sha256:9d0eec3d72d3fda1f43fea6bb170b28f9c6429f93f41b776c2235284460aa7cc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzMGU4ODViMGQxYmVhYmRiMzc4YjRiMWE3NDJiYWU4MTI4OWE0ZmJjZjEzYmU4ZDBiMDA1MThlMGVjOGVjYTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJhYWU4YTBjYTc2Zjk4ZjdiN2RjNzk4NDk1MWQ2M2U1N2RiM2M2NDU1NzljYTUxYmFkNmE1MzlkNjE0ZWRiYmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkYjdlZGEzMGU4NmQyZTc0MWZmMzEyY2IyYWM2N2MyOThmZTkwNTlhYTkwN2YxMzE3YmJjMTcwMGM4NDY1MDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNWQ3MDkwMWExYmIxY2I1NGY2M2FhNTFhNWE4ZGEwYTE1YmM5ODlhN2QwMzkzZTk2MDcxYmI0MTFmMTMyYTIifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/model_router.py#L244-L267",
+          "version": "repo-lines-v1:sha256:ed685bf901260fb5d095cdc36070c4b95b9dd5795bacaf19f8198fd943195da5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxOTA5MDlmOTU2ZWFmMjQwNjM2NmVjZmYxMjQ1MDJjZDFlOTE2NjNmZjEzMTRkMjEwYTQ5MDJjNjFlYWRmNTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlODljYmViZGRmODNhZjRmZjI1YWNjMzdkN2I0ZjMxMzU2NTJkOTA4NWU3NWM3YWE5ZGJkOWNkYmM3OTIwZDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiOWU1ZjNiODJhYjhkNWRmNWM5YmU3NTJjZjRjOGFjODg1MGMzZmI1NThiNTczNDI5OTE4OGM2MGEzYTE5YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU3OTBmZmVhMmRlZjRmOGU2YzhmZTJlMzUyYWY2NTlkOWIyNzE5MzY4NGZlMTIwYzYxNzY1ZWM3ODdkZjM2ZTAifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/model_router.py#L88-L92",
+          "version": "repo-lines-v1:sha256:fb9b197f8053c464510cabad157930358efb914706fa2de7c506cf2b45a84eb8:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTdmMGNhYjNjZDU5N2ExZDU2NzljYjA4MmYzMGQzYTM4NjMzMzNhMDQzNGVjZjAwMmNjYzY1M2UzZjQzZjY4YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2RiOGU2NzU1ODZkYmNlMzM3ZTZmOTM4NWE3NGQ1MjY0OGQ2NmY2MzdkOTdmYjY3YzE0NTM1OGFiZTcwNDk2MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWQ1ZGY1NDg4MTFjODlhZWVmYWNjMGFjMGI1MDA1MGZhYzczYTgxZjNiNWVhNDAzYjZlMmMyMTc1YTQ2MzE5NCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bc50713794c942fa891a4222ab786a01",
+      "statement": "decide_with_text_fallback() and adecide_with_text_fallback() retry Decisions API requests with images on HTTP 400 or 413 errors, ensuring that image issues do not block guardrails or routing; middleware degrades gracefully to text-only assessment.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/middleware/_fallback.py#L24-L70",
+          "version": "repo-lines-v1:sha256:87976e970fb9c18455c04e5ff849fa018a05b5202ade6df30e1554e077a65318:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY1MzVkZmNkMDAwNWMwOWEyOWI5MWZlNjQ3YTYyM2I5OTRhODhjZGRmYTc2MTZjZjM2YWM4YTU4MjJmM2ZjMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyMDA5N2U0YWE1MDA2OGJhMTU3ZjlhMjczOWZhZDg2OTk1ZTFlMGNkY2NkYWRjNTg5N2MyMDM0Yzc0ZDNlZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-28T08:35:20.640Z"
+    "at": "2026-10-10T08:25:28.570Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6585fb7a1172592cbaf6a865841096f09424e36447d24d244974094163c16746",
+  "pageVersion": "sha256:577e75ba33c07ad76b61c5c0d5f9c4d6aaa90d19b499b61f746ec0e3cac3e822",
   "claims": [
     {
       "id": "claim_7425c73f5e4c4667b8babba66c3663a0",
@@ -12,11 +12,11 @@
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/__init__.py",
-          "version": "repo-file-v1:sha256:56c4a355b80b98c270b27051036f19ab2b81c58fdecbc1539f76b4ad7a92ff6d"
+          "version": "repo-file-v1:sha256:353b944bc45aea580e24c29c4154eacc599e2fc06c4e73e1344eeac3ebe4ca24"
         },
         {
           "resource": "repo://libs/partners/openai/langchain_openai/__init__.py",
-          "version": "repo-file-v1:sha256:d08e06dea1f954a477fa8951e2a8387a10396d07b92a3a60fdced307c136a84f"
+          "version": "repo-file-v1:sha256:5673ccbe8f53267c2027dd390051424928a6e1e744c2f8c8a418960a29dccf4d"
         }
       ]
     },
@@ -30,7 +30,7 @@
         },
         {
           "resource": "repo://libs/core/langchain_core/language_models/chat_models.py",
-          "version": "repo-file-v1:sha256:a2c769b852868ee63985025e519a25bb988b8c987f5958033c7c97d832a70d11"
+          "version": "repo-file-v1:sha256:7377a3e0d534d6fe9835cb35e39fc2bf7614ae2be26eb5664a0767dfb002cb03"
         },
         {
           "resource": "repo://libs/core/langchain_core/messages/__init__.py",
@@ -78,7 +78,7 @@
       "evidence": [
         {
           "resource": "repo://libs/partners/openai/langchain_openai/__init__.py",
-          "version": "repo-file-v1:sha256:d08e06dea1f954a477fa8951e2a8387a10396d07b92a3a60fdced307c136a84f"
+          "version": "repo-file-v1:sha256:5673ccbe8f53267c2027dd390051424928a6e1e744c2f8c8a418960a29dccf4d"
         }
       ]
     },
@@ -162,7 +162,7 @@
       "evidence": [
         {
           "resource": "repo://libs/partners/openai/langchain_openai/__init__.py",
-          "version": "repo-file-v1:sha256:d08e06dea1f954a477fa8951e2a8387a10396d07b92a3a60fdced307c136a84f"
+          "version": "repo-file-v1:sha256:5673ccbe8f53267c2027dd390051424928a6e1e744c2f8c8a418960a29dccf4d"
         },
         {
           "resource": "repo://libs/standard-tests/langchain_tests/__init__.py",
@@ -183,6 +183,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-29T08:28:34.635Z"
+    "at": "2026-10-10T08:25:28.570Z"
   }
 }

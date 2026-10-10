@@ -1,11 +1,11 @@
 ---
 type: "Concept"
-title: "Streaming: Token-by-Token Output"
-description: "How streaming works across LLM components and chains, token-by-token delivery via AIMessageChunk, callback integration, and memory/latency tradeoffs."
-tags: [streaming, token-streaming, llm-output, chat-models, callbacks, astream, real-time-feedback]
+title: "Streaming & Async Support"
+description: "Streaming primitives (stream(), astream(), stream_events(), astream_events()), message chunk accumulation with AIMessageChunk, callback integration (on_llm_new_token, on_stream_event, _V2StreamingCallbackHandler), and async execution patterns with error handling and backpressure."
+tags: [streaming, token-streaming, astream, astream_events, async, callbacks, chat-models, backpressure, observability]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-10T08:25:28.570Z
 sources:
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py
@@ -27,7 +27,7 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/base.py
   - id: openwiki-source-ff9b926753e6cc6fe87acfe7
     resource: repo://libs/langchain_v1/tests/unit_tests/agents/test_agent_streaming.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-10T08:25:28.570Z" }
 ---
 
 ## Overview
@@ -104,6 +104,68 @@ async for chunk in model.astream(messages):
     chunks.append(chunk)
 final_message = sum(chunks)  # Merge via + operator
 ```
+
+### Error Handling in Async Streaming
+
+Async streaming errors are propagated like sync errors. To handle failures gracefully:
+
+```python
+async def stream_with_error_handling():
+    try:
+        async for chunk in model.astream(messages):
+            print(chunk.content, end="", flush=True)
+    except asyncio.CancelledError:
+        # Caller cancelled the stream
+        print("\n[Cancelled]")
+        raise
+    except Exception as e:
+        # Model or callback error
+        print(f"\n[Error: {e}]")
+        raise
+
+# Can be cancelled from outside:
+task = asyncio.create_task(stream_with_error_handling())
+await asyncio.sleep(0.5)
+task.cancel()  # Cancels the streaming operation
+```
+
+### Concurrent Streaming
+
+Multiple models can stream concurrently using `asyncio.gather()`:
+
+```python
+results = await asyncio.gather(
+    collect_astream(model1.astream(msg1)),
+    collect_astream(model2.astream(msg2)),
+    collect_astream(model3.astream(msg3)),
+)
+
+async def collect_astream(astream_iter):
+    chunks = []
+    async for chunk in astream_iter:
+        chunks.append(chunk)
+    return chunks[0] + sum(chunks[1:], chunks[0]) if chunks else None
+```
+
+## Async Event Streaming: astream_events()
+
+**Location**: `repo://libs/core/langchain_core/language_models/chat_models.py#L1361-L1396`
+
+`BaseChatModel.astream_events()` is the async variant of `stream_events()`, supporting v1, v2, and v3 event versions.
+
+```python
+# v1/v2: Async generator of StreamEvent dicts
+async for event in model.astream_events(messages, version="v2"):
+    if event.get("type") == "on_llm_new_token":
+        print(event.get("data", {}).get("token"), end="", flush=True)
+
+# v3: Awaitable that returns AsyncChatModelStream (not an async generator)
+stream = await model.astream_events(messages, version="v3")
+async for text_delta in stream.text:
+    print(text_delta, end="", flush=True)
+```
+
+**Key difference**: For `version="v3"`, `astream_events()` returns an **awaitable** that must be awaited before iterating projections. This is because the projection infrastructure must be initialized before the producer starts running. For v1/v2, it returns an **async generator** that can be iterated directly.
 
 ## Message Chunks: Types and Composition
 
@@ -394,7 +456,58 @@ The `_transform_stream_with_config()` helper manages streaming with callbacks. I
 
 This mechanism ensures streaming callbacks fire for each chunk and that parent run managers know when a chain's streaming is complete.
 
-## Streaming via stream_events: ChatModelStream
+## Streaming Events: stream_events() and astream_events()
+
+### Overview
+
+Beyond token-level streaming, LangChain provides **event streaming** via `stream_events()` and its async variant `astream_events()`. These methods support three event format versions:
+
+- **v1 (legacy)**: Basic event dicts with type, payload (deprecated in favor of v2/v3)
+- **v2 (protocol events)**: Content-block lifecycle events (`on_stream_event` callback)
+- **v3 (projections)**: Typed, pull-based streams with `.text`, `.tool_calls`, `.reasoning`, `.output`, `.usage` projections
+
+### v1 and v2 Streaming: Callback-Driven Events
+
+**Location**: `repo://libs/core/langchain_core/language_models/chat_models.py#L1287-L1396`
+
+For `version="v1"` or `version="v2"`, `stream_events()` yields **StreamEvent dicts** that represent model state changes. These are callback-driven events that fire callbacks like `on_stream_event` (the v2 protocol event handler) as the model executes.
+
+To consume v2 events, create a callback handler that inherits from `_V2StreamingCallbackHandler`:
+
+```python
+from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
+
+class MyProtocolStreamingHandler(_V2StreamingCallbackHandler, BaseCallbackHandler):
+    """Marker class signals: this handler wants on_stream_event callbacks (v2)."""
+    
+    def on_stream_event(self, event, **kwargs):
+        """Receive protocol event: text-delta, tool_call_chunk, reasoning-delta, usage, etc."""
+        event_type = event.get("type")
+        if event_type == "text-delta":
+            # Incremental text content
+            print(event["text"], end="", flush=True)
+        elif event_type == "tool_call_chunk":
+            # Partial tool call with accumulated arguments
+            print(f"Tool {event['name']}: {event['args']}")
+        elif event_type == "usage":
+            # Token usage update (input, output, cached, etc.)
+            print(f"Usage: {event}")
+
+handler = MyProtocolStreamingHandler()
+
+# When this handler is attached, the model routes through v2 event path
+for event in model.stream_events(
+    messages,
+    version="v2",
+    config=RunnableConfig(callbacks=[handler])
+):
+    # Also yields events directly (for non-callback access)
+    pass
+```
+
+The `_V2StreamingCallbackHandler` marker is an **opt-in** mechanism: when a handler inherits from it, the model's invoke/stream path automatically routes through the v2 protocol event generator, firing `on_stream_event` callbacks at event granularity instead of token granularity.
+
+### v3 Streaming: ChatModelStream with Projections
 
 **Location**: `repo://libs/core/langchain_core/language_models/chat_model_stream.py`
 
@@ -565,6 +678,47 @@ When streaming with `stream_events()` (v3):
 - **Pull-based backpressure**: The producer (model/graph) only generates events as the consumer requests them via the projection iterator. This naturally paces the producer to the consumer.
 - **Bounded buffering**: The projection buffers events only until the consumer reads them. A slow consumer will naturally slow the producer, preventing unbounded memory growth.
 - **Multiple independent consumers**: Multiple `for` loops over different projections (e.g., `.text` and `.tool_calls`) can replay all events from the buffer, supporting diverse consumption patterns without re-running the model.
+
+## Async Context Managers and Resource Cleanup
+
+When using `astream_events(version="v3")` with `AsyncChatModelStream`, the stream manages resources like background tasks that produce events. To ensure proper cleanup, use async context managers:
+
+```python
+async def stream_with_cleanup():
+    # Option 1: Use async context manager (recommended)
+    async with await model.astream_events(messages, version="v3") as stream:
+        async for chunk in stream.text:
+            process(chunk)
+        # Context manager exits and cleans up producer task
+
+# Option 2: Manual cleanup
+stream = await model.astream_events(messages, version="v3")
+try:
+    async for chunk in stream.text:
+        process(chunk)
+finally:
+    await stream.aclose()  # Explicitly cancel producer task
+```
+
+The context manager pattern ensures that the producer task is cancelled cleanly if the consumer exits early, preventing orphaned async tasks.
+
+## Streaming Event Versions: v1 vs v2 vs v3
+
+| Feature | v1 | v2 | v3 |
+|---------|----|----|-----|
+| **Form** | Callback events dicts | Protocol events (on_stream_event) | Typed projections |
+| **Granularity** | Token-level | Content-block lifecycle | Accumulated state + deltas |
+| **Driver** | Token streaming callbacks | Protocol event callbacks | Pull-based projections |
+| **Backpressure** | No (callback-driven) | No (callback-driven) | Yes (pull-based) |
+| **Access** | Callback `on_llm_new_token` | Callback `on_stream_event` or iteration | `.text`, `.tool_calls`, `.reasoning`, `.output` |
+| **Stability** | Stable | Stable | Beta (subject to change) |
+| **Opt-in** | Default | Requires `_V2StreamingCallbackHandler` | Explicit `version="v3"` |
+
+### When to Use Each Version
+
+- **v1**: Legacy code or simple token observation via callbacks
+- **v2**: LangSmith integration or detailed protocol event observation via `on_stream_event` callback
+- **v3**: Complex workflows (agents, tool chains), hierarchical visibility, and pull-based consumption patterns where you want explicit control over producer pacing
 
 ## Best Practices for Streaming
 

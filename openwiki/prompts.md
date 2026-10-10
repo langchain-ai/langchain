@@ -14,6 +14,8 @@ sources:
     resource: repo://libs/core/langchain_core/prompts/base.py
   - id: openwiki-source-15fdd645c1ee76ae559799c1
     resource: repo://libs/core/langchain_core/prompts/chat.py
+  - id: openwiki-source-84508ab3c1ec7e3752ffca7f
+    resource: repo://libs/core/langchain_core/prompts/few_shot_with_templates.py
   - id: openwiki-source-bc32774051e0e8a931a6fecd
     resource: repo://libs/core/langchain_core/prompts/few_shot.py
   - id: openwiki-source-5549894302ea4dfd5b8f4278
@@ -22,10 +24,10 @@ sources:
     resource: repo://libs/core/langchain_core/prompts/string.py
   - id: openwiki-source-204b5e61a019044332bd2dd4
     resource: repo://libs/core/langchain_core/prompts/structured.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-10T08:25:28.570Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-10T08:25:28.570Z
 ---
 
 ## Overview
@@ -270,6 +272,54 @@ template = ChatPromptTemplate.from_messages([
 result = template.invoke({"input": "4+4"})
 # Messages: [system, human(2+2?), ai(4), human(2+3?), ai(5), human(4+4?)]
 ```
+
+### FewShotPromptWithTemplates
+
+`FewShotPromptWithTemplates` is an advanced variant that uses template objects for prefix and suffix instead of static strings. This enables the prefix and suffix themselves to have dynamic variables and template logic, merging example selection with flexible prompt composition.
+
+**Key differences from `FewShotPromptTemplate`:**
+- `prefix` and `suffix` are `StringPromptTemplate` instances (or `None` for prefix) instead of strings
+- `example_prompt` remains a `PromptTemplate` for formatting individual examples
+- Input variables are automatically inferred from prefix and suffix templates
+- Supports all template formats: f-string, mustache, and jinja2
+
+```python
+from langchain_core.prompts import PromptTemplate, FewShotPromptWithTemplates
+
+examples = [
+    {"input": "happy", "output": "sad"},
+    {"input": "tall", "output": "short"},
+]
+
+example_prompt = PromptTemplate(
+    template="Input: {input}\nOutput: {output}",
+    input_variables=["input", "output"],
+)
+
+# Prefix and suffix are templates, not strings
+prefix = PromptTemplate(
+    template="You are translating words. Task: {task}",
+    input_variables=["task"],
+)
+
+suffix = PromptTemplate(
+    template="Now, translate this: {input}",
+    input_variables=["input"],
+)
+
+prompt = FewShotPromptWithTemplates(
+    examples=examples,
+    example_prompt=example_prompt,
+    prefix=prefix,
+    suffix=suffix,
+)
+
+# Format with variables for both prefix and suffix
+output = prompt.format(task="Find opposites", input="big")
+# Output includes formatted prefix, examples, and suffix
+```
+
+This pattern is useful when your few-shot prompt structure itself depends on runtime parameters, such as conditional instructions in the prefix based on request metadata.
 
 ## Example Selectors
 

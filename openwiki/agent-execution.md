@@ -5,13 +5,13 @@ description: Traces the runtime lifecycle of an agent from user input through mo
 tags: [agent-execution, control-flow, state-machine, loop-control, tool-dispatch, middleware, langchain]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-10T08:25:28.570Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-10T08:25:28.570Z" }
 ---
 
 ## Overview
@@ -104,6 +104,26 @@ Messages flow through the system as `langchain_core.messages` objects:
 - **`AIMessage`**: Emitted by the model, may contain `tool_calls` (list of dicts with `id`, `name`, `args`).
 - **`ToolMessage`**: Result of tool execution, carries `tool_call_id` to link it back to the model's request, `name` of the tool, and `content` with the tool's output.
 - **`UserMessage`**, **`SystemMessage`**: User and system prompts; system message is prepended at model call time.
+
+### Message Accumulation
+
+The `messages` field uses a reducer function (`add_messages`) to accumulate rather than replace. This means:
+
+- When a node returns `{"messages": [new_msg]}`, the `add_messages` reducer **appends** `new_msg` to the existing list.
+- Calling the model multiple times does not lose prior conversation history.
+- Each `ToolMessage` is appended after its corresponding tool execution.
+- The full conversation is always visible to the next model invocation.
+
+Other state fields like `structured_response` and `jump_to` are replaced, not accumulated.
+
+### User Interruption via RemoveMessage
+
+Agents support human-in-the-loop workflows where users can interrupt execution and modify state. The `RemoveMessage` interface allows users to remove or redirect tool calls:
+
+- When a checkpointer is configured, users can pause execution at specified nodes (via `interrupt_before` or `interrupt_after`).
+- Users can inspect the current state (including pending tool calls in `messages`).
+- By returning a `Command` containing `RemoveMessage` objects, users can remove specific tool call messages and inject alternative `ToolMessage` objects with corrected results or user-provided responses.
+- The agent resumes from the interruption point with the modified state, allowing human review and correction before tool execution or before continuing the loop.
 
 ## Model Request and Response
 
@@ -333,6 +353,31 @@ The model's native structured output API (e.g., OpenAI's `response_format`) is u
 **Auto-Detection:**
 When `response_format` is a raw schema, `create_agent()` auto-detects the best strategy at graph compile time based on model capabilities. If the model supports provider strategy, use it; otherwise fall back to tool strategy.
 
+## Streaming and Resumption
+
+The compiled agent graph supports streaming and checkpointing for long-running conversations:
+
+### Streaming Modes
+
+The agent can be invoked with various streaming modes via the compiled graph:
+
+- **`stream(inputs, stream_mode="updates")`**: Yields state updates after each node execution, allowing real-time monitoring of the agent's progress.
+- **`astream(inputs, stream_mode="updates")`**: Async variant for non-blocking streaming.
+- **`astream_events(inputs)`**: Emits detailed lifecycle events (node execution, message generation, tool calls) for fine-grained tracing.
+- **`stream_mode="messages"`**: Yields individual messages as they are added to state, useful for streaming LLM output tokens or tool results.
+- **`stream_mode="custom"`**: Emits custom events via middleware `runtime.stream_writer()` calls.
+
+### Checkpointing and Resumption
+
+When a `Checkpointer` is configured on the agent:
+
+- State is persisted after each node completes, keyed by thread ID.
+- Execution can be resumed from a checkpoint, allowing multi-turn conversations with full history preservation.
+- Interrupts (via `interrupt_before` or `interrupt_after`) pause execution and return control to the user for inspection or modification.
+- Users can inspect `state['messages']` to see the current conversation and any pending tool calls.
+- Users can return a `Command` with `RemoveMessage` objects to modify the state before resuming.
+- Resumption continues from the interruption point with the modified state.
+
 ## Callbacks and Monitoring
 
 At each major step, LangGraph fires callbacks and traces to `langsmith` for monitoring and debugging:
@@ -343,34 +388,6 @@ At each major step, LangGraph fires callbacks and traces to `langsmith` for moni
 - **State updates**: Every `Command` returned from a node updates the graph state.
 
 Middleware can configure a `trace_policy` to shape what is recorded (e.g., `omit_payload` to drop sensitive data from traces while preserving timing and node names).
-
-## Message Accumulation and State Reducers
-
-The `messages` field uses a reducer function (`add_messages`) to accumulate rather than replace. This means:
-
-- When a node returns `{"messages": [new_msg]}`, the `add_messages` reducer **appends** `new_msg` to the existing list.
-- Calling the model multiple times does not lose prior conversation history.
-- Each `ToolMessage` is appended after its corresponding tool execution.
-- The full conversation is always visible to the next model invocation.
-
-Other state fields like `structured_response` and `jump_to` are replaced, not accumulated.
-
-## Error Handling
-
-### Model Invocation Errors
-
-Exceptions during model invocation propagate unless `wrap_model_call` middleware catches them. A middleware can implement retry logic by catching exceptions and calling the handler again with a modified request.
-
-### Tool Execution Errors
-
-By default, exceptions during tool execution propagate. The `ToolNode` accepts a `handle_tool_errors` parameter to return error messages instead of crashing. Middleware can wrap tools with `wrap_tool_call` to implement custom error strategies.
-
-### Structured Output Validation Errors
-
-If a structured output tool's arguments fail to parse:
-1. If `handle_errors=True` on the `ToolStrategy`, synthesize a `ToolMessage` with the error.
-2. If `handle_errors=False`, raise `StructuredOutputValidationError`.
-3. The loop continues (or exits) based on the strategy configuration.
 
 ## State Machine View
 
@@ -419,12 +436,22 @@ stateDiagram-v2
 
 State machine showing the progression from agent start through model invocation, tool dispatch, loop evaluation, and final exit.
 
-## Integration with Related Components
+## Error Handling
 
-- **Middleware** (`/openwiki/middleware.md`): Details on how middleware hooks compose and intercept at each phase.
-- **Structured Output** (`/openwiki/structured-output.md`): In-depth guide to response formats, strategies, and schema validation.
-- **Messages** (`/openwiki/messages.md`): Message types, serialization, and conversation management.
-- **Agent Factory** (`/openwiki/agent-factory.md`): How `create_agent()` constructs the StateGraph from configuration.
+### Model Invocation Errors
+
+Exceptions during model invocation propagate unless `wrap_model_call` middleware catches them. A middleware can implement retry logic by catching exceptions and calling the handler again with a modified request.
+
+### Tool Execution Errors
+
+By default, exceptions during tool execution propagate. The `ToolNode` accepts a `handle_tool_errors` parameter to return error messages instead of crashing. Middleware can wrap tools with `wrap_tool_call` to implement custom error strategies.
+
+### Structured Output Validation Errors
+
+If a structured output tool's arguments fail to parse:
+1. If `handle_errors=True` on the `ToolStrategy`, synthesize a `ToolMessage` with the error.
+2. If `handle_errors=False`, raise `StructuredOutputValidationError`.
+3. The loop continues (or exits) based on the strategy configuration.
 
 ## Configuration and Operations
 
@@ -475,3 +502,13 @@ for msg in result["messages"]:
 ```
 
 This example shows how middleware intercepts the model call to implement retry logic that re-invokes the handler on failure.
+
+## Integration with Related Components
+
+- **Middleware** (`/openwiki/middleware.md`): Details on how middleware hooks compose and intercept at each phase.
+- **Structured Output** (`/openwiki/structured-output.md`): In-depth guide to response formats, strategies, and schema validation.
+- **Messages** (`/openwiki/messages.md`): Message types, serialization, and conversation management.
+- **Agent Factory** (`/openwiki/agent-factory.md`): How `create_agent()` constructs the StateGraph from configuration.
+- **Streaming** (`/openwiki/streaming.md`): Real-time event streaming and checkpoint resumption.
+- **Tools** (`/openwiki/tools.md`): Tool definition, binding, and execution semantics.
+- **Callbacks** (`/openwiki/callbacks.md`): Tracing integration and LangSmith hooks.
