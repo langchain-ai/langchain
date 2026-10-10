@@ -305,7 +305,7 @@ def test_request_payload_with_store_false_drops_reasoning_item_references() -> N
                     },
                     {"type": "text", "text": "Use pathlib.rglob.", "id": "msg_123"},
                 ],
-                response_metadata={"id": "resp_123"},
+                response_metadata={"id": "resp_123", "model_provider": "openai"},
             ),
             HumanMessage("Make it shorter."),
         ]
