@@ -4313,12 +4313,8 @@ def test_html_splitter_keep_separator_default() -> None:
 
 
 @pytest.mark.requires("bs4")
-def test_html_splitter_preserved_elements_reverse_order() -> None:
-    """Test HTML splitter with preserved elements and conflicting placeholders.
-
-    This test validates that preserved elements are reinserted in reverse order
-    to prevent conflicts when one placeholder might be a substring of another.
-    """
+def test_html_splitter_with_multiple_preserved_elements() -> None:
+    """Test HTML splitter with multiple preserved elements."""
     html_content = """
     <h1>Section 1</h1>
     <table>
@@ -4341,16 +4337,72 @@ def test_html_splitter_preserved_elements_reverse_order() -> None:
         )
     documents = splitter.split_text(html_content)
 
-    # Verify that all preserved elements are correctly reinserted
-    # This would fail if placeholders were processed in forward order
-    # when one placeholder is a substring of another
     assert len(documents) >= 1
-    # Check that table content is preserved
     content = " ".join(doc.page_content for doc in documents)
     assert "Table 1 content" in content
     assert "Table 10 content" in content
     assert "List item 1" in content
     assert "List item 10" in content
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_preserved_placeholders_do_not_collide_with_content() -> None:
+    """Test that placeholder-like text is preserved without replacement."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>see PRESERVED_0 here</p>
+    <table><tr><td>SECRET-TABLE</td></tr></table>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            elements_to_preserve=["table"],
+            max_chunk_size=1000,
+        )
+
+    documents = splitter.split_text(html_content)
+
+    assert documents == [
+        Document(
+            page_content="see PRESERVED_0 here SECRET-TABLE",
+            metadata={"Header 1": "Section 1"},
+        )
+    ]
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_preserved_content_can_contain_placeholder_like_text() -> None:
+    """Test that preserved content with placeholder-like text is unchanged."""
+    html_content = """
+    <h1>Section 1</h1>
+    <table><tr><td>PRESERVED_0</td></tr></table>
+    <table><tr><td>Second table</td></tr></table>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            elements_to_preserve=["table"],
+            max_chunk_size=1000,
+        )
+
+    documents = splitter.split_text(html_content)
+
+    assert documents == [
+        Document(
+            page_content="PRESERVED_0 Second table",
+            metadata={"Header 1": "Section 1"},
+        )
+    ]
+
+
+def test_html_splitter_reinsertion_does_not_cascade() -> None:
+    """Test preserved values are not interpreted as placeholders."""
+    assert (
+        HTMLSemanticPreservingSplitter._reinsert_preserved_elements(
+            "first", {"second": "value", "first": "second"}
+        )
+        == "second"
+    )
 
 
 @pytest.mark.requires("bs4")

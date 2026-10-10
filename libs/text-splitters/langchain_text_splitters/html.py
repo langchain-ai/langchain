@@ -753,7 +753,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         if self._allowlist_tags or self._denylist_tags:
             self._filter_tags(soup)
 
-        return self._process_html(soup)
+        return self._process_html(soup, f"{text}{soup}")
 
     @override
     def transform_documents(
@@ -871,11 +871,12 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
         return text
 
-    def _process_html(self, soup: BeautifulSoup) -> list[Document]:
+    def _process_html(self, soup: BeautifulSoup, original_text: str) -> list[Document]:
         """Processes the HTML content using BeautifulSoup and splits it using headers.
 
         Args:
             soup: Parsed HTML content using BeautifulSoup.
+            original_text: Original HTML text used to avoid placeholder collisions.
 
         Returns:
             A list of `Document` objects containing the split content.
@@ -949,7 +950,10 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                         dict(self._headers_to_split_on)[elem.name]: header_name
                     }
                 elif elem.name in self._elements_to_preserve:
-                    placeholder = f"PRESERVED_{placeholder_count}"
+                    placeholder = f"\ue000{placeholder_count}\ue001"
+                    while placeholder in original_text:
+                        placeholder_count += 1
+                        placeholder = f"\ue000{placeholder_count}\ue001"
                     preserved_elements[placeholder] = _get_element_text(elem)
                     current_content.append(placeholder)
                     placeholder_count += 1
@@ -1040,16 +1044,32 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         content = re.sub(r"\s+", " ", content).strip()
 
         metadata = {**headers, **self._external_metadata}
+        placeholder_pattern = (
+            re.compile(
+                "|".join(
+                    re.escape(placeholder)
+                    for placeholder in sorted(preserved_elements, key=len, reverse=True)
+                )
+            )
+            if preserved_elements
+            else None
+        )
 
         if len(content) <= self._max_chunk_size:
             page_content = self._reinsert_preserved_elements(
-                content, preserved_elements
+                content, preserved_elements, placeholder_pattern
             )
             return [Document(page_content=page_content, metadata=metadata)]
-        return self._further_split_chunk(content, metadata, preserved_elements)
+        return self._further_split_chunk(
+            content, metadata, preserved_elements, placeholder_pattern
+        )
 
     def _further_split_chunk(
-        self, content: str, metadata: dict[Any, Any], preserved_elements: dict[str, str]
+        self,
+        content: str,
+        metadata: dict[Any, Any],
+        preserved_elements: dict[str, str],
+        placeholder_pattern: re.Pattern[str] | None,
     ) -> list[Document]:
         """Further splits the content into smaller chunks.
 
@@ -1057,6 +1077,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
             content: The content to be split.
             metadata: Metadata to attach to each chunk.
             preserved_elements: Preserved elements to be reinserted into each chunk.
+            placeholder_pattern: Pattern matching the preserved element placeholders.
 
         Returns:
             A list of `Document` objects containing the split content.
@@ -1066,7 +1087,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
         for split in splits:
             split_with_preserved = self._reinsert_preserved_elements(
-                split, preserved_elements
+                split, preserved_elements, placeholder_pattern
             )
             if split_with_preserved.strip():
                 result.append(
@@ -1080,20 +1101,32 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
     @staticmethod
     def _reinsert_preserved_elements(
-        content: str, preserved_elements: dict[str, str]
+        content: str,
+        preserved_elements: dict[str, str],
+        placeholder_pattern: re.Pattern[str] | None = None,
     ) -> str:
         """Reinserts preserved elements into the content into their original positions.
 
         Args:
             content: The content where placeholders need to be replaced.
             preserved_elements: Preserved elements to be reinserted.
+            placeholder_pattern: Pattern matching the preserved element placeholders.
 
         Returns:
             The content with placeholders replaced by preserved elements.
         """
-        for placeholder, preserved_content in reversed(preserved_elements.items()):
-            content = content.replace(placeholder, preserved_content.strip())
-        return content
+        if not preserved_elements:
+            return content
+        if placeholder_pattern is None:
+            placeholder_pattern = re.compile(
+                "|".join(
+                    re.escape(placeholder)
+                    for placeholder in sorted(preserved_elements, key=len, reverse=True)
+                )
+            )
+        return placeholder_pattern.sub(
+            lambda match: preserved_elements[match.group()].strip(), content
+        )
 
 
 # %%
