@@ -17,7 +17,7 @@ class MarkdownTextSplitter(RecursiveCharacterTextSplitter):
     def __init__(self, **kwargs: Any) -> None:
         """Initialize a `MarkdownTextSplitter`."""
         separators = self.get_separators_for_language(Language.MARKDOWN)
-        super().__init__(separators=separators, **kwargs)
+        super().__init__(separators=separators, is_separator_regex=True, **kwargs)
 
 
 class MarkdownHeaderTextSplitter:

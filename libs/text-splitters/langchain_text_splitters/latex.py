@@ -14,4 +14,4 @@ class LatexTextSplitter(RecursiveCharacterTextSplitter):
     def __init__(self, **kwargs: Any) -> None:
         """Initialize a LatexTextSplitter."""
         separators = self.get_separators_for_language(Language.LATEX)
-        super().__init__(separators=separators, **kwargs)
+        super().__init__(separators=separators, is_separator_regex=True, **kwargs)
