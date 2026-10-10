@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:48ea385d8432c2a0ff1d100837e0ca311a3ea341fe2963834d7c8eec9590d019",
+  "pageVersion": "sha256:3e4e5daadbc016bbffe8005d5cd02a59c546605479a563cf1ae637391d85be44",
   "claims": [
     {
       "id": "claim_87d5d462354440a7bccb6dbe992c60d3",
@@ -197,10 +197,70 @@
           "version": "repo-lines-v1:sha256:ad25efc0b9dde129f68999de4a00b228f4ebcdb5e3c41d1f5d86a71690598a81:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQ2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiZWUyODI4YWI5ODNjODVkZTdkOWUxOGNlZjVhYTQzZGY0MTJiYmRiY2FiMDc3ZjdmMDEzYjUzZWQ3ZTRlNzM3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlMGFjYmYwOTdlMWU4NjZmNGJlMzE5MjU3YmI0OWQ5OGQ1NWQwMWY4MTcxN2IzYzIyNTMwNDQ5NWYzNDMwMjZkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjYmVjNzljZDAzZDA2YmE2ZmU3MDBlMDhiZDA0ZjFmMDA0ZDFkZTg0ODMzMzMwN2U2ZGE5YTJlZjcyZTZmODZmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxODQwYjI2ZmUzZWI2OTY1MDNhZDY4ZmJmMTg5ZmU4ODAwYjQ3NzRkYmYzZGIzYWZmM2Q4YzBjMTA4NDg1ODVlIn0"
         }
       ]
+    },
+    {
+      "id": "claim_a176594151ba495a856d459cd4bce954",
+      "statement": "BaseChatModel.astream_events() is the async variant of stream_events(), supporting v1, v2, and v3 event versions. For v1/v2, it returns an async generator of StreamEvent dicts; for v3, it returns an awaitable that must be awaited before iterating projections, because projection infrastructure must initialize before the producer starts.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1361-L1396",
+          "version": "repo-lines-v1:sha256:46460f827d122e322b54f1d7e737ba1ca757e802ae11f486a4a6abbb6693315a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiMDdmZWYyYmIwYmU0MzBjOGYxYWM4N2UwNDdiMmJiMGQyNTZkMmEwMmJmNjRhMDY0ZTliYTRhMDAwMjVjMTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjZTkzZjk1OWZiNDliZGI1MjUwYTU1MGQ2Yzk3MWUwYWYxMGFhZWVkZTVlOWM0ODlhMzA5MjVkYjVmY2Y2MDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5YTM0MDViYjc5MDRlYWNlYTE1NTBlMjE3NTA2OTNkNTg3NzYyN2RhYjBiOTEwYWU1ZWRjMjI0MzE1MWQ0M2MifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ad14659a058c4b95b9b8a7906ef81852",
+      "statement": "_V2StreamingCallbackHandler is a marker base class (in langchain_core.tracers._streaming) that signals opt-in to v2 protocol event streaming. When a handler inherits from _V2StreamingCallbackHandler, the model's invoke/stream path automatically routes through the v2 protocol event generator, firing on_stream_event callbacks at content-block lifecycle granularity instead of token granularity.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L587-L648",
+          "version": "repo-lines-v1:sha256:bc97da1640786e95153af6bc46f7f807bf4c94a353d1905e3c69302939c5e7e0:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJlMzJkOTYzMzc4ZDEyYWFhMzVmYzI5NTg1Y2FhZjBkZGE0MmYxM2Q2Mjg0N2ZhZDdhZmRjNmQ2YTRkMDhjNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjODcyYzgzMmZhZjQ1N2UwMGVjODYyODZkOWI2OTU3OWZiMDc5ZWU0N2I3ZmU2Mjg0ZTNjNTI2YjA2OTRjYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc1ZjYyODhlYTM4N2E5NGMzODlmMTFlZTMzYzk3ZmIwZDZlNjRlODlkNTczNWQ2MzlhMTkzMzUzYTIxZjEwMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjZDVmZGFmMTU0OGUxNTcwMTMzNThlODZlNWRmZTYwNjdkMDI5OTVkYmQzOWQzZWQ0NWE1MGY1YzY1NjYxOTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_60906504667548cbbea6fc547486c697",
+      "statement": "Stream event versions provide three levels of detail: v1 (legacy callback event dicts, deprecated), v2 (protocol events fired via on_stream_event callback, requires _V2StreamingCallbackHandler, callback-driven), v3 (typed projections .text/.tool_calls/.reasoning/.output/.usage, pull-based backpressure, beta). v1/v2 are callback-driven with no backpressure; v3 implements backpressure where producer only generates events as consumer requests them.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1287-L1358",
+          "version": "repo-lines-v1:sha256:605c94c32de9cfd2815e4e7edf859ab0c924e3c40edf59a1445c70c34de977b1:eyJzZWxlY3RlZExpbmVDb3VudCI6NzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkYmI2ZDFmYzMxYjdhMTg3YTczYzQ4NmI5MTNlMjMzYjEyMWIzZmQ0ZTI3MGI5M2JiOGVjZWY4YTYzNzBjMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjN2ZhNzMyYWY3OThiZjAwMTRjNTJjYTZmMDVlODdkM2I1OTFlOGM1NzgxMmVmYjUzMTczN2Y4YjdkOWMzZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2MWI5OTdlNDViN2Y5Nzk3MjY3ZGNjNDY1ODdhOGI4OTFhZThiM2ZkZmY0NWU4OGEzY2YyZmFjOWJhNzZiYmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6064ac3bdbec432b8d142d37a136b7b7",
+      "statement": "Async streaming with astream() propagates errors like sync streaming: on_llm_error fires with partial accumulated chunks, then the exception is re-raised. AsyncCancelledError may occur if the caller cancels the task, indicating early termination of streaming. Error handling patterns include try/except/finally blocks and task cancellation via task.cancel().",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L858-L991",
+          "version": "repo-lines-v1:sha256:807ccf05f7bff67ca424c7f8b240e4b0317145e74e2c5c57b3d8f788617b6923:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNGU4YzYzMWQ3M2ZkMDAzMjFkNmUyY2IyNzUwZWE2M2VhYmVlOGIzNjc2YmMwYTEzZjMwZmQ1NDY0NjUwM2NiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3Mjc2ZmE5ODdiZGNkNTJkOTZhNjQ5YjNiNTcyYmRiMjZiOWU5MjcxYTNmMjljZjc0MTI1NDBkNzM1YjJkM2Q0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YjRlNzQ0ZThjZjE5MzY0OGExNzA1ZWRlZjE5N2M0NTNkNGM5NWE1YzI0MTUyNzdlMTA3NzFjMDgxOTFhYWRiIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_7302ed9bc6c8479aa39311c735e82fb4",
+      "statement": "Multiple models can stream concurrently using asyncio.gather(), running independent astream() calls in parallel. Each call maintains its own callback manager, rate limiter, and chunk accumulation, enabling concurrent token generation without interference. Results are merged independently per model via the + operator.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L858-L991",
+          "version": "repo-lines-v1:sha256:807ccf05f7bff67ca424c7f8b240e4b0317145e74e2c5c57b3d8f788617b6923:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNGU4YzYzMWQ3M2ZkMDAzMjFkNmUyY2IyNzUwZWE2M2VhYmVlOGIzNjc2YmMwYTEzZjMwZmQ1NDY0NjUwM2NiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3Mjc2ZmE5ODdiZGNkNTJkOTZhNjQ5YjNiNTcyYmRiMjZiOWU5MjcxYTNmMjljZjc0MTI1NDBkNzM1YjJkM2Q0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YjRlNzQ0ZThjZjE5MzY0OGExNzA1ZWRlZjE5N2M0NTNkNGM5NWE1YzI0MTUyNzdlMTA3NzFjMDgxOTFhYWRiIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_dd7e2753abba4595bad0a937b5042e48",
+      "statement": "AsyncChatModelStream from astream_events(version='v3') supports async context manager protocol (async with). The context manager ensures proper cleanup of producer tasks when the consumer exits, preventing orphaned async tasks. Manual cleanup is available via stream.aclose(), which cancels the producer task.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1-L45",
+          "version": "repo-lines-v1:sha256:9b0e7fb5e40ee88f22f766937245805b9ed747d105421138da2b46fe8f8522d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MTcxNTdmOTc5MDY1N2FmMGViZGVjZjNjM2ZmMTA4ZTQ2MGNhYWEzMjQ5MjczOGIxYThlMzU2YTI2MGE3NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1NmRhNjZiNTVjODU4ZjIxZWNkYmFlOTM4MWEzMTkwNDkxNTc4YjEzZmJkNGU0ZjRlYzU3NTQyYTU5N2NmODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhYzM5ZDU1YjFjNDA5YWVlN2MzMThhZThmZWU0ZjEyOWVlODM1OWViMjczNjU3NWJlYmI4MDcxN2E1Mzk2OWQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-28T08:35:20.640Z"
+    "at": "2026-10-10T08:25:28.570Z"
   }
 }

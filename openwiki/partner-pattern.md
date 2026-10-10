@@ -36,10 +36,10 @@ sources:
     resource: repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py
   - id: openwiki-source-025cad4ae99967890152b7e0
     resource: repo://libs/standard-tests/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-09-22T08:27:06.345Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-10T08:25:28.570Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-10T08:25:28.570Z
 ---
 
 ## Overview
@@ -304,7 +304,8 @@ LangChain messages have a **unified, provider-agnostic content format** using **
 - **`content`**: `str | list[dict]` - Either plain text or structured content blocks
 - **`tool_calls`**: `list[ToolCall]` - Structured tool invocation requests from the model
 - **`usage_metadata`**: Token counts and category breakdowns
-- **`response_metadata`**: Provider-specific response data (model name, usage, finish reason, etc.)
+- **`response_metadata`**: Provider-specific response data (model name, usage, finish reason, etc.); should include `model_provider` field identifying the provider for block translation
+- **`model_provider`**: String identifier for the provider (e.g., "openai", "anthropic"), used by block translators for format conversion
 
 **Unified content block types:**
 - `{"type": "text", "text": "..."}` - Plain text
@@ -314,6 +315,79 @@ LangChain messages have a **unified, provider-agnostic content format** using **
 - `{"type": "tool_result", ...}` - Tool execution results
 - `{"type": "reasoning", ...}` - Reasoning content (advanced models)
 - `{"type": "audio", ...}` - Audio input/output (multimodal)
+
+### Message Block Translators
+
+LangChain provides a **block translator** system to convert between unified message formats and provider-specific API schemas. This allows providers to return provider-specific formats in `AIMessage.content` while still supporting transparent conversion to unified blocks.
+
+**When translators are used:**
+- When `AIMessage.content_blocks` is accessed (lazy conversion)
+- When `response_metadata["model_provider"]` is set to a registered provider
+- Translators are registered automatically at module import time
+
+**Provider translators** (in `repo://libs/core/langchain_core/messages/block_translators/`):
+- **OpenAI** (`openai.py`): Converts Chat Completions format (`image_url`, `tool_calls` structures) and Responses API blocks
+- **Anthropic** (`anthropic.py`): Handles Anthropic's document, image, and tool_use block formats
+- **Google GenAI / VertexAI**: Convert Google's format to unified blocks
+- **Bedrock**: Convert AWS Bedrock format (classic and Converse variants)
+- **Groq**: Handles Groq's API response format
+
+**Implementation pattern for custom translators:**
+
+```python
+from langchain_core.messages import register_translator
+
+def translate_provider_content(message: AIMessage) -> list[dict]:
+    """Convert provider-specific blocks to unified format."""
+    if not message.content:
+        return []
+    
+    # If content is already unified format, return as-is
+    if isinstance(message.content, str):
+        return [{"type": "text", "text": message.content}]
+    
+    # Convert provider-specific formats to unified blocks
+    unified_blocks = []
+    for block in message.content:
+        if block["type"] == "provider_image_type":
+            # Convert to unified image block
+            unified_blocks.append({
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": "image/png",
+                    "data": block["data"],
+                }
+            })
+        elif block["type"] == "text":
+            unified_blocks.append(block)
+    
+    return unified_blocks
+
+def translate_provider_content_chunk(chunk: AIMessageChunk) -> list[dict]:
+    """Convert streaming chunks to unified format."""
+    # Similar to above but handles incremental content
+    pass
+
+# Register at provider package import time
+register_translator(
+    provider="provider_name",
+    translate_content=translate_provider_content,
+    translate_content_chunk=translate_provider_content_chunk,
+)
+```
+
+Include `model_provider` in response metadata so translators are invoked automatically:
+
+```python
+return AIMessage(
+    content=provider_response.content,  # Provider-specific format
+    response_metadata={
+        "model_provider": "provider_name",  # Enables automatic translation
+        "model_name": provider_response.model,
+    },
+)
+```
 
 **Conversion responsibilities:**
 
@@ -525,25 +599,146 @@ Implement `bind_tools()` (inherited from `BaseChatModel`) to support tool callin
 **Implementation approach:**
 
 1. **Accept `BaseTool` objects, Pydantic models, or dicts** via `bind_tools()`
-2. **Convert to provider schema** using utility functions:
-   - `convert_to_openai_tool()` - For OpenAI-compatible APIs
-   - `convert_to_json_schema()` - For JSON Schema format
-   - Provider-specific converters for custom formats
-3. **Include tools in API request** as part of the payload
-4. **Parse tool calls** from the response into `ToolCall` objects
-5. **Handle invalid/malformed tool calls** by storing them in `invalid_tool_calls`
+2. **Convert to provider schema** using utility functions (from `langchain_core.utils.function_calling`):
+   - **`convert_to_openai_tool()`** - For OpenAI-compatible APIs (most common):
+     ```python
+     from langchain_core.utils.function_calling import convert_to_openai_tool
+     from langchain_core.tools import BaseTool
+     
+     # Convert BaseTool or Pydantic model to OpenAI tool schema
+     openai_tools = [convert_to_openai_tool(tool) for tool in tools]
+     # Output: {"type": "function", "function": {"name": "...", "description": "...", "parameters": {...}}}
+     ```
+   - **`convert_to_json_schema()`** - For JSON Schema format (alternate structured formats):
+     ```python
+     from langchain_core.utils.function_calling import convert_to_json_schema
+     
+     json_schema = convert_to_json_schema(pydantic_model)
+     # Output: {"$defs": {...}, "properties": {...}, "required": [...], "type": "object"}
+     ```
+   - Provider-specific converters for custom formats (Anthropic, Mistral, etc.)
+
+3. **Include tools in API request** as part of the payload:
+   ```python
+   payload = {
+       "model": self.model,
+       "messages": messages,
+       "tools": openai_tools,  # In OpenAI format
+       "tool_choice": "auto",   # or "required", provider-specific
+   }
+   ```
+
+4. **Parse tool calls** from the response into `ToolCall` objects:
+   ```python
+   from langchain_core.messages import ToolCall
+   from langchain_core.output_parsers.openai_tools import parse_tool_call
+   
+   tool_calls = []
+   for raw_tc in response.choices[0].message.tool_calls:
+       tool_calls.append(parse_tool_call(raw_tc, return_id=True))
+   ```
+
+5. **Handle invalid/malformed tool calls** by storing them in `invalid_tool_calls`:
+   ```python
+   from langchain_core.output_parsers.openai_tools import make_invalid_tool_call
+   
+   invalid_tool_calls = []
+   for raw_tc in response.choices[0].message.tool_calls:
+       try:
+           tool_calls.append(parse_tool_call(raw_tc))
+       except Exception as e:
+           invalid_tool_calls.append(make_invalid_tool_call(raw_tc, str(e)))
+   ```
 
 ### Structured Output
 
 Implement `with_structured_output()` to enforce the model to return responses matching a Pydantic model or JSON schema. This typically maps to the provider's structured output or JSON mode feature.
 
-**Pattern:**
+The LangChain framework supports multiple structured output strategies (see `/openwiki/structured-output.md` for full details). Provider implementations typically support **at least one** of these strategies:
 
-1. Accept a Pydantic model or JSON schema
-2. Convert to provider's structured output format
-3. Include in API request
-4. Parse response and validate against schema
-5. Return parsed model instance or dict
+**Strategy 1: ProviderStrategy (Native Structured Output)**  
+Use the provider's native structured output API (if available):
+- Provider enforces schema compliance at the API level
+- Send JSON Schema to provider via provider-specific parameter (e.g., OpenAI's `response_format`)
+- Provider guarantees response conforms to schema
+- Example: OpenAI's `response_format={"type": "json_schema", "json_schema": {"name": "...", "schema": {...}}}`
+
+```python
+def with_structured_output(
+    self,
+    schema: _DictOrPydanticClass,
+    *,
+    method: Literal["json_schema", "json_mode"] = "json_schema",
+    include_raw: bool = False,
+    strict: bool | None = None,
+) -> Runnable:
+    """Structured output using provider's native API."""
+    # 1. Convert schema to provider format
+    provider_schema = convert_to_provider_json_schema(schema)
+    
+    # 2. Create wrapper that includes schema in request
+    def with_schema(messages, **kwargs):
+        kwargs["response_format"] = {
+            "type": "json_schema",
+            "json_schema": provider_schema,
+        }
+        return self.invoke(messages, **kwargs)
+    
+    # 3. Parse and validate response
+    # Provider API guarantees valid JSON that matches schema
+    return with_schema
+```
+
+**Strategy 2: ToolStrategy (Tool-Based Structured Output)**  
+Presented as a fallback or alternative:
+- Create an artificial tool with the schema's JSON schema as arguments
+- Force model to call this tool (via `tool_choice="any"`)
+- Extract and validate tool arguments against schema
+- Returns parsed result without requiring provider's native structured output support
+
+**Strategy 3: AutoStrategy (Automatic Selection)**  
+- Detect provider capabilities at runtime
+- If native structured output is supported, use ProviderStrategy
+- Otherwise fall back to ToolStrategy
+- Allows code to work across multiple providers without explicit strategy selection
+
+**Implementation pattern:**
+
+```python
+def with_structured_output(
+    self,
+    schema: _DictOrPydanticClass | None = None,
+    *,
+    method: Literal["function_calling", "json_mode", "json_schema"] = "function_calling",
+    include_raw: bool = False,
+    strict: bool | None = None,
+) -> Runnable:
+    """Enforce structured output.
+    
+    Args:
+        schema: Pydantic model, TypedDict, or JSON schema dict
+        method: Strategy to use:
+            - 'function_calling': Use tool-based structured output
+            - 'json_schema': Use provider's native structured output (if supported)
+            - 'json_mode': Use JSON mode with schema instructions
+        include_raw: If True, return both parsed and raw response
+        strict: If True, enforce strict schema validation (provider-dependent)
+    
+    Returns:
+        Runnable that returns parsed schema or dict
+    """
+    if method == "json_schema":
+        # Use provider's native API
+        return self._with_json_schema(schema, include_raw=include_raw, strict=strict)
+    elif method == "function_calling":
+        # Use tool-based approach
+        return self._with_tool_schema(schema, include_raw=include_raw)
+    elif method == "json_mode":
+        # Use JSON mode with schema instructions
+        return self._with_json_mode(schema, include_raw=include_raw)
+```
+
+For details on strategy tradeoffs and configuration, see `/openwiki/structured-output.md`.
 
 ### Vision / Multimodal Input
 

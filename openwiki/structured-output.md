@@ -1,11 +1,11 @@
 ---
 type: "Reference"
 title: "Structured Output and Response Formatting"
-description: "Document the structured output system: response format specification, strategy selection (auto, provider, tool-based), parsing, validation, and middleware integration."
-tags: [structured-output, response-format, agent, schema, validation, middleware]
+description: "Techniques for constraining LLM responses to JSON schemas via tool-based, provider-native, or automatically-selected strategies; schema types, strategy selection, parsing, validation, and middleware integration."
+tags: [structured-output, response-format, schema, validation, agent, pydantic]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-10T08:25:28.570Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py

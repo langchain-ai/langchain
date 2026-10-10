@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:08b16574d155fea41f84c89a32fa0f8c6c34fcf5a6f640ab81d2d0dd5f796884",
+  "pageVersion": "sha256:43f08b386b4ed8cde7bc179bf7beb3ca818caa65bd81532230c515232b24745c",
   "claims": [
     {
       "id": "claim_51e65b4f126f42d986b2766ee964d991",
@@ -211,10 +211,74 @@
           "version": "repo-lines-v1:sha256:98f8c09434deaeab4fa002aff9e2811f173ab68db004fa38ae7ed50afc6c8c63:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZjdjYjFlODMyZDUyOGZjNjFkOGU5YTg1NzYyNmVmYWRmNDI1NDlhY2YwMzU0YzVkYjMwYzU1M2E5MzQ5ZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3ODQ4NzIyMWE5ZGZiYTkxYzJmNjcyY2JkYmNiOGRhZjRlMDBhZjc2ZWM2NjFmNTI3M2NjOTZhMzMxYzNlNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5NTkzNDRiYjIzMGEzZDZiM2M1ZWFhNWMwYzg3NzEyNTFhYzU2YzliZjJjOWVjNmViMmJiYTBiNTEzYjhiZmMifQ"
         }
       ]
+    },
+    {
+      "id": "claim_40c2f962c98d4bb29487619a81d5b770",
+      "statement": "RunnableBranch evaluates a sequence of (condition, Runnable) tuples in order, executing the first matching branch based on the condition's return value; if no condition matches, the default branch executes.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/branch.py#L43-L136",
+          "version": "repo-lines-v1:sha256:8426f2fe0fb96c51a30c88bcd1e249436e3d3a6f6d456e426871ebcfd86f07dd:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExYjE3NjU1OTc3OTQwMjNjMjVkY2E5MzMwZDYwNDk1NDcyOTI3MzBjZDYwZWZlYThiNWFkOWNlMzhmZjQ0OWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5YzA0NTAxNWEwM2FmNzYyOTYzNGUwNmU5YmUzZjg4YjI0MjZhYjVhMzdmZTkwYjI4MmJlOGY3ZjFjZjc3ZGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUwMWJiYmQwMjVkMTZmMjE0MzM1NWI0NGQ3MzQ1OWQ3MWQxODM5OTJlOGI3NTE2NWMxOTAxZjMxMTg0ZWYxODEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d6f8d3238a6e4e49b13a4c59b0abfc58",
+      "statement": "The `.map()` method wraps a Runnable to process a list of inputs sequentially via invoke, returning outputs in order without parallelism, and is distinct from batch() which processes inputs in parallel.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L2169-L2190",
+          "version": "repo-lines-v1:sha256:8221dfec56db3ce6ceb4261348137ca5c9b414d06b95b8c29f7f92019333fef6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkYzM3NWM1Yjc0ODRiYjM3NDVhNWQ4NzVjZGNmYjA2ZjBiNmE2NGEzYTFhNTgzOWMzNGJjOGE2ODRkZDRiZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MDY5MjVmOWIyYmQ1MmNhZGU5NzIwOThkZTM5NGY0YzRhODkxZDBkZWI1MTA2NzU5M2M3M2Q3ZWQwYTcxYTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NDYwNTJiYTdlMjg3YzA3MTNiYThjMWY4Y2Q0NDE5NDY1OTBlZTFmMGZmMjUxYjM2ZDAyMjdiZDgwMTVkYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2YzA4YzRmMGVjNTFmYzUzYzYwOTI2NDgxNjE0MDNjMDI2NGNiNDBkYjk4YWZiOTQxZDg1OGJmZDg5ZjViODIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c9d9b563d1b043b2b3ecaec7026efb39",
+      "statement": "RunnableWithFallbacks tries a primary runnable first, then sequentially attempts each fallback in order if an exception matching exceptions_to_handle is caught, with optional exception_key to pass caught exceptions to fallbacks as part of the input dict.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/fallbacks.py#L164-L262",
+          "version": "repo-lines-v1:sha256:86cede6149edb3566febc214c5a611792b98ea0327ffcecffd3972b6932ac22e:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZGE5MzUwMDE5ZGMxZTY2NzQ1MjY0Mzg3MzE2MTk5NzIyNWU5Y2U2MDEwN2FmN2I2NGY4NDBkZGVjZmRhNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlYjkyNWVhYjkwYzkwNjk5M2EwMzljNGQ2OGY4OGIzZTlhZDI2OGJmMDc1ODA2MDhhN2RiN2MxNTFjN2JiNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiODAzNzNmZDEyMWZkMzY0MDc4YjdkY2M4ZjRmZThlNWMzYWZjZTI2NTQ5ZTExODUzZmU3NDk2MjE0NWIwNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3NGJlNTVmYmEwMjNmNGY0ZGNhN2RkZGM5NDdhM2FiMmNlOWY2NmZlM2UxNTQzYTdhNGIxMzZjYzdkZjRjZWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5ec6102117f74a68b8c02e04153822a8",
+      "statement": "The with_retry method on any Runnable returns a RunnableRetry instance that automatically retries the runnable on specified exception types using exponential backoff with jitter, with configurable max_attempt_number and exponential_jitter_params.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L2102-L2167",
+          "version": "repo-lines-v1:sha256:083cd011246b5f1e2fc6b23206cdc744cef8050c7990a8010620a88c71c9544c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNjdhYzRkODE0M2VjY2Q3YjM4YWNmMTdkYzllN2Y2MjY4YTM1YmFkNDgzMzBiYWI5MTY3M2M2ODliMmJmZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmNDZhMjkwYmRiYTZmNzY3ZWJiMGNjOWQ1NTAxZGNhNzdhNmFlZmU3OWZjM2QwNmZkYTJhYmE4NzY3YTUyYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhNjAxNzY2MzQyYmQzMTIwY2VjODMzY2UxYTA4NDcxYjMzMThkMjBhNTYyODg0NmViYmZjOWVjNDBkZTkyMmYifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/retry.py#L116-L157",
+          "version": "repo-lines-v1:sha256:903e244fdd641562595e191cfa90f4d81720f9e5dc533c8de76bf54112d46a35:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1ZTNkNjdiZjYzNDRiNTRjZjUwZGE3ZmNhZGQ3ZWNkNDQxZWZkNGFjMDJmN2U2YTAyNGFkNjNkYWU3NWMwNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwM2E5ZjU4N2NlNDlkNzNlZDhhNzRkMzZiNTAyODlkNmUwYWQ5YmRhOWVmYzlhYjllNzg3YzhiMzJmOGZjNmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MmE4NTA2MzFiMjI5MGVlMmYzN2YwZGEyZDM0YjAyNjEwNWE0NGYzMDU4NmFkMGU1MTc4NWMyZjg0NTVmMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2NWEyNTk4MTIxN2RkNTJjMTkxMDExNDBhZmEyM2ZhZjM0ZjBjNTFjYzgxYWU5Y2UzYjc4MzVmZjFmN2I3MTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c7ebc27c3c26442a8b83fb2c5d6f6c36",
+      "statement": "The dumpd and dumps functions serialize Runnable chains to dict and JSON string representations, preserving component types, class identifiers, constructor arguments, and nested composition structure for persistence and transport.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/load/dump.py#L70-L120",
+          "version": "repo-lines-v1:sha256:e0e8ddc985a6406f5db504cb5d4fd43aa08a809c5fd2a23fc8dad4b1ede2e8ce:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzMDY1YWM5MGUwZDM4OTA4NjdlZjNkY2NkY2FhN2ViNjYwNzg2ZjY0MGNlNzdlYzBiM2FkZTA4YjcyZDZhODAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNGIxMzg0MTYzZDE4Zjk3MGFlOWFjYzA0MjA5MmFmMTUwNjgxYTk0ODBhYWQ4Y2M0MDZjZWQ4MTliNTUwMWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4MjUzYmI3M2ZjMDdkNWVjMGU0YjBiYTVjNTI1YTlmNjNlMWY5MjM4ZDA3MjcyZmZlMzM0MjlmMmJlMjQwODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fdd743cb0a9544f19814937c8af865e3",
+      "statement": "The load and loads functions deserialize Runnable chains from dict and JSON representations, with allowed_objects parameter controlling which classes can be instantiated (messages, core, all, or explicit list) for security.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/load/load.py#L1-L90",
+          "version": "repo-lines-v1:sha256:d6b723a21c4783f82904c90e77981b6e340a09e66391d52c78200b1a7c6e91a1:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliYTM2MmVlMWY5OGM3M2ZkMWNmZDBlZDljMTAyOTFhMjdhYWE2NzY0NmQxNTYzOWE1ODgyOGE5YWMzMGM3MjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiNGU0NzA3YjU4MjA5M2M0ZTg0ZWZlMTJjZGNkNjMwYjYxNGI5NjI0ODJkY2I5NThkNGFiZjIzYTlmZWJkNzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1ZjEzMmNlYmVmMzg1YzVmOTIyYjkwZWJjOThjZDZkMmIyM2EzMTJlMjQ5YWUzMmRhOWJlN2NkNjk5MjUxNTEifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-28T08:35:20.640Z"
+    "at": "2026-10-10T08:25:28.570Z"
   }
 }

@@ -3,9 +3,6 @@ type: "Reference"
 title: "CI/CD Workflows: GitHub Actions and Release Process"
 description: "LangChain's GitHub Actions-based CI/CD system automating testing, linting, and release management across a monorepo with intelligent change detection, parallel matrix testing, and strict release gates."
 tags: [ci-cd, github-actions, testing, linting, release, pypi, monorepo, automation]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
 sources:
   - id: openwiki-source-34e57b5a3a0c875639ab72a7
     resource: repo://.github/scripts/check_diff.py
@@ -31,7 +28,10 @@ sources:
     resource: repo://.github/workflows/pr_labeler.yml
   - id: openwiki-source-12805fbf767dc2a3e238645e
     resource: repo://.github/workflows/pr_lint.yml
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-10T08:25:28.570Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-10T08:25:28.570Z
 ---
 
 # CI/CD Workflows: GitHub Actions and Release Process
@@ -217,23 +217,27 @@ Scheduled daily (1 PM UTC) with manual dispatch override capability.
 
 **Job: `compute-matrix`**:
 
-- **Default scope**: Tests 9 partner libraries (OpenAI, Anthropic, Fireworks, Groq, MistralAI, XAI, Google VertexAI, Google GenAI, AWS)
-- **Python versions**: 3.10 and 3.14 by default; overridable via input
-- **Selective testing**: Can select single library, exclude libraries, or override Python versions
+- **Default scope**: Tests 9 partner libraries (OpenAI, Anthropic, Fireworks, Groq, MistralAI, XAI, Google VertexAI, Google GenAI, AWS) from `DEFAULT_LIBS` environment variable
+- **Python versions**: 3.10 and 3.14 by default; fully overridable via input
+- **Selective testing**: Dropdown selection of single library, comma-separated exclusion list (e.g., `exclude: openai,anthropic`), or manual path override
 - **Scope security**: Only runs on main repository; manual dispatch allowed from forks
+- **Short-name mapping**: Dropdown uses short names (e.g., `openai`, `google-genai`) which the compute-matrix job re-expands to full paths (`libs/partners/openai`), with special cases for non-partner libraries (core, langchain, text-splitters, etc.)
 
 ### Integration Test Execution
 
 **Job: `integration-tests`**:
 
-- Checks out primary monorepo plus external google-genai, google-vertexai, and langchain-aws repositories
-- Reorganizes external repos into local partner directories for unified testing
-- Authenticates to Google Cloud and AWS
-- Runs per-package `make integration_tests` with all live API credentials injected
-- Uses concurrency locks per (package, python-version) to serialize same-package runs and prevent credential conflicts
-- Includes special installation logic: overlays local editable core and standard-tests packages atop checked-out partner versions
+- Checks out primary monorepo plus external repositories (langchain-google for genai/vertexai, langchain-aws) to separate checkout paths
+- Authenticates to Google Cloud (via `google-github-actions/auth` with service account credentials) and AWS (via `aws-actions/configure-aws-credentials`)
+- Reorganizes external repos by moving their `libs/` subdirectories into `langchain/libs/partners/` (e.g., `langchain-google/libs/genai` → `langchain/libs/partners/google-genai`)
+- Runs `uv sync --group test --group test_integration` in each package's working directory
+- Overlays local editable installs of core and standard-tests packages for external repositories (google-genai, google-vertexai, aws) via `uv pip install -e` after sync, ensuring tests exercise current branch code rather than published releases
+- Uses concurrency locks keyed per (working-directory, python-version) to serialize same-package tests across workflow runs, preventing credential conflicts and race conditions
+- Executes per-package `make integration_tests` with 30+ live API credential environment variables injected
+- Cleans up external library checkouts before final working directory validation to isolate test artifacts
+- Verifies clean working directory after tests to catch untracked generated files
 
-**Credentials**: Receives 30+ environment variables covering OpenAI, Anthropic, Google, AWS, Azure, Groq, MistralAI, HuggingFace, Mistral, Together, Cohere, and more.
+**Credentials**: Receives 30+ environment variables covering OpenAI, Anthropic, Google, AWS, Azure, Groq, MistralAI, Cohere, Together, HuggingFace, Mistral, Deepseek, Upstage, Perplexity, TypeSafe, Nomic, Ollama, Nvidia, Elasticsearch, and Anthropic Files API.
 
 ## Auto-Labeling Workflows
 

@@ -1,8 +1,8 @@
 ---
 type: "ChatModel Integration"
-title: "OpenAI Integration: ChatOpenAI and Azure Support"
-description: "ChatOpenAI integration for OpenAI's Chat Completions and Responses APIs, with support for tool calling, structured output, vision, streaming, and Azure deployment."
-tags: ["openai", "chat-models", "tool-calling", "structured-output", "vision", "azure"]
+title: "OpenAI Integration: ChatOpenAI, Decisions API, and Middleware"
+description: "ChatOpenAI integration for OpenAI's Chat Completions and Responses APIs, with tool calling, structured output, vision, streaming, and agentic guardrails via OpenAI Decisions API and middleware."
+tags: ["openai", "chat-models", "tool-calling", "structured-output", "vision", "azure", "decisions-api", "middleware", "guardrails"]
 sources:
   - id: openwiki-source-1e66a9da38565f8901e651f4
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
@@ -12,10 +12,20 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
   - id: openwiki-source-74e5bef080f1af7da12371cf
     resource: repo://libs/partners/openai/langchain_openai/data/_profiles.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+  - id: openwiki-source-b65307f1d05bd74532af2eee
+    resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
+  - id: openwiki-source-122b01e9aef52272c0a77739
+    resource: repo://libs/partners/openai/langchain_openai/decisions/types.py
+  - id: openwiki-source-267eee1b5a1b044275ba0994
+    resource: repo://libs/partners/openai/langchain_openai/middleware/_fallback.py
+  - id: openwiki-source-22c4d13fc1ad9b58545a0abf
+    resource: repo://libs/partners/openai/langchain_openai/middleware/auto_mode.py
+  - id: openwiki-source-e348c8131205eb31637236df
+    resource: repo://libs/partners/openai/langchain_openai/middleware/model_router.py
+generated: { by: "openwiki/0.5.0", at: "2026-10-10T08:25:28.570Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-10T08:25:28.570Z
 ---
 
 ## Overview
@@ -1147,10 +1157,412 @@ model = ChatOpenAI(
 4. **Structured output schema validation**: The `json_schema` method requires schemas to meet OpenAI's supported-schemas constraints.
 5. **Azure API version coupling**: Azure requires explicit `api_version` and ties it to feature availability (e.g., structured output only in newer versions).
 
+## OpenAI Decisions API
+
+The `OpenAIDecisions` API enables applications to ask structured questions about text, images, and messages using OpenAI models. It forms the foundation for agentic guardrails and decision-making middleware. The API supports three question types: **Predicate** (probability estimation), **Choice** (selection from options), and **Score** (multi-level rating).
+
+### Overview
+
+`OpenAIDecisions` is a `RunnableSerializable` that answers typed questions over shared input (text, images, or messages) in a single request. It preserves probabilities, confidence scores, and token usage so applications can make informed decisions about execution, routing, or escalation.
+
+**Location**: `repo://libs/partners/openai/langchain_openai/decisions/base.py`
+
+### Request and Response Types
+
+**DecisionRequest** (TypedDict with two fields):
+
+- **`input`** (`State`): Text, messages, or structured data to evaluate. Accepts:
+  - String literals
+  - `HumanMessage` objects with text and base64-encoded images
+  - Sequences of messages (system, assistant, tool messages converted to JSON)
+  - Any other state serialized as JSON text in a single user message
+  
+- **`questions`** (`dict[str, Question]`): Named mapping of questions to ask. Keys become identifiers in the response.
+
+**DecisionResponse** (Pydantic model):
+
+- **`model`**: Name of the model that answered the questions
+- **`answers`**: Dict of all answers keyed by question name, with discriminated union type (`PredicateAnswer | ChoiceAnswer | ScoreAnswer | RefusalAnswer`)
+- **`usage`**: `Usage` object with optional `input_tokens` and `output_tokens`
+- **`request_id`**: OpenAI request ID for debugging
+- **Properties**: `.predicates`, `.choices`, `.scores`, `.refusals` filter answers by type
+
+### Question Types
+
+**Predicate: Probability Estimation**
+
+```python
+from langchain_openai.decisions import OpenAIDecisions, Predicate
+
+decisions = OpenAIDecisions(model="gpt-6-luna")
+response = decisions.invoke({
+    "input": "Production database is down. Urgent fix required.",
+    "questions": {
+        "is_urgent": Predicate(instructions="Is this request urgent?"),
+    }
+})
+
+probability = response.predicates["is_urgent"].probability  # float 0.0-1.0
+if probability >= 0.8:
+    trigger_page_on_call()
+```
+
+- **PredicateAnswer** contains: `type: "predicate"`, `probability: float`
+- Use for binary yes/no conditions, risk assessments, or gate decisions
+
+**Choice: Selection from Options**
+
+```python
+from langchain_openai.decisions import Choice
+
+response = decisions.invoke({
+    "input": "I was double-charged for my subscription.",
+    "questions": {
+        "department": Choice(
+            instructions="Which team should handle this?",
+            choices={
+                "billing": "Payment, subscription, refund issues.",
+                "technical": "Product bugs, integration problems.",
+                "other": "Requests outside these categories.",
+            },
+        ),
+    }
+})
+
+answer = response.choices["department"]
+print(answer.choice)  # str: "billing" or "technical" or "other"
+print(answer.confidence)  # float 0.0-1.0, derived from probability distribution
+print(answer.probabilities)  # dict: {"billing": 0.8, "technical": 0.15, "other": 0.05}
+
+if answer.confidence >= 0.7:
+    route_to_department(answer.choice)
+else:
+    escalate_to_human()
+```
+
+- **ChoiceAnswer** contains: `type: "choice"`, `choice: str | bool`, `probabilities: dict`, `confidence: float`
+- Include a fallback option (e.g., `"other"`) when responses may not fit predefined categories
+- Confidence describes distribution concentration, not the selected value's probability
+
+**Score: Multi-Level Rating**
+
+```python
+from langchain_openai.decisions import Score, Level
+
+response = decisions.invoke({
+    "input": "The export button doesn't work on mobile Safari.",
+    "questions": {
+        "severity": Score(
+            instructions="How severe is this issue?",
+            levels=[
+                Level(label="Minor", description="No lost function."),
+                Level(label="Workaround", description="Alternative exists."),
+                Level(label="Blocked", description="No workaround available."),
+            ],
+        ),
+    }
+})
+
+answer = response.scores["severity"]
+print(answer.score)  # float, probability-weighted average of level indices (0.0-2.0)
+print(answer.legend)  # dict: {0: "Minor", 1: "Workaround", 2: "Blocked"}
+print(answer.probabilities)  # dict: {0: 0.1, 1: 0.7, 2: 0.2}
+print(answer.confidence)  # float 0.0-1.0, certainty of the distribution
+```
+
+- **ScoreAnswer** contains: `type: "score"`, `score: float`, `legend: dict[int, str]`, `probabilities: dict[int, float]`, `confidence: float`
+- Levels are indexed from 0; score can be fractional (e.g., 1.3 = between Workaround and Blocked)
+
+### Combined Questions Example
+
+```python
+from langchain_openai.decisions import OpenAIDecisions, Choice, Predicate, Score
+
+decisions = OpenAIDecisions(model="gpt-6-luna")
+response = decisions.invoke({
+    "input": "Stripe integration has been offline for 3 days. Help ASAP!",
+    "questions": {
+        "department": Choice(
+            instructions="Which team handles this?",
+            choices={
+                "billing": "Payment issues.",
+                "technical": "Integration failures.",
+            },
+        ),
+        "urgent": Predicate(instructions="Is this urgent?"),
+        "impact": Score(
+            instructions="Business impact level?",
+            levels=["Low", "Medium", "High"],
+        ),
+    }
+})
+
+# Access all answer types
+route = response.choices["department"].choice
+is_urgent = response.predicates["urgent"].probability >= 0.8
+impact_level = response.scores["impact"].score
+tokens = response.usage.input_tokens
+```
+
+### Configuration
+
+The `OpenAIDecisions` constructor accepts:
+
+- **`model`** (str, required): Decisions model name (e.g., `"gpt-6-luna"`)
+- **`api_key`**: String, sync callable, or async callable; inferred from `OPENAI_API_KEY`
+- **`base_url`**: Custom API endpoint; resolves from kwarg → `OPENAI_API_BASE` → LangSmith gateway → `OPENAI_BASE_URL`
+- **`organization`**: OpenAI organization ID; inferred from `OPENAI_ORG_ID`
+- **`timeout`**: Request timeout (float or `httpx.Timeout`)
+- **`max_retries`**: Automatic retry count for transient errors
+- **`http_client` / `http_async_client`**: Custom `httpx.Client` / `httpx.AsyncClient` instances
+- **`default_headers`**: Custom HTTP headers
+- **`default_query`**: Custom query parameters
+
+### Sync and Async Usage
+
+```python
+# Synchronous
+response = decisions.invoke({
+    "input": "customer complaint text",
+    "questions": {"urgency": Predicate(instructions="Is this urgent?")}
+})
+
+# Asynchronous
+response = await decisions.ainvoke({
+    "input": "customer complaint text",
+    "questions": {"urgency": Predicate(instructions="Is this urgent?")}
+})
+```
+
+- Sync and async clients are created on first use via cached properties
+- If `api_key` is an async callable, sync methods raise `ValueError`
+
+## Agentic Guardrails and Middleware
+
+Two middleware implementations use the Decisions API to guard and route agent tool calls and model selections.
+
+### Auto Mode Middleware: Tool Risk Classification
+
+`OpenAIAutoModeMiddleware` intercepts configured tool calls and asks a `Predicate` question to assess execution risk. Calls with probability ≥ 0.5 are blocked; others execute normally.
+
+**Location**: `repo://libs/partners/openai/langchain_openai/middleware/auto_mode.py`
+
+**Purpose**: Allow low-risk, clearly-authorized tool calls; block destructive, credential-accessing, or insufficiently-authorized calls.
+
+**Constructor**:
+
+```python
+from langchain_openai.middleware import OpenAIAutoModeMiddleware
+
+auto_mode = OpenAIAutoModeMiddleware(
+    tools=[delete_file, modify_settings],  # Tool names or BaseTool instances
+    model="gpt-6-luna",  # Decisions model name or OpenAIDecisions instance
+    instructions="Would executing this tool be risky or lack explicit user authorization?"
+)
+```
+
+**Parameters**:
+
+- **`tools`**: Non-empty sequence of tool names (str) or `BaseTool` instances to classify before execution
+- **`model`**: Decisions model name or pre-configured `OpenAIDecisions` instance
+- **`instructions`** (optional): Custom risk question; defaults to comprehensive directive covering destructive actions, credential access, external sharing, security bypasses, and persistence
+
+**Behavior**:
+
+1. Intercepts tool calls via `wrap_tool_call()` and `awrap_tool_call()`
+2. Tools listed in `tools` are classified; unlisted tools bypass the middleware
+3. Creates a `DecisionRequest` with:
+   - `input`: A structured dict containing up to 30 recent messages, the proposed tool call (id, name, args), and tool description
+   - `questions`: One `Predicate` named `"is_risky"` with the risk instructions
+4. Passes the request to the Decisions API
+5. If probability ≥ 0.5, returns an error `ToolMessage` without executing
+6. If probability < 0.5, calls the handler to execute the tool normally
+7. If the model refuses, blocks the call with an error message
+
+**Media Handling**:
+
+- Base64-encoded images are included in the request
+- Audio, video, and file content (unsupported by Decisions API) are replaced with `[audio omitted]`, `[video omitted]`, `[file omitted]` placeholders
+- If the API rejects a request with images (HTTP 400 or 413), the middleware retries with all images replaced by placeholders
+
+**Usage Example**:
+
+```python
+from langchain.agents import create_agent
+from langchain_openai.middleware import OpenAIAutoModeMiddleware
+from langchain_core.tools import tool
+
+@tool
+def delete_sensitive_file(path: str) -> str:
+    """Delete a file from the system."""
+    # Implementation...
+
+@tool
+def read_config(path: str) -> str:
+    """Read configuration file."""
+    # Implementation...
+
+auto_mode = OpenAIAutoModeMiddleware(
+    tools=[delete_sensitive_file],  # Only guard destructive tool
+    model="gpt-6-luna",
+)
+
+agent = create_agent(
+    "openai:gpt-6-luna",
+    tools=[delete_sensitive_file, read_config],
+    middleware=[auto_mode],
+)
+
+# read_config bypasses the middleware (not in tools list)
+# delete_sensitive_file is classified for risk before execution
+```
+
+**Error Messages**:
+
+- **Blocked (probability ≥ 0.5)**: `"The tool call `<name>` was blocked because it was classified as risky (probability: X.XX). The tool was not executed."`
+- **Refusal (model declined)**: `"The tool call `<name>` was blocked because its risk could not be assessed. The tool was not executed."`
+
+### Model Router Middleware: Task-Based Model Selection
+
+`OpenAIModelRouterMiddleware` classifies the latest human message once per agent run using a `Choice` question and routes all subsequent model calls to the selected model.
+
+**Location**: `repo://libs/partners/openai/langchain_openai/middleware/model_router.py`
+
+**Purpose**: Select the most cost-effective or capable model based on task characteristics (e.g., fast model for simple queries, powerful model for complex reasoning).
+
+**Constructor**:
+
+```python
+from langchain_openai.middleware import (
+    OpenAIModelRouterMiddleware,
+    ModelChoice,
+)
+
+router = OpenAIModelRouterMiddleware(
+    choices={
+        "fast": ModelChoice(
+            model="openai:gpt-6-luna",
+            criteria="Simple, well-scoped tasks like factual lookups or basic transformations.",
+        ),
+        "powerful": ModelChoice(
+            model="openai:gpt-6-sol",
+            criteria="Complex tasks requiring deep reasoning, multi-step planning, or code generation.",
+        ),
+    },
+    instructions="Choose the least expensive model suited to the task.",
+    model="gpt-6-luna",  # Decisions model for routing
+)
+```
+
+**Parameters**:
+
+- **`choices`**: Mapping of route names to `ModelChoice` objects. Each choice specifies a model (string or `BaseChatModel`) and criteria description
+- **`instructions`**: Custom routing question sent to the Decisions API
+- **`model`**: Decisions model name or pre-configured `OpenAIDecisions` instance
+
+**ModelChoice Dataclass**:
+
+- **`model`**: LangChain model instance or model string accepted by `init_chat_model()` (e.g., `"openai:gpt-6-luna"`)
+- **`criteria`**: Description of tasks suited to the model (used to prompt the Decisions API)
+
+**Behavior**:
+
+1. Before agent execution, calls `before_agent()` or `abefore_agent()`
+2. Extracts the latest `HumanMessage` from agent state (if none, `model_route` is set to `None`)
+3. Creates decision requests with the message text and base64 images (hosted URLs/files/audio replaced with placeholders)
+4. Sends a `Choice` question to the Decisions API asking which route matches the task
+5. Stores the routing answer as `ModelRoute` in agent state under `model_route`:
+   ```python
+   {
+       "choice": "fast",  # Selected route name
+       "probabilities": {"fast": 0.75, "powerful": 0.25},  # Full distribution
+       "confidence": 0.92,  # Concentration of the distribution
+   }
+   ```
+6. In `wrap_model_call()` and `awrap_model_call()`, routes subsequent model calls to the selected model
+7. If the model refused or no human message exists, `model_route` is `None` and the agent uses its own model
+
+**Media Handling**:
+
+- Base64-encoded images are included in routing requests
+- Hosted image URLs, files, and audio are replaced with `[image omitted]`, `[file omitted]`, `[audio omitted]` placeholders
+- If a request with images is rejected (HTTP 400 or 413), retries with all images replaced
+
+**Usage Example**:
+
+```python
+from langchain.agents import create_agent
+from langchain_openai.middleware import (
+    OpenAIModelRouterMiddleware,
+    ModelChoice,
+)
+
+router = OpenAIModelRouterMiddleware(
+    choices={
+        "fast": ModelChoice(
+            model="gpt-6-luna",
+            criteria="Quick answers, factual lookups, simple calculations.",
+        ),
+        "powerful": ModelChoice(
+            model="gpt-6-sol",
+            criteria="Complex reasoning, multi-step problem solving, code generation.",
+        ),
+    },
+    instructions="Route to the least expensive model that can solve the task.",
+    model="gpt-6-luna",
+)
+
+agent = create_agent(
+    "openai:gpt-6-luna",  # Fallback model if routing fails
+    tools=[calculator, web_search],
+    middleware=[router],
+)
+
+# Agent state includes model_route; model_route["choice"] is "fast" or "powerful"
+# All model calls use the routed model unless routing failed
+```
+
+**ModelRoute in Agent State**:
+
+The `ModelRoute` TypedDict persists in agent state, allowing applications to inspect routing decisions:
+
+```python
+# In agent middleware, traces, or checkpointing
+if state.get("model_route"):
+    route = state["model_route"]
+    if route["confidence"] < 0.6:
+        log_warning(f"Low confidence routing: {route['probabilities']}")
+```
+
+### Fallback Middleware Pattern
+
+Both auto-mode and model-router use a fallback pattern when the Decisions API rejects requests with images (HTTP 400 or 413): they automatically retry with images replaced by text placeholders (`[image omitted]`).
+
+**Location**: `repo://libs/partners/openai/langchain_openai/middleware/_fallback.py`
+
+```python
+from langchain_openai.middleware._fallback import decide_with_text_fallback
+
+# Synchronous: tries requests in order, falling back on 400/413 errors
+response = decide_with_text_fallback(decisions, [
+    with_images_request,
+    text_only_request,  # Final fallback
+])
+
+# Asynchronous variant
+response = await adecide_with_text_fallback(decisions, [
+    with_images_request,
+    text_only_request,
+])
+```
+
+This ensures that image-related issues don't block guardrails or routing; the middleware degrades gracefully to text-only assessment.
+
 ## Related Pages
 
 - `/openwiki/model-initialization.md`: Factory function `init_chat_model()` for provider-agnostic model selection
 - `/openwiki/chat-models.md`: Core `BaseChatModel` interface and lifecycle
+- `/openwiki/middleware.md`: Middleware patterns and agent composition
 - `/openwiki/messages.md`: Message types and content blocks (text, images, tool calls)
 - `/openwiki/partner-pattern.md`: Partner package patterns and extension points
 - `/openwiki/structured-output.md`: Structured output patterns and schema validation

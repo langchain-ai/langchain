@@ -1,21 +1,27 @@
 ---
 type: "Concept"
-title: "Composability and LCEL Chains"
-description: "How Runnable components compose through LCEL operators, creating reusable workflows with automatic async, batch, and streaming support."
-tags: ["composability", "LCEL", "runnables", "chaining", "operators"]
+title: "Composability: Chains & Workflows"
+description: "Building applications by composing runnables: pipe operator, mapping, branching, error handling, and common patterns."
+tags: ["composability", "LCEL", "runnables", "chaining", "operators", "branching", "error-handling"]
 sources:
+  - id: openwiki-source-bade918c6ca6cdcb4bfd3ed4
+    resource: repo://libs/core/langchain_core/load/dump.py
+  - id: openwiki-source-2b02620f51e06ab62ea15911
+    resource: repo://libs/core/langchain_core/load/load.py
   - id: openwiki-source-a1981e868973f6fd7f71e12e
     resource: repo://libs/core/langchain_core/runnables/base.py
   - id: openwiki-source-48e94bbe49ab4f33ba87e9cb
     resource: repo://libs/core/langchain_core/runnables/branch.py
   - id: openwiki-source-f9f4c1dc4f9cdf80d824ce15
     resource: repo://libs/core/langchain_core/runnables/fallbacks.py
+  - id: openwiki-source-ebe3f825462d0b4a14ee3717
+    resource: repo://libs/core/langchain_core/runnables/retry.py
   - id: openwiki-source-de6c904bd0171642bd50f6d9
     resource: repo://libs/core/langchain_core/runnables/router.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-10T08:25:28.570Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-10T08:25:28.570Z
 ---
 
 
@@ -101,6 +107,26 @@ parallel.invoke(2)
 - For async streaming, tasks are managed with `asyncio.wait(return_when=FIRST_COMPLETED)` to emit output as soon as any branch produces a chunk
 - The final result is a dict combining outputs from all branches
 
+## Mapping: `.map()` for Sequential Processing
+
+The **`.map()`** method wraps a Runnable to process a list of inputs sequentially:
+
+```python
+from langchain_core.runnables import RunnableLambda
+
+add_one = RunnableLambda(lambda x: x + 1)
+
+# Create a mapped version that processes lists
+mapper = add_one.map()
+mapper.invoke([1, 2, 3])  # [2, 3, 4]
+```
+
+Unlike **`batch()`** which processes multiple inputs in parallel, **`.map()`**:
+- Processes inputs sequentially (one at a time via `invoke`)
+- Returns a list of outputs in the same order as inputs
+- Useful when you want to maintain order without parallelism
+- Can be used in chains: `sequence.map().invoke(inputs)`
+
 ## Batching: Parallel Invocation over Multiple Inputs
 
 Batching processes multiple inputs efficiently through a pipeline. Unlike parallel branching, batching applies the **same sequence** to each input in parallel.
@@ -183,7 +209,7 @@ Conditional logic routes inputs to different branches based on predicates.
 
 ### RunnableBranch: Predicate-Based Routing
 
-A **`RunnableBranch`** evaluates conditions in order and executes the first matching branch:
+A **`RunnableBranch`** evaluates a series of conditions in order and executes the first matching branch:
 
 ```python
 from langchain_core.runnables import RunnableBranch, RunnableLambda
@@ -191,7 +217,7 @@ from langchain_core.runnables import RunnableBranch, RunnableLambda
 branch = RunnableBranch(
     (lambda x: isinstance(x, int), RunnableLambda(lambda x: x * 2)),
     (lambda x: isinstance(x, str), RunnableLambda(lambda x: x.upper())),
-    RunnableLambda(lambda x: "unknown"),
+    RunnableLambda(lambda x: "unknown"),  # Default branch
 )
 
 branch.invoke(5)        # 10
@@ -199,14 +225,20 @@ branch.invoke("hello")  # "HELLO"
 branch.invoke(None)     # "unknown"
 ```
 
-Conditions are evaluated sequentially; the first truthy result selects its corresponding Runnable. If no condition matches, the default branch executes.
+**Key characteristics**:
+- Conditions are evaluated sequentially
+- The first truthy condition selects its corresponding Runnable
+- Conditions can be plain functions or Runnables that return `bool`
+- If no condition matches, the default branch (last argument) executes
+- Both condition evaluation and branch execution support sync and async
 
 ### RouterRunnable: Key-Based Routing
 
-A **`RouterRunnable`** routes based on a string key in the input:
+A **`RouterRunnable`** routes to one of several branches based on a string key extracted from the input:
 
 ```python
 from langchain_core.runnables.router import RouterRunnable
+from langchain_core.runnables import RunnableLambda
 
 add = RunnableLambda(lambda x: x + 1)
 square = RunnableLambda(lambda x: x ** 2)
@@ -216,7 +248,13 @@ router.invoke({"key": "square", "input": 3})  # 9
 router.invoke({"key": "add", "input": 3})     # 4
 ```
 
-The input is a dict with `"key"` (which Runnable to route to) and `"input"` (the data).
+**Key characteristics**:
+- Input must be a dict with two fields:
+  - `"key"`: The string routing key (selects which Runnable to invoke)
+  - `"input"`: The data to pass to the selected Runnable
+- The `runnables` dict maps routing keys to Runnable implementations
+- If the key is not found in `runnables`, an error is raised
+- Useful for choosing between implementations at runtime based on runtime data
 
 ## Composition with RunnablePassthrough
 
@@ -453,6 +491,36 @@ chain = (
 # Better than retrying the whole chain, which wastes time on non-failing steps
 ```
 
+## Combining Retry and Fallback
+
+For maximum resilience, combine retry and fallback strategies:
+
+```python
+from langchain_openai import ChatOpenAI, ChatAnthropic
+
+# Retry transient failures on each provider
+primary_llm = ChatOpenAI().with_retry(
+    retry_if_exception_type=(APIConnectionError, TimeoutError),
+    max_attempt_number=3,
+)
+
+fallback_llm = ChatAnthropic().with_retry(
+    retry_if_exception_type=(APIConnectionError, TimeoutError),
+    max_attempt_number=3,
+)
+
+# Fall back if primary provider is unavailable
+resilient_model = primary_llm.with_fallbacks([fallback_llm])
+
+chain = prompt | resilient_model | parser
+```
+
+This approach:
+1. Retries transient failures on the primary LLM (network glitches, temporary outages)
+2. Falls back to an alternative provider if the primary is persistently down
+3. Ensures reasonable wait times via exponential backoff
+4. Provides observability through callback tags (`retry:attempt:N`)
+
 ## Chaining Patterns
 
 ### Common Pattern: Prompt → Model → Parser
@@ -539,14 +607,66 @@ chain3 = (step1 | step2) | step3
 
 All produce a single flat sequence with steps `[step1, step2, step3]`, avoiding unnecessary nesting overhead.
 
-## Serialization and Debugging
+## Serialization and Deserialization
 
-Composed chains support serialization via the LangChain serialization system, enabling:
-- **Persistence**: Save and load chains
-- **Tracing**: Automatic callback integration for debugging via LangSmith
-- **Inspection**: Use `get_graph()` to visualize chain structure
+Composed chains are serializable via the LangChain serialization system for persistence and transport:
 
-Enable debug output:
+### Serialization: `dumpd` and `dumps`
+
+The `dumpd` and `dumps` functions serialize Runnable chains to dict and JSON string representations:
+
+```python
+from langchain_core.load import dumpd, dumps
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+from langchain_core.output_parsers import StrOutputParser
+
+chain = (
+    ChatPromptTemplate.from_template("What is {topic}?")
+    | ChatOpenAI()
+    | StrOutputParser()
+)
+
+# Serialize to dict
+chain_dict = dumpd(chain)
+
+# Serialize to JSON string
+chain_json = dumps(chain, pretty=True)
+```
+
+The serialized form preserves:
+- Component types and class identifiers (via `lc_id` field in the serialized output)
+- Constructor arguments and configuration
+- Nested composition structure
+
+### Deserialization: `load`
+
+The `load` and `loads` functions reconstruct Runnable chains from serialized data:
+
+```python
+from langchain_core.load import load, loads
+
+# Load from dict
+chain = load(chain_dict)
+
+# Load from JSON string
+chain = loads(chain_json)
+
+# Control which classes can be deserialized (for security):
+# - 'messages': only message classes (safe for untrusted input)
+# - 'core': core LangChain classes (default, unsafe with untrusted data)
+# - 'all': all registered classes (unsafe with untrusted data)
+chain = loads(chain_json, allowed_objects='core')
+
+# Or provide an explicit list of allowed classes
+chain = loads(chain_json, allowed_objects=[ChatOpenAI, StrOutputParser])
+```
+
+**Security Note**: Only deserialize JSON from trusted sources. If the source is untrusted, restrict `allowed_objects` to `'messages'` or an explicit list of classes without dangerous constructor arguments.
+
+## Debugging
+
+Enable debug output and tracing for chains:
 
 ```python
 from langchain_core.globals import set_debug
@@ -559,6 +679,8 @@ from langchain_core.tracers import ConsoleCallbackHandler
 
 chain.invoke(input, config={"callbacks": [ConsoleCallbackHandler()]})
 ```
+
+Use `get_graph()` to visualize chain structure via LangSmith or other tracing tools.
 
 ## Extension: Custom Runnables
 
@@ -592,6 +714,8 @@ Custom Runnables are automatically compatible with all composition operators.
 
 ## Summary Table
 
+### Composition Operators
+
 | Operator | Effect | Example |
 |----------|--------|---------|
 | `\|` | Sequential chaining | `step1 \| step2` |
@@ -600,5 +724,21 @@ Custom Runnables are automatically compatible with all composition operators.
 | `RouterRunnable` | Key-based routing | `RouterRunnable({"key": runnable})` |
 | `.batch()` / `.abatch()` | Parallel input processing | `chain.batch([in1, in2])` |
 | `.stream()` / `.astream()` | Token-by-token output | `for chunk in chain.stream(input):` |
+
+### Error Handling & Resilience
+
+| Operator | Effect | Example |
+|----------|--------|---------|
+| `.with_retry()` | Automatic retry with exponential backoff | `llm.with_retry(retry_if_exception_type=(TimeoutError,))` |
+| `.with_fallbacks()` | Fallback to alternative Runnables on failure | `llm.with_fallbacks([fallback_llm])` |
+
+### Serialization
+
+| Function | Effect | Example |
+|----------|--------|---------|
+| `dumpd()` | Serialize to dict | `dumpd(chain)` |
+| `dumps()` | Serialize to JSON string | `dumps(chain, pretty=True)` |
+| `load()` | Deserialize from dict | `load(chain_dict)` |
+| `loads()` | Deserialize from JSON string | `loads(chain_json)` |
 
 See the [Runnables](runnables.md) page for protocol details and method signatures.

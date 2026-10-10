@@ -5,7 +5,7 @@ description: "How to write integration tests that call real model APIs with VCR 
 tags: [integration-tests, vcr, cassettes, api-testing, pytest, ci-cd, model-testing]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-10T08:25:28.570Z
 sources:
   - id: openwiki-source-ff76574b014ac8b5c67560a6
     resource: repo://libs/langchain_v1/tests/integration_tests/chat_models/test_base.py
