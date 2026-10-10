@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx2
 from langchain_core._api import beta
@@ -32,6 +32,9 @@ from langchain_typesafe.types import (
     ClassifierRequest,
     ClassifierResponse,
 )
+
+if TYPE_CHECKING:
+    from langchain_core.decision_models import BaseDecisionModel
 
 _DEFAULT_BASE_URL = "https://api.typesafe.ai"
 _DEFAULT_MODEL = "jev-latest"
@@ -352,8 +355,31 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
             run_type="llm",
         )
 
+    def as_decision_model(self) -> BaseDecisionModel:
+        """Adapt this configured instance to the beta core decision interface.
+
+        Requires a `langchain-core` release containing `decision_models`.
+        Reuses the same clients and credential/error handling. Boolean choice
+        values and message media are rejected before network access. The native
+        interface, including richer criteria, is unchanged. The adapter itself
+        does not support LangChain model deserialization.
+
+        Returns:
+            A model accepting core `DecisionRequest` with `Noul`, `Choice`, and
+            `Score` questions and returning core `DecisionResponse`.
+        """
+        from langchain_typesafe._canonical import (  # noqa: PLC0415
+            _TypeSafeDecisionModel,
+        )
+
+        return _TypeSafeDecisionModel(native=self)
+
     def _classify(self, request: ClassifierRequest) -> ClassifierResponse:
-        payload = self._payload(request)
+        return self._record_usage(
+            parse_response(self._post_classification(self._payload(request)))
+        )
+
+    def _post_classification(self, payload: dict[str, Any]) -> httpx2.Response:
         if self.client is None:  # pragma: no cover - guaranteed by model validation
             message = "Synchronous TypeSafe client was not initialized."
             raise TypeSafeAPIConnectionError(message)
@@ -368,13 +394,17 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
         except httpx2.HTTPError as error:
             message = "Unable to connect to the TypeSafe API."
             raise TypeSafeAPIConnectionError(message) from error
-        return self._record_usage(parse_response(response))
+        return response
 
     async def _aclassify(
         self,
         request: ClassifierRequest,
     ) -> ClassifierResponse:
-        payload = self._payload(request)
+        return self._record_usage(
+            parse_response(await self._apost_classification(self._payload(request)))
+        )
+
+    async def _apost_classification(self, payload: dict[str, Any]) -> httpx2.Response:
         if self.async_client is None:  # pragma: no cover - guaranteed by validation
             message = "Asynchronous TypeSafe client was not initialized."
             raise TypeSafeAPIConnectionError(message)
@@ -389,7 +419,7 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
         except httpx2.HTTPError as error:
             message = "Unable to connect to the TypeSafe API."
             raise TypeSafeAPIConnectionError(message) from error
-        return self._record_usage(parse_response(response))
+        return response
 
     def _traced_config(self, config: RunnableConfig | None) -> RunnableConfig:
         """Set `ls_provider` and `ls_model_name` when run is created."""

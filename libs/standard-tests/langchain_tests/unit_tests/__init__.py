@@ -8,6 +8,7 @@ import pytest
 # https://docs.pytest.org/en/7.1.x/how-to/writing_plugins.html#assertion-rewriting
 modules = [
     "chat_models",
+    "decision_models",
     "embeddings",
     "tools",
 ]

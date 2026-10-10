@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Awaitable, Callable, Mapping
 from functools import cached_property
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import openai
 from langchain_core._api import beta
@@ -27,6 +27,9 @@ from langchain_openai.chat_models.base import (
 )
 from langchain_openai.decisions._input import to_decision_input
 from langchain_openai.decisions.types import DecisionRequest, DecisionResponse
+
+if TYPE_CHECKING:
+    from langchain_core.decision_models import BaseDecisionModel
 
 _LS_PROVIDER = "openai"
 _ANSWER_TYPES = frozenset({"predicate", "choice", "score", "refusal"})
@@ -290,8 +293,30 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
             run_type="llm",
         )
 
+    def as_decision_model(self) -> BaseDecisionModel:
+        """Adapt this configured instance to the beta core decision interface.
+
+        Requires a `langchain-core` release containing `decision_models`.
+        Client ownership, authentication, timeouts, and SDK retries are retained.
+        Native `invoke` and its response types are unchanged. The adapter itself
+        does not support LangChain model deserialization.
+
+        Returns:
+            A model accepting core `DecisionRequest` with `Noul`, `Choice`, and
+            `Score` questions and returning core `DecisionResponse`.
+        """
+        from langchain_openai.decisions._canonical import (
+            _OpenAIDecisionModel,
+        )
+
+        return _OpenAIDecisionModel(native=self)
+
     def _decide(self, request: DecisionRequest) -> DecisionResponse:
-        payload = self._payload(request)
+        return self._record_usage(
+            _parse_response(self._post_decision(self._payload(request)))
+        )
+
+    def _post_decision(self, payload: dict[str, Any]) -> httpx.Response:
         try:
             response = self._client.post(
                 "/decisions", body=payload, cast_to=httpx.Response
@@ -300,10 +325,14 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
             _handle_openai_bad_request(e)
         except openai.APIError as e:
             _handle_openai_api_error(e)
-        return self._record_usage(_parse_response(response))
+        return response
 
     async def _adecide(self, request: DecisionRequest) -> DecisionResponse:
-        payload = self._payload(request)
+        return self._record_usage(
+            _parse_response(await self._apost_decision(self._payload(request)))
+        )
+
+    async def _apost_decision(self, payload: dict[str, Any]) -> httpx.Response:
         try:
             response = await self._async_client.post(
                 "/decisions", body=payload, cast_to=httpx.Response
@@ -312,7 +341,7 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
             _handle_openai_bad_request(e)
         except openai.APIError as e:
             _handle_openai_api_error(e)
-        return self._record_usage(_parse_response(response))
+        return response
 
     def _payload(self, request: DecisionRequest) -> dict[str, Any]:
         return {
