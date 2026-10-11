@@ -1564,6 +1564,41 @@ def test_count_tokens_approximately_tool_calls() -> None:
     assert count_tokens_approximately(messages) == 29
 
 
+def test_count_tokens_approximately_tool_calls_with_non_tool_use_list_content() -> None:
+    """Tool calls are counted unless list content already holds `tool_use` blocks."""
+    tool_calls = [
+        {"name": "search", "args": {"query": "x" * 4000}, "id": "call_1"},
+    ]
+    with_str = count_tokens_approximately(
+        [AIMessage(content="", tool_calls=tool_calls)]
+    )
+    with_empty_list = count_tokens_approximately(
+        [AIMessage(content=[], tool_calls=tool_calls)]
+    )
+    with_text_block = count_tokens_approximately(
+        [AIMessage(content=[{"type": "text", "text": ""}], tool_calls=tool_calls)]
+    )
+    assert with_empty_list >= with_str - 1
+    assert with_text_block >= with_str - 1
+
+    # Anthropic format: the tool call is already part of the content blocks
+    anthropic_message = AIMessage(
+        content=[
+            {
+                "type": "tool_use",
+                "id": "call_1",
+                "name": "search",
+                "input": tool_calls[0]["args"],
+            }
+        ],
+        tool_calls=tool_calls,
+    )
+    without_tool_calls = AIMessage(content=anthropic_message.content)
+    assert count_tokens_approximately(
+        [anthropic_message]
+    ) == count_tokens_approximately([without_tool_calls])
+
+
 def test_count_tokens_approximately_custom_token_length() -> None:
     messages = [
         # 11 chars + 4 role chars -> (4 tokens of length 4 / 8 tokens of length 2) + 3

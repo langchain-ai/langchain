@@ -2378,9 +2378,15 @@ def count_tokens_approximately(
 
         if (
             isinstance(message, AIMessage)
-            # exclude Anthropic format as tool calls are already included in the content
-            and not isinstance(message.content, list)
             and message.tool_calls
+            # exclude Anthropic format as tool calls are already included in the content
+            and not (
+                isinstance(message.content, list)
+                and any(
+                    isinstance(block, dict) and block.get("type") == "tool_use"
+                    for block in message.content
+                )
+            )
         ):
             tool_calls_content = repr(message.tool_calls)
             message_chars += len(tool_calls_content)
