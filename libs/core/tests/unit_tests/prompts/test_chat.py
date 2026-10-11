@@ -28,6 +28,7 @@ from langchain_core.prompts.chat import (
     SystemMessagePromptTemplate,
     _convert_to_message_template,
 )
+from langchain_core.prompts.dict import DictPromptTemplate
 from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
@@ -2004,3 +2005,51 @@ def test_mustache_template_attribute_access_vulnerability() -> None:
     )
     result_dict = prompt_dict.invoke({"person": {"name": "Alice"}})
     assert result_dict.messages[0].content == "Alice"  # type: ignore[attr-defined]
+
+
+async def test_multimodal_dict_branch_awaits_aformat(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The async path must await `DictPromptTemplate.aformat`.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/39835:
+    `_MultiModalMessagePromptTemplate.aformat` called the synchronous
+    `DictPromptTemplate.format` instead of awaiting `aformat`, silently
+    bypassing any async override while the sibling string/image branches
+    awaited correctly.
+    """
+    calls: list[dict[str, Any]] = []
+    orig_aformat = DictPromptTemplate.aformat
+
+    async def spy_aformat(
+        self: DictPromptTemplate, **kwargs: Any
+    ) -> dict[str, Any]:
+        calls.append(kwargs)
+        return await orig_aformat(self, **kwargs)
+
+    monkeypatch.setattr(DictPromptTemplate, "aformat", spy_aformat)
+
+    template = ChatPromptTemplate.from_messages(
+        [("human", [{"type": "text", "text": "{q}"}, {"my_field": "{q}"}])]
+    )
+
+    messages = await template.aformat_messages(q="hi")
+
+    assert calls == [{"q": "hi"}]
+    assert messages[0].content == [
+        {"type": "text", "text": "hi"},
+        {"my_field": "hi"},
+    ]
+
+
+def test_multimodal_dict_branch_sync_path_unchanged() -> None:
+    template = ChatPromptTemplate.from_messages(
+        [("human", [{"type": "text", "text": "{q}"}, {"my_field": "{q}"}])]
+    )
+
+    messages = template.format_messages(q="hi")
+
+    assert messages[0].content == [
+        {"type": "text", "text": "hi"},
+        {"my_field": "hi"},
+    ]
