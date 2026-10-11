@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from typing_extensions import override
 
-from langchain_text_splitters.base import Language, TextSplitter
+from langchain_text_splitters.base import Language, TextSplitter, _ChunkSpan
 
 
 class CharacterTextSplitter(TextSplitter):
@@ -34,13 +34,18 @@ class CharacterTextSplitter(TextSplitter):
         Returns:
             A list of text chunks.
         """
+        return [span.content for span in self._split_text_with_positions(text)]
+
+    @override
+    def _split_text_with_positions(self, text: str) -> list[_ChunkSpan]:
+        """Split `text` and record the source offset of each merged chunk."""
         # 1. Determine split pattern: raw regex or escaped literal
         sep_pattern = (
             self._separator if self._is_separator_regex else re.escape(self._separator)
         )
 
         # 2. Initial split (keep separator if requested)
-        splits = _split_text_with_regex(
+        splits = _split_text_with_regex_spans(
             text, sep_pattern, keep_separator=self._keep_separator
         )
 
@@ -58,13 +63,29 @@ class CharacterTextSplitter(TextSplitter):
             merge_sep = self._separator
 
         # 5. Merge adjacent splits and return
-        return self._merge_splits(splits, merge_sep)
+        return self._merge_split_spans(splits, merge_sep)
 
 
 def _split_text_with_regex(
     text: str, separator: str, *, keep_separator: bool | Literal["start", "end"]
 ) -> list[str]:
     # Now that we have the separator, split the text
+    return [
+        span.content
+        for span in _split_text_with_regex_spans(
+            text, separator, keep_separator=keep_separator
+        )
+    ]
+
+
+def _split_text_with_regex_spans(
+    text: str, separator: str, *, keep_separator: bool | Literal["start", "end"]
+) -> list[_ChunkSpan]:
+    """Split `text` the same way as `_split_text_with_regex`, with offsets.
+
+    Offsets are positions in `text`. They are attached after the historical
+    split so the piece strings stay identical, including separator keeping.
+    """
     if separator:
         if keep_separator:
             # The parentheses in the pattern keep the delimiters in the result.
@@ -85,7 +106,24 @@ def _split_text_with_regex(
             splits = re.split(separator, text)
     else:
         splits = list(text)
-    return [s for s in splits if s]
+    return _attach_start_indexes(text, [s for s in splits if s])
+
+
+def _attach_start_indexes(text: str, pieces: list[str]) -> list[_ChunkSpan]:
+    """Pair ordered pieces with their first occurrence at or after the cursor.
+
+    Pieces produced by the separator split are non-overlapping and in order, so
+    a forward search cannot land on an earlier duplicate of the same piece.
+    """
+    spans: list[_ChunkSpan] = []
+    cursor = 0
+    for piece in pieces:
+        start = text.find(piece, cursor)
+        if start < 0:
+            start = cursor
+        spans.append(_ChunkSpan(content=piece, start_index=start))
+        cursor = start + len(piece)
+    return spans
 
 
 class RecursiveCharacterTextSplitter(TextSplitter):
@@ -109,10 +147,24 @@ class RecursiveCharacterTextSplitter(TextSplitter):
 
     def _split_text(self, text: str, separators: list[str]) -> list[str]:
         """Split incoming text and return chunks."""
-        final_chunks = []
+        return [
+            span.content
+            for span in self._split_text_spans(text, separators, base_offset=0)
+        ]
+
+    def _split_text_spans(
+        self, text: str, separators: list[str], base_offset: int
+    ) -> list[_ChunkSpan]:
+        """Split `text` and return chunks with offsets into the root document.
+
+        `base_offset` is the start of `text` inside that root document. Recursive
+        calls add the piece offset on the way down, so a merged chunk does not
+        have to be found again with `str.find`.
+        """
+        final_chunks: list[_ChunkSpan] = []
         # Get appropriate separator to use
         separator = separators[-1]
-        new_separators = []
+        new_separators: list[str] = []
         for i, s_ in enumerate(separators):
             separator_ = s_ if self._is_separator_regex else re.escape(s_)
             if not s_:
@@ -123,29 +175,37 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 new_separators = separators[i + 1 :]
                 break
 
-        separator_ = separator if self._is_separator_regex else re.escape(separator)
-        splits = _split_text_with_regex(
-            text, separator_, keep_separator=self._keep_separator
+        separator_pattern = (
+            separator if self._is_separator_regex else re.escape(separator)
+        )
+        splits = _split_text_with_regex_spans(
+            text, separator_pattern, keep_separator=self._keep_separator
         )
 
         # Now go merging things, recursively splitting longer texts.
-        good_splits = []
-        separator_ = "" if self._keep_separator else separator
-        for s in splits:
-            if self._length_function(s) < self._chunk_size:
-                good_splits.append(s)
+        good_splits: list[_ChunkSpan] = []
+        merge_separator = "" if self._keep_separator else separator
+        for split in splits:
+            absolute = _ChunkSpan(
+                content=split.content,
+                start_index=base_offset + split.start_index,
+            )
+            if self._length_function(split.content) < self._chunk_size:
+                good_splits.append(absolute)
             else:
                 if good_splits:
-                    merged_text = self._merge_splits(good_splits, separator_)
+                    merged_text = self._merge_split_spans(good_splits, merge_separator)
                     final_chunks.extend(merged_text)
                     good_splits = []
                 if not new_separators:
-                    final_chunks.append(s)
+                    final_chunks.append(absolute)
                 else:
-                    other_info = self._split_text(s, new_separators)
+                    other_info = self._split_text_spans(
+                        split.content, new_separators, absolute.start_index
+                    )
                     final_chunks.extend(other_info)
         if good_splits:
-            merged_text = self._merge_splits(good_splits, separator_)
+            merged_text = self._merge_split_spans(good_splits, merge_separator)
             final_chunks.extend(merged_text)
         return final_chunks
 
@@ -159,7 +219,12 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         Returns:
             A list of text chunks obtained after splitting.
         """
-        return self._split_text(text, self._separators)
+        return [span.content for span in self._split_text_with_positions(text)]
+
+    @override
+    def _split_text_with_positions(self, text: str) -> list[_ChunkSpan]:
+        """Split `text` and record the source offset of each chunk."""
+        return self._split_text_spans(text, self._separators, base_offset=0)
 
     @classmethod
     def from_language(

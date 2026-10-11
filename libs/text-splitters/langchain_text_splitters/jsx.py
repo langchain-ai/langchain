@@ -6,6 +6,7 @@ from typing import Any
 from typing_extensions import override
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters.base import _ChunkSpan
 
 
 class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
@@ -61,6 +62,21 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
         Returns:
             List of text chunks split on component and JS boundaries
         """
+        return [span.content for span in self._split_text_with_positions(text)]
+
+    @override
+    def _split_text_with_positions(self, text: str) -> list[_ChunkSpan]:
+        """Split JSX/Vue/Svelte code and record each chunk's source offset.
+
+        Separator discovery stays local to the call so `self._separators` is not
+        mutated, matching `split_text`.
+
+        Args:
+            text: String containing code to split.
+
+        Returns:
+            Chunks with start offsets into `text`.
+        """
         # Extract unique opening component tags using regex
         # Regex to match opening tags, excluding self-closing tags
         opening_tags = re.findall(r"<\s*([a-zA-Z0-9]+)[^>]*>", text)
@@ -100,10 +116,13 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
         # append js_separators + component_separators on every invocation,
         # causing the list to grow unboundedly when split_text() is called
         # multiple times on the same instance.
-        separators = (
-            self._separators
-            + js_separators
-            + component_separators
-            + ["<>", "\n\n", "&&\n", "||\n"]
-        )
-        return self._split_text(text, separators)
+        separators = [
+            *self._separators,
+            *js_separators,
+            *component_separators,
+            "<>",
+            "\n\n",
+            "&&\n",
+            "||\n",
+        ]
+        return self._split_text_spans(text, separators, base_offset=0)

@@ -29,6 +29,19 @@ logger = logging.getLogger(__name__)
 TS = TypeVar("TS", bound="TextSplitter")
 
 
+@dataclass(frozen=True)
+class _ChunkSpan:
+    """A chunk of text and the index where it begins in the source text.
+
+    `start_index` is a character offset into the original document, not a
+    count from `length_function`. `content` is the chunk after the same
+    separator joining and whitespace stripping that `split_text` applies.
+    """
+
+    content: str
+    start_index: int
+
+
 def _import_tiktoken() -> object:
     try:
         import tiktoken  # noqa: PLC0415
@@ -130,18 +143,45 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         metadatas_ = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
-            index = 0
-            previous_chunk_len = 0
-            for chunk in self.split_text(text):
+            for span in self._iter_chunk_spans(text):
                 metadata = copy.deepcopy(metadatas_[i])
                 if self._add_start_index:
-                    offset = index + previous_chunk_len - self._chunk_overlap
-                    index = text.find(chunk, max(0, offset))
-                    metadata["start_index"] = index
-                    previous_chunk_len = len(chunk)
-                new_doc = Document(page_content=chunk, metadata=metadata)
+                    metadata["start_index"] = span.start_index
+                new_doc = Document(page_content=span.content, metadata=metadata)
                 documents.append(new_doc)
         return documents
+
+    def _iter_chunk_spans(self, text: str) -> list[_ChunkSpan]:
+        """Return split chunks, with source offsets when `add_start_index` is set.
+
+        Offset tracking is skipped unless it was requested. Splitters that can
+        derive offsets while they split override `_split_text_with_positions`
+        instead of rediscovering them afterwards.
+        """
+        if not self._add_start_index:
+            return [
+                _ChunkSpan(content=chunk, start_index=0)
+                for chunk in self.split_text(text)
+            ]
+        return self._split_text_with_positions(text)
+
+    def _split_text_with_positions(self, text: str) -> list[_ChunkSpan]:
+        """Split `text` and pair each chunk with its start offset.
+
+        The default recovers offsets with `str.find`, starting the search near
+        the previous hit. That guess is wrong when a chunk is shorter than
+        `chunk_overlap` or when the same text occurs twice, so splitters that
+        merge separator pieces override this and keep the offset from the split.
+        """
+        spans: list[_ChunkSpan] = []
+        index = 0
+        previous_chunk_len = 0
+        for chunk in self.split_text(text):
+            offset = index + previous_chunk_len - self._chunk_overlap
+            index = text.find(chunk, max(0, offset))
+            spans.append(_ChunkSpan(content=chunk, start_index=index))
+            previous_chunk_len = len(chunk)
+        return spans
 
     def split_documents(self, documents: Iterable[Document]) -> list[Document]:
         """Split documents.
@@ -164,16 +204,49 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             text = text.strip()
         return text or None
 
+    def _join_spans(self, docs: list[_ChunkSpan], separator: str) -> _ChunkSpan | None:
+        """Join spans the same way as `_join_docs`, keeping the source offset.
+
+        The offset points at the first character of the returned content. When
+        stripping is on, leading whitespace removed from the joined text advances
+        the offset by that many characters.
+        """
+        if not docs:
+            return None
+        raw = separator.join(doc.content for doc in docs)
+        text = self._join_docs([doc.content for doc in docs], separator)
+        if text is None:
+            return None
+        if not self._strip_whitespace:
+            return _ChunkSpan(content=text, start_index=docs[0].start_index)
+        leading = len(raw) - len(raw.lstrip())
+        return _ChunkSpan(content=text, start_index=docs[0].start_index + leading)
+
     def _merge_splits(self, splits: Iterable[str], separator: str) -> list[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
+        spans = self._merge_split_spans(
+            [_ChunkSpan(content=split, start_index=0) for split in splits],
+            separator,
+        )
+        return [span.content for span in spans]
+
+    def _merge_split_spans(
+        self, splits: Iterable[_ChunkSpan], separator: str
+    ) -> list[_ChunkSpan]:
+        """Merge piece spans into chunks and carry each chunk's start offset.
+
+        Popping from the front of the current piece list is what creates overlap.
+        The chunk's offset is the offset of whichever piece is still at the front
+        when the chunk is emitted, not `previous_end - chunk_overlap`.
+        """
         separator_len = self._length_function(separator)
 
-        docs = []
-        current_doc: list[str] = []
+        docs: list[_ChunkSpan] = []
+        current_doc: list[_ChunkSpan] = []
         total = 0
         for d in splits:
-            len_ = self._length_function(d)
+            len_ = self._length_function(d.content)
             if (
                 total + len_ + (separator_len if len(current_doc) > 0 else 0)
                 > self._chunk_size
@@ -186,7 +259,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                         self._chunk_size,
                     )
                 if len(current_doc) > 0:
-                    doc = self._join_docs(current_doc, separator)
+                    doc = self._join_spans(current_doc, separator)
                     if doc is not None:
                         docs.append(doc)
                     # Keep on popping if:
@@ -197,13 +270,13 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                         > self._chunk_size
                         and total > 0
                     ):
-                        total -= self._length_function(current_doc[0]) + (
+                        total -= self._length_function(current_doc[0].content) + (
                             separator_len if len(current_doc) > 1 else 0
                         )
                         current_doc = current_doc[1:]
             current_doc.append(d)
             total += len_ + (separator_len if len(current_doc) > 1 else 0)
-        doc = self._join_docs(current_doc, separator)
+        doc = self._join_spans(current_doc, separator)
         if doc is not None:
             docs.append(doc)
         return docs
