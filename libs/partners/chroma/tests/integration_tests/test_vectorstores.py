@@ -700,8 +700,8 @@ def test_chroma_legacy_batching() -> None:
     db.delete_collection()
 
 
-def test_create_collection_if_not_exist_default() -> None:
-    """Tests existing behaviour without the new create_collection_if_not_exists flag."""
+def test_create_collection_if_not_exists_default() -> None:
+    """Tests existing behavior without the new create_collection_if_not_exists flag."""
     texts = ["foo", "bar", "baz"]
     docsearch = Chroma.from_texts(
         collection_name="test_collection",
@@ -712,7 +712,7 @@ def test_create_collection_if_not_exist_default() -> None:
     docsearch.delete_collection()
 
 
-def test_create_collection_if_not_exist_true_existing(
+def test_create_collection_if_not_exists_true_existing(
     client: chromadb.ClientAPI,
 ) -> None:
     """Tests create_collection_if_not_exists=True and collection already existing."""
@@ -727,7 +727,7 @@ def test_create_collection_if_not_exist_true_existing(
     vectorstore.delete_collection()
 
 
-def test_create_collection_if_not_exist_false_existing(
+def test_create_collection_if_not_exists_false_existing(
     client: chromadb.ClientAPI,
 ) -> None:
     """Tests create_collection_if_not_exists=False and collection already existing."""
@@ -742,7 +742,7 @@ def test_create_collection_if_not_exist_false_existing(
     vectorstore.delete_collection()
 
 
-def test_create_collection_if_not_exist_false_non_existing(
+def test_create_collection_if_not_exists_false_non_existing(
     client: chromadb.ClientAPI,
 ) -> None:
     """Tests create_collection_if_not_exists=False and collection not-existing,
@@ -756,7 +756,7 @@ def test_create_collection_if_not_exist_false_non_existing(
         )
 
 
-def test_create_collection_if_not_exist_true_non_existing(
+def test_create_collection_if_not_exists_true_non_existing(
     client: chromadb.ClientAPI,
 ) -> None:
     """Tests create_collection_if_not_exists=True and collection non-existing. ."""
