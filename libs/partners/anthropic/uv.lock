@@ -582,7 +582,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.4.3"
+version = "1.4.4"
 source = { editable = "../../langchain_v1" }
 dependencies = [
     { name = "langchain-core" },
@@ -650,7 +650,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.7.5"
+version = "1.7.6"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -723,7 +723,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.6.7"
+version = "1.6.10"
 source = { editable = "../../core" }
 dependencies = [
     { name = "httpx" },
