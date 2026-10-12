@@ -625,10 +625,10 @@ def _format_system_content(
                 warnings.warn(
                     f"Tool-change block {block_type!r} was dropped: it is only "
                     "valid on a `SystemMessage` sent in place, and this one was "
-                    "hoisted into the top-level `system` field. Use a model that "
-                    "supports mid-conversation system messages and place the "
-                    "message after a human or tool message, either last or before "
-                    f"an AI message (model: {model!r}).",
+                    "hoisted into the top-level `system` field. Use a model whose "
+                    "profile sets `mid_conversation_system_messages` and place "
+                    "the message after a human or tool message, either last or "
+                    f"before an AI message (model: {model!r}).",
                     UserWarning,
                     stacklevel=stacklevel,
                 )
@@ -648,8 +648,9 @@ def _warn_system_message_hoisted(model: str | None) -> None:
     warnings.warn(
         "A non-leading `SystemMessage` was moved to the top-level `system` field "
         "and now applies to the entire conversation. To send it in place, use a "
-        "supported model and place it after a human or tool message, either last "
-        f"or before an AI message (model: {model!r}).",
+        "model whose profile sets `mid_conversation_system_messages` and place "
+        "it after a human or tool message, either last or before an AI message "
+        f"(model: {model!r}).",
         UserWarning,
         stacklevel=3,
     )
@@ -716,8 +717,16 @@ def _format_messages(
     messages: Sequence[BaseMessage],
     *,
     model: str | None,
+    mid_conversation_system_messages: bool = False,
 ) -> tuple[str | list[dict] | None, list[dict]]:
-    """Format messages for Anthropic's API."""
+    """Format messages for Anthropic's API.
+
+    Args:
+        messages: Messages to format.
+        model: The model the request targets, used only in warning text.
+        mid_conversation_system_messages: Whether a non-leading system message
+            may be sent in place. When `False`, it is hoisted into `system`.
+    """
     system: str | list[dict] | None = None
     formatted_messages: list[dict] = []
     toolsets: dict[str, str] = {}
@@ -736,7 +745,7 @@ def _format_messages(
                     preserve_tool_changes=True,
                 )
                 continue
-            if _supports_mid_conversation_system_messages(model) and (
+            if mid_conversation_system_messages and (
                 pending_system
                 or _previous_turn_allows_system(
                     formatted_messages[-1] if formatted_messages else None
@@ -1141,21 +1150,6 @@ def _reasoning_effort_levels(profile: object) -> tuple[str, ...]:
     if not isinstance(levels, (list, tuple)):
         return ()
     return tuple(levels)
-
-
-def _supports_mid_conversation_system_messages(model: object) -> bool:
-    """Return whether the model supports mid-conversation system messages."""
-    if not isinstance(model, str):
-        return False
-    return model.startswith(
-        (
-            "claude-fable-5",
-            "claude-mythos-5",
-            "claude-opus-4-8",
-            "claude-opus-5",
-            "claude-sonnet-5-5",
-        )
-    )
 
 
 def _supports_forced_tool_choice(model: str) -> bool:
@@ -1901,7 +1895,13 @@ class ChatAnthropic(BaseChatModel):
                     }
                 )
 
-        system, formatted_messages = _format_messages(messages, model=self.model)
+        system, formatted_messages = _format_messages(
+            messages,
+            model=self.model,
+            mid_conversation_system_messages=bool(
+                (self.profile or {}).get("mid_conversation_system_messages")
+            ),
+        )
         if isinstance(system, list) and not system:
             # Every block was narrowed away (or the message was empty to begin
             # with). An empty block array carries no instructions, so drop the
@@ -3095,7 +3095,11 @@ class ChatAnthropic(BaseChatModel):
             ```
         """  # noqa: D214
         formatted_system, formatted_messages = _format_messages(
-            messages, model=self.model
+            messages,
+            model=self.model,
+            mid_conversation_system_messages=bool(
+                (self.profile or {}).get("mid_conversation_system_messages")
+            ),
         )
         if formatted_system is not None:
             kwargs["system"] = formatted_system

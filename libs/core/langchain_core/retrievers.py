@@ -8,7 +8,6 @@ the backbone of a retriever, but there are other types of retrievers as well.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from inspect import signature
 from typing import TYPE_CHECKING, Any
 
 from pydantic import ConfigDict
@@ -23,6 +22,7 @@ from langchain_core.runnables import (
     ensure_config,
 )
 from langchain_core.runnables.config import run_in_executor
+from langchain_core.utils._signature import _signature_parameters
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -145,7 +145,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     @override
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
-        parameters = signature(cls._get_relevant_documents).parameters
+        parameters = _signature_parameters(cls._get_relevant_documents)
         cls._new_arg_supported = parameters.get("run_manager") is not None
         if (
             not cls._new_arg_supported

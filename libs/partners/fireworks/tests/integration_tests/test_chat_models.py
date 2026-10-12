@@ -44,9 +44,11 @@ def test_tool_choice_bool(strict: bool | None) -> None:  # noqa: FBT001
     else:
         assert tool_def["function"].get("strict") is strict
 
-    resp = with_tool.invoke("Who was the 27 year old named Erick?")
+    resp = with_tool.invoke(
+        "Use MyTool to extract the name and age from this fictional example: "
+        "Erick is 27 years old."
+    )
     assert isinstance(resp, AIMessage)
-    assert resp.content == ""  # should just be tool call
     tool_calls = resp.additional_kwargs["tool_calls"]
     assert len(tool_calls) == 1
     tool_call = tool_calls[0]

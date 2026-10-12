@@ -12,7 +12,6 @@ import textwrap
 # RunnableConfigurableFields.
 from collections.abc import Mapping, Sequence  # noqa: TC003
 from functools import lru_cache
-from inspect import signature
 from itertools import groupby
 from typing import (
     TYPE_CHECKING,
@@ -24,6 +23,8 @@ from typing import (
 )
 
 from typing_extensions import override
+
+from langchain_core.utils._signature import _signature_parameters
 
 # Re-export create-model for backwards compatibility
 from langchain_core.utils.pydantic import create_model  # noqa: F401
@@ -92,7 +93,7 @@ def accepts_run_manager(callable: Callable[..., Any]) -> bool:  # noqa: A002
         `True` if the callable accepts a run_manager argument, `False` otherwise.
     """
     try:
-        return signature(callable).parameters.get("run_manager") is not None
+        return _signature_parameters(callable).get("run_manager") is not None
     except ValueError:
         return False
 
@@ -107,7 +108,7 @@ def accepts_config(callable: Callable[..., Any]) -> bool:  # noqa: A002
         `True` if the callable accepts a config argument, `False` otherwise.
     """
     try:
-        return signature(callable).parameters.get("config") is not None
+        return _signature_parameters(callable).get("config") is not None
     except ValueError:
         return False
 
@@ -122,7 +123,7 @@ def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
         `True` if the callable accepts a context argument, `False` otherwise.
     """
     try:
-        return signature(callable).parameters.get("context") is not None
+        return _signature_parameters(callable).get("context") is not None
     except ValueError:
         return False
 
