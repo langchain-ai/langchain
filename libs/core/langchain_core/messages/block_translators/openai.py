@@ -618,14 +618,19 @@ def _explode_reasoning(block: dict[str, Any]) -> Iterator[types.ReasoningContent
 
     known_fields = {"type", "reasoning", "id", "index"}
     unknown_fields = [
-        field for field in block if field != "summary" and field not in known_fields
+        field
+        for field in block
+        if field not in known_fields and field not in ("summary", "extras")
     ]
-    if unknown_fields:
-        block["extras"] = {}
+    # Optional keys that must appear only in the first exploded item (nested under
+    # `extras`)
+    first_only: dict[str, Any] = dict(block.pop("extras", None) or {})
     for field in unknown_fields:
-        block["extras"][field] = block.pop(field)
+        first_only[field] = block.pop(field)
 
     if not block["summary"]:
+        if first_only:
+            block["extras"] = first_only
         # [{'id': 'rs_...', 'summary': [], 'type': 'reasoning', 'index': 0}]
         block = {k: v for k, v in block.items() if k != "summary"}
         if "index" in block:
@@ -637,14 +642,11 @@ def _explode_reasoning(block: dict[str, Any]) -> Iterator[types.ReasoningContent
     # Common part for every exploded line, except 'summary'
     common = {k: v for k, v in block.items() if k in known_fields}
 
-    # Optional keys that must appear only in the first exploded item
-    first_only = block.pop("extras", None)
-
     for idx, part in enumerate(block["summary"]):
         new_block = dict(common)
         new_block["reasoning"] = part.get("text", "")
         if idx == 0 and first_only:
-            new_block.update(first_only)
+            new_block["extras"] = first_only
         if "index" in new_block:
             summary_index = part.get("index", 0)
             meaningful_idx = f"{new_block['index']}_{summary_index}"

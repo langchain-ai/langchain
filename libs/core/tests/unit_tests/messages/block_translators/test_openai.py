@@ -317,6 +317,58 @@ def test_convert_to_v1_from_openai_input() -> None:
     assert _content_blocks_equal_ignore_id(message.content_blocks, expected)
 
 
+def test_convert_to_v1_reasoning_summary_with_extras() -> None:
+    # store=False responses carry encrypted_content next to the summary
+    message = AIMessage(
+        content=[
+            {
+                "type": "reasoning",
+                "id": "rs_123",
+                "summary": [
+                    {"type": "summary_text", "text": "summary 1"},
+                    {"type": "summary_text", "text": "summary 2"},
+                ],
+                "encrypted_content": "gAAAAABl",
+            },
+        ],
+        response_metadata={"model_provider": "openai"},
+    )
+    expected_content: list[types.ContentBlock] = [
+        {
+            "type": "reasoning",
+            "id": "rs_123",
+            "reasoning": "summary 1",
+            "extras": {"encrypted_content": "gAAAAABl"},
+        },
+        {"type": "reasoning", "id": "rs_123", "reasoning": "summary 2"},
+    ]
+    assert message.content_blocks == expected_content
+
+
+def test_convert_to_v1_reasoning_summary_with_existing_extras() -> None:
+    message = AIMessage(
+        content=[
+            {
+                "type": "reasoning",
+                "id": "rs_123",
+                "summary": [{"type": "summary_text", "text": "summary 1"}],
+                "extras": {"foo": "bar"},
+                "encrypted_content": "gAAAAABl",
+            },
+        ],
+        response_metadata={"model_provider": "openai"},
+    )
+    expected_content: list[types.ContentBlock] = [
+        {
+            "type": "reasoning",
+            "id": "rs_123",
+            "reasoning": "summary 1",
+            "extras": {"foo": "bar", "encrypted_content": "gAAAAABl"},
+        },
+    ]
+    assert message.content_blocks == expected_content
+
+
 def test_compat_responses_v03() -> None:
     # Check compatibility with v0.3 legacy message format
     message_v03 = AIMessage(
