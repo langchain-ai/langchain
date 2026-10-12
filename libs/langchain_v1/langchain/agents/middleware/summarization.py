@@ -372,7 +372,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                     `init_chat_model`, writes summaries in place of `model`. It is
                     prompted with `summary_prompt` and retried like `model` would
                     be. Use this to summarize with a different model than the one
-                    whose context window you're managing.
+                    whose context window you're managing. To summarize with a chat
+                    model, pass its name or a `BaseChatModel` instance; wrapped
+                    models such as `model.with_config(...)` are treated as a
+                    `Runnable` (below).
                 - A `Runnable` or function receives the messages to summarize
                     (after trimming) and returns the summary text. `summary_prompt`
                     is not used. Functions may be sync or async; an async function
