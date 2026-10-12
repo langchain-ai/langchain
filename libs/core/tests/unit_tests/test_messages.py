@@ -20,6 +20,7 @@ from langchain_core.messages import (
     RemoveMessage,
     SystemMessage,
     ToolMessage,
+    ToolMessageChunk,
     convert_to_messages,
     convert_to_openai_image_block,
     get_buffer_string,
@@ -356,6 +357,54 @@ def test_function_message_chunks() -> None:
         FunctionMessageChunk(name="hello", content="I am") + FunctionMessageChunk(
             name="bye", content=" indeed."
         )
+
+
+def test_tool_message_chunks() -> None:
+    assert ToolMessageChunk(content="I am", tool_call_id="1") + ToolMessageChunk(
+        content=" indeed.", tool_call_id="1"
+    ) == ToolMessageChunk(content="I am indeed.", tool_call_id="1"), (
+        "ToolMessageChunk + ToolMessageChunk should be a ToolMessageChunk"
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Cannot concatenate ToolMessageChunks with different names",
+    ):
+        ToolMessageChunk(content="I am", tool_call_id="1") + ToolMessageChunk(
+            content=" indeed.", tool_call_id="2"
+        )
+
+
+def test_tool_message_chunk_concatenation_keeps_its_required_field() -> None:
+    # The sequence and cross-type paths build the merged chunk from a fixed
+    # field list, which used to drop `tool_call_id` and surface as a bare
+    # KeyError from the model validator.
+    first = ToolMessageChunk(content="a", tool_call_id="t", artifact={"k": 1})
+    second = ToolMessageChunk(content="b", tool_call_id="t")
+
+    # `chunk + [chunks]` is the form under test (RUF005 would rewrite it away).
+    from_sequence = first + [second]  # noqa: RUF005
+    assert from_sequence == ToolMessageChunk(
+        content="ab", tool_call_id="t", artifact={"k": 1}
+    )
+
+    from_other_type = first + AIMessageChunk(content="z")
+    assert from_other_type.content == "az"
+    assert from_other_type.tool_call_id == "t"
+
+    # The mirrored order already worked and must keep working.
+    mirrored = AIMessageChunk(content="z") + first
+    assert mirrored.content == "za"
+    assert isinstance(mirrored, AIMessageChunk)
+
+
+def test_tool_message_chunk_concatenation_keeps_subclass_fields() -> None:
+    first = ToolMessageChunk(content="a", tool_call_id="t", status="error")
+    second = ToolMessageChunk(content="b", tool_call_id="t")
+
+    merged = first + [second]  # noqa: RUF005  # the sequence form is under test
+    assert merged.status == "error"
+    assert merged.artifact is None
 
 
 def test_ai_message_chunks() -> None:

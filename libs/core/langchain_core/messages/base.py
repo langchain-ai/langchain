@@ -436,16 +436,20 @@ class BaseMessageChunk(BaseMessage):
             # If both are (subclasses of) BaseMessageChunk,
             # concat into a single BaseMessageChunk
 
-            return self.__class__(
-                id=self.id,
-                type=self.type,
-                content=merge_content(self.content, other.content),
-                additional_kwargs=merge_dicts(
-                    self.additional_kwargs, other.additional_kwargs
-                ),
-                response_metadata=merge_dicts(
-                    self.response_metadata, other.response_metadata
-                ),
+            # Copy `self` rather than re-constructing from a fixed field list: a
+            # subclass may declare required fields of its own (`ToolMessageChunk`'s
+            # `tool_call_id`), and dropping them either loses the value or makes the
+            # constructor raise. `model_copy` keeps every field, including extras.
+            return self.model_copy(
+                update={
+                    "content": merge_content(self.content, other.content),
+                    "additional_kwargs": merge_dicts(
+                        self.additional_kwargs, other.additional_kwargs
+                    ),
+                    "response_metadata": merge_dicts(
+                        self.response_metadata, other.response_metadata
+                    ),
+                }
             )
         if isinstance(other, list) and all(
             isinstance(o, BaseMessageChunk) for o in other
@@ -457,11 +461,13 @@ class BaseMessageChunk(BaseMessage):
             response_metadata = merge_dicts(
                 self.response_metadata, *(o.response_metadata for o in other)
             )
-            return self.__class__(  # type: ignore[call-arg]
-                id=self.id,
-                content=content,
-                additional_kwargs=additional_kwargs,
-                response_metadata=response_metadata,
+            # See the note above: keep the subclass's own fields.
+            return self.model_copy(
+                update={
+                    "content": content,
+                    "additional_kwargs": additional_kwargs,
+                    "response_metadata": response_metadata,
+                }
             )
         msg = (
             'unsupported operand type(s) for +: "'
