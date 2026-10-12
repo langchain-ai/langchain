@@ -15,6 +15,7 @@ from langchain_core.callbacks.stdout import StdOutCallbackHandler
 from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain_core.runnables import RunnableBinding, RunnablePassthrough
 from langchain_core.runnables.config import (
+    DEFAULT_RECURSION_LIMIT,
     RunnableConfig,
     _get_langsmith_inheritable_metadata_from_config,
     _merge_metadata_dicts,
@@ -414,3 +415,19 @@ class TestMergeMetadataDicts:
         assert merged["metadata"] == {
             "lc_versions": {"a": "1", "b": "2", "c": "3"},
         }
+
+
+def test_merge_configs_reset_recursion_limit() -> None:
+    base: RunnableConfig = {"recursion_limit": 50}
+    override: RunnableConfig = {"recursion_limit": DEFAULT_RECURSION_LIMIT}
+    merged = merge_configs(base, override)
+    assert merged["recursion_limit"] == DEFAULT_RECURSION_LIMIT
+
+    # Secondary case: override config does not specify recursion_limit at all
+    override_without_limit: RunnableConfig = {}
+    merged_preserved = merge_configs(base, override_without_limit)
+    assert merged_preserved["recursion_limit"] == 50
+
+    override_with_other_key: RunnableConfig = {"tags": ["preserve"]}
+    merged_with_other = merge_configs(base, override_with_other_key)
+    assert merged_with_other["recursion_limit"] == 50
