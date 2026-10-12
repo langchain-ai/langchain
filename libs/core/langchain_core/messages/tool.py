@@ -1,7 +1,7 @@
 """Messages for tools."""
 
 import json
-from typing import Any, Literal, cast, overload
+from typing import Any, Literal, Sequence, cast, overload
 from uuid import UUID
 
 from pydantic import Field, model_validator
@@ -179,17 +179,28 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
     # non-chunk variant.
     type: Literal["ToolMessageChunk"] = "ToolMessageChunk"  # type: ignore[assignment]
 
+    @overload  # type: ignore[override]
+    def __add__(self, other: "ToolMessageChunk") -> "ToolMessageChunk": ...
+
+    @overload
+    def __add__(self, other: Sequence["ToolMessageChunk"]) -> "ToolMessageChunk": ...
+
+    @overload
+    def __add__(self, other: Any) -> BaseMessageChunk: ...
+
     @override
     def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
         if isinstance(other, ToolMessageChunk):
-            if self.tool_call_id != other.tool_call_id:
-                msg = "Cannot concatenate ToolMessageChunks with different names."
-                raise ValueError(msg)
-
+            return add_tool_message_chunks(self, other)
+        if isinstance(other, (list, tuple)) and all(
+            isinstance(o, ToolMessageChunk) for o in other
+        ):
+            return add_tool_message_chunks(self, *other)
+        if isinstance(other, BaseMessageChunk):
             return self.__class__(
                 tool_call_id=self.tool_call_id,
                 content=merge_content(self.content, other.content),
-                artifact=merge_obj(self.artifact, other.artifact),
+                artifact=self.artifact,
                 additional_kwargs=merge_dicts(
                     self.additional_kwargs, other.additional_kwargs
                 ),
@@ -197,10 +208,69 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
                     self.response_metadata, other.response_metadata
                 ),
                 id=self.id,
-                status=_merge_status(self.status, other.status),
+                status=self.status,
+            )
+        if isinstance(other, (list, tuple)) and all(
+            isinstance(o, BaseMessageChunk) for o in other
+        ):
+            return self.__class__(
+                tool_call_id=self.tool_call_id,
+                content=merge_content(self.content, *(o.content for o in other)),
+                artifact=self.artifact,
+                additional_kwargs=merge_dicts(
+                    self.additional_kwargs, *(o.additional_kwargs for o in other)
+                ),
+                response_metadata=merge_dicts(
+                    self.response_metadata, *(o.response_metadata for o in other)
+                ),
+                id=self.id,
+                status=self.status,
             )
 
         return super().__add__(other)
+
+
+def add_tool_message_chunks(
+    left: ToolMessageChunk, *others: ToolMessageChunk
+) -> ToolMessageChunk:
+    """Add multiple `ToolMessageChunk`s together.
+
+    Args:
+        left: The first `ToolMessageChunk`.
+        *others: Other `ToolMessageChunk`s to add.
+
+    Returns:
+        The resulting `ToolMessageChunk`.
+    """
+    for o in others:
+        if left.tool_call_id != o.tool_call_id:
+            msg = "Cannot concatenate ToolMessageChunks with different names."
+            raise ValueError(msg)
+
+    content = merge_content(left.content, *(o.content for o in others))
+    artifact = left.artifact
+    for o in others:
+        artifact = merge_obj(artifact, o.artifact)
+
+    additional_kwargs = merge_dicts(
+        left.additional_kwargs, *(o.additional_kwargs for o in others)
+    )
+    response_metadata = merge_dicts(
+        left.response_metadata, *(o.response_metadata for o in others)
+    )
+    status = left.status
+    for o in others:
+        status = _merge_status(status, o.status)
+
+    return left.__class__(
+        tool_call_id=left.tool_call_id,
+        content=content,
+        artifact=artifact,
+        additional_kwargs=additional_kwargs,
+        response_metadata=response_metadata,
+        id=left.id,
+        status=status,
+    )
 
 
 class ToolCall(TypedDict):
