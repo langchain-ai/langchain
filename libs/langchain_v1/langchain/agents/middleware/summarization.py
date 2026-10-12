@@ -3,7 +3,7 @@
 import logging
 import uuid
 import warnings
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Coroutine, Iterable, Mapping
 from functools import partial
 from typing import Any, Literal, TypedDict, cast
 
@@ -41,10 +41,17 @@ logger = logging.getLogger(__name__)
 
 TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
 
-Summarizer = Runnable[list[AnyMessage], str] | Callable[[list[AnyMessage]], str]
+Summarizer = (
+    str
+    | BaseChatModel
+    | Runnable[list[AnyMessage], str]
+    | Callable[[list[AnyMessage]], str]
+    | Callable[[list[AnyMessage]], Coroutine[Any, Any, str]]
+)
 """Generates a summary from the messages selected for summarization.
 
-A `Runnable` or a callable taking the messages and returning the summary text.
+Either a chat model (or model string) prompted with the summary prompt, or a
+`Runnable` or callable taking the messages and returning the summary text.
 """
 
 DEFAULT_SUMMARY_PROMPT = """<role>
@@ -126,6 +133,14 @@ _LS_PROVIDER_ALIASES: dict[str, frozenset[str]] = {
 def _summary_config() -> RunnableConfig:
     """Config for summary model calls."""
     return {"metadata": {"lc_source": "summarization", **internal_call_metadata()}}
+
+
+def _check_summary(summary: object) -> str:
+    """Validate and normalize the text returned by a custom `summarizer`."""
+    if not isinstance(summary, str):
+        msg = f"`summarizer` must return a str, got {type(summary).__name__}."
+        raise TypeError(msg)
+    return summary.strip()
 
 
 def _provider_matches(message_provider: str, model_ls_provider: str | None) -> bool:
@@ -350,20 +365,34 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 Pass `None` to skip trimming entirely.
             summarizer: Optional replacement for the summarization model call.
 
-                A `Runnable` or callable that receives the messages to summarize
-                (after trimming) and returns the summary text. When set,
-                `summary_prompt` is not used and `model` is not called to write
-                summaries; `model` is still used for its profile (fractional
-                limits) and token counting.
+                `model` is still used for its profile (fractional limits) and
+                token counting, but is not called to write summaries.
 
-                Plain callables are wrapped with `RunnableLambda`, so an async
-                function is only usable with async invocation.
+                - A chat model, or a model string resolved with
+                    `init_chat_model`, writes summaries in place of `model`. It is
+                    prompted with `summary_prompt` and retried like `model` would
+                    be. Use this to summarize with a different model than the one
+                    whose context window you're managing.
+                - A `Runnable` or function receives the messages to summarize
+                    (after trimming) and returns the summary text. `summary_prompt`
+                    is not used. Functions may be sync or async; an async function
+                    requires async invocation (e.g. `ainvoke`), and a sync function
+                    runs in a thread pool when invoked asynchronously.
 
                 !!! example
 
                     ```python
-                    def summarize(messages: list[AnyMessage]) -> str:
-                        return my_summarization_service(get_buffer_string(messages))
+                    # Manage gpt-6-sol's context window, summarize with gpt-6-luna
+                    SummarizationMiddleware(
+                        model="openai:gpt-6-sol",
+                        trigger=("fraction", 0.8),
+                        summarizer="openai:gpt-6-luna",
+                    )
+
+
+                    # Summarize with a non-LLM service
+                    async def summarize(messages: Sequence[BaseMessage]) -> str:
+                        return await my_summarization_service(get_buffer_string(messages))
 
 
                     SummarizationMiddleware(
@@ -425,9 +454,16 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             self._partial_token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
-        self.summarizer: Runnable[list[AnyMessage], str] | None = (
-            coerce_to_runnable(summarizer) if summarizer is not None else None
-        )
+        if isinstance(summarizer, str):
+            summarizer = init_chat_model(summarizer)
+        # The chat model that writes summaries: `model` unless `summarizer` replaces it.
+        self._summary_chat_model = self.model
+        self.summarizer: Runnable[list[AnyMessage], str] | None = None
+        if isinstance(summarizer, BaseChatModel):
+            self._summary_chat_model = summarizer
+            self._summary_model = summarizer.with_retry(retry_if_exception_type=default_retry_on)
+        elif summarizer is not None:
+            self.summarizer = coerce_to_runnable(summarizer)
 
         requires_profile = any("fraction" in clause for clause in self._trigger_clauses)
         if self.keep[0] == "fraction":
@@ -765,10 +801,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         # Advance past any ToolMessages to avoid splitting AI/Tool pairs
         return self._find_safe_cutoff_point(messages, cutoff_candidate)
 
-    def _get_profile_limits(self) -> int | None:
-        """Retrieve max input token limit from the model profile."""
+    def _get_profile_limits(self, model: BaseChatModel | None = None) -> int | None:
+        """Retrieve max input token limit from the profile of `model` (default: `self.model`)."""
         try:
-            profile = self.model.profile
+            profile = (model or self.model).profile
         except AttributeError:
             return None
 
@@ -898,7 +934,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             return "Previous conversation was too long to summarize."
 
         if self.summarizer is not None:
-            return self.summarizer.invoke(trimmed_messages, config=_summary_config()).strip()
+            return _check_summary(
+                self.summarizer.invoke(trimmed_messages, config=_summary_config())
+            )
 
         prompt = self._format_summary_prompt(trimmed_messages)
         try:
@@ -932,7 +970,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         if self.summarizer is not None:
             summary = await self.summarizer.ainvoke(trimmed_messages, config=_summary_config())
-            return summary.strip()
+            return _check_summary(summary)
 
         prompt = self._format_summary_prompt(trimmed_messages)
         try:
@@ -956,7 +994,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         Cuts the middle out of the formatted history, keeping its start (where the
         objective is usually stated) and its most recent part, within half of its
-        token count and 40% of the model's `max_input_tokens` when known.
+        token count and 40% of the summary model's `max_input_tokens` when known.
 
         Returns:
             The retry prompt, or `None` if nothing fits the budget.
@@ -964,7 +1002,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         formatted = get_buffer_string(messages, format="xml")
         tokens = self._partial_token_counter([HumanMessage(content=formatted)])
         budget = tokens // 2
-        if (max_input_tokens := self._get_profile_limits()) is not None:
+        if (max_input_tokens := self._get_profile_limits(self._summary_chat_model)) is not None:
             # 40% rather than half absorbs up to 1.25x usage-metadata scaling.
             budget = min(budget, max_input_tokens * 2 // 5)
         keep_chars = len(formatted) * budget // max(tokens, 1)
