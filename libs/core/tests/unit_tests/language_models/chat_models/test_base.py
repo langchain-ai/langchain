@@ -54,6 +54,7 @@ from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 from langchain_core.version import VERSION
 from tests.unit_tests.fake.callbacks import (
     BaseFakeCallbackHandler,
@@ -1728,6 +1729,21 @@ def test_generate_response_from_error_with_valid_json() -> None:
     }
     assert metadata["headers"] == {"content-type": "application/json"}
     assert metadata["status_code"] == 400
+
+
+def test_generate_response_from_error_surfaces_gateway_metadata() -> None:
+    """Gateway metadata from an error response is available for tracing."""
+    response = MockResponse(
+        headers={"X-LangSmith-Gateway-Metadata": '{"outcome": "blocked"}'},
+    )
+
+    generations = _generate_response_from_error(
+        MockAPIError("API Error", response=response)
+    )
+
+    assert generations[0].generation_info == {
+        GATEWAY_METADATA_RESPONSE_KEY: {"outcome": "blocked"}
+    }
 
 
 def test_generate_response_from_error_handles_streaming_response_failure() -> None:

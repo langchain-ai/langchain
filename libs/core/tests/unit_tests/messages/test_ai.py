@@ -423,6 +423,18 @@ def test_content_blocks() -> None:
         {"type": "server_tool_call", "name": "foo", "index": 0, "args": {"a": 1}}
     ]
 
+    # Server tool calls with no input stream no args
+    empty_args_chunk = AIMessageChunk(
+        content=[
+            {"type": "server_tool_call_chunk", "index": 0, "name": "foo", "args": ""}
+        ]
+    ) + AIMessageChunk(
+        content=[], chunk_position="last", response_metadata={"output_version": "v1"}
+    )
+    assert empty_args_chunk.content == [
+        {"type": "server_tool_call", "name": "foo", "index": 0, "args": {}}
+    ]
+
     # Test non-standard + non-standard
     chunk_1 = AIMessageChunk(
         content=[

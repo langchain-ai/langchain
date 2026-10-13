@@ -12,10 +12,14 @@ from langchain_core.utils.aiter import abatch_iterate
         (3, [10, 20, 30, 40, 50], [[10, 20, 30], [40, 50]]),
         (1, [100, 200, 300], [[100], [200], [300]]),
         (4, [], []),
+        (None, [1, 2, 3], [[1, 2, 3]]),
+        (None, [], []),
     ],
 )
 async def test_abatch_iterate(
-    input_size: int, input_iterable: list[str], expected_output: list[list[str]]
+    input_size: int | None,
+    input_iterable: list[str],
+    expected_output: list[list[str]],
 ) -> None:
     """Test batching function."""
 
@@ -29,3 +33,15 @@ async def test_abatch_iterate(
 
     output = [el async for el in iterator_]
     assert output == expected_output
+
+
+@pytest.mark.parametrize("input_size", [0, -1])
+async def test_abatch_iterate_invalid_size(input_size: int) -> None:
+    """Non-positive sizes should raise instead of silently discarding data."""
+
+    async def _to_async_iterable(iterable: list[int]) -> AsyncIterator[int]:
+        for item in iterable:
+            yield item
+
+    with pytest.raises(ValueError, match="positive integer"):
+        _ = [el async for el in abatch_iterate(input_size, _to_async_iterable([1, 2]))]

@@ -421,11 +421,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             else:
                 if self.openai_proxy and not self.http_client:
                     try:
-                        import httpx
+                        from langchain_openai._compat import httpx
                     except ImportError as e:
                         msg = (
-                            "Could not import httpx python package. "
-                            "Please install it with `pip install httpx`."
+                            "Could not import the httpx package used by the "
+                            "OpenAI SDK. It is normally installed alongside "
+                            "`openai`; reinstall with `pip install openai`."
                         )
                         raise ImportError(msg) from e
                     self.http_client = httpx.Client(proxy=self.openai_proxy)
@@ -437,11 +438,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         if not self.async_client:
             if self.openai_proxy and not self.http_async_client:
                 try:
-                    import httpx
+                    from langchain_openai._compat import httpx
                 except ImportError as e:
                     msg = (
-                        "Could not import httpx python package. "
-                        "Please install it with `pip install httpx`."
+                        "Could not import the httpx package used by the "
+                        "OpenAI SDK. It is normally installed alongside "
+                        "`openai`; reinstall with `pip install openai`."
                     )
                     raise ImportError(msg) from e
                 self.http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)

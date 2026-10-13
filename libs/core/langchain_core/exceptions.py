@@ -65,7 +65,62 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
         self.send_to_llm = send_to_llm
 
 
-class ContextOverflowError(LangChainException):
+class ModelError(LangChainException):
+    """Base exception for failures related to model invocation.
+
+    Subclasses correspond to conditions that model providers report consistently,
+    keyed to the HTTP status they surface it with, so the same condition maps to
+    the same exception type regardless of provider.
+
+    Provider integrations raise subclasses that also inherit from the provider
+    SDK's own exception type, so code catching either continues to work.
+    """
+
+    is_retryable = False
+    """Whether retrying the same model request may succeed."""
+
+
+class ModelAuthenticationError(ModelError):
+    """Exception raised when model provider authentication fails (HTTP 401)."""
+
+
+class ModelPermissionDeniedError(ModelError):
+    """Exception raised when credentials lack permission for a request (HTTP 403)."""
+
+
+class ModelInvalidRequestError(ModelError):
+    """Exception raised when a provider rejects a request as invalid (e.g. HTTP 400)."""
+
+
+class ModelNotFoundError(ModelError):
+    """Exception raised when the requested model cannot be found (HTTP 404)."""
+
+
+class ModelRateLimitError(ModelError):
+    """Exception raised when a model provider rate limit is exceeded (HTTP 429)."""
+
+    is_retryable = True
+
+
+class ModelAPIError(ModelError):
+    """Exception raised when a model provider reports a server failure (HTTP 5xx)."""
+
+    is_retryable = True
+
+
+class ModelConnectionError(ModelError):
+    """Exception raised when a model provider cannot be reached."""
+
+    is_retryable = True
+
+
+class ModelTimeoutError(ModelError):
+    """Exception raised when a model request times out."""
+
+    is_retryable = True
+
+
+class ContextOverflowError(ModelError):
     """Exception raised when input exceeds the model's context limit.
 
     This exception is raised by chat models when the input tokens exceed

@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
-from langchain_core.messages import AIMessage, AnyMessage, BaseMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langgraph.stream import StreamTransformer
 from typing_extensions import override
 
@@ -660,13 +660,39 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         """Name of the middleware."""
         return f"{self.__class__.__name__}[{self.pii_type}]"
 
-    def _process_content(self, content: str) -> tuple[str, list[PIIMatch]]:
-        """Apply the configured redaction rule to the provided content."""
-        matches = self.detector(content)
-        if not matches:
-            return content, []
-        sanitized = apply_strategy(content, matches, self.strategy)
-        return sanitized, matches
+    def _process_content(
+        self, content: str | list[str | dict[str, Any]]
+    ) -> tuple[str | list[str | dict[str, Any]], bool]:
+        """Apply the configured redaction rule, preserving the shape of `content`.
+
+        Only string leaves are redacted: a plain-string `content` directly, and
+        the `text` of each block in a block-list `content`. Non-text blocks pass
+        through untouched, so block-list content keeps its structure instead of
+        collapsing into the `repr` of the list.
+
+        Args:
+            content: The message content to redact.
+
+        Returns:
+            The redacted content and whether anything was rewritten.
+        """
+        if isinstance(content, str):
+            matches = self.detector(content)
+            if not matches:
+                return content, False
+            return apply_strategy(content, matches, self.strategy), True
+
+        new_blocks: list[str | dict[str, Any]] = []
+        changed = False
+        for block in content:
+            new_block: str | dict[str, Any] = block
+            text = block if isinstance(block, str) else block.get("text")
+            if isinstance(text, str) and (matches := self.detector(text)):
+                redacted = apply_strategy(text, matches, self.strategy)
+                new_block = redacted if isinstance(block, str) else {**block, "text": redacted}
+                changed = True
+            new_blocks.append(new_block)
+        return (new_blocks, True) if changed else (content, False)
 
     @hook_config(can_jump_to=["end"])
     @override
@@ -710,18 +736,12 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                     break
 
             if last_user_idx is not None and last_user_msg and last_user_msg.content:
-                # Detect PII in message content
-                content = str(last_user_msg.content)
-                new_content, matches = self._process_content(content)
+                new_content, changed = self._process_content(last_user_msg.content)
 
-                if matches:
-                    updated_message: AnyMessage = HumanMessage(
-                        content=new_content,
-                        id=last_user_msg.id,
-                        name=last_user_msg.name,
+                if changed:
+                    new_messages[last_user_idx] = last_user_msg.model_copy(
+                        update={"content": new_content}
                     )
-
-                    new_messages[last_user_idx] = updated_message
                     any_modified = True
 
         # Check tool results if enabled
@@ -742,21 +762,12 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                         if not tool_msg.content:
                             continue
 
-                        content = str(tool_msg.content)
-                        new_content, matches = self._process_content(content)
+                        new_content, changed = self._process_content(tool_msg.content)
 
-                        if not matches:
+                        if not changed:
                             continue
 
-                        # Create updated tool message
-                        updated_message = ToolMessage(
-                            content=new_content,
-                            id=tool_msg.id,
-                            name=tool_msg.name,
-                            tool_call_id=tool_msg.tool_call_id,
-                        )
-
-                        new_messages[i] = updated_message
+                        new_messages[i] = tool_msg.model_copy(update={"content": new_content})
                         any_modified = True
 
         if any_modified:
@@ -824,24 +835,13 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
         if last_ai_idx is None or not last_ai_msg or not last_ai_msg.content:
             return None
 
-        # Detect PII in message content
-        content = str(last_ai_msg.content)
-        new_content, matches = self._process_content(content)
+        new_content, changed = self._process_content(last_ai_msg.content)
 
-        if not matches:
+        if not changed:
             return None
 
-        # Create updated message
-        updated_message = AIMessage(
-            content=new_content,
-            id=last_ai_msg.id,
-            name=last_ai_msg.name,
-            tool_calls=last_ai_msg.tool_calls,
-        )
-
-        # Return updated messages
         new_messages = list(messages)
-        new_messages[last_ai_idx] = updated_message
+        new_messages[last_ai_idx] = last_ai_msg.model_copy(update={"content": new_content})
 
         return {"messages": new_messages}
 

@@ -1,5 +1,11 @@
 """Tests for PII detection middleware."""
 
+# `run.tool_calls`/`run.subagents` are stream projections registered dynamically by
+# `create_agent` (via langgraph-prebuilt's `ToolCallTransformer` and langchain's
+# `SubagentTransformer`), not declared on langgraph's typed `GraphRunStream`
+# (langgraph#8389). The `# type: ignore[attr-defined]` below self-remove once
+# langgraph adds a `__getattr__` fallback (strict mode's `warn_unused_ignores`).
+
 import re
 from typing import Any
 
@@ -19,7 +25,9 @@ from langgraph.stream._types import ProtocolEvent
 from langgraph.stream.transformers import MessagesTransformer
 
 from langchain.agents import AgentState
+from langchain.agents import middleware as middleware_package
 from langchain.agents.factory import create_agent
+from langchain.agents.middleware import PIIMatch as PublicPIIMatch
 from langchain.agents.middleware._redaction import RedactionRule
 from langchain.agents.middleware.pii import (
     PIIDetectionError,
@@ -33,6 +41,24 @@ from langchain.agents.middleware.pii import (
     detect_url,
 )
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+# ============================================================================
+# Public Export Tests
+# ============================================================================
+
+
+class TestPIIMatchPublicExport:
+    """Test that `PIIMatch` is importable from the public middleware package.
+
+    Regression test: `PIIMatch` was only exported from the private
+    `_redaction` module, forcing custom-detector authors to import from it
+    directly instead of `langchain.agents.middleware`.
+    """
+
+    def test_pii_match_importable_from_middleware_package(self) -> None:
+        assert PublicPIIMatch is PIIMatch
+        assert "PIIMatch" in middleware_package.__all__
+
 
 # ============================================================================
 # Detection Function Tests
@@ -524,6 +550,89 @@ class TestPIIMiddlewareIntegration:
         # The first message should have been processed
         messages = result["messages"]
         assert any("[REDACTED_EMAIL]" in str(msg.content) for msg in messages)
+
+    def test_input_list_content_preserved(self) -> None:
+        """List-of-content-blocks input is redacted in place, not stringified.
+
+        Regression: `str(msg.content)` flattened block-list content into its
+        `repr`, so the stored content became the literal string
+        `"[{'type': 'text', 'text': '...'}]"`.
+        """
+        middleware = PIIMiddleware("email", strategy="redact")
+        state = AgentState[Any](
+            messages=[
+                HumanMessage(content=[{"type": "text", "text": "my email is test@example.com"}])
+            ]
+        )
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][0].content
+        assert content == [{"type": "text", "text": "my email is [REDACTED_EMAIL]"}]
+        assert "test@example.com" not in str(content)
+
+    def test_output_list_content_preserved(self) -> None:
+        """List-of-content-blocks AI output is redacted in place, not stringified."""
+        middleware = PIIMiddleware(
+            "email", strategy="redact", apply_to_input=False, apply_to_output=True
+        )
+        state = AgentState[Any](
+            messages=[AIMessage(content=[{"type": "text", "text": "reach me at ai@example.com"}])]
+        )
+
+        result = middleware.after_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][0].content
+        assert content == [{"type": "text", "text": "reach me at [REDACTED_EMAIL]"}]
+        assert "ai@example.com" not in str(content)
+
+    def test_redaction_preserves_message_fields(self) -> None:
+        """Redacting keeps fields the hooks never enumerated when rebuilding messages."""
+        middleware = PIIMiddleware("email", strategy="redact")
+        original = HumanMessage(
+            content="my email is test@example.com",
+            id="msg_1",
+            name="alice",
+            additional_kwargs={"source": "web"},
+        )
+        state = AgentState[Any](messages=[original])
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        redacted = result["messages"][0]
+        assert redacted.content == "my email is [REDACTED_EMAIL]"
+        assert redacted.id == "msg_1"
+        assert redacted.name == "alice"
+        assert redacted.additional_kwargs == {"source": "web"}
+
+    def test_tool_result_list_content_preserved(self) -> None:
+        """List-of-content-blocks tool results are redacted in place."""
+        middleware = PIIMiddleware(
+            "email", strategy="redact", apply_to_input=False, apply_to_tool_results=True
+        )
+        state = AgentState[Any](
+            messages=[
+                HumanMessage("Search for user"),
+                AIMessage(
+                    content="",
+                    tool_calls=[ToolCall(name="search", args={}, id="call_1", type="tool_call")],
+                ),
+                ToolMessage(
+                    content=[{"type": "text", "text": "found: john@example.com"}],
+                    tool_call_id="call_1",
+                ),
+            ]
+        )
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][2].content
+        assert content == [{"type": "text", "text": "found: [REDACTED_EMAIL]"}]
+        assert "john@example.com" not in str(content)
 
 
 class TestCustomDetector:
@@ -1953,7 +2062,7 @@ class TestPIIStreamTransformer:
         )
 
         # Drain to close cleanly.
-        list(run.tool_calls)
+        list(run.tool_calls)  # type: ignore[attr-defined]
 
 
 class TestPIIStreamingEndToEnd:
@@ -2093,8 +2202,6 @@ class TestPIIStreamingEndToEnd:
         surfaces: list[str] = []
         run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
         async for event in run:
-            if not isinstance(event, dict):
-                continue
             data = event.get("params", {}).get("data")
             if isinstance(data, tuple) and len(data) == 2:
                 p = data[0]
@@ -2167,8 +2274,6 @@ class TestPIIStreamingEndToEnd:
         surfaces: list[str] = []
         run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
         async for event in run:
-            if not isinstance(event, dict):
-                continue
             data = event.get("params", {}).get("data")
             if isinstance(data, tuple) and len(data) == 2:
                 p = data[0]

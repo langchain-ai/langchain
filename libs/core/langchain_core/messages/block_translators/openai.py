@@ -735,7 +735,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                         tool_call_block["extras"]["item_id"] = block["id"]
                     if "index" in block:
                         tool_call_block["index"] = f"lc_tc_{block['index']}"
-                    for extra_key in ("status", "namespace"):
+                    for extra_key in ("status", "namespace", "async"):
                         if extra_key in block:
                             if "extras" not in tool_call_block:
                                 tool_call_block["extras"] = {}

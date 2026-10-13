@@ -310,8 +310,11 @@ class LangChainTracer(BaseTracer):
             retry=retry_if_exception_type(ls_utils.LangSmithError),
         ):
             with attempt:
-                return self.client.get_run_url(
-                    run=self.latest_run, project_name=self.project_name
+                return cast(
+                    "str",
+                    self.client.get_run_url(
+                        run=self.latest_run, project_name=self.project_name
+                    ),
                 )
         msg = "Failed to get run URL."
         raise ValueError(msg)

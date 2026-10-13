@@ -652,6 +652,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             rtn.generations[0].message.usage_metadata["output_tokens"] += (  # type: ignore[attr-defined]
                 reasoning_tokens
             )
+            # Keep the documented UsageMetadata invariant
+            # total_tokens == input_tokens + output_tokens (gh #39634).
+            usage_metadata["total_tokens"] = (
+                usage_metadata["input_tokens"] + usage_metadata["output_tokens"]
+            )
 
         return rtn
 
@@ -700,6 +705,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             )
         ):
             generation_chunk.message.usage_metadata["output_tokens"] += reasoning_tokens  # type: ignore[attr-defined]
+            # Keep the documented UsageMetadata invariant
+            # total_tokens == input_tokens + output_tokens (gh #39634).
+            usage_metadata["total_tokens"] = (
+                usage_metadata["input_tokens"] + usage_metadata["output_tokens"]
+            )
         return generation_chunk
 
     def with_structured_output(
@@ -757,7 +767,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             strict:
                 - `True`:
                     Model output is guaranteed to exactly match the schema.
-                    The input schema will also be validated according to the [supported schemas](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas).
+                    The input schema will also be validated according to the [supported schemas](https://docs.x.ai/docs/guides/structured-outputs).
                 - `False`:
                     Input schema will not be validated and model output will not be
                     validated.

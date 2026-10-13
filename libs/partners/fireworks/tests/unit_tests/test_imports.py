@@ -5,6 +5,7 @@ EXPECTED_ALL = [
     "ChatFireworks",
     "Fireworks",
     "FireworksEmbeddings",
+    "FireworksRerank",
 ]
 
 

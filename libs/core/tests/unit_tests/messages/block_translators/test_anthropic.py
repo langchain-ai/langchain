@@ -1,3 +1,5 @@
+from typing import Any
+
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langchain_core.messages import content as types
 
@@ -507,3 +509,97 @@ def test_convert_to_v1_from_anthropic_input() -> None:
     ]
 
     assert message.content_blocks == expected
+
+
+def test_convert_to_v1_from_anthropic_input_malformed_sources() -> None:
+    content: list[str | dict[Any, Any]] = [
+        {"type": "document", "source": {"type": "base64", "media_type": "app/pdf"}},
+        {"type": "document", "source": {"type": "url"}},
+        {"type": "document", "source": {"type": "file"}},
+        {"type": "document", "source": {"type": "text"}},
+        {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg"}},
+        {"type": "image", "source": {"type": "url"}},
+        {"type": "image", "source": {"type": "file"}},
+    ]
+    message = HumanMessage(content)
+
+    assert message.content_blocks == [
+        *[{"type": "non_standard", "value": block} for block in content[:4]],
+        *content[4:],
+    ]
+
+
+def test_convert_to_v1_from_anthropic_malformed_citations() -> None:
+    message = AIMessage(
+        [
+            {
+                "type": "text",
+                "text": "Source-backed answer.",
+                "citations": [
+                    {
+                        "type": "web_search_result_location",
+                        "cited_text": "Source text",
+                    },
+                    {
+                        "type": "search_result_location",
+                        "title": "Document Title",
+                    },
+                ],
+            },
+        ],
+        response_metadata={"model_provider": "anthropic"},
+    )
+
+    assert message.content_blocks == [
+        {
+            "type": "text",
+            "text": "Source-backed answer.",
+            "annotations": [
+                {
+                    "type": "non_standard_annotation",
+                    "value": {
+                        "type": "web_search_result_location",
+                        "cited_text": "Source text",
+                    },
+                },
+                {
+                    "type": "non_standard_annotation",
+                    "value": {
+                        "type": "search_result_location",
+                        "title": "Document Title",
+                    },
+                },
+            ],
+        },
+    ]
+
+
+def test_toolset_namespace_in_content_blocks() -> None:
+    block = {
+        "type": "tool_use",
+        "id": "call_1",
+        "name": "click",
+        "input": {},
+        "toolset_name": "computer",
+    }
+    metadata = {"model_provider": "anthropic"}
+    message = AIMessage([block], response_metadata=metadata)
+    content_block = message.content_blocks[0]
+    assert content_block["type"] == "tool_call"
+    assert content_block["extras"]["toolset_name"] == "computer"
+    chunk = AIMessageChunk(
+        content=[{**block, "index": 0}],
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "id": "call_1",
+                "name": "click",
+                "args": "{}",
+                "index": 0,
+            }
+        ],
+        response_metadata=metadata,
+    )
+    chunk_block = chunk.content_blocks[0]
+    assert chunk_block["type"] == "tool_call_chunk"
+    assert chunk_block["extras"]["toolset_name"] == "computer"

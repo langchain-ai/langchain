@@ -161,7 +161,7 @@ def _insert_input_variables(
                 warnings.warn(msg, stacklevel=2)
             formatted[k] = _insert_input_variables(v, inputs, template_format)
         elif isinstance(v, (list, tuple)):
-            formatted_v: list[str | dict[str, Any]] = []
+            formatted_v: list[Any] = []
             for x in v:
                 if isinstance(x, str):
                     formatted_v.append(formatter(x, **inputs))
@@ -169,6 +169,8 @@ def _insert_input_variables(
                     formatted_v.append(
                         _insert_input_variables(x, inputs, template_format)
                     )
+                else:
+                    formatted_v.append(x)
             formatted[k] = type(v)(formatted_v)
         else:
             formatted[k] = v

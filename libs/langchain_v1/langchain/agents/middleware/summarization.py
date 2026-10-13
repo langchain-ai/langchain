@@ -1,11 +1,13 @@
 """Summarization middleware."""
 
+import logging
 import uuid
 import warnings
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Coroutine, Iterable, Mapping
 from functools import partial
 from typing import Any, Literal, TypedDict, cast
 
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -19,16 +21,38 @@ from langchain_core.messages.utils import (
     get_buffer_string,
     trim_messages,
 )
+from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.runnables.base import coerce_to_runnable
 from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
 )
 from langgraph.runtime import Runtime
 from typing_extensions import override
 
+from langchain.agents.middleware._retry import default_retry_on
+from langchain.agents.middleware.internal_call_transformer import (
+    InternalCallTransformer,
+    internal_call_metadata,
+)
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
 from langchain.chat_models import BaseChatModel, init_chat_model
 
+logger = logging.getLogger(__name__)
+
 TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
+
+Summarizer = (
+    str
+    | BaseChatModel
+    | Runnable[list[AnyMessage], str]
+    | Callable[[list[AnyMessage]], str]
+    | Callable[[list[AnyMessage]], Coroutine[Any, Any, str]]
+)
+"""Generates a summary from the messages selected for summarization.
+
+Either a chat model (or model string) prompted with the summary prompt, or a
+`Runnable` or callable taking the messages and returning the summary text.
+"""
 
 DEFAULT_SUMMARY_PROMPT = """<role>
 Context Extraction Assistant
@@ -97,7 +121,26 @@ _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
 # accept known aliases per `ls_provider`.
 _LS_PROVIDER_ALIASES: dict[str, frozenset[str]] = {
     "amazon_bedrock": frozenset({"bedrock", "bedrock_converse"}),
+    # ChatOpenAIMantle traces under ls_provider="openai-mantle" but its messages
+    # inherit model_provider="openai" from BaseChatOpenAI.
+    "openai-mantle": frozenset({"openai"}),
+    # ChatAnthropicMantle traces under ls_provider="anthropic-mantle" but its
+    # messages inherit model_provider="anthropic" from BaseChatAnthropic.
+    "anthropic-mantle": frozenset({"anthropic"}),
 }
+
+
+def _summary_config() -> RunnableConfig:
+    """Config for summary model calls."""
+    return {"metadata": {"lc_source": "summarization", **internal_call_metadata()}}
+
+
+def _check_summary(summary: object) -> str:
+    """Validate and normalize the text returned by a custom `summarizer`."""
+    if not isinstance(summary, str):
+        msg = f"`summarizer` must return a str, got {type(summary).__name__}."
+        raise TypeError(msg)
+    return summary.strip()
 
 
 def _provider_matches(message_provider: str, model_ls_provider: str | None) -> bool:
@@ -222,6 +265,24 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
     This middleware monitors message token counts and automatically summarizes older
     messages when a threshold is reached, preserving recent messages and maintaining
     context continuity by ensuring AI/Tool message pairs remain together.
+
+    Summary-generation errors are retried in-process, up to 3 attempts total, via
+    `Runnable.with_retry`, unless the error is a `ModelError` marked non-retryable
+    (e.g. authentication or invalid request errors). If the summary prompt exceeds
+    the model's context window (`ContextOverflowError`), the call is retried once with
+    the middle of the history cut out. If a summary call still fails, the
+    underlying error propagates rather than fabricating a summary.
+
+    To generate summaries with something other than a chat model, pass a
+    `summarizer`. The middleware still decides when to summarize and which
+    messages to summarize; only the summary text comes from the summarizer.
+    """
+
+    transformers = (InternalCallTransformer,)
+    """Keeps the summarization model call's tokens out of `run.messages`.
+
+    Registered only when this middleware is used — see
+    `InternalCallTransformer` for why the call needs tagging and filtering.
     """
 
     def __init__(
@@ -233,6 +294,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
+        summarizer: Summarizer | None = None,
         **deprecated_kwargs: Any,
     ) -> None:
         """Initialize summarization middleware.
@@ -301,6 +363,47 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 the summarization call.
 
                 Pass `None` to skip trimming entirely.
+            summarizer: Optional replacement for the summarization model call.
+
+                `model` is still used for its profile (fractional limits) and
+                token counting, but is not called to write summaries.
+
+                - A chat model, or a model string resolved with
+                    `init_chat_model`, writes summaries in place of `model`. It is
+                    prompted with `summary_prompt` and retried like `model` would
+                    be. Use this to summarize with a different model than the one
+                    whose context window you're managing. To summarize with a chat
+                    model, pass its name or a `BaseChatModel` instance; wrapped
+                    models such as `model.with_config(...)` are treated as a
+                    `Runnable` (below).
+                - A `Runnable` or function receives the messages to summarize
+                    (after trimming) and returns the summary text. `summary_prompt`
+                    is not used. Functions may be sync or async; an async function
+                    requires async invocation (e.g. `ainvoke`), and a sync function
+                    runs in a thread pool when invoked asynchronously.
+
+                !!! example
+
+                    ```python
+                    # Manage gpt-6-sol's context window, summarize with gpt-6-luna
+                    SummarizationMiddleware(
+                        model="openai:gpt-6-sol",
+                        trigger=("fraction", 0.8),
+                        summarizer="openai:gpt-6-luna",
+                    )
+
+
+                    # Summarize with a non-LLM service
+                    async def summarize(messages: Sequence[BaseMessage]) -> str:
+                        return await my_summarization_service(get_buffer_string(messages))
+
+
+                    SummarizationMiddleware(
+                        model="openai:gpt-6-luna",
+                        trigger=("fraction", 0.8),
+                        summarizer=summarize,
+                    )
+                    ```
         """
         # Handle deprecated parameters
         if "max_tokens_before_summary" in deprecated_kwargs:
@@ -329,6 +432,8 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             model = init_chat_model(model)
 
         self.model = model
+        # Retry up to 3 attempts total, skipping errors marked non-retryable.
+        self._summary_model = self.model.with_retry(retry_if_exception_type=default_retry_on)
 
         self.trigger: ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None = (
             self._copy_trigger(trigger)
@@ -352,6 +457,16 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             self._partial_token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
+        if isinstance(summarizer, str):
+            summarizer = init_chat_model(summarizer)
+        # The chat model that writes summaries: `model` unless `summarizer` replaces it.
+        self._summary_chat_model = self.model
+        self.summarizer: Runnable[list[AnyMessage], str] | None = None
+        if isinstance(summarizer, BaseChatModel):
+            self._summary_chat_model = summarizer
+            self._summary_model = summarizer.with_retry(retry_if_exception_type=default_retry_on)
+        elif summarizer is not None:
+            self.summarizer = coerce_to_runnable(summarizer)
 
         requires_profile = any("fraction" in clause for clause in self._trigger_clauses)
         if self.keep[0] == "fraction":
@@ -378,6 +493,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         Returns:
             An updated state with summarized messages if summarization was performed.
+
+        Raises:
+            Exception: If summary generation still fails once retries are exhausted.
         """
         messages = state["messages"]
         self._ensure_message_ids(messages)
@@ -416,6 +534,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         Returns:
             An updated state with summarized messages if summarization was performed.
+
+        Raises:
+            Exception: If summary generation still fails once retries are exhausted.
         """
         messages = state["messages"]
         self._ensure_message_ids(messages)
@@ -683,10 +804,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         # Advance past any ToolMessages to avoid splitting AI/Tool pairs
         return self._find_safe_cutoff_point(messages, cutoff_candidate)
 
-    def _get_profile_limits(self) -> int | None:
-        """Retrieve max input token limit from the model profile."""
+    def _get_profile_limits(self, model: BaseChatModel | None = None) -> int | None:
+        """Retrieve max input token limit from the profile of `model` (default: `self.model`)."""
         try:
-            profile = self.model.profile
+            profile = (model or self.model).profile
         except AttributeError:
             return None
 
@@ -800,6 +921,13 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         Args:
             messages_to_summarize: Messages to summarize.
+
+        Returns:
+            The generated summary.
+
+        Raises:
+            Exception: If the summary model call still fails once retries (see
+                `Runnable.with_retry`) are exhausted.
         """
         if not messages_to_summarize:
             return "No previous conversation history."
@@ -808,24 +936,33 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
-        # Serialize as XML so URL-based multimodal blocks remain visible in the summary
-        # prompt while excluding raw message metadata from the token budget.
-        formatted_messages = get_buffer_string(trimmed_messages, format="xml")
-
-        try:
-            response = self.model.invoke(
-                self.summary_prompt.format(messages=formatted_messages).rstrip(),
-                config={"metadata": {"lc_source": "summarization"}},
+        if self.summarizer is not None:
+            return _check_summary(
+                self.summarizer.invoke(trimmed_messages, config=_summary_config())
             )
-            return response.text.strip()
-        except Exception as e:
-            return f"Error generating summary: {e!s}"
+
+        prompt = self._format_summary_prompt(trimmed_messages)
+        try:
+            response = self._summary_model.invoke(prompt, config=_summary_config())
+        except ContextOverflowError:
+            retry_prompt = self._overflow_retry_prompt(trimmed_messages)
+            if retry_prompt is None:
+                raise
+            response = self._summary_model.invoke(retry_prompt, config=_summary_config())
+        return response.text.strip()
 
     async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
         """Generate summary for the given messages.
 
         Args:
             messages_to_summarize: Messages to summarize.
+
+        Returns:
+            The generated summary.
+
+        Raises:
+            Exception: If the summary model call still fails once retries (see
+                `Runnable.with_retry`) are exhausted.
         """
         if not messages_to_summarize:
             return "No previous conversation history."
@@ -834,18 +971,59 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
+        if self.summarizer is not None:
+            summary = await self.summarizer.ainvoke(trimmed_messages, config=_summary_config())
+            return _check_summary(summary)
+
+        prompt = self._format_summary_prompt(trimmed_messages)
+        try:
+            response = await self._summary_model.ainvoke(prompt, config=_summary_config())
+        except ContextOverflowError:
+            retry_prompt = self._overflow_retry_prompt(trimmed_messages)
+            if retry_prompt is None:
+                raise
+            response = await self._summary_model.ainvoke(retry_prompt, config=_summary_config())
+        return response.text.strip()
+
+    def _format_summary_prompt(self, messages: list[AnyMessage]) -> str:
+        """Render the summary prompt for the given messages."""
         # Serialize as XML so URL-based multimodal blocks remain visible in the summary
         # prompt while excluding raw message metadata from the token budget.
-        formatted_messages = get_buffer_string(trimmed_messages, format="xml")
+        formatted_messages = get_buffer_string(messages, format="xml")
+        return self.summary_prompt.format(messages=formatted_messages).rstrip()
 
-        try:
-            response = await self.model.ainvoke(
-                self.summary_prompt.format(messages=formatted_messages).rstrip(),
-                config={"metadata": {"lc_source": "summarization"}},
-            )
-            return response.text.strip()
-        except Exception as e:
-            return f"Error generating summary: {e!s}"
+    def _overflow_retry_prompt(self, messages: list[AnyMessage]) -> str | None:
+        """Build a smaller summary prompt after the summary call overflowed.
+
+        Cuts the middle out of the formatted history, keeping its start (where the
+        objective is usually stated) and its most recent part, within half of its
+        token count and 40% of the summary model's `max_input_tokens` when known.
+
+        Returns:
+            The retry prompt, or `None` if nothing fits the budget.
+        """
+        formatted = get_buffer_string(messages, format="xml")
+        tokens = self._partial_token_counter([HumanMessage(content=formatted)])
+        budget = tokens // 2
+        if (max_input_tokens := self._get_profile_limits(self._summary_chat_model)) is not None:
+            # 40% rather than half absorbs up to 1.25x usage-metadata scaling.
+            budget = min(budget, max_input_tokens * 2 // 5)
+        keep_chars = len(formatted) * budget // max(tokens, 1)
+        if keep_chars <= 0:
+            return None
+        head_chars = keep_chars // 4
+        tail_chars = keep_chars - head_chars
+        logger.debug(
+            "Summary prompt exceeded the model's context window; retrying with "
+            "~%d of ~%d history tokens.",
+            budget,
+            tokens,
+        )
+        truncated = (
+            f"{formatted[:head_chars]}\n\n[... middle of conversation omitted ...]\n\n"
+            f"{formatted[-tail_chars:]}"
+        )
+        return self.summary_prompt.format(messages=truncated).rstrip()
 
     def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
         """Trim messages to fit within summary generation limits."""

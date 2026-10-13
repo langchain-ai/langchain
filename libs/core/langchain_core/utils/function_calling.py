@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import collections
+import copy
 import inspect
 import logging
 import types
@@ -28,7 +29,6 @@ from pydantic.v1 import Field as Field_v1
 from pydantic.v1 import create_model as create_model_v1
 from typing_extensions import TypedDict, is_typeddict
 
-import langchain_core
 from langchain_core._api import beta
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.utils.json_schema import dereference_refs
@@ -224,8 +224,11 @@ def _convert_python_function_to_openai_function(
     Returns:
         The OpenAI function description.
     """
+    # Import locally to prevent circular import
+    from langchain_core.tools.base import create_schema_from_function  # noqa: PLC0415
+
     func_name = _get_python_function_name(function)
-    model = langchain_core.tools.base.create_schema_from_function(
+    model = create_schema_from_function(
         func_name,
         function,
         filter_args=(),
@@ -335,9 +338,10 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     Returns:
         The function description.
     """
-    is_simple_oai_tool = (
-        isinstance(tool, langchain_core.tools.simple.Tool) and not tool.args_schema
-    )
+    # Import locally to prevent circular import
+    from langchain_core.tools import Tool  # noqa: PLC0415
+
+    is_simple_oai_tool = isinstance(tool, Tool) and not tool.args_schema
     if tool.tool_call_schema and not is_simple_oai_tool:
         if isinstance(tool.tool_call_schema, dict):
             return _convert_json_schema_to_openai_function(
@@ -401,6 +405,12 @@ def convert_to_openai_function(
         `description` and `parameters` keys are now optional. Only `name` is
         required and guaranteed to be part of the output.
     """
+    # Import locally to prevent circular import
+    from langchain_core.tools import BaseTool  # noqa: PLC0415
+
+    if strict and isinstance(function, dict):
+        function = copy.deepcopy(function)
+
     # an Anthropic format tool
     if isinstance(function, dict) and all(
         k in function for k in ("name", "input_schema")
@@ -443,7 +453,7 @@ def convert_to_openai_function(
             "dict[str, Any]",
             _convert_typed_dict_to_openai_function(cast("type", function)),
         )
-    elif isinstance(function, langchain_core.tools.base.BaseTool):
+    elif isinstance(function, BaseTool):
         oai_function = cast("dict[str, Any]", _format_tool_to_openai_function(function))
     elif callable(function):
         oai_function = cast(
@@ -477,18 +487,6 @@ def convert_to_openai_function(
             raise ValueError(msg)
         oai_function["strict"] = strict
         if strict:
-            # All fields must be `required`
-            parameters = oai_function.get("parameters")
-            if isinstance(parameters, dict):
-                fields = parameters.get("properties")
-                if isinstance(fields, dict) and fields:
-                    parameters = dict(parameters)
-                    parameters["required"] = list(fields.keys())
-                    oai_function["parameters"] = parameters
-
-            # As of 08/06/24, OpenAI requires that additionalProperties be supplied and
-            # set to False if strict is True.
-            # All properties layer needs 'additionalProperties=False'
             oai_function["parameters"] = _recursive_set_additional_properties_false(
                 oai_function["parameters"]
             )
@@ -713,6 +711,13 @@ def tool_example_to_messages(
     messages.append(
         AIMessage(content="", additional_kwargs={"tool_calls": openai_tool_calls})
     )
+    if tool_outputs is not None and len(tool_outputs) != len(openai_tool_calls):
+        msg = (
+            f"The number of tool_outputs ({len(tool_outputs)}) must match the number "
+            f"of tool_calls ({len(openai_tool_calls)}). Got {len(tool_outputs)} "
+            f"output(s) for {len(openai_tool_calls)} tool call(s)."
+        )
+        raise ValueError(msg)
     tool_outputs = tool_outputs or ["You have correctly called this tool."] * len(
         openai_tool_calls
     )
@@ -821,6 +826,12 @@ def _recursive_set_additional_properties_false(
     schema: dict[str, Any],
 ) -> dict[str, Any]:
     if isinstance(schema, dict):
+        # OpenAI strict mode requires every property to appear in `required` at every
+        # level of nesting. Without this, nested object schemas are rejected.
+        properties = schema.get("properties")
+        if isinstance(properties, dict) and properties:
+            schema["required"] = list(properties.keys())
+
         # Check if 'required' is a key at the current level or if the schema is empty,
         # in which case additionalProperties still needs to be specified.
         if (
@@ -838,10 +849,21 @@ def _recursive_set_additional_properties_false(
         if "anyOf" in schema:
             for sub_schema in schema["anyOf"]:
                 _recursive_set_additional_properties_false(sub_schema)
+        # Pydantic <2.9 wraps a referenced model field in 'allOf' when it has
+        # sibling keys (e.g. 'description'), instead of merging them directly.
+        if "allOf" in schema:
+            for sub_schema in schema["allOf"]:
+                _recursive_set_additional_properties_false(sub_schema)
         if "properties" in schema:
             for sub_schema in schema["properties"].values():
                 _recursive_set_additional_properties_false(sub_schema)
         if "items" in schema:
             _recursive_set_additional_properties_false(schema["items"])
+        # Raw JSON schemas may keep nested objects in `$defs` and reference them via
+        # `$ref`; walk those definitions too so they're made strict.
+        for defs_key in ("$defs", "definitions"):
+            if isinstance(schema.get(defs_key), dict):
+                for sub_schema in schema[defs_key].values():
+                    _recursive_set_additional_properties_false(sub_schema)
 
     return schema

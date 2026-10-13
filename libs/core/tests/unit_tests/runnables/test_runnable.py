@@ -117,6 +117,13 @@ PYDANTIC_VERSION_AT_LEAST_29 = version.parse("2.9") <= PYDANTIC_VERSION
 PYDANTIC_VERSION_AT_LEAST_210 = version.parse("2.10") <= PYDANTIC_VERSION
 
 
+def _normalize_lc_version(value: str) -> str:
+    return value.replace(
+        f"'langchain-core': '{VERSION}'",
+        "'langchain-core': '<version>'",
+    )
+
+
 class FakeTracer(BaseTracer):
     """Fake tracer that records LangChain execution.
 
@@ -1799,12 +1806,12 @@ def test_prompt_with_chat_model(
 
     chain = prompt | chat
 
-    assert repr(chain) == snapshot
+    assert _normalize_lc_version(repr(chain)) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == []
     assert chain.last == chat
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "invoke")
@@ -1905,12 +1912,12 @@ async def test_prompt_with_chat_model_async(
 
     chain = prompt | chat
 
-    assert repr(chain) == snapshot
+    assert _normalize_lc_version(repr(chain)) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == []
     assert chain.last == chat
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "ainvoke")
@@ -2023,7 +2030,7 @@ async def test_prompt_with_llm(
     assert chain.first == prompt
     assert chain.middle == []
     assert chain.last == llm
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "ainvoke")
@@ -2224,7 +2231,7 @@ async def test_prompt_with_llm_parser(
     assert chain.first == prompt
     assert chain.middle == [llm]
     assert chain.last == parser
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "ainvoke")
@@ -2617,7 +2624,7 @@ async def test_prompt_with_llm_and_async_lambda(
     assert chain.first == prompt
     assert chain.middle == [llm]
     assert chain.last == RunnableLambda(func=passthrough)
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "ainvoke")
@@ -2658,7 +2665,7 @@ def test_prompt_with_chat_model_and_parser(
     assert chain.first == prompt
     assert chain.middle == [chat]
     assert chain.last == parser
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "invoke")
@@ -2698,7 +2705,7 @@ def test_combining_sequences(
     assert chain.first == prompt
     assert chain.middle == [chat]
     assert chain.last == parser
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     prompt2 = (
         SystemMessagePromptTemplate.from_template("You are a nicer assistant.")
@@ -2716,7 +2723,7 @@ def test_combining_sequences(
     assert chain2.first == input_formatter
     assert chain2.middle == [prompt2, chat2]
     assert chain2.last == parser2
-    assert dumps(chain2, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain2, pretty=True)) == snapshot
 
     combined_chain = chain | chain2
 
@@ -2730,7 +2737,7 @@ def test_combining_sequences(
         chat2,
     ]
     assert combined_chain.last == parser2
-    assert dumps(combined_chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(combined_chain, pretty=True)) == snapshot
 
     # Test invoke
     tracer = FakeTracer()
@@ -2773,12 +2780,12 @@ Question:
         | parser
     )
 
-    assert repr(chain) == snapshot
+    assert _normalize_lc_version(repr(chain)) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert isinstance(chain.first, RunnableParallel)
     assert chain.middle == [prompt, chat]
     assert chain.last == parser
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "invoke")
@@ -2844,12 +2851,12 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
         }
     )
 
-    assert repr(chain) == snapshot
+    assert _normalize_lc_version(repr(chain)) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == [RunnableLambda(passthrough)]
     assert isinstance(chain.last, RunnableParallel)
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "invoke")
@@ -2896,7 +2903,7 @@ def test_router_runnable(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
         "key": lambda x: x["key"],
         "input": {"question": lambda x: x["question"]},
     } | router
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     result = chain.invoke({"key": "math", "question": "2 + 2"})
     assert result == "4"
@@ -2977,7 +2984,7 @@ def test_higher_order_lambda_runnable(
         raise ValueError(msg)
 
     chain = input_map | router
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     result = chain.invoke({"key": "math", "question": "2 + 2"})
     assert result == "4"
@@ -3107,7 +3114,7 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert isinstance(chain.last, RunnableParallel)
 
     if PYDANTIC_VERSION_AT_LEAST_210:
-        assert dumps(chain, pretty=True) == snapshot
+        assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "invoke")
@@ -3914,7 +3921,7 @@ def test_each(snapshot: SnapshotAssertion) -> None:
 
     chain = prompt | first_llm | parser | second_llm.map()
 
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
     output = chain.invoke({"question": "What up"})
     assert output == ["this", "is", "a"]
 
@@ -4117,6 +4124,60 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     assert isinstance(output[1], RuntimeError)
     assert output[2] == 0
     lambda_mock.reset_mock()
+
+
+def _retry_value_errors(exc: BaseException) -> bool:
+    return isinstance(exc, ValueError)
+
+
+def test_retrying_with_predicate(mocker: MockerFixture) -> None:
+    def _lambda(x: int) -> int:
+        if x == 1:
+            msg = "x is 1"
+            raise ValueError(msg)
+        msg = "x is 2"
+        raise RuntimeError(msg)
+
+    lambda_mock = mocker.Mock(side_effect=_lambda)
+    runnable = RunnableLambda(lambda_mock).with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=_retry_value_errors,
+    )
+
+    with pytest.raises(ValueError, match="x is 1"):
+        runnable.invoke(1)
+    assert lambda_mock.call_count == 2  # retried
+    lambda_mock.reset_mock()
+
+    with pytest.raises(RuntimeError, match="x is 2"):
+        runnable.invoke(2)
+    assert lambda_mock.call_count == 1  # did not retry
+
+
+async def test_async_retrying_with_predicate(mocker: MockerFixture) -> None:
+    def _lambda(x: int) -> int:
+        if x == 1:
+            msg = "x is 1"
+            raise ValueError(msg)
+        msg = "x is 2"
+        raise RuntimeError(msg)
+
+    lambda_mock = mocker.Mock(side_effect=_lambda)
+    runnable = RunnableLambda(lambda_mock).with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=_retry_value_errors,
+    )
+
+    with pytest.raises(ValueError, match="x is 1"):
+        await runnable.ainvoke(1)
+    assert lambda_mock.call_count == 2  # retried
+    lambda_mock.reset_mock()
+
+    with pytest.raises(RuntimeError, match="x is 2"):
+        await runnable.ainvoke(2)
+    assert lambda_mock.call_count == 1  # did not retry
 
 
 def test_runnable_lambda_stream() -> None:

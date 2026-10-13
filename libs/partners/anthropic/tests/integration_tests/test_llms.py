@@ -1,5 +1,6 @@
 """Test Anthropic API wrapper."""
 
+import os
 from collections.abc import Generator
 
 import pytest
@@ -10,6 +11,21 @@ from langchain_anthropic import AnthropicLLM
 from tests.unit_tests._utils import FakeCallbackHandler
 
 MODEL = "claude-sonnet-4-5-20250929"
+
+# The deprecated `AnthropicLLM` class has no LangSmith gateway support, so it
+# cannot authenticate when requests are routed through the gateway. Skip the
+# network-calling tests in that case; they still run against a direct
+# `ANTHROPIC_API_KEY`. Mirrors the gateway truthiness in `langchain_core`.
+_GATEWAY_ENABLED = (os.getenv("LANGSMITH_GATEWAY") or "").lower() not in (
+    "",
+    "false",
+    "0",
+    "no",
+)
+_skip_under_gateway = pytest.mark.skipif(
+    _GATEWAY_ENABLED,
+    reason="AnthropicLLM is deprecated and not compatible with the LangSmith gateway",
+)
 
 
 @pytest.mark.requires("anthropic")
@@ -24,6 +40,7 @@ def test_anthropic_model_param() -> None:
     assert llm.model == "foo"
 
 
+@_skip_under_gateway
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
     llm = AnthropicLLM(model=MODEL)  # type: ignore[call-arg]
@@ -31,6 +48,7 @@ def test_anthropic_call() -> None:
     assert isinstance(output, str)
 
 
+@_skip_under_gateway
 def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
     llm = AnthropicLLM(model=MODEL)  # type: ignore[call-arg]
@@ -42,6 +60,7 @@ def test_anthropic_streaming() -> None:
         assert isinstance(token, str)
 
 
+@_skip_under_gateway
 def test_anthropic_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
@@ -56,6 +75,7 @@ def test_anthropic_streaming_callback() -> None:
     assert callback_handler.llm_streams > 1
 
 
+@_skip_under_gateway
 async def test_anthropic_async_generate() -> None:
     """Test async generate."""
     llm = AnthropicLLM(model=MODEL)  # type: ignore[call-arg]
@@ -63,6 +83,7 @@ async def test_anthropic_async_generate() -> None:
     assert isinstance(output, LLMResult)
 
 
+@_skip_under_gateway
 async def test_anthropic_async_streaming_callback() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()

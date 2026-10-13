@@ -19,10 +19,17 @@ from typing import (
 )
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    AnyMessage,
+    RemoveMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
+from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt import ToolCallTransformer
 from langgraph.prebuilt.tool_node import ToolNode
@@ -31,6 +38,10 @@ from langsmith import traceable
 from typing_extensions import NotRequired, Required, TypedDict, overload
 
 from langchain.agents._subagent_transformer import SubagentTransformer
+from langchain.agents.middleware._trace_policy import (
+    _node_trace_policy,
+    _resolved_transform,
+)
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -77,8 +88,9 @@ class _ComposedExtendedModelResponse(Generic[ResponseT]):
 
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Sequence
+    from collections.abc import Awaitable, Callable, Iterable, Sequence
 
+    from langchain_core.messages import InvalidToolCall
     from langchain_core.runnables import Runnable, RunnableConfig
     from langgraph.cache.base import BaseCache
     from langgraph.graph.state import CompiledStateGraph
@@ -151,6 +163,22 @@ def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     return filtered
 
 
+def _wrap_trace_kwargs(middleware: AgentMiddleware[Any, Any]) -> dict[str, Any]:
+    """`traceable` kwargs for a middleware's `wrap_*` hook spans.
+
+    The `_scrub_inputs` baseline (strip the unserializable `handler`/`runtime`) always
+    runs first; the effective `TracePolicy` (the middleware's own, else the process-wide
+    default) composes on top. The effective policy is resolved at call time, so a
+    `configure_trace_policy` call after `create_agent` still applies.
+    """
+    process_inputs = _resolved_transform(middleware.trace_policy, "process_inputs")
+    process_outputs = _resolved_transform(middleware.trace_policy, "process_outputs")
+    return {
+        "process_inputs": lambda inputs: process_inputs(_scrub_inputs(inputs)),
+        "process_outputs": process_outputs,
+    }
+
+
 FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
     # If model profile data are not available, model names matching these patterns
     # are assumed to support provider-native structured output. These are regexes
@@ -165,6 +193,7 @@ FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
     r"(^|[/:.])gpt-5\.4(-\d{4}-\d{2}-\d{2})?($|[/:])",
     r"(^|[/:.])gpt-5\.4-(mini|nano)($|[-/:])",
     r"(^|[/:.])gpt-5\.5($|[-/:])",
+    r"(^|[/:.])gpt-6-(astra|luna|sol)($|[-/:])",
     r"(^|[/:.])claude-(fable|mythos)-5(?:-\d{8})?(?:-v\d(?::\d)?)?($|[/:])",
     r"(^|[/:.])claude-haiku-4-5(?:-\d{8})?(?:-v\d(?::\d)?)?($|[/:])",
     r"(^|[/:.])claude-opus-4-(5|6|7|8)(?:-\d{8})?(?:-v\d(?::\d)?)?($|[/:])",
@@ -193,6 +222,9 @@ def _normalize_to_model_response(
 def _build_commands(
     model_response: ModelResponse,
     middleware_commands: list[Command[Any]] | None = None,
+    *,
+    has_structured_output: bool = False,
+    repaired_messages: list[AnyMessage] | None = None,
 ) -> list[Command[Any]]:
     """Build a list of Commands from a model response and middleware commands.
 
@@ -204,14 +236,28 @@ def _build_commands(
             structured output.
         middleware_commands: Commands accumulated from middleware layers during
             composition (inner-first ordering).
+        has_structured_output: Whether the agent was configured with a
+            `response_format`. When `True` and no structured response was
+            produced, `structured_response` is explicitly cleared to avoid a
+            stale value from a previous checkpointed turn.
+        repaired_messages: Complete message history after repairing invalid tool calls.
 
     Returns:
         List of `Command` objects ready to be returned from a model node.
     """
-    state: dict[str, Any] = {"messages": model_response.result}
+    messages = model_response.result
+    if repaired_messages is not None:
+        messages = [
+            RemoveMessage(id=REMOVE_ALL_MESSAGES),
+            *repaired_messages,
+            *model_response.result,
+        ]
+    state: dict[str, Any] = {"messages": messages}
 
     if model_response.structured_response is not None:
         state["structured_response"] = model_response.structured_response
+    elif has_structured_output:
+        state["structured_response"] = None
 
     for cmd in middleware_commands or []:
         if cmd.goto:
@@ -428,7 +474,11 @@ def _resolve_schemas(schemas: list[type]) -> tuple[type, type, type]:
     same field is declared by multiple schemas.  Duplicates are harmless — a type
     that appears more than once is processed at its last position.
     """
-    schema_hints = {schema: _get_schema_type_hints(schema) for schema in schemas}
+    schema_hints: dict[type, dict[str, Any]] = {}
+    for schema in schemas:
+        # Reinsert duplicates so dict iteration reflects their final position.
+        schema_hints.pop(schema, None)
+        schema_hints[schema] = _get_schema_type_hints(schema)
     return (
         _resolve_schema(schema_hints, "StateSchema", None),
         _resolve_schema(schema_hints, "InputSchema", "input"),
@@ -621,6 +671,40 @@ def _handle_structured_output_error(
             return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
         return False, ""
     return True, handle_errors(exception)
+
+
+def _invalid_tool_call_message(tool_call: InvalidToolCall) -> ToolMessage | None:
+    tool_call_id = tool_call.get("id")
+    if tool_call_id is None:
+        return None
+    name = tool_call.get("name") or "unknown"
+    return ToolMessage(
+        content=(
+            f"Tool call {name} with id {tool_call_id} could not be executed - "
+            "arguments were malformed or truncated."
+        ),
+        name=name,
+        tool_call_id=tool_call_id,
+        status="error",
+    )
+
+
+def _patch_invalid_tool_calls(messages: Sequence[AnyMessage]) -> list[AnyMessage]:
+    answered_ids = {
+        message.tool_call_id for message in messages if isinstance(message, ToolMessage)
+    }
+    patched_messages: list[AnyMessage] = []
+    for message in messages:
+        patched_messages.append(message)
+        if not isinstance(message, AIMessage):
+            continue
+        for tool_call in message.invalid_tool_calls:
+            if tool_call.get("id") in answered_ids:
+                continue
+            if tool_message := _invalid_tool_call_message(tool_call):
+                patched_messages.append(tool_message)
+                answered_ids.add(tool_message.tool_call_id)
+    return patched_messages
 
 
 def _chain_tool_call_wrappers(
@@ -1018,9 +1102,7 @@ def create_agent(
     wrap_tool_call_wrapper = None
     if middleware_w_wrap_tool_call:
         wrappers = [
-            traceable(name=f"{m.name}.wrap_tool_call", process_inputs=_scrub_inputs)(
-                m.wrap_tool_call
-            )
+            traceable(name=f"{m.name}.wrap_tool_call", **_wrap_trace_kwargs(m))(m.wrap_tool_call)
             for m in middleware_w_wrap_tool_call
         ]
         wrap_tool_call_wrapper = _chain_tool_call_wrappers(wrappers)
@@ -1039,9 +1121,7 @@ def create_agent(
     awrap_tool_call_wrapper = None
     if middleware_w_awrap_tool_call:
         async_wrappers = [
-            traceable(name=f"{m.name}.awrap_tool_call", process_inputs=_scrub_inputs)(
-                m.awrap_tool_call
-            )
+            traceable(name=f"{m.name}.awrap_tool_call", **_wrap_trace_kwargs(m))(m.awrap_tool_call)
             for m in middleware_w_awrap_tool_call
         ]
         awrap_tool_call_wrapper = _chain_async_tool_call_wrappers(async_wrappers)
@@ -1127,9 +1207,7 @@ def create_agent(
     wrap_model_call_handler = None
     if middleware_w_wrap_model_call:
         sync_handlers = [
-            traceable(name=f"{m.name}.wrap_model_call", process_inputs=_scrub_inputs)(
-                m.wrap_model_call
-            )
+            traceable(name=f"{m.name}.wrap_model_call", **_wrap_trace_kwargs(m))(m.wrap_model_call)
             for m in middleware_w_wrap_model_call
         ]
         wrap_model_call_handler = _chain_model_call_handlers(sync_handlers)
@@ -1138,7 +1216,7 @@ def create_agent(
     awrap_model_call_handler = None
     if middleware_w_awrap_model_call:
         async_handlers = [
-            traceable(name=f"{m.name}.awrap_model_call", process_inputs=_scrub_inputs)(
+            traceable(name=f"{m.name}.awrap_model_call", **_wrap_trace_kwargs(m))(
                 m.awrap_model_call
             )
             for m in middleware_w_awrap_model_call
@@ -1348,8 +1426,17 @@ def create_agent(
         # and dicts (built-ins)
         final_tools = list(request.tools)
         if isinstance(effective_response_format, ToolStrategy):
-            # Add structured output tools to final tools list
-            structured_tools = [info.tool for info in structured_output_tools.values()]
+            # Add structured output tools to final tools list, narrowed to only the
+            # schemas present in the (possibly middleware-narrowed) response format.
+            # This ensures middleware that narrows a union `ToolStrategy` to a subset
+            # via `request.override()` actually restricts which structured output
+            # tools the model can choose from.
+            narrowed_tool_names = {spec.name for spec in effective_response_format.schema_specs}
+            structured_tools = [
+                info.tool
+                for name, info in structured_output_tools.items()
+                if name in narrowed_tool_names
+            ]
             final_tools.extend(structured_tools)
 
         # Bind model based on effective response format
@@ -1432,23 +1519,34 @@ def create_agent(
 
     def model_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command[Any]]:
         """Sync model request handler with sequential middleware processing."""
+        messages = _patch_invalid_tool_calls(state["messages"])
         request = ModelRequest(
             model=model,
             tools=default_tools,
             system_message=system_message,
             response_format=initial_response_format,
-            messages=state["messages"],
+            messages=messages,
             tool_choice=None,
             state=state,
             runtime=runtime,
         )
 
+        has_structured_output = initial_response_format is not None
         if wrap_model_call_handler is None:
             model_response = _execute_model_sync(request)
-            return _build_commands(model_response)
+            return _build_commands(
+                model_response,
+                has_structured_output=has_structured_output,
+                repaired_messages=messages if messages != state["messages"] else None,
+            )
 
         result = wrap_model_call_handler(request, _execute_model_sync)
-        return _build_commands(result.model_response, result.commands)
+        return _build_commands(
+            result.model_response,
+            result.commands,
+            has_structured_output=has_structured_output,
+            repaired_messages=messages if messages != state["messages"] else None,
+        )
 
     async def _execute_model_async(request: ModelRequest[ContextT]) -> ModelResponse:
         """Execute model asynchronously and return response.
@@ -1480,23 +1578,34 @@ def create_agent(
 
     async def amodel_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command[Any]]:
         """Async model request handler with sequential middleware processing."""
+        messages = _patch_invalid_tool_calls(state["messages"])
         request = ModelRequest(
             model=model,
             tools=default_tools,
             system_message=system_message,
             response_format=initial_response_format,
-            messages=state["messages"],
+            messages=messages,
             tool_choice=None,
             state=state,
             runtime=runtime,
         )
 
+        has_structured_output = initial_response_format is not None
         if awrap_model_call_handler is None:
             model_response = await _execute_model_async(request)
-            return _build_commands(model_response)
+            return _build_commands(
+                model_response,
+                has_structured_output=has_structured_output,
+                repaired_messages=messages if messages != state["messages"] else None,
+            )
 
         result = await awrap_model_call_handler(request, _execute_model_async)
-        return _build_commands(result.model_response, result.commands)
+        return _build_commands(
+            result.model_response,
+            result.commands,
+            has_structured_output=has_structured_output,
+            repaired_messages=messages if messages != state["messages"] else None,
+        )
 
     # Use sync or async based on model capabilities
     graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))
@@ -1525,7 +1634,10 @@ def create_agent(
             )
             before_agent_node = RunnableCallable(sync_before_agent, async_before_agent, trace=False)
             graph.add_node(
-                f"{m.name}.before_agent", before_agent_node, input_schema=resolved_state_schema
+                f"{m.name}.before_agent",
+                before_agent_node,
+                input_schema=resolved_state_schema,
+                trace_policy=_node_trace_policy(m.trace_policy),
             )
 
         if (
@@ -1546,7 +1658,10 @@ def create_agent(
             )
             before_node = RunnableCallable(sync_before, async_before, trace=False)
             graph.add_node(
-                f"{m.name}.before_model", before_node, input_schema=resolved_state_schema
+                f"{m.name}.before_model",
+                before_node,
+                input_schema=resolved_state_schema,
+                trace_policy=_node_trace_policy(m.trace_policy),
             )
 
         if (
@@ -1566,7 +1681,12 @@ def create_agent(
                 else None
             )
             after_node = RunnableCallable(sync_after, async_after, trace=False)
-            graph.add_node(f"{m.name}.after_model", after_node, input_schema=resolved_state_schema)
+            graph.add_node(
+                f"{m.name}.after_model",
+                after_node,
+                input_schema=resolved_state_schema,
+                trace_policy=_node_trace_policy(m.trace_policy),
+            )
 
         if (
             m.__class__.after_agent is not AgentMiddleware.after_agent
@@ -1586,7 +1706,10 @@ def create_agent(
             )
             after_agent_node = RunnableCallable(sync_after_agent, async_after_agent, trace=False)
             graph.add_node(
-                f"{m.name}.after_agent", after_agent_node, input_schema=resolved_state_schema
+                f"{m.name}.after_agent",
+                after_agent_node,
+                input_schema=resolved_state_schema,
+                trace_policy=_node_trace_policy(m.trace_policy),
             )
 
     # Determine the entry node (runs once at start): before_agent -> before_model -> model
@@ -1643,14 +1766,10 @@ def create_agent(
             tools_to_model_destinations,
         )
 
-        # base destinations are tools and exit_node
-        # we add the loop_entry node to edge destinations if:
-        # - there is an after model hook(s) -- allows jump_to to model
-        #   potentially artificially injected tool messages, ex HITL
-        # - there is a response format -- to allow for jumping to model to handle
-        #   regenerating structured output tool calls
+        # Include loop_entry_node when middleware can inject synthetic tool
+        # messages, or when structured output or after-model hooks can reroute there.
         model_to_tools_destinations = ["tools", exit_node]
-        if response_format or loop_exit_node != "model":
+        if response_format or loop_exit_node != "model" or middleware_w_wrap_model_call:
             model_to_tools_destinations.append(loop_entry_node)
 
         graph.add_conditional_edges(
@@ -1782,6 +1901,9 @@ def create_agent(
     if name:
         config["metadata"]["lc_agent_name"] = name
 
+    # Middleware that makes internal model calls (e.g. `SummarizationMiddleware`)
+    # each declare `InternalCallTransformer` on their own `transformers` tuple so
+    # it's only registered when one of them is actually in use.
     middleware_transformers = [t for m in middleware for t in getattr(m, "transformers", ())]
 
     return graph.compile(
@@ -1792,13 +1914,42 @@ def create_agent(
         debug=debug,
         name=name,
         cache=cache,
-        transformers=[
-            ToolCallTransformer,
-            SubagentTransformer,
-            *middleware_transformers,
-            *(transformers or ()),
-        ],
+        transformers=_dedupe_transformers(
+            [
+                ToolCallTransformer,
+                SubagentTransformer,
+                *middleware_transformers,
+                *(transformers or ()),
+            ]
+        ),
     ).with_config(config)
+
+
+def _dedupe_transformers(
+    factories: Iterable[TransformerFactory],
+) -> list[TransformerFactory]:
+    """Order-preserving de-dup of transformer factories, by identity.
+
+    `AgentMiddleware.transformers` accepts any scope-aware callable, and
+    callables aren't required to be hashable (e.g. a dataclass-based factory
+    with `__hash__ = None`), so this can't use a `set`/`dict` keyed on the
+    factories themselves. Combining several middleware that each declare the
+    same shared transformer class (e.g. `InternalCallTransformer`) would
+    otherwise register it once per middleware.
+
+    Args:
+        factories: Transformer factories to de-dup, in registration order.
+
+    Returns:
+        The same factories with exact repeats (by `is`) removed, order kept.
+    """
+    seen_ids: set[int] = set()
+    deduped: list[TransformerFactory] = []
+    for factory in factories:
+        if id(factory) not in seen_ids:
+            seen_ids.add(id(factory))
+            deduped.append(factory)
+    return deduped
 
 
 def _resolve_jump(
@@ -1880,8 +2031,8 @@ def _make_model_to_tools_edge(
         if pending_tool_calls:
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
-        # 5. If there is a structured response, exit the loop
-        if "structured_response" in state:
+        # 5. If a fresh structured response was produced this call, exit the loop
+        if state.get("structured_response") is not None:
             return end_destination
 
         # 6. AIMessage has tool calls, but there are no pending tool calls which suggests
@@ -1907,8 +2058,8 @@ def _make_model_to_model_edge(
                 end_destination=end_destination,
             )
 
-        # 2. Exit condition: A structured response was generated
-        if "structured_response" in state:
+        # 2. Exit condition: a fresh structured response was generated this call
+        if state.get("structured_response") is not None:
             return end_destination
 
         # 3. Default: Continue the loop, there may have been an issue with structured
@@ -1934,16 +2085,22 @@ def _make_tools_to_model_edge(
 
         # 2. Exit condition: All executed tools have return_direct=True
         # Filter to only client-side tools (provider tools are not in tool_node)
-        client_side_tool_calls = [
-            c for c in last_ai_message.tool_calls if c["name"] in tool_node.tools_by_name
+        # Prefer tool name from ToolMessage due to redirects (e.g., from HITL)
+        executed_by_id = {
+            t.tool_call_id: t.name for t in tool_messages if t.name in tool_node.tools_by_name
+        }
+        executed_names = [
+            name
+            for c in last_ai_message.tool_calls
+            if (name := executed_by_id.get(c["id"] or "", c["name"])) in tool_node.tools_by_name
         ]
-        if client_side_tool_calls and all(
-            tool_node.tools_by_name[c["name"]].return_direct for c in client_side_tool_calls
+        if executed_names and all(
+            tool_node.tools_by_name[name].return_direct for name in executed_names
         ):
             return end_destination
 
         # 3. Exit condition: A structured output tool was executed
-        if any(t.name in structured_output_tools for t in tool_messages):
+        if any(t.name in structured_output_tools and t.status != "error" for t in tool_messages):
             return end_destination
 
         # 4. Default: Continue the loop

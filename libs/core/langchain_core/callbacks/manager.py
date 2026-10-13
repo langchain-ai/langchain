@@ -123,7 +123,7 @@ def trace_as_chain_group(
     )
     try:
         yield group_cm
-    except Exception as e:
+    except BaseException as e:
         if not group_cm.ended:
             run_manager.on_chain_error(e)
         raise
@@ -206,7 +206,7 @@ async def atrace_as_chain_group(
     )
     try:
         yield group_cm
-    except Exception as e:
+    except BaseException as e:
         if not group_cm.ended:
             await run_manager.on_chain_error(e)
         raise

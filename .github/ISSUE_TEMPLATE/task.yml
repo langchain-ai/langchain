@@ -116,5 +116,6 @@ body:
         - label: langchain-openrouter
         - label: langchain-perplexity
         - label: langchain-qdrant
+        - label: langchain-typesafe
         - label: langchain-xai
         - label: Other / not sure / general

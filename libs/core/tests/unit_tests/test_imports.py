@@ -1,6 +1,7 @@
 import concurrent.futures
 import importlib
 import subprocess
+import sys
 from pathlib import Path
 
 
@@ -26,7 +27,7 @@ def try_to_import(module_name: str) -> tuple[int, str]:
         getattr(module, cls_)
 
     result = subprocess.run(
-        ["python", "-c", f"import langchain_core.{module_name}"], check=True
+        [sys.executable, "-c", f"import langchain_core.{module_name}"], check=True
     )
     return result.returncode, module_name
 

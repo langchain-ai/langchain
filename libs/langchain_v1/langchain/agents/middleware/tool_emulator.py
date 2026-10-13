@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING, Any, Generic
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, ToolMessage
 
+from langchain.agents.middleware.internal_call_transformer import (
+    InternalCallTransformer,
+    internal_call_metadata,
+)
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT
 from langchain.chat_models.base import init_chat_model
 
@@ -17,6 +22,8 @@ if TYPE_CHECKING:
 
     from langchain.agents.middleware.types import ToolCallRequest
     from langchain.tools import BaseTool
+
+_DEFAULT_EMULATOR_MODEL = "anthropic:claude-sonnet-4-5-20250929"
 
 
 class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[ContextT]):
@@ -63,6 +70,13 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
             ```
     """
 
+    transformers = (InternalCallTransformer,)
+    """Keeps the emulation model call's tokens out of `run.messages`.
+
+    Registered only when this middleware is used — see
+    `InternalCallTransformer` for why the call needs tagging and filtering.
+    """
+
     def __init__(
         self,
         *,
@@ -79,7 +93,14 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
                 If empty list, no tools will be emulated.
             model: Model to use for emulation.
 
-                Defaults to `'anthropic:claude-sonnet-4-5-20250929'`.
+                Defaults to `'anthropic:claude-sonnet-4-5-20250929'`, which requires
+                `langchain-anthropic` to be installed.
+
+                !!! warning "Deprecated"
+                    Relying on the implicit default is deprecated and will be
+                    removed in a future release, since it makes this middleware
+                    depend on `langchain-anthropic` even when unspecified. Pass
+                    `model` explicitly instead.
 
                 Can be a model identifier string or `BaseChatModel` instance.
         """
@@ -90,7 +111,7 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
         self.emulate_all = tools is None
         self.tools_to_emulate: set[str] = set()
 
-        if not self.emulate_all and tools is not None:
+        if tools is not None:
             for tool in tools:
                 if isinstance(tool, str):
                     self.tools_to_emulate.add(tool)
@@ -100,7 +121,22 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
 
         # Initialize emulator model
         if model is None:
-            self.model = init_chat_model("anthropic:claude-sonnet-4-5-20250929", temperature=1)
+            warnings.warn(
+                "LLMToolEmulator's default model "
+                f"({_DEFAULT_EMULATOR_MODEL!r}) is deprecated and will be removed "
+                "in a future release. Pass `model` explicitly instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            try:
+                self.model = init_chat_model(_DEFAULT_EMULATOR_MODEL, temperature=1)
+            except ImportError as e:
+                msg = (
+                    "LLMToolEmulator's default model requires `langchain-anthropic` "
+                    "to be installed. Install it with `pip install langchain-anthropic`, "
+                    "or pass `model=...` explicitly to use a different provider."
+                )
+                raise ImportError(msg) from e
         elif isinstance(model, BaseChatModel):
             self.model = model
         else:
@@ -147,7 +183,10 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
         )
 
         # Get emulated response from LLM
-        response = self.model.invoke([HumanMessage(prompt)])
+        response = self.model.invoke(
+            [HumanMessage(prompt)],
+            config={"metadata": {"lc_source": "tool_emulation", **internal_call_metadata()}},
+        )
 
         # Short-circuit: return emulated result without executing real tool
         return ToolMessage(
@@ -199,7 +238,10 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
         )
 
         # Get emulated response from LLM (using async invoke)
-        response = await self.model.ainvoke([HumanMessage(prompt)])
+        response = await self.model.ainvoke(
+            [HumanMessage(prompt)],
+            config={"metadata": {"lc_source": "tool_emulation", **internal_call_metadata()}},
+        )
 
         # Short-circuit: return emulated result without executing real tool
         return ToolMessage(

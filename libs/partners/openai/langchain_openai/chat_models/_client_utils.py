@@ -22,9 +22,10 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from functools import lru_cache
 from typing import Any, TypeVar, cast
 
-import httpx
 import openai
 from pydantic import SecretStr
+
+from langchain_openai._compat import httpx
 
 logger = logging.getLogger(__name__)
 

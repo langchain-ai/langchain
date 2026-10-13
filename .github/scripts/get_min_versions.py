@@ -19,16 +19,20 @@ from packaging.version import Version, parse
 
 MIN_VERSION_LIBS = [
     "langchain-core",
+    "langchain-openai",
     "langchain",
     "langchain-text-splitters",
     "numpy",
     "SQLAlchemy",
+    "anthropic",
+    "openai",
 ]
 
 # some libs only get checked on release because of simultaneous changes in
 # multiple libs
 SKIP_IF_PULL_REQUEST = [
     "langchain-core",
+    "langchain-openai",
     "langchain-text-splitters",
     "langchain",
 ]

@@ -38,6 +38,10 @@ class InMemoryCache(BaseCache):
         """Clear cache."""
         self._cache = {}
 
+    def __len__(self) -> int:
+        """Return the number of cached entries."""
+        return len(self._cache)
+
 
 def test_local_cache_sync() -> None:
     """Test that the local cache is being populated but not the global one."""

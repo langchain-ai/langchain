@@ -4,7 +4,7 @@ import inspect
 from collections.abc import Callable
 from typing import Any, Literal, cast, get_type_hints, overload
 
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field, RootModel, create_model
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.runnables import Runnable
@@ -329,16 +329,17 @@ def tool(
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
-            if dec_func.__doc__ is None:
+            tool_description = tool_description or dec_func.__doc__
+            if tool_description is None:
                 msg = (
-                    "Function must have a docstring if "
-                    "description not provided and infer_schema is False."
+                    "Function must have either a docstring or description "
+                    "when infer_schema is False."
                 )
                 raise ValueError(msg)
             return Tool(
                 name=tool_name,
                 func=func,
-                description=f"{tool_name} tool",
+                description=tool_description,
                 return_direct=return_direct,
                 coroutine=coroutine,
                 response_format=response_format,
@@ -469,12 +470,19 @@ def convert_runnable_to_tool(
     def invoke_wrapper(callbacks: Callbacks | None = None, **kwargs: Any) -> Any:
         return runnable.invoke(kwargs, config={"callbacks": callbacks})
 
+    input_schema_cls = runnable.input_schema
+    # Detect `RootModel` input schemas so we don't use them directly as the tool
+    # args schema.
+    is_root_model = isinstance(input_schema_cls, type) and issubclass(
+        input_schema_cls, RootModel
+    )
     if (
         arg_types is None
         and schema.get("type") == "object"
         and schema.get("properties")
+        and not is_root_model
     ):
-        args_schema = runnable.input_schema
+        args_schema = input_schema_cls
     else:
         args_schema = _get_schema_from_runnable_and_arg_types(
             runnable, name, arg_types=arg_types

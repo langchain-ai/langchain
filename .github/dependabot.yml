@@ -66,6 +66,7 @@ updates:
       - "/libs/partners/openrouter/"
       - "/libs/partners/perplexity/"
       - "/libs/partners/qdrant/"
+      - "/libs/partners/typesafe/"
       - "/libs/partners/xai/"
     schedule:
       interval: "monthly"
@@ -105,6 +106,26 @@ updates:
       - dependency-name: "langchain-text-splitters"
       - dependency-name: "langchain-tests"
       - dependency-name: "langchain-model-profiles"
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+
+
+  - package-ecosystem: "docker"
+    directories:
+      - "/.devcontainer/"
+      - "/libs/langchain/"
+    schedule:
+      interval: "monthly"
     groups:
       minor-and-patch:
         patterns:

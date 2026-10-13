@@ -29,6 +29,7 @@ from langchain_openrouter.chat_models import (
     _convert_file_block_to_openrouter,
     _convert_message_to_dict,
     _convert_video_block_to_openrouter,
+    _create_stream_generation_info,
     _create_usage_metadata,
     _format_message_content,
 )
@@ -82,6 +83,7 @@ _SIMPLE_RESPONSE_DICT: dict[str, Any] = {
     "model": MODEL_NAME,
     "object": "chat.completion",
     "created": 1700000000.0,
+    "provider": "Anthropic",
 }
 
 _TOOL_RESPONSE_DICT: dict[str, Any] = {
@@ -1908,6 +1910,30 @@ class TestCreateChatResult:
             == "openrouter"
         )
 
+    def test_provider_in_response_metadata(self) -> None:
+        """Test that upstream provider is surfaced in response_metadata."""
+        model = _make_model()
+        result = model._create_chat_result(_SIMPLE_RESPONSE_DICT)
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        assert msg.response_metadata["provider"] == "Anthropic"
+
+    def test_provider_absent_when_not_returned(self) -> None:
+        """Test that provider is not in response_metadata when API omits it."""
+        model = _make_model()
+        response: dict[str, Any] = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "Hello!"},
+                    "finish_reason": "stop",
+                }
+            ],
+        }
+        result = model._create_chat_result(response)
+        msg = result.generations[0].message
+        assert isinstance(msg, AIMessage)
+        assert "provider" not in msg.response_metadata
+
     def test_reasoning_from_response(self) -> None:
         """Test that reasoning content is extracted from response."""
         model = _make_model()
@@ -2152,6 +2178,7 @@ class TestCreateChatResult:
         assert isinstance(msg, AIMessage)
         assert "system_fingerprint" not in msg.response_metadata
         assert "native_finish_reason" not in msg.response_metadata
+        assert "provider" not in msg.response_metadata
         assert "model" not in msg.response_metadata
         assert result.llm_output is not None
         assert "id" not in result.llm_output
@@ -2277,6 +2304,27 @@ class TestStreamingChunks:
         message_chunk = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
         assert isinstance(message_chunk, AIMessageChunk)
         assert message_chunk.response_metadata.get("model_provider") == "openrouter"
+
+    def test_provider_in_stream_generation_info(self) -> None:
+        """Test that upstream provider is included in stream generation_info."""
+        chunk_dict: dict[str, Any] = {
+            "id": "gen-stream",
+            "model": MODEL_NAME,
+            "provider": "Anthropic",
+        }
+        choice: dict[str, Any] = {"finish_reason": "stop"}
+        gen_info = _create_stream_generation_info(chunk_dict, choice, MODEL_NAME)
+        assert gen_info["provider"] == "Anthropic"
+
+    def test_provider_absent_from_stream_generation_info(self) -> None:
+        """Test that provider is omitted from generation_info when not in chunk."""
+        chunk_dict: dict[str, Any] = {
+            "id": "gen-stream",
+            "model": MODEL_NAME,
+        }
+        choice: dict[str, Any] = {"finish_reason": "stop"}
+        gen_info = _create_stream_generation_info(chunk_dict, choice, MODEL_NAME)
+        assert "provider" not in gen_info
 
     def test_chunk_without_reasoning(self) -> None:
         """Test that chunk without reasoning fields works correctly."""
