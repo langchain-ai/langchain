@@ -2996,8 +2996,8 @@ wheels = [
 
 [[package]]
 name = "langgraph"
-version = "1.2.14"
-source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Flanggraph&branch=bengret%2Flanggraph%2Finsert-input#72a085717f0511a3100590e745353c5ea50c067e" }
+version = "1.2.15"
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Flanggraph&branch=bengret%2Flanggraph%2Finsert-input#7d8b4e446245c9431d9d591e273aae37ff0c5067" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
@@ -3010,7 +3010,7 @@ dependencies = [
 [[package]]
 name = "langgraph-checkpoint"
 version = "4.3.0"
-source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fcheckpoint&branch=bengret%2Flanggraph%2Finsert-input#72a085717f0511a3100590e745353c5ea50c067e" }
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fcheckpoint&branch=bengret%2Flanggraph%2Finsert-input#7d8b4e446245c9431d9d591e273aae37ff0c5067" }
 dependencies = [
     { name = "langchain-core" },
     { name = "ormsgpack" },
@@ -3019,7 +3019,7 @@ dependencies = [
 [[package]]
 name = "langgraph-prebuilt"
 version = "1.1.0"
-source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fprebuilt&branch=bengret%2Flanggraph%2Finsert-input#72a085717f0511a3100590e745353c5ea50c067e" }
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fprebuilt&branch=bengret%2Flanggraph%2Finsert-input#7d8b4e446245c9431d9d591e273aae37ff0c5067" }
 dependencies = [
     { name = "langchain-core" },
     { name = "langgraph-checkpoint" },
@@ -3027,8 +3027,8 @@ dependencies = [
 
 [[package]]
 name = "langgraph-sdk"
-version = "0.4.6"
-source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fsdk-py&branch=bengret%2Flanggraph%2Finsert-input#72a085717f0511a3100590e745353c5ea50c067e" }
+version = "0.4.7"
+source = { git = "https://github.com/langchain-ai/langgraph.git?subdirectory=libs%2Fsdk-py&branch=bengret%2Flanggraph%2Finsert-input#7d8b4e446245c9431d9d591e273aae37ff0c5067" }
 dependencies = [
     { name = "httpx" },
     { name = "langchain-core" },
