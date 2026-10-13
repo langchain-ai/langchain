@@ -1911,6 +1911,8 @@ def create_agent(
         store=store,
         interrupt_before=interrupt_before,
         interrupt_after=interrupt_after,
+        # inserted input lands before the next model call, after every tool result
+        insert_before=[loop_entry_node],
         debug=debug,
         name=name,
         cache=cache,
