@@ -1018,7 +1018,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.4.3"
+version = "1.4.4"
 source = { editable = "../../langchain_v1" }
 dependencies = [
     { name = "langchain-core" },
@@ -1086,7 +1086,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.6.7"
+version = "1.6.10"
 source = { editable = "../../core" }
 dependencies = [
     { name = "httpx" },
@@ -1150,7 +1150,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.7.0"
+version = "1.7.1"
 source = { editable = "." }
 dependencies = [
     { name = "certifi" },
