@@ -263,7 +263,28 @@ class ShellSession:
                 break
 
             if data is None:
-                continue
+                # A reader thread reached EOF: the shell's stdout/stderr pipes
+                # are closed, which happens when the shell exits as a result of
+                # the command itself (e.g. the command contained `exit N`). The
+                # done-marker command never ran, so waiting for it would block
+                # until the deadline. Drain any in-flight output, wait briefly
+                # for the process to be reaped, and finish with the process
+                # exit code instead of reporting a spurious timeout.
+                (
+                    total_lines,
+                    total_bytes,
+                    truncated_by_lines,
+                    truncated_by_bytes,
+                ) = self._drain_after_exit(
+                    collected,
+                    deadline,
+                    total_lines=total_lines,
+                    total_bytes=total_bytes,
+                    truncated_by_lines=truncated_by_lines,
+                    truncated_by_bytes=truncated_by_bytes,
+                )
+                exit_code = self._wait_for_process_exit(deadline)
+                break
 
             if source == "stdout" and data.startswith(marker):
                 _, _, status = data.partition(" ")
@@ -324,28 +345,38 @@ class ShellSession:
             total_bytes=total_bytes,
         )
 
-    def _collect_output_after_exit(self, deadline: float) -> CommandExecutionResult:
-        """Collect output after the shell exited unexpectedly.
+    def _drain_after_exit(
+        self,
+        collected: list[str],
+        deadline: float,
+        *,
+        total_lines: int,
+        total_bytes: int,
+        truncated_by_lines: bool,
+        truncated_by_bytes: bool,
+        drain_timeout: float = 0.1,
+    ) -> tuple[int, int, bool, bool]:
+        """Briefly drain queued output after the shell has exited.
 
-        Called when a `BrokenPipeError` occurs while writing to stdin, indicating the
-        shell process terminated (e.g., due to an 'exit' command).
+        Reader threads run independently, so output may still be in flight when
+        the shell terminates. This method polls the queue for a short window and
+        appends any remaining stdout/stderr lines, applying the same line/byte
+        truncation limits as normal collection.
 
         Args:
-            deadline: Absolute time by which collection must complete.
+            collected: The list to append collected output lines to.
+            deadline: The original command deadline (used as an upper bound).
+            total_lines: The running count of collected lines.
+            total_bytes: The running count of collected bytes.
+            truncated_by_lines: Whether line truncation already applied.
+            truncated_by_bytes: Whether byte truncation already applied.
+            drain_timeout: Maximum time to wait for additional output.
 
         Returns:
-            `CommandExecutionResult` with collected output and the process exit code.
+            Updated `(total_lines, total_bytes, truncated_by_lines,
+            truncated_by_bytes)`.
         """
-        collected: list[str] = []
-        total_lines = 0
-        total_bytes = 0
-        truncated_by_lines = False
-        truncated_by_bytes = False
-
-        # Give reader threads a brief moment to enqueue any remaining output.
-        drain_timeout = 0.1
         drain_deadline = min(time.monotonic() + drain_timeout, deadline)
-
         while True:
             remaining = drain_deadline - time.monotonic()
             if remaining <= 0:
@@ -382,10 +413,66 @@ class ShellSession:
             else:
                 collected.append(data)
 
-        # Get exit code from the terminated process.
-        exit_code: int | None = None
-        if self._process:
+        return total_lines, total_bytes, truncated_by_lines, truncated_by_bytes
+
+    def _wait_for_process_exit(self, deadline: float, timeout: float = 0.5) -> int | None:
+        """Wait a short window for the shell process to be reaped.
+
+        On some platforms (e.g. Windows/MSYS) the child's stdout/stderr pipes
+        close a moment before the process is fully reaped, so ``poll()`` can
+        still return ``None`` when EOF is observed. This method polls until the
+        exit code is available, bounded by both ``timeout`` and ``deadline``.
+
+        Args:
+            deadline: Absolute time by which the wait must finish.
+            timeout: Maximum additional time to wait for the exit code.
+
+        Returns:
+            The process exit code, or ``None`` if the process was not reaped
+            within the window.
+        """
+        if self._process is None:
+            return None
+        wait_until = min(time.monotonic() + timeout, deadline)
+        exit_code = self._process.poll()
+        while exit_code is None and time.monotonic() < wait_until:
+            time.sleep(0.01)
             exit_code = self._process.poll()
+        return exit_code
+
+    def _collect_output_after_exit(self, deadline: float) -> CommandExecutionResult:
+        """Collect output after the shell exited unexpectedly.
+
+        Called when a `BrokenPipeError` occurs while writing to stdin, indicating the
+        shell process terminated (e.g., due to an 'exit' command).
+
+        Args:
+            deadline: Absolute time by which collection must complete.
+
+        Returns:
+            `CommandExecutionResult` with collected output and the process exit code.
+        """
+        collected: list[str] = []
+        total_lines = 0
+        total_bytes = 0
+        truncated_by_lines = False
+        truncated_by_bytes = False
+
+        # Give reader threads a brief moment to enqueue any remaining output.
+        total_lines, total_bytes, truncated_by_lines, truncated_by_bytes = (
+            self._drain_after_exit(
+                collected,
+                deadline,
+                total_lines=total_lines,
+                total_bytes=total_bytes,
+                truncated_by_lines=truncated_by_lines,
+                truncated_by_bytes=truncated_by_bytes,
+            )
+        )
+
+        # Get exit code from the terminated process. The pipes may have closed
+        # a moment before the process is reaped, so wait briefly for it.
+        exit_code = self._wait_for_process_exit(deadline)
 
         output = "".join(collected)
         return CommandExecutionResult(

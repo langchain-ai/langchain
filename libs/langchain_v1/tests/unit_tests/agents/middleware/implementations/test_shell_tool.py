@@ -309,6 +309,72 @@ def test_nonzero_exit_code_returns_error(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+def test_exit_command_does_not_timeout(tmp_path: Path) -> None:
+    """A command containing `exit N` must return promptly with its exit code.
+
+    Regression test for #41228: when a command terminates the shell (e.g.
+    ``for f in *.txt; do echo $f; done; exit 7``), the done-marker command
+    never runs, so collection used to block until the full command timeout and
+    report a spurious timeout instead of the command's exit code.
+    """
+    (tmp_path / "workspace" / "a.txt").write_text("x")
+    (tmp_path / "workspace" / "b.txt").write_text("y")
+    policy = HostExecutionPolicy(command_timeout=10.0)
+    middleware = ShellToolMiddleware(
+        workspace_root=tmp_path / "workspace", execution_policy=policy
+    )
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+
+        start = time.monotonic()
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": "for f in *.txt; do echo $f; done; exit 7"},
+            tool_call_id="exit-test",
+        )
+        elapsed = time.monotonic() - start
+
+        assert isinstance(result, ToolMessage)
+        # Return well before the 10s command timeout.
+        assert elapsed < 5.0
+        assert result.status == "error"
+        assert "a.txt" in result.content
+        assert "b.txt" in result.content
+        assert "Exit code: 7" in result.content
+        assert "timed out" not in result.content.lower()
+        assert result.artifact["exit_code"] == 7
+        assert result.artifact["timed_out"] is False
+    finally:
+        middleware.after_agent(state, runtime)
+
+
+def test_session_exit_command_returns_exit_code(tmp_path: Path) -> None:
+    """`ShellSession.execute` must surface the shell exit code for `exit N`."""
+    (tmp_path / "a.txt").write_text("x")
+    (tmp_path / "b.txt").write_text("y")
+    session = ShellSession(tmp_path, HostExecutionPolicy(), ("/bin/bash",), {})
+    session.start()
+    try:
+        start = time.monotonic()
+        result = session.execute(
+            "for f in *.txt; do echo $f; done; exit 7", timeout=10.0
+        )
+        elapsed = time.monotonic() - start
+
+        assert elapsed < 5.0
+        assert result.timed_out is False
+        assert result.exit_code == 7
+        assert "a.txt" in result.output
+        assert "b.txt" in result.output
+    finally:
+        session.stop(5.0)
+
+
 def test_truncation_by_bytes(tmp_path: Path) -> None:
     """Test that output is truncated by bytes when max_output_bytes is exceeded."""
     policy = HostExecutionPolicy(max_output_bytes=50, command_timeout=5.0)
