@@ -23,6 +23,7 @@ from langchain_core.prompt_values import (
     ChatPromptValueConcrete,
     PromptValue,
     StringPromptValue,
+    _set_prompt_template_info,
 )
 from langchain_core.runnables.base import RunnableSerializable
 from langchain_core.runnables.config import RunnableConfig, ensure_config
@@ -198,13 +199,56 @@ class BasePromptTemplate(
         self, inner_input: builtins.dict[str, Any]
     ) -> PromptValue:
         inner_input_ = self._validate_input(inner_input)
-        return self.format_prompt(**inner_input_)
+        return self._with_template_info(
+            self.format_prompt(**inner_input_), inner_input_
+        )
 
     async def _aformat_prompt_with_error_handling(
         self, inner_input: builtins.dict[str, Any]
     ) -> PromptValue:
         inner_input_ = self._validate_input(inner_input)
-        return await self.aformat_prompt(**inner_input_)
+        prompt_value = await self.aformat_prompt(**inner_input_)
+        return self._with_template_info(prompt_value, inner_input_)
+
+    def _template_for_tracing(self) -> tuple[Any, str | None]:
+        """Return this prompt's template and its format, as tracing should show them.
+
+        Subclasses with a plain template representation override this. The default
+        `(None, None)` means the template has none, and only the name, variables and
+        metadata are reported.
+        """
+        return None, None
+
+    def _with_template_info(
+        self, prompt_value: PromptValue, inputs: builtins.dict[str, Any]
+    ) -> PromptValue:
+        """Attach the template that produced `prompt_value`, for the model's tracing.
+
+        The prompt run and the language model run that consumes its output are
+        siblings, so the model's callbacks can't otherwise tell which template its
+        input came from. Language models pass this on as
+        `options["ls_prompt_template"]`. Only scalar variables are included:
+        message lists and other structured inputs are already part of the model's
+        input messages.
+        """
+        info: builtins.dict[str, Any] = {}
+        if self.name:
+            info["name"] = self.name
+        template, template_format = self._template_for_tracing()
+        if template is not None:
+            info["template"] = template
+        if template_format:
+            info["template_format"] = template_format
+        names = {*self.input_variables, *self.optional_variables}
+        info["variables"] = {
+            key: value
+            for key, value in inputs.items()
+            if key in names and isinstance(value, (str, int, float))
+        }
+        if self.metadata:
+            info["metadata"] = builtins.dict(self.metadata)
+        _set_prompt_template_info(prompt_value, info)
+        return prompt_value
 
     @override
     def invoke(

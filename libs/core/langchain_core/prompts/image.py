@@ -101,6 +101,9 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         """
         return ImagePromptValue(image_url=await self.aformat(**kwargs))
 
+    def _template_for_tracing(self) -> tuple[Any, str | None]:
+        return self.template, self.template_format
+
     def format(
         self,
         **kwargs: Any,

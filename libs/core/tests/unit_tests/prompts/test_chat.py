@@ -17,7 +17,7 @@ from langchain_core.messages import (
     ToolMessage,
     get_buffer_string,
 )
-from langchain_core.prompt_values import ChatPromptValue
+from langchain_core.prompt_values import ChatPromptValue, _get_prompt_template_info
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,
@@ -2004,3 +2004,99 @@ def test_mustache_template_attribute_access_vulnerability() -> None:
     )
     result_dict = prompt_dict.invoke({"person": {"name": "Alice"}})
     assert result_dict.messages[0].content == "Alice"  # type: ignore[attr-defined]
+
+
+def test_chat_prompt_template_info_for_tracing() -> None:
+    nested = ChatPromptTemplate.from_messages([("ai", "Noted: {note}")])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            SystemMessage(content="You are helpful."),
+            ("system", "Answer as {persona}."),
+            MessagesPlaceholder("history"),
+            ChatMessagePromptTemplate.from_template("Context: {context}", role="tool"),
+            (
+                "human",
+                [
+                    {"type": "text", "text": "Describe {thing}"},
+                    {"type": "image_url", "image_url": {"url": "{image}"}},
+                ],
+            ),
+            nested,
+        ]
+    )
+    prompt.name = "describer"
+    prompt.metadata = {"lc_hub_repo": "describer"}  # as LangSmith's `pull_prompt` does
+
+    value = prompt.invoke(
+        {
+            "persona": "a poet",
+            "history": [HumanMessage(content="hi")],
+            "context": "none",
+            "thing": "a cat",
+            "image": "https://example.com/cat.png",
+            "note": "ok",
+        }
+    )
+
+    assert _get_prompt_template_info(value) == {
+        "name": "describer",
+        "template": [
+            {"role": "system", "content": "You are helpful."},
+            {"role": "system", "template": "Answer as {persona}."},
+            {"placeholder": "history"},
+            {"role": "tool", "template": "Context: {context}"},
+            {"role": "human", "template": ["Describe {thing}", {"url": "{image}"}]},
+            {"role": "ai", "template": "Noted: {note}"},
+        ],
+        "template_format": "f-string",
+        # Message lists aren't repeated: they're already in the model's input.
+        "variables": {
+            "persona": "a poet",
+            "context": "none",
+            "thing": "a cat",
+            "image": "https://example.com/cat.png",
+            "note": "ok",
+        },
+        "metadata": {"lc_hub_repo": "describer"},
+    }
+
+
+async def test_chat_prompt_template_info_for_tracing_async() -> None:
+    prompt = ChatPromptTemplate.from_messages(
+        [("human", "Hi {{name}}")], template_format="mustache"
+    )
+
+    value = await prompt.ainvoke({"name": "Ada"})
+
+    assert _get_prompt_template_info(value) == {
+        "template": [{"role": "human", "template": "Hi {{name}}"}],
+        "template_format": "mustache",
+        "variables": {"name": "Ada"},
+    }
+
+
+def test_chat_prompt_template_info_mixed_formats() -> None:
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            SystemMessagePromptTemplate.from_template("Be {tone}."),
+            HumanMessagePromptTemplate.from_template(
+                "Hi {{name}}", template_format="mustache"
+            ),
+        ]
+    )
+
+    info = _get_prompt_template_info(prompt.invoke({"tone": "brief", "name": "Ada"}))
+
+    assert info is not None
+    assert "template_format" not in info
+    assert info["template"] == [
+        {"role": "system", "template": "Be {tone}."},
+        {"role": "human", "template": "Hi {{name}}"},
+    ]
+
+
+def test_chat_prompt_template_info_only_from_invoke() -> None:
+    """Formatting directly creates no prompt run, so nothing is attached."""
+    prompt = ChatPromptTemplate.from_messages([("human", "Hi {name}")])
+
+    assert _get_prompt_template_info(prompt.format_prompt(name="Ada")) is None

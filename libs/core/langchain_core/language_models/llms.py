@@ -54,7 +54,12 @@ from langchain_core.messages import (
     convert_to_messages,
 )
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunInfo
-from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
+from langchain_core.prompt_values import (
+    ChatPromptValue,
+    PromptValue,
+    StringPromptValue,
+    _pop_prompt_template_option,
+)
 from langchain_core.runnables import RunnableConfig, ensure_config, get_config_list
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils._signature import _signature_parameters
@@ -523,12 +528,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             # model doesn't implement streaming, so use default implementation
             yield self.invoke(input, config=config, stop=stop, **kwargs)
         else:
-            prompt = self._convert_input(input).to_string()
+            prompt_value = self._convert_input(input)
+            prompt = prompt_value.to_string()
+            prompt_template_option = _pop_prompt_template_option(prompt_value, kwargs)
             config = ensure_config(config)
             params = self._dict_for_compat()
             params["stop"] = stop
             params = {**params, **kwargs}
-            options = {"stop": stop}
+            options = {"stop": stop, **prompt_template_option}
             inheritable_metadata = {
                 **(config.get("metadata") or {}),
                 **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -596,12 +603,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
             return
 
-        prompt = self._convert_input(input).to_string()
+        prompt_value = self._convert_input(input)
+        prompt = prompt_value.to_string()
+        prompt_template_option = _pop_prompt_template_option(prompt_value, kwargs)
         config = ensure_config(config)
         params = self._dict_for_compat()
         params["stop"] = stop
         params = {**params, **kwargs}
-        options = {"stop": stop}
+        options = {"stop": stop, **prompt_template_option}
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -798,6 +807,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> LLMResult:
         prompt_strings = [p.to_string() for p in prompts]
+        if len(prompts) == 1:
+            # Hand the prompt template info on to `generate`, which reports it.
+            kwargs.update(_pop_prompt_template_option(prompts[0], kwargs))
         return self.generate(prompt_strings, stop=stop, callbacks=callbacks, **kwargs)
 
     @override
@@ -809,6 +821,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> LLMResult:
         prompt_strings = [p.to_string() for p in prompts]
+        if len(prompts) == 1:
+            # Hand the prompt template info on to `generate`, which reports it.
+            kwargs.update(_pop_prompt_template_option(prompts[0], kwargs))
         return await self.agenerate(
             prompt_strings, stop=stop, callbacks=callbacks, **kwargs
         )
@@ -911,6 +926,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 f" argument of type {type(prompts)}."
             )
             raise ValueError(msg)  # noqa: TRY004
+        prompt_template_option = _pop_prompt_template_option(None, kwargs)
         # Create callback managers
         if isinstance(metadata, list):
             metadata = [
@@ -999,7 +1015,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ] * len(prompts)
             run_name_list = [cast("str | None", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
-        options = {"stop": stop}
+        options = {"stop": stop, **prompt_template_option}
         (
             existing_prompts,
             llm_string,
@@ -1185,6 +1201,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             An `LLMResult`, which contains a list of candidate `Generations` for each
                 input prompt and additional model provider-specific output.
         """
+        prompt_template_option = _pop_prompt_template_option(None, kwargs)
         if isinstance(metadata, list):
             metadata = [
                 {
@@ -1269,7 +1286,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ] * len(prompts)
             run_name_list = [cast("str | None", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
-        options = {"stop": stop}
+        options = {"stop": stop, **prompt_template_option}
         (
             existing_prompts,
             llm_string,

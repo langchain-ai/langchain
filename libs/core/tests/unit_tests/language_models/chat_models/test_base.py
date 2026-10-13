@@ -47,6 +47,8 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.outputs.llm_result import LLMResult
+from langchain_core.prompt_values import ChatPromptValue
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tracers import LogStreamCallbackHandler
 from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
@@ -1936,3 +1938,161 @@ async def test_astream_events_v3_invocation_params_passed_to_tracer_metadata() -
     assert metadata["_type"] == "fake-chat-model-with-invocation-params"
     assert metadata["stop"] == ["done"]
     assert metadata["temperature"] == 0.7
+
+
+class _KwargsRecordingModel(BaseChatModel):
+    """Records the keyword arguments that reach the provider methods."""
+
+    provider_kwargs: list[dict[str, Any]] = Field(default_factory=list)
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        self.provider_kwargs.append(kwargs)
+        return ChatResult(generations=[ChatGeneration(message=AIMessage("sunny"))])
+
+    @override
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        self.provider_kwargs.append(kwargs)
+        yield ChatGenerationChunk(message=AIMessageChunk(content="sunny"))
+
+    @property
+    def _llm_type(self) -> str:
+        return "kwargs-recording"
+
+
+class _ModelStartRecorder(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.starts: list[dict[str, Any]] = []
+
+    @override
+    def on_chat_model_start(
+        self,
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
+        *,
+        metadata: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        self.starts.append({"options": kwargs.get("options"), "metadata": metadata})
+
+
+_WEATHER_PROMPT = ChatPromptTemplate.from_messages(
+    [("system", "You are {persona}."), ("human", "Weather in {city}?")]
+)
+_WEATHER_INPUT = {"persona": "terse", "city": "Oslo"}
+_WEATHER_TEMPLATE_INFO = {
+    "template": [
+        {"role": "system", "template": "You are {persona}."},
+        {"role": "human", "template": "Weather in {city}?"},
+    ],
+    "template_format": "f-string",
+    "variables": {"persona": "terse", "city": "Oslo"},
+}
+
+
+@pytest.mark.parametrize("method", ["invoke", "stream", "stream_events_v3"])
+def test_prompt_template_passed_to_chat_model_callbacks(method: str) -> None:
+    model = _KwargsRecordingModel()
+    recorder = _ModelStartRecorder()
+    config: RunnableConfig = {"callbacks": [recorder]}
+
+    if method == "invoke":
+        (_WEATHER_PROMPT | model).invoke(_WEATHER_INPUT, config)
+    elif method == "stream":
+        list((_WEATHER_PROMPT | model).stream(_WEATHER_INPUT, config))
+    else:
+        prompt_value = _WEATHER_PROMPT.invoke(_WEATHER_INPUT)
+        list(model.stream_events(prompt_value, config, version="v3").text)
+
+    (start,) = recorder.starts
+    assert start["options"]["ls_prompt_template"] == _WEATHER_TEMPLATE_INFO
+    # Tracing-only: not in the run metadata, and never sent to the provider.
+    assert not any("prompt_template" in key for key in start["metadata"])
+    assert model.provider_kwargs
+    assert all("ls_prompt_template" not in kw for kw in model.provider_kwargs)
+
+
+@pytest.mark.parametrize("method", ["ainvoke", "astream", "astream_events_v3"])
+async def test_prompt_template_passed_to_chat_model_callbacks_async(
+    method: str,
+) -> None:
+    model = _KwargsRecordingModel()
+    recorder = _ModelStartRecorder()
+    config: RunnableConfig = {"callbacks": [recorder]}
+
+    if method == "ainvoke":
+        await (_WEATHER_PROMPT | model).ainvoke(_WEATHER_INPUT, config)
+    elif method == "astream":
+        async for _ in (_WEATHER_PROMPT | model).astream(_WEATHER_INPUT, config):
+            pass
+    else:
+        prompt_value = await _WEATHER_PROMPT.ainvoke(_WEATHER_INPUT)
+        stream = await model.astream_events(prompt_value, config, version="v3")
+        await stream.text
+
+    (start,) = recorder.starts
+    assert start["options"]["ls_prompt_template"] == _WEATHER_TEMPLATE_INFO
+    assert model.provider_kwargs
+    assert all("ls_prompt_template" not in kw for kw in model.provider_kwargs)
+
+
+def test_prompt_template_follows_value_not_run_position() -> None:
+    """A prompt value formatted outside the chain still identifies its template."""
+    model = _KwargsRecordingModel()
+    recorder = _ModelStartRecorder()
+    prompt_value = _WEATHER_PROMPT.invoke(_WEATHER_INPUT)
+
+    model.invoke(prompt_value, {"callbacks": [recorder]})
+
+    options = recorder.starts[0]["options"]
+    assert options["ls_prompt_template"] == _WEATHER_TEMPLATE_INFO
+
+
+def test_no_prompt_template_without_a_template() -> None:
+    model = _KwargsRecordingModel()
+    recorder = _ModelStartRecorder()
+    config: RunnableConfig = {"callbacks": [recorder]}
+
+    model.invoke([HumanMessage("Weather in Oslo?")], config)
+    model.invoke(ChatPromptValue(messages=[HumanMessage("hi")]), config)
+
+    assert len(recorder.starts) == 2
+    assert all("ls_prompt_template" not in s["options"] for s in recorder.starts)
+
+
+def test_prompt_template_not_shared_across_generate_prompt_batch() -> None:
+    """One `options` dict serves the whole batch, so per-prompt info is left out."""
+    model = _KwargsRecordingModel()
+    recorder = _ModelStartRecorder()
+    prompt_values = [
+        _WEATHER_PROMPT.invoke(_WEATHER_INPUT),
+        _WEATHER_PROMPT.invoke({"persona": "chatty", "city": "Lima"}),
+    ]
+
+    model.generate_prompt(prompt_values, callbacks=[recorder])
+
+    assert len(recorder.starts) == 2
+    assert all("ls_prompt_template" not in s["options"] for s in recorder.starts)
+
+
+def test_explicit_prompt_template_kwarg_not_sent_to_provider() -> None:
+    model = _KwargsRecordingModel()
+    recorder = _ModelStartRecorder()
+    info = {"template": "Weather in {city}?", "variables": {"city": "Oslo"}}
+
+    model.invoke("Weather in Oslo?", {"callbacks": [recorder]}, ls_prompt_template=info)
+
+    assert recorder.starts[0]["options"]["ls_prompt_template"] == info
+    assert model.provider_kwargs == [{}]

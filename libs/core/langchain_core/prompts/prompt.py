@@ -188,6 +188,10 @@ class PromptTemplate(StringPromptTemplate):
         """Return the prompt type key."""
         return "prompt"
 
+    @override
+    def _template_for_tracing(self) -> tuple[Any, str | None]:
+        return self.template, self.template_format
+
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with the inputs.
 

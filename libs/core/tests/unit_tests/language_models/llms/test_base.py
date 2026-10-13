@@ -1,13 +1,15 @@
 import warnings
 from collections.abc import AsyncIterator, Iterator
-from typing import Any, get_type_hints
+from typing import TYPE_CHECKING, Any, get_type_hints
 
 import pytest
+from pydantic import Field
 from typing_extensions import override
 
 from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
+    BaseCallbackHandler,
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import (
@@ -17,12 +19,16 @@ from langchain_core.language_models import (
 )
 from langchain_core.language_models._utils import _filter_invocation_params_for_tracing
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
+from langchain_core.prompts import PromptTemplate
 from langchain_core.tracers.context import collect_runs
 from tests.unit_tests.fake.callbacks import (
     BaseFakeCallbackHandler,
     FakeAsyncCallbackHandler,
     FakeCallbackHandler,
 )
+
+if TYPE_CHECKING:
+    from langchain_core.runnables.config import RunnableConfig
 
 
 def test_asdict_replaces_deprecated_dict() -> None:
@@ -413,3 +419,86 @@ async def test_llm_invocation_params_filtered_in_stream() -> None:
         run = cb.traced_runs[0]
         # Verify the run was traced
         assert run.extra is not None
+
+
+class _KwargsRecordingLLM(LLM):
+    """Records the keyword arguments that reach the provider methods."""
+
+    provider_kwargs: list[dict[str, Any]] = Field(default_factory=list)
+
+    @override
+    def _call(
+        self,
+        prompt: str,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> str:
+        self.provider_kwargs.append(kwargs)
+        return "sunny"
+
+    @override
+    def _stream(
+        self,
+        prompt: str,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[GenerationChunk]:
+        self.provider_kwargs.append(kwargs)
+        yield GenerationChunk(text="sunny")
+
+    @property
+    def _llm_type(self) -> str:
+        return "kwargs-recording"
+
+
+class _LLMStartRecorder(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.options: list[dict[str, Any]] = []
+
+    @override
+    def on_llm_start(
+        self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
+    ) -> None:
+        self.options.append(kwargs["options"])
+
+
+_CITY_PROMPT = PromptTemplate.from_template("Weather in {city}?")
+_CITY_TEMPLATE_INFO = {
+    "template": "Weather in {city}?",
+    "template_format": "f-string",
+    "variables": {"city": "Oslo"},
+}
+
+
+@pytest.mark.parametrize("method", ["invoke", "stream", "ainvoke", "astream"])
+async def test_prompt_template_passed_to_llm_callbacks(method: str) -> None:
+    llm = _KwargsRecordingLLM()
+    recorder = _LLMStartRecorder()
+    chain = _CITY_PROMPT | llm
+    config: RunnableConfig = {"callbacks": [recorder]}
+
+    if method == "invoke":
+        chain.invoke({"city": "Oslo"}, config)
+    elif method == "stream":
+        list(chain.stream({"city": "Oslo"}, config))
+    elif method == "ainvoke":
+        await chain.ainvoke({"city": "Oslo"}, config)
+    else:
+        async for _ in chain.astream({"city": "Oslo"}, config):
+            pass
+
+    assert recorder.options == [
+        {"stop": None, "ls_prompt_template": _CITY_TEMPLATE_INFO}
+    ]
+    assert llm.provider_kwargs
+    assert all("ls_prompt_template" not in kw for kw in llm.provider_kwargs)
+
+
+def test_no_prompt_template_for_plain_llm_input() -> None:
+    recorder = _LLMStartRecorder()
+
+    _KwargsRecordingLLM().invoke("Weather in Oslo?", {"callbacks": [recorder]})
+
+    assert recorder.options == [{"stop": None}]

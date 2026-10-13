@@ -1310,6 +1310,14 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """Name of prompt type. Used for serialization."""
         return "chat"
 
+    @override
+    def _template_for_tracing(self) -> tuple[Any, str | None]:
+        entries: list[dict[str, Any]] = []
+        formats: set[str] = set()
+        for message in self.messages:
+            _add_message_for_tracing(message, entries, formats)
+        return entries, formats.pop() if len(formats) == 1 else None
+
     @deprecated(
         since="1.2.21",
         removal="2.0.0",
@@ -1336,6 +1344,49 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """
         # TODO: handle partials
         return "\n\n".join(msg.pretty_repr(html=html) for msg in self.messages)
+
+
+def _add_message_for_tracing(
+    message: MessageLike, entries: list[dict[str, Any]], formats: set[str]
+) -> None:
+    """Describe one entry of a chat prompt template for tracing.
+
+    Literal messages keep their `content`, message templates their `template`
+    (a list when it mixes text and image parts), and placeholders the variable
+    they are filled from. The template format of every part is added to `formats`.
+    """
+
+    def describe(part: BasePromptTemplate[Any] | DictPromptTemplate) -> Any:
+        template: Any
+        template_format: str | None
+        if isinstance(part, DictPromptTemplate):
+            template, template_format = part.template, part.template_format
+        else:
+            template, template_format = part._template_for_tracing()  # noqa: SLF001
+        if template_format:
+            formats.add(template_format)
+        return template
+
+    if isinstance(message, BaseMessage):
+        entries.append({"role": message.type, "content": message.content})
+    elif isinstance(message, MessagesPlaceholder):
+        entries.append({"placeholder": message.variable_name})
+    elif isinstance(message, _StringImageMessagePromptTemplate):
+        role = message._msg_class.model_fields["type"].default  # noqa: SLF001
+        template = (
+            [describe(part) for part in message.prompt]
+            if isinstance(message.prompt, list)
+            else describe(message.prompt)
+        )
+        entries.append({"role": role, "template": template})
+    elif isinstance(message, BaseStringMessagePromptTemplate):
+        role = getattr(message, "role", None) or type(message).__name__
+        entries.append({"role": role, "template": describe(message.prompt)})
+    elif isinstance(message, ChatPromptTemplate):
+        for nested in message.messages:
+            _add_message_for_tracing(nested, entries, formats)
+    else:
+        entries.append({"type": type(message).__name__})
 
 
 def _create_template_from_message_type(

@@ -12,6 +12,7 @@ from packaging import version
 from syrupy.assertion import SnapshotAssertion
 
 from langchain_core._api import LangChainDeprecationWarning
+from langchain_core.prompt_values import _get_prompt_template_info
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
@@ -744,3 +745,37 @@ def test_prompt_template_add(
         variable="template",
         another_variable="other_template",
     )
+
+
+def test_prompt_template_info_for_tracing() -> None:
+    prompt = PromptTemplate(
+        template="Summarize {doc} in {words} words for {audience}.",
+        input_variables=["doc", "words", "audience"],
+        name="summarizer",
+        metadata={"prompt.version": "2"},
+    )
+
+    value = prompt.invoke(
+        {"doc": "the report", "words": 50, "audience": {"team": "infra"}}
+    )
+
+    assert _get_prompt_template_info(value) == {
+        "name": "summarizer",
+        "template": "Summarize {doc} in {words} words for {audience}.",
+        "template_format": "f-string",
+        # Only scalar variables are reported.
+        "variables": {"doc": "the report", "words": 50},
+        "metadata": {"prompt.version": "2"},
+    }
+
+
+def test_prompt_template_info_ignores_partials_and_extra_input() -> None:
+    prompt = PromptTemplate.from_template("{greeting}, {name}").partial(greeting="Hi")
+
+    value = prompt.invoke({"name": "Ada", "unused": "x"})
+
+    assert _get_prompt_template_info(value) == {
+        "template": "{greeting}, {name}",
+        "template_format": "f-string",
+        "variables": {"name": "Ada"},
+    }
