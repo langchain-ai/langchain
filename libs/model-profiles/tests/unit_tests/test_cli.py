@@ -410,6 +410,25 @@ def test_model_data_to_profile_keys_subset_of_model_profile() -> None:
     )
 
 
+def test_model_data_to_profile_reasoning_effort_levels() -> None:
+    """Test that reasoning effort levels from models.dev are captured in the profile."""
+    model_data = {
+        "reasoning_options": [
+            {"type": "toggle", "values": [True, False]},
+            {"type": "effort", "values": ["low", "medium", "high", "max"]},
+        ]
+    }
+
+    profile = _model_data_to_profile(model_data)
+
+    assert profile["reasoning_effort_levels"] == [
+        "low",
+        "medium",
+        "high",
+        "max",
+    ]
+
+
 class TestWarnUndeclaredProfileKeys:
     """Tests for _warn_undeclared_profile_keys."""
 

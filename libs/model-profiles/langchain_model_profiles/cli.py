@@ -110,6 +110,19 @@ def _model_data_to_profile(model_data: dict[str, Any]) -> dict[str, Any]:
     modalities = model_data.get("modalities") or {}
     input_modalities = modalities.get("input") or []
     output_modalities = modalities.get("output") or []
+    reasoning_options = model_data.get("reasoning_options") or []
+    reasoning_effort_levels = None
+
+    if isinstance(reasoning_options, list):
+        for option in reasoning_options:
+            if (
+                isinstance(option, dict)
+                and option.get("type") == "effort"
+                and isinstance(option.get("values"), list)
+                and all(isinstance(value, str) for value in option["values"])
+            ):
+                reasoning_effort_levels = option["values"]
+                break
 
     profile = {
         "name": model_data.get("name"),
@@ -129,6 +142,7 @@ def _model_data_to_profile(model_data: dict[str, Any]) -> dict[str, Any]:
         "audio_outputs": "audio" in output_modalities,
         "video_outputs": "video" in output_modalities,
         "reasoning_output": model_data.get("reasoning"),
+        "reasoning_effort_levels": reasoning_effort_levels,
         "tool_calling": model_data.get("tool_call"),
         "tool_choice": model_data.get("tool_choice"),
         "tool_call_streaming": model_data.get("tool_call_streaming"),
