@@ -146,6 +146,17 @@ def convert_to_openai_data_block(
         else:
             error_msg = "Key base64 is required for audio blocks."
             raise ValueError(error_msg)
+
+    elif block["type"] == "text-plain":
+        if "text" in block:
+            # OpenAI has no separate plain-text document block; inline text is
+            # sent as a regular text block, like the Anthropic integration
+            # sends it as a text document.
+            formatted_block = {"type": "text", "text": block["text"]}
+        else:
+            error_msg = "Key text is required for text-plain blocks."
+            raise ValueError(error_msg)
+
     else:
         error_msg = f"Block of type {block['type']} is not supported."
         raise ValueError(error_msg)

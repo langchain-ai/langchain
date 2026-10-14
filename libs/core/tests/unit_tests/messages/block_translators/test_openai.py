@@ -550,6 +550,21 @@ def test_convert_to_openai_data_block() -> None:
     result = convert_to_openai_data_block(block)
     assert result == expected
 
+    # Plain text / inline text
+    block = {
+        "type": "text-plain",
+        "text": "hello world",
+        "mime_type": "text/plain",
+    }
+    expected = {"type": "text", "text": "hello world"}
+    result = convert_to_openai_data_block(block)
+    assert result == expected
+
+    # Plain text / missing text key
+    block = {"type": "text-plain", "mime_type": "text/plain"}
+    with pytest.raises(ValueError, match="Key text is required"):
+        convert_to_openai_data_block(block)
+
     # Responses
     # Image / url
     block = {
@@ -557,6 +572,16 @@ def test_convert_to_openai_data_block() -> None:
         "url": "https://example.com/test.png",
     }
     expected = {"type": "input_image", "image_url": "https://example.com/test.png"}
+    result = convert_to_openai_data_block(block, api="responses")
+    assert result == expected
+
+    # Plain text / inline text
+    block = {
+        "type": "text-plain",
+        "text": "hello world",
+        "mime_type": "text/plain",
+    }
+    expected = {"type": "text", "text": "hello world"}
     result = convert_to_openai_data_block(block, api="responses")
     assert result == expected
 
