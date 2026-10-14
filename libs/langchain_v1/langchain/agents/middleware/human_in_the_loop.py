@@ -31,6 +31,9 @@ if TYPE_CHECKING:
 _EDITED_TOOL_CALLS_KEY = "hitl_edited_tool_calls"
 """State key mapping tool call ID to the reviewer's replacement for it."""
 
+_REVIEWED_TOOL_CALLS_KEY = "hitl_reviewed_tool_calls"
+"""State key listing the IDs of the gated tool calls `after_model` reviewed last."""
+
 _EDIT_NOTICE = (
     "Note: a human reviewer replaced this tool call before it ran. The call recorded in "
     "your message is the one you produced, not the one that executed. This was "
@@ -211,13 +214,15 @@ class InterruptOnConfig(TypedDict):
 
     Receives a `ToolCallRequest` and returns `True` to interrupt or `False` to
     auto-approve. The predicate is called during `after_model` before the tool
-    call is added to the batched human-in-the-loop request.
+    call is added to the batched human-in-the-loop request. If another middleware
+    sends the call to the tools node before `after_model` runs, the predicate is
+    instead called with the actual request right before the call would execute.
 
-    The request is constructed with `tool=None` and a new `ToolRuntime`. The
-    `ToolRuntime` copies `context`, `store`, `stream_writer`, `execution_info`,
-    and `server_info` from the node-level `Runtime`, while `tool_call_id` is
-    populated from the current tool call. The `tools` argument is not supplied,
-    so it uses its default empty list.
+    In `after_model`, the request is constructed with `tool=None` and a new
+    `ToolRuntime`. The `ToolRuntime` copies `context`, `store`, `stream_writer`,
+    `execution_info`, and `server_info` from the node-level `Runtime`, while
+    `tool_call_id` is populated from the current tool call. The `tools` argument
+    is not supplied, so it uses its default empty list.
 
     Example:
         ```python
@@ -235,6 +240,10 @@ class _HumanInTheLoopState(AgentState[ResponseT]):
 
     hitl_edited_tool_calls: NotRequired[Annotated[dict[str, Action], PrivateStateAttr]]
     """Track tool call edits from `after_model`, so they can be used by `wrap_tool_call`."""
+
+    hitl_reviewed_tool_calls: NotRequired[Annotated[list[str], PrivateStateAttr]]
+    """IDs of the gated tool calls `after_model` reviewed, so `wrap_tool_call` can tell
+    when one reached execution without a review."""
 
 
 class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
@@ -464,12 +473,23 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 review_configs.append(review_config)
                 interrupt_indices.append(idx)
 
+        # Every gated call on this message has now been reviewed or auto-approved by
+        # `when`; `wrap_tool_call` reviews any gated call that is missing from this list.
+        reviewed_tool_call_ids = [
+            tool_call["id"]
+            for tool_call in last_ai_msg.tool_calls
+            if tool_call["name"] in self.interrupt_on and tool_call["id"]
+        ]
+
         # If no interrupts needed, return early, dropping any earlier turn's edits so
         # they cannot be applied to this turn's tool calls.
         if not action_requests:
+            update: dict[str, Any] = {}
             if state.get(_EDITED_TOOL_CALLS_KEY):
-                return {_EDITED_TOOL_CALLS_KEY: {}}
-            return None
+                update[_EDITED_TOOL_CALLS_KEY] = {}
+            if reviewed_tool_call_ids or state.get(_REVIEWED_TOOL_CALLS_KEY):
+                update[_REVIEWED_TOOL_CALLS_KEY] = reviewed_tool_call_ids
+            return update or None
 
         # Create single HITLRequest with all actions and configs
         hitl_request = HITLRequest(
@@ -522,6 +542,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         return {
             "messages": [last_ai_msg, *artificial_tool_messages],
             _EDITED_TOOL_CALLS_KEY: edited_tool_calls,
+            _REVIEWED_TOOL_CALLS_KEY: reviewed_tool_call_ids,
         }
 
     async def aafter_model(
@@ -537,6 +558,76 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             Updated message with the revised tool calls.
         """
         return self.after_model(state, runtime)
+
+    def _unreviewed_config(self, request: ToolCallRequest) -> InterruptOnConfig | None:
+        """The review config for a gated call that reached execution without a review.
+
+        This happens when another middleware sends the call to the tools node before this
+        middleware's `after_model` hook runs, for example by returning
+        `jump_to="tools"` from an `after_model` hook that runs first.
+        """
+        tool_call = request.tool_call
+        config = self.interrupt_on.get(tool_call["name"])
+        if config is None or tool_call["id"] in (request.state.get(_REVIEWED_TOOL_CALLS_KEY) or []):
+            return None
+        when = config.get("when")
+        if when is not None and not when(request):
+            return None
+        return config
+
+    def _review_at_execution(
+        self, request: ToolCallRequest, config: InterruptOnConfig
+    ) -> ToolMessage | Action | None:
+        """Ask a human about a call that skipped review, right before it would run.
+
+        The call gets its own interrupt with the same request and decision shapes as
+        `after_model` uses, holding just this call.
+
+        Returns:
+            The `ToolMessage` answering the call if the reviewer rejected or responded to
+            it, the reviewer's replacement if they edited it, or `None` if they approved.
+
+        Raises:
+            ValueError: If the reviewer does not return exactly one decision.
+        """
+        tool_call = request.tool_call
+        action_request, review_config = self._create_action_and_config(
+            tool_call, config, request.state, cast("Runtime[ContextT]", request.runtime)
+        )
+        hitl_request = HITLRequest(action_requests=[action_request], review_configs=[review_config])
+        decisions = interrupt(hitl_request)["decisions"]
+        if (decisions_len := len(decisions)) != 1:
+            msg = (
+                f"Number of human decisions ({decisions_len}) does not match "
+                "number of hanging tool calls (1)."
+            )
+            raise ValueError(msg)
+        decision: Decision = decisions[0]
+        _, tool_message = self._process_decision(decision, tool_call, config)
+        if tool_message is not None:
+            return tool_message
+        if decision["type"] == "edit":
+            return decision["edited_action"]
+        return None
+
+    def _prepare_execution(
+        self, request: ToolCallRequest
+    ) -> ToolMessage | tuple[ToolCallRequest, Action | None]:
+        """Resolve the reviewer's decision for a call that is about to run.
+
+        Returns:
+            The `ToolMessage` answering the call when it must not run, otherwise the
+            request to run and the reviewer's replacement it carries, if any.
+        """
+        executed = self._reviewer_edit(request)
+        if executed is None and (config := self._unreviewed_config(request)) is not None:
+            review = self._review_at_execution(request, config)
+            if isinstance(review, ToolMessage):
+                return review
+            executed = review
+        if executed is not None:
+            request = self._apply_edit(request, executed)
+        return request, executed
 
     def _reviewer_edit(self, request: ToolCallRequest) -> Action | None:
         """The reviewer's replacement for this call, if an `edit` decision replaced it."""
@@ -646,18 +737,23 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         request: ToolCallRequest,
         handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
     ) -> ToolMessage | Command[Any]:
-        """Prepend reviewer-edit guidance to the result of an edited tool call.
+        """Review a gated call that skipped `after_model`, and annotate edited results.
+
+        A gated call reaches this hook without a review when another middleware sends it
+        to the tools node before `after_model` runs; it is reviewed here before it runs.
 
         Args:
             request: The tool call request being executed.
             handler: Callable that executes the tool.
 
         Returns:
-            The tool result, with a note prepended when a reviewer edited the call.
+            The tool result, with a note prepended when a reviewer edited the call, or
+            the reviewer's `ToolMessage` when they rejected or responded to it.
         """
-        executed = self._reviewer_edit(request)
-        if executed is not None:
-            request = self._apply_edit(request, executed)
+        prepared = self._prepare_execution(request)
+        if isinstance(prepared, ToolMessage):
+            return prepared
+        request, executed = prepared
         return self._annotate_edited_result(handler(request), request, executed)
 
     async def awrap_tool_call(
@@ -672,9 +768,11 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             handler: Awaitable callable that executes the tool.
 
         Returns:
-            The tool result, with a note prepended when a reviewer edited the call.
+            The tool result, with a note prepended when a reviewer edited the call, or
+            the reviewer's `ToolMessage` when they rejected or responded to it.
         """
-        executed = self._reviewer_edit(request)
-        if executed is not None:
-            request = self._apply_edit(request, executed)
+        prepared = self._prepare_execution(request)
+        if isinstance(prepared, ToolMessage):
+            return prepared
+        request, executed = prepared
         return self._annotate_edited_result(await handler(request), request, executed)
