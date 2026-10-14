@@ -103,6 +103,8 @@ langchain-tests = { path = "../standard-tests", editable = true }
 langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 langchain-anthropic = { path = "../partners/anthropic", editable = true }
+# TODO: remove once langgraph releases `insert_before` (langchain-ai/langgraph#9298)
+langgraph = { git = "https://github.com/langchain-ai/langgraph.git", subdirectory = "libs/langgraph", branch = "bengret/langgraph/insert-input" }
 
 [tool.ruff]
 line-length = 100
