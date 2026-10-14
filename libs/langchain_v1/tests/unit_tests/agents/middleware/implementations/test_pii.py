@@ -7,6 +7,7 @@
 # langgraph adds a `__getattr__` fallback (strict mode's `warn_unused_ignores`).
 
 import re
+from collections.abc import Callable
 from typing import Any
 
 import pytest
@@ -885,6 +886,53 @@ def _emitted_text(events: list[ProtocolEvent]) -> tuple[str, dict[int, str]]:
     return "".join(parts), final_by_index
 
 
+def _make_tool_call_delta_event(
+    delta: dict[str, Any], *, index: int = 0, run_id: str = "r1"
+) -> ProtocolEvent:
+    """Build a `messages` protocol event for a tool-call content-block delta."""
+    return {
+        "type": "event",
+        "method": "messages",
+        "params": {
+            "namespace": [],
+            "timestamp": 0,
+            "data": (
+                {"event": "content-block-delta", "index": index, "delta": delta},
+                {"run_id": run_id},
+            ),
+        },
+    }
+
+
+def _tool_call_slice(args: str) -> dict[str, Any]:
+    return {"type": "tool-call-delta", "args": args}
+
+
+def _tool_call_snapshot(args: str | None = None, **fields: Any) -> dict[str, Any]:
+    if args is not None:
+        fields["args"] = args
+    return {"type": "block-delta", "fields": {"type": "tool_call_chunk", **fields}}
+
+
+def _emitted_tool_call_args(events: list[ProtocolEvent]) -> str:
+    """Rebuild streamed tool-call args the way a consumer would.
+
+    `tool-call-delta` appends its slice; a `block-delta` carrying `args`
+    replaces them.
+    """
+    args = ""
+    for event in events:
+        payload = event["params"]["data"][0]
+        if payload.get("event") != "content-block-delta":
+            continue
+        delta = payload["delta"]
+        if delta.get("type") == "tool-call-delta":
+            args += delta["args"]
+        elif delta.get("type") == "block-delta" and "args" in delta["fields"]:
+            args = delta["fields"]["args"]
+    return args
+
+
 def _run_transformer(transformer: Any, events: list[ProtocolEvent]) -> list[ProtocolEvent]:
     """Feed events through the transformer (mutates in place) and return them."""
     for event in events:
@@ -1750,6 +1798,93 @@ class TestPIIStreamTransformer:
         with pytest.raises(PIIDetectionError):
             transformer.process(event)
 
+    @pytest.mark.parametrize(
+        "make_delta",
+        [
+            pytest.param(_tool_call_slice, id="slices"),
+            pytest.param(_tool_call_snapshot, id="snapshots"),
+        ],
+    )
+    def test_tool_call_pii_straddling_deltas_is_redacted(
+        self, make_delta: Callable[[str], dict[str, Any]]
+    ) -> None:
+        """PII split across tool-call deltas never reaches the wire, in either form.
+
+        `tool-call-delta` slices go through the same lookback buffer as
+        text; `block-delta` snapshots (older cores) are redacted whole.
+        Either way the consumer rebuilds the same args: the redacted args
+        minus the held-back tail that `content-block-finish` carries.
+        """
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=8)
+
+        slices = ['{"to": "alice', '@example.com", ', '"subject": "hi"}']
+        args = ["".join(slices[: i + 1]) for i in range(len(slices))]
+        parts = slices if make_delta is _tool_call_slice else args
+        events = [_make_tool_call_delta_event(make_delta(p)) for p in parts]
+        _run_transformer(transformer, events)
+
+        assert _emitted_tool_call_args(events) == '{"to": "[REDACTED_EMAIL]", "subject'
+
+    def test_unknown_delta_variant_passes_through(self) -> None:
+        """An unknown delta variant is left as is and doesn't disturb the buffer."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=8)
+
+        unknown = {"type": "future-delta", "args": "x"}
+        events = [
+            _make_tool_call_delta_event(_tool_call_slice('{"to": "alice')),
+            _make_tool_call_delta_event(dict(unknown)),
+            _make_tool_call_delta_event(_tool_call_slice('@example.com", ')),
+            _make_tool_call_delta_event(_tool_call_slice('"subject": "hi"}')),
+        ]
+        _run_transformer(transformer, events)
+
+        assert events[1]["params"]["data"][0]["delta"] == unknown
+        assert _emitted_tool_call_args(events) == '{"to": "[REDACTED_EMAIL]", "subject'
+
+    def test_tool_call_slices_after_a_snapshot_extend_what_it_emitted(self) -> None:
+        """A snapshot's withheld tail is the prefix later slices append to."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=8)
+
+        events = [
+            _make_tool_call_delta_event(_tool_call_snapshot('{"to": "alice')),
+            _make_tool_call_delta_event(_tool_call_slice('@example.com", ')),
+            _make_tool_call_delta_event(_tool_call_slice('"subject": "hi"}')),
+        ]
+        _run_transformer(transformer, events)
+
+        assert _emitted_tool_call_args(events) == '{"to": "[REDACTED_EMAIL]", "subject'
+
+    def test_tool_call_delta_block_strategy_raises(self) -> None:
+        """`block` raises as soon as PII completes across tool-call slices."""
+        rule = RedactionRule(pii_type="email", strategy="block").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        transformer.process(_make_tool_call_delta_event(_tool_call_slice('{"to": "alice')))
+        with pytest.raises(PIIDetectionError):
+            transformer.process(_make_tool_call_delta_event(_tool_call_slice('@example.com"}')))
+
+    def test_args_free_block_delta_between_slices_passes_through(self) -> None:
+        """A late `id` / `name` update leaves the slices' buffer intact."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=8)
+
+        late_id = _tool_call_snapshot(id="c1", name="send_email")
+        events = [
+            _make_tool_call_delta_event(_tool_call_slice('{"to": "alice')),
+            _make_tool_call_delta_event(late_id),
+            _make_tool_call_delta_event(_tool_call_slice('@example.com", ')),
+            _make_tool_call_delta_event(_tool_call_slice('"subject": "hi"}')),
+        ]
+        _run_transformer(transformer, events)
+
+        assert events[1]["params"]["data"][0]["delta"] == _tool_call_snapshot(
+            id="c1", name="send_email"
+        )
+        assert _emitted_tool_call_args(events) == '{"to": "[REDACTED_EMAIL]", "subject'
+
     def test_pii_fully_inside_one_delta_is_redacted_on_finalize(self) -> None:
         """A delta shorter than `lookback` is held until finalize redacts the snapshot."""
         rule = RedactionRule(pii_type="email").resolve()
@@ -2219,7 +2354,9 @@ class TestPIIStreamingEndToEnd:
                             surfaces.append(str(c.get("args")))
                     elif p.get("event") == "content-block-delta":
                         d = p.get("delta") or {}
-                        if d.get("type") == "block-delta":
+                        if d.get("type") == "tool-call-delta":
+                            surfaces.append(str(d.get("args", "")))
+                        elif d.get("type") == "block-delta":
                             f = d.get("fields") or {}
                             if f.get("type") in {
                                 "tool_call_chunk",
