@@ -250,6 +250,7 @@ class ShellSession:
         truncated_by_bytes = False
         exit_code: int | None = None
         timed_out = False
+        shell_exited = False
 
         while True:
             remaining = deadline - time.monotonic()
@@ -263,6 +264,11 @@ class ShellSession:
                 break
 
             if data is None:
+                if source == "stdout":
+                    # The shell exited (e.g. an `exit N` command) before the
+                    # marker printf could run, so the marker will never arrive.
+                    shell_exited = True
+                    break
                 continue
 
             if source == "stdout" and data.startswith(marker):
@@ -307,6 +313,23 @@ class ShellSession:
                 output="",
                 exit_code=None,
                 timed_out=True,
+                truncated_by_lines=truncated_by_lines,
+                truncated_by_bytes=truncated_by_bytes,
+                total_lines=total_lines,
+                total_bytes=total_bytes,
+            )
+
+        if shell_exited:
+            # The shell terminated before running the marker printf (e.g. the
+            # command ended with `exit N`). Collect any remaining output, report
+            # the process exit code, and restart so the session stays usable.
+            self._drain_remaining_stderr(collected, deadline)
+            exit_code = self._process.poll() if self._process else None
+            self.restart()
+            return CommandExecutionResult(
+                output="".join(collected),
+                exit_code=exit_code,
+                timed_out=False,
                 truncated_by_lines=truncated_by_lines,
                 truncated_by_bytes=truncated_by_bytes,
                 total_lines=total_lines,

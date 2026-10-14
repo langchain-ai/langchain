@@ -309,6 +309,53 @@ def test_nonzero_exit_code_returns_error(tmp_path: Path) -> None:
         middleware.after_agent(state, runtime)
 
 
+def test_exit_command_returns_quickly_with_output_and_exit_code(
+    tmp_path: Path,
+) -> None:
+    """An `exit N` command must not hang until the command timeout.
+
+    The shell terminates before the marker printf runs, so the marker never
+    arrives. The session must return the collected output and the process
+    exit code promptly and restart so the next command still works.
+    """
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "a.txt").write_text("x")
+    (workspace / "b.txt").write_text("y")
+    policy = HostExecutionPolicy(command_timeout=10.0, startup_timeout=5.0, termination_timeout=5.0)
+    middleware = ShellToolMiddleware(workspace_root=workspace, execution_policy=policy)
+    runtime = Runtime()
+    state = _empty_state()
+    try:
+        updates = middleware.before_agent(state, runtime)
+        if updates:
+            state.update(cast("ShellToolState", updates))
+        resources = middleware._get_or_create_resources(state)
+
+        start = time.monotonic()
+        result = middleware._run_shell_tool(
+            resources,
+            {"command": "for f in *.txt; do echo $f; done; exit 7"},
+            tool_call_id="test-id",
+        )
+        elapsed = time.monotonic() - start
+
+        assert elapsed < 5.0, f"exit command took {elapsed:.2f}s; it must not wait out the timeout"
+        assert isinstance(result, ToolMessage)
+        assert result.artifact["exit_code"] == 7
+        assert result.artifact["timed_out"] is False
+        assert "a.txt" in result.content
+        assert "b.txt" in result.content
+
+        follow_up = middleware._run_shell_tool(
+            resources, {"command": "echo recovered"}, tool_call_id="test-id-2"
+        )
+        assert follow_up.status == "success"
+        assert "recovered" in follow_up.content
+    finally:
+        middleware.after_agent(state, runtime)
+
+
 def test_truncation_by_bytes(tmp_path: Path) -> None:
     """Test that output is truncated by bytes when max_output_bytes is exceeded."""
     policy = HostExecutionPolicy(max_output_bytes=50, command_timeout=5.0)
