@@ -464,6 +464,56 @@ def test_trim_messages_last_allow_partial_one_message() -> None:
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
+def _count_order_sensitive_words(messages: list[BaseMessage]) -> int:
+    return sum(
+        3 + len(re.findall(r"\w+|\n", str(message.text))) for message in messages
+    )
+
+
+def test_trim_messages_last_allow_partial_respects_token_counter_order() -> None:
+    max_tokens = 5
+    messages = [HumanMessage("a\nb\nc")]
+    messages_copy = [message.model_copy(deep=True) for message in messages]
+
+    actual = trim_messages(
+        messages,
+        max_tokens=max_tokens,
+        token_counter=_count_order_sensitive_words,
+        strategy="last",
+        allow_partial=True,
+    )
+
+    assert actual == [HumanMessage("c")]
+    assert _count_order_sensitive_words(actual) <= max_tokens
+    assert messages == messages_copy
+
+
+def test_trim_messages_last_allow_partial_blocks_respects_token_order() -> None:
+    max_tokens = 5
+    messages = [
+        HumanMessage(
+            [
+                {"type": "text", "text": "a\n"},
+                {"type": "text", "text": "b\n"},
+                {"type": "text", "text": "c"},
+            ]
+        )
+    ]
+    messages_copy = [message.model_copy(deep=True) for message in messages]
+
+    actual = trim_messages(
+        messages,
+        max_tokens=max_tokens,
+        token_counter=_count_order_sensitive_words,
+        strategy="last",
+        allow_partial=True,
+    )
+
+    assert actual == [HumanMessage([{"type": "text", "text": "c"}])]
+    assert _count_order_sensitive_words(actual) <= max_tokens
+    assert messages == messages_copy
+
+
 def test_trim_messages_allow_partial_text_splitter() -> None:
     expected = [
         HumanMessage("a 4 token text.", id="third"),
