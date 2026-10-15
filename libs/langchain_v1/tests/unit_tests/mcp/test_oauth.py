@@ -462,3 +462,44 @@ async def test_event_handler_can_raise_the_host_error() -> None:
     async with _client(servers, provider) as client:
         with pytest.raises(HostReauthError):
             await client.post(MCP_URL, json={})
+
+
+@pytest.mark.parametrize(
+    ("failure", "expected"),
+    [
+        (httpx2.ConnectError("refused"), MCPOAuthUnavailableError),
+        (httpx2.ReadTimeout("timed out"), httpx2.ReadTimeout),
+    ],
+)
+async def test_refresh_reports_only_unsent_requests_as_unavailable(
+    failure: Exception, expected: type[Exception]
+) -> None:
+    """A read timeout may follow a rotation the server already committed."""
+    servers, store = FakeServers(), InMemoryOAuthCredentialStore()
+    await _connect(servers, store)
+
+    async def failing(_request: httpx2.Request) -> httpx2.Response:
+        raise failure
+
+    provider = MCPOAuthProvider(MCP_URL, _metadata(), store, request_sender=failing)
+
+    with pytest.raises(expected):
+        await provider.refresh()
+
+
+async def test_begin_propagates_host_sender_errors() -> None:
+    class BlockedError(Exception):
+        pass
+
+    servers, store = FakeServers(), InMemoryOAuthCredentialStore()
+
+    async def guarded(request: httpx2.Request) -> httpx2.Response:
+        if str(request.url).startswith(ISSUER):
+            msg = "blocked by host policy"
+            raise BlockedError(msg)
+        return await servers.send(request)
+
+    provider = MCPOAuthProvider(MCP_URL, _metadata(), store, request_sender=guarded)
+
+    with pytest.raises(BlockedError, match="host policy"):
+        await provider.begin()
