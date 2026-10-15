@@ -6,20 +6,25 @@
 # (langgraph#8389). The `# type: ignore[attr-defined]` below self-remove once
 # langgraph adds a `__getattr__` fallback (strict mode's `warn_unused_ignores`).
 
+import json
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import Any
 
 import pytest
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
     HumanMessage,
     InvalidToolCall,
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages.tool import tool_call_chunk
+from langchain_core.outputs import ChatGenerationChunk
 from langchain_core.tools import tool
 from langgraph.runtime import Runtime
 from langgraph.stream._types import ProtocolEvent
@@ -2200,8 +2205,95 @@ class TestPIIStreamTransformer:
         list(run.tool_calls)  # type: ignore[attr-defined]
 
 
+class _SlicedToolCallModel(FakeToolCallingModel):
+    """Streams each tool call's args in small slices, as providers do."""
+
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        message = self._generate(messages, stop, run_manager, **kwargs).generations[0].message
+        assert isinstance(message, AIMessage)
+        yield ChatGenerationChunk(message=AIMessageChunk(content=message.content, id=message.id))
+        for index, call in enumerate(message.tool_calls):
+            args = json.dumps(call["args"])
+            # The opener carries the id and name; the args follow in slices.
+            slices = ["", *(args[i : i + 8] for i in range(0, len(args), 8))]
+            for i, part in enumerate(slices):
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content="",
+                        id=message.id,
+                        tool_call_chunks=[
+                            tool_call_chunk(
+                                id=call["id"] if i == 0 else None,
+                                name=call["name"] if i == 0 else None,
+                                args=part,
+                                index=index,
+                            )
+                        ],
+                    )
+                )
+
+
 class TestPIIStreamingEndToEnd:
     """End-to-end tests with a real streaming chat model wired into create_agent."""
+
+    @pytest.mark.anyio
+    async def test_streamed_tool_call_args_are_redacted_and_reach_the_tool_whole(
+        self,
+    ) -> None:
+        """Tool-call args streamed in slices are redacted, and the tool gets every arg.
+
+        The email straddles slices. Redacting the streamed args must not
+        reach the args the tool runs with: under async streaming the tool
+        once ran with `{}`, because each `block-delta` the middleware
+        redacted was the bridge's own running copy of the args.
+        """
+        received: list[dict[str, str]] = []
+
+        @tool
+        def send_email(to: str, subject: str, body: str) -> str:
+            """Send an email."""
+            received.append({"to": to, "subject": subject, "body": body})
+            return "sent"
+
+        body = "Long enough that the args outlast the lookback. " * 4
+        model = _SlicedToolCallModel(
+            tool_calls=[
+                [
+                    ToolCall(
+                        name="send_email",
+                        args={"to": "alice@example.com", "subject": "hi", "body": body},
+                        id="c1",
+                    )
+                ],
+                [],
+            ]
+        )
+        agent = create_agent(
+            model, [send_email], middleware=[PIIMiddleware("email", apply_to_output=True)]
+        )
+
+        streamed_args = ""
+        run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
+        async for event in run:
+            if event.get("method") != "messages":
+                continue
+            payload = event["params"]["data"][0]
+            if isinstance(payload, dict) and payload.get("event") == "content-block-delta":
+                delta = payload["delta"]
+                if delta.get("type") == "tool-call-delta":
+                    streamed_args += delta["args"]
+
+        assert "alice@example.com" not in streamed_args
+        assert "[REDACTED_EMAIL]" in streamed_args
+        assert len(received) == 1
+        assert received[0]["subject"] == "hi"
+        assert received[0]["body"] == body
 
     @pytest.mark.anyio
     async def test_streamed_messages_projection_is_redacted(self) -> None:
