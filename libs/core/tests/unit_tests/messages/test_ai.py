@@ -588,3 +588,39 @@ def test_content_blocks_reasoning_extraction() -> None:
     content_blocks = message.content_blocks
     assert len(content_blocks) == 1
     assert content_blocks[0]["type"] == "text"
+
+
+def test_ai_message_chunk_preserves_invalid_tool_calls() -> None:
+    """Invalid tool calls must survive the chunk round-trip.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/41254.
+    """
+    invalid = create_invalid_tool_call(
+        name="search_notes", args="{bad json", id="bad-1", error="parse error"
+    )
+    chunk = AIMessageChunk(content="calling", invalid_tool_calls=[invalid])
+    # The invalid marker is carried on the chunk ...
+    assert chunk.tool_call_chunks[0].get("invalid") is True
+    assert chunk.tool_call_chunks[0].get("error") == "parse error"
+
+    # ... through chunk addition (e.g., `merge_message_runs`) ...
+    merged_chunk = chunk + AIMessageChunk(content="more")
+    assert merged_chunk.tool_call_chunks[0].get("invalid") is True
+
+    # ... and back to a message, without being re-parsed as a valid call.
+    assert merged_chunk.invalid_tool_calls == [invalid]
+    assert merged_chunk.tool_calls == []
+
+
+def test_ai_message_chunk_unmarked_unparseable_args_stay_invalid() -> None:
+    """Streamed chunks without the invalid marker keep existing behavior."""
+    chunk = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(name="tool1", args="abc", id="1", index=0),
+        ],
+    )
+    assert chunk.tool_calls == []
+    assert chunk.invalid_tool_calls == [
+        create_invalid_tool_call(name="tool1", args="abc", id="1", error=None)
+    ]

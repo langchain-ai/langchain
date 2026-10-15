@@ -1045,6 +1045,17 @@
             ]),
             'title': 'Args',
           }),
+          'error': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'title': 'Error',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -1066,6 +1077,10 @@
               }),
             ]),
             'title': 'Index',
+          }),
+          'invalid': dict({
+            'title': 'Invalid',
+            'type': 'boolean',
           }),
           'name': dict({
             'anyOf': list([
@@ -2460,6 +2475,17 @@
             ]),
             'title': 'Args',
           }),
+          'error': dict({
+            'anyOf': list([
+              dict({
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'title': 'Error',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -2481,6 +2507,10 @@
               }),
             ]),
             'title': 'Index',
+          }),
+          'invalid': dict({
+            'title': 'Invalid',
+            'type': 'boolean',
           }),
           'name': dict({
             'anyOf': list([

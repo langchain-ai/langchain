@@ -531,7 +531,12 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 tool_call_chunks.extend(
                     [
                         create_tool_call_chunk(
-                            name=tc["name"], args=tc["args"], id=tc["id"], index=None
+                            name=tc["name"],
+                            args=tc["args"],
+                            id=tc["id"],
+                            index=None,
+                            invalid=True,
+                            error=tc["error"],
                         )
                         for tc in self.invalid_tool_calls
                     ]
@@ -542,17 +547,26 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         tool_calls = []
         invalid_tool_calls = []
 
-        def add_chunk_to_invalid_tool_calls(chunk: ToolCallChunk) -> None:
+        def add_chunk_to_invalid_tool_calls(
+            chunk: ToolCallChunk, error: str | None = None
+        ) -> None:
             invalid_tool_calls.append(
                 create_invalid_tool_call(
                     name=chunk["name"],
                     args=chunk["args"],
                     id=chunk["id"],
-                    error=None,
+                    error=error,
                 )
             )
 
         for chunk in self.tool_call_chunks:
+            if chunk.get("invalid"):
+                # The chunk was converted from an invalid tool call of a
+                # fully-formed message (e.g., via `merge_message_runs`).
+                # Restore it as invalid instead of re-parsing the args, which
+                # would promote it to a valid tool call.
+                add_chunk_to_invalid_tool_calls(chunk, error=chunk.get("error"))
+                continue
             try:
                 args_ = parse_partial_json(chunk["args"]) if chunk["args"] else {}
                 if isinstance(args_, dict):
@@ -673,15 +687,19 @@ def add_ai_message_chunks(
     if raw_tool_calls := merge_lists(
         left.tool_call_chunks, *(o.tool_call_chunks for o in others)
     ):
-        tool_call_chunks = [
-            create_tool_call_chunk(
+        tool_call_chunks = []
+        for rtc in raw_tool_calls:
+            chunk = create_tool_call_chunk(
                 name=rtc.get("name"),
                 args=rtc.get("args"),
                 index=rtc.get("index"),
                 id=rtc.get("id"),
+                # Preserve the invalid marker so invalid tool calls converted
+                # from fully-formed messages are not re-parsed as valid.
+                invalid=rtc.get("invalid", False),
+                error=rtc.get("error"),
             )
-            for rtc in raw_tool_calls
-        ]
+            tool_call_chunks.append(chunk)
     else:
         tool_call_chunks = []
 

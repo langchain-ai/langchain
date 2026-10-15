@@ -299,6 +299,22 @@ class ToolCallChunk(TypedDict):
     type: NotRequired[Literal["tool_call_chunk"]]
     """Used for discrimination."""
 
+    invalid: NotRequired[bool]
+    """Whether the chunk originated from an invalid tool call.
+
+    Set when a fully-formed message's `invalid_tool_calls` are converted to
+    chunks (e.g., in `AIMessageChunk.init_tool_calls`). Preserved through
+    chunk merging so the call is restored as invalid instead of being
+    re-parsed as a valid tool call.
+    """
+
+    error: NotRequired[str | None]
+    """Error associated with the invalid tool call, if any.
+
+    Only set when `invalid` is true; carried through the chunk round-trip so
+    the original error is not lost.
+    """
+
 
 def tool_call_chunk(
     *,
@@ -306,6 +322,8 @@ def tool_call_chunk(
     args: str | None = None,
     id: str | None = None,
     index: int | None = None,
+    invalid: bool = False,
+    error: str | None = None,
 ) -> ToolCallChunk:
     """Create a tool call chunk.
 
@@ -314,13 +332,23 @@ def tool_call_chunk(
         args: The arguments to the tool call as a JSON string.
         id: An identifier associated with the tool call.
         index: The index of the tool call in a sequence.
+        invalid: Whether the chunk originated from an invalid tool call. Used to
+            preserve the invalid marker when a fully-formed message is converted
+            to chunks and back.
+        error: Error associated with the invalid tool call, if any. Only
+            meaningful when `invalid` is true.
 
     Returns:
         The created tool call chunk.
     """
-    return ToolCallChunk(
+    chunk = ToolCallChunk(
         name=name, args=args, id=id, index=index, type="tool_call_chunk"
     )
+    if invalid:
+        chunk["invalid"] = True
+    if error is not None:
+        chunk["error"] = error
+    return chunk
 
 
 def invalid_tool_call(

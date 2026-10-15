@@ -15,6 +15,7 @@ from langchain_core.messages import (
     ChatMessage,
     FunctionMessage,
     HumanMessage,
+    InvalidToolCall,
     SystemMessage,
     ToolCall,
     ToolMessage,
@@ -136,6 +137,69 @@ def test_merge_messages_tool_messages() -> None:
     messages_model_copy = [m.model_copy(deep=True) for m in messages]
     actual = merge_message_runs(messages)
     assert actual == messages
+    assert messages == messages_model_copy
+
+
+def test_merge_message_runs_invalid_tool_calls() -> None:
+    # Regression test for https://github.com/langchain-ai/langchain/issues/41254:
+    # merging must not promote invalid tool calls to valid ones.
+    messages = [
+        AIMessage(
+            "calling",
+            invalid_tool_calls=[
+                InvalidToolCall(
+                    name="search_notes",
+                    args="{bad json",
+                    id="bad-1",
+                    error="parse error",
+                    type="invalid_tool_call",
+                )
+            ],
+        ),
+        AIMessage("ANYTHING"),
+        AIMessage(
+            "more",
+            tool_calls=[
+                ToolCall(name="ok_tool", args={"q": "x"}, id="good-1", type="tool_call")
+            ],
+            invalid_tool_calls=[
+                InvalidToolCall(
+                    name="cut_tool",
+                    args='{"query": "fo',
+                    id="bad-2",
+                    error="truncated",
+                    type="invalid_tool_call",
+                )
+            ],
+        ),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+    actual = merge_message_runs(messages)
+    assert len(actual) == 1
+    merged = actual[0]
+    assert isinstance(merged, AIMessage)
+    # Invalid tool calls stay invalid, with original args and error intact.
+    assert merged.invalid_tool_calls == [
+        InvalidToolCall(
+            name="search_notes",
+            args="{bad json",
+            id="bad-1",
+            error="parse error",
+            type="invalid_tool_call",
+        ),
+        InvalidToolCall(
+            name="cut_tool",
+            args='{"query": "fo',
+            id="bad-2",
+            error="truncated",
+            type="invalid_tool_call",
+        ),
+    ]
+    # Valid tool calls are untouched.
+    assert merged.tool_calls == [
+        ToolCall(name="ok_tool", args={"q": "x"}, id="good-1", type="tool_call")
+    ]
+    # Inputs are not mutated.
     assert messages == messages_model_copy
 
 
