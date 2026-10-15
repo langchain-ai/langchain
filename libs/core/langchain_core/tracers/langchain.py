@@ -30,6 +30,8 @@ from langchain_core.tracers.schemas import Run
 if TYPE_CHECKING:
     from collections.abc import Mapping
 
+    from langsmith.address import AgentAddress
+
     from langchain_core.messages import BaseMessage
     from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 
@@ -145,7 +147,7 @@ class LangChainTracer(BaseTracer):
         tags: list[str] | None = None,
         *,
         metadata: Mapping[str, str] | None = None,
-        address: str | None = None,
+        address: AgentAddress | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer.
@@ -177,7 +179,7 @@ class LangChainTracer(BaseTracer):
             UUID(example_id) if isinstance(example_id, str) else example_id
         )
         self.project_name = project_name
-        self.address = ls_address.parse(address) if address is not None else None
+        self.address = ls_address.ensure_agent(address) if address is not None else None
         self.client = client or get_client()
         self.tags = tags or []
         self.latest_run: Run | None = None

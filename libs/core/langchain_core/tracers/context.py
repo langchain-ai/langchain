@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
     from langsmith import Client as LangSmithClient
+    from langsmith.address import AgentAddress
 
     from langchain_core.callbacks.base import BaseCallbackHandler, Callbacks
     from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
@@ -43,7 +44,7 @@ def tracing_v2_enabled(
     example_id: str | UUID | None = None,
     tags: list[str] | None = None,
     client: LangSmithClient | None = None,
-    address: str | None = None,
+    address: AgentAddress | None = None,
 ) -> Generator[LangChainTracer, None, None]:
     """Instruct LangChain to log all runs in context to LangSmith.
 
@@ -114,7 +115,7 @@ def _get_trace_callbacks(
     example_id: str | UUID | None = None,
     callback_manager: CallbackManager | AsyncCallbackManager | None = None,
     *,
-    address: str | None = None,
+    address: AgentAddress | None = None,
 ) -> Callbacks:
     if _tracing_v2_is_enabled():
         tracer = tracing_v2_callback_var.get() or LangChainTracer(
@@ -144,7 +145,7 @@ def _tracing_v2_is_enabled() -> bool | Literal["local"]:
 
 
 def _get_tracer_kwargs(
-    project_name: str | None = None, *, address: str | None = None
+    project_name: str | None = None, *, address: AgentAddress | None = None
 ) -> dict[str, Any]:
     """Get tracer defaults from the current LangSmith context.
 

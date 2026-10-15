@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from uuid import UUID
 
     from langchain_protocol.protocol import MessagesData
+    from langsmith.address import AgentAddress
     from tenacity import RetryCallState
 
     from langchain_core.agents import AgentAction, AgentFinish
@@ -59,7 +60,7 @@ def trace_as_chain_group(
     *,
     inputs: dict[str, Any] | None = None,
     project_name: str | None = None,
-    address: str | None = None,
+    address: AgentAddress | None = None,
     example_id: str | UUID | None = None,
     run_id: UUID | None = None,
     tags: list[str] | None = None,
@@ -144,7 +145,7 @@ async def atrace_as_chain_group(
     *,
     inputs: dict[str, Any] | None = None,
     project_name: str | None = None,
-    address: str | None = None,
+    address: AgentAddress | None = None,
     example_id: str | UUID | None = None,
     run_id: UUID | None = None,
     tags: list[str] | None = None,

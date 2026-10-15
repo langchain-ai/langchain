@@ -12,6 +12,7 @@ from langsmith import Client, address, configure, tracing_context
 from langsmith.address import EnvAddressError
 from langsmith.run_trees import RunTree, WriteReplica
 from langsmith.utils import LangSmithUserError, get_env_var, get_tracer_project
+from typing_extensions import TypedDict
 
 from langchain_core.callbacks.manager import (
     CallbackManager,
@@ -27,8 +28,8 @@ from langchain_core.tracers.context import (
 )
 from langchain_core.tracers.langchain import LangChainTracer
 
-ADDRESS = address.agent("code-agent", "production")
-ENV_ADDRESS = address.agent("env-agent", "staging")
+ADDRESS = address.agent_address("code-agent", "production")
+ENV_ADDRESS = address.agent_address("env-agent", "staging")
 
 
 @pytest.fixture(autouse=True)
@@ -144,11 +145,16 @@ def test_callback_address_propagation(run_type: str) -> None:
         assert payload.get("session_name") is None
 
 
+class _Destination(TypedDict, total=False):
+    project_name: str
+    address: address.AgentAddress
+
+
 @pytest.mark.parametrize(
     "destination", [{"address": ADDRESS}, {"project_name": "configured"}]
 )
 @pytest.mark.parametrize("mode", ["context", "configure", "parent"])
-def test_ambient_destination(destination: dict[str, str], mode: str) -> None:
+def test_ambient_destination(destination: _Destination, mode: str) -> None:
     client = MagicMock(spec=Client)
     scope: AbstractContextManager[None]
     if mode == "context":
@@ -195,7 +201,29 @@ def test_copy_and_context_address() -> None:
     assert client.create_run.call_args.kwargs["address"] == ADDRESS
 
 
-@pytest.mark.parametrize("address", ["invalid", {"agent_id": "agent"}])
+def test_plain_dictionary_address() -> None:
+    """A plain dictionary is normalized and forwarded to the SDK."""
+    destination = {"kind": "AGENT", "id": "code-agent", "environment": "production"}
+    client = MagicMock(spec=Client)
+    tracer = LangChainTracer(address=destination, client=client)  # type: ignore[arg-type]
+    assert tracer.address == ADDRESS
+    assert destination["environment"] == "production"
+    run = CallbackManager(handlers=[tracer]).on_chain_start({}, {})
+    run.on_chain_end({})
+    assert client.create_run.call_args.kwargs["address"] == ADDRESS
+
+
+@pytest.mark.parametrize(
+    "address",
+    [
+        "invalid",
+        "lrn:agents/code-agent/environments/production",
+        {"agent_id": "agent"},
+        {"kind": "AGENT", "id": "agent", "environment": "invalid"},
+        address.evaluator_address(),
+        address.experiment_address("0190c3d4-0000-7000-8000-0000000000b1"),
+    ],
+)
 def test_invalid_address(address: Any) -> None:
     with pytest.raises(LangSmithUserError):
         LangChainTracer(address=address, client=MagicMock(spec=Client))
@@ -343,7 +371,7 @@ def test_replica_destinations(*, root_address: bool, replica_mode: str) -> None:
     client = MagicMock(spec=Client)
     replica_client = MagicMock(spec=Client)
     replica: WriteReplica = {"client": replica_client, "primary": False}
-    replica_address = address.agent("replica-agent", "staging")
+    replica_address = address.agent_address("replica-agent", "staging")
     if replica_mode == "project":
         replica["project_name"] = "replica-project"
     elif replica_mode == "address":
@@ -391,7 +419,7 @@ def test_replica_preserves_primary_ids() -> None:
     client = MagicMock(spec=Client)
     primary_client = MagicMock(spec=Client)
     secondary_client = MagicMock(spec=Client)
-    secondary_address = address.agent("secondary-agent", "staging")
+    secondary_address = address.agent_address("secondary-agent", "staging")
     run_id = uuid4()
     tracer = LangChainTracer(address=ADDRESS, client=client)
     with tracing_context(
