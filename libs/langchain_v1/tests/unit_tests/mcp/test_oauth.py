@@ -427,3 +427,38 @@ def test_reprs_hide_credentials() -> None:
     rendered = repr(credentials) + repr(pending)
 
     assert "secret" not in rendered.replace("client_secret", "")
+
+
+async def test_inline_refresh_sends_resource_for_the_request_protocol_version() -> None:
+    servers, store = FakeServers(), InMemoryOAuthCredentialStore()
+    await _connect(servers, store)
+    assert store.credentials is not None
+    store.credentials = store.credentials.model_copy(
+        update={"expires_at": time.time() - 60, "protected_resource_metadata": None}
+    )
+    servers.auth_requests.clear()
+
+    async with _client(servers, _provider(servers, store)) as client:
+        await client.post(MCP_URL, json={}, headers={"MCP-Protocol-Version": "2025-11-25"})
+
+    (refresh,) = servers.auth_requests
+    assert parse_qs(refresh.content.decode())["resource"] == [MCP_URL]
+
+
+async def test_event_handler_can_raise_the_host_error() -> None:
+    class HostReauthError(Exception):
+        pass
+
+    servers, store = FakeServers(), InMemoryOAuthCredentialStore()
+
+    async def on_event(event: OAuthEvent) -> None:
+        if isinstance(event, AuthorizationRequired):
+            raise HostReauthError
+
+    provider = MCPOAuthProvider(
+        MCP_URL, _metadata(), store, request_sender=servers.send, on_event=on_event
+    )
+
+    async with _client(servers, provider) as client:
+        with pytest.raises(HostReauthError):
+            await client.post(MCP_URL, json={})
