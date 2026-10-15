@@ -63,8 +63,6 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
 
     from langchain_protocol.protocol import (
-        BlockDelta,
-        BlockDeltaFields,
         ContentBlockDelta,
         DataDelta,
         ReasoningDelta,
@@ -111,46 +109,6 @@ def _to_protocol_block(block: CompatBlock) -> ContentBlock:
 def _to_finalized_block(block: CompatBlock) -> FinalizedContentBlock:
     """Counterpart of `_to_protocol_block` for finalized blocks."""
     return cast("FinalizedContentBlock", block)
-
-
-def _to_block_delta_fields(block: CompatBlock) -> BlockDeltaFields:
-    """Narrow an internal working dict to protocol block-delta fields."""
-    return cast("BlockDeltaFields", block)
-
-
-_TOOL_CALL_CHUNK_TYPES = frozenset({"tool_call_chunk", "server_tool_call_chunk"})
-
-
-def _to_content_delta(block: CompatBlock) -> ContentBlockDelta:
-    """Convert a content-block slice to an explicit protocol delta."""
-    btype = block.get("type")
-    if btype == "text":
-        return cast("TextDelta", {"type": "text-delta", "text": block.get("text", "")})
-    if btype == "reasoning":
-        return cast(
-            "ReasoningDelta",
-            {
-                "type": "reasoning-delta",
-                "reasoning": block.get("reasoning", ""),
-            },
-        )
-    if btype in _TOOL_CALL_CHUNK_TYPES:
-        return cast(
-            "ToolCallDelta",
-            {"type": "tool-call-delta", "args": block.get("args") or ""},
-        )
-    if "data" in block:
-        delta = cast("DataDelta", {"type": "data-delta", "data": block.get("data", "")})
-        if block.get("encoding") == "base64":
-            delta["encoding"] = "base64"
-        return delta
-    return cast(
-        "BlockDelta",
-        {
-            "type": "block-delta",
-            "fields": _to_block_delta_fields(block),
-        },
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -241,6 +199,8 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
 # of being serialized twice on the wire.
 _HEAVY_FIELDS = frozenset({"args", "data", "output", "transcript", "value"})
 
+_TOOL_CALL_CHUNK_TYPES = frozenset({"tool_call_chunk", "server_tool_call_chunk"})
+
 
 def _start_skeleton(block: CompatBlock) -> ContentBlock:
     """Empty-content placeholder for the `content-block-start` event.
@@ -293,8 +253,8 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
     return _to_protocol_block(stripped)
 
 
-def _should_emit_delta(block: CompatBlock) -> bool:
-    """Whether a per-chunk block carries content worth a delta event.
+def _to_content_delta(block: CompatBlock) -> ContentBlockDelta | None:
+    """Convert a content-block slice to a protocol delta, or `None` if it has none.
 
     Deltaable types emit only when they have fresh content.  Self-contained
     / already-finalized types skip the delta entirely — the `finish`
@@ -302,16 +262,29 @@ def _should_emit_delta(block: CompatBlock) -> bool:
     """
     btype = block.get("type")
     if btype == "text":
-        return bool(block.get("text"))
+        if not block.get("text"):
+            return None
+        return cast("TextDelta", {"type": "text-delta", "text": block["text"]})
     if btype == "reasoning":
-        return bool(block.get("reasoning"))
+        if not block.get("reasoning"):
+            return None
+        return cast(
+            "ReasoningDelta",
+            {"type": "reasoning-delta", "reasoning": block["reasoning"]},
+        )
     if btype in _TOOL_CALL_CHUNK_TYPES:
-        # An `id` or `name` arriving after the start reaches consumers
-        # on `content-block-finish`.
-        return bool(block.get("args"))
-    if "data" in block:
-        return bool(block.get("data"))
-    return False
+        # Only the args: the call's `id`, `name` and `index` went on its
+        # start. `extras`, and an `id` or `name` arriving after the
+        # start, reach consumers on `content-block-finish`.
+        if not block.get("args"):
+            return None
+        return cast("ToolCallDelta", {"type": "tool-call-delta", "args": block["args"]})
+    if block.get("data"):
+        delta = cast("DataDelta", {"type": "data-delta", "data": block["data"]})
+        if block.get("encoding") == "base64":
+            delta["encoding"] = "base64"
+        return delta
+    return None
 
 
 def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
@@ -680,11 +653,12 @@ def chunks_to_events(
             else:
                 wire_idx, existing = blocks[key]
                 blocks[key] = (wire_idx, _accumulate(existing, block))
-            if _should_emit_delta(block):
+            delta = _to_content_delta(block)
+            if delta is not None:
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
                     index=wire_idx,
-                    delta=_to_content_delta(block),
+                    delta=delta,
                 )
 
         if msg.usage_metadata:
@@ -754,11 +728,12 @@ async def achunks_to_events(
             else:
                 wire_idx, existing = blocks[key]
                 blocks[key] = (wire_idx, _accumulate(existing, block))
-            if _should_emit_delta(block):
+            delta = _to_content_delta(block)
+            if delta is not None:
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
                     index=wire_idx,
-                    delta=_to_content_delta(block),
+                    delta=delta,
                 )
 
         if msg.usage_metadata:
@@ -811,11 +786,12 @@ def message_to_events(
             index=wire_idx,
             content=_start_skeleton(block),
         )
-        if _should_emit_delta(block):
+        delta = _to_content_delta(block)
+        if delta is not None:
             yield ContentBlockDeltaData(
                 event="content-block-delta",
                 index=wire_idx,
-                delta=_to_content_delta(block),
+                delta=delta,
             )
         yield ContentBlockFinishData(
             event="content-block-finish",
