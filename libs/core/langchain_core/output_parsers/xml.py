@@ -172,7 +172,7 @@ class XMLOutputParser(BaseTransformOutputParser[dict[str, Any]]):
         `'<foo>\n   <tag>\n   </tag>\n</foo>'`
     """
     encoding_matcher: re.Pattern[str] = re.compile(
-        r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL
+        r"<\?xml\s[^>]*encoding[^>]*\?>\n(.*)", re.DOTALL
     )
 
     parser: Literal["defusedxml", "xml"] = "defusedxml"
@@ -240,7 +240,7 @@ class XMLOutputParser(BaseTransformOutputParser[dict[str, Any]]):
             text = match.group(2)
         encoding_match = self.encoding_matcher.search(text)
         if encoding_match:
-            text = encoding_match.group(2)
+            text = encoding_match.group(1)
 
         text = text.strip()
         try:

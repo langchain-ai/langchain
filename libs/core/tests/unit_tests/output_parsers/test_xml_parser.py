@@ -132,6 +132,19 @@ def test_xml_output_parser_fail(result: str) -> None:
     assert "Failed to parse" in str(e)
 
 
+def test_encoding_attribute_on_element_not_stripped() -> None:
+    """Regression test for issue #41149.
+
+    An ordinary element with an ``encoding`` attribute followed by a newline must
+    not be stripped by the XML-declaration matcher, so ``parse`` and
+    ``transform`` agree.
+    """
+    xml = '<root encoding="utf-8">\n<item>x</item>\n</root>'
+    parser = XMLOutputParser(parser="xml")
+    assert list(parser.transform(iter([xml]))) == [{"root": [{"item": "x"}]}]
+    assert parser.parse(xml) == {"root": [{"item": "x"}]}
+
+
 MALICIOUS_XML = """<?xml version="1.0"?>
 <!DOCTYPE lolz [<!ENTITY lol "lol"><!ELEMENT lolz (#PCDATA)>
  <!ENTITY lol1 "&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;">
