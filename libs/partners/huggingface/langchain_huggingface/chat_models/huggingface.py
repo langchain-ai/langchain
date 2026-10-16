@@ -13,6 +13,8 @@ if TYPE_CHECKING:
     from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
     from langchain_huggingface.llms.huggingface_pipeline import HuggingFacePipeline
 
+from typing import Self
+
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -67,7 +69,6 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, model_validator
-from typing_extensions import Self
 
 from langchain_huggingface._version import __version__
 from langchain_huggingface.data._profiles import _PROFILES

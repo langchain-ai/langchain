@@ -38,6 +38,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    Self,
     TypeAlias,
     TypeVar,
     cast,
@@ -143,7 +144,6 @@ from pydantic import (
     model_validator,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
-from typing_extensions import Self
 
 from langchain_openai._version import __version__
 from langchain_openai.chat_models._client_utils import (

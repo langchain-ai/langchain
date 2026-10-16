@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import sys
 from collections.abc import AsyncIterator, Callable, Collection, Iterator, Mapping
-from typing import Any, Literal
+from typing import Any, Literal, Self
 
 import openai
 import tiktoken
@@ -19,7 +19,6 @@ from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
 from pydantic import ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
 
 from langchain_openai._version import __version__
 from langchain_openai.data._profiles import _PROFILES

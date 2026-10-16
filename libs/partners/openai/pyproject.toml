@@ -12,7 +12,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -21,7 +20,7 @@ classifiers = [
 ]
 
 version = "1.7.2"
-requires-python = ">=3.10.0,<4.0.0"
+requires-python = ">=3.11.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.6.10,<2.0.0",
     "certifi>=2024.6.2",
@@ -117,6 +116,7 @@ ignore = [
     "PLR2004", # Comparison to magic number
     "ANN401",
     "ARG002",
+    "ASYNC109",
     "BLE001",
     "TC",
     "PLC0415",

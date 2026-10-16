@@ -651,7 +651,7 @@ async def _astream_with_chunk_timeout(
                 chunk = await asyncio.wait_for(it.__anext__(), timeout=timeout)
             except StopAsyncIteration:
                 return
-            except asyncio.TimeoutError as e:
+            except TimeoutError as e:
                 logger.warning(
                     "langchain_openai.stream_chunk_timeout fired",
                     extra={

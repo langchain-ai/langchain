@@ -8,13 +8,12 @@ import dataclasses
 import hashlib
 import json
 import os
-from datetime import datetime, timedelta, timezone, tzinfo
+from datetime import UTC, datetime, timedelta, tzinfo
 from pathlib import Path
-from typing import Any, Literal, overload
+from typing import Any, Literal, Self, overload
 
 import httpx
 import pytest
-from typing_extensions import Self
 
 from langchain_openai import chatgpt_oauth as oauth_module
 from langchain_openai.chatgpt_oauth import (
@@ -98,11 +97,11 @@ def test_token_from_response_extracts_claims_and_falls_back_to_existing_refresh(
     assert token.user_id == "user-9"
     assert token.id_token == id_token
     # expires_at is in the future
-    assert token.expires_at > datetime.now(timezone.utc)
+    assert token.expires_at > datetime.now(UTC)
 
 
 def test_token_is_expired_uses_skew() -> None:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     token = _ChatGPTToken(
         access_token="x",
         refresh_token="y",
@@ -118,7 +117,7 @@ def test_file_provider_persists_token_with_private_perms(tmp_path: Path) -> None
     token = _ChatGPTToken(
         access_token="at",
         refresh_token="rt",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
         account_id="acct-1",
         plan_type="plus",
     )
@@ -148,7 +147,7 @@ def test_file_provider_get_token_does_not_refresh_when_valid(
     valid_token = _ChatGPTToken(
         access_token="at",
         refresh_token="rt",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
     provider.save(valid_token)
 
@@ -170,7 +169,7 @@ def test_file_provider_get_token_refreshes_when_expired(
     expired = _ChatGPTToken(
         access_token="old-at",
         refresh_token="old-rt",
-        expires_at=datetime.now(timezone.utc) - timedelta(minutes=10),
+        expires_at=datetime.now(UTC) - timedelta(minutes=10),
     )
     provider.save(expired)
 
@@ -214,13 +213,13 @@ def test_file_provider_reloads_expired_cached_token_before_refresh(
     expired = _ChatGPTToken(
         access_token="old-at",
         refresh_token="old-rt",
-        expires_at=datetime.now(timezone.utc) - timedelta(minutes=10),
+        expires_at=datetime.now(UTC) - timedelta(minutes=10),
     )
     provider.save(expired)
     rotated = _ChatGPTToken(
         access_token="rotated-at",
         refresh_token="rotated-rt",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
     _FileChatGPTOAuthTokenProvider(path=store).save(rotated)
 
@@ -245,7 +244,7 @@ def test_serialize_roundtrip_preserves_fields() -> None:
     token = _ChatGPTToken(
         access_token="a",
         refresh_token="b",
-        expires_at=datetime(2030, 1, 1, tzinfo=timezone.utc),
+        expires_at=datetime(2030, 1, 1, tzinfo=UTC),
         account_id="acct",
         plan_type="plus",
         user_id="u1",
@@ -289,7 +288,7 @@ def test_chatgpt_token_repr_does_not_leak_secrets() -> None:
     token = _ChatGPTToken(
         access_token="super-secret-at",
         refresh_token="super-secret-rt",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
         id_token="super-secret-id",
         account_id="acct-1",
     )
@@ -305,13 +304,13 @@ def test_chatgpt_token_rejects_empty_or_naive_fields() -> None:
         _ChatGPTToken(
             access_token="",
             refresh_token="rt",
-            expires_at=datetime.now(timezone.utc),
+            expires_at=datetime.now(UTC),
         )
     with pytest.raises(ValueError, match="refresh_token"):
         _ChatGPTToken(
             access_token="at",
             refresh_token="",
-            expires_at=datetime.now(timezone.utc),
+            expires_at=datetime.now(UTC),
         )
     with pytest.raises(ValueError, match="timezone-aware"):
         _ChatGPTToken(
@@ -330,7 +329,7 @@ def test_chatgpt_token_is_frozen() -> None:
     token = _ChatGPTToken(
         access_token="at",
         refresh_token="rt",
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
     )
     with pytest.raises(dataclasses.FrozenInstanceError):
         token.access_token = ""  # type: ignore[misc]
@@ -411,7 +410,7 @@ def test_invalid_grant_refresh_raises_typed_error(
         _ChatGPTToken(
             access_token="old-at",
             refresh_token="old-rt",
-            expires_at=datetime.now(timezone.utc) - timedelta(minutes=10),
+            expires_at=datetime.now(UTC) - timedelta(minutes=10),
         )
     )
 
@@ -439,7 +438,7 @@ def test_refresh_failure_preserves_stored_token(
         _ChatGPTToken(
             access_token="keep-at",
             refresh_token="keep-rt",
-            expires_at=datetime.now(timezone.utc) - timedelta(minutes=1),
+            expires_at=datetime.now(UTC) - timedelta(minutes=1),
         )
     )
 
@@ -465,7 +464,7 @@ def test_aget_token_refreshes_when_expired(
         _ChatGPTToken(
             access_token="old-at",
             refresh_token="old-rt",
-            expires_at=datetime.now(timezone.utc) - timedelta(minutes=1),
+            expires_at=datetime.now(UTC) - timedelta(minutes=1),
         )
     )
 
@@ -492,7 +491,7 @@ def test_aget_access_token_returns_access_string(
         _ChatGPTToken(
             access_token="at-x",
             refresh_token="rt",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
         )
     )
 
@@ -509,7 +508,7 @@ def test_aget_access_token_returns_access_string(
 def test_token_is_expired_uses_skew_with_frozen_clock(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    frozen = datetime(2030, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+    frozen = datetime(2030, 1, 1, 12, 0, 0, tzinfo=UTC)
 
     class _FrozenDatetime(datetime):
         @classmethod

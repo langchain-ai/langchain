@@ -6,7 +6,7 @@ import json
 import os
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, Self
 from unittest.mock import patch
 
 import httpx2
@@ -17,7 +17,7 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import BaseTool, tool
 from pydantic import ValidationError
-from typing_extensions import Self, override
+from typing_extensions import override
 
 import langchain_typesafe
 from langchain_typesafe import NoulCriteria, experimental

@@ -6,7 +6,7 @@ import json
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Literal, NoReturn, cast
+from typing import Any, Literal, NoReturn, Self, cast
 
 import groq
 from langchain_core.callbacks import (
@@ -70,7 +70,6 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
 
 from langchain_groq._compat import _convert_from_v1_to_groq
 from langchain_groq._version import __version__

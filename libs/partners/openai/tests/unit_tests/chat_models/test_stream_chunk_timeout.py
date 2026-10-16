@@ -16,11 +16,10 @@ import asyncio
 import logging
 from collections.abc import AsyncGenerator
 from types import TracebackType
-from typing import Any, cast
+from typing import Any, Self, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from typing_extensions import Self
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models._client_utils import (

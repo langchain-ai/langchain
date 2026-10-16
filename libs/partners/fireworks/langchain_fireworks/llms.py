@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Self
 
 import requests
 from aiohttp import ClientSession, ClientTimeout
@@ -15,7 +15,6 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.utils import _build_model_kwargs, secret_from_env
 from pydantic import ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
 
 from langchain_fireworks._version import __version__
 
