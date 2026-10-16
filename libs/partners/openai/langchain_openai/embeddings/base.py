@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import warnings
 from collections.abc import Awaitable, Callable, Iterable, Mapping, Sequence
-from typing import Any, Literal, cast
+from typing import Any, Literal, Self, cast
 
 import openai
 import tiktoken
@@ -13,7 +13,6 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
 
 from langchain_openai.chat_models._client_utils import _resolve_sync_and_async_api_keys
 

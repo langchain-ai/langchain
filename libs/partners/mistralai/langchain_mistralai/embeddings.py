@@ -2,6 +2,7 @@ import asyncio
 import logging
 import warnings
 from collections.abc import Callable, Iterable
+from typing import Self
 
 import httpx
 from httpx import Response
@@ -18,7 +19,6 @@ from pydantic import (
 )
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_fixed
 from tokenizers import Tokenizer  # type: ignore[import]
-from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 

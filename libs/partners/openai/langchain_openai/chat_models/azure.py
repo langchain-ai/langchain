@@ -6,7 +6,7 @@ import logging
 import os
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from importlib import import_module
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, Self, TypeAlias, TypeVar
 
 import openai
 from langchain_core.language_models import LanguageModelInput
@@ -16,7 +16,6 @@ from langchain_core.runnables import Runnable
 from langchain_core.utils import from_env, secret_from_env
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, SecretStr, model_validator
-from typing_extensions import Self
 
 from langchain_openai.chat_models.base import BaseChatOpenAI, _get_default_model_profile
 

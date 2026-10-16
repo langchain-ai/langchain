@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Iterator, Sequence
 from json import JSONDecodeError
-from typing import Any, Literal, TypeAlias, cast
+from typing import Any, Literal, Self, TypeAlias, cast
 from urllib.parse import urlparse
 
 import openai
@@ -26,7 +26,6 @@ from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, secret_from_env
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
 
 from langchain_deepseek._version import __version__
 from langchain_deepseek.data._profiles import _PROFILES
