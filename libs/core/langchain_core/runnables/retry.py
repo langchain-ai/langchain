@@ -239,6 +239,10 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
+        # Latest exception per original input index, for inputs that never
+        # succeeded. Used to build the final output so a permanently failing
+        # input reports its own exception instead of a neighbor's result.
+        exception_map: dict[int, Exception] = {}
 
         not_set: list[Output] = []
         result = not_set
@@ -268,12 +272,14 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                     # back to their original indices.
                     first_exception = None
                     for offset, r in enumerate(result):
+                        orig_idx = remaining_indices[offset]
                         if isinstance(r, Exception):
                             if not first_exception:
                                 first_exception = r
+                            exception_map[orig_idx] = r
                             continue
-                        orig_idx = remaining_indices[offset]
                         results_map[orig_idx] = r
+                        exception_map.pop(orig_idx, None)
                     # If any exception occurred, raise it, to retry the failed ones
                     if first_exception:
                         raise first_exception
@@ -290,6 +296,10 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
+            elif idx in exception_map:
+                # The input never succeeded: report its own latest exception
+                # rather than another input's result.
+                outputs.append(exception_map[idx])
             else:
                 outputs.append(result.pop(0))
         return outputs
@@ -315,6 +325,10 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         **kwargs: Any,
     ) -> list[Output | Exception]:
         results_map: dict[int, Output] = {}
+        # Latest exception per original input index, for inputs that never
+        # succeeded. Used to build the final output so a permanently failing
+        # input reports its own exception instead of a neighbor's result.
+        exception_map: dict[int, Exception] = {}
 
         not_set: list[Output] = []
         result = not_set
@@ -343,12 +357,14 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                     # back to their original indices.
                     first_exception = None
                     for offset, r in enumerate(result):
+                        orig_idx = remaining_indices[offset]
                         if isinstance(r, Exception):
                             if not first_exception:
                                 first_exception = r
+                            exception_map[orig_idx] = r
                             continue
-                        orig_idx = remaining_indices[offset]
                         results_map[orig_idx] = r
+                        exception_map.pop(orig_idx, None)
                     # If any exception occurred, raise it, to retry the failed ones
                     if first_exception:
                         raise first_exception
@@ -365,6 +381,10 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         for idx in range(len(inputs)):
             if idx in results_map:
                 outputs.append(results_map[idx])
+            elif idx in exception_map:
+                # The input never succeeded: report its own latest exception
+                # rather than another input's result.
+                outputs.append(exception_map[idx])
             else:
                 outputs.append(result.pop(0))
         return outputs

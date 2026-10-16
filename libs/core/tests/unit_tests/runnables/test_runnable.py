@@ -4009,6 +4009,68 @@ def test_retrying(mocker: MockerFixture) -> None:
     lambda_mock.reset_mock()
 
 
+def test_retry_batch_permanently_failing_input_reports_own_exception() -> None:
+    """Regression test: a batch input that never recovers must report its own exception.
+
+    On the last retry attempt the pending list is shorter than the original
+    input list, so filling missing outputs from the raw attempt output can
+    hand a permanently failing input another input's success (e.g.
+    ["a", "b", "c"] -> ["A", "A", "C"] instead of ["A", ValueError, "C"]).
+    """
+    attempts: dict[str, int] = {}
+
+    def flaky(x: str) -> str:
+        attempts[x] = attempts.get(x, 0) + 1
+        if x == "a" and attempts[x] == 1:
+            msg = "a fails once"
+            raise ValueError(msg)  # recovers on retry
+        if x == "b":
+            msg = "b always fails"
+            raise ValueError(msg)  # never recovers
+        return x.upper()
+
+    runnable = RunnableLambda(flaky).with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=(ValueError,),
+    )
+
+    output = runnable.batch(["a", "b", "c"], return_exceptions=True)
+    assert output[0] == "A"
+    assert isinstance(output[1], ValueError)
+    assert str(output[1]) == "b always fails"
+    assert output[2] == "C"
+
+
+async def test_async_retry_batch_permanently_failing_input_reports_own_exception() -> (
+    None
+):
+    """Async variant: abatch must also report the failing input's own exception."""
+    attempts: dict[str, int] = {}
+
+    async def flaky(x: str) -> str:
+        attempts[x] = attempts.get(x, 0) + 1
+        if x == "a" and attempts[x] == 1:
+            msg = "a fails once"
+            raise ValueError(msg)  # recovers on retry
+        if x == "b":
+            msg = "b always fails"
+            raise ValueError(msg)  # never recovers
+        return x.upper()
+
+    runnable = RunnableLambda(flaky).with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=(ValueError,),
+    )
+
+    output = await runnable.abatch(["a", "b", "c"], return_exceptions=True)
+    assert output[0] == "A"
+    assert isinstance(output[1], ValueError)
+    assert str(output[1]) == "b always fails"
+    assert output[2] == "C"
+
+
 def test_retry_batch_preserves_order() -> None:
     """Regression test: batch with retry should preserve input order.
 
