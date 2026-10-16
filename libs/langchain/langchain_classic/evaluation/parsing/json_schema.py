@@ -64,7 +64,7 @@ class JsonSchemaEvaluator(StringEvaluator):
         """Returns the name of the evaluation."""
         return "json_schema_validation"
 
-    def _parse_json(self, node: Any) -> dict | list | None | float | bool | int | str:
+    def _parse_json(self, node: Any) -> dict | list | float | bool | int | str | None:
         if isinstance(node, str):
             return parse_json_markdown(node)
         if hasattr(node, "model_json_schema") and callable(node.model_json_schema):

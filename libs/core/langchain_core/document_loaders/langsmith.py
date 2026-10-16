@@ -1,6 +1,6 @@
 """LangSmith document loader."""
 
-import datetime
+import datetime as dt
 import json
 import uuid
 from collections.abc import Callable, Iterator, Mapping, Sequence
@@ -43,7 +43,7 @@ class LangSmithLoader(BaseLoader):
         dataset_id: uuid.UUID | str | None = None,
         dataset_name: str | None = None,
         example_ids: Sequence[uuid.UUID | str] | None = None,
-        as_of: datetime.datetime | str | None = None,
+        as_of: dt.datetime | str | None = None,
         splits: Sequence[str] | None = None,
         inline_s3_urls: bool = True,
         offset: int = 0,
