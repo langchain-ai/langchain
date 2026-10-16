@@ -2269,6 +2269,41 @@ class Runnable(ABC, Generic[Input, Output]):
 
     """ --- Helper methods for Subclasses --- """
 
+    def with_rescue(
+        self,
+        *,
+        fallback: Any = ...,
+        handler: Callable[[Exception, Input], Output] | None = None,
+        async_handler: Callable[[Exception, Input], Awaitable[Output]] | None = None,
+        exceptions: tuple[type[BaseException], ...] = (Exception,),
+    ) -> Runnable[Input, Output]:
+        """Recover from selected exceptions raised by this Runnable.
+
+        Args:
+            fallback: Value to return when a selected exception occurs.
+                Defaults to no fallback. Explicitly passing None is supported.
+            handler: Optional synchronous function receiving the exception
+                and original input.
+            async_handler: Optional asynchronous recovery function receiving
+                the exception and original input.
+            exceptions: Exception types that trigger recovery.
+
+        Returns:
+            A Runnable that recovers from selected exceptions.
+        """
+        from langchain_core.runnables.rescue import (  # noqa: PLC0415
+            RunnableRescue,
+        )
+
+        return RunnableRescue(
+            runnable=self,
+            fallback=None if fallback is ... else fallback,
+            has_fallback=fallback is not ...,
+            handler=handler,
+            async_handler=async_handler,
+            exceptions=exceptions,
+        )
+
     def _call_with_config(
         self,
         func: Callable[[Input], Output]
