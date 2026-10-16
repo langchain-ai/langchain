@@ -27,8 +27,7 @@ from langchain_core.prompts.string import (
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from typing_extensions import Self
+    from typing import Self
 
 
 class _FewShotPromptTemplateMixin(BaseModel):

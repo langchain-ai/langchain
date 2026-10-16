@@ -11,7 +11,7 @@ from langchain_core.outputs.generation import Generation
 from langchain_core.utils._merge import merge_dicts
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
+    from typing import Self
 
 
 class ChatGeneration(Generation):

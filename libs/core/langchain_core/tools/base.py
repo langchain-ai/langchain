@@ -15,6 +15,7 @@ from typing import (
     Annotated,
     Any,
     Literal,
+    Self,
     TypeVar,
     cast,
     get_args,
@@ -36,7 +37,7 @@ from pydantic.fields import FieldInfo
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
-from typing_extensions import Self, get_type_hints, override
+from typing_extensions import get_type_hints, override
 
 from langchain_core.callbacks import (
     AsyncCallbackManager,
