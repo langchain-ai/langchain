@@ -1365,6 +1365,76 @@ class TestBedrockConverseToolCallArgs:
         assert text_blocks[0]["text"] == "Hello Boston!"
 
 
+class _StreamingToolCallModel(BaseChatModel):
+    """Fake model that streams one tool call's args across several chunks."""
+
+    @property
+    def _llm_type(self) -> str:
+        return "streaming-tool-call-fake"
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        del messages, stop, run_manager, kwargs
+        raise NotImplementedError
+
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        # Opener carries the id and name; the args follow in slices.
+        parts = ["", '{"path": ', '"a.py", ', '"content": ', '"hi"}']
+        for i, part in enumerate(parts):
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content="",
+                    tool_call_chunks=[
+                        {
+                            "name": "write_file" if i == 0 else None,
+                            "args": part,
+                            "id": "call_1" if i == 0 else None,
+                            "index": 0,
+                        }
+                    ],
+                )
+            )
+
+
+_TOOL_CALL_DELTAS = [
+    {
+        "type": "tool_call_chunk",
+        "id": "call_1",
+        "name": "write_file",
+        "args": args,
+        "index": 0,
+    }
+    for args in ['{"path": ', '"a.py", ', '"content": ', '"hi"}']
+]
+
+
+class TestToolCallsYieldDeltas:
+    """`.tool_calls` yields args deltas, not the snapshots the bridge emits."""
+
+    def test_stream_events_v3_tool_calls_yield_deltas(self) -> None:
+        stream = _StreamingToolCallModel().stream_events("hi", version="v3")
+
+        assert list(stream.tool_calls) == _TOOL_CALL_DELTAS
+
+    @pytest.mark.asyncio
+    async def test_astream_events_v3_tool_calls_yield_deltas(self) -> None:
+        stream = await _StreamingToolCallModel().astream_events("hi", version="v3")
+
+        assert [d async for d in stream.tool_calls] == _TOOL_CALL_DELTAS
+
+
 class _CachedUsageModel(BaseChatModel):
     """Replays an Anthropic-shaped usage split across stream chunks.
 
