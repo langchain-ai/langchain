@@ -1061,6 +1061,43 @@ def test_message_to_events_self_contained_start_strips_heavy_fields() -> None:
     assert finishes[2]["content"]["value"] == {"big": "C" * 1024}
 
 
+def test_chunks_to_events_text_start_preserves_metadata() -> None:
+    """Text/reasoning start keeps small metadata (e.g. `phase`) but no payload."""
+    blocks: list[dict[str, Any]] = [
+        {"type": "reasoning", "reasoning": "hmm", "id": "rs_1", "index": 0},
+        {"type": "text", "text": "", "phase": "commentary", "index": 1},
+        {
+            "type": "text",
+            "text": "Hi",
+            "id": "msg_1",
+            "annotations": [{"type": "citation", "url": "u"}],
+            "index": 1,
+        },
+    ]
+    chunks = [
+        ChatGenerationChunk(message=AIMessageChunk(content=[block], id="msg-1"))
+        for block in blocks
+    ]
+    events = list(chunks_to_events(iter(chunks)))
+    assert_valid_event_stream(events)
+
+    starts: list[Any] = [e for e in events if e["event"] == "content-block-start"]
+    assert starts[0]["content"] == {
+        "type": "reasoning",
+        "reasoning": "",
+        "id": "rs_1",
+    }
+    assert starts[1]["content"] == {
+        "type": "text",
+        "text": "",
+        "phase": "commentary",
+    }
+
+    finishes: list[Any] = [e for e in events if e["event"] == "content-block-finish"]
+    assert finishes[1]["content"]["phase"] == "commentary"
+    assert finishes[1]["content"]["text"] == "Hi"
+
+
 def test_message_to_events_finalized_tool_call_start_strips_args() -> None:
     """Finalized `tool_call` keeps id/name on start but not parsed args."""
     msg = AIMessage(
