@@ -12,9 +12,9 @@ from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
 
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_core.callbacks.base import (
     BaseCallbackHandler,

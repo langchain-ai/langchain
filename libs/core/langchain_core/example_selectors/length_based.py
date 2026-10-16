@@ -2,10 +2,9 @@
 
 import re
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Self
 
 from pydantic import BaseModel, Field, model_validator
-from typing_extensions import Self
 
 from langchain_core.example_selectors.base import BaseExampleSelector
 from langchain_core.prompts.prompt import PromptTemplate

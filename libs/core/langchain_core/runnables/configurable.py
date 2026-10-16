@@ -459,7 +459,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
 
 # Before Python 3.11 native StrEnum is not available
-class StrEnum(str, enum.Enum):
+class StrEnum(enum.StrEnum):
     """String enum."""
 
 
