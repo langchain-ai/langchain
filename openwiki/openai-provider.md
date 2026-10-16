@@ -12,10 +12,14 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
   - id: openwiki-source-74e5bef080f1af7da12371cf
     resource: repo://libs/partners/openai/langchain_openai/data/_profiles.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+  - id: openwiki-source-b65307f1d05bd74532af2eee
+    resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
+  - id: openwiki-source-122b01e9aef52272c0a77739
+    resource: repo://libs/partners/openai/langchain_openai/decisions/types.py
+generated: { by: "openwiki/0.5.0", at: "2026-10-16T08:25:55.096Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-16T08:25:55.096Z
 ---
 
 ## Overview
@@ -1146,6 +1150,147 @@ model = ChatOpenAI(
 3. **Responses API limitations**: Not all Chat Completions parameters are supported in Responses API (e.g., `n` is not supported).
 4. **Structured output schema validation**: The `json_schema` method requires schemas to meet OpenAI's supported-schemas constraints.
 5. **Azure API version coupling**: Azure requires explicit `api_version` and ties it to feature availability (e.g., structured output only in newer versions).
+
+## OpenAI Decisions API
+
+`OpenAIDecisions` is a specialized runnable (marked with `@beta`) for asking typed questions about text and images using OpenAI's Decisions API. Unlike `ChatOpenAI` which generates free-form text, `OpenAIDecisions` structures queries as predicates, choices, and scores, returning probabilities and confidence scores for decision-making.
+
+**Key Characteristics:**
+
+- **`@beta` decorator**: Indicates unstable, early-stage API subject to change
+- **Structured queries**: Combine predicates (yes/no), choices (multiple select), and scores (rating scales) in one request over shared input
+- **Confidence-aware**: Returns probabilities and confidence for each answer type
+- **Shared input**: All questions operate on the same input (text or image) for consistency
+- **Token usage tracking**: Includes token usage in response for cost/quota tracking
+
+**Basic Usage:**
+
+```python
+from langchain_openai.decisions import (
+    Choice,
+    OpenAIDecisions,
+    Predicate,
+    Score,
+)
+
+decisions = OpenAIDecisions(model="gpt-6-luna")
+response = decisions.invoke(
+    {
+        "input": "Stripe has failed to connect for three days. Help ASAP.",
+        "questions": {
+            "department": Choice(
+                instructions="Which team should handle this request?",
+                choices={
+                    "billing": "Payment or subscription issues.",
+                    "technical": "Product bugs or integration failures.",
+                },
+            ),
+            "urgent": Predicate(instructions="Is this request urgent?"),
+            "frustration": Score(
+                instructions="How frustrated does the customer appear?",
+                levels=["Calm", "Concerned", "Angry"],
+            ),
+        },
+    }
+)
+
+# Access results by question type and key
+print(response.choices["department"].choice)          # e.g., "technical"
+print(response.predicates["urgent"].probability)      # e.g., 0.95
+print(response.scores["frustration"].score)           # e.g., 2
+```
+
+**Constructor Parameters:**
+
+- **`model`** (`str`): Decisions model identifier (e.g., `"gpt-6-luna"`).
+- **`api_key`** (`SecretStr | None | Callable`): OpenAI API key. Auto-inferred from `OPENAI_API_KEY`, or via `LANGSMITH_GATEWAY_API_KEY` when routed through LangSmith gateway.
+- **`base_url`** (`str | None`): Custom API base. Resolution order:
+  1. Explicit `base_url` kwarg
+  2. `OPENAI_API_BASE` env var
+  3. LangSmith gateway (if `LANGSMITH_GATEWAY` is set)
+  4. `OPENAI_BASE_URL` env var
+- **`organization`** (`str | None`): OpenAI organization ID (from `OPENAI_ORG_ID` env var).
+- **`timeout`** (`float | tuple[float, float] | None`): Request timeout in seconds.
+- **`max_retries`** (`int | None`): Maximum retry attempts for transient failures.
+- **`default_headers`** and **`default_query`**: Custom HTTP headers and query parameters.
+- **`http_client`** and **`http_async_client`**: Custom httpx clients for sync/async requests.
+
+**Answer Types:**
+
+1. **`Predicate`**: Yes/no question returning probability (0–1) and confidence.
+   ```python
+   Predicate(instructions="Is this urgent?")
+   # Response: PredicateAnswer with probability and confidence
+   ```
+
+2. **`Choice`**: Select from multiple options returning chosen option and confidence.
+   ```python
+   Choice(
+       instructions="Which category?",
+       choices={"A": "Description A", "B": "Description B"}
+   )
+   # Response: ChoiceAnswer with choice and confidence
+   ```
+
+3. **`Score`**: Rate on a scale returning numeric score and confidence.
+   ```python
+   Score(
+       instructions="Rate from 1–5",
+       levels=["Very Low", "Low", "Medium", "High", "Very High"]
+   )
+   # Response: ScoreAnswer with score and confidence
+   ```
+
+4. **`RefusalAnswer`**: Model refuses to answer the question (no associated data).
+
+**Response Structure:**
+
+`DecisionResponse` contains:
+
+- **`predicates`** (`dict[str, PredicateAnswer]`): Results for predicate questions
+- **`choices`** (`dict[str, ChoiceAnswer]`): Results for choice questions
+- **`scores`** (`dict[str, ScoreAnswer]`): Results for score questions
+- **`usage`** (`Usage`): Token counts (input_tokens, output_tokens, total_tokens)
+
+**Example with Image Input:**
+
+```python
+import base64
+
+with open("chart.png", "rb") as f:
+    image_data = base64.b64encode(f.read()).decode("utf-8")
+
+response = decisions.invoke(
+    {
+        "input": f"data:image/png;base64,{image_data}",
+        "questions": {
+            "trend": Predicate(instructions="Is the trend upward?"),
+            "category": Choice(
+                instructions="Which sector?",
+                choices={"stocks": "Financial", "crypto": "Digital Assets"}
+            ),
+        },
+    }
+)
+```
+
+**Sync and Async:**
+
+Clients are created lazily on first use of `invoke()` or `ainvoke()`:
+
+```python
+# Sync
+response = decisions.invoke(...)
+
+# Async
+response = await decisions.ainvoke(...)
+```
+
+Mixing sync and async calls on the same instance is supported; LangChain manages separate client instances internally.
+
+**Error Handling:**
+
+`OpenAIDecisions` raises `ValueError` if no API key is available (not provided, not in `OPENAI_API_KEY`, and not accessible via LangSmith gateway). OpenAI API errors are mapped to standardized LangChain exceptions similar to `ChatOpenAI`.
 
 ## Related Pages
 

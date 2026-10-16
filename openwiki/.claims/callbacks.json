@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:08c495ccfb12ed0a79d3e0791c2a12f86cb4b7732c6de698b6b1a8bcc71b7718",
+  "pageVersion": "sha256:a78a1b44776018b2b89e5ce8c517e88fc5ec7f49e79d371e4ef23477fb4aed5f",
   "claims": [
     {
       "id": "claim_1870ae33ffdb41fa87eaee4125620240",
@@ -92,11 +92,11 @@
     },
     {
       "id": "claim_42969e38018f425c896f33fc69b02806",
-      "statement": "LangChainTracer (from tracers.context) is automatically registered when LANGCHAIN_TRACING_V2 is enabled, capturing all run lifecycle events and building hierarchical trace trees for LangSmith.",
+      "statement": "LangChainTracer (from tracers.context) is automatically registered when LANGCHAIN_TRACING_V2 is enabled via _get_trace_callbacks, capturing all run lifecycle events and building hierarchical trace trees for LangSmith.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/tracers/context.py#L105-L130",
-          "version": "repo-lines-v1:sha256:a2e02829089efe415de6521d2c0c70ced00e85c4643a9699c977b28486c2d680:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNWUyMzMyNDYwZjc3NjFiYjUxNDdmNGEwYzYyYmM2YjM0YTQ4MGEyNjFhNzg0MDVhNWQ3OWUzNTAwODVkYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3OTQzZTk2MzdiMTZkZjk4NTc2YjFjZDA1NjI2ZmJmMTE2ODAxODk5NGI3ZTI4NTBiYzRhM2E3MTQ3ZmVkNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3ZmJhZTY1NWUxYmM2NDk4OGVlYTQ2ZGIxNzA5MzU4ZDlmNGNiZTNhOWM3NjZkNzM4NjJlYzUwNGZhNjczOWYifQ"
+          "resource": "repo://libs/core/langchain_core/tracers/context.py#L113-L138",
+          "version": "repo-lines-v1:sha256:9268c5ed2d5dfd086123afafb8382c3f743a4d8cdaa1190aa22eb1c2ccfdcad1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNWUyMzMyNDYwZjc3NjFiYjUxNDdmNGEwYzYyYmM2YjM0YTQ4MGEyNjFhNzg0MDVhNWQ3OWUzNTAwODVkYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NjdkNzIyYWRjYjA0YmYxNDlhMTc4ZTFjYWI5NDUxMGIxZDFlZTZjYzVlYzczODBlZGRmYmNhOTBkOTE0ZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU3OTQzZTk2MzdiMTZkZjk4NTc2YjFjZDA1NjI2ZmJmMTE2ODAxODk5NGI3ZTI4NTBiYzRhM2E3MTQ3ZmVkNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2MDcxZjMxZmZjMDc5MzIyMGRjY2YxMzQxY2Q0YWE2NmFiNTZlODk0NWIwZWVlNzFhY2U1YzE0ZTlmMzliZjgifQ"
         }
       ]
     },
@@ -132,11 +132,11 @@
     },
     {
       "id": "claim_7fe8d08eda3f46d3ae32b897aa4fd008",
-      "statement": "Context variables (tracing_v2_callback_var, run_collector_var) propagate callback configuration across sync/async boundaries and thread pool execution via copy_context().run().",
+      "statement": "Context variables (tracing_v2_callback_var at line 32, run_collector_var at line 35) propagate callback configuration across sync/async boundaries and thread pool execution via copy_context().run().",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/tracers/context.py",
-          "version": "repo-file-v1:sha256:149a9f5b662baec09d1a41555c60ed005b9d65d29d015bd1dae82a3c7be05dab"
+          "resource": "repo://libs/core/langchain_core/tracers/context.py#L14-L37",
+          "version": "repo-lines-v1:sha256:fbfc6c0a58e4cb2b70889ee1c2ceb225dc8bb8a9920a2403e922a0f7e18f3b73:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5MzE0ZTRhOWQ2OWFmOTRhYzJiOTFlYjgwN2E4YWYxYjczMzAxYmY3YzMyYzk5OWQxMzVlY2ZiNzM2NGU2OTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5N2I4YTg4ZTYzYTY2NGQwM2U1NzU2YWJjOGJhMTkwYTcyZWRjNDU1OTMwN2YzYWZiNDJhNzFhZjNjYzMxNzEifQ"
         }
       ]
     },
@@ -182,11 +182,11 @@
     },
     {
       "id": "claim_058ced639933463a9ec9a4f2d9a2b39c",
-      "statement": "trace_as_chain_group and atrace_as_chain_group context managers group multiple separate calls as a single logical operation with unified tagging and tracing.",
+      "statement": "trace_as_chain_group (lines 57-138) and atrace_as_chain_group (lines 142-226) context managers group multiple separate calls as a single logical operation with unified tagging and tracing.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/callbacks/manager.py#L55-L133",
-          "version": "repo-lines-v1:sha256:5c88290ff1791d3a8b6cc5c198f1d77c0310fa88bf696f750dfd59b60cf95ed0:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2MWYzM2MxMzI1NjlhNzQ5NDZiMmZjZjU0NmNhM2M0NDI1ZGEwY2E1Y2Y2YjY4NmMyNjA5MGZhYTlkMTEyYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4ZWFhMTI4Nzg4ZGE4ODYwNjExOTAyY2NiZWI1ZGVkYzk0NGNkZmIxNWYzYjQ5ODc2YTc5ZTUyYmRhZGNlZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwNzExZjJlM2U0MTEyODY3YTQyZDJmZGFkZjNmNWRlNWMyNDgyMjY0ODY2NTA2YTQ0ZDgyY2I3YmI1ZmFmNDUifQ"
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py#L57-L226",
+          "version": "repo-lines-v1:sha256:b5bad56f030542569ea2bb548380aa7f7e8ebd1ab04c7c61cfefd45977f12a35:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYjE1MGNkY2M3Njg4NDFlMDJkZmU2YjE4MDIyOGUxODYyODFmYjBmMjgwOWJlNzc5ZjFmMWQ2MGJhNjFkNTYyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2MDkwZjIyNTI3NjY3ZmU3MzU0Y2Q2MTM3M2ViZThmZmMwNTU3M2FmNzg3NDNiMTJkZWVlYjVkYTZlODg5MjE5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3OTdiOGE4OGU2M2E2NjRkMDNlNTc1NmFiYzhiYTE5MGE3MmVkYzQ1NTkzMDdmM2FmYjQyYTcxYWYzY2MzMTcxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2NWI1MzVhZmYxN2MxZDg4OGNkMmViOGQ5ZWQ0Y2RkNTZiNDc3M2M3ZTBkYTllMWQwNWQzYzA3M2Q3MDlkOTFkIn0"
         }
       ]
     },
@@ -207,6 +207,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-28T08:35:20.640Z"
+    "at": "2026-10-16T08:25:55.096Z"
   }
 }
