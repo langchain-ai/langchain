@@ -1280,10 +1280,6 @@ def test_tool_pass_context() -> None:
     assert foo.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="requires python3.11 or higher",
-)
 async def test_async_tool_pass_context() -> None:
     @tool
     async def foo(bar: str) -> str:

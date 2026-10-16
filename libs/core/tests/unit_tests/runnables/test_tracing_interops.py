@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import json
-import sys
 import threading
 import uuid
 from inspect import isasyncgenfunction
@@ -196,9 +195,6 @@ def test_config_traceable_handoff() -> None:
     assert "such-a-tag" in name_to_body["my_parent_function"]["tags"]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11), reason="Asyncio context vars require Python 3.11+"
-)
 async def test_config_traceable_async_handoff() -> None:
     tracer = _create_tracer_with_mocked_client()
 
@@ -452,9 +448,6 @@ class TestRunnableSequenceParallelTraceNesting:
     ) -> int:
         return (await parent.abatch([1], {"callbacks": cb}))[0]
 
-    @pytest.mark.skipif(
-        sys.version_info < (3, 11), reason="Asyncio context vars require Python 3.11+"
-    )
     @pytest.mark.parametrize("method", [ainvoke, astream, abatch])
     async def test_async(
         self,
@@ -919,9 +912,6 @@ def test_inheritable_metadata_parallel_children_keep_tenant_isolation() -> None:
     assert all(len(trace_posts) == 3 for trace_posts in posts_by_trace.values())
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11), reason="Asyncio context vars require Python 3.11+"
-)
 async def test_langsmith_inheritable_metadata_mixed_sync_async_managers_isolated() -> (
     None
 ):
