@@ -14,10 +14,10 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/fallbacks.py
   - id: openwiki-source-ebe3f825462d0b4a14ee3717
     resource: repo://libs/core/langchain_core/runnables/retry.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-16T08:25:55.096Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-16T08:25:55.096Z
 ---
 
 ## Overview
@@ -259,9 +259,9 @@ sequence = RunnableSequence(
 
 ### Branching: RunnableBranch
 
-**Location**: `repo://libs/core/langchain_core/runnables/branch.py#L43-L150`
+**Location**: `repo://libs/core/langchain_core/runnables/branch.py#L43-L290`
 
-`RunnableBranch` selects and runs one of several branches based on a condition:
+`RunnableBranch` selects and runs one of several branches based on condition evaluation:
 
 ```python
 from langchain_core.runnables import RunnableBranch
@@ -277,11 +277,14 @@ branch.invoke(42)       # 43
 branch.invoke(None)     # "default"
 ```
 
-- Takes a list of `(condition, runnable)` tuples and a default runnable.
-- Conditions are Runnables or callables returning bool.
-- At invoke time, the first condition that returns `True` is selected; its runnable is executed on the input.
-- If no condition matches, the default runnable is run.
-- Conditions are evaluated sequentially; use judiciously for complex logic.
+- **Constructor**: Accepts variable args of `(condition, runnable)` tuples plus a final default runnable. Each condition-runnable pair is coerced via `coerce_to_runnable()`.
+- **Conditions**: Are themselves Runnables (or coerced from callables returning `bool`). Can be sync, async, or awaitable.
+- **Evaluation**: At invoke time, conditions are evaluated sequentially against the same input. The first condition returning `True` selects its runnable.
+- **Default**: If no condition matches, the default runnable is executed.
+- **Async support**: Both `ainvoke()` and sync `invoke()` are implemented; async conditions and runnables can be awaited natively.
+- **Streaming**: Delegates to the selected branch's `stream()` or `astream()` method.
+- **Validation**: Enforces minimum 2 branches at construction time; raises `ValueError` or `TypeError` for invalid configurations.
+- **Callback integration**: Tags callback runs as `condition:N` for condition evaluation and `branch:N` or `branch:default` for runnable execution, enabling tracing and observability.
 
 ### Routing: RouterRunnable
 
@@ -306,7 +309,7 @@ router.invoke({"key": "math", "input": "2 + 2"})  # Uses math_chain
 
 ### Fallback and Retry
 
-**Fallbacks**: `RunnableWithFallbacks` (`repo://libs/core/langchain_core/runnables/fallbacks.py#L37-L150`)
+**Fallbacks**: `RunnableWithFallbacks` (`repo://libs/core/langchain_core/runnables/fallbacks.py#L37-L590`)
 
 ```python
 from langchain_core.runnables import RunnableWithFallbacks
@@ -317,12 +320,16 @@ model = ChatOpenAI().with_fallbacks([ChatAnthropic(), ChatCohere()])
 result = model.invoke("Hello")  # Returns first successful result
 ```
 
-- Executes the primary runnable.
-- If it fails with an exception in `exceptions_to_handle`, tries the next fallback.
-- Proceeds until one succeeds or all fail.
-- Optionally passes exceptions to fallbacks for adaptive recovery.
+- **Sequential execution**: Invokes the primary `runnable`, then each fallback in order until one succeeds.
+- **Exception handling**: Catches exceptions matching `exceptions_to_handle` (default `Exception`) and proceeds to the next fallback. Exceptions outside this set are raised immediately.
+- **Exception injection**: If `exception_key` is set (a string), handled exceptions are injected into the input dict before invoking the next fallback, enabling adaptive recovery strategies.
+- **Async support**: Both `ainvoke()` and `abatch()` are natively async, awaiting each fallback in sequence.
+- **Batch handling**: Processes batches by invoking each fallback's `batch()` method on all inputs, tracking per-input success/failure to determine which to retry.
+- **Callback integration**: Tags each fallback invocation with callbacks for observability; first error and last error are tracked and reported.
+- **Streaming**: Delegates to the first successful runnable's `stream()` or `astream()`.
+- **Fallback exhaustion**: If all runnables fail, raises the first error encountered.
 
-**Retry**: `RunnableRetry` (`repo://libs/core/langchain_core/runnables/retry.py#L48-L150`)
+**Retry**: `RunnableRetry` (`repo://libs/core/langchain_core/runnables/retry.py#L50-L386`)
 
 ```python
 runnable = ChatOpenAI().with_retry(
@@ -333,8 +340,13 @@ runnable = ChatOpenAI().with_retry(
 # Retries on APIError up to 3 times with exponential backoff + jitter.
 ```
 
-- Uses `tenacity` for retry logic.
-- Configurable stop conditions, wait strategies, and exception types.
+- Wraps a `Runnable` via `RunnableBindingBase` to add retry logic powered by `tenacity`.
+- **Exception filtering**: `retry_exception_types` is either a tuple of exception types or a callable that returns `True` for exceptions to retry.
+- **Retry strategy**: Configurable via `max_attempt_number` (default 3) and `wait_exponential_jitter` (default `True`) for exponential backoff with random jitter.
+- **Jitter parameters**: Fine-tunable via `exponential_jitter_params` (initial, max, exp_base, jitter).
+- **Retry propagation**: Tracks per-attempt state via `_patch_config` to tag callback runs as `retry:attempt:N` for observability.
+- **Batch retries**: Retries only failed inputs in a batch, re-invoking just the subset that did not succeed.
+- **Stream limitation**: `stream()` and `transform()` are not retried because stream retry semantics are ambiguous.
 - Best applied to individual runnables (e.g., LLM calls) rather than entire chains.
 
 ## RunnableConfig: Threading Context
