@@ -1529,13 +1529,13 @@ class Runnable(ABC, Generic[Input, Output]):
             await adispatch_custom_event(
                 "progress_event",
                 {"message": "Finished step 1 of 3"},
-                config=config # Must be included for python < 3.10
+                config=config
             )
             await asyncio.sleep(1) # Placeholder for some slow operation
             await adispatch_custom_event(
                 "progress_event",
                 {"message": "Finished step 2 of 3"},
-                config=config # Must be included for python < 3.10
+                config=config
             )
             await asyncio.sleep(1) # Placeholder for some slow operation
             return "Done"

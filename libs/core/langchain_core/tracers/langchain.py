@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
@@ -287,7 +287,7 @@ class LangChainTracer(BaseTracer):
         Returns:
             The run.
         """
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
         chat_model_run = Run(

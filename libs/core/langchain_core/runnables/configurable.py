@@ -459,7 +459,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
 
 # Before Python 3.11 native StrEnum is not available
-class StrEnum(str, enum.Enum):
+class StrEnum(enum.StrEnum):
     """String enum."""
 
 
@@ -550,11 +550,12 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     @property
     @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
+        which_enum: type[StrEnum] | StrEnum | None
         with _enums_for_spec_lock:
             if which_enum := _enums_for_spec.get(self.which):
                 pass
             else:
-                which_enum = StrEnum(  # type: ignore[call-overload]
+                which_enum = StrEnum(  # type: ignore[call-arg]
                     self.which.name or self.which.id,
                     (
                         (v, v)
@@ -682,11 +683,12 @@ def make_options_spec(
     Returns:
         The `ConfigurableFieldSpec`.
     """
+    enum: type[StrEnum] | StrEnum | None
     with _enums_for_spec_lock:
         if enum := _enums_for_spec.get(spec):
             pass
         else:
-            enum = StrEnum(  # type: ignore[call-overload]
+            enum = StrEnum(  # type: ignore[call-arg]
                 spec.name or spec.id,
                 ((v, v) for v in list(spec.options.keys())),
             )

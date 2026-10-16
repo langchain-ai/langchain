@@ -8,10 +8,10 @@ the backbone of a retriever, but there are other types of retrievers as well.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 from pydantic import ConfigDict
-from typing_extensions import Self, TypedDict, override
+from typing_extensions import TypedDict, override
 
 from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain_core.documents import Document
