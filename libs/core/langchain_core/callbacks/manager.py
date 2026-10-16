@@ -2637,7 +2637,7 @@ async def adispatch_custom_event(
             AsyncCallbackHandler,
             adispatch_custom_event
         )
-        from langchain_core.runnable import RunnableLambda
+        from langchain_core.runnables import RunnableLambda
 
         class CustomCallbackManager(AsyncCallbackHandler):
             async def on_custom_event(
@@ -2669,7 +2669,7 @@ async def adispatch_custom_event(
             AsyncCallbackHandler,
             adispatch_custom_event
         )
-        from langchain_core.runnable import RunnableLambda
+        from langchain_core.runnables import RunnableLambda
 
         class CustomCallbackManager(AsyncCallbackHandler):
             async def on_custom_event(
@@ -2760,7 +2760,7 @@ def dispatch_custom_event(
         ```python
         from langchain_core.callbacks import BaseCallbackHandler
         from langchain_core.callbacks import dispatch_custom_event
-        from langchain_core.runnable import RunnableLambda
+        from langchain_core.runnables import RunnableLambda
 
         class CustomCallbackManager(BaseCallbackHandler):
             def on_custom_event(
