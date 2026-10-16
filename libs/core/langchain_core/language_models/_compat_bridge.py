@@ -47,10 +47,8 @@ from langchain_protocol.protocol import (
     MessageMetadata,
     MessagesData,
     MessageStartData,
-    ReasoningContentBlock,
     ServerToolCall,
     ServerToolCallChunk,
-    TextContentBlock,
     ToolCall,
     ToolCallChunk,
     UsageInfo,
@@ -242,13 +240,21 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
     audio, video, file, non_standard, finalized tool calls) drop their
     heavy payload fields; those are carried by `content-block-finish`.
     Correlation fields (id, name, toolCallId) and small metadata
-    (mime_type, url, status, …) are preserved on the start event.
+    (mime_type, url, status, phase, …) are preserved on the start event.
     """
     btype = block.get("type", "text")
     if btype == "text":
-        return TextContentBlock(type="text", text="")
+        # extras and id
+        text_skel = {
+            k: v for k, v in block.items() if k not in {"text", "index", "annotations"}
+        }
+        text_skel["text"] = ""
+        return _to_protocol_block(text_skel)
     if btype == "reasoning":
-        return ReasoningContentBlock(type="reasoning", reasoning="")
+        # extras and id
+        r_skel = {k: v for k, v in block.items() if k not in {"reasoning", "index"}}
+        r_skel["reasoning"] = ""
+        return _to_protocol_block(r_skel)
     if btype == "tool_call_chunk":
         return ToolCallChunk(
             type="tool_call_chunk",
