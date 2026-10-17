@@ -6,6 +6,16 @@ from typing import Any, cast
 from langchain_core.messages import content as types
 
 
+def _unwrap_non_standard(block: dict) -> dict:
+    """Unwrap a provider-native dictionary from a standard content block."""
+    if block.get("type") == "non_standard" and isinstance(
+        value := block.get("value"),
+        dict,
+    ):
+        return value
+    return block
+
+
 def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
     """Convert LangChain annotation format to Anthropic's native citation format."""
     if annotation["type"] == "non_standard_annotation":
@@ -119,8 +129,9 @@ def _convert_from_v1_to_anthropic(
                 "input": block.get("args", {}),
                 "id": block.get("id", ""),
             }
-            if "caller" in block.get("extras", {}):
-                tool_use_block["caller"] = block["extras"]["caller"]
+            for key in ("caller", "toolset_name"):
+                if key in block.get("extras", {}):
+                    tool_use_block[key] = block["extras"][key]
             new_content.append(tool_use_block)
 
         elif block["type"] == "tool_call_chunk":
@@ -137,6 +148,11 @@ def _convert_from_v1_to_anthropic(
                     "name": block.get("name", ""),
                     "input": input_,
                     "id": block.get("id", ""),
+                    **{
+                        key: block["extras"][key]
+                        for key in ("caller", "toolset_name")
+                        if key in block.get("extras", {})
+                    },
                 }
             )
 

@@ -783,6 +783,36 @@ def test_strict_tool_use() -> None:
     assert response.tool_calls
 
 
+@pytest.mark.vcr
+def test_system_tool_addition() -> None:
+    model = ChatAnthropic(model="claude-opus-5-5")  # type: ignore[call-arg]
+    response = model.invoke(
+        [
+            HumanMessage("What time is it?"),
+            SystemMessage(
+                [
+                    {
+                        "type": "tool_addition",
+                        "tool": {
+                            "type": "tool_definition",
+                            "definition": {
+                                "name": "get_time",
+                                "description": "Get the current time.",
+                                "input_schema": {
+                                    "type": "object",
+                                    "properties": {},
+                                },
+                            },
+                        },
+                    }
+                ]
+            ),
+        ]
+    )
+    assert isinstance(response, AIMessage)
+    assert response.tool_calls[0]["name"] == "get_time"
+
+
 def test_get_num_tokens_from_messages() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
 

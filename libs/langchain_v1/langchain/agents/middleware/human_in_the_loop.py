@@ -4,12 +4,30 @@ from __future__ import annotations
 
 import json
 from dataclasses import replace
-from typing import TYPE_CHECKING, Annotated, Any, Literal, Protocol, cast
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Literal,
+    Protocol,
+    Union,
+    cast,
+    get_args,
+)
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.config import get_config
 from langgraph.prebuilt.tool_node import ToolRuntime
+from langgraph.runtime import get_runtime
 from langgraph.types import Command, interrupt
+from pydantic import (
+    BaseModel,
+    Discriminator,
+    ValidatorFunctionWrapHandler,
+    WithJsonSchema,
+    WrapValidator,
+    create_model,
+)
 from typing_extensions import NotRequired, TypedDict
 
 from langchain.agents.middleware.types import (
@@ -23,8 +41,10 @@ from langchain.agents.middleware.types import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
+    from collections.abc import Awaitable, Callable, Sequence
 
+    from langchain_core.runnables import RunnableConfig
+    from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
 
 
@@ -75,7 +95,11 @@ class ReviewConfig(TypedDict):
     """The decisions that are allowed for this request."""
 
     args_schema: NotRequired[dict[str, Any]]
-    """JSON schema for the args associated with the action, if edits are allowed."""
+    """Unused: the middleware doesn't set it.
+
+    In `per_call` mode the interrupt's `response_schema` shows the tool's own argument
+    schema instead.
+    """
 
 
 class HITLRequest(TypedDict):
@@ -141,6 +165,125 @@ class RespondDecision(TypedDict):
 Decision = ApproveDecision | EditDecision | RejectDecision | RespondDecision
 
 
+InterruptMode = Literal["batched", "per_call"]
+"""How HITL pauses: one interrupt per model turn (`batched`) or per gated tool call."""
+
+
+class ToolApprovalRequest(TypedDict):
+    """Interrupt value raised once per gated tool call in `per_call` mode.
+
+    Takes the place of `HITLRequest`. Answer it with a single `Decision`, keyed by the
+    interrupt's ID, not a `HITLResponse`. The interrupt's `response_schema` lists the
+    decisions allowed for the tool and, for edits, the tool's argument schema.
+    """
+
+    type: Literal["tool_approval"]
+    """Always `"tool_approval"`; tells clients how to read this interrupt."""
+
+    tool_call_id: str
+    """ID of the model's tool call this approval is about."""
+
+    name: str
+    """Tool name, as the model requested it."""
+
+    args: dict[str, Any]
+    """Tool arguments, as the model requested them."""
+
+    description: str
+    """Text shown to the reviewer."""
+
+
+def _edit_args(tool: BaseTool | None) -> object:
+    """What an edit's `args` must look like: the tool's Pydantic schema, if it has one.
+
+    That's the schema the model sees (`tool_call_schema`): it checks arg types and
+    required args. Args it doesn't declare pass through, and the tool ignores them as
+    it would from the model.
+    Validator methods on the tool's `args_schema` aren't part of it; they run when the
+    tool does.
+    A JSON-schema tool's schema is shown but not enforced, and with no tool any object
+    is accepted.
+    """
+    schema = tool.tool_call_schema if tool else None
+    if not (isinstance(schema, type) and issubclass(schema, BaseModel)):
+        shown = schema if isinstance(schema, dict) else {"type": "object"}
+        return Annotated[dict[str, Any], WithJsonSchema(shown)]
+    return schema
+
+
+def _as_sent(answer: object, check: ValidatorFunctionWrapHandler) -> object:
+    """Check `answer`, then pass it on as sent, so the tool validates its args once."""
+    check(answer)
+    return answer
+
+
+def _edit_decision(name: str, tool: BaseTool | None) -> object:
+    """`EditDecision` for one tool: `name` pinned to it, `args` from `_edit_args`."""
+    edited_action = create_model(
+        "EditedAction",
+        name=(Literal[name], ...),
+        args=(_edit_args(tool), ...),
+    )
+    decision = create_model(
+        "EditDecision",
+        type=(Literal["edit"], ...),
+        edited_action=(edited_action, ...),
+    )
+    return Annotated[decision, WrapValidator(_as_sent)]
+
+
+def _decision_schema(
+    allowed: Sequence[DecisionType], name: str, tool: BaseTool | None = None
+) -> type[Decision]:
+    """The per-call `response_schema`: today's decision types, limited to `allowed`.
+
+    The edit branch is built for this tool: its name is pinned, so an edit can't switch
+    tools, and its args follow the tool's own schema. An answer is checked only against
+    the branch its `type` names, so a bad one gets a single error about what's wrong.
+    A one-decision tool gets that decision's plain object schema.
+
+    Returns a type rather than a JSON schema because LangGraph checks answers only
+    against Python types; it publishes the type's JSON schema to clients.
+    """
+    by_type: dict[DecisionType, object] = {
+        "approve": ApproveDecision,
+        "reject": RejectDecision,
+        "respond": RespondDecision,
+    }
+    if "edit" in allowed:
+        by_type["edit"] = _edit_decision(name, tool)
+    # Drop duplicates, keeping order: a union of one type can't take a `Discriminator`.
+    members = tuple(by_type[d] for d in dict.fromkeys(allowed))
+    # Type checkers can't follow a type built at runtime. At runtime, `interrupt()` checks
+    # every answer against it, so what it returns is one of these decisions.
+    if len(members) == 1:
+        return cast("type[Decision]", members[0])
+    # Check only the branch the answer's `type` names, so a bad answer gets one precise
+    # error rather than one per branch.
+    return cast("type[Decision]", Annotated[Union[members], Discriminator("type")])  # noqa: UP007
+
+
+def _answer_message(tool_call: ToolCall, decision: RejectDecision | RespondDecision) -> ToolMessage:
+    """The message the model gets in place of the tool's result."""
+    if decision["type"] == "respond":
+        # Skip tool execution; the human answers on behalf of the tool.
+        content = decision["message"]
+    elif reason := decision.get("message"):
+        content = f"User rejected the tool call for `{tool_call['name']}` with reason: {reason}"
+    else:
+        content = (
+            f"User rejected the tool call for `{tool_call['name']}` with id "
+            f"{tool_call['id']}. The tool was not executed. Do not retry this tool "
+            "call unless the user explicitly requests it."
+        )
+    return ToolMessage(
+        content=content,
+        name=tool_call["name"],
+        tool_call_id=tool_call["id"],
+        status="success" if decision["type"] == "respond" else "error",
+    )
+
+
 class HITLResponse(TypedDict):
     """Response payload for a HITLRequest."""
 
@@ -204,7 +347,11 @@ class InterruptOnConfig(TypedDict):
         ```
     """
     args_schema: NotRequired[dict[str, Any]]
-    """JSON schema for the args associated with the action, if edits are allowed."""
+    """Unused: the middleware doesn't send it to the reviewer in either mode.
+
+    In `per_call` mode the interrupt's `response_schema` shows the tool's own argument
+    schema instead.
+    """
 
     when: NotRequired[Callable[[ToolCallRequest], bool]]
     """Optional predicate controlling whether to interrupt for a given tool call.
@@ -218,6 +365,15 @@ class InterruptOnConfig(TypedDict):
     and `server_info` from the node-level `Runtime`, while `tool_call_id` is
     populated from the current tool call. The `tools` argument is not supplied,
     so it uses its default empty list.
+
+    In `per_call` mode the predicate runs in `wrap_tool_call` and receives the real
+    `ToolCallRequest`, with `tool` and the tool's `ToolRuntime` set.
+
+    In both modes the predicate runs again when the run resumes, so it must return the
+    same answer for the same call. If it returns `False` on resume, the reviewer's
+    answer is skipped and the tool runs, even if they rejected it. In `batched` mode,
+    if it flips for only some of the reviewed calls, the decisions no longer line up
+    with the calls and resuming raises a `ValueError`.
 
     Example:
         ```python
@@ -238,7 +394,95 @@ class _HumanInTheLoopState(AgentState[ResponseT]):
 
 
 class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
-    """Human in the loop middleware."""
+    """Pause the agent so a person can review tool calls before they run.
+
+    Each tool in `interrupt_on` needs a decision before it runs: approve, edit, reject,
+    or respond. The pause is a LangGraph `interrupt`, so the agent needs a checkpointer,
+    and the run continues with `Command(resume=...)`.
+
+    `interrupt_mode` sets how the agent pauses:
+
+    - `"batched"` (default): one interrupt per model turn. Its value is a `HITLRequest`
+        listing every gated call, answered with a `HITLResponse` whose decisions match
+        the calls by position.
+    - `"per_call"`: one interrupt per gated tool call, as the call starts. Its value is
+        a `ToolApprovalRequest` and its `response_schema` lists the decisions that tool
+        allows. Each is answered with a single `Decision` keyed by interrupt ID, and
+        LangGraph checks the answer against the schema before saving it. `"per_call"`
+        is planned to become the default in the next major release.
+
+    Examples:
+        !!! example "Batched: one interrupt per model turn"
+
+            ```python
+            from langchain.agents import create_agent
+            from langchain.agents.middleware import HumanInTheLoopMiddleware
+            from langgraph.checkpoint.memory import InMemorySaver
+            from langgraph.types import Command
+
+            agent = create_agent(
+                model,
+                tools=[send_email, delete_file],
+                middleware=[
+                    HumanInTheLoopMiddleware(interrupt_on={"send_email": True, "delete_file": True})
+                ],
+                checkpointer=InMemorySaver(),
+            )
+            config = {"configurable": {"thread_id": "1"}}
+            result = agent.invoke(
+                {"messages": [{"role": "user", "content": "Email Alice, then delete the report."}]},
+                config,
+                version="v2",
+            )
+            # One interrupt; `value["action_requests"]` lists send_email, then delete_file.
+            agent.invoke(
+                Command(
+                    resume={
+                        "decisions": [
+                            {"type": "approve"},
+                            {"type": "reject", "message": "Keep the report."},
+                        ]
+                    }
+                ),
+                config,
+                version="v2",
+            )
+            ```
+
+        !!! example "Per-call: one interrupt per gated tool call"
+
+            ```python
+            agent = create_agent(
+                model,
+                tools=[send_email, delete_file],
+                middleware=[
+                    HumanInTheLoopMiddleware(
+                        interrupt_on={
+                            "send_email": True,
+                            "delete_file": {"allowed_decisions": ["approve", "reject"]},
+                        },
+                        interrupt_mode="per_call",
+                    )
+                ],
+                checkpointer=InMemorySaver(),
+            )
+            config = {"configurable": {"thread_id": "2"}}
+            result = agent.invoke(
+                {"messages": [{"role": "user", "content": "Email Alice, then delete the report."}]},
+                config,
+                version="v2",
+            )
+            # Two interrupts, each with `value["type"] == "tool_approval"` and its own
+            # `response_schema`. Answer each by its ID.
+            answers = {}
+            for interrupt in result.interrupts:
+                if interrupt.value["name"] == "delete_file":
+                    answers[interrupt.id] = {"type": "reject", "message": "Keep the report."}
+                else:
+                    answers[interrupt.id] = {"type": "approve"}
+            agent.invoke(Command(resume=answers), config, version="v2")
+            ```
+    """
 
     state_schema = _HumanInTheLoopState  # type: ignore[assignment]
 
@@ -248,6 +492,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         *,
         description_prefix: str = "Tool execution requires approval",
         edit_notice: str | None = _EDIT_NOTICE,
+        interrupt_mode: InterruptMode = "batched",
     ) -> None:
         """Initialize the human in the loop middleware.
 
@@ -275,14 +520,61 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 Not used if a tool has a `description` in its `InterruptOnConfig`.
             edit_notice: Text prepended to the result of a tool call a reviewer replaced
                 via an `edit` decision. Pass `None` to add nothing.
+            interrupt_mode: How the agent pauses for review.
+
+                - `"batched"` (default): one interrupt per model turn for all gated
+                    tool calls, answered with a `HITLResponse`.
+                - `"per_call"`: one `ToolApprovalRequest` interrupt per gated tool
+                    call, with a typed `response_schema`, answered with a single
+                    `Decision` keyed by interrupt ID.
+
+                In `per_call` mode, LangGraph checks each answer before saving it:
+
+                - An edit can't switch tools, and its args must match the tool's
+                    argument types. Args the tool doesn't declare are ignored, as
+                    they are when the model sends them.
+                    Validator methods on the tool's `args_schema` run when the tool
+                    does. For a tool whose arguments are a JSON schema rather than a
+                    Pydantic model, edits are shown in `response_schema` but not
+                    checked.
+                - An invalid answer raises `pydantic.ValidationError` and isn't
+                    saved, so the same interrupt can be answered again.
+
+                !!! warning "Answering several calls at once"
+
+                    If one of several answers sent together is invalid, the others'
+                    tools may already have run even if they still show as pending,
+                    and answering them again would run them twice. Check answers
+                    against `response_schema` before sending them together, or send
+                    one at a time.
+
+                !!! warning "Middleware order in `per_call` mode"
+
+                    The review happens as the tool call starts, inside the tool-call
+                    middleware chain. List this middleware before tool retry or
+                    error-handling middleware so it wraps them, and don't enable it
+                    on subclasses that raise their own interrupts in `after_model`.
+                    On resume, each paused tool call runs the middleware listed
+                    before this one again up to the pause, so that middleware must
+                    not have side effects before calling `handler`. The tool itself
+                    runs only after the answer.
+
+                As in `batched` mode, running the agent asynchronously (`ainvoke`,
+                `astream`) needs Python 3.11 or later.
 
         Raises:
             ValueError: If a tool's `InterruptOnConfig` does not have a non-empty
                 `allowed_decisions` list (e.g. a misspelled key or an empty list).
                 An interrupt config without decisions would otherwise be silently
                 dropped, disabling the approval gate for that tool.
+                Also if `interrupt_mode` is invalid.
         """
         super().__init__()
+        if interrupt_mode not in (modes := get_args(InterruptMode)):
+            allowed = " or ".join(repr(mode) for mode in modes)
+            msg = f"`interrupt_mode` must be {allowed}, got {interrupt_mode!r}."
+            raise ValueError(msg)
+        self.interrupt_mode = interrupt_mode
         self.edit_notice = edit_notice
         resolved_configs: dict[str, InterruptOnConfig] = {}
         for tool_name, tool_config in interrupt_on.items():
@@ -333,7 +625,6 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         )
 
         # Create ReviewConfig
-        # eventually can get tool information and populate args_schema from there
         review_config = ReviewConfig(
             action_name=tool_name,
             allowed_decisions=config["allowed_decisions"],
@@ -356,33 +647,10 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             # Keep the model's own call in the message; `wrap_tool_call` substitutes the
             # reviewer's at execution time.
             return tool_call, None
-        if decision["type"] == "reject" and "reject" in allowed_decisions:
-            reason = decision.get("message")
-            content = (
-                f"User rejected the tool call for `{tool_call['name']}` with reason: {reason}"
-                if reason
-                else (
-                    f"User rejected the tool call for `{tool_call['name']}` with id "
-                    f"{tool_call['id']}. The tool was not executed. Do not retry this tool "
-                    "call unless the user explicitly requests it."
-                )
-            )
-            tool_message = ToolMessage(
-                content=content,
-                name=tool_call["name"],
-                tool_call_id=tool_call["id"],
-                status="error",
-            )
-            return tool_call, tool_message
-        if decision["type"] == "respond" and "respond" in allowed_decisions:
-            # Skip tool execution; the human answers on behalf of the tool.
-            tool_message = ToolMessage(
-                content=decision["message"],
-                name=tool_call["name"],
-                tool_call_id=tool_call["id"],
-                status="success",
-            )
-            return tool_call, tool_message
+        if decision["type"] in allowed_decisions and (
+            decision["type"] == "reject" or decision["type"] == "respond"
+        ):
+            return tool_call, _answer_message(tool_call, decision)
         msg = (
             f"Unexpected human decision: {decision}. "
             f"Decision type '{decision.get('type')}' "
@@ -402,6 +670,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         when = config.get("when")
         if when is None:
             return True
+        runnable_config: RunnableConfig
         try:
             runnable_config = get_config()
         except RuntimeError:
@@ -424,6 +693,68 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         )
         return when(req)
 
+    def _tool_approval_request(
+        self, request: ToolCallRequest, config: InterruptOnConfig
+    ) -> ToolApprovalRequest:
+        """Build the per-call interrupt value for one gated tool call.
+
+        Raises:
+            ValueError: If the tool call has no ID. It can't run without one, so the
+                reviewer isn't asked to approve it.
+        """
+        tool_call = request.tool_call
+        tool_call_id = tool_call["id"]
+        # Only `None`: an empty ID still runs, so per-call keeps working where batched does.
+        if tool_call_id is None:
+            msg = (
+                f"Tool call `{tool_call['name']}` has no ID, so its result can't be matched "
+                "to it. Make sure the chat model returns tool call IDs."
+            )
+            raise ValueError(msg)
+        # A description factory gets the graph `Runtime`, as in batched mode.
+        runtime: Runtime[ContextT] = get_runtime()
+        action_request, _ = self._create_action_and_config(
+            tool_call, config, request.state, runtime
+        )
+        return ToolApprovalRequest(
+            type="tool_approval",
+            tool_call_id=tool_call_id,
+            name=tool_call["name"],
+            args=tool_call["args"],
+            description=action_request.get("description", ""),
+        )
+
+    def _resolve_per_call(
+        self, request: ToolCallRequest
+    ) -> tuple[ToolCallRequest, Action | None] | ToolMessage:
+        """Ask the reviewer about one tool call, if it's gated.
+
+        Returns the request to run, with the reviewer's call if they edited it, or the
+        message to return instead of running the tool.
+        """
+        tool_call = request.tool_call
+        config = self.interrupt_on.get(tool_call["name"])
+        if config is None:
+            return request, None
+        when = config.get("when")
+        if when is not None and not when(request):
+            return request, None
+
+        value = self._tool_approval_request(request, config)
+        response_schema = _decision_schema(
+            config["allowed_decisions"], tool_call["name"], request.tool
+        )
+        # LangGraph parses the answer against `response_schema` before saving it, so it
+        # comes back as one of this tool's allowed decisions.
+        decision = interrupt(value, response_schema=response_schema)
+        if decision["type"] == "approve":
+            return request, None
+        if decision["type"] == "edit":
+            # The schema pinned the tool name, so this is always the same tool.
+            executed = decision["edited_action"]
+            return self._apply_edit(request, executed), executed
+        return _answer_message(tool_call, decision)
+
     def after_model(
         self, state: AgentState[Any], runtime: Runtime[ContextT]
     ) -> dict[str, Any] | None:
@@ -440,6 +771,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             ValueError: If the number of human decisions does not match the number of
                 interrupted tool calls.
         """
+        if self.interrupt_mode == "per_call":
+            # Interrupts are raised per tool call, in `wrap_tool_call`.
+            return None
         messages = state["messages"]
         if not messages:
             return None
@@ -545,7 +879,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             return None
         edited = request.state.get(_EDITED_TOOL_CALLS_KEY) or {}
         if tool_call_id in edited:
-            return cast("Action", edited[tool_call_id])
+            executed: Action = edited[tool_call_id]
+            return executed
         return None
 
     def _apply_edit(self, request: ToolCallRequest, executed: Action) -> ToolCallRequest:
@@ -648,13 +983,27 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     ) -> ToolMessage | Command[Any]:
         """Prepend reviewer-edit guidance to the result of an edited tool call.
 
+        In `per_call` mode this is also where the interrupt is raised.
+
         Args:
             request: The tool call request being executed.
             handler: Callable that executes the tool.
 
         Returns:
             The tool result, with a note prepended when a reviewer edited the call.
+
+        Raises:
+            ValidationError: In `per_call` mode, if the reviewer's answer doesn't match
+                the tool call's `response_schema`. Nothing is saved, so the call can be
+                answered again.
+            ValueError: In `per_call` mode, if a gated tool call has no ID.
         """
+        if self.interrupt_mode == "per_call":
+            resolved = self._resolve_per_call(request)
+            if isinstance(resolved, ToolMessage):
+                return resolved
+            to_run, executed = resolved
+            return self._annotate_edited_result(handler(to_run), to_run, executed)
         executed = self._reviewer_edit(request)
         if executed is not None:
             request = self._apply_edit(request, executed)
@@ -667,13 +1016,27 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     ) -> ToolMessage | Command[Any]:
         """Async variant of `wrap_tool_call`.
 
+        In `per_call` mode this is also where the interrupt is raised.
+
         Args:
             request: The tool call request being executed.
             handler: Awaitable callable that executes the tool.
 
         Returns:
             The tool result, with a note prepended when a reviewer edited the call.
+
+        Raises:
+            ValidationError: In `per_call` mode, if the reviewer's answer doesn't match
+                the tool call's `response_schema`. Nothing is saved, so the call can be
+                answered again.
+            ValueError: In `per_call` mode, if a gated tool call has no ID.
         """
+        if self.interrupt_mode == "per_call":
+            resolved = self._resolve_per_call(request)
+            if isinstance(resolved, ToolMessage):
+                return resolved
+            to_run, executed = resolved
+            return self._annotate_edited_result(await handler(to_run), to_run, executed)
         executed = self._reviewer_edit(request)
         if executed is not None:
             request = self._apply_edit(request, executed)

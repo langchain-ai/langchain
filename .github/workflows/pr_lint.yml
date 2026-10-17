@@ -31,7 +31,7 @@
 #   core, langchain, langchain-classic, model-profiles,
 #   standard-tests, text-splitters, docs, anthropic, chroma, deepseek, exa,
 #   fireworks, groq, huggingface, mistralai, nomic, ollama, openai,
-#   perplexity, qdrant, xai, infra, deps, partners
+#   openrouter, perplexity, qdrant, typesafe, xai, infra, deps, partners
 #
 # Multiple scopes can be used by separating them with a comma. For example:
 #

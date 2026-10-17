@@ -76,3 +76,24 @@ def test_huggingface_hosted_endpoint_keeps_api_key(
 
     call_kwargs = mock_inference_client.call_args[1]
     assert call_kwargs.get("api_key") == "hf_xxx"
+
+
+@patch("huggingface_hub.AsyncInferenceClient")
+@patch("huggingface_hub.InferenceClient")
+def test_api_token_not_in_repr_or_serialized(
+    mock_inference_client: MagicMock,
+    mock_async_client: MagicMock,
+) -> None:
+    """The token must not leak via `repr`, which tracers receive as `serialized`."""
+    mock_inference_client.return_value = MagicMock()
+    mock_async_client.return_value = MagicMock()
+
+    llm = HuggingFaceEndpoint(  # type: ignore[call-arg]
+        endpoint_url="https://abc.huggingface.co/inference",
+        huggingfacehub_api_token="hf_secret_token",  # noqa: S106
+    )
+
+    assert "hf_secret_token" not in repr(llm)
+    assert "hf_secret_token" not in str(llm._serialized)
+    # Still handed to the client.
+    assert mock_inference_client.call_args[1]["api_key"] == "hf_secret_token"

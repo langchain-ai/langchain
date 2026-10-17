@@ -30,6 +30,7 @@ from langchain_core.exceptions import (
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    BaseMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
@@ -1720,7 +1721,9 @@ def test__format_messages_with_multiple_system() -> None:
         },
     ]
     actual_system, actual_messages = _format_messages(
-        messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
     )
     assert actual_system is None
     assert expected_messages == actual_messages
@@ -1794,7 +1797,9 @@ def test__format_messages_leading_system_string_content_unchanged() -> None:
         HumanMessage("Review foo()"),
     ]
     actual_system, actual_messages = _format_messages(
-        messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
     )
     assert actual_system == "You are a code reviewer."
     assert actual_messages == [{"role": "user", "content": "Review foo()"}]
@@ -1810,7 +1815,9 @@ def test__format_messages_trailing_system_sent_in_place() -> None:
         SystemMessage("Every suggestion must include type annotations."),
     ]
     actual_system, actual_messages = _format_messages(
-        messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
     )
     assert actual_system == "You are a code reviewer."
     assert actual_messages == [
@@ -1831,7 +1838,9 @@ def test__format_messages_non_leading_system_only_run_sent_in_place() -> None:
         SystemMessage("Be concise."),
     ]
     actual_system, actual_messages = _format_messages(
-        messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
     )
     assert actual_system is None
     assert actual_messages == [
@@ -1848,7 +1857,9 @@ def test__format_messages_system_between_user_and_ai_sent_in_place() -> None:
         AIMessage("Looks fine."),
     ]
     actual_system, actual_messages = _format_messages(
-        messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
     )
     assert actual_system is None
     assert actual_messages == [
@@ -1871,7 +1882,9 @@ def test__format_messages_system_after_tool_message_sent_in_place() -> None:
         SystemMessage("Be concise."),
     ]
     actual_system, actual_messages = _format_messages(
-        messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
     )
     assert actual_system is None
     assert [message["role"] for message in actual_messages] == [
@@ -1896,22 +1909,21 @@ def test__format_messages_system_after_server_tool_result_sent_in_place(
     block_type: str,
 ) -> None:
     """An assistant turn ending in a server tool result is a legal predecessor."""
-    ai = AIMessage(
-        [
-            {
-                "type": block_type,
-                "tool_use_id": "srvtoolu_1",
-                "content": [{"type": "text", "text": "results"}],
-            },
-        ],
-    )
+    block = {
+        "type": block_type,
+        "tool_use_id": "srvtoolu_1",
+        "content": [{"type": "text", "text": "results"}],
+    }
+    ai = AIMessage([block], response_metadata={"model_provider": "anthropic"})
     messages = [
         HumanMessage("Review foo()"),
         ai,
         SystemMessage("Be concise."),
     ]
     actual_system, actual_messages = _format_messages(
-        messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
     )
     assert actual_system is None
     assert [message["role"] for message in actual_messages] == [
@@ -1919,6 +1931,9 @@ def test__format_messages_system_after_server_tool_result_sent_in_place(
         "assistant",
         "system",
     ]
+    # Forward compatibility: an unrecognized server tool result block reaches the
+    # wire untouched, which is what makes it a legal predecessor in the first place.
+    assert actual_messages[1]["content"] == [block]
 
 
 def test__format_messages_system_after_client_tool_result_hoisted() -> None:
@@ -1932,7 +1947,9 @@ def test__format_messages_system_after_client_tool_result_hoisted() -> None:
     ]
     with pytest.warns(UserWarning, match=_HOIST_WARNING):
         actual_system, actual_messages = _format_messages(
-            messages, model=MID_CONVERSATION_SYSTEM_MODEL
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
         )
     assert actual_system == "Be concise."
     assert [message["role"] for message in actual_messages] == ["user", "assistant"]
@@ -1947,7 +1964,9 @@ def test__format_messages_system_after_plain_ai_turn_hoisted() -> None:
     ]
     with pytest.warns(UserWarning, match=_HOIST_WARNING):
         actual_system, actual_messages = _format_messages(
-            messages, model=MID_CONVERSATION_SYSTEM_MODEL
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
         )
     assert actual_system == "Be concise."
     assert actual_messages == [
@@ -1965,7 +1984,9 @@ def test__format_messages_system_followed_by_user_turn_hoisted() -> None:
     ]
     with pytest.warns(UserWarning, match=_HOIST_WARNING):
         actual_system, actual_messages = _format_messages(
-            messages, model=MID_CONVERSATION_SYSTEM_MODEL
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
         )
     assert actual_system == "Be concise."
     assert actual_messages == [
@@ -1983,7 +2004,9 @@ def test__format_messages_leading_run_hoisted_and_later_run_in_place() -> None:
         SystemMessage("Every suggestion must include type annotations."),
     ]
     actual_system, actual_messages = _format_messages(
-        messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
     )
     assert actual_system == [
         {"type": "text", "text": "You are a code reviewer."},
@@ -2008,7 +2031,9 @@ def test__format_messages_several_non_contiguous_system_runs_in_place() -> None:
         SystemMessage("Include type annotations."),
     ]
     actual_system, actual_messages = _format_messages(
-        messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
     )
     assert actual_system is None
     assert actual_messages == [
@@ -2031,7 +2056,9 @@ def test__format_messages_keeps_both_runs_when_turn_between_is_dropped() -> None
         HumanMessage("Review bar()"),
     ]
     actual_system, actual_messages = _format_messages(
-        messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
     )
     assert actual_system is None
     assert actual_messages == [
@@ -2055,11 +2082,15 @@ def test__format_messages_two_held_back_runs_before_a_user_turn_raise() -> None:
     with pytest.raises(
         ValueError, match=r"Received multiple non-consecutive system messages\."
     ):
-        _format_messages(messages, model=MID_CONVERSATION_SYSTEM_MODEL)
+        _format_messages(
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
 
 
-def test__format_messages_non_leading_system_hoisted_on_unsupported_model() -> None:
-    """Test unsupported models hoist non-leading system messages."""
+def test__format_messages_non_leading_system_hoisted_by_default() -> None:
+    """Without the capability, it is hoisted, and the warning omits its text."""
     messages = [
         HumanMessage("Review foo()"),
         SystemMessage("Be concise."),
@@ -2073,57 +2104,54 @@ def test__format_messages_non_leading_system_hoisted_on_unsupported_model() -> N
     assert actual_messages == [{"role": "user", "content": "Review foo()"}]
 
 
-def test__format_messages_non_leading_system_hoisted_on_sonnet_5() -> None:
-    """Sonnet 5 is a current model that does not support the feature."""
-    messages = [
-        HumanMessage("Review foo()"),
-        SystemMessage("Be concise."),
-    ]
-    with pytest.warns(UserWarning, match=_HOIST_WARNING):
-        actual_system, actual_messages = _format_messages(
-            messages, model="claude-sonnet-5"
-        )
-    assert actual_system == "Be concise."
-    assert actual_messages == [{"role": "user", "content": "Review foo()"}]
+def test_non_leading_system_in_place_when_profile_declares_it() -> None:
+    """The profile decides, so a Bedrock model ID sends it in place too."""
+    model = ChatAnthropic(
+        model="global.anthropic.claude-opus-5-5",
+        profile={"mid_conversation_system_messages": True},
+    )
+    payload = model._get_request_payload(
+        [HumanMessage("Review foo()"), SystemMessage("Be concise.")]
+    )
+    assert "system" not in payload
+    assert payload["messages"][-1] == {"role": "system", "content": "Be concise."}
 
 
-def test__format_messages_non_leading_system_hoisted_on_platform_model_id() -> None:
-    """Test platform-prefixed model identifiers do not match."""
-    messages = [
-        HumanMessage("Review foo()"),
-        SystemMessage("Be concise."),
-    ]
+@pytest.mark.parametrize("profile", [{}, {"mid_conversation_system_messages": False}])
+def test_non_leading_system_hoisted_when_profile_does_not_declare_it(
+    profile: dict,
+) -> None:
+    """Absent or `False` both hoist, even for a model that supports it."""
+    model = ChatAnthropic(model="claude-opus-5-5", profile=profile)
     with pytest.warns(UserWarning, match=_HOIST_WARNING):
-        actual_system, _ = _format_messages(
-            messages, model="us.anthropic.claude-opus-5-v1:0"
+        payload = model._get_request_payload(
+            [HumanMessage("Review foo()"), SystemMessage("Be concise.")]
         )
-    assert actual_system == "Be concise."
+    assert payload["system"] == "Be concise."
+    assert payload["messages"] == [{"role": "user", "content": "Review foo()"}]
 
 
 @pytest.mark.parametrize(
-    "model",
-    ["claude-opus-5-1", "claude-fable-5-1", "claude-mythos-5-2", "claude-opus-4-8"],
+    ("model", "system_messages", "tools"),
+    [
+        ("claude-opus-5-5", True, True),
+        ("claude-haiku-5-5", True, True),
+        # Sonnet 5 accepts a mid-conversation system message but rejects tools in it.
+        ("claude-sonnet-5", True, False),
+        # Mythos isn't in models.dev, so its profile comes from augmentations alone.
+        ("claude-mythos-5", True, True),
+        ("claude-mythos-5-1", True, True),
+        ("claude-mythos-preview", None, None),
+        ("claude-opus-4-5", None, None),
+    ],
 )
-def test__format_messages_supported_model_prefixes_match_forward(model: str) -> None:
-    """A later point release of a supported family needs no edit here."""
-    messages = [
-        HumanMessage("Review foo()"),
-        SystemMessage("Be concise."),
-    ]
-    _, actual_messages = _format_messages(messages, model=model)
-    assert actual_messages[-1] == {"role": "system", "content": "Be concise."}
-
-
-@pytest.mark.parametrize("model", ["claude-opus-4-5", "claude-mythos-preview"])
-def test__format_messages_unsupported_model_prefixes_hoist(model: str) -> None:
-    """Prefixes that must not match: pre-4-8 Opus, and unversioned Mythos."""
-    messages = [
-        HumanMessage("Review foo()"),
-        SystemMessage("Be concise."),
-    ]
-    with pytest.warns(UserWarning, match=_HOIST_WARNING):
-        actual_system, _ = _format_messages(messages, model=model)
-    assert actual_system == "Be concise."
+def test_profile_declares_mid_conversation_capabilities(
+    model: str, *, system_messages: bool | None, tools: bool | None
+) -> None:
+    """Profiles carry the capabilities live probes show each model accepts."""
+    profile = ChatAnthropic(model=model).profile or {}
+    assert profile.get("mid_conversation_system_messages") is system_messages
+    assert profile.get("mid_conversation_tools") is tools
 
 
 def test__format_messages_second_unplaceable_system_run_raises() -> None:
@@ -2137,7 +2165,11 @@ def test__format_messages_second_unplaceable_system_run_raises() -> None:
     with pytest.raises(
         ValueError, match=r"Received multiple non-consecutive system messages\."
     ):
-        _format_messages(messages, model=MID_CONVERSATION_SYSTEM_MODEL)
+        _format_messages(
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
 
 
 def test__format_messages_system_cache_control_preserved_in_both_paths() -> None:
@@ -2149,7 +2181,9 @@ def test__format_messages_system_cache_control_preserved_in_both_paths() -> None
     }
     in_place_messages = [HumanMessage("Review foo()"), SystemMessage([block])]
     actual_system, actual_messages = _format_messages(
-        in_place_messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        in_place_messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
     )
     assert actual_system is None
     assert actual_messages[-1] == {"role": "system", "content": [block]}
@@ -2166,7 +2200,9 @@ def test__format_messages_system_v1_content_blocks_drop_id_in_place() -> None:
         SystemMessage(content_blocks=[create_text_block("Be concise.")]),
     ]
     actual_system, actual_messages = _format_messages(
-        messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
     )
     assert actual_system is None
     assert actual_messages[-1] == {
@@ -2184,6 +2220,7 @@ def test__format_messages_final_assistant_turn_trimmed_past_system() -> None:
         _, actual_messages = _format_messages(
             [human, AIMessage("thought "), system],
             model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
         )
     assert actual_messages[-1]["content"] == "thought"
 
@@ -2191,6 +2228,7 @@ def test__format_messages_final_assistant_turn_trimmed_past_system() -> None:
         _, actual_messages = _format_messages(
             [human, AIMessage([{"type": "text", "text": "thought "}]), system],
             model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
         )
     assert actual_messages[-1]["content"][0]["text"] == "thought"  # type: ignore[index]
 
@@ -2201,6 +2239,7 @@ def test__format_messages_empty_final_assistant_turn_kept_past_system() -> None:
         _, actual_messages = _format_messages(
             [HumanMessage("Review foo()"), AIMessage(""), SystemMessage("Be concise.")],
             model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
         )
     assert actual_messages == [
         {"role": "user", "content": "Review foo()"},
@@ -2217,7 +2256,9 @@ def test__format_messages_system_position_judged_against_wire_sequence() -> None
         AIMessage("Looks fine."),
     ]
     actual_system, actual_messages = _format_messages(
-        messages, model=MID_CONVERSATION_SYSTEM_MODEL
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
     )
     assert actual_system is None
     assert actual_messages == [
@@ -2237,7 +2278,9 @@ def test__format_messages_system_hoisted_when_next_ai_turn_is_dropped() -> None:
     ]
     with pytest.warns(UserWarning, match=_HOIST_WARNING):
         actual_system, actual_messages = _format_messages(
-            messages, model=MID_CONVERSATION_SYSTEM_MODEL
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
         )
     assert actual_system == "Be concise."
     assert actual_messages == [
@@ -2271,6 +2314,7 @@ def test__format_messages_system_citations_preserved_in_place() -> None:
     _, actual_messages = _format_messages(
         [HumanMessage("Review foo()"), SystemMessage([block])],
         model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
     )
     assert actual_messages[-1] == {
         "role": "system",
@@ -2282,6 +2326,258 @@ def test__format_messages_system_citations_preserved_in_place() -> None:
             },
         ],
     }
+
+
+_TOOL_REMOVAL_BLOCK = {
+    "type": "tool_removal",
+    "tool": {"type": "tool_reference", "name": "get_weather"},
+}
+_TOOL_ADDITION_BLOCK = {
+    "type": "tool_addition",
+    "tool": {"type": "tool_reference", "name": "get_weather"},
+}
+_TOOL_CHANGE_UNSUPPORTED_WARNING = "Tool-change block"
+_UNRECOGNIZED_SYSTEM_BLOCK_WARNING = "Unrecognized system content block"
+
+
+@pytest.mark.parametrize("block", [_TOOL_REMOVAL_BLOCK, _TOOL_ADDITION_BLOCK])
+def test__format_messages_system_tool_change_block_sent_in_place(
+    block: dict,
+) -> None:
+    """Tool-change blocks reach the wire verbatim from an in-place system message."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage([block]),
+        AIMessage("Looks fine."),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system is None
+    assert actual_messages[1] == {"role": "system", "content": [block]}
+
+
+@pytest.mark.parametrize("block", [_TOOL_REMOVAL_BLOCK, _TOOL_ADDITION_BLOCK])
+def test__format_messages_system_tool_change_block_spellings_match(
+    block: dict,
+) -> None:
+    """A bare dict and a `non_standard` wrapper produce identical wire output."""
+    bare = [
+        HumanMessage("Review foo()"),
+        SystemMessage([block]),
+        AIMessage("Looks fine."),
+    ]
+    wrapped = [
+        HumanMessage("Review foo()"),
+        SystemMessage([{"type": "non_standard", "value": block}]),
+        AIMessage("Looks fine."),
+    ]
+    assert _format_messages(
+        bare, model=MID_CONVERSATION_SYSTEM_MODEL, mid_conversation_system_messages=True
+    ) == (
+        _format_messages(
+            wrapped,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+    )
+
+
+@pytest.mark.parametrize("block", [_TOOL_REMOVAL_BLOCK, _TOOL_ADDITION_BLOCK])
+def test__format_messages_tool_change_block_survives_content_blocks(
+    block: dict,
+) -> None:
+    """The payload reaches the converter untranslated via either accessor.
+
+    A bare provider-native dict wraps into `non_standard` when read through
+    `content_blocks`, and an already-wrapped one stays put; neither is rewritten.
+    The converter unwraps both, so the accessor a caller uses cannot change the
+    wire output.
+    """
+    bare = SystemMessage([block])
+    wrapped = SystemMessage(content_blocks=[{"type": "non_standard", "value": block}])
+    expected = [{"type": "non_standard", "value": block}]
+    assert bare.content_blocks == expected
+    assert wrapped.content_blocks == expected
+
+    conversation = [HumanMessage("Review foo()"), AIMessage("Looks fine.")]
+    assert _format_messages(
+        [conversation[0], bare, conversation[1]],
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    ) == _format_messages(
+        [conversation[0], wrapped, conversation[1]],
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+
+
+def test__format_messages_system_tool_change_block_beside_text() -> None:
+    """Siblings of a tool-change block survive alongside it."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage([{"type": "text", "text": "Be concise."}, _TOOL_REMOVAL_BLOCK]),
+        AIMessage("Looks fine."),
+    ]
+    _, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_messages[1] == {
+        "role": "system",
+        "content": [{"type": "text", "text": "Be concise."}, _TOOL_REMOVAL_BLOCK],
+    }
+
+
+def test__format_messages_system_unrecognized_block_dropped_with_warning() -> None:
+    """An unrecognized system content block is dropped with a warning."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage(
+            [
+                {"type": "text", "text": "Be concise."},
+                {"type": "made_up_block", "foo": "bar"},
+            ],
+        ),
+        AIMessage("Looks fine."),
+    ]
+    with pytest.warns(UserWarning, match=_UNRECOGNIZED_SYSTEM_BLOCK_WARNING):
+        _, actual_messages = _format_messages(
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+    assert actual_messages[1] == {
+        "role": "system",
+        "content": [{"type": "text", "text": "Be concise."}],
+    }
+
+
+def test__format_messages_leading_system_unrecognized_block_dropped() -> None:
+    """The hoisted leading system path drops unrecognized blocks too."""
+    messages = [
+        SystemMessage(
+            [
+                {"type": "text", "text": "Be concise."},
+                {"type": "made_up_block", "foo": "bar"},
+            ],
+        ),
+        HumanMessage("Review foo()"),
+    ]
+    with pytest.warns(UserWarning, match=_UNRECOGNIZED_SYSTEM_BLOCK_WARNING):
+        actual_system, _ = _format_messages(
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+    assert actual_system == [{"type": "text", "text": "Be concise."}]
+
+
+@pytest.mark.parametrize("block", [_TOOL_REMOVAL_BLOCK, _TOOL_ADDITION_BLOCK])
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+def test__format_messages_leading_system_tool_change_block_forwarded(
+    block: dict,
+    spelling: str,
+) -> None:
+    """Anthropic validates tool-change blocks on the top-level system field."""
+    content: list[str | dict] = (
+        [block] if spelling == "bare" else [{"type": "non_standard", "value": block}]
+    )
+    actual_system, actual_messages = _format_messages(
+        [SystemMessage(content), HumanMessage("Review foo()")],
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system == [block]
+    assert actual_messages == [{"role": "user", "content": "Review foo()"}]
+
+
+def test__format_messages_system_tool_change_block_stripped_on_unsupported_model() -> (
+    None
+):
+    """An unsupported model strips the tool-change block and hoists the text."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage([{"type": "text", "text": "Be concise."}, _TOOL_REMOVAL_BLOCK]),
+        AIMessage("Looks fine."),
+    ]
+    with pytest.warns(UserWarning, match=_TOOL_CHANGE_UNSUPPORTED_WARNING) as record:
+        actual_system, actual_messages = _format_messages(messages, model=MODEL_NAME)
+    messages_warned = [str(warning.message) for warning in record]
+    assert any(_TOOL_CHANGE_UNSUPPORTED_WARNING in m for m in messages_warned)
+    assert any(_HOIST_WARNING in m for m in messages_warned)
+    assert actual_system == [{"type": "text", "text": "Be concise."}]
+    assert [message["role"] for message in actual_messages] == ["user", "assistant"]
+
+
+def test__format_messages_system_tool_change_block_stripped_on_illegal_position() -> (
+    None
+):
+    """A hoisted system message on a supported model also strips tool changes."""
+    messages = [
+        HumanMessage("Review foo()"),
+        AIMessage("Looks fine."),
+        SystemMessage([{"type": "text", "text": "Be concise."}, _TOOL_REMOVAL_BLOCK]),
+    ]
+    with pytest.warns(UserWarning, match=_TOOL_CHANGE_UNSUPPORTED_WARNING) as record:
+        actual_system, _ = _format_messages(
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+    messages_warned = [str(warning.message) for warning in record]
+    assert any(_TOOL_CHANGE_UNSUPPORTED_WARNING in m for m in messages_warned)
+    assert actual_system == [{"type": "text", "text": "Be concise."}]
+
+
+def test__format_messages_system_stripped_to_empty_hoists_empty_list() -> None:
+    """Stripping every block leaves an empty system array, not `None`."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage([_TOOL_REMOVAL_BLOCK]),
+        AIMessage("Looks fine."),
+    ]
+    with pytest.warns(UserWarning, match=_TOOL_CHANGE_UNSUPPORTED_WARNING):
+        actual_system, _ = _format_messages(messages, model=MODEL_NAME)
+    assert actual_system == []
+
+
+def test__format_messages_does_not_mutate_input_content() -> None:
+    """Formatting must leave the caller's own message content untouched."""
+    text_block = {"type": "text", "text": "Be concise.", "id": "lc_abc123"}
+    tool_change_block = {
+        "type": "tool_removal",
+        "tool": {"type": "tool_reference", "name": "get_weather"},
+    }
+    content: list[str | dict] = [text_block, tool_change_block]
+    before = copy.deepcopy(content)
+    _format_messages(
+        [
+            HumanMessage("Review foo()"),
+            SystemMessage(content),
+            AIMessage("Looks fine."),
+        ],
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert content == before
+
+
+def test__format_messages_human_native_image_block_preserved() -> None:
+    """Regression guard: native Anthropic image blocks still reach the wire."""
+    block = {
+        "type": "image",
+        "source": {"type": "base64", "media_type": "image/png", "data": "aGk="},
+    }
+    _, actual_messages = _format_messages(
+        [HumanMessage([block])],
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_messages == [{"role": "user", "content": [block]}]
 
 
 def test__format_messages_requires_model() -> None:
@@ -2707,6 +3003,59 @@ def test_with_structured_output_root_combinator_raises_when_thinking_enabled() -
         chat_model.with_structured_output(_Either, method="function_calling")
 
 
+class _Person(BaseModel):
+    name: str
+
+
+_ANTHROPIC_TOOL_SCHEMA = {
+    "name": "_Person",
+    "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}},
+}
+
+
+@pytest.mark.parametrize("model", ["claude-opus-5-5", "claude-fable-5-1"])
+@pytest.mark.parametrize("schema", [_Person, _ANTHROPIC_TOOL_SCHEMA])
+@pytest.mark.parametrize("thinking", [None, {"type": "adaptive"}])
+def test_with_structured_output_skips_forced_tool_choice_when_unsupported(
+    model: str,
+    schema: type[BaseModel] | dict[str, Any],
+    thinking: dict[str, Any] | None,
+) -> None:
+    """Models that reject forced `tool_choice` bind the tool without forcing it."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=model,
+        anthropic_api_key="secret-api-key",
+        thinking=thinking,
+    )
+
+    with pytest.warns(UserWarning, match="method='json_schema'"):
+        structured = chat_model.with_structured_output(schema)
+
+    bound = cast("RunnableBinding", structured.first)  # type: ignore[attr-defined]
+    assert [t["name"] for t in bound.kwargs["tools"]] == ["_Person"]
+    assert "tool_choice" not in bound.kwargs
+    assert "output_config" not in bound.kwargs
+
+
+def test_with_structured_output_forces_tool_choice_when_supported() -> None:
+    """Models that accept forced `tool_choice` keep `function_calling`."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model="claude-opus-5",
+        anthropic_api_key="secret-api-key",
+    )
+
+    class Person(BaseModel):
+        name: str
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        structured = chat_model.with_structured_output(Person)
+
+    bound = cast("RunnableBinding", structured.first)  # type: ignore[attr-defined]
+    assert bound.kwargs["tool_choice"] == {"type": "tool", "name": "Person"}
+    assert "output_config" not in bound.kwargs
+
+
 def test_get_num_tokens_from_messages_filters_unsupported_tools() -> None:
     """Token counting and sending agree on which tools the API will accept."""
     chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
@@ -2829,6 +3178,21 @@ def test_get_num_tokens_from_messages_forwards_block_system_prompt() -> None:
 
     call_args = _client.return_value.messages.count_tokens.call_args.kwargs
     assert call_args["system"] == [{"type": "text", "text": "You are a scientist"}]
+
+
+def test_get_num_tokens_from_messages_keeps_mid_conversation_system_in_place() -> None:
+    """Counting reads the profile like a request does, so the turn stays in place."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, profile={"mid_conversation_system_messages": True}
+    )
+    messages = [HumanMessage("Review foo()"), SystemMessage("Be concise.")]
+
+    with patch.object(anthropic, "Client") as _client:
+        llm.get_num_tokens_from_messages(messages)
+
+    call_args = _client.return_value.messages.count_tokens.call_args.kwargs
+    assert "system" not in call_args
+    assert call_args["messages"][-1] == {"role": "system", "content": "Be concise."}
 
 
 def test_usage_metadata_standardization() -> None:
@@ -3862,6 +4226,60 @@ def test_format_messages_preserves_nonempty_thinking_field() -> None:
     assert block["signature"] == "sig_xyz"
 
 
+@pytest.mark.parametrize(
+    ("args", "expected_input"),
+    [('{"city":', {}), ('{"city":"Paris"}', {"city": "Paris"}), ("[1]", {})],
+)
+def test_invalid_tool_call_retains_tool_use_for_error_result(
+    args: str, expected_input: dict[str, Any]
+) -> None:
+    tool_call_id = "toolu_invalid"
+    ai_message = AIMessage(
+        content=[{"type": "text", "text": "Calling tool"}],
+        invalid_tool_calls=[{"name": "get_weather", "args": args, "id": tool_call_id}],
+    )
+    tool_message = ToolMessage(
+        "Tool call arguments were malformed.",
+        tool_call_id=tool_call_id,
+        status="error",
+    )
+
+    _, messages = _format_messages(
+        [HumanMessage("Check the weather"), ai_message, tool_message],
+        model=MODEL_NAME,
+    )
+
+    assert messages[1]["content"] == [
+        {"type": "text", "text": "Calling tool"},
+        {
+            "type": "tool_use",
+            "name": "get_weather",
+            "input": expected_input,
+            "id": tool_call_id,
+        },
+    ]
+    assert messages[2]["content"][0]["tool_use_id"] == tool_call_id
+    assert messages[2]["content"][0]["is_error"] is True
+
+
+def test_invalid_tool_call_does_not_duplicate_existing_tool_use() -> None:
+    ai_message = AIMessage(
+        content=[
+            {"type": "tool_use", "name": "get_weather", "input": {}, "id": "toolu_1"}
+        ],
+        tool_calls=[{"name": "get_weather", "args": {}, "id": "toolu_2"}],
+        invalid_tool_calls=[
+            {"name": "get_weather", "args": "bad", "id": "toolu_1"},
+            {"name": "get_weather", "args": "bad", "id": "toolu_2"},
+            {"name": "get_weather", "args": "bad", "id": None},
+        ],
+    )
+
+    _, messages = _format_messages([ai_message], model=MODEL_NAME)
+
+    assert [block["id"] for block in messages[0]["content"]] == ["toolu_1", "toolu_2"]
+
+
 def test_v1_invalid_tool_call_retains_tool_use_for_error_result() -> None:
     """An error result must retain its Anthropic tool-use block on replay."""
     tool_call_id = "toolu_invalid"
@@ -4392,7 +4810,7 @@ def test_profile() -> None:
 def test_profile_1m_context_beta() -> None:
     model = ChatAnthropic(model="claude-sonnet-4-5")
     assert model.profile
-    assert model.profile["max_input_tokens"] == 1000000
+    assert model.profile["max_input_tokens"] == 200000
 
     model = ChatAnthropic(model="claude-sonnet-4-5", betas=["context-1m-2025-08-07"])
     assert model.profile
@@ -4403,7 +4821,7 @@ def test_profile_1m_context_beta() -> None:
         betas=["token-efficient-tools-2025-02-19"],
     )
     assert model.profile
-    assert model.profile["max_input_tokens"] == 1000000
+    assert model.profile["max_input_tokens"] == 200000
 
 
 async def test_model_profile_not_blocking() -> None:
@@ -5357,6 +5775,134 @@ def test_no_task_budget_no_beta() -> None:
     betas = payload.get("betas")
     if betas:
         assert "task-budgets-2026-03-13" not in betas
+
+
+_MID_CONVERSATION_TOOL_CHANGES_BETA = "mid-conversation-tool-changes-2026-07-01"
+_INLINE_TOOLS_BETA = "inline-tools-2026-09-15"
+_INLINE_TOOL_ADDITION_BLOCK = {
+    "type": "tool_addition",
+    "tool": {
+        "type": "tool_definition",
+        "definition": {
+            "name": "db_query",
+            "description": "Run a read-only query.",
+            "input_schema": {
+                "type": "object",
+                "properties": {"sql": {"type": "string"}},
+                "required": ["sql"],
+            },
+        },
+    },
+}
+
+
+def _tool_change_conversation() -> list[BaseMessage]:
+    return [
+        HumanMessage("Review foo()"),
+        SystemMessage([_TOOL_REMOVAL_BLOCK]),
+        AIMessage("Looks fine."),
+    ]
+
+
+def test_tool_change_block_auto_appends_beta() -> None:
+    """A tool-change block that reaches the wire enables the beta."""
+    model = ChatAnthropic(model=MID_CONVERSATION_SYSTEM_MODEL)
+    payload = model._get_request_payload(_tool_change_conversation())
+    assert payload["betas"] == [_MID_CONVERSATION_TOOL_CHANGES_BETA]
+
+
+def test_tool_change_block_beta_not_duplicated() -> None:
+    """The tool-change beta is appended at most once."""
+    model = ChatAnthropic(
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        betas=[_MID_CONVERSATION_TOOL_CHANGES_BETA],
+    )
+    payload = model._get_request_payload(_tool_change_conversation())
+    assert payload["betas"].count(_MID_CONVERSATION_TOOL_CHANGES_BETA) == 1
+
+
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+def test_inline_tool_definition_auto_appends_beta(spelling: str) -> None:
+    """Inline definitions use their beta and preserve the native wire payload."""
+    block = (
+        _INLINE_TOOL_ADDITION_BLOCK
+        if spelling == "bare"
+        else {"type": "non_standard", "value": _INLINE_TOOL_ADDITION_BLOCK}
+    )
+    model = ChatAnthropic(model="claude-opus-5-5")
+    payload = model._get_request_payload(
+        [HumanMessage("Review data"), SystemMessage([block])]
+    )
+    assert payload["messages"][-1]["content"] == [_INLINE_TOOL_ADDITION_BLOCK]
+    assert payload["betas"] == [_INLINE_TOOLS_BETA]
+
+
+def test_inline_tool_definition_supersedes_reference_beta() -> None:
+    """One inline beta covers mixed inline and reference-based changes."""
+    model = ChatAnthropic(model="claude-opus-5-5")
+    payload = model._get_request_payload(
+        [
+            HumanMessage("Review data"),
+            SystemMessage([_TOOL_REMOVAL_BLOCK, _INLINE_TOOL_ADDITION_BLOCK]),
+        ]
+    )
+    assert payload["betas"] == [_INLINE_TOOLS_BETA]
+
+
+def test_explicit_inline_beta_covers_reference_tool_change() -> None:
+    """An explicit inline beta prevents inference of the older reference beta."""
+    model = ChatAnthropic(
+        model="claude-opus-5-5",
+        betas=[_INLINE_TOOLS_BETA],
+    )
+    payload = model._get_request_payload(_tool_change_conversation())
+    assert payload["betas"] == [_INLINE_TOOLS_BETA]
+
+
+@pytest.mark.parametrize(
+    "betas",
+    [
+        [_INLINE_TOOLS_BETA],
+        [_MID_CONVERSATION_TOOL_CHANGES_BETA, _INLINE_TOOLS_BETA],
+    ],
+)
+def test_inline_tool_beta_preserved_without_duplication(betas: list[str]) -> None:
+    """Explicit beta order is preserved and inline beta is not duplicated."""
+    model = ChatAnthropic(model="claude-opus-5-5", betas=betas)
+    payload = model._get_request_payload(
+        [HumanMessage("Review data"), SystemMessage([_INLINE_TOOL_ADDITION_BLOCK])]
+    )
+    assert payload["betas"] == betas
+    assert payload["betas"].count(_INLINE_TOOLS_BETA) == 1
+
+
+def test_system_stripped_to_empty_omits_system_field() -> None:
+    """An empty block array carries no instructions, so it is not sent."""
+    model = ChatAnthropic(model=MODEL_NAME)
+    with pytest.warns(UserWarning, match="Tool-change block"):
+        payload = model._get_request_payload(_tool_change_conversation())
+    assert "system" not in payload
+
+
+def test_no_tool_change_block_no_beta() -> None:
+    """A conversation without tool-change blocks does not enable the beta."""
+    model = ChatAnthropic(model=MID_CONVERSATION_SYSTEM_MODEL)
+    payload = model._get_request_payload(
+        [
+            HumanMessage("Review foo()"),
+            SystemMessage("Be concise."),
+            AIMessage("Looks fine."),
+        ],
+    )
+    assert _MID_CONVERSATION_TOOL_CHANGES_BETA not in (payload.get("betas") or [])
+
+
+def test_stripped_tool_change_block_no_beta() -> None:
+    """A tool-change block narrowed away on an unsupported model enables nothing."""
+    model = ChatAnthropic(model=MODEL_NAME)
+    with pytest.warns(UserWarning, match="Tool-change block"):
+        payload = model._get_request_payload(_tool_change_conversation())
+    assert _MID_CONVERSATION_TOOL_CHANGES_BETA not in (payload.get("betas") or [])
 
 
 def test_anthropic_stream_events_v3_lifecycle() -> None:

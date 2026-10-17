@@ -37,6 +37,40 @@ def test_validate_resolved_ip_blocks_nat64_embedded_private_ip() -> None:
         validate_resolved_ip("64:ff9b::c0a8:101", policy)
 
 
+@pytest.mark.parametrize("block_private_ips", [True, False])
+@pytest.mark.parametrize(
+    "ip",
+    [
+        "fd00:ec2::254%eth0",
+        "fd00:ec2::23%eth0",
+        "fe80::a9fe:a9fe%eth0",
+        "::1%eth0",
+        "::169.254.169.254",
+        "::169.254.170.2",
+        "::100.100.100.200",
+        "::127.0.0.1",
+    ],
+)
+def test_scoped_and_compatible_ipv6_blocked(
+    ip: str, *, block_private_ips: bool
+) -> None:
+    policy = SSRFPolicy(block_private_ips=block_private_ips)
+    with pytest.raises(SSRFBlockedError):
+        validate_resolved_ip(ip, policy)
+    with pytest.raises(SSRFBlockedError):
+        validate_url_sync(f"http://[{ip}]/", policy)
+
+
+@pytest.mark.parametrize("ip", ["::8.8.8.8", "::192.168.1.1", "fd00::123%eth0", "::"])
+def test_relaxed_policy_allows_non_metadata_ipv6(ip: str) -> None:
+    validate_resolved_ip(ip, SSRFPolicy(block_private_ips=False))
+
+
+@pytest.mark.parametrize("ip", ["::1", "::1%eth0", "::127.0.0.1"])
+def test_relaxed_policy_can_allow_ipv6_localhost(ip: str) -> None:
+    validate_resolved_ip(ip, SSRFPolicy(block_private_ips=False, block_localhost=False))
+
+
 def test_validate_resolved_ip_blocks_cgnat() -> None:
     policy = SSRFPolicy()
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0ff4006082d29f33169349313c83cc890f4fafd73f0a3df4a51cf88689471825",
+  "pageVersion": "sha256:bd811dcc6b70cbe1b135d1ae06d5196272d0742d1df5c7491d4adfa89cf21a9a",
   "claims": [
     {
       "id": "claim_189e539212e149fdb6d26bfac3426a8c",
@@ -46,11 +46,11 @@
     },
     {
       "id": "claim_b11a1705a5cd44ea88dd0a9a4565a98d",
-      "statement": "_BUILTIN_PROVIDERS is a dictionary mapping provider keys to tuples of (module_path, class_name, creator_func) for 37 built-in providers including openai, anthropic, bedrock, google_vertexai, azure_openai, cohere, groq, mistralai, ollama, and others. The registry includes fallback logic for ollama (tries langchain_community) and special creators for huggingface (from_model_id), ibm (model_id), and langsmith (gateway config).",
+      "statement": "_BUILTIN_PROVIDERS is a dictionary mapping provider keys to tuples of (module_path, class_name, creator_func) for 30 built-in providers including openai, anthropic, bedrock, google_vertexai, azure_openai, cohere, groq, mistralai, ollama, and others. The registry includes fallback logic for ollama (tries langchain_community) and special creators for huggingface (from_model_id), ibm (model_id), and langsmith (gateway config).",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L56-L120",
-          "version": "repo-lines-v1:sha256:a714caf3bde31adb33a627fe7c985aa333571e5693027c2ef4131d0168cfc131:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0OWFmODNkYjQ4ODc5YTQyYjVjNTliMmEyYmY3NThiYWY4YjFkMmQwNTJmOGRmN2VlNWNkOTIyMjJkYTM4NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkNzA5NGEwOTBkZDkxYjgwMmJjZWIxYWNkYzMwYWMyNTc5MjU4YTFjNjkxNTk4YWVmNjYyMDAyMWQ1NWMzMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxOTY2MDgyOTFhZjY5NzQ1YzViMmVhZDliM2ZhYjRkMjVkZjQ2MjZkNDNhMzQyYTA3ZjkyMGRiYzhiMmJiYWMifQ"
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L56-L99",
+          "version": "repo-lines-v1:sha256:a0432456fbcc294961073b737c0871eb2e1444b6649f4f39c8fd5af7d29f8834:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0OWFmODNkYjQ4ODc5YTQyYjVjNTliMmEyYmY3NThiYWY4YjFkMmQwNTJmOGRmN2VlNWNkOTIyMjJkYTM4NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkNzA5NGEwOTBkZDkxYjgwMmJjZWIxYWNkYzMwYWMyNTc5MjU4YTFjNjkxNTk4YWVmNjYyMDAyMWQ1NWMzMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhYzk3OTRjOTIxODcwZGVjNjU0YWU5YjU2ZDBiMDk3YWU0NDlhODU4NzE5Y2Q3MjhkZDI5N2ZhNjMyN2VhOTYifQ"
         }
       ]
     },
@@ -63,8 +63,12 @@
           "version": "repo-lines-v1:sha256:6e5b778f54e6269116c7c108fc0539dcb3d7f95e0e3529de1c59b46699e93250:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhMTQ0MTg3N2RmNDEzMmJlOTc1MjBlMDUwMWI2YjAzNTFkMjVkMDNiNmZhZjNmYWQ2NDk0MTZlMDBkMjM4ZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjMGEwMjQ5NGY3NTViMTQ4YWRlYmMyNWI5MzU3ZDA5MjAzNTM3YWY3OTcxZDE0OTBiZWM3ODFmMjFiNDY1YmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2NTdkMjA0ZjBiNWVmMmU3ZjAzYWM3NGE3NGJmZDhmY2U1ZTVkNzU4OTkwNTYxODU3MTY2NDRiMmY3YWUxZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkZTlhOTVmZjI2NTMxOWVjM2U1ZjdlYzQ1ODFlNjBiYTc3NTA3Y2I3OWY5YWM4M2IzNmNmZjU5M2FjMGRjNWEifQ"
         },
         {
-          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L51-L97",
-          "version": "repo-lines-v1:sha256:fbbd5e179b2a760321d8bfaedb870aace34be1b417b6f3a4c3703a9a455bfa25:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjZGEyZjQxNDVlNWI3YTZjMjNiZmNlYTE4ODc2Y2QzYzA1OWUyNGYxNzI2NzVjMzMwYTMzYzEyY2JjODVjNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1N2QzZGM0Yzk1NTU4ZTVjMTZlODkxNGQzMTJiYWVkYTMxNWZjZjJlMDE0MzM0MDBkMzU0N2I4MDE2NjljM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhYzk3OTRjOTIxODcwZGVjNjU0YWU5YjU2ZDBiMDk3YWU0NDlhODU4NzE5Y2Q3MjhkZDI5N2ZhNjMyN2VhOTYifQ"
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L51-L53",
+          "version": "repo-lines-v1:sha256:7c5514a90a7cb726e689925fc593573aaaac4e7030aa8a674cd28b1c55ee6c61:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmNkYTJmNDE0NWU1YjdhNmMyM2JmY2VhMTg4NzZjZDNjMDU5ZTI0ZjE3MjY3NWMzMzBhMzNjMTJjYmM4NWM3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWMwYTAyNDk0Zjc1NWIxNDhhZGViYzI1YjkzNTdkMDkyMDM1MzdhZjc5NzFkMTQ5MGJlYzc4MWYyMWI0NjViYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDU3ZDNkYzRjOTU1NThlNWMxNmU4OTE0ZDMxMmJhZWRhMzE1ZmNmMmUwMTQzMzQwMGQzNTQ3YjgwMTY2OWMzZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiM2VkOGZiZDgzMTA5OTI4NGNjNWRhNWIyMjE5NTRjYjhmMjA1OTQ4ZjFkZjIxNTFjZGEyOGEzNjE3ZTlkYTA1YSJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L77-L87",
+          "version": "repo-lines-v1:sha256:e486292ad2b9caccfa014e5f18701eeef37b59be5d93c71d3489debba71af337:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjYjNkYmFhNGZmOTA4OTczNDRlYzk5ZjAyZjE1Yjk1YWE0OTg2Nzc1N2I4YjRlZGM5ODAzNWE0NDUzN2RjZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczODhkMjg0NWFhMmE2MzhjNjU1ZGQxZjQ1MmYzNTQ4NDUzOTEwNzI2ZjZjNDZlMjg1YmVhNjhjYzM0NGY3ZjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3N2RlYTg5YTEyNTEzOGFiOGMwYzZmMWU0Y2JlYTVhYTMzMThhN2Q0ZGQxN2Q0MGU5N2UyNzRjNmEwMjk0Y2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMwMDBhZTg2ZmM4YmQ3NzMwYzk3YjQ4ZGY5Y2NiZTg3ODg4MmQxYTQ2NGYzYjIxNWE0MjA1ZjdhNDk3ODY4YTEifQ"
         }
       ]
     },
@@ -177,6 +181,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-03T15:18:34.589Z"
+    "at": "2026-09-28T08:35:20.640Z"
   }
 }

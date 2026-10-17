@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:dc648f1612a1d33054c8fbb196b66361684e441ad6fbf9af3cb5df1777a4a402",
+  "pageVersion": "sha256:b8080e5df75c67cc4c69c2dc6ae72e2c8385efe2b711e32f89d064f4c2925191",
   "claims": [
     {
       "id": "claim_6ce968382a514edb90e74830ccdebef7",
@@ -80,11 +80,11 @@
     },
     {
       "id": "claim_146d4170ba854d6d8f27e3cc012721a2",
-      "statement": "ExtendedModelResponse allows middleware to return a Command alongside the model response; commands from multiple middleware are accumulated (inner-to-outer order) and applied sequentially to state after the model node completes; messages in commands are added through reducers, non-reducer fields follow outermost-wins semantics.",
+      "statement": "ExtendedModelResponse allows middleware to return a Command alongside the model response; commands from multiple middleware are accumulated (inner-to-outer order) and applied sequentially to state after the model node completes through LangGraph reducers; messages in commands are added through add_messages reducer, non-reducer fields follow outermost-wins semantics where later (outer) middleware values override earlier (inner) ones.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L284-L300",
-          "version": "repo-lines-v1:sha256:9b8b5efb54adc30f9af684ab9d439f7759c4ec88d4f6c69086dcc164df2bef3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwZjc4MzAxZThmZjUwYmJiOGNmMjNmZWFlNDhlYWYyYTBjZmUwMDYwYjhkNjMzNjcxYTg4OWViN2VjYjk0NjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzN2ZjZjdjZjQ0YWUzYzQwMzU3YTA3ODMwZjRiYTBjNDcyYjY4ZGYyY2VmNmQzMDczZTVhNTdjMTMwMTQwZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0M2E5ZmZkMDUyNTI1MTJhZTA2MDNjMDIwZmZhOTIxYmY1ODFiN2M2MDYwOGJjMjcyZWUyYTk2ZWNhN2FiZDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0NjdkYTdmMTg2NjUxNDY3NGIzZTQ2Yjk4NTNmMmQ0ODBmYzEyYjQ3MjhhZGI2ODQ3MjU5NTJhYjcwNjA1MDEifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L222-L278",
+          "version": "repo-lines-v1:sha256:6bb49e7a7e6403834213953a9111549f15c00024566792a43dc06e6452e013b7:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3YzgzN2QxZjhjOGZmMTQ2ZGFkODY5ZTlhZDhkMGNjYzY2YTA0Y2JhNjVkNzBhYTM5ZDUxMDAwNTQzMzFiNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyNmQ2OGQ5YjUyMjFlYjU5NGVmOGJjN2JmZTNhYzVhNjM2ZjA2MjlmNmU1ZGNmNmE5NWEyMGZmMThhZDdmMzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MjIzMTA2ZmQ4NzQyYjcwZWEyMzNmOWRjMzU5ZjRiMDJiYmIwNjliNzI4M2VlZjc2MjQ5OTUxNmJkN2I5YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiN2UyMTk1NWE5MGNjNjVhNmY1YmQxNTE2ODEyYThmYTQzYmNmZDhiZWJiMzMwNDJiMzg4NDZjMmUzNzYwNzQifQ"
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L290-L312",
@@ -122,15 +122,15 @@
     },
     {
       "id": "claim_8bc539a2478d490e89c935a82740c877",
-      "statement": "HumanInTheLoopMiddleware uses after_model hook to intercept AIMessage tool_calls and send HITLRequest (with ActionRequest list and ReviewConfig list) to a human via langgraph.interrupt(); decisions (approve, edit, reject, respond) modify or filter tool calls before execution; edit decision revises tool arguments, reject sends ToolMessage with user feedback, respond skips execution and returns synthetic ToolMessage with human's answer.",
+      "statement": "HumanInTheLoopMiddleware in batched mode (default) uses after_model hook to intercept AIMessage tool_calls and send HITLRequest (with ActionRequest list and ReviewConfig list) to a human via langgraph.interrupt(); decisions (approve, edit, reject, respond) modify or filter tool calls before execution; edit decision revises tool arguments, reject sends ToolMessage with user feedback, respond skips execution and returns synthetic ToolMessage with human's answer. In per_call mode, interrupts are raised inside wrap_tool_call per tool call.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/human_in_the_loop.py#L217-L276",
-          "version": "repo-lines-v1:sha256:2764bf666b6b99a2710ca974140ec12a6d6aff0a99a588b97024223dff9f3d3d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxNWRmMmI2MDc2NjFmM2ZhMjRlMzNjMjA2YTJlMTU2YmUyNmMwZDJmOWZkNTVjOGFlZTk0OTBiYmIxN2Y5NzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1ZDRkMjAyOTQ3MDFmZjkwYjkyNzg5OWMwMmIwZjg4MGU4Yzc4NzMxNDg2MGQxNGJiYTQ2YmY3NjFlYTZjNjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyYjI1NzhkODVmMDU0N2ZhOTE3ZGE3YjE4ZDIwNzg5OTE4MjlhNTM4MmM3OTEyOGJlMTZmNmYxMDg4ZjdhYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkMzk2MjgxZmIwMWQyYmJhZjI2MjY3OWFlNWEzOWRlYzY1YWMwODI2ZWVlZGQxZWYwMDU0OTdhN2ZhMGI2Y2MifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/human_in_the_loop.py#L758-L859",
+          "version": "repo-lines-v1:sha256:3943e4668af0c3795be53d59428c008b2fc27ff1abe4aa657c964343efae8d7f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1M2UwMTAxNTNmZGYxMTVmNjViYTA3NjNkMTIzMGJhYjA1ZWRiZTJlZWYwMzEzZjdkMDVjMzA3YmE2MGNjMjhiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNmIwNDQ5MTQ2OTcyMmU4MzYzYTk0ZTQwNDQ1MzhlMDEzYTJhMjE3ZTM2YjFlNTY4YmE2MGFjYjdiNGM4ZjJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0MGFlMjQxMjI1MGQ0ODliNTM3YTllN2FjYTM2ZDJhMjBjYWZiOGEwNDgxYmJiNzg1NTIzOWNmNzk3NTUyZjMzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmOTQyMGE2ZGRiZmI4YTViZmUyYTgyMTFlNjYzMTg0YmVjYTliNWUzN2NkYWFhOTE2Y2I3NmM1MjVmNDFkNTFkIn0"
         },
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/human_in_the_loop.py#L405-L492",
-          "version": "repo-lines-v1:sha256:429c16826e242b9ccaf9dca3d6505ac7391120daab38cfc33c3ec3d77f0120c6:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzZTAxMDE1M2ZkZjExNWY2NWJhMDc2M2QxMjMwYmFiMDVlZGJlMmVlZjAzMTNmN2QwNWMzMDdiYTYwY2MyOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiNTJiNDgzZjcxM2I4N2JkODBiODExMzZhZDYwMDczYmJhYzgyZmNhZWMyMWU1MDk5ZDE2M2RkN2ZhMGE0YzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0ZjFkY2I1ZGY0ZmVjZjljOTFkZjUzYWFkNGZmZTMyY2RlNjU0OTlmNmUyMGI2YTZjMTk0ZTgwODU3ZjM4ODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5NDIwYTZkZGJmYjhhNWJmZTJhODIxMWU2NjMxODRiZWNhOWI1ZTM3Y2RhYWE5MTZjYjc2YzUyNWY0MWQ1MWQifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/human_in_the_loop.py#L979-L1010",
+          "version": "repo-lines-v1:sha256:9c0e2237728e0a57d12dead8a206bd6195d59ce95f8133c040472a0fbc74b6a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0NTJkY2RlODgxMjZjNGM1Njg1OTMwOGFjNzY3OWU1ODBkYmJiMWNhODNkYjVkYjAxZTJkMTJmMzVhNDdjZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5Y2FkMTQ5MTVkMTg5YTFkY2I1MTQ2NjAyZjAxNDg3ZGE5YzNhYWMyZTZmNzM3NTE4NDVmZjhlYzEyNDFhNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyNGRlOGRiYzU4YmIyMmRjNDIzNjhlODY3MWMyNmJhOWQ1NGVhZmEzZWE5OWJkYzM2N2ZlZmFiOTJhMzE2OTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkMzljOTgwOTA2NDFmNWU4NGRkY2QyZTJkYmVlNjZkNWJjNGY1OTQ4YjVlYWY0ZWZjODlkZWE0NTIwYmIzMzMifQ"
         }
       ]
     },
@@ -199,6 +199,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-08T08:27:09.597Z"
+    "at": "2026-10-16T08:25:55.096Z"
   }
 }
