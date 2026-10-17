@@ -3000,6 +3000,19 @@ def test_count_tokens_approximately_with_tools() -> None:
     assert count_empty_tools == base_count
 
 
+def test_count_tokens_approximately_with_plain_callable_tools() -> None:
+    """Plain callables in `tools=` must count without raising AttributeError."""
+    messages = [HumanMessage(content="Hello")]
+    base_count = count_tokens_approximately(messages)
+
+    def search(query: str) -> str:
+        """Search the web."""
+        return query
+
+    count_with_callable = count_tokens_approximately(messages, tools=[search])
+    assert count_with_callable > base_count
+
+
 def test_count_tokens_approximately_basetool_dict_args_schema() -> None:
     """`BaseTool.tool_call_schema` can itself already be a plain dict.
 
