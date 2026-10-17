@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:339d8e66c371c2b3edea0712a04b95025cd4178fa1ee3fdc4f4540a0d95eef9c",
+  "pageVersion": "sha256:a787523243618e720439dddadcdbbc60a0454d47a8453b737754bb76cf7c0460",
   "claims": [
     {
       "id": "claim_d872799ce6874d76b63667fe912b7616",
@@ -26,7 +26,7 @@
     },
     {
       "id": "claim_bf4afec1395b4acbbf413fe2928daab6",
-      "statement": "langchain-core (v1.6.11) provides the stable base abstractions including Runnable protocol, BaseChatModel, message types, tools, prompts, and callbacks.",
+      "statement": "langchain-core (v1.6.12) provides the stable base abstractions including Runnable protocol, BaseChatModel, message types, tools, prompts, and callbacks.",
       "evidence": [
         {
           "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1-L80",
@@ -38,7 +38,7 @@
         },
         {
           "resource": "repo://libs/core/pyproject.toml#L24-L24",
-          "version": "repo-lines-v1:sha256:ab55122e765f3ea0e327f56d6339b1377ce1a5231ce7a38ae8e144e214b09c79:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWI1NTEyMmU3NjVmM2VhMGUzMjdmNTZkNjMzOWIxMzc3Y2UxYTUyMzFjZTdhMzhhZThlMTQ0ZTIxNGIwOWM3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWI1NTEyMmU3NjVmM2VhMGUzMjdmNTZkNjMzOWIxMzc3Y2UxYTUyMzFjZTdhMzhhZThlMTQ0ZTIxNGIwOWM3OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc0MzY5NGEzZTBkOGRiMDQ5ZDQ1ZGFlOGM4YTdiYmM2YTk0NjAwYjNjN2MxZjFhNTJkMzQ4YzlkMjIzMTFkOSJ9"
+          "version": "repo-lines-v1:sha256:83821d8f9e6c872dc1d449b47ea5a586199be5dcf3ced9724d66bf0081d384f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODM4MjFkOGY5ZTZjODcyZGMxZDQ0OWI0N2VhNWE1ODYxOTliZTVkY2YzY2VkOTcyNGQ2NmJmMDA4MWQzODRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODM4MjFkOGY5ZTZjODcyZGMxZDQ0OWI0N2VhNWE1ODYxOTliZTVkY2YzY2VkOTcyNGQ2NmJmMDA4MWQzODRmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc0MzY5NGEzZTBkOGRiMDQ5ZDQ1ZGFlOGM4YTdiYmM2YTk0NjAwYjNjN2MxZjFhNTJkMzQ4YzlkMjIzMTFkOSJ9"
         }
       ]
     },
@@ -145,10 +145,38 @@
           "version": "repo-lines-v1:sha256:8dfabf0afb2a34a0d10ef2d5bd39d19322131ad902c8e6b1f5339fbd5cc11e1a:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjRjNThlMGJjY2M5YjcwMjI1MDZlOGQ5OTE1OGIwMzY0ZGE4Y2M1MTcwYTE1MmNiYTAwZDcxNTM0MjQ5OGE3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTExMjY3N2NlN2U0YjczZGU3YzlmYjI5MWU4ODkyODNiYzk3NzM4Y2VhYjEwMDI5YTg3N2FhYWM2ZWI4ZTJmMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWM1OWViZTEyOTE2YzBlYTg1MjNlZGMwNWNjM2YwYjJkMDhlMWQwZGVjMzdjYWYxNWUzZTVjMTQ3MTY0MjYwMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWU2OTgzY2FkY2E1MTk3MWNmMDJkNmRjOTZhMGRiNjlmNzJlMDNiOTkwZTEzMGQ5ZTBlNDA0YTA3NTFhZWNlOCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_58b1bc647b1044b8a5c4bd17acecded0",
+      "statement": "The _compat_bridge module in langchain-core translates AIMessageChunk streaming representations to langchain-protocol events via chunks_to_events() and message_to_events(), supporting live streaming, cache replay, and provider-agnostic content block parsing.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/_compat_bridge.py#L1-L50",
+          "version": "repo-lines-v1:sha256:d5047e25e13e143201fd85d28e1be7cc09ae544911fb5ecbc3d3cd97d34b2de5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4MWVkMWM4NDVhZTBiMTA3MTM0YmMyMzI5NDU5NGEwNjJhNGZhYzBjOWQ5YjczNDY4NWVhOTMzNDUxMGE0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjZjAwOTgwYmJlOGI3Y2U2Y2MyNWJjNDllMGQ4MDlmMWE5NmFlNWU1OTFjNjRmZWU2ZTJkMjZiM2UxNWVmYTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzMDUyNjFhMWI2YTM2NWU4NjFlMTdiMzg4NTFiY2I4MjhhMzQ1MGRiMjI1N2E1NWMzYTZjNzAyMzNhZDViOTkifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L29-L34",
+          "version": "repo-lines-v1:sha256:6f085227054f6e7306eac6d2656f8db596cb0ef9ca081d7b74e3ea9eb710485f:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOWExZGNlYTJhYmI1ZGUwZjlkM2MyMDc4ZWFmZDBkM2M0NmZjZDY0ZWQwYWI0M2IxZjY3NDFjODUwNmFhNjM2NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFmYmEwNTI3YzM5NTNjNGI2ZTBlNWI1NzM5YmE4MzYxMmY4MDUzYmNkYzk0NjY3MzAxOTNjZDFkNTkwYjQwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjVmY2U2ZjAxNTg5NzEwZmExNDA4MTUwODU2N2I0YzkyNGE0NjZlZDkzZDdlYjRjODhjYzM0ZTliNmIyNjY3ZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjdkYmM4MzkwNzVlY2Y1MTFmOGVkOGVmZDUxZTgyYzM3MzczMjFkM2MxOWJiNmU5OTUzM2M1MmUwZWYwMmViNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_55d9726f61a740a8a9fc0642dd50c9b0",
+      "statement": "langchain-core depends on langchain-protocol (>=0.0.17), which defines canonical event and message schemas for streaming, structured output, and protocol-compliant client integration enabling LangSmith and cross-language compatibility.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/_compat_bridge.py#L39-L55",
+          "version": "repo-lines-v1:sha256:c282844de4afd1c7b0eb221661247a35d0ffcaba50c0130bebdfb98227cca80a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkZjIwM2VmZGJhZjE0YWE0MmJjZDFiNjcyMTYzMGUxOWRiZWM4YmI5ZDlhMjQyZmM0MDhhMjE2MmY2MjdhOTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEyMzlmZWQ1MGM4YTc1MDBlZTFhMjVhMDk5ZDNlYTAzMDQ3YjZiY2YzZmExZWY3OWExMGMzNzFiMDhhMDljMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmNWY0NjFkZmVlYjg3ZDY3ZWZhYzBlZTVkNjM3NDJmZThjNGQ2NjJhZTNiYTc0YTlkZGRjNjA4NWVlYWY3YjAifQ"
+        },
+        {
+          "resource": "repo://libs/core/pyproject.toml#L36-L36",
+          "version": "repo-lines-v1:sha256:1450f4f05847547f0fe0b2edb630f18d169c04ce70ac5d2391737402df069702:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQ1MGY0ZjA1ODQ3NTQ3ZjBmZTBiMmVkYjYzMGYxOGQxNjljMDRjZTcwYWM1ZDIzOTE3Mzc0MDJkZjA2OTcwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTQ1MGY0ZjA1ODQ3NTQ3ZjBmZTBiMmVkYjYzMGYxOGQxNjljMDRjZTcwYWM1ZDIzOTE3Mzc0MDJkZjA2OTcwMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDg0ODFmYzUzMDMwMGQ3MTNkNThhMzFiOTI1NzI3M2Y2NjZlZGQ0ZmFlYjY1OTJhZjJlMGQ4ZmIxN2IzYjgzMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGVhY2E2YzYwMjNiNzYzMTQ1NmI5MDE1MTVlMTA5MzAyMzdmNmQxNWYwZTM4NjA2NGYwZDc3YWUzZTdmN2M2NiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-16T08:25:55.096Z"
+    "at": "2026-10-17T08:22:12.940Z"
   }
 }

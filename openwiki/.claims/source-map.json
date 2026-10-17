@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:73c5c817bf2df670f82dd43ed5b0e10160c72ceb92496ebc39c41a396c0763ae",
+  "pageVersion": "sha256:6e9f4ff672e775a8e5e4acd239834c68dd1bfa705e11708b8054b2a3e2388a8b",
   "claims": [
     {
       "id": "claim_c71edae5b0f64c8fa79c17ef1aca0f6b",
@@ -164,7 +164,7 @@
         },
         {
           "resource": "repo://libs/core/pyproject.toml",
-          "version": "repo-file-v1:sha256:f8a59729f05304c1056ea84cac0139c0cf64a3f0a9568544b0fec35df42b3f74"
+          "version": "repo-file-v1:sha256:004e8bf80be70fd331ac4c9f14b0cf2ab3e90cb5b0db2c6e45a1a1f59efbfd35"
         },
         {
           "resource": "repo://libs/langchain_v1/pyproject.toml",
@@ -174,11 +174,11 @@
     },
     {
       "id": "claim_458d709b604149fa8fb9639025882358",
-      "statement": "LangChain uses a three-layer architecture: langchain-core (v1.6.11) for base abstractions, langchain (v1.4.6) for orchestration and agents, and partners for provider-specific implementations, enabling model interoperability and independent release cycles.",
+      "statement": "LangChain uses a three-layer architecture: langchain-core (v1.6.12) for base abstractions, langchain (v1.4.6) for orchestration and agents, and partners for provider-specific implementations, enabling model interoperability and independent release cycles.",
       "evidence": [
         {
           "resource": "repo://libs/core/pyproject.toml#L24-L24",
-          "version": "repo-lines-v1:sha256:ab55122e765f3ea0e327f56d6339b1377ce1a5231ce7a38ae8e144e214b09c79:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWI1NTEyMmU3NjVmM2VhMGUzMjdmNTZkNjMzOWIxMzc3Y2UxYTUyMzFjZTdhMzhhZThlMTQ0ZTIxNGIwOWM3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWI1NTEyMmU3NjVmM2VhMGUzMjdmNTZkNjMzOWIxMzc3Y2UxYTUyMzFjZTdhMzhhZThlMTQ0ZTIxNGIwOWM3OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc0MzY5NGEzZTBkOGRiMDQ5ZDQ1ZGFlOGM4YTdiYmM2YTk0NjAwYjNjN2MxZjFhNTJkMzQ4YzlkMjIzMTFkOSJ9"
+          "version": "repo-lines-v1:sha256:83821d8f9e6c872dc1d449b47ea5a586199be5dcf3ced9724d66bf0081d384f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODM4MjFkOGY5ZTZjODcyZGMxZDQ0OWI0N2VhNWE1ODYxOTliZTVkY2YzY2VkOTcyNGQ2NmJmMDA4MWQzODRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODM4MjFkOGY5ZTZjODcyZGMxZDQ0OWI0N2VhNWE1ODYxOTliZTVkY2YzY2VkOTcyNGQ2NmJmMDA4MWQzODRmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc0MzY5NGEzZTBkOGRiMDQ5ZDQ1ZGFlOGM4YTdiYmM2YTk0NjAwYjNjN2MxZjFhNTJkMzQ4YzlkMjIzMTFkOSJ9"
         },
         {
           "resource": "repo://libs/langchain_v1/pyproject.toml#L24-L24",
@@ -195,10 +195,24 @@
           "version": "repo-file-v1:sha256:430531c926f369c474d95856b96e19e137dca1f01a9228c2f4e54be3ecd7bfed"
         }
       ]
+    },
+    {
+      "id": "claim_14716977f6a940889382b7e8c45799ff",
+      "statement": "The _compat_bridge module in langchain_core/language_models/ converts AIMessageChunk streams to standardized protocol events, handling content-block deltas and message lifecycle events (message-start, content-block-start/delta/finish, message-finish) to enable consistent streaming across provider integrations.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/_compat_bridge.py#L1-L32",
+          "version": "repo-lines-v1:sha256:c1354388d067f4e29b87e5a1ccf0bcc27625491a06271728247b8a2af0fcf6ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4MWVkMWM4NDVhZTBiMTA3MTM0YmMyMzI5NDU5NGEwNjJhNGZhYzBjOWQ5YjczNDY4NWVhOTMzNDUxMGE0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/language_models/test_compat_bridge.py#L1-L50",
+          "version": "repo-lines-v1:sha256:b3522a1948e99262c85ddc2b84042acd5a4f93b71f9b5ca62d876a3bfbb466b1:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1ZGJiOTA3MjI0Nzk0ZDQzNGFiNWUyZjk4MjYyY2E2YmM5Zjg2ZDg2ZTk4MzY2Y2Q0NWZlZTdlNmVhYzI4NWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyODA3YTE0ZjU2YjljODhhMjZhMTM4MzUwNTgwNDQ2ZTY4NDljN2IyNWU5ZTFiNDM2NTg0YzkxYWE0ZDcxYzIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlYmM2NDlkZTM1ZDI5MmEyYTc5ZGU0OGJkYjY2Njg3NzAzMDI1NjE4ZTUzODIxOTVjNzA4ZTcyMGZjZWIzODgifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-16T08:25:55.096Z"
+    "at": "2026-10-17T08:22:12.940Z"
   }
 }

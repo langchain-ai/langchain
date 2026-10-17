@@ -4,6 +4,8 @@ title: "LangChain System Architecture"
 description: "High-level decomposition of the LangChain framework into three layers: langchain-core (abstractions), langchain (orchestration and agents), and partners (provider integrations), showing dependencies, component responsibilities, and extension boundaries."
 tags: [architecture, core, langchain, partners, orchestration, runnable, abstractions, layered-architecture]
 sources:
+  - id: openwiki-source-a9d15707c8dcabbe5cf98edb
+    resource: repo://libs/core/langchain_core/language_models/_compat_bridge.py
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
   - id: openwiki-source-a1981e868973f6fd7f71e12e
@@ -34,10 +36,10 @@ sources:
     resource: repo://libs/partners/README.md
   - id: openwiki-source-7da6afe7fe64c6589cf1fed0
     resource: repo://libs/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-10-16T08:25:55.096Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-17T08:22:12.940Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-16T08:25:55.096Z
+    at: 2026-10-17T08:22:12.940Z
 ---
 
 ## Overview
@@ -61,7 +63,7 @@ graph TB
     User["User Applications"]
     
     User -->|imports from| LangChain["langchain<br/>(Orchestration & Agents)<br/>v1.4.6"]
-    User -->|may use directly| Core["langchain-core<br/>(Base Abstractions)<br/>v1.6.11"]
+    User -->|may use directly| Core["langchain-core<br/>(Base Abstractions)<br/>v1.6.12"]
     
     LangChain -->|depends on| Core
     LangChain -->|depends on| LangGraph["LangGraph<br/>(State Graph Engine)"]
@@ -103,6 +105,15 @@ graph TB
 - **Callbacks and Tracing**: Callback manager infrastructure for instrumentation, logging, and integration with LangSmith.
 
 **Stability guarantee**: langchain-core follows a strict semantic versioning policy with advance notice of breaking changes. Core abstractions are stable across major versions.
+
+**Protocol Translation**: The `_compat_bridge` module (in `/libs/core/langchain_core/language_models/_compat_bridge.py`) bridges between internal `AIMessageChunk` streaming representations and the external `langchain-protocol` event format. It provides:
+
+- `chunks_to_events()` and `achunks_to_events()`: Convert live streaming chunks to protocol events in real-time
+- `message_to_events()` and `amessage_to_events()`: Replay a finalized `AIMessage` as a synthetic event lifecycle (used for cache hits, checkpoint restore)
+- Lifecycle management: Emits `message-start`, `content-block-start`, `content-block-delta` (per-chunk deltas), `content-block-finish`, and `message-finish` events
+- Provider-agnostic: Works with registered partners, unregistered community models, and unlabeled models by parsing `content_blocks` property
+
+**langchain-protocol Dependency**: langchain-core depends on `langchain-protocol (>=0.0.17)`, which defines the canonical event and message schemas for streaming, structured output, and protocol-compliant client integration. This enables LangSmith integration, UI streaming, and cross-language client compatibility.
 
 **Location**: `/libs/core/langchain_core/`
 
@@ -292,7 +303,7 @@ The core layer (langchain-core) is intentionally minimal and stable. Orchestrati
 
 ## Versioning and Release Policy
 
-- **langchain-core** (`v1.6.11`): Stable base abstractions. Major version bumps are rare and announced in advance. Deprecations carry multiple minor versions of notice. This is the "least-moving" part of the ecosystem.
+- **langchain-core** (`v1.6.12`): Stable base abstractions. Major version bumps are rare and announced in advance. Deprecations carry multiple minor versions of notice. This is the "least-moving" part of the ecosystem.
 
 - **langchain** (`v1.4.6`): Main user-facing package. Minor versions may add new agent patterns, middleware types, or orchestration improvements. Patch versions fix bugs. Requires specific langchain-core version (e.g., `>=1.6.10,<2.0.0`).
 
@@ -309,6 +320,8 @@ The core layer (langchain-core) is intentionally minimal and stable. Orchestrati
 - `Runnable[Input, Output]` (`/libs/core/langchain_core/runnables/base.py`): The foundational protocol for all composable units. Defines `invoke()`, `stream()`, `batch()`, and async variants.
 
 - `BaseChatModel` (`/libs/core/langchain_core/language_models/chat_models.py`): Abstract base for all chat models. Providers extend this class.
+
+- `_compat_bridge` (`/libs/core/langchain_core/language_models/_compat_bridge.py`): Protocol translation module. Converts `AIMessageChunk` streams to `langchain-protocol` events for LangSmith integration and client streaming. Provides `chunks_to_events()`, `message_to_events()`, and async variants.
 
 - `BaseTool` (`/libs/core/langchain_core/tools/`): Abstract base for tools. Enables schema generation, structured argument parsing, and sync/async execution.
 
@@ -378,7 +391,7 @@ Tools are bound to agents at creation time and made available to the model for i
 
 | Package | Depends On | Role |
 |---------|-----------|------|
-| **langchain-core** | langsmith, httpx, pydantic | Base abstractions; stable |
+| **langchain-core** | langsmith, httpx, pydantic, langchain-protocol | Base abstractions; protocol event bridge; stable |
 | **langchain** | langchain-core, langgraph, pydantic | Agent orchestration; user-facing |
 | **langchain-classic** | langchain-core, langchain-text-splitters, pydantic | Legacy chains and community re-exports |
 | **langchain-openai** | langchain-core, openai SDK | OpenAI integration (ChatOpenAI, embeddings) |

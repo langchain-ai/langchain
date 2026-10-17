@@ -4,6 +4,8 @@ title: "Message Types and Content Representation"
 description: "Document the message abstraction, standardized content blocks for multimodal LLM I/O, message hierarchy, and provider-specific block translators."
 tags: [messages, content-blocks, chat-models, streaming, multimodal, provider-adapters]
 sources:
+  - id: openwiki-source-a9d15707c8dcabbe5cf98edb
+    resource: repo://libs/core/langchain_core/language_models/_compat_bridge.py
   - id: openwiki-source-77dc1fb726463969f9d53658
     resource: repo://libs/core/langchain_core/messages/ai.py
   - id: openwiki-source-b32b84365d17276620c41ebc
@@ -26,10 +28,10 @@ sources:
     resource: repo://libs/core/langchain_core/messages/tool.py
   - id: openwiki-source-498a9586e021b126ab8a8b42
     resource: repo://libs/core/langchain_core/messages/utils.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-08T08:27:09.597Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-17T08:22:12.940Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-17T08:22:12.940Z
 ---
 
 ## Overview
@@ -282,23 +284,26 @@ All block types support an optional `extras: dict[str, Any]` field for provider-
 
 ### Accessing Content Blocks
 
-**Location**: `repo://libs/core/langchain_core/messages/base.py#L199-L260`
+**Location**: `repo://libs/core/langchain_core/messages/base.py#L199-L260` (BaseMessage), `repo://libs/core/langchain_core/messages/ai.py#L243-L304` (AIMessage)
 
-The `content_blocks` property normalizes message content to a list of typed content block dicts:
+The `content_blocks` property normalizes message content to a list of typed content block dicts. The property runs a three-tier lookup pipeline:
 
-```python
-@property
-def content_blocks(self) -> list[types.ContentBlock]:
-```
+**Tier 1: Output Version Short-Circuit** (v1 optimization)
+- If `response_metadata["output_version"] == "v1"` **and** `content` is a list (not a string), return the list directly as standard blocks. This avoids redundant parsing for model responses already in v1 format.
+- For `AIMessageChunk`, even with `output_version="v1"`, a string-content stream (e.g., text-only OpenAI responses) falls through to Tier 2 so the translator can build `ContentBlock` dicts from `tool_call_chunks`.
 
-**Behavior**:
+**Tier 2: Provider-Specific Translation**
+- If `response_metadata["model_provider"]` is set, look up the registered translator via `PROVIDER_TRANSLATORS`.
+- If found, invoke `translate_content(message)` or `translate_content_chunk(chunk)` to convert provider-specific format to standard blocks.
+- This handles formats like OpenAI's `image_url` blocks, Anthropic's `document` blocks, Google's blocks, AWS Bedrock blocks, etc.
+
+**Tier 3: Best-Effort Parsing** (BaseMessage fallback)
 1. If `content` is a string, wrap it as `{"type": "text", "text": content}`.
 2. Parse list items: strings become text blocks, dicts with known `type` values are kept as-is, others become `{"type": "non_standard", "value": ...}`.
-3. Attempt to unpack non-standard blocks through a series of provider-specific parsers (v0 blocks, Chat Completions format, Anthropic format, Google GenAI format, Bedrock format).
-4. For `AIMessage`, check `response_metadata["model_provider"]` and use the provider's translator if registered (e.g., OpenAI, Anthropic).
-5. Fall back to best-effort parsing if no translator exists.
-6. For `AIMessage`, append `tool_calls` not already in content as tool call blocks.
-7. Extract reasoning from `additional_kwargs["reasoning_content"]` if present (inserted at start of blocks list).
+3. Attempt to unpack non-standard blocks through provider-specific parsers (v0 blocks, Chat Completions format, Anthropic format, Google GenAI format, Bedrock Converse format).
+4. For `AIMessage` specifically (after Tiers 1-2):
+   - Append any `tool_calls` not already in content as `ToolCall` blocks.
+   - Extract reasoning from `additional_kwargs["reasoning_content"]` if present and insert at the start of blocks.
 
 ## Block Translators: Adapting to Provider Formats
 
@@ -363,9 +368,9 @@ When `AIMessage.content_blocks` is accessed:
 The utils module provides helpers for working with messages:
 
 **`get_buffer_string(messages, format="prefix")`** (`repo://libs/core/langchain_core/messages/utils.py#L287-L370`)  
-Converts a sequence of messages to a single string for logging, prompting, or debugging:
-- **`format="prefix"`** (default): Role-prefixed format like `"Human: ...\nAI: ..."`. Multimodal content blocks are skipped; only text and `text` blocks included.
-- **`format="xml"`**: XML-formatted output with `<message type="role">content</message>` structure. Supports safe rendering of complex multimodal content (images, audio, video, reasoning, tool calls) with proper character escaping. Base64-encoded data is skipped. Useful when message content may contain role-like prefixes that could cause ambiguity.
+Converts a sequence of messages to a single string for logging, prompting, or debugging. Supports two formats:
+- **`format="prefix"`** (default): Role-prefixed format like `"Human: ...\nAI: ..."`. Only text and `text`-type blocks are included; multimodal blocks (images, audio, etc.) are skipped.
+- **`format="xml"`**: XML-formatted output with `<message type="role">content</message>` structure. Fully supports complex multimodal content (text, images, audio, video, reasoning, tool calls) with proper XML escaping and truncation (max 500 characters per block). Base64-encoded data is excluded; file URLs are preserved. Useful when message content may contain role-like prefixes that could cause ambiguity in prefix format.
 
 **`convert_to_messages` and `convert_to_openai_messages`**  
 Coerce various input formats (dicts, strings, `MessageLikeRepresentation` union) into typed message objects.
@@ -483,6 +488,35 @@ The `extras` field in content blocks allows provider metadata without breaking s
 
 This approach maintains type safety while supporting emerging provider capabilities.
 
+## Message Serialization and Deserialization
+
+**Location**: `repo://libs/core/langchain_core/messages/utils.py#L86-L100`
+
+Messages are serializable via the `AnyMessage` discriminated union type, which uses the `type` field as the discriminator. During deserialization:
+
+1. Pydantic reads the `type` field from the input dict or JSON.
+2. The `_get_type()` function extracts this discriminator.
+3. The correct message class is instantiated based on the type value.
+
+This enables round-trip serialization (message → JSON → message) while ensuring type safety:
+
+```python
+from langchain_core.messages.utils import AnyMessage
+import json
+
+# Serialize
+msg = AIMessage(content="Hello", tool_calls=[...])
+msg_dict = msg.model_dump()
+msg_json = json.dumps(msg_dict)
+
+# Deserialize
+loaded_dict = json.loads(msg_json)
+loaded_msg: AnyMessage = AnyMessage(**loaded_dict)  # Correct class auto-selected by type
+assert isinstance(loaded_msg, AIMessage)
+```
+
+The `AnyMessage` union includes all standard message types and their chunk variants, enabling polymorphic handling in functions that accept heterogeneous message sequences.
+
 ## Message Versioning and Backward Compatibility
 
 LangChain v1.0 introduced the v1 content block format, superseding the v0 `source_type` style. The system handles both transparently:
@@ -507,6 +541,37 @@ The `response_metadata["output_version"]` field signals content normalization st
 - **`None` or absent**: Content requires normalization via provider translators and fallback parsing.
 
 For `AIMessageChunk`, the v1 short-circuit is especially critical: even if `output_version="v1"`, if `content` is a string (e.g., text-only streaming), the content falls through to the provider translator to build `ContentBlock` dicts from `tool_call_chunks`.
+
+## Streaming Content Blocks and Event Lifecycle
+
+**Location**: `repo://libs/core/langchain_core/language_models/_compat_bridge.py#L1-L50`
+
+When streaming, messages emit content blocks incrementally as **delta events**. The LangChain compatibility bridge converts `AIMessageChunk` streams into a standardized event lifecycle:
+
+**Event Sequence**:
+```
+message-start
+  -> content-block-start   (first time each block index is observed)
+  -> content-block-delta*  (per chunk, carrying incremental content)
+  -> content-block-finish  (finalized block with complete data)
+message-finish
+```
+
+**Key Behaviors**:
+
+1. **Block Identity**: Each block is tracked by its `index` field (integer or string like `"lc_rs_305f30"`), or positionally as a fallback. Chunks with the same index are merged.
+
+2. **Deltaable vs. Self-Contained Blocks**:
+   - **Deltaable blocks** (`text`, `reasoning`, `tool_call_chunk`, `server_tool_call_chunk`): Emit empty placeholders on `start`, then accumulate deltas until `finish`.
+   - **Self-Contained blocks** (`image`, `audio`, `video`, `file`, `tool_call`, `server_tool_call`, `invalid_tool_call`): Skip delta events; their full payload rides on `finish`.
+
+3. **Content-Block-Delta Payload**: For each chunk, the bridge extracts `AIMessageChunk.content_blocks` and emits a delta event containing the incremental content slice (e.g., new text characters, reasoning fragment, tool arg JSON bytes). This delta is a **true slice**, not accumulated state—providers emit SSE-style chunks that each carry their own increment.
+
+4. **Finalization**: When a chunk has `chunk_position="last"`, `tool_call_chunks` are parsed into complete `ToolCall` dicts, `server_tool_call_chunks` with `args` strings are parsed into `ServerToolCall` dicts with `args` objects, and the final event is emitted.
+
+5. **Invalid Tool Calls**: For finalized `AIMessage`, `invalid_tool_calls` (which `content_blocks` omits) are surfaced as separate `invalid_tool_call` blocks in the event stream.
+
+See `/openwiki/chat-models.md` for the streaming lifecycle in chat model invocation context.
 
 ## Example Workflows
 

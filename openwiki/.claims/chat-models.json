@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d4e1d9ef9bf4df3d0af48fc7d5987181cc75cb01f01a63b305c09d741e0b7f7c",
+  "pageVersion": "sha256:a9dc604cc33e3a63e2ce5d22966606dda04865db26382088f1031f2c12021e34",
   "claims": [
     {
       "id": "claim_d2cdcf05dd4149bb9ea0a5fb0d1568d8",
@@ -385,10 +385,68 @@
           "version": "repo-lines-v1:sha256:a732c1c124fb5420deb79366dc38eb2eb9718106ab90e22c0a8cd9e494f9b519:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzYjgzYWViMmQ4YjA1MjI2NzAwYjk2ZDEyZjA1NDA4YjBhNWUzYjU1NDVlNDkzZmIzNDU5NzE4YWY4ZGQyYjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY4MzY4NGQ3MjNhZDUwZjhhMWIyOTljZjBmNThjZmIzOGFiYjNkM2QwZTFiZmJkOWZjNzA0MzljYTY3ZWJiN2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5NTZmOGQwMDlhYjQ1NDE0MTczNGE4ZWNhZjg1YzQyMWRkMWYxMTViNWE1NDUyZTJmYWI0YTRmOTk0MjA2YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4NmMwNzAwZjRlYmRkMjI4NDcwYzMxNWRkMzY2ZDM5MTBkMWExYjk5Njg3YzkzYWJmYTE2ODRjOGVmNDE4MGEifQ"
         }
       ]
+    },
+    {
+      "id": "claim_3b069f1a7af449c8ba0e7ce757f92c71",
+      "statement": "The _compat_bridge module provides transparent conversion between provider-emitted AIMessageChunk streams and v3 protocol events (MessagesData), enabling uniform event consumption across all providers. It handles content block translation via AIMessageChunk.content_blocks (three-tier lookup supporting output_version='v1' override, registered translators, and best-effort parsing), treats each chunk's blocks as delta slices matching provider SSE semantics, accumulates per-index state for finalization, and produces structured lifecycle events: message-start -> content-block-start/delta*/finish per-block -> message-finish.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/_compat_bridge.py#L1-L32",
+          "version": "repo-lines-v1:sha256:c1354388d067f4e29b87e5a1ccf0bcc27625491a06271728247b8a2af0fcf6ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4MWVkMWM4NDVhZTBiMTA3MTM0YmMyMzI5NDU5NGEwNjJhNGZhYzBjOWQ5YjczNDY4NWVhOTMzNDUxMGE0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c2183070ba2843d6a9b8db7d7f93fa3e",
+      "statement": "chunks_to_events() and achunks_to_events() convert live ChatGenerationChunk streams to MessagesData protocol events. They track blocks independently by source-side identifier (handling provider-specific indices like Anthropic's parallel tool-call chunks), accumulate usage and response_metadata across chunks, and yield lifecycle events. message_to_events() and amessage_to_events() replay finalized AIMessages as synthetic event lifecycles for cache hits and graph node returns, allowing consumers to see uniform event shape regardless of source.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/_compat_bridge.py#L596-L779",
+          "version": "repo-lines-v1:sha256:9e40e1a83c89638cf22f8c28b3fba560da7624131593a8f4edeb23e9255fcfa2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTg0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkOWNlZjhlNDZmYjJjMzE4NjdjZDViYTk4MjU4M2ExM2IxZDU4NWI5ZDg0Y2YzOWRmZjAyYTFlMjI1MTBlOTQ2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzMGMxZjE4OGYxNDJlZDdhODI0NjgwYjIwNzE3MmM1NTE5YmM2MTRhNDhmZGE3Y2YxNjdlZGI4ZGRmNzk5NTZjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwODI2NzZjODg4YzFhNGQ5ZmE3NzJmY2RjMzAyZjc3M2JjNzI5MGVlYmZmOWRhMzZhMzlmNDRjMzIxMTk4Mzg1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmZGNmZGRjY2Q3NDJhYTJmZTkxYjEwNzk2NDgyNmNlMWIyMTkwNGQyZTQzNzNhZDQzYTFiODhkNDU1NDFhNDBkIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/_compat_bridge.py#L782-L800",
+          "version": "repo-lines-v1:sha256:41592451fd6ab6650fbc8ee20505a9a1b26b311348d7e26128ab9e154102091b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0MTczOTA4MDFkMGJlM2Q2MjNlYTZkNGI1MGZmYWIyYjcwNDE2MmUzMjkxZjA0MDk1N2YwYmJmYTViZjRjYmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkZGY5NzBhZGRlYjJjYmYxYTQ2YTdiOWM0ZjgxMzdkYjhiY2UwMWYyNWJmMDAyODQwOWFkY2MzMzc1YTkxNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzZmNkNWU3MjQwYmJiNjA4MzdjN2VkNzE4MThkMzMwMDZjNTIwYTZjMTZlYzRmNmE1OTdkOTY5YzZmMmVmMTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bac171d84a38492382e491cc2848a89c",
+      "statement": "The bridge handles full protocol block taxonomy: deltaable types (text, reasoning, tool_call_chunk, server_tool_call_chunk, data) emit content-block-start -> delta* -> finish; self-contained types (image, audio, video, file, non_standard, finalized tool calls, invalid_tool_call) skip delta and carry payload on finish. Tool call finalization parses accumulated args JSON; on success becomes tool_call/server_tool_call with extras preserved; on failure becomes invalid_tool_call with raw string intact.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/_compat_bridge.py#L234-L284",
+          "version": "repo-lines-v1:sha256:c1bfeab1724f39c87780f18a24ddaa0aa66756fa5319b51d3312e079de1f4e64:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3M2FjNjUxNDBiZmFjOGIxZmQ0Zjg1NWM5MDM5ZTgyNDQzOWFiMDU4NWQyNzZiYWZlMGZiNzcxMTJhZjM3MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmYWFjMzgxOTA0YTg1OWFiNGY0MjA0YTkyZDk3NDU1YWIwZjcwNDJjMjJhOTU4MmMyN2Y0ZjE5NGJlNTZiNTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVhMjRhMWJiMzkwMzdlODgyNWY3MmJmOWZiOWVlMzU2MTQ0MjgxZGZjZjcwMjliN2I5YjQ2ZDVhNzNhZDg5OGMifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/_compat_bridge.py#L365-L465",
+          "version": "repo-lines-v1:sha256:79e92f7984b39d4f1a1c03da1274e49229041b4d99238aeab8267ab2a7f689bd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkOWI0NmRmYTYzYTNiZWI1ZmU0NmQzMTA5OTdhMzM3OWQwYzE1YTgwM2IwNjE3OTE2Y2FlNTdhZGViMjFmZTI5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3YWYzNmViM2ExZjY2YWYxMjE2MmFjMTYwMjQzNDJiNzBhZmE2ZTNjYjZlOGM1ZjMwMmVlMWQ4OTYzMmY0Yjk1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmMzM4YTg3MjYyYzg1YTZkNmE3MGQyYjIxMWNmYmM4NzU5OTEzYjY4NDcwMTIyM2E5ZGJlMTIxN2Y5ODI2ZjFiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjYWMzOWQ1NWIxYzQwOWFlZTdjMzE4YWU4ZmVlNGYxMjllZTgzNTllYjI3MzY1NzViZWJiODA3MTdhNTM5NjlkIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_a3930b3b6f974893ae6da90681d20a97",
+      "statement": "_iter_v2_events() and _aiter_v2_events() drive the v2 event generator with per-event dispatch. They call native _stream_chat_model_events/_astream_chat_model_events hooks if available, otherwise bridge _stream/_astream chunks via chunks_to_events/achunks_to_events. Each event is dispatched to stream accumulator and fired as on_stream_event to run manager. Run-lifecycle callbacks and rate-limiter acquisition are caller's responsibility.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L645-L724",
+          "version": "repo-lines-v1:sha256:0b0eff12ff639a9cea0603128c0c6afa580a4bf1fa90737d9e1fd62d40af6653:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlZDEzZTU5NTg3Y2QzODI2MGI4MDJjYjFhYzhjYWI5ZGVhZDVjZmRiMzgwZDZjMmQyYWI3NmE2NGM0NTE5ZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhZjg0ZGQ1YWY3MGExNDVkZGFiYjIwMDgxYTRjNjhkNjVhNjYwN2U2Y2NmYTZiZjRjNGI4YWQyZTE2ZjEyNjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4ZTI5YTJkZWZjOTBjNDQzMmM5MmIzNWYxN2NmODMzMjlmZDIxMTRiODZmN2M5ZDUyZTlhYjJjYWU3NTZiYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyNjU2NmNmY2I3MmZhM2Q1ZWIyMzQxYTIzMTQ5NWQ0MTE3Y2QwM2EzNDUyMzUxYzljYzA2Y2RhNjU3NGJmYmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_03a4ea9b6dfe4dc78d56f2cc3959bb77",
+      "statement": "_replay_v2_events_for_cache_hit() and _areplay_v2_events_for_cache_hit() replay cached messages as v2 events when a v2 handler is attached, ensuring warm cache produces the same on_stream_event stream as cold calls. This prevents LangGraph-style consumers from observing behavior dependent on cache state. Gated by _should_use_protocol_streaming() so disable_streaming suppresses v2 on cold calls also suppresses replay.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1450-L1491",
+          "version": "repo-lines-v1:sha256:58f1db29b6bcf0a4725aade8dd84a6b3eadbb2665fe6da61c6318acb2e79c625:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlNTlhNTA5ZmFmZTExMWZjNmU0Y2MzZDA5NmZmNmYxZDJiY2VhZjViYmM1ODI5YjBkZGI1OGE1NzcxYjkxYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MjRlZDE2M2QzNmVkNmY2M2EyOGVlNmQzYmVkMGE3YjhmMWE4YjQ3YzIzODk2ZjY3MTNhMjUzYzFmMGRjZjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxMmI5YTAzNjIyZWZhMTg3MzAxNDM0MjJlNTExM2U2NjdkODhkMWQwOTM1YmM4NmY5NTU2ZmQ4OTdjZWE2NzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2N2U0MDcyNzYyOTdhYzUxMzY0Mjk2YjEyY2NiNDM2ZTU1YzNmZTBhYTEzY2U3NTA5ZDRkM2JjMWUxNzRjOGUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-16T08:25:55.096Z"
+    "at": "2026-10-17T08:22:12.940Z"
   }
 }

@@ -4,6 +4,8 @@ title: "Chat Model Interface and Lifecycle"
 description: "Document BaseChatModel protocol, input/output handling, streaming, and integration points with callbacks and model profiling. Covers the init_chat_model() factory, provider registry, and model instantiation."
 tags: [chat-models, llm-integration, streaming, structured-output, model-capabilities, model-initialization]
 sources:
+  - id: openwiki-source-a9d15707c8dcabbe5cf98edb
+    resource: repo://libs/core/langchain_core/language_models/_compat_bridge.py
   - id: openwiki-source-132f3183693cd9cf79d029a5
     resource: repo://libs/core/langchain_core/language_models/base.py
   - id: openwiki-source-5f8bc32563177d89fbab9b2f
@@ -14,10 +16,10 @@ sources:
     resource: repo://libs/core/langchain_core/language_models/model_profile.py
   - id: openwiki-source-c479d4fffee5cf62576699e4
     resource: repo://libs/langchain_v1/langchain/chat_models/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-17T08:22:12.940Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-16T08:25:55.096Z
+    at: 2026-10-17T08:22:12.940Z
 ---
 
 ## Overview
@@ -27,6 +29,8 @@ The **chat model system** is the core interface for integrating large language m
 Chat models convert conversational message history into AI responses, supporting both simple generation (`invoke`) and streaming output (`stream`). The framework unifies sync/async patterns, handles caching transparently, routes to streaming or non-streaming backends based on configuration and attached callbacks, and provides extension points for custom behavior via method overrides.
 
 The `init_chat_model()` factory provides a unified interface to instantiate any supported chat model by provider name (e.g., `'openai:gpt-4o'`), with automatic provider detection, dependency management, and fallback strategies.
+
+**Framework version**: langchain-core v1.6.12
 
 ## Core Interface: BaseChatModel
 
@@ -188,6 +192,80 @@ async def _astream(
 - Default implementation runs `_stream()` in an executor and yields results
 - Subclasses can override for native async streaming
 
+### Protocol Event Streaming and the Compat Bridge
+
+**Location**: `repo://libs/core/langchain_core/language_models/_compat_bridge.py`
+
+The **compat bridge module** provides transparent conversion between provider-emitted `AIMessageChunk` streams and the v3 protocol event format (`MessagesData`), enabling uniform event consumption across all providers—whether they emit events natively or return chunks.
+
+#### Bridge Responsibilities
+
+The bridge serves several critical functions:
+
+1. **Content block translation**: Reads `AIMessageChunk.content_blocks` (a three-tier lookup supporting `output_version="v1"` override, registered block translators, and best-effort parsing) and exposes the result as a consistent `list[ContentBlock]` regardless of provider implementation.
+
+2. **Delta detection**: Each chunk's `content_blocks` is treated as a **delta slice** (not accumulated state), matching provider SSE-style chunk semantics. The bridge forwards deltas directly as `content-block-delta` events and accumulates per-index state only for finalization.
+
+3. **Lifecycle emission**: Produces a structured event sequence:
+   ```
+   message-start
+     -> content-block-start   (first time each index is observed)
+     -> content-block-delta*  (per chunk, carrying the incremental slice)
+     -> content-block-finish  (finalized block)
+   -> message-finish
+   ```
+
+4. **Block finalization**: Promotes incomplete block types (e.g., `tool_call_chunk` → `tool_call`) by parsing accumulated JSON arguments; falls back to `invalid_tool_call` if parsing fails, preserving partial data for inspection.
+
+#### Core Bridge Functions
+
+**`chunks_to_events()`** and **`achunks_to_events()`** (`repo://libs/core/langchain_core/language_models/_compat_bridge.py#L596-L779`):
+- Convert live `ChatGenerationChunk` streams to protocol events
+- Accept optional `message_id` for explicit message identification
+- Track blocks independently by source-side identifier (handling provider-specific indices like Anthropic's parallel tool-call chunks)
+- Accumulate usage and response metadata across chunks
+- Yield `MessagesData` lifecycle events for downstream handlers
+
+**`message_to_events()`** and **`amessage_to_events()`** (`repo://libs/core/langchain_core/language_models/_compat_bridge.py#L782-L800`+):
+- Replay a finalized `AIMessage` (from cache, checkpoint, or graph return) as a synthetic event lifecycle
+- Produce the same event stream a live call would produce
+- Allow consumers downstream to see a uniform shape regardless of source
+- Text/reasoning blocks emit full content in a single delta; finalized blocks (tool_call, image, etc.) skip delta and rely on finish event
+
+#### Block Type Handling
+
+The bridge handles the full protocol block taxonomy:
+
+- **Deltaable types** (text, reasoning, tool_call_chunk, server_tool_call_chunk, data): Emit `content-block-start` → `content-block-delta*` → `content-block-finish`
+- **Self-contained types** (image, audio, video, file, non_standard, finalized tool calls, invalid_tool_call): Skip delta, carry payload on finish event
+- **Tool call finalization**: Accumulated `tool_call_chunk.args` is parsed as JSON; on success becomes `tool_call`; on failure becomes `invalid_tool_call` with raw string preserved
+
+### Choosing the Event Path: _should_use_protocol_streaming()
+
+**`_should_use_protocol_streaming()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L587-L643`) determines whether to route through v2/v3 protocol events:
+
+```python
+def _should_use_protocol_streaming(
+    self,
+    *,
+    async_api: bool,
+    run_manager: CallbackManagerForLLMRun | AsyncCallbackManagerForLLMRun | None = None,
+    **kwargs: Any,
+) -> bool
+```
+
+Returns `True` if:
+1. At least one attached handler is a `_V2StreamingCallbackHandler` (opt-in requirement)
+2. The model has a native `_stream_chat_model_events` / `_astream_chat_model_events` hook, OR it overrides `_stream` / `_astream` (which the bridge can wrap)
+3. Streaming is not disabled by `disable_streaming` configuration
+
+When `True`, the model uses `_iter_v2_events()` / `_aiter_v2_events()` which:
+- Call native event hooks if available
+- Otherwise wrap `_stream()` / `_astream()` chunks via the compat bridge
+- Dispatch each event to the handler via `run_manager.on_stream_event(event)`
+
+This design allows models to opt in to native protocol events while non-native providers transparently convert chunks to events via the bridge.
+
 ### ChatModelStream and AsyncChatModelStream
 
 **Location**: `repo://libs/core/langchain_core/language_models/chat_model_stream.py`
@@ -244,7 +322,7 @@ async def _agenerate(
 **`_generate_with_cache()`** and **`_agenerate_with_cache()`** wrap the core methods with:
 
 1. **Prompt caching**: Checks if `self.cache` or global `get_llm_cache()` has cached results for the input
-2. **Cache hits**: Returns cached generations and replays them as v2 events if a v2 handler is attached
+2. **Cache hits**: Returns cached generations and replays them as v2 events via the compat bridge if a v2 handler is attached, ensuring uniform event streams regardless of cache state
 3. **Cache misses**: Routes through streaming or non-streaming path
 4. **Protocol routing**: Dispatches to v2 events (`_should_use_protocol_streaming`) or v1 callback path (`_should_stream`)
 
@@ -290,8 +368,9 @@ Chat models integrate with the callback system to emit structured events through
    - `_generate_response_from_error()` extracts response metadata from HTTP errors
 
 5. **`on_stream_event`** (v2/v3 protocol):
-   - Fires for each content-block protocol event during streaming
+   - Fires for each protocol event during streaming
    - Allows fine-grained event observation for advanced tracing
+   - Driven by the compat bridge or native provider implementation
 
 ### Callback Configuration
 
@@ -821,7 +900,7 @@ result = executor.invoke(
 
 4. **Streaming fallback**: If streaming is not implemented or disabled, `stream` seamlessly falls back to `invoke` and yields the result as a single chunk.
 
-5. **Cache transparency**: Cache hits are completely transparent—same lifecycle callbacks fire as for cache misses.
+5. **Cache transparency**: Cache hits are completely transparent—same lifecycle callbacks fire as for cache misses. With v2 event handlers attached, the compat bridge replays the cached message as a synthetic event sequence.
 
 6. **Async/sync equivalence**: Async methods mirror sync behavior; default async implementations run sync methods in an executor.
 
@@ -832,3 +911,5 @@ result = executor.invoke(
 9. **Provider isolation**: Each provider integration is independently installed and loaded; missing packages are reported with clear `pip install` instructions.
 
 10. **Configurable deferred binding**: Declarative methods (`bind_tools`, `with_structured_output`) on configurable models queue operations and apply them at instantiation time, ensuring consistent behavior across runtime model swaps.
+
+11. **Uniform event streams**: Whether a response is streamed live or replayed from cache, protocol event consumers see the same lifecycle via the compat bridge's event translation.

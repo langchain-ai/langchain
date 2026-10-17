@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:479c5428fb5c4d5a6a9cb84f2f11bf8a578e6af0b1f5e1208f47fa98d0f563df",
+  "pageVersion": "sha256:bbf6820f6de3f7c23997d92efc7315b3a1e9b6a901fd17853816d6d406fd53f4",
   "claims": [
     {
       "id": "claim_06ad6af0140b4318b25f43272f89e77f",
@@ -175,10 +175,130 @@
           "version": "repo-lines-v1:sha256:9e7a196791d7921f5dda4aff01828a5731663f7a163f5da719a6140c2fec3dee:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmZGRjYTFjZDMwMjFlNzA0YjcxMjNiMTYwMGIzOGM3ZDExNTRhYWZiNGJlNzEwOTA1ZTVkZDE1MjBlNzk0NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MjU2OTVlYTJkY2RhMWM2M2JlMjg1Yjc4MDlhMmEwMzYwZGEzZGZiYWY3ZjMzYjJkMTA0NzJmYzZhMDNkMDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxZjAyMzJlOTNkNTcxMDA4MTM4N2E5ZWFkNmFjZmRlZTYzNGRkZWU3YzQ2ZjE0NDc3Y2NhZGRhMDZmZWE5OTIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_9c170cb1d82e4c1396533adddef888b7",
+      "statement": "Message templates support multimodal content combining text and images. HumanMessagePromptTemplate and AIMessagePromptTemplate accept lists mixing text strings with image-url dicts. Each image template can have at most one variable. The image_url value can be a string (for templating) or a dict with url and detail fields. Image loading from local paths is not supported for security reasons.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/chat.py#L400-L532",
+          "version": "repo-lines-v1:sha256:25828f89e604349e6b40556974786c8337863269761811e25bcc1ea44d321f63:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlODNiNjQ5OTY5MGFjNjcyYzc4YmZkYTBiZTJlZjE2NWNiNzc5Njk2NDZiNjRhYmU4MWZjMDk5ODhmMGExZDAyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyNDBkNTkyODUzZGI3MDBkMjY3OWE2OGRiMzExMTcwM2I3ZTViOGJmNGZkYzZkZWVkODViZjM1ZDk0OTgyMGRiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0ODA4YTJmNDYwMjk5NTFlZmE0MGViYzBmOTUwNzBlMzdhMTUzNDc4MjU4MmJhMjllZjY2MzBiZDlhNTI0NmFmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1NWFjY2Y3MTAwY2U2MDk1ZjRjYWMyNzNjOTc0M2MxMDhmMDU2ZTY3M2UwNTE1MDAyNDI2NGQxYjE5ZTZiN2IzIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/image.py#L17-L72",
+          "version": "repo-lines-v1:sha256:4edc2b176abf3b0275593f700b5a8d73a5d2fbc343b2075f5e1848874b39386d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMGU3NjJlNTE3YjAyYWY1ZWZmNzUxZWMwNjQ0ZGRmMGNkYzc0MjQxNjQ1MjZhZDMwYzgwNmU4YWUxNmY3ZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxODhlYzliYWJmOTQxYWUyM2NkODJlYmMzMmNiY2E3MDgxN2JiN2NjNjczZWFmMDA5NDkyYTgzM2VkOGU3ZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhZTA0YThkNmY1YmRhOTc5YjNjMTgxMjUxYjVmZTlmZDUwZjlmNjE2MTNkYzgwNDM0ODczN2RmNzYxMDNjYjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f0d58bb96da44de9738527938034223",
+      "statement": "ImagePromptTemplate is a BasePromptTemplate variant that formats dictionary templates containing image URLs and other fields using f-string, mustache, or jinja2 syntax. It validates that input_variables do not conflict with reserved fields (url, path, detail) and raises ValueError for local path loading.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/image.py#L17-L152",
+          "version": "repo-lines-v1:sha256:88a7b93f6ac1d9f8c55f2ed7af821b8ace7dae138db6909addb16fe77c3a5a40:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3MTBlNzYyZTUxN2IwMmFmNWVmZjc1MWVjMDY0NGRkZjBjZGM3NDI0MTY0NTI2YWQzMGM4MDZlOGFlMTZmN2ZlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4MjBlN2JiNmFkMzZjNjE5YWIxZjJiM2MyYjQzNTVjNjFlNWI1NTc3MmM4MmU2NGU1YmVkZmZkZDQ5YzQzNzMxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzMTg4ZWM5YmFiZjk0MWFlMjNjZDgyZWJjMzJjYmNhNzA4MTdiYjdjYzY3M2VhZjAwOTQ5MmE4MzNlZDhlN2RjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjNmYxM2FhY2RmYmY1OTY4MTgzZDIwMGZlZmQzY2FkZGQxNjhkYmZkYzUzODQ2OTlmNzRjZjJmMTVkNzFlNjNlIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_882a0fc6fcff41f7b9fee058ccc07ea2",
+      "statement": "DictPromptTemplate applies variable substitution to string values in a dictionary structure, leaving keys and non-string values unchanged. It supports f-string and mustache formats (not jinja2) and recursively processes nested dicts.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/dict.py#L19-L86",
+          "version": "repo-lines-v1:sha256:e7c1c3c27a6e8780c10f7c14852d89f5a72352e26bd4aa3b42b1a96c4f48a49d:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzOTIzZGZhNzMzMjI5Y2EzNjZhMTAyMjUwYzA0ZmNkZjcxMzNhMmZiNzdkODYzMzRlMGRjNzVkMDljNWU0Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5MzcxZWQzZTk1MjEwMjcyZTg3ZDM4NzFmM2NmNjFkNGRhZWQxNTQyYmQ5M2I5MTllMjgyMzY5Yzc5NTdmYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2Nzg5ODU5N2E2MDA0MjNkZGNkOWQxMmU0MTUyYTU3ZDQyOGIwYWUyNmNhNTNhYzhjM2VmZTllNTk2MmU5MTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5508a1aff46743db9e639c96bd6bb53c",
+      "statement": "All prompt templates support asynchronous formatting via ainvoke(dict), aformat_messages(), and aformat() methods. The Runnable interface also provides batch() and astream() for batch processing and async streaming. These operations return the same PromptValue types as their synchronous counterparts.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/base.py#L200-L250",
+          "version": "repo-lines-v1:sha256:aa0d8c77e11713a4b9b092f837c7c1949c77900161c1c37bd6e9e6cb1bbba7d7:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyOGE1YzRkOTMyZjU1OGJjMzY0YWMxOGFhNDI4NTlhNjhhZDNhMzdjOTg3NmZkNTM3NmYxOWYwNmMxM2UyYmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5NGVjMjNmMTQwMWZiZGZhMWMzYWQwMmJlMTNlMjljYzhmNzQ2NTBmZDljYzEwZjY4MDg2NDFhMmM4YzA4MGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyYzAwMzU4MWEyNWNkYjFhNzc2YTc1NzhkZTk0MmMzZWFjZmVlYjVmZWQwZGE1Mjc3MzhkNTA0NzVhOTgyMTEifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/chat.py#L619-L648",
+          "version": "repo-lines-v1:sha256:00a1582f768c7b0544d69374d6efcfbc4a251275da176bbe9672ed09b6a5e9b4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3MmU0MGNlN2FiZDc0ZTFjOTU3ZmZkMmM2ZjJjNDk0ZjQyMjZmNTYzODM3MmIyMDczYTViNjY1Nzg2YTliY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE0YTU1NmE5Y2ZkMDQ2MzkwNjMxNDFiNmIxZWM1YTdhNDcyZGQyMDkzZDkzZDE1NmMyM2VlMGFhY2UxNTVlMzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzMzc1NzBiOTk5OGRhMjQzMzYxMmQ5OGJhN2UxMGY2MWI4MTRiN2M3OTY1ODVjMzgyM2ZjZDBhYzI1Y2M0NDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a780c9a37b47446d915223c821a90683",
+      "statement": "ChatPromptTemplate supports composition via __add__ operator with other ChatPromptTemplate instances, BaseMessage objects, BaseMessagePromptTemplate instances, strings (shorthand for human messages), or lists of messages. The + operator concatenates message lists, merges input variables, and merges partial variables (raising ValueError on conflicts).",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/chat.py#L1011-L1049",
+          "version": "repo-lines-v1:sha256:3b7074dc2c1eb4e2cdc77683a3d0c461727eb0524db237fa7c9a065126bb7f46:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyNDYwZjM0Y2U2OGViZjk0NjY4ZDAwYjEwZDkxZmM1YmIzZTIzY2E3NDhiN2ZjNjE5MjgzZDAwY2EyNzA2YjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzM2IzNjc5NjdlODc3ZWJhMmRhMTZmNDBmYjljMDgwYzAwZjM3MmNmODE2ZmU2N2MxNjczMWNmMzJlN2FhNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkMjk1YzY5NjZiNGRmYWFlNzkzZDI5NzQ0MjUyZWIwOGJiZDNmMjg3NDAwNzBmZTgzMjIwNGM4MzczMWJhZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmMGQ5MjMzM2ExNDBiZDU0NTQ3MDhiYjRkOTA2MzZmZTc4Y2RhYTMyOTAwODA3NzQxM2I5NDlmMWVlMmU4OGUifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/message.py#L84-L97",
+          "version": "repo-lines-v1:sha256:b16272c26f2ffc473c89017f9e0df5b43741768d220b4cfc768a5bf4aef3112d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyNDYwZjM0Y2U2OGViZjk0NjY4ZDAwYjEwZDkxZmM1YmIzZTIzY2E3NDhiN2ZjNjE5MjgzZDAwY2EyNzA2YjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxN2E2YmQyMTc5NjM5NjU3N2NiMWNiNjViZWZhNWY5YmYxNmI0ODc3MjZlODdlMzk5NDI4NTUzYmFlYzI2YWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwMzNkNjM3YzI1ZjIxZTRjOGI3ODhiMTcyYzQ4ZjM3NTMyYjE5MmVkNTc5ZTcyODhmNjYwMDAwYzY1ZTg2OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ec6a9f38939749d79aa741dd6931c2ac",
+      "statement": "FewShotPromptTemplate and FewShotChatMessagePromptTemplate support both static example lists and dynamic selection via example_selector. The _aget_examples() method enables async example selection; selectors must implement both select_examples(input_variables) and aselect_examples(input_variables) methods.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/few_shot.py#L101-L118",
+          "version": "repo-lines-v1:sha256:6b9dfade7aea8541dd54e62b4fd8bd3047f53bb2c3f880dfedfdc9b1166d04f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDg4ZTVmNzBkY2QzOGM4NDkyYTdiZDAxZWFjOTFiMDBjZjlmMjIyZDg2YjJkMDhlNmQ5MWEzN2E2ZTdiYTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2MWUzYmZlZjJjZDZhZjhhZTUyYmYxYzNiYjllM2NiYTViYmYwZDI4ZDg1MTBlM2YzYWFjZGI2MWM4ZGJhNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhNzMzNGNmZWJlYjdjOWZhZmI0ZjdiMWIyN2I2YjIzMTY4ODEwNGE1MmE0OWVhYTFkOThhYjM2NWE0YTU4YzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJjZWE2OTU1YTQ4MzRmYTBmMTdiZGYwNTcyNzc2MDAwYTQ2NTNkOGVlZmIxNjRjNzJmMDUwZjk0ZTIxY2U3ZDMifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/few_shot.py#L208-L234",
+          "version": "repo-lines-v1:sha256:7264d7ac7fb8eec588be043eccbb2f291ec8b53a299c630fef11bc00c9cc8a68:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0ZDYxYjk0YjVkNzFmZTM4YWYzYjZmOWU2NWQ3Y2Q1ZTcxZWM3NjE1NjVmZGUwMTllOTUyZjFjYWZhZmJjMTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YzEzMWE2ZDg2ZGRhNzM2MTA3NGQ2ZWUyZGMxNzM2ZDdhNzRjZjZjMjIzZjMyZDEyMjllYmE2MDg3YjM4MTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg4MjlkOGMyZWQ5M2MzMDU2MzJjNWJmMzlmOTJhMTRkN2QyMjYyZmJjNzM2ZDBhYmVhNzg4YjA0NzI0NzJhMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2Nzg5ODU5N2E2MDA0MjNkZGNkOWQxMmU0MTUyYTU3ZDQyOGIwYWUyNmNhNTNhYzhjM2VmZTllNTk2MmU5MTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e8349713a8d74b5f9ff5d9a93b02393c",
+      "statement": "_StringImageMessagePromptTemplate (base for HumanMessagePromptTemplate, AIMessagePromptTemplate, SystemMessagePromptTemplate) formats multimodal content including both StringPromptTemplate, ImagePromptTemplate, and DictPromptTemplate instances into message content arrays with type/text and type/image_url entries.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/chat.py#L597-L648",
+          "version": "repo-lines-v1:sha256:5e08dc91af9229ae9dca43879cd18ba6c3fe5782c2d1f5d637f9c241ad74f3c2:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxODliM2VjN2ViZmI2Mzc3YWQ3YWUxMmNlZjc3MDBhNTQ4NGVjOWJjZTg1YzUzZjBiNTIxMWNiZDJhYTlkOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc3MTJjODQ3OGU2ZDA0MzU0NzEzYjZhNWZjMjdhODNiNGQxYTIxNjc1YTgxMGMxYThkNTA2M2Y3ZjUyMGRkYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkzMzc1NzBiOTk5OGRhMjQzMzYxMmQ5OGJhN2UxMGY2MWI4MTRiN2M3OTY1ODVjMzgyM2ZjZDBhYzI1Y2M0NDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_44b6b1f0cd8a4b7a8540664c0eff3966",
+      "statement": "When a ChatPromptTemplate has exactly one input variable, invoke() automatically wraps non-dict arguments as a single-key dict. This enables passing raw values directly instead of requiring dict construction for single-variable templates.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/chat.py#L871-L898",
+          "version": "repo-lines-v1:sha256:20b844138db12de0c40c2f730235217936bb1dd770077379a1990b0e168fe88e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhNzc4Y2RkMmM3NmNmNWRjYjYwM2M4N2JmZDk1ZTNmYTQ4YjRiMThkNmExNzE0OTAyNDc5NDA0ZGM5M2Q3NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZWY2ZDQ3NjI3Yzk4YzFjYWFkYTM4MDMzZDQzZTEyYzE5YTA3OTNiN2E5OTNjNWUwYTdmZDdlNjRiMmNmNTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFjYmY5N2EyNWMxZTBmNWFiZjc5NzYwMjY2OGI5NzMxMWE0NzlmNmFjYzk0ODFiNDg4M2EyNjdhN2NiYzc3MjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFjYTM2MDc4Yjc2NGEzOTc2NDZlNzc5ZTQ1NWMwOTJiN2UzNWZiMmYxNGUxOTY0ODAxMjA0NzJmMWVkMWQ1NzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3978d7184802461cacd963821ff06cb3",
+      "statement": "MessagesPlaceholder supports the n_messages parameter to limit how many recent messages are included in the placeholder, enabling token budget management by keeping only the last N messages from conversation history.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/chat.py#L107-L123",
+          "version": "repo-lines-v1:sha256:d27464db6f26cab993d3b9d470ea0402937df0401a35957b205e0f7711333a48:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjNGIyYmQ1NWVmZjE5ZjI0ZTNiNjRhNTQ3M2QyMDI2MjAyNzlmMzM4MTVjM2Q5ZGZhOTM5OWM2ODFjMDc2MzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2ZWY2ZDQ3NjI3Yzk4YzFjYWFkYTM4MDMzZDQzZTEyYzE5YTA3OTNiN2E5OTNjNWUwYTdmZDdlNjRiMmNmNTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE5YjYwMTllM2YxYmI1ZTFjYjRjZDY5N2RkZjYxMzI5NzUwNzUwNmNiMDY2ODNiOTlmNWUwMTFmZDE3YTlmMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1NGQ0NGQ4NjZjOTZkMTk4NGRiZjZhNjgxNWU2ZDkxOTZlNWJlNDQ1YmU3ZGViMjEyYTRjOTFkMjY4MGQ2ODkifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/chat.py#L139-L143",
+          "version": "repo-lines-v1:sha256:b0fc103afff0785aa811f18885230526cb83e09a01c5ab7de6797b862b2428d4:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWZkNzhiM2VmMjE2OTgzM2VjZGI4OTczMWJmMjU3OTFjMzg3M2JiYWRmNDVkMjY4MmE1YjY0NmU4MjU2MzZkNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZhNzE1MjU3MmVlODRmMTA5MDZjNzRiOWYyYTkyNDM0ZGRhYjBlM2M0MjgxM2IwNGU1OTdlZmNlYzk1MWIyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWZiODk2MGVjM2E5OTFmNjczMWQxODczODRkY2MzNWQ1YTBhMTI1MmY4YmYxYzYzZWVjMTEyMDU4NTUwNWNlZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWY4NWExNWU4MTE1ZmUzOTc4M2RkOTUwNjk4ZTIwYjk5YmM4NGUzMmNjYjBkNjQ3MDk3MjlkNWE3ZTI5ZjliNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0aeeac1420794825b0dff5e4761a1c89",
+      "statement": "FewShotPromptWithTemplates provides an alternative few-shot pattern where both prefix and suffix are StringPromptTemplate instances rather than plain strings, enabling complex variable handling in prefix/suffix sections alongside examples.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/few_shot_with_templates.py#L19-L100",
+          "version": "repo-lines-v1:sha256:cbdbcf8e3358493ea5cccc1c135debadc237b0008c7d207868b5ac5a951f03d4:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkYTcwMTcxYThkNzMxMzEwYjY3NjJlZjk2YTIzZjU0MjlkNzg4MjZiNzcxMGZjODZlYTAyMzNiNWIxMzE4MjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMjJmMDA4MjAxZWVjMWZjZjY2MjUwYTM2ODAyNjRhN2FmMTBhYzNlNzg1OTMxMDkwMGI5ZDA5ODNkNTdkNTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU4MDUzNzAyYzBjYmFkNWY2NmIyMzk4NTg2OTJmMzE1NGUwZTU3NDVjZGM2ODY1ZDBkMTgwODlmYmMwYTMxNTkifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-28T08:35:20.640Z"
+    "at": "2026-10-17T08:22:12.940Z"
   }
 }
