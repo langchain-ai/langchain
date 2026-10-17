@@ -14,6 +14,8 @@ sources:
     resource: repo://libs/core/tests/unit_tests/fake/callbacks.py
   - id: openwiki-source-e8916b46b41eee662deabd17
     resource: repo://libs/core/tests/unit_tests/fake/test_fake_chat_model.py
+  - id: openwiki-source-2193cdb0cca8a2a00fb054af
+    resource: repo://libs/core/tests/unit_tests/language_models/test_compat_bridge.py
   - id: openwiki-source-f0e376fe9b6befdcc2505465
     resource: repo://libs/core/tests/unit_tests/pydantic_utils.py
   - id: openwiki-source-344bd4b667096c3c45c8fa82
@@ -42,10 +44,10 @@ sources:
     resource: repo://libs/standard-tests/langchain_tests/unit_tests/embeddings.py
   - id: openwiki-source-a6b31954b6df57580d0f3ed0
     resource: repo://libs/standard-tests/langchain_tests/unit_tests/tools.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-17T08:22:12.940Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-16T08:25:55.096Z
+    at: 2026-10-17T08:22:12.940Z
 ---
 
 ## Overview
@@ -1027,6 +1029,88 @@ make coverage
 # - term-missing (terminal output with uncovered lines)
 ```
 
+## Streaming and Event Testing
+
+The compat bridge (`langchain_core.language_models._compat_bridge`) converts chunk-based streaming to event-based protocols. Tests in `test_compat_bridge.py` demonstrate streaming feature validation:
+
+**Key Compat Bridge Functions**:
+
+- `chunks_to_events()`: Converts `ChatGenerationChunk` stream to protocol event stream
+- `achunks_to_events()`: Async variant
+- `message_to_events()`: Converts finalized `AIMessage` to event sequence
+- `_finalize_block()`: Normalizes chunk blocks (text, tool_call_chunk, server_tool_call_chunk) into protocol blocks
+
+**Example: Testing Multi-Chunk Tool Calls**:
+
+```python
+from langchain_core.language_models._compat_bridge import chunks_to_events
+from langchain_core.outputs import ChatGenerationChunk
+from langchain_core.messages import AIMessageChunk
+
+# Test tool call args accumulated across chunks
+chunks = [
+    ChatGenerationChunk(
+        message=AIMessageChunk(
+            content="",
+            tool_call_chunks=[{
+                "index": 0,
+                "id": "tc1",
+                "name": "search",
+                "args": '{"q":',  # Partial JSON
+            }]
+        )
+    ),
+    ChatGenerationChunk(
+        message=AIMessageChunk(
+            content="",
+            tool_call_chunks=[{
+                "index": 0,
+                "id": "tc1",
+                "name": "search",
+                "args": ' "test"}',  # Complete JSON
+            }]
+        )
+    ),
+]
+
+events = list(chunks_to_events(iter(chunks), message_id="msg-1"))
+# Verifies proper message-start, content-block-start/delta/finish, message-finish sequence
+assert events[0]["event"] == "message-start"
+assert any(e["event"] == "content-block-delta" for e in events)
+assert events[-1]["event"] == "message-finish"
+```
+
+**Testing Content Block Transitions**:
+
+When a model streams multiple distinct blocks (reasoning, text, tool calls), the compat bridge tracks block transitions with stable wire indices:
+
+```python
+def test_reasoning_and_text_blocks():
+    """Test that reasoning and text blocks get separate lifecycle events."""
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "reasoning", "reasoning": "hmm", "index": "rs_a"}]
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "text", "text": "answer: ", "index": "txt_1"}]
+            )
+        ),
+    ]
+    
+    events = list(chunks_to_events(iter(chunks), message_id="msg-1"))
+    
+    # Each distinct block gets its own content-block-start and content-block-finish
+    starts = [e for e in events if e["event"] == "content-block-start"]
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    
+    assert [s["content"]["type"] for s in starts] == ["reasoning", "text"]
+    assert [f["content"]["type"] for f in finishes] == ["reasoning", "text"]
+    assert [s["index"] for s in starts] == [0, 1]  # Sequential wire indices
+```
+
 ## Key Test Infrastructure Files
 
 - **conftest.py** (`libs/core/tests/unit_tests/conftest.py`): Shared fixtures, markers, blockbuster configuration
@@ -1034,6 +1118,8 @@ make coverage
 - **agents/model.py** (`libs/langchain_v1/tests/unit_tests/agents/model.py`): `FakeToolCallingModel` for agent testing without API calls
 - **agents/any_str.py** (`libs/langchain_v1/tests/unit_tests/agents/any_str.py`): `AnyStr` class for matching strings with prefixes independent of exact values
 - **agents/messages.py** (`libs/langchain_v1/tests/unit_tests/agents/messages.py`): Helpers like `_AnyIdHumanMessage` for message matching
+- **language_models/test_compat_bridge.py** (`libs/core/tests/unit_tests/language_models/test_compat_bridge.py`): Tests for chunk-to-event conversion, streaming lifecycle, and protocol compliance
+- **language_models/test_chat_model_v3_stream.py** (`libs/core/tests/unit_tests/language_models/test_chat_model_v3_stream.py`): Tests for `stream_events(version="v3")` with ChatModelStream
 - **stubs.py** (`libs/core/tests/unit_tests/stubs.py`): Helper functions for message testing with wildcard IDs
 - **pydantic_utils.py** (`libs/core/tests/unit_tests/pydantic_utils.py`): Schema normalization for cross-version Pydantic compatibility
 - **fake/callbacks.py** (`libs/core/tests/unit_tests/fake/callbacks.py`): FakeCallbackHandler for tracking events

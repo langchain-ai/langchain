@@ -8,6 +8,8 @@ sources:
     resource: repo://.pre-commit-config.yaml
   - id: openwiki-source-1c233fccf5a66b84d0045366
     resource: repo://libs/core/langchain_core/callbacks/manager.py
+  - id: openwiki-source-a9d15707c8dcabbe5cf98edb
+    resource: repo://libs/core/langchain_core/language_models/_compat_bridge.py
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
   - id: openwiki-source-b32b84365d17276620c41ebc
@@ -20,6 +22,8 @@ sources:
     resource: repo://libs/core/langchain_core/tools/base.py
   - id: openwiki-source-3486a94e6eb23a78271a5bfb
     resource: repo://libs/core/pyproject.toml
+  - id: openwiki-source-2193cdb0cca8a2a00fb054af
+    resource: repo://libs/core/tests/unit_tests/language_models/test_compat_bridge.py
   - id: openwiki-source-a690cf632a02205e3f555be8
     resource: repo://libs/core/tests/unit_tests/test_tools.py
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
@@ -46,17 +50,17 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
   - id: openwiki-source-bd29e79613d5f366a00068f5
     resource: repo://libs/standard-tests/langchain_tests/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-16T08:25:55.096Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-17T08:22:12.940Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-16T08:25:55.096Z
+    at: 2026-10-17T08:22:12.940Z
 ---
 
 ## Overview
 
 This page provides a quick reference for locating code by topic in the LangChain monorepo. The repository is organized as a multi-package workspace with a three-layer architecture: **langchain-core** (base abstractions), **langchain** (orchestration and agents), and **partners** (provider integrations). Use this map to navigate directly to the code responsible for a given concept.
 
-**Current Versions**: langchain-core v1.6.11, langchain v1.4.6
+**Current Versions**: langchain-core v1.6.12, langchain v1.4.6
 
 ## Concept-to-Path Mapping
 
@@ -66,6 +70,7 @@ This page provides a quick reference for locating code by topic in the LangChain
 | **Agent Middleware** | `repo://libs/langchain_v1/langchain/agents/middleware/` | Pluggable hooks for model calls, tool invocation, and lifecycle events (retries, human-in-loop, redaction, etc.) |
 | **Chat Models** | `repo://libs/core/langchain_core/language_models/chat_models.py` | `BaseChatModel` abstract base and unified provider interface for streaming, batching, and token counting |
 | **Chat Models (Core Interfaces)** | `repo://libs/core/langchain_core/language_models/` | Base language model classes, fake models for testing, and compatibility bridges |
+| **Compat Bridge** | `repo://libs/core/langchain_core/language_models/_compat_bridge.py` | Converts `AIMessageChunk` streams to protocol events, handling content-block deltas and message lifecycle events for streaming standardization |
 | **Chat Models (Partner Implementations)** | `repo://libs/partners/*/` (e.g., `openai/`, `anthropic/`, `ollama/`) | Provider-specific implementations: ChatOpenAI, ChatAnthropic, ChatOllama, etc. |
 | **Decisions (OpenAI)** | `repo://libs/partners/openai/langchain_openai/decisions/` | OpenAI structured outputs API integration for deterministic response marshaling and routing |
 | **Callbacks & Tracing** | `repo://libs/core/langchain_core/callbacks/` | Callback manager, base handlers, streaming output, and LangSmith integration |
@@ -94,7 +99,7 @@ This page provides a quick reference for locating code by topic in the LangChain
 
 ```
 /libs/
-├── core/                           # langchain-core: Base abstractions (v1.6.11)
+├── core/                           # langchain-core: Base abstractions (v1.6.12)
 │   ├── langchain_core/
 │   │   ├── language_models/        # BaseChatModel and language model abstractions
 │   │   ├── messages/               # Message types and content blocks
@@ -189,6 +194,7 @@ This page provides a quick reference for locating code by topic in the LangChain
 - **Tools**: `repo://libs/core/langchain_core/tools/base.py`
 - **Prompts**: `repo://libs/core/langchain_core/prompts/`
 - **Callbacks**: `repo://libs/core/langchain_core/callbacks/`
+- **Streaming (Compat Bridge)**: `repo://libs/core/langchain_core/language_models/_compat_bridge.py` for AIMessageChunk-to-protocol-event conversion
 
 ### Finding Tests
 - **Core abstractions**: `repo://libs/core/tests/`

@@ -5,7 +5,7 @@ okf_version: "0.2"
 # Files
 
 - [Agent Execution Flow and Loop Control](agent-execution.md) - Traces the runtime lifecycle of an agent from user input through model invocation, tool dispatch, and loop termination conditions, with detailed state management and middleware integration points.
-- [Agent Factory and create_agent](agent-factory.md) - The agent factory constructs state machines that orchestrate conversation flow between a language model, tool execution, and middleware layers. The create_agent function handles tool binding, structured output, state schema resolution, and graph compilation.
+- [Agent Factory and create_agent](agent-factory.md) - The agent factory constructs LangGraph state machines orchestrating conversation flow between a language model, tool execution, and pluggable middleware layers. The create_agent function handles tool binding, structured output, state schema merging, and graph compilation with middleware node chaining.
 - [LangChain System Architecture](architecture.md) - High-level decomposition of the LangChain framework into three layers: langchain-core (abstractions), langchain (orchestration and agents), and partners (provider integrations), showing dependencies, component responsibilities, and extension boundaries.
 - [Callback System and Handler Integration](callbacks.md) - Document the callback handler architecture, integration with runnables and chat models, and patterns for tracking execution events, streaming, and instrumentation.
 - [Chat Model Interface and Lifecycle](chat-models.md) - Document BaseChatModel protocol, input/output handling, streaming, and integration points with callbacks and model profiling. Covers the init_chat_model() factory, provider registry, and model instantiation.
@@ -23,7 +23,7 @@ okf_version: "0.2"
 - [LangChain Repository Quick Start](quickstart.md) - Entry point for engineers: orient to the monorepo structure, run first tests, understand what to edit for common tasks, and route to major development areas.
 - [Runnable: Core Composition Layer](runnables.md) - Explain the Runnable protocol and how it enables composable chaining of LLM components through the LangChain Expression Language (LCEL).
 - [Source Map: Repository File Organization](source-map.md) - Quick reference for locating code by topic, mapping LangChain concepts to their implementation paths across the monorepo including core abstractions, agents, middleware, partners, and configuration files.
-- [Streaming: Token-by-Token Output](streaming.md) - How streaming works across LLM components and chains, token-by-token delivery via AIMessageChunk, callback integration, and memory/latency tradeoffs.
+- [Streaming: Event-Driven Output](streaming.md) - How streaming works across LLM components and chains, token-by-token delivery via AIMessageChunk, protocol event translation, callback integration, and real-time feedback patterns.
 - [Structured Output and Response Formatting](structured-output.md) - Document the structured output system: response format specification, strategy selection (auto, provider, tool-based), parsing, validation, and middleware integration.
 - [Tools and Tool Binding](tools.md) - LangChain's tool system enables agents and language models to execute structured actions through schema-aware components with automatic validation, error handling, and callback integration.
 - [Unit Testing and Mocking](unit-tests.md) - Guide to writing unit tests: test structure, mocking chat models, fixtures, assertions, and test coverage for agents and components.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:65f906ea13a560a244a94274e39853d77724d9155f5b1d7f6a03cf63bd4401a0",
+  "pageVersion": "sha256:31f7ac418f61c3d1208be128485d401363ee3ecebdbd03c6d8830eca88fff30b",
   "claims": [
     {
       "id": "claim_bdde90f4e5f6413f8214fe7e80b66a9a",
@@ -249,10 +249,24 @@
           "version": "repo-lines-v1:sha256:ab8103f9ee7c85d9fb1c9d3d0cbe6264d1384aac292f90c74f84c77c06ed5398:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDliMzBjZTkzZjhkMmVlNmQ2NDdlYjNhN2RhYjQ0NjRiNWQ5Yjc5ZGExOTI4ZGE2MDY4MDQ3M2QyY2Y0ZTY4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ2M2RlMzg2ZTA3OTFhZGQ1MmUzZjZlM2EwOWYyYmY2NDhmZTQzMTMxOGUxOTE1YjdlNWRlOTlmN2E1ODQ1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzgzNzQ1ZTU1YTIzYmI0MzZjYTUxMGFiMTgwNGQyODMwMjhhNTJlNzc5MjE5YmNlNzAyODRkOWY3YjEwMDcxMCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_a36569796cb54b9797b7d58bfa3b40cc",
+      "statement": "The compat bridge module (langchain_core.language_models._compat_bridge) provides chunks_to_events, achunks_to_events, message_to_events, and _finalize_block for converting chunk-based streaming to protocol event streams, with tests in test_compat_bridge.py validating multi-chunk tool call accumulation, content block transitions with stable wire indices, and proper message-start/content-block-delta/message-finish lifecycle sequences.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/language_models/test_compat_bridge.py#L1-L100",
+          "version": "repo-lines-v1:sha256:731ea8ee32904c2a0ac784a0ae8daf9dbfd53a2828935b77d037150ac82cf2f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyNWRiYjkwNzIyNDc5NGQ0MzRhYjVlMmY5ODI2MmNhNmJjOWY4NmQ4NmU5ODM2NmNkNDVmZWU3ZTZlYWMyODVhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5NDk2OGY1YTZiZWZkYTRhOGNkZTM4YzQ0ZjI0NjIyZDZjYjk2NDZkN2JjYzMwNWI1NzE0NTdmZGI2NDcxMGFhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjNWNiNmYzMWU3NTNkNGExZjVlNTU4MjM3NGM1ZTdiNGY0NGJiNmNlM2YxYjVmNDQwMjJmY2Q4Y2RiZDI5ZDJiIn0"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/language_models/test_compat_bridge.py#L151-L270",
+          "version": "repo-lines-v1:sha256:a408d2e0660acfee1924065c5bfa4cd3d314052193f88a1e3e8e68a846b86d8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3MzI1MjEzNmMwZmFlNWRmNGZkNmQ0OTMwMDEzMzc1YjVhNzNjZWFhODIzYTgxZTc2NGU4YTljNTMyZjgzMjliIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwODI2NzZjODg4YzFhNGQ5ZmE3NzJmY2RjMzAyZjc3M2JjNzI5MGVlYmZmOWRhMzZhMzlmNDRjMzIxMTk4Mzg1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyYjE0ZGQ5Yjk2MTFjMDQxZjgyMjJlNDZhODZiZGFiZjEwNWJjODdmNGJlZmJlN2NjMWJmYTI5OGJjMWNlNjhkIn0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-16T08:25:55.096Z"
+    "at": "2026-10-17T08:22:12.940Z"
   }
 }

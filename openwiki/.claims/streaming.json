@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2de6aba507dba1baae1391c75deecbbcaa023c038ca1aedf859e19eafb44bf2f",
+  "pageVersion": "sha256:968b672eb5933bcbc5310c6434cfa3604c1f878579e8747522ae1182eb910797",
   "claims": [
     {
       "id": "claim_87d5d462354440a7bccb6dbe992c60d3",
@@ -209,10 +209,86 @@
           "version": "repo-lines-v1:sha256:ad25efc0b9dde129f68999de4a00b228f4ebcdb5e3c41d1f5d86a71690598a81:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQ2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiZWUyODI4YWI5ODNjODVkZTdkOWUxOGNlZjVhYTQzZGY0MTJiYmRiY2FiMDc3ZjdmMDEzYjUzZWQ3ZTRlNzM3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlMGFjYmYwOTdlMWU4NjZmNGJlMzE5MjU3YmI0OWQ5OGQ1NWQwMWY4MTcxN2IzYzIyNTMwNDQ5NWYzNDMwMjZkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjYmVjNzljZDAzZDA2YmE2ZmU3MDBlMDhiZDA0ZjFmMDA0ZDFkZTg0ODMzMzMwN2U2ZGE5YTJlZjcyZTZmODZmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxODQwYjI2ZmUzZWI2OTY1MDNhZDY4ZmJmMTg5ZmU4ODAwYjQ3NzRkYmYzZGIzYWZmM2Q4YzBjMTA4NDg1ODVlIn0"
         }
       ]
+    },
+    {
+      "id": "claim_3e0ace0e9ef84daea2fc4361e21843fb",
+      "statement": "The _compat_bridge module converts streams of AIMessageChunk chunks into a structured protocol event lifecycle. The bridge tracks blocks by source-side identity (block index), assigns sequential wire-level uint indices, emits content-block-delta events for per-chunk deltas, and accumulates state for content-block-finish events. Core APIs are chunks_to_events() / achunks_to_events() for live streams and message_to_events() / amessage_to_events() for replaying finalized AIMessage objects.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/_compat_bridge.py#L1-L50",
+          "version": "repo-lines-v1:sha256:d5047e25e13e143201fd85d28e1be7cc09ae544911fb5ecbc3d3cd97d34b2de5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4MWVkMWM4NDVhZTBiMTA3MTM0YmMyMzI5NDU5NGEwNjJhNGZhYzBjOWQ5YjczNDY4NWVhOTMzNDUxMGE0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFjZjAwOTgwYmJlOGI3Y2U2Y2MyNWJjNDllMGQ4MDlmMWE5NmFlNWU1OTFjNjRmZWU2ZTJkMjZiM2UxNWVmYTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzMDUyNjFhMWI2YTM2NWU4NjFlMTdiMzg4NTFiY2I4MjhhMzQ1MGRiMjI1N2E1NWMzYTZjNzAyMzNhZDViOTkifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/_compat_bridge.py#L596-L701",
+          "version": "repo-lines-v1:sha256:411b3b7ab479be7cb8ab659e73eaf3977f0f34c7e6f80c219b22d889b7f34263:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkOWNlZjhlNDZmYjJjMzE4NjdjZDViYTk4MjU4M2ExM2IxZDU4NWI5ZDg0Y2YzOWRmZjAyYTFlMjI1MTBlOTQ2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwODI2NzZjODg4YzFhNGQ5ZmE3NzJmY2RjMzAyZjc3M2JjNzI5MGVlYmZmOWRhMzZhMzlmNDRjMzIxMTk4Mzg1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0MDJlYWRiYTU5YTM2OWY1OGNlNTk5ODc0NDdhZWE1YjgzNjc0MGU5MGMxZTY2MDMzNmQ1ZjZjNzliNWNkZTc1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_8bcc007f058d4225a1f97a7c8bfab3cc",
+      "statement": "The protocol event lifecycle is: message-start (once, with provider metadata) -> content-block-start (per new source block index) -> content-block-delta* (per chunk carrying delta slice) -> content-block-finish (after all chunks, carrying finalized state). Protocol events are MessagesData TypedDicts carrying event type, index, content blocks, usage, and metadata. Message-finish fires once at stream end with accumulated usage and response metadata.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/_compat_bridge.py#L17-L32",
+          "version": "repo-lines-v1:sha256:46b4e836dfd3160e8148e7fa7a1def1d4ea4a0a7f9357ecf283c4abd5af6165b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjMTE4MGJhNzFiYmE2MzAzZWE2NDkyYTY1ZGM5MjVjMDY0OThmOTI0YTU3NGI4MWQ3YWEwZTBjNjMwOTVjMmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhMzk2NjY1YjgxOTE2YjYyYTgzMjQ1Mjc0YWIyNTljNDkxZGU3N2Q3ZGE5ZWU5NjhhZmM0MjA3NDU2YjM1MWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/_compat_bridge.py#L536-L589",
+          "version": "repo-lines-v1:sha256:d8a84626c1d87464d2283befbd6ba9af09282aac9206c39f1d3007d63018d9d3:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiZTZiYzFkZjcwYWYyNWE1MzY5ZmU2NWMxNDI1Mjk3NzU1NjE2NmE0NmM2MzM5ZGVkYTUxZDIxMDhjYjBhYTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4MjY3NmM4ODhjMWE0ZDlmYTc3MmZjZGMzMDJmNzczYmM3MjkwZWViZmY5ZGEzNmEzOWY0NGMzMjExOTgzODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI5NWJmNTk0NWZmNzE3NWI2MDgwYWFiZWZlNjkwZGFiYThkZDAwZjE3NmQ4OTJlMWU5ODMxZDQxNTNhY2ZjMzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c35232696791463f98665cc0d067178b",
+      "statement": "The finalize_tool_call_chunk() function promotes incomplete tool_call_chunk blocks to finalized tool_call blocks by parsing accumulated argument JSON. On successful JSON parse, it emits a tool_call block with parsed args dict. On JSON parse failure, it emits an invalid_tool_call block carrying the raw string and error message, allowing downstream consumers to introspect malformed payloads.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/_compat_bridge.py#L365-L427",
+          "version": "repo-lines-v1:sha256:ebe93c9b98f8550fbde2e30d7761b29ff161a4b81bca34dac89d88f62bca527c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5YjQ2ZGZhNjNhM2JlYjVmZTQ2ZDMxMDk5N2EzMzc5ZDBjMTVhODAzYjA2MTc5MTZjYWU1N2FkZWIyMWZlMjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYzg1MjQ3ZTdmNDdhNDgyM2QxODZjNzZkNDIzMzNmOTE2ZWVkODI2MTA0MzNkMmFiNzlkMTM2M2IxYjg0MjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYzMzhhODcyNjJjODVhNmQ2YTcwZDJiMjExY2ZiYzg3NTk5MTNiNjg0NzAxMjIzYTlkYmUxMjE3Zjk4MjZmMWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5NjdjMGZkODk5MGE0YWI1NjA1NzcxZmM5MjVhMWY1YjI3ZjljZjljZjFkOWIxNGI3NDUyYzIwNTY1ZDRlOWQifQ"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/language_models/test_compat_bridge.py#L56-L82",
+          "version": "repo-lines-v1:sha256:ed7e6e070088ccb621d4226f2ce6d3e301fa7eb999f1cad30de4764ccf5d0c38:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NTM1MTcxYTliNjRkZWM3ODdiNWEyYWI2OTgyM2QzZmQ4NzE5YjA0OGE1ZTAwMjQ2ZmNlZTM4NzdiMDg1MzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzOTE4MDQwMjVmNTczZTE3ZTYyY2JjMzAwOWYyYmViYjdhNmQzOTIyZGY0Njk3NTc3NzNhYWZiNjE2ODg4MmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2ZDU1ZTZiNTNhOTBmYjQ3MmVkZmYyODNkYjBmN2I3OWNkODY4OWYwM2U4YTFkZjIzNjhkZDc3NDBmZGNjOTAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7fa453abf47344d79f200e3e78190753",
+      "statement": "ChatModelStream (returned by stream_events(version='v3')) exposes typed projection properties: .text (SyncTextProjection) for text deltas, .tool_calls (SyncProjection) for tool call chunks, .reasoning for reasoning blocks, .usage for token usage, and .output (AIMessage) for the assembled message. Each projection implements pull-based backpressure via _request_more() callback, allowing consumers to pace the producer and preventing unbounded memory growth.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_model_stream.py#L556-L610",
+          "version": "repo-lines-v1:sha256:e0ccd4000335d48f98589212a934a517188c6fdfab80f3572c072b681cf763e3:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyZjBkYTg2ZmUxOGNkODdhMDgwY2ZhZTBhN2FjZWVkYzIyM2I4ZmE4ZjlhMWJiZTIxZWZlNmYxZGRjMjJlY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMxYjE3MzZkYTM0OTFmOGMxNzViNDNiZjgxM2IwYjdkNGZkYWJhODU0Y2ExMDZiMmE0NmZjMjZmMWRjOGE3ZTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4MjY3NmM4ODhjMWE0ZDlmYTc3MmZjZGMzMDJmNzczYmM3MjkwZWViZmY5ZGEzNmEzOWY0NGMzMjExOTgzODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmMWVkODA2OWQ0Njk2MmM4YjA4NzI3Yjc4Yjk2NmIzNjE1YmQxMzQxZTQ0MTkxNjYzNGVkMGUxZDdjYWFkYmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e1ea55c0c8624bcb91d1ef3b7f96779d",
+      "statement": "ChatModelStream.dispatch(event) routes protocol events to internal handlers: message-start pushes to _push_message_start(), content-block-delta to _push_content_block_delta(), content-block-finish to _push_content_block_finish(), message-finish to _finish(). Dispatch accumulates state (text per block, tool calls, usage) and completes projections when message-finish arrives, assembling an AIMessage from finalized blocks.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_model_stream.py#L663-L684",
+          "version": "repo-lines-v1:sha256:3c2ac26074eb0a33a62e1527ce5358e531aeded4ce79ba61cee119d170b3849a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwNjNlODMxZTM1MDVlYTM2N2Q0ZmIwZDhlM2JkNzE1YzI0ZWE0ZmMyMGVlYThhYzVmZjJjM2JlN2FkNTVjMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0YWI2NjM2ODk3ODllZTJkOTNlYTk3YmQ3NzgwOWVmOTAzOGMyNWM5ZDQ0YTU4MTEyMjRhZDg1MWM2YWEzZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExNzU4ZmRiN2YzYjI2MTVkYTIxNjgxZDdiMzY5NDY0MWFhZTI0ZDMwZmZmMTdjYjYyM2ZiYTQ5Y2M5MWFkMzMifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_model_stream.py#L978-L1030",
+          "version": "repo-lines-v1:sha256:a9c2060a434b7cd714a6f669139ebcabde1f115550cca187cc422981d2118c83:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzNzFiYTY5ZGMyZTBmMTU1NDIzNGZkM2Q1Y2JmYTk3Zjk2NWI1Mzc3ZWI1NzdjNDI0OGUzY2FkZGUxZWE0NDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkZjUzNjkwYTNmZDkxZmQwZmYzM2IzNWQzNzkyNjg4N2RmY2U3MWFjNTNhODdhY2QwMzEyYjA3OTM3MzRlNWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhY2IyMjNlM2ZmMWE3YjJiOGNkN2E0YTYyMzBhOTE0ZDZhODNjZWJkNjcwNTNiMzU4ZTBmODBhMmZlNmM1ZWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjOTY0ODYyYTU5ZjNmNThhMzM4MzI4YjZlZWI1NjVhNzI2NWQ4ZTYxOTljMDM4ZDc4OTdlMjZmNjE1N2JlNWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5e36a3b567c64ccbbc7bbd461ea3ff5b",
+      "statement": "Protocol content-block-delta events carry structured delta types: text-delta ({type: 'text-delta', text: '...'}), reasoning-delta ({type: 'reasoning-delta', reasoning: '...'}), data-delta for binary/modal payloads, and block-delta for tool-call-chunk fields. Text and reasoning deltas accumulate per block; tool call and data deltas are finalized at content-block-finish.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/_compat_bridge.py#L118-L143",
+          "version": "repo-lines-v1:sha256:112f02065a02908e09798bcb7c20a5e245e8f4dfaf8dbd5912174839dd11a920:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM4YTQ2YmYyMTEzYTQyNGQ0MTk5ZmFkMDFlZmJhOWQyMjE4YmQ5YzlkZDZiOTRiY2Y0ODZhMjYwNDQ5MDQyMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiM2M4MmJhOWUxNzEzZTNhMDNkZThkOTMyZDdlZjQwYzA2MmQxMjg2MmVlOWMzNjgxMjVhMjQ4YTlmYmY0YTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhYzhlZTEyMDViNjE3M2I0ZWYyYjMwMzg3OWFhMmRhYTk2NzczYWMzMGIwNmNlMDMzNTRiMDM2NmUwNmQzY2MifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-16T08:25:55.096Z"
+    "at": "2026-10-17T08:22:12.940Z"
   }
 }

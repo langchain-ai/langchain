@@ -14,23 +14,31 @@ sources:
     resource: repo://libs/core/langchain_core/prompts/base.py
   - id: openwiki-source-15fdd645c1ee76ae559799c1
     resource: repo://libs/core/langchain_core/prompts/chat.py
+  - id: openwiki-source-86a0acfe0b2a633a81e54549
+    resource: repo://libs/core/langchain_core/prompts/dict.py
+  - id: openwiki-source-84508ab3c1ec7e3752ffca7f
+    resource: repo://libs/core/langchain_core/prompts/few_shot_with_templates.py
   - id: openwiki-source-bc32774051e0e8a931a6fecd
     resource: repo://libs/core/langchain_core/prompts/few_shot.py
+  - id: openwiki-source-c90241f4e6facb853f05d8e4
+    resource: repo://libs/core/langchain_core/prompts/image.py
+  - id: openwiki-source-40344690a40ad68a9d5ec313
+    resource: repo://libs/core/langchain_core/prompts/message.py
   - id: openwiki-source-5549894302ea4dfd5b8f4278
     resource: repo://libs/core/langchain_core/prompts/prompt.py
   - id: openwiki-source-cf81d0ba0a387a7cd9b5dfb8
     resource: repo://libs/core/langchain_core/prompts/string.py
   - id: openwiki-source-204b5e61a019044332bd2dd4
     resource: repo://libs/core/langchain_core/prompts/structured.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-03T15:18:34.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-17T08:22:12.940Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-17T08:22:12.940Z
 ---
 
 ## Overview
 
-LangChain's **prompt templating system** provides a flexible, composable way to construct messages for language models. Prompts accept input variables, format them into message sequences, and optionally parse structured output. The system distinguishes between **string templates** (for raw text) and **chat templates** (sequences of typed messages). **Few-shot prompt templates** add the capability to select and inject examples dynamically, teaching models by demonstration.
+LangChain's **prompt templating system** provides a flexible, composable way to construct messages for language models. Prompts accept input variables, format them into message sequences, and optionally parse structured output. The system distinguishes between **string templates** (for raw text), **chat templates** (sequences of typed messages), and **multimodal templates** (combining text and images). **Few-shot prompt templates** add the capability to select and inject examples dynamically, teaching models by demonstration. All prompt types are composable **Runnable** objects, enabling seamless integration into chains and supporting streaming, batching, and asynchronous execution.
 
 ## Fundamental Concepts
 
@@ -113,6 +121,36 @@ Supported message types in the shorthand syntax:
 - `format_messages(**kwargs)`: Returns a list of `BaseMessage` objects.
 - `invoke(dict)`: Runnable interface, returns `ChatPromptValue` containing formatted messages.
 - `format(**kwargs)`: Converts message list to a single string (useful for debugging or non-chat APIs).
+
+#### Multimodal Message Templates
+
+Message templates support both text and images. Use `HumanMessagePromptTemplate.from_template()` or `AIMessagePromptTemplate.from_template()` with a list of mixed content: text strings, text-only dicts, or image-url dicts. This enables models like GPT-4 Vision and Claude to process visual input.
+
+```python
+from langchain_core.prompts import HumanMessagePromptTemplate
+
+# Text and image in a single message
+template = HumanMessagePromptTemplate.from_template([
+    "Analyze this image:",
+    {
+        "type": "image_url",
+        "image_url": "https://example.com/{image_id}.png",
+    },
+    "Describe what you see.",
+])
+
+result = template.format(image_id="photo1")
+# Message with content: [{"type": "text", "text": "Analyze this image:"}, 
+#                        {"type": "image_url", "image_url": {...}},
+#                        {"type": "text", "text": "Describe what you see."}]
+```
+
+**Key points:**
+- Image URLs use the OpenAI format: `{"type": "image_url", "image_url": {...}}`.
+- The `image_url` value can be a string (for URL templates) or a dict with `url`, `detail` fields.
+- Each image in the template can have at most one variable (no multiple variables per image).
+- Image loading from local `path` is not supported for security reasons; use URLs instead.
+- Only `f-string` and `mustache` template formats are supported for image URLs.
 
 #### MessagesPlaceholder
 
@@ -382,6 +420,35 @@ output = prompt.format(input="fast")
 
 **Behavior:** Examples are iterated in order; the selector stops adding when the next example would exceed `max_length`. This is greedy, not optimal, but fast and predictable.
 
+## Dictionary Prompts
+
+`DictPromptTemplate` wraps a dictionary structure and applies variable substitution to string values. This is useful for constructing structured payloads (e.g., API requests, tool inputs) or preparing data for downstream processors.
+
+```python
+from langchain_core.prompts import DictPromptTemplate
+
+prompt = DictPromptTemplate(
+    template={
+        "type": "text",
+        "text": "Hello {name}",
+        "metadata": {"source": "{source}"},
+    },
+    template_format="f-string",
+)
+
+result = prompt.format(name="Alice", source="docs")
+# {
+#     "type": "text",
+#     "text": "Hello Alice",
+#     "metadata": {"source": "docs"},
+# }
+```
+
+**Behavior:**
+- Variable substitution applies only to string values, not keys.
+- Nesting is supported; substitution is recursive across nested dicts.
+- Only `f-string` and `mustache` formats are supported (not `jinja2`, for security).
+
 ## Structured Output Prompts
 
 The `StructuredPrompt` (beta) combines a `ChatPromptTemplate` with a Pydantic schema, enabling the model to produce JSON output matching a specific schema.
@@ -441,7 +508,7 @@ print(result)
 
 ## Prompt Composition
 
-Prompts compose via the `+` operator, merging messages and variables.
+Prompts compose via the `+` operator, which merges messages, input variables, and partial variables while preserving immutability.
 
 ```python
 from langchain_core.prompts import ChatPromptTemplate
@@ -464,11 +531,24 @@ combined = system + conversation
 result = combined.invoke({"bot_name": "Alice", "user_input": "Hello!"})
 ```
 
+You can also compose message templates with individual messages or other prompts:
+
+```python
+from langchain_core.messages import SystemMessage
+
+system_msg = SystemMessage(content="You are an AI assistant.")
+human_prompt = ("human", "{question}")
+
+combined = system_msg + human_prompt
+# Results in a ChatPromptTemplate with the system message and human template
+```
+
 **Rules:**
-- When combining `ChatPromptTemplate` instances, messages are concatenated.
-- Input variables from both templates are merged.
-- Partial variables are merged; conflicting keys raise an error.
-- Templates must have compatible formats (both f-string, both mustache, etc.).
+- Composing two `ChatPromptTemplate` instances concatenates their message lists.
+- Composing a `ChatPromptTemplate` with a `BaseMessage`, `BaseMessagePromptTemplate`, or string (shorthand for human message) adds that message.
+- Input variables from all templates are merged; duplicates are removed.
+- Partial variables are merged; conflicting keys raise a `ValueError`.
+- The resulting prompt inherits the template format from the left operand.
 
 ## Prompt Loading from Files
 
@@ -502,27 +582,45 @@ prompt_dict = dumpd(prompt)
 # Contains nested structure compatible with loads()
 ```
 
-## Integration with Agent Factory
+## Integration with LLM Chains and Agents
 
-Prompts are a core input to the **Agent Factory** (`create_agent`), providing the conversational context for agent reasoning and tool use.
+Prompts integrate seamlessly into agent and chain architectures through the Runnable interface. They can be piped directly with language models and output parsers, or passed as the `system_prompt` parameter to agent factories.
 
 ```python
-from langchain.agents import create_agent
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+from langchain_core.output_parsers import JsonOutputParser
 
-system_template = ChatPromptTemplate.from_messages([
-    ("system", "You are a helpful weather assistant."),
+template = ChatPromptTemplate.from_messages([
+    ("system", "Extract {entity_type} from the text."),
+    ("human", "{text}"),
 ])
 
-# Or use a simple string
-agent = create_agent(
-    model="openai:gpt-4o",
-    tools=[weather_tool],
-    system_prompt="You are a helpful weather assistant."
-)
+model = ChatOpenAI(model="gpt-4")
+parser = JsonOutputParser()
+
+# Chain with pipe operator
+chain = template | model | parser
+result = chain.invoke({
+    "entity_type": "names",
+    "text": "Alice and Bob went to the park."
+})
 ```
 
-The agent factory internally compiles prompts with the model and tool bindings, managing message flow through the state machine. Middleware can intercept and modify prompts before model invocation via the `wrap_model_call` hook, enabling use cases like prompt optimization or safety filters.
+Prompts also compose via `+` operator with other prompts, enabling modular system instructions, conversation history, and dynamic examples:
+
+```python
+system_prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant. Your name is {name}."),
+])
+
+conversation = ChatPromptTemplate.from_messages([
+    ("human", "{query}"),
+])
+
+final_prompt = system_prompt + conversation
+result = final_prompt.invoke({"name": "Claude", "query": "Hello!"})
+```
 
 ## Security Considerations
 
@@ -560,7 +658,7 @@ prompt = PromptTemplate(
 
 ## Lifecycle and State
 
-Prompt templates are **immutable** in the functional sense: calling `format()` or `invoke()` does not mutate the template. Methods like `partial()` return new instances.
+Prompt templates are **immutable** in the functional sense: calling `format()` or `invoke()` does not mutate the template. Methods like `partial()` and composition operators (`+`) return new instances.
 
 ```python
 original = PromptTemplate.from_template("Say {text}")
@@ -571,7 +669,43 @@ print(original.input_variables)  # ['text']
 print(partial.input_variables)   # []
 ```
 
-This immutability enables safe composition and caching in pipelines.
+This immutability enables safe composition, caching, and parallel execution in pipelines.
+
+## Asynchronous and Batch Operations
+
+All prompt templates support async formatting and batch processing via the Runnable interface.
+
+```python
+import asyncio
+from langchain_core.prompts import ChatPromptTemplate
+
+template = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant."),
+    ("human", "{question}"),
+])
+
+# Async formatting
+async def process():
+    result = await template.ainvoke({"question": "What is AI?"})
+    return result.to_string()
+
+output = asyncio.run(process())
+
+# Batch processing
+inputs = [
+    {"question": "What is AI?"},
+    {"question": "What is ML?"},
+]
+results = template.batch(inputs)
+# Returns a list of ChatPromptValue objects
+```
+
+**Methods:**
+- `invoke(dict)`: Synchronous formatting; returns `PromptValue`.
+- `ainvoke(dict)`: Asynchronous formatting; returns `PromptValue` as a coroutine.
+- `batch(list[dict])`: Format multiple inputs in a batch.
+- `stream(dict)`: Rarely used for prompts; typically used downstream in chains.
+- `astream(dict)`: Async streaming variant.
 
 ## Observability and Tracing
 

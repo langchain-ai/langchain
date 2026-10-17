@@ -40,10 +40,10 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
   - id: openwiki-source-48ce5ee900993294d349b4e8
     resource: repo://libs/standard-tests/langchain_tests/__init__.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-16T08:25:55.096Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-17T08:22:12.940Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-16T08:25:55.096Z
+    at: 2026-10-17T08:22:12.940Z
 ---
 
 ## Welcome to LangChain Development
@@ -60,7 +60,7 @@ LangChain is organized as a **three-layer architecture** in `/libs/`:
 
 ```
 /libs/
-├── core/              # langchain-core (v1.6.11): Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
+├── core/              # langchain-core (v1.6.12): Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
 ├── langchain_v1/      # langchain (v1.4.6): Agent orchestration, factory, middleware
 ├── partners/          # Provider-specific integrations (OpenAI, Anthropic, Ollama, etc.)
 ├── standard-tests/    # Shared test suites for component conformance
@@ -73,7 +73,7 @@ LangChain is organized as a **three-layer architecture** in `/libs/`:
 
 | Layer | Edit when you are… | Key files |
 |-------|-----|-----------|
-| **core** | Adding or modifying base abstractions and core interfaces: `Runnable`, `BaseChatModel`, messages, tools, prompts, callbacks, output parsers. | `libs/core/langchain_core/` |
+| **core** | Adding or modifying base abstractions and core interfaces: `Runnable`, `BaseChatModel`, messages, tools, prompts, callbacks, output parsers. Includes streaming event conversion via `_compat_bridge` (converts `AIMessageChunk` to protocol events). | `libs/core/langchain_core/` |
 | **langchain_v1** | Building agent factory features (`create_agent`), middleware composition, model initialization (`init_chat_model`), or high-level orchestration. | `libs/langchain_v1/langchain/agents/factory.py`, `libs/langchain_v1/langchain/chat_models/base.py` |
 | **partners/{name}** | Adding a new LLM provider (OpenAI, Anthropic, etc.), implementing `ChatModel`, handling message conversion, or adding provider-specific features (streaming, tool calling, structured output). | `libs/partners/{provider}/langchain_{provider}/chat_models/base.py` |
 | **standard-tests** | Defining reusable test suites and test fixtures for evaluating chat models, embeddings, and tools across all providers. | `libs/standard-tests/langchain_tests/` |

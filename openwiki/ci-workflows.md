@@ -3,6 +3,9 @@ type: "Reference"
 title: "CI/CD Workflows: GitHub Actions and Release Process"
 description: "LangChain's GitHub Actions-based CI/CD system automating testing, linting, and release management across a monorepo with intelligent change detection, parallel matrix testing, and strict release gates."
 tags: [ci-cd, github-actions, testing, linting, release, pypi, monorepo, automation]
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-17T08:22:12.940Z
 sources:
   - id: openwiki-source-34e57b5a3a0c875639ab72a7
     resource: repo://.github/scripts/check_diff.py
@@ -28,10 +31,7 @@ sources:
     resource: repo://.github/workflows/pr_labeler.yml
   - id: openwiki-source-12805fbf767dc2a3e238645e
     resource: repo://.github/workflows/pr_lint.yml
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-16T08:25:55.096Z
+generated: { by: "openwiki/0.5.0", at: "2026-10-17T08:22:12.940Z" }
 ---
 
 # CI/CD Workflows: GitHub Actions and Release Process
@@ -61,6 +61,8 @@ The workflow begins with a change detection phase:
 5. Outputs are passed as JSON to downstream jobs via matrix strategy
 
 This detection ensures only affected packages are tested, optimizing CI runtime. The script skips the `libs/standard-tests` directory in enumeration and treats certain partners (e.g., huggingface) as CI-unstable, removing them from dependent chains while allowing direct edits to be tested.
+
+**Special triggers**: Infrastructure changes (`.github/workflows`, `.github/actions`, `.github/scripts/check_diff.py`) trigger extended tests on all core packages as a conservative safety measure to catch unexpected side effects from workflow modifications.
 
 ### Linting Pipeline (`_lint.yml`)
 
@@ -235,16 +237,7 @@ Scheduled daily (1 PM UTC) with manual dispatch override capability.
 
 **Credentials**: Receives 30+ environment variables covering OpenAI, Anthropic, Google, AWS, Azure, Groq, MistralAI, HuggingFace, Mistral, Together, Cohere, and more.
 
-## Auto-Labeling Workflows
-
-### Issue Auto-Labeling (`auto-label-by-package.yml`)
-
-Fires when issues are opened or edited:
-
-1. Parses issue body for `## Package` section
-2. Supports both dropdown (single select) and checkbox (multi-select) formats
-3. Maps package name (e.g., "langchain-openai") to label via JSON mapping table (e.g., "openai")
-4. Adds/removes labels to match selected package(s)
+## PR Quality Gates & Auto-Labeling
 
 ### PR Title Linting (`pr_lint.yml`)
 
@@ -269,6 +262,15 @@ Unified PR labeler applying size, file-based, title-based, and contributor class
 - Contributor classification: Checks org membership to tag external contributions (via GitHub App token)
 - Uses concurrency locks to prevent race conditions
 - Consolidates multiple prior workflows into single sequential run
+
+### Issue Auto-Labeling (`auto-label-by-package.yml`)
+
+Fires when issues are opened or edited:
+
+1. Parses issue body for `## Package` section
+2. Supports both dropdown (single select) and checkbox (multi-select) formats
+3. Maps package name (e.g., "langchain-openai") to label via JSON mapping table (e.g., "openai")
+4. Adds/removes labels to match selected package(s)
 
 ## OpenWiki Auto-Update (`openwiki-update.yml`)
 
@@ -349,35 +351,36 @@ Two modes:
 
 Workflows follow principle of least privilege:
 
-- **Default**: `contents: read` (read-only)
-- **PR labeler**: `pull-requests: write`, `issues: write`
-- **Release**: `id-token: write` (trusted publishing), `contents: write` (GitHub Release creation)
-- **OpenWiki update**: `contents: write`, `pull-requests: write`
+- **`check_diffs.yml`**: `contents: read` only
+- **`_release.yml`**: Isolated jobs with minimal permissions; `build` has `contents: read`; `publish` has `id-token: write` (trusted publishing only)
+- **`pr_labeler.yml`**: Uses GitHub App tokens for org membership checks; `pull-requests: write`, `issues: write`
+- **`integration_tests.yml`**: `contents: read`; uses `environment: "Scheduled testing"` for secrets
 
-Isolated jobs (build, testing) receive no write permissions; publishing jobs run in separate jobs with restricted scope.
+### Concurrency Control
 
-### Custom Actions
+- **Main CI (`check_diffs.yml`)**: Cancels prior runs on same branch/PR to optimize runner usage
+- **Integration tests (`integration_tests.yml`)**: Locks per (package, python-version) to serialize live API calls and prevent credential conflicts
+- **PR labeler (`pr_labeler.yml`)**: Separate locks for `opened` (never cancel) vs. updates (allow cancellation) to avoid losing external/tier labels
 
-**`uv_setup`** (`.github/actions/uv_setup`):
-- Sets up Python via official `setup-python` action
-- Configures `uv` tool with optional caching
-- Supports per-package cache suffixes to avoid cross-contamination
-- Parameters: `python-version`, `cache-suffix`, `working-directory`, `enable-cache`
+### Cache Strategy
 
-## Important Invariants & Failure Modes
+- **PR/push CI**: Caches pip/uv artifacts per job type and working directory for speed
+- **Release pre-checks**: Explicitly disables caching to catch missing dependencies that would be masked by cached layers
+- **Integration tests**: Frozen lockfiles (`UV_FROZEN=true`) ensure reproducibility without needing cache validation
 
-1. **No caching in release pre-checks**: Missing dependencies would be masked by cached venvs, allowing broken releases to publish
-2. **Minimum version downgrade isolation**: Minimum version tests reinstall packages in fresh virtual environment context, not via constraint relaxation alone
-3. **Separate build/publish jobs**: Build job has no PyPI credentials; publishing job has no build tools, preventing supply-chain attacks
-4. **Change detection scope**: VCR and extended test matrices only include packages with appropriate markers; adding test files without markers won't trigger corresponding test suites
-5. **Prerelease blocking**: Stable releases reject any prerelease dependencies, preventing version resolution issues in downstream users
-6. **Tag/version synchronization**: Release workflow validates git tags match expected version format before publishing, catching manual tag drift
+## Workflow Invocation & Entrypoints
 
-## Extension Points
+**Automatic triggers**:
+- Pull requests to any branch: Runs `check_diffs.yml`
+- Pushes to `master`: Runs `check_diffs.yml`
+- Merge group events: Runs `check_diffs.yml` (GitHub's equivalent of staging for required checks)
+- Daily schedule (1 PM UTC): Runs `integration_tests.yml` and `openwiki-update.yml` (8 AM UTC)
 
-1. **Adding new package types**: Update `check_diff.py` to recognize new directories and map them to appropriate test matrices
-2. **Adding partners to release testing**: Update `test-prior-published-packages-against-new-core` matrix and `skip-prior-published-package-checks` input options (keep in sync)
-3. **Adding new linting/type checkers**: Extend `_lint.yml` job steps and dependency groups; ensure `make lint_package` target exists
-4. **Adding integration test credentials**: Add environment variable to `integration_tests.yml` job and ensure `make integration_tests` target handles optional credentials
-5. **Custom test suites**: Create `extended_testing_deps.txt` in package directory and define `make extended_tests` target
-6. **OpenWiki pages**: Add to `openwiki/` directory; auto-updated on each scheduled run
+**Manual dispatch**:
+- Release workflow: `_release.yml` with dropdown package selection and version entry
+- Integration tests: Can override library, Python version, or exclusions
+- OpenWiki update: Can be triggered on-demand
+
+**Reusable workflows**:
+- Child workflows (`_lint.yml`, `_test.yml`, `_test_pydantic.yml`, etc.) are called by parent workflows with explicit inputs
+- `_release.yml` can be invoked as `workflow_call` for multi-package orchestration scenarios

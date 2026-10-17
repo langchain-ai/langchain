@@ -1,13 +1,15 @@
 ---
 type: "Concept"
-title: "Streaming: Token-by-Token Output"
-description: "How streaming works across LLM components and chains, token-by-token delivery via AIMessageChunk, callback integration, and memory/latency tradeoffs."
-tags: [streaming, token-streaming, llm-output, chat-models, callbacks, astream, real-time-feedback]
+title: "Streaming: Event-Driven Output"
+description: "How streaming works across LLM components and chains, token-by-token delivery via AIMessageChunk, protocol event translation, callback integration, and real-time feedback patterns."
+tags: [streaming, token-streaming, llm-output, chat-models, callbacks, astream, real-time-feedback, protocol-events, content-blocks]
 sources:
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py
   - id: openwiki-source-c7a2c3ef4ec61c3e28011205
     resource: repo://libs/core/langchain_core/callbacks/streaming_stdout.py
+  - id: openwiki-source-a9d15707c8dcabbe5cf98edb
+    resource: repo://libs/core/langchain_core/language_models/_compat_bridge.py
   - id: openwiki-source-5f8bc32563177d89fbab9b2f
     resource: repo://libs/core/langchain_core/language_models/chat_model_stream.py
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
@@ -22,14 +24,16 @@ sources:
     resource: repo://libs/core/langchain_core/messages/system.py
   - id: openwiki-source-a1981e868973f6fd7f71e12e
     resource: repo://libs/core/langchain_core/runnables/base.py
+  - id: openwiki-source-2193cdb0cca8a2a00fb054af
+    resource: repo://libs/core/tests/unit_tests/language_models/test_compat_bridge.py
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-ff9b926753e6cc6fe87acfe7
     resource: repo://libs/langchain_v1/tests/unit_tests/agents/test_agent_streaming.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-16T08:25:55.096Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-17T08:22:12.940Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-16T08:25:55.096Z
+    at: 2026-10-17T08:22:12.940Z
 ---
 
 ## Overview
@@ -38,7 +42,7 @@ verified:
 
 Instead of blocking with `invoke()` until a full response is ready, applications call `stream()` or `astream()` and receive a sequence of partial outputs as they arrive from the model. Each chunk is an `AIMessageChunk` carrying delta content. Callbacks intercept these chunks via the `on_llm_new_token` event, making it possible to observe, log, or react to each token without collecting the entire response first.
 
-Streaming flows through chains—prompts, models, output parsers, and other runnables—preserving incremental output delivery at each stage. By composition, a chain automatically supports streaming if all its components do. This page documents the mechanics of streaming across components, the trade-offs versus non-streaming invoke, and how to integrate streaming into applications.
+Streaming flows through chains—prompts, models, output parsers, and other runnables—preserving incremental output delivery at each stage. By composition, a chain automatically supports streaming if all its components do. This page documents the mechanics of streaming across components, protocol event translation, callback integration, the trade-offs versus non-streaming invoke, and how to integrate streaming into applications.
 
 ## Synchronous Streaming: stream()
 
@@ -341,6 +345,123 @@ LangSmith automatically captures streaming via callbacks. When you use `stream()
 
 LangSmith projects these traces in the UI as token-by-token progress, enabling real-time observability of model streaming behavior.
 
+## Protocol Event Streaming: The Compat Bridge
+
+**Location**: `repo://libs/core/langchain_core/language_models/_compat_bridge.py`
+
+The **compat bridge** is the mechanism for converting streams of `AIMessageChunk` chunks into a structured **protocol event lifecycle**. This enables precise, event-driven control over streaming and allows consumers to subscribe to specific event types (text, tool calls, usage, reasoning) independently.
+
+### Protocol Event Lifecycle
+
+The bridge generates a well-defined event sequence per message:
+
+```
+message-start
+  -> content-block-start   (first time each block index is observed)
+  -> content-block-delta*  (per chunk, carrying the delta slice)
+  -> content-block-finish  (finalized block with accumulated state)
+message-finish
+```
+
+**Event Timing**:
+- **message-start**: Fires once when the first chunk arrives, carrying optional provider metadata (model name, provider name).
+- **content-block-start**: Fires when a new block (by source-side index) is first observed. Carries minimal payload (empty text/reasoning for deltaable types, placeholder args for tool calls).
+- **content-block-delta**: Fires for each chunk that carries new content for an open block. Text and reasoning deltas carry incremental strings; tool call deltas carry accumulated argument JSON.
+- **content-block-finish**: Fires once per block after all chunks have been received. Carries the finalized block with parsed tool call arguments (if JSON was present), complete text, etc.
+- **message-finish**: Fires once at end of stream, carrying accumulated usage metadata and response metadata.
+
+### Bridge Responsibilities: From Chunks to Events
+
+The compat bridge performs three key functions:
+
+1. **Block Tracking by Source-Side Identity**: Providers like Anthropic can interleave parallel tool-call chunks by index. The bridge tracks each distinct block (identified by the block's `index` field from `content_blocks`, which may be int or string) and assigns sequential wire-level `uint` indices for the event stream. When two chunks carry the same source index, they belong to the same block and are merged.
+
+2. **Delta vs. Finalized Distinction**: The bridge emits per-chunk deltas directly—text/reasoning chunks yield `text-delta` / `reasoning-delta` events carrying the slice from that chunk. Tool call chunks yield accumulated state as `block-delta` with the merged fields. Already-finalized blocks (images, audio, tool_call, etc.) skip the delta and rely on `content-block-finish` alone.
+
+3. **State Accumulation for Finalization**: The bridge maintains per-block state (text, reasoning, arguments) and emits a `content-block-finish` event only after all chunks have arrived, carrying the finalized block with parsed JSON arguments and complete text. This enables providers to stream tool calls in parallel (Anthropic's model) without closing each block prematurely.
+
+### Core APIs
+
+**`chunks_to_events(chunks: Iterator[ChatGenerationChunk], message_id: str | None = None) -> Iterator[MessagesData]`**
+
+Converts a stream of `ChatGenerationChunk` objects (from `model._stream()`) to protocol events. Called by the streaming entry points to translate raw chunks into structured events.
+
+**`achunks_to_events(chunks: AsyncIterator[ChatGenerationChunk], message_id: str | None = None) -> AsyncIterator[MessagesData]`**
+
+Async variant. Consumes an async iterator of chunks and yields events.
+
+**`message_to_events(msg: BaseMessage, message_id: str | None = None) -> Iterator[MessagesData]`**
+
+Replays a finalized `AIMessage` as a synthetic event lifecycle. Used when a message is returned whole (cache hit, checkpoint restore, graph-node return value). Consumers downstream see a uniform event shape regardless of source.
+
+**`amessage_to_events(msg: BaseMessage, message_id: str | None = None) -> AsyncIterator[MessagesData]`**
+
+Async variant for replaying a finalized message.
+
+### Protocol Event Type Details
+
+**ContentBlockStartData**: Signals the start of a new content block.
+- `event`: `"content-block-start"`
+- `index`: Sequential uint wire index assigned by the bridge.
+- `content`: Empty or minimal payload for deltaable types (text: "", reasoning: "", tool_call_chunk: {id, name, args: ""}). Self-contained types carry correlation fields (id, name) and small metadata.
+
+**ContentBlockDeltaData**: Carries an incremental delta for an open block.
+- `event`: `"content-block-delta"`
+- `index`: Wire index of the block being updated.
+- `delta`: One of `TextDelta` (`{type: "text-delta", text: "..."}`) | `ReasoningDelta` | `DataDelta` | `BlockDelta` (carrying merged `fields` for tool_call_chunk and other structured types).
+
+**ContentBlockFinishData**: Signals completion of a block and carries the finalized state.
+- `event`: `"content-block-finish"`
+- `index`: Wire index of the block.
+- `content`: The finalized block. Tool call chunks have args parsed from JSON (or `InvalidToolCall` if parsing failed). Text/reasoning blocks carry complete accumulated text/reasoning. Other types pass through.
+
+**MessageStartData**: Signals the start of a message.
+- `event`: `"message-start"`
+- `id`: Optional message ID (from `message.id` or supplied separately).
+- `role`: Always `"ai"` for model responses.
+- `metadata`: Optional dict with provider-inferred hints (`provider`, `model`).
+
+**MessageFinishData**: Signals completion of a message.
+- `event`: `"message-finish"`
+- `usage`: Optional `UsageInfo` dict with `input_tokens`, `output_tokens`, `total_tokens`, and optional detail dicts (`input_token_details`, `output_token_details`) for cache and reasoning breakdowns.
+- `metadata`: Optional dict carrying provider metadata (finish_reason, system_fingerprint, etc.).
+- `additional_kwargs`: Off-spec extension carrying provider-side fields that don't map to protocol types (e.g., Gemini's per-tool-call thought signatures).
+
+### Tool Call Finalization
+
+The bridge's `finalize_tool_call_chunk()` function handles the critical step of promoting incomplete `tool_call_chunk` blocks to finalized `tool_call` blocks:
+
+1. **Accumulate arguments** across chunks as partial JSON strings.
+2. **Parse the accumulated JSON** when the block is finalized.
+3. **Emit `tool_call`** with parsed `args` dict on success.
+4. **Emit `invalid_tool_call`** with the raw string and error message if JSON parsing fails. Downstream consumers can still introspect the malformed payload.
+
+This enables robust streaming of JSON arguments even when the model emits them in awkward chunks.
+
+### Example: Converting Chunks to Events
+
+```python
+from langchain_core.language_models._compat_bridge import chunks_to_events
+
+# Stream from model
+chunks = model._stream(messages)
+
+# Convert to protocol events
+for event in chunks_to_events(chunks, message_id="msg-123"):
+    if event["event"] == "message-start":
+        print(f"Message {event['id']} started")
+    elif event["event"] == "content-block-delta":
+        delta = event["delta"]
+        if delta.get("type") == "text-delta":
+            print(delta["text"], end="", flush=True)
+    elif event["event"] == "content-block-finish":
+        block = event["content"]
+        if block["type"] == "tool_call":
+            print(f"Tool: {block['name']}({block['args']})")
+    elif event["event"] == "message-finish":
+        print(f"Message finished, usage: {event.get('usage')}")
+```
+
 ## Streaming Through Chains
 
 Streaming flows through chains composed of runnables (prompts, models, parsers). The streaming protocol is implemented at each stage via the `stream()` and `transform()` methods on `Runnable`.
@@ -402,14 +523,38 @@ This mechanism ensures streaming callbacks fire for each chunk and that parent r
 
 For advanced use cases requiring detailed event granularity, `BaseChatModel.stream_events(version="v3")` returns a `ChatModelStream` object that exposes **typed projection properties** (`.text`, `.tool_calls`, `.usage`, `.reasoning`, `.output`) which accumulate protocol events as they arrive.
 
-### Structured Event Streaming
+### ChatModelStream and Protocol Events
 
-Unlike token streaming (`stream()`), which yields tokens, `stream_events()` yields **protocol events**—structured objects representing model state changes:
+`ChatModelStream` bridges protocol events (message-start, content-block-start/delta/finish, message-finish) into consumable projections. The stream:
 
-- **text-delta**: Incremental text generation
-- **reasoning-delta**: Incremental reasoning/thinking content (when supported)
-- **tool_call_chunk**: Partial tool call with accumulated arguments
-- **usage**: Token usage update (input, output, cached, etc.)
+1. **Ingests protocol events** via the `dispatch(event)` method, called by the streaming driver (`stream_events()` / `astream_events()`).
+2. **Accumulates state** from events: text per block, tool calls, usage, and metadata.
+3. **Pushes deltas to projections** as events arrive: `.text.push(delta)` for text-delta events, `.tool_calls.push(chunk)` for tool call chunks, etc.
+4. **Finalizes and completes projections** when message-finish arrives: `.text.complete(final_text)`, `.tool_calls.complete(tool_calls_list)`, etc.
+5. **Assembles an AIMessage** from accumulated state when the stream finishes, accessible via `.output`.
+
+### Typed Projections: Text, Tool Calls, Reasoning, Usage, Output
+
+**`.text` (SyncTextProjection / AsyncTextProjection)**
+- Yields text deltas as they arrive from content-block-delta events.
+- Completes with the full accumulated text when the message finishes.
+- Supports iteration (for sync: `for delta in stream.text:`) or awaiting (for async: `await stream.text`).
+
+**`.tool_calls` (SyncProjection / AsyncProjection)**
+- Yields tool call chunks (`{"type": "tool_call_chunk", "id": ..., "name": ..., "args": "..."}`) as they accumulate.
+- Completes with a list of finalized `ToolCall` objects (with parsed `args` dicts) when the message finishes.
+- Allows iteration over deltas or awaiting the final list.
+
+**`.reasoning` (SyncTextProjection / AsyncTextProjection)**
+- Similar to `.text`, but carries reasoning/thinking blocks when the model produces them (e.g., OpenAI o1, Claude with extended thinking).
+
+**`.usage` (SyncProjection / AsyncProjection)**
+- Yields usage deltas if the model emits incremental token counts.
+- Completes with a `UsageInfo` dict: `{input_tokens, output_tokens, total_tokens, input_token_details?, output_token_details?}`.
+
+**`.output` (SyncProjection / AsyncProjection)**
+- Completes with an `AIMessage` built from accumulated protocol blocks. Content is always a list of protocol-shape blocks (not a bare string), preserving block-level metadata.
+- Accessible after the stream finishes via `stream.output` (sync) or `await stream.output` (async).
 
 ### Pull-Based Backpressure
 
@@ -425,15 +570,17 @@ This backpressure mechanism prevents unbounded memory growth: the producer only 
 
 ```python
 # Pull events on demand; producer waits if no consumer is pulling
-for event in model.stream_events(messages, version="v3"):
-    if should_stop_early():
-        break  # Producer stops; no buffered events accumulate
-    process_event(event)
-
-# Or consume a specific projection with type safety
 stream = model.stream_events(messages, version="v3")
+
 for text_delta in stream.text:  # Only text events
-    print(text_delta)
+    print(text_delta, end="", flush=True)
+
+# Or consume multiple projections independently
+tool_calls = []
+async for tool_call_chunk in stream.tool_calls:
+    tool_calls.append(tool_call_chunk)
+
+final_usage = stream.usage.get()  # Drain and get final usage
 ```
 
 ## Streaming in Agent Execution
