@@ -480,14 +480,16 @@ def test_message_chunk_to_message() -> None:
             create_tool_call_chunk(name="tool4", args="abc", id="4", index=0),
         ],
     )
+    # args='{"b": ' is truncated JSON: the finalized message must not heal it
+    # (https://github.com/langchain-ai/langchain/issues/41285)
     expected = AIMessage(
         content="I am",
         tool_calls=[
             create_tool_call(name="tool1", args={"a": 1}, id="1"),
-            create_tool_call(name="tool2", args={}, id="2"),
             create_tool_call(name="tool3", args={}, id="3"),
         ],
         invalid_tool_calls=[
+            create_invalid_tool_call(name="tool2", args='{"b": ', id="2", error=None),
             create_invalid_tool_call(name="tool4", args="abc", id="4", error=None),
         ],
     )
@@ -1455,3 +1457,48 @@ def test_text_accessor_deprecation_warning() -> None:
         match=r"Calling \.text\(\) as a method is deprecated",
     ):
         HumanMessage(content="Hello world").text()
+
+
+def test_message_chunk_to_message_does_not_heal_truncated_tool_args() -> None:
+    """A stream that ends mid-tool-call must not yield a valid-looking tool call.
+
+    https://github.com/langchain-ai/langchain/issues/41285
+    """
+    truncated = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="edit_document",
+                args='{"operation": "replace", "blocks": [{"type": "hea',
+                id="call_1",
+                index=0,
+            )
+        ],
+    )
+    final = message_chunk_to_message(truncated)
+    assert final.tool_calls == []
+    assert len(final.invalid_tool_calls) == 1
+    assert final.invalid_tool_calls[0]["name"] == "edit_document"
+    assert final.invalid_tool_calls[0]["args"].endswith("hea")
+
+    complete = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="get_weather",
+                args='{"city": "Madrid"}',
+                id="call_2",
+                index=0,
+            )
+        ],
+    )
+    final2 = message_chunk_to_message(complete)
+    assert final2.tool_calls == [
+        {
+            "name": "get_weather",
+            "args": {"city": "Madrid"},
+            "id": "call_2",
+            "type": "tool_call",
+        }
+    ]
+    assert final2.invalid_tool_calls == []

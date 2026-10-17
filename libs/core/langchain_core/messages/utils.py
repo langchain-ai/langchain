@@ -46,7 +46,14 @@ from langchain_core.messages.function import FunctionMessage, FunctionMessageChu
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
-from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
+from langchain_core.messages.tool import (
+    InvalidToolCall,
+    ToolCall,
+    ToolMessage,
+    ToolMessageChunk,
+    invalid_tool_call,
+    tool_call,
+)
 from langchain_core.utils.pydantic import model_json_schema as get_model_json_schema
 
 if TYPE_CHECKING:
@@ -585,6 +592,40 @@ def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
     ignore_keys = ["type"]
     if isinstance(chunk, AIMessageChunk):
         ignore_keys.extend(["tool_call_chunks", "chunk_position"])
+        # The chunk validator parses tool-call arguments leniently (parse_partial_json)
+        # so that in-flight streams expose partial arguments. A finalized message must
+        # not inherit that healing: if the stream ended partway through a call's
+        # arguments, lenient parsing produces a valid-looking tool call with half an
+        # input. Re-derive tool_calls / invalid_tool_calls with strict JSON here.
+        tool_calls: list[ToolCall] = []
+        invalid_tool_calls: list[InvalidToolCall] = []
+        for tc_chunk in chunk.tool_call_chunks:
+            raw_args = tc_chunk["args"] or ""
+            try:
+                args_ = json.loads(raw_args) if raw_args else {}
+            except json.JSONDecodeError:
+                args_ = None  # truncated or malformed: not a valid tool call
+            if not isinstance(args_, dict):
+                invalid_tool_calls.append(
+                    invalid_tool_call(
+                        name=tc_chunk["name"],
+                        args=raw_args,
+                        id=tc_chunk["id"],
+                        error=None,
+                    )
+                )
+            else:
+                tool_calls.append(
+                    tool_call(
+                        name=tc_chunk["name"] or "",
+                        args=args_,
+                        id=tc_chunk["id"],
+                    )
+                )
+        values = {k: v for k, v in chunk.__dict__.items() if k not in ignore_keys}
+        values["tool_calls"] = tool_calls
+        values["invalid_tool_calls"] = invalid_tool_calls
+        return cast("BaseMessage", chunk.__class__.__mro__[1](**values))
     return cast(
         "BaseMessage",
         chunk.__class__.__mro__[1](
