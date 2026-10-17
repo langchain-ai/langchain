@@ -798,8 +798,8 @@ class BaseChatOpenAI(BaseChatModel):
 
     root_async_client: Any = Field(default=None, exclude=True)
 
-    model_name: str = Field(default="gpt-3.5-turbo", alias="model")
-    """Model name to use."""
+    model_name: str = Field(alias="model")
+    """Model name to use. Must be provided explicitly."""
 
     temperature: float | None = None
     """What sampling temperature to use."""

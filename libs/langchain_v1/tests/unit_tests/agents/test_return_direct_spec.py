@@ -79,7 +79,7 @@ def test_return_direct_integration_matrix(case: TestCase) -> None:
     poll_tool = _make_tool(return_direct=case.return_direct)
 
     model = ChatOpenAI(
-        model=OPENAI_TEST_MODEL,
+        model_name=OPENAI_TEST_MODEL,
         temperature=0,
     )
 
