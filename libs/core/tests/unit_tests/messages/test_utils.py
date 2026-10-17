@@ -753,6 +753,73 @@ def test_trim_messages_token_counter_shortcut_with_options() -> None:
     assert messages == messages_copy
 
 
+def test_trim_messages_per_message_base_message_annotation() -> None:
+    def counter(_msg: BaseMessage) -> int:
+        return 10
+
+    result = trim_messages(_MESSAGES_TO_TRIM, max_tokens=30, token_counter=counter)
+    assert len(result) == 3
+
+
+def test_trim_messages_per_message_subclass_annotation() -> None:
+    def counter(_msg: HumanMessage) -> int:
+        return 10
+
+    result = trim_messages(_MESSAGES_TO_TRIM, max_tokens=30, token_counter=counter)  # type: ignore[arg-type]
+    assert len(result) == 3
+
+
+def test_trim_messages_per_message_string_annotation() -> None:
+    def counter(_msg: "BaseMessage") -> int:
+        return 10
+
+    result = trim_messages(_MESSAGES_TO_TRIM, max_tokens=30, token_counter=counter)
+    assert len(result) == 3
+
+
+def test_trim_messages_per_message_lambda_with_flag() -> None:
+    result = trim_messages(
+        _MESSAGES_TO_TRIM,
+        max_tokens=30,
+        token_counter=lambda _msg: 10,
+        token_counter_is_per_message=True,
+    )
+    assert len(result) == 3
+
+
+def test_trim_messages_per_message_unannotated_with_flag() -> None:
+    def counter(_msg):  # type: ignore[no-untyped-def]  # noqa: ANN001, ANN202
+        return 10
+
+    result = trim_messages(
+        _MESSAGES_TO_TRIM,
+        max_tokens=30,
+        token_counter=counter,
+        token_counter_is_per_message=True,
+    )
+    assert len(result) == 3
+
+
+def test_trim_messages_list_counter_still_works() -> None:
+    def counter(messages: list[BaseMessage]) -> int:
+        return len(messages) * 10
+
+    result = trim_messages(_MESSAGES_TO_TRIM, max_tokens=30, token_counter=counter)
+    assert len(result) == 3
+
+
+def test_trim_messages_get_num_tokens_from_messages_takes_precedence() -> None:
+    class CounterObj:
+        def __call__(self, _msg: BaseMessage) -> int:
+            return 10
+
+        def get_num_tokens_from_messages(self, messages: list[BaseMessage]) -> int:
+            return len(messages) * 10
+
+    result = trim_messages(_MESSAGES_TO_TRIM, max_tokens=30, token_counter=CounterObj())
+    assert len(result) == 3
+
+
 class FakeTokenCountingModel(FakeChatModel):
     @override
     def get_num_tokens_from_messages(
