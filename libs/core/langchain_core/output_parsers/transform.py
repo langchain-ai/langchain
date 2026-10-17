@@ -9,7 +9,7 @@ from typing import (
 
 from typing_extensions import override
 
-from langchain_core.messages import BaseMessage, BaseMessageChunk
+from langchain_core.messages import BaseMessage, BaseMessageChunk,AIMessage, AIMessageChunk
 from langchain_core.output_parsers.base import BaseOutputParser, T
 from langchain_core.outputs import (
     ChatGeneration,
@@ -130,6 +130,13 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
             chunk_gen: GenerationChunk | ChatGenerationChunk
             if isinstance(chunk, BaseMessageChunk):
                 chunk_gen = ChatGenerationChunk(message=chunk)
+            elif isinstance(chunk, AIMessage):
+                message_data = chunk.model_dump()
+                message_data.pop("type", None)
+
+                chunk_gen = ChatGenerationChunk(
+                    message=AIMessageChunk(**message_data)
+                )    
             elif isinstance(chunk, BaseMessage):
                 chunk_gen = ChatGenerationChunk(
                     message=BaseMessageChunk(**chunk.model_dump())
@@ -157,6 +164,13 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
             chunk_gen: GenerationChunk | ChatGenerationChunk
             if isinstance(chunk, BaseMessageChunk):
                 chunk_gen = ChatGenerationChunk(message=chunk)
+            elif isinstance(chunk, AIMessage):
+                message_data = chunk.model_dump()
+                message_data.pop("type", None)
+
+                chunk_gen = ChatGenerationChunk(
+                    message=AIMessageChunk(**message_data)
+                )
             elif isinstance(chunk, BaseMessage):
                 chunk_gen = ChatGenerationChunk(
                     message=BaseMessageChunk(**chunk.model_dump())

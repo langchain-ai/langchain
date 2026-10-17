@@ -6,6 +6,7 @@ import logging
 from json import JSONDecodeError
 from typing import Annotated, Any
 
+from langchain_core.messages.ai import AIMessageChunk
 from pydantic import BaseModel, SkipValidation, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
 
@@ -180,21 +181,28 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
+
         generation = result[0]
+
         if not isinstance(generation, ChatGeneration):
             msg = "This output parser can only be used with a chat generation."
             raise OutputParserException(msg)
         message = generation.message
-        if isinstance(message, AIMessage) and message.tool_calls:
+
+        if isinstance(message, (AIMessage, AIMessageChunk)) and message.tool_calls:
             tool_calls = [dict(tc) for tc in message.tool_calls]
+
             for tool_call in tool_calls:
                 if not self.return_id:
-                    _ = tool_call.pop("id")
+                    tool_call.pop("id", None)
         else:
             try:
-                raw_tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
+                raw_tool_calls = copy.deepcopy(
+                    message.additional_kwargs["tool_calls"]
+                )
             except KeyError:
                 return []
+
             tool_calls = parse_tool_calls(
                 raw_tool_calls,
                 partial=partial,
@@ -234,7 +242,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
             result: The result of the LLM call.
             partial: Whether to parse partial JSON.
                 If `True`, the output will be a JSON object containing
-                    all the keys that have been returned so far.
+                all the keSys that have been returned so far.
                 If `False`, the output will be the full JSON object.
 
         Raises:
@@ -297,7 +305,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
 # Common cause of ValidationError is truncated output due to max_tokens.
 _MAX_TOKENS_ERROR = (
     "Output parser received a `max_tokens` stop reason. "
-    "The output is likely incomplete—please increase `max_tokens` "
+    "The output is likely incompleteâ€”please increase `max_tokens` "
     "or shorten your prompt."
 )
 
