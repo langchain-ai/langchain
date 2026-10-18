@@ -269,6 +269,64 @@ def test_filter_message_exclude_tool_calls_content_blocks() -> None:
     assert messages == messages_model_copy
 
 
+def test_filter_message_exclude_tool_calls_invalid_tool_calls() -> None:
+    tool_calls = [
+        {"name": "foo", "id": "1", "args": {}, "type": "tool_call"},
+    ]
+    invalid_tool_calls = [
+        {
+            "name": "bar",
+            "args": "{",
+            "id": "2",
+            "error": "parse error",
+            "type": "invalid_tool_call",
+        },
+        {
+            "name": "baz",
+            "args": "{",
+            "id": "3",
+            "error": "parse error",
+            "type": "invalid_tool_call",
+        },
+    ]
+    messages = [
+        HumanMessage("foo", name="blah", id="1"),
+        AIMessage(
+            "bar-response",
+            tool_calls=tool_calls,
+            invalid_tool_calls=invalid_tool_calls,
+            id="2",
+        ),
+        AIMessage(
+            "invalid-only",
+            invalid_tool_calls=invalid_tool_calls,
+            id="3",
+        ),
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+
+    # test excluding all tool calls also removes a message whose only
+    # tool calls are invalid
+    actual = filter_messages(messages, exclude_tool_calls=True)
+    assert actual == messages[:1]
+
+    # test excluding a specific invalid tool call id
+    expected = [
+        messages[0],
+        messages[1].model_copy(update={"invalid_tool_calls": [invalid_tool_calls[1]]}),
+        messages[2].model_copy(update={"invalid_tool_calls": [invalid_tool_calls[1]]}),
+    ]
+    actual = filter_messages(messages, exclude_tool_calls=["2"])
+    assert expected == actual
+
+    # test excluding every tool call (valid and invalid) drops the messages
+    actual = filter_messages(messages, exclude_tool_calls=["1", "2", "3"])
+    assert actual == messages[:1]
+
+    # assert that we didn't mutate the original messages
+    assert messages == messages_model_copy
+
+
 _MESSAGES_TO_TRIM = [
     SystemMessage("This is a 4 token text."),
     HumanMessage("This is a 4 token text.", id="first"),
