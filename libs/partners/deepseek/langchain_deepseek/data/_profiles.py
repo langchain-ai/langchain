@@ -17,9 +17,9 @@ from typing import Any
 
 _PROFILES: dict[str, dict[str, Any]] = {
     "deepseek-flash": {
-        "name": "DeepSeek V4.1 Flash",
-        "release_date": "2026-09-10",
-        "last_updated": "2026-09-10",
+        "name": "DeepSeek V4.1 Flash 1017",
+        "release_date": "2026-10-17",
+        "last_updated": "2026-10-17",
         "open_weights": True,
         "max_input_tokens": 1000000,
         "max_output_tokens": 393216,
@@ -41,8 +41,8 @@ _PROFILES: dict[str, dict[str, Any]] = {
     "deepseek-v4-flash": {
         "name": "DeepSeek V4 Flash",
         "status": "deprecated",
-        "release_date": "2026-09-10",
-        "last_updated": "2026-09-10",
+        "release_date": "2026-10-17",
+        "last_updated": "2026-10-17",
         "open_weights": True,
         "max_input_tokens": 1000000,
         "max_output_tokens": 393216,
@@ -64,8 +64,8 @@ _PROFILES: dict[str, dict[str, Any]] = {
     "deepseek-v4-flash-vision-exp": {
         "name": "DeepSeek V4 Flash Vision Exp",
         "status": "deprecated",
-        "release_date": "2026-09-10",
-        "last_updated": "2026-09-10",
+        "release_date": "2026-10-17",
+        "last_updated": "2026-10-17",
         "open_weights": True,
         "max_input_tokens": 1000000,
         "max_output_tokens": 393216,
