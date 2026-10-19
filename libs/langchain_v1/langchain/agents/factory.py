@@ -224,6 +224,7 @@ def _build_commands(
     middleware_commands: list[Command[Any]] | None = None,
     *,
     has_structured_output: bool = False,
+    has_stale_structured_response: bool = False,
     repaired_messages: list[AnyMessage] | None = None,
 ) -> list[Command[Any]]:
     """Build a list of Commands from a model response and middleware commands.
@@ -240,6 +241,11 @@ def _build_commands(
             `response_format`. When `True` and no structured response was
             produced, `structured_response` is explicitly cleared to avoid a
             stale value from a previous checkpointed turn.
+        has_stale_structured_response: Whether incoming state already holds a
+            `structured_response` that the current model call did not produce.
+            Covers agents whose response format is chosen at runtime by
+            `wrap_model_call` middleware, where `has_structured_output` is
+            `False` because `create_agent` was given no `response_format`.
         repaired_messages: Complete message history after repairing invalid tool calls.
 
     Returns:
@@ -256,7 +262,7 @@ def _build_commands(
 
     if model_response.structured_response is not None:
         state["structured_response"] = model_response.structured_response
-    elif has_structured_output:
+    elif has_structured_output or has_stale_structured_response:
         state["structured_response"] = None
 
     for cmd in middleware_commands or []:
@@ -1532,11 +1538,13 @@ def create_agent(
         )
 
         has_structured_output = initial_response_format is not None
+        has_stale_structured_response = state.get("structured_response") is not None
         if wrap_model_call_handler is None:
             model_response = _execute_model_sync(request)
             return _build_commands(
                 model_response,
                 has_structured_output=has_structured_output,
+                has_stale_structured_response=has_stale_structured_response,
                 repaired_messages=messages if messages != state["messages"] else None,
             )
 
@@ -1545,6 +1553,7 @@ def create_agent(
             result.model_response,
             result.commands,
             has_structured_output=has_structured_output,
+            has_stale_structured_response=has_stale_structured_response,
             repaired_messages=messages if messages != state["messages"] else None,
         )
 
@@ -1591,11 +1600,13 @@ def create_agent(
         )
 
         has_structured_output = initial_response_format is not None
+        has_stale_structured_response = state.get("structured_response") is not None
         if awrap_model_call_handler is None:
             model_response = await _execute_model_async(request)
             return _build_commands(
                 model_response,
                 has_structured_output=has_structured_output,
+                has_stale_structured_response=has_stale_structured_response,
                 repaired_messages=messages if messages != state["messages"] else None,
             )
 
@@ -1604,6 +1615,7 @@ def create_agent(
             result.model_response,
             result.commands,
             has_structured_output=has_structured_output,
+            has_stale_structured_response=has_stale_structured_response,
             repaired_messages=messages if messages != state["messages"] else None,
         )
 
