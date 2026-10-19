@@ -196,6 +196,7 @@ class EvaluatorCallbackHandler(BaseTracer):
                 value=res.value,
                 comment=res.comment,
                 correction=res.correction,
+                feedback_config=res.feedback_config,
                 source_info=source_info_,
                 source_run_id=res.source_run_id or source_run_id,
                 feedback_source_type=langsmith.schemas.FeedbackSourceType.MODEL,
