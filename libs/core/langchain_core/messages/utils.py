@@ -2262,7 +2262,7 @@ def count_tokens_approximately(
     count_name: bool = True,
     tokens_per_image: int = 85,
     use_usage_metadata_scaling: bool = False,
-    tools: list[BaseTool | dict[str, Any]] | None = None,
+    tools: list[BaseTool | dict[str, Any] | Callable[..., Any]] | None = None,
 ) -> int:
     """Approximate the total number of tokens in messages.
 
@@ -2321,11 +2321,14 @@ def count_tokens_approximately(
 
     # Count tokens for tools if provided
     if tools:
+        from langchain_core.tools import BaseTool  # noqa: PLC0415
+        from langchain_core.utils.function_calling import convert_to_openai_tool  # noqa: PLC0415
+
         tools_chars = 0
         for tool in tools:
             if isinstance(tool, dict):
                 tool_dict = tool
-            else:
+            elif isinstance(tool, BaseTool):
                 # tool_call_schema is memoized per instance
                 schema = tool.tool_call_schema
                 if isinstance(schema, dict):
@@ -2339,6 +2342,17 @@ def count_tokens_approximately(
                 tool_dict = {
                     "name": tool.name,
                     "description": tool.description,
+                    "parameters": parameters,
+                }
+            else:
+                # Plain callable: convert to OpenAI tool format, as documented.
+                converted = convert_to_openai_tool(tool)["function"]
+                parameters = dict(converted.get("parameters") or {})
+                parameters.pop("title", None)
+                parameters.pop("description", None)
+                tool_dict = {
+                    "name": converted["name"],
+                    "description": converted.get("description") or "",
                     "parameters": parameters,
                 }
             tools_chars += len(json.dumps(tool_dict))

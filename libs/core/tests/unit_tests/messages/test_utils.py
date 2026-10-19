@@ -3170,3 +3170,30 @@ def test_convert_to_messages_lc_envelope_partial_shape_not_matched() -> None:
     # and dict `kwargs` too. Without all four, we fall through.
     with pytest.raises(ValueError, match="MESSAGE_COERCION_FAILURE"):
         convert_to_messages([{"lc": 1, "content": "missing other fields"}])
+
+def test_count_tokens_approximately_accepts_plain_callable_tool() -> None:
+    """A plain callable in tools= must be counted, not crash with AttributeError."""
+
+    def search(query: str) -> str:
+        """Search the web."""
+        return query
+
+    messages = [HumanMessage(content="hi")]
+    baseline = count_tokens_approximately(messages)
+    count = count_tokens_approximately(messages, tools=[search])
+    assert count > baseline
+
+
+def test_count_tokens_approximately_still_counts_base_tool() -> None:
+    """The BaseTool path keeps working alongside the callable path."""
+    from langchain_core.tools import tool
+
+    @tool
+    def search(query: str) -> str:
+        """Search the web."""
+        return query
+
+    messages = [HumanMessage(content="hi")]
+    baseline = count_tokens_approximately(messages)
+    count = count_tokens_approximately(messages, tools=[search])
+    assert count > baseline
