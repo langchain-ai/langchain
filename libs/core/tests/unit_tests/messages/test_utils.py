@@ -1,4 +1,4 @@
-import base64
+﻿import base64
 import json
 import math
 import re
@@ -2999,6 +2999,21 @@ def test_count_tokens_approximately_with_tools() -> None:
     count_empty_tools = count_tokens_approximately(messages, tools=[])
     assert count_empty_tools == base_count
 
+
+def test_count_tokens_approximately_with_plain_callable() -> None:
+    """Test that plain Python callables are accepted as tools."""
+
+    def search_web(query: str) -> str:
+        """Search the web."""
+        return query
+
+    messages = [HumanMessage(content="Hello")]
+    base_count = count_tokens_approximately(messages)
+    count_with_tool = count_tokens_approximately(
+        messages, tools=[search_web]
+    )
+
+    assert count_with_tool > base_count
 
 def test_count_tokens_approximately_basetool_dict_args_schema() -> None:
     """`BaseTool.tool_call_schema` can itself already be a plain dict.

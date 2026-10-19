@@ -47,6 +47,7 @@ from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
 from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import model_json_schema as get_model_json_schema
 
 if TYPE_CHECKING:
@@ -2262,7 +2263,7 @@ def count_tokens_approximately(
     count_name: bool = True,
     tokens_per_image: int = 85,
     use_usage_metadata_scaling: bool = False,
-    tools: list[BaseTool | dict[str, Any]] | None = None,
+    tools: list[BaseTool | dict[str, Any] | Callable[..., Any]] | None = None,
 ) -> int:
     """Approximate the total number of tokens in messages.
 
@@ -2325,23 +2326,36 @@ def count_tokens_approximately(
         for tool in tools:
             if isinstance(tool, dict):
                 tool_dict = tool
-            else:
-                # tool_call_schema is memoized per instance
+            elif hasattr(tool, "tool_call_schema") and hasattr(tool, "name"):
+                # Preserve the existing BaseTool token-counting behavior.
                 schema = tool.tool_call_schema
                 if isinstance(schema, dict):
                     parameters = dict(schema)
                 else:
                     parameters = dict(get_model_json_schema(schema))
-                # Drop the schema's own `title`/`description` to avoid double-counting:
-                # they're duplicated at the top level.
+
                 parameters.pop("title", None)
                 parameters.pop("description", None)
+
                 tool_dict = {
                     "name": tool.name,
                     "description": tool.description,
                     "parameters": parameters,
                 }
+            else:
+                # Convert plain Python callables to an OpenAI tool schema.
+                openai_tool = convert_to_openai_tool(tool)
+                tool_dict = openai_tool.get("function", openai_tool)
+
+                parameters = tool_dict.get("parameters")
+                if isinstance(parameters, dict):
+                    parameters = dict(parameters)
+                    parameters.pop("title", None)
+                    parameters.pop("description", None)
+                    tool_dict["parameters"] = parameters
+
             tools_chars += len(json.dumps(tool_dict))
+
         token_count += math.ceil(tools_chars / chars_per_token)
 
     for message in converted_messages:
