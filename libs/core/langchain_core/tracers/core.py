@@ -70,6 +70,7 @@ class _TracerCore(ABC):
     """
 
     log_missing_parent: bool = True
+    retain_child_runs: bool = True
 
     def __init__(
         self,
@@ -154,7 +155,8 @@ class _TracerCore(ABC):
                 run.trace_id, run.dotted_order = parent
                 run.dotted_order += "." + current_dotted_order
                 if parent_run := self.run_map.get(str(run.parent_run_id)):
-                    self._add_child_run(parent_run, run)
+                    if self.retain_child_runs:
+                        self._add_child_run(parent_run, run)
                     parent_key = str(run.parent_run_id)
                     if parent_key in self._external_run_ids:
                         self._external_run_ids[parent_key] += 1
