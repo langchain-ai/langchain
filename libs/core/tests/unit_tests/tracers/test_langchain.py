@@ -92,9 +92,27 @@ def test_tracer_with_run_tree_parent(*, retain_child_runs: bool) -> None:
     assert tracer._external_run_ids == {}
 
 
-@pytest.mark.parametrize("retain_child_runs", [True, False])
+@pytest.mark.parametrize("retain_child_runs", [None, True, False])
+@pytest.mark.parametrize("context_retention", [None, True, False])
 @pytest.mark.parametrize("failed", [False, True])
-def test_chat_run_retention(*, retain_child_runs: bool, failed: bool) -> None:
+def test_chat_run_retention(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    retain_child_runs: bool | None,
+    context_retention: bool | None,
+    failed: bool,
+) -> None:
+    context = (
+        {} if context_retention is None else {"retain_child_runs": context_retention}
+    )
+    monkeypatch.setattr(
+        "langchain_core.tracers.langchain.get_tracing_context", lambda: context
+    )
+    expected_retention = (
+        retain_child_runs
+        if retain_child_runs is not None
+        else context.get("retain_child_runs", True)
+    )
     client = unittest.mock.MagicMock(spec=Client)
     client.tracing_queue = None
     tracer = LangChainTracer(client=client, retain_child_runs=retain_child_runs)
@@ -127,8 +145,8 @@ def test_chat_run_retention(*, retain_child_runs: bool, failed: bool) -> None:
         del child, posted
         client.reset_mock()
         gc.collect()
-        assert (child_ref() is not None) == retain_child_runs
-        assert len(root.child_runs) == (count if retain_child_runs else 0)
+        assert (child_ref() is not None) == expected_retention
+        assert len(root.child_runs) == (count if expected_retention else 0)
         assert tracer.run_map == {str(root_id): root}
     tracer.on_chain_end({}, run_id=root_id)
     assert tracer.run_map == {}
@@ -885,7 +903,7 @@ class TestTracerMetadataCloning:
     def _make_tracer(
         metadata: dict[str, str] | None = None,
         *,
-        retain_child_runs: bool = True,
+        retain_child_runs: bool | None = None,
     ) -> LangChainTracer:
         client = unittest.mock.MagicMock(spec=Client)
         client.tracing_queue = None
@@ -893,9 +911,9 @@ class TestTracerMetadataCloning:
             client=client, metadata=metadata, retain_child_runs=retain_child_runs
         )
 
-    @pytest.mark.parametrize("retain_child_runs", [True, False])
+    @pytest.mark.parametrize("retain_child_runs", [None, True, False])
     def test_copy_with_metadata_defaults_copies_configuration(
-        self, *, retain_child_runs: bool
+        self, *, retain_child_runs: bool | None
     ) -> None:
         """Copied tracer keeps stable configuration but not identity."""
         tracer = self._make_tracer(
@@ -917,9 +935,9 @@ class TestTracerMetadataCloning:
         assert copied.run_has_token_event_map == {}
         assert copied.retain_child_runs == retain_child_runs
 
-    @pytest.mark.parametrize("retain_child_runs", [True, False])
+    @pytest.mark.parametrize("retain_child_runs", [None, True, False])
     def test_copy_preserves_subclass_constructor_keywords(
-        self, *, retain_child_runs: bool
+        self, *, retain_child_runs: bool | None
     ) -> None:
         class LegacyTracer(LangChainTracer):
             def __init__(self, **kwargs: Any) -> None:

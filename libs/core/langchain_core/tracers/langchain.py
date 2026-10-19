@@ -148,7 +148,7 @@ class LangChainTracer(BaseTracer):
         *,
         metadata: Mapping[str, str] | None = None,
         address: AgentAddress | None = None,
-        retain_child_runs: bool = True,
+        retain_child_runs: bool | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer.
@@ -173,15 +173,17 @@ class LangChainTracer(BaseTracer):
                 !!! warning "Beta"
                     Agent addressing is in beta and must be enabled for the
                     LangSmith workspace.
-            retain_child_runs: Whether to retain children in in-memory run trees.
+            retain_child_runs: Override automatic in-memory child-tree retention.
 
-                Set to `False` to release completed runs while a parent remains open.
-                Uploaded trace nesting is unchanged, but callbacks and evaluators
-                cannot inspect LangChain children through `child_runs`, including
-                children of an externally supplied LangSmith parent.
+                When omitted, compatible LangSmith SDKs request retention for
+                evaluation, `on_end` callbacks, or an explicit
+                `tracing_context(retain_child_runs=True)`. Ordinary tracing does
+                not retain children. Older SDKs retain children for compatibility.
+                Set to `True` when directly inspecting run trees without a callback.
+                Uploaded trace nesting is unchanged.
 
                 !!! warning "Experimental"
-                    Opt out only when in-memory child-run inspection is not needed.
+                    An explicit `False` also disables children needed by evaluators.
             **kwargs: Additional keyword arguments.
         """
         super().__init__(**kwargs)
@@ -241,6 +243,12 @@ class LangChainTracer(BaseTracer):
         )
         tracer.retain_child_runs = self.retain_child_runs
         return tracer
+
+    @override
+    def _should_retain_child_runs(self) -> bool:
+        if self.retain_child_runs is not None:
+            return self.retain_child_runs
+        return bool(get_tracing_context().get("retain_child_runs", True))
 
     def _get_run_kwargs(
         self, parent_run_id: UUID | None, extra: dict[str, Any]
