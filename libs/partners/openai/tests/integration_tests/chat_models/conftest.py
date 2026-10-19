@@ -16,7 +16,7 @@ leaves non-Codex tests in the directory untouched.
 from __future__ import annotations
 
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -105,7 +105,7 @@ def _fake_codex_oauth_token(
     fake_token = chatgpt_oauth._ChatGPTToken(
         access_token="vcr-fake-access-token",  # noqa: S106
         refresh_token="vcr-fake-refresh-token",  # noqa: S106
-        expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
         account_id="vcr-fake-account-id",
     )
 

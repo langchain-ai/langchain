@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Self
 
 from langchain_core.embeddings import Embeddings
 from ollama import AsyncClient, Client
@@ -13,7 +13,6 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from typing_extensions import Self
 
 from langchain_ollama._utils import (
     merge_auth_headers,
