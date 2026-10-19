@@ -26,10 +26,12 @@ except ImportError as error:
     )
     raise ImportError(msg) from error
 
+from typing import NotRequired
+
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field, JsonValue
-from typing_extensions import NotRequired, override
+from typing_extensions import override
 
 from langchain_typesafe.classifier import TypeSafeClassifier
 from langchain_typesafe.types import Choice, ChoiceAnswer, Question

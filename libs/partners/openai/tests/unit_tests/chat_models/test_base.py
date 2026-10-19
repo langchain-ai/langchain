@@ -7,7 +7,7 @@ import json
 import warnings
 from functools import partial
 from types import TracebackType
-from typing import Any, Literal, cast
+from typing import Any, Literal, Self, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -79,7 +79,7 @@ from openai.types.responses.response_usage import (
     ResponseUsage,
 )
 from pydantic import BaseModel, Field, SecretStr
-from typing_extensions import Self, TypedDict
+from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models._compat import (

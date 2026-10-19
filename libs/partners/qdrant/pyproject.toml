@@ -13,16 +13,15 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-requires-python = ">=3.10.0,<4.0.0"
+requires-python = ">=3.11.0,<4.0.0"
 dependencies = [
-    "qdrant-client>=1.15.1,<2.0.0",
+    "qdrant-client>=1.15.1,<1.16.0",
     "pydantic>=2.7.4,<3.0.0",
     "langchain-core>=1.4.7,<2.0.0",
 ]

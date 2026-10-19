@@ -12,7 +12,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -21,7 +20,7 @@ classifiers = [
 ]
 
 version = "1.7.2"
-requires-python = ">=3.10.0,<4.0.0"
+requires-python = ">=3.11.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.6.10,<2.0.0",
     "certifi>=2024.6.2",
@@ -96,41 +95,39 @@ docstring-code-format = true
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
+    "C90",     # McCabe complexity
     "COM812",  # Messes with the formatter
+    "CPY",     # No copyright
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "SIM105",  # Rarely useful
     "FIX",     # TODOs
     "TD",      # TODOs
-    "C901",    # Complex functions
-    "PLR0912", # Too many branches
-    "PLR0913", # Too many arguments
-    "PLR0914", # Too many local variables
-    "PLR0915", # Too many statements
-    "ARG001",
-    "RUF001",
+    "PLR09",   # Too many something (arg, statements, etc)
     "ERA001",
-    "PLR0911",
     "FA100",  # from __future__ import annotations breaks some schema conversion logic
 
     # TODO
-    "PLR2004", # Comparison to magic number
+    "A001",
     "ANN401",
+    "ARG001",
     "ARG002",
+    "ASYNC109",
+    "B028",
+    "B904",
     "BLE001",
-    "TC",
+    "FBT",
     "PLC0415",
+    "PLE",
+    "PLR2004", # Comparison to magic number
+    "PLW",
     "PT011",
     "PT013",
-    "TRY",
-    "PLW",
-    "PLE",
-    "FBT",
-    "A001",
-    "B028",
-    "YTT203",
+    "RUF001",
     "RUF012",
-    "B904",
+    "TC",
+    "TRY",
+    "YTT203",
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 

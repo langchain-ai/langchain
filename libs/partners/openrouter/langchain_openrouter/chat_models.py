@@ -6,7 +6,7 @@ import json
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Literal, cast
+from typing import Any, Literal, Self, cast
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -67,7 +67,6 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
 
 from langchain_openrouter._version import __version__
 from langchain_openrouter.data._profiles import _PROFILES
@@ -1375,7 +1374,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:  # noqa: 
             for raw_tool_call in raw_tool_calls:
                 try:
                     tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
-                except Exception as e:  # noqa: BLE001, PERF203
+                except Exception as e:  # noqa: BLE001
                     invalid_tool_calls.append(
                         make_invalid_tool_call(raw_tool_call, str(e))
                     )
@@ -1442,7 +1441,7 @@ def _convert_chunk_to_message_chunk(  # noqa: C901, PLR0911, PLR0912
                         index=rtc["index"],
                     )
                 )
-            except (KeyError, TypeError, AttributeError):  # noqa: PERF203
+            except (KeyError, TypeError, AttributeError):
                 warnings.warn(
                     f"Skipping malformed tool call chunk during streaming: "
                     f"unexpected structure in {rtc!r}.",
