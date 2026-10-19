@@ -916,6 +916,70 @@ class TestDynamicModelWithResponseFormat:
         assert ai_message.tool_calls == []
         assert ai_message.content == json.dumps(WEATHER_DATA)
 
+    def test_middleware_disabling_response_format_clears_stale_structured_response(self) -> None:
+        """Disabling structured output mid-conversation must not retain a stale value.
+
+        Regression test for #41304: when `wrap_model_call` middleware enables a
+        `ProviderStrategy` for one checkpointed turn and disables structured output
+        on the next turn, the second turn must not return the previous turn's
+        `structured_response` as though it belonged to the current response.
+        """
+        schema = {
+            "title": "Answer",
+            "type": "object",
+            "properties": {"text": {"type": "string"}},
+            "required": ["text"],
+            "additionalProperties": False,
+        }
+
+        class ScriptedModel(GenericFakeChatModel):
+            @override
+            def bind_tools(
+                self,
+                tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
+                **kwargs: Any,
+            ) -> Runnable[LanguageModelInput, AIMessage]:
+                return self
+
+        model = ScriptedModel(
+            messages=iter(
+                [
+                    AIMessage(content='{"text":"first"}'),
+                    AIMessage(content="plain"),
+                ]
+            )
+        )
+
+        class ToggleResponseFormatMiddleware(AgentMiddleware):
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> ModelCallResult:
+                response_format = (
+                    ProviderStrategy(schema)
+                    if request.messages[-1].content == "structured"
+                    else None
+                )
+                return handler(request.override(response_format=response_format))
+
+        agent = create_agent(
+            model=model,
+            tools=[],
+            response_format=None,
+            middleware=[ToggleResponseFormatMiddleware()],
+            checkpointer=InMemorySaver(),
+        )
+        thread: RunnableConfig = {"configurable": {"thread_id": "test-thread"}}
+
+        first = agent.invoke({"messages": [HumanMessage("structured")]}, config=thread)
+        second = agent.invoke({"messages": [HumanMessage("ordinary")]}, config=thread)
+
+        assert first["structured_response"] == {"text": "first"}
+        assert second["messages"][-1].content == "plain"
+        assert second.get("structured_response") is None
+        assert agent.get_state(thread).values.get("structured_response") is None
+
 
 def test_union_of_types() -> None:
     """Test response_format as ProviderStrategy with Union (if supported)."""
