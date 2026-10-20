@@ -28,10 +28,12 @@ sources:
     resource: repo://.github/workflows/pr_labeler.yml
   - id: openwiki-source-12805fbf767dc2a3e238645e
     resource: repo://.github/workflows/pr_lint.yml
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+  - id: openwiki-source-4d1645cb6317345817452838
+    resource: repo://.pre-commit-config.yaml
+generated: { by: "openwiki/0.5.0", at: "2026-10-20T08:25:57.412Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-16T08:25:55.096Z
+    at: 2026-10-20T08:25:57.412Z
 ---
 
 # CI/CD Workflows: GitHub Actions and Release Process
@@ -329,6 +331,41 @@ Two modes:
 - Optional `allow-prereleases` flag permits transitive prerelease dependencies during alpha cycles
 - Final releases block prerelease dependencies unless explicitly allowed
 
+## Pre-Commit Hooks
+
+Local developers use pre-commit hooks (`.pre-commit-config.yaml`) to enforce code quality standards before pushing:
+
+### Hook Categories
+
+**Standard hooks** (all packages):
+- **Branch protection**: Prevents direct commits to `master` branch
+- **YAML/TOML validation**: Ensures valid syntax
+- **Whitespace fixes**: Removes trailing spaces, ensures newline-terminated files
+- **Smart quotes normalization**: Converts curly quotes to straight quotes
+- **Space normalization**: Replaces non-breaking spaces with regular spaces
+
+**Per-package format & lint hooks**:
+- Each package directory (core, langchain, standard-tests, text-splitters, and 17+ partner packages) runs:
+  - `make format`: Auto-formats code (via ruff, Black, etc.)
+  - `make lint`: Lints code (via Ruff, MyPy, markdown-lint)
+- Partner packages run both targets with their own isolated Makefiles
+- Hooks trigger only when files in that package directory change
+
+**Version consistency hooks**:
+- Enforce that version strings in `pyproject.toml` match version files (e.g., `langchain_core/version.py`)
+- Applies to core, langchain_v1, anthropic, chroma, and deepseek packages
+- Prevents accidental version mismatches during development
+
+### Workflow
+
+1. **Local commit**: Developer runs `git commit`
+2. **Pre-commit triggers**: Hooks run against staged files
+3. **Formatting applied**: Hooks auto-format code in place
+4. **If issues remain**: Commit aborts; developer must fix remaining issues (e.g., lint violations) and re-stage
+5. **Success**: Commit proceeds after all checks pass
+
+This catches common issues before pushing and reduces CI turnaround time for formatting-only changes.
+
 ## Configuration & Operations
 
 ### Environment Variables
@@ -363,6 +400,108 @@ Isolated jobs (build, testing) receive no write permissions; publishing jobs run
 - Configures `uv` tool with optional caching
 - Supports per-package cache suffixes to avoid cross-contamination
 - Parameters: `python-version`, `cache-suffix`, `working-directory`, `enable-cache`
+
+## Workflow Selection & Running Locally
+
+### Selecting CI Workflows for Pull Requests
+
+CI runs automatically on all pull requests. The `check_diffs.yml` workflow intelligently selects which checks to run based on files changed:
+
+**Change detection maps files to workflows**:
+- Changes in `libs/core/` → Full linting, unit tests, Pydantic compatibility, integration test compilation; downstream packages also tested
+- Changes in `libs/langchain/`, `libs/text-splitters/`, etc. → Linting, unit tests, downstream dependency tests
+- Changes in `libs/partners/{name}/` → Package-specific linting, unit tests, integration tests (if supported), and tests for affected dependents
+- No package changes (e.g., `.github/`, docs-only) → Skips package CI; may run workflow-related checks instead
+- `ci-ignore` label on PR → Skips all checks (use with caution for pure documentation updates)
+
+The `check_diffs.py` script outputs separate matrices for each check type, allowing parallel execution and fast feedback on unaffected packages.
+
+### Debugging CI Failures
+
+**Common failure patterns**:
+
+1. **Linting failures** (`🧹 Linting` job):
+   - **Ruff violations**: Inline GitHub annotations show exact lines. Run `make lint_package` locally to see full output
+   - **MyPy type errors**: Run `make lint_tests` to check test code type stubs
+   - **Markdown lint**: Check `.markdownlint.json` rules; run locally to debug
+
+2. **Unit test failures** (`🧪 Unit Testing` job):
+   - **Current dependency failures**: Run `make test PYTEST_EXTRA=-q` locally with same Python version
+   - **Minimum version failures**: Run the minimum-versions step locally to reproduce: extract min versions via `get_min_versions.py`, downgrade via `uv pip install <min-spec>`, then re-run tests
+   - **Clean working directory**: If tests generate files, CI will fail the cleanup step; ensure tests clean up or add patterns to `.gitignore`
+
+3. **Pydantic compatibility failures** (`🐍 Pydantic Version Testing`):
+   - Reproduce locally: `uv pip install "pydantic~=<failing-version>"` then `make test`
+   - Check for hardcoded Pydantic version assumptions in code
+
+4. **VCR cassette failures** (`📼 VCR Cassette Tests`):
+   - Stale cassettes detected: Cassette file doesn't match current test inputs
+   - Re-record locally with real API credentials: `make test_vcr --record` or set `CASSETTE_RECORD=new` environment variable
+   - Commit updated cassette file
+
+5. **Integration test compilation failures** (`🔗 Compile Integration Tests`):
+   - Import or syntax errors in test code: Run `pytest -m compile tests/integration_tests` locally
+   - Missing dependencies: Ensure `test_integration` group is installed via `uv sync --group test_integration`
+
+6. **Release workflow failures**:
+   - **Version mismatch**: Check that `pyproject.toml` version matches the release version input (PEP 440 normalization applied)
+   - **PyPI already published**: Version already exists on PyPI; increment version and retry
+   - **Pre-release checks fail**: Run wheel install, import, and unit tests locally to diagnose
+   - **Prior partner tests fail**: The new core breaks an existing partner package; investigate breaking API changes
+
+7. **PR lint failures** (`🏷️ PR Title Lint`):
+   - **Conventional Commits format**: PR title must match `<type>[optional scope]: <description>` with allowed types and scopes
+   - **Empty scope parentheses**: Rejected; either remove `()` or provide a scope like `(core)`
+   - **Invalid type or scope**: Check the `pr_lint.yml` file for complete allowed lists
+
+### Running Workflows Locally
+
+Most CI workflows require GitHub Actions context (secrets, `GITHUB_OUTPUT`, etc.) and cannot fully run locally. However, you can simulate the key steps:
+
+**Simulate linting**:
+```bash
+cd libs/core  # or your package
+make lint_package  # lint package code
+make lint_tests   # lint test code
+```
+
+**Simulate unit tests**:
+```bash
+cd libs/core
+make test PYTEST_EXTRA=-q              # current dependencies
+python -m pip install packaging requests
+python .github/scripts/get_min_versions.py pyproject.toml pull_request 3.11  # get min spec
+pip install <min-spec>
+make tests PYTEST_EXTRA=-q             # minimum dependencies
+```
+
+**Simulate release pre-checks**:
+```bash
+cd libs/core
+uv build                               # build distributions
+uv pip install dist/*.whl              # install wheel
+python -c "import langchain_core"      # verify import
+make tests                             # run full test suite
+python .github/scripts/check_prerelease_dependencies.py pyproject.toml  # check deps
+```
+
+**Using pre-commit locally**:
+```bash
+pip install pre-commit
+cd <repo-root>
+pre-commit run --all-files             # run all checks against staged files
+pre-commit run --hook-stage commit     # run only commit-stage hooks
+```
+
+### Key Workflow Files Reference
+
+- **Primary CI**: `.github/workflows/check_diffs.yml` (entry point for PR tests)
+- **Linting template**: `.github/workflows/_lint.yml` (reusable, called by check_diffs)
+- **Unit tests template**: `.github/workflows/_test.yml` (reusable, called by check_diffs)
+- **Release workflow**: `.github/workflows/_release.yml` (manual dispatch for releases)
+- **Integration tests**: `.github/workflows/integration_tests.yml` (daily + manual dispatch)
+- **Change detection script**: `.github/scripts/check_diff.py` (determines test matrices)
+- **Version management script**: `.github/scripts/get_min_versions.py` (extracts min versions)
 
 ## Important Invariants & Failure Modes
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5ef144d1673a8c9bac92b48f6531aa2f32ae51805f71e0cf48eb3dfbba7ddb34",
+  "pageVersion": "sha256:8c205f9cfc427a48af09a109860f0eb9febf4772e344a443382f2f743b6c4e79",
   "claims": [
     {
       "id": "claim_72f3312a1c4a494889542dc6efdbf940",
@@ -211,10 +211,58 @@
           "version": "repo-lines-v1:sha256:436274b5dcf2c57abdf86c1e0fc3c0061283c60a27a1158bd1466176b72f82d3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1MzViY2E3YjMzZGRhMzdiNzljZDFlNGYyNTVkYmY2YmFhMDdjZWVlMGZiYTU1ODMyZTkyYmQ5ODkxODlhY2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1ODg0MGQ5YWJjYmIyMjYwZDE3ZWFiNmFkOWQ3ZDlhNzcwNDc3OWZhNGVhZjA1YjlkYTMwNTFmZjNhYzNhMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlODBhOTE5MDFiMzg5ZWIyZDA4ZmFlNmRlYzM2Y2JlZDYzNGEwMDUyYTU1NTNlNDZkNmE4YjYwMTgzNDhjMjkifQ"
         }
       ]
+    },
+    {
+      "id": "claim_234acc2d725b4f4f899da20f3d0c4879",
+      "statement": "The bind_tools() method on chat models configures model instances to emit tool calls within AIMessage objects; each provider implementation (OpenAI, Anthropic, etc.) converts BaseTool instances or dicts to provider-specific schemas via utilities like convert_to_openai_function(), then binds formatted tools to model invocation to return a new Runnable that accepts optional tool_choice parameter controlling model behavior.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2366-L2383",
+          "version": "repo-lines-v1:sha256:a2c56a9bc7a84b7ed47b879ac55e9139606dc73bd2023a8ced246310d05fb38c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxODU0YjA0NjkxN2UzYWIyYWQwMjllMGVlYWU3ZjkxZDBiZTNkNjkwMTRiYjYyN2FhZGRlZjJlNjlkMzg4MmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YjQ4Nzk3YmM1N2JkZGEzOGQ4MTE5NjhkMTE0YjgzNTZkN2I0YmUzMzFhMTQyZmY4ZDgzNWUwMzc3NjVlYzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1NzQzYjMwYzc5OTI2MzkwNGY4ZTgxODQyNDM3OWY5ZDIyYjJjMjAxY2I2ZTJmNzUzMzA0MTc3Y2YxYzk4OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhMTQxNjFmOTNhMDJmMzU5YmQ4MDVmZWI0Yjg5NmM0ZjExZWFiNGM1Zjc4NDA2ZmRjZjk5N2NlZGM2N2MyZGIifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/utils/function_calling.py#L515-L574",
+          "version": "repo-lines-v1:sha256:7cca7b42a0a127f5052b86dcf4a58517c20b7946f06473ae49e1cd038456f052:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmYWQ1OWViODM5NTI1YTAwNTY4NjE4YzNmODE5NzhlZjljNjZiNWI5ZGY4MmY0Njc4N2Q1Mzc1MTc3ZTJjNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NzBlNTVjMWM5NjNiOTJkN2RkNjMzMTBjMDY4MzAwMGYwYjgwMjEyMGI1NTFiZTBjN2EzMWM4OTQ1NmZjMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjZGNmMDZhY2Y0ZDYzMTJjOGU2YjM4ZDFjMjYwMDg1NmQzNGVhYTA0YWMwYjBlMDE1NzE1NzMxOGQ4ODkyMTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_618d768bfc0a47dab16b578a6c8b24a9",
+      "statement": "ToolNode is a specialized graph node that executes tool calls from AIMessage; it extracts ToolCall dicts, looks up BaseTool instances by name, invokes each with tool_call_id for error handling, and returns ToolMessage objects with matching tool_call_id and status (success/error) for model feedback, respecting each tool's handle_tool_error configuration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1130-L1151",
+          "version": "repo-lines-v1:sha256:0c8c554e463eebc0ddbb905d2f68ef27dd4514557cd5f3cd6ef20c4923bb4249:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NmU1NTNmYjUxNmIyMjBjYzVkNTUzODNlNWQxNDYxY2EyODUzOTEyYTRjNWQwNjZiY2NlNjg3ZmYzNDI2MTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmZjBjZGJhYWE0MDI2YWZiNjNlOGRiYWE0MjYxMDA3YjIxN2U5MTNmMDZiMWJhZWFiOTdjMDU5Yzk2NDdlYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0MDZiYjY2MjEzMDVlZGZmMDk1OGU4OWJiN2Y0NTM0ZDJiMTI3ZDIyYjJhYzkwNGU4ZDY1MzZmZjNjYzA5YjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5NTIwNWRlYWMwMzZhNjlhZDMyYjI5OTFlOWVjNWVlMWU2ODc3NzAzNjdmYTI1MWIyNmRlZjU1ZWI2YzBjYjMifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L35-L35",
+          "version": "repo-lines-v1:sha256:b70871375ad326e56a68cade469735dc64df2896c92a7c74c3e223660f084545:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjcwODcxMzc1YWQzMjZlNTZhNjhjYWRlNDY5NzM1ZGM2NGRmMjg5NmM5MmE3Yzc0YzNlMjIzNjYwZjA4NDU0NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjcwODcxMzc1YWQzMjZlNTZhNjhjYWRlNDY5NzM1ZGM2NGRmMjg5NmM5MmE3Yzc0YzNlMjIzNjYwZjA4NDU0NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmExNjM0YjIzZTgwNmUzZmE1MTk1YTU3NjQ3ZTM3YTk5Y2QxZTE3N2RkNjc0NDA5MjYwYjFlYzVkODFmNTZkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmUzMDQ2NGFhNGY3N2UwZTg4NTA1OGNkYWMwN2M4NmRjM2I5NDRkNGI0OWJkOGYyOGMxNTA4YWVmZjA0MGZmYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_22655d955fe04510bbfa1ac534af7796",
+      "statement": "Tool call extraction and validation follows: models emit structured JSON in AIMessage.tool_calls; ToolNode extracts ToolCall dicts with name/args/id; tool name is resolved against agent's tool registry; args dict is validated via tool's args_schema via Pydantic; invalid calls (unknown name, bad JSON, missing args) are caught and returned as ToolMessage with status=error for model correction.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L1009-L1135",
+          "version": "repo-lines-v1:sha256:899a9cd38841879080e0d62013f442bfbe7473c0ed4f2843d83e1e6d19116df1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMDhjZDk3OTY5Yjk0ZjdjYWJkOWFiODUyY2RlY2RjOWNlOTllNTJkNzJlYzFjZDE4YjhhZWNhMjlhOWUyYmUyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4MjBlN2JiNmFkMzZjNjE5YWIxZjJiM2MyYjQzNTVjNjFlNWI1NTc3MmM4MmU2NGU1YmVkZmZkZDQ5YzQzNzMxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0ZDg5MjM5YTEwYTAwMTRmMjM0ZTE3MjM3NWQxMWZkZWFmNjdjNWFhNzJjZjFkYTMzMjMxMWQ3NGJiNjEwMTBhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjMTIxMzUwY2E0NmI3Yjc0OWVkZTdlYTBhNmFhYmQ1ZGFjYWNmYmJkMTdmOGRkZTZjMjZmMmRkN2UyN2IxYjkxIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_b68aa35bc0644b9ab17bd9356474dedf",
+      "statement": "Different model providers format tools using provider-specific utilities: OpenAI via convert_to_openai_function() generates function definitions with JSON schema parameters; Anthropic uses tool_use block format; each provider's bind_tools() converts tool_call_schema to provider format, optionally with provider extras (cache_control, defer_loading) before binding to model invocation.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/utils/function_calling.py#L515-L574",
+          "version": "repo-lines-v1:sha256:7cca7b42a0a127f5052b86dcf4a58517c20b7946f06473ae49e1cd038456f052:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmYWQ1OWViODM5NTI1YTAwNTY4NjE4YzNmODE5NzhlZjljNjZiNWI5ZGY4MmY0Njc4N2Q1Mzc1MTc3ZTJjNGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5NzBlNTVjMWM5NjNiOTJkN2RkNjMzMTBjMDY4MzAwMGYwYjgwMjEyMGI1NTFiZTBjN2EzMWM4OTQ1NmZjMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjZGNmMDZhY2Y0ZDYzMTJjOGU2YjM4ZDFjMjYwMDg1NmQzNGVhYTA0YWMwYjBlMDE1NzE1NzMxOGQ4ODkyMTIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-16T08:25:55.096Z"
+    "at": "2026-10-20T08:25:57.412Z"
   }
 }
