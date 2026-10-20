@@ -71,7 +71,7 @@ class TestAgentStreamV3Sync:
         run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
 
         # Drain so the run closes cleanly.
-        list(run.tool_calls)  # type: ignore[attr-defined]
+        list(run.tool_calls)
 
     def test_tool_calls_populated_without_opt_in(self) -> None:
         """`ToolCallTransformer` is registered by default on the agent streamer."""
@@ -80,7 +80,7 @@ class TestAgentStreamV3Sync:
 
         run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
 
-        collected: list[ToolCallStream] = list(run.tool_calls)  # type: ignore[attr-defined]
+        collected: list[ToolCallStream] = list(run.tool_calls)
         assert len(collected) == 1
         tc = collected[0]
         assert tc.tool_name == "echo"
@@ -95,7 +95,7 @@ class TestAgentStreamV3Sync:
         run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
 
         tool_calls: list[ToolCallStream] = []
-        for tc in run.tool_calls:  # type: ignore[attr-defined]
+        for tc in run.tool_calls:
             tool_calls.append(tc)
             assert list(tc.output_deltas) == ["one", "two"]
         assert len(tool_calls) == 1
@@ -106,7 +106,7 @@ class TestAgentStreamV3Sync:
         agent = create_agent(model, [])
 
         run = agent.stream_events({"messages": [HumanMessage("hi")]}, version="v3")
-        assert list(run.tool_calls) == []  # type: ignore[attr-defined]
+        assert list(run.tool_calls) == []
         assert run.output is not None
 
     def test_messages_projection_present(self) -> None:
@@ -122,7 +122,7 @@ class TestAgentStreamV3Sync:
         assert "messages" in run._mux.extensions
         assert hasattr(run, "messages")
         # Drain so the run closes cleanly.
-        for tc in run.tool_calls:  # type: ignore[attr-defined]
+        for tc in run.tool_calls:
             list(tc.output_deltas)
 
     def test_caller_transformers_appended_not_replaced(self) -> None:
@@ -167,7 +167,7 @@ class TestAgentStreamV3Sync:
             "ToolCallTransformer must be registered before user-supplied transformers"
         )
 
-        list(run.tool_calls)  # type: ignore[attr-defined]
+        list(run.tool_calls)
 
     def test_tool_error_sets_error_field(self) -> None:
         """Tool errors are surfaced on the `ToolCallStream.error` field.
@@ -184,7 +184,7 @@ class TestAgentStreamV3Sync:
         collected: list[ToolCallStream] = []
 
         def _drive() -> None:
-            for tc in run.tool_calls:  # type: ignore[attr-defined]
+            for tc in run.tool_calls:
                 collected.append(tc)
                 list(tc.output_deltas)
 
@@ -271,7 +271,7 @@ class TestAgentStreamV3Async:
         agent = create_agent(model, [echo])
 
         run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
-        async for tc in run.tool_calls:  # type: ignore[attr-defined]
+        async for tc in run.tool_calls:
             async for _ in tc.output_deltas:
                 pass
 
@@ -283,7 +283,7 @@ class TestAgentStreamV3Async:
         run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
 
         collected: list[ToolCallStream] = []
-        async for tc in run.tool_calls:  # type: ignore[attr-defined]
+        async for tc in run.tool_calls:
             collected.append(tc)
             deltas = [d async for d in tc.output_deltas]
             assert deltas == ["hi", "hi!"]

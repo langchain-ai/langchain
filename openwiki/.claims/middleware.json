@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:292ef3af03c17963611499165f6045b27db7700b522fb3d608fb027272c23f40",
+  "pageVersion": "sha256:b8080e5df75c67cc4c69c2dc6ae72e2c8385efe2b711e32f89d064f4c2925191",
   "claims": [
     {
       "id": "claim_6ce968382a514edb90e74830ccdebef7",
@@ -122,15 +122,15 @@
     },
     {
       "id": "claim_8bc539a2478d490e89c935a82740c877",
-      "statement": "HumanInTheLoopMiddleware uses after_model hook to intercept AIMessage tool_calls and send HITLRequest (with ActionRequest list and ReviewConfig list) to a human via langgraph.interrupt(); decisions (approve, edit, reject, respond) modify or filter tool calls before execution; edit decision revises tool arguments, reject sends ToolMessage with user feedback, respond skips execution and returns synthetic ToolMessage with human's answer.",
+      "statement": "HumanInTheLoopMiddleware in batched mode (default) uses after_model hook to intercept AIMessage tool_calls and send HITLRequest (with ActionRequest list and ReviewConfig list) to a human via langgraph.interrupt(); decisions (approve, edit, reject, respond) modify or filter tool calls before execution; edit decision revises tool arguments, reject sends ToolMessage with user feedback, respond skips execution and returns synthetic ToolMessage with human's answer. In per_call mode, interrupts are raised inside wrap_tool_call per tool call.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/human_in_the_loop.py#L427-L525",
-          "version": "repo-lines-v1:sha256:d5b7ad81526ab0894786de5e15377062824c5abe2a939e57d2e3181282bfbb71:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzZTAxMDE1M2ZkZjExNWY2NWJhMDc2M2QxMjMwYmFiMDVlZGJlMmVlZjAzMTNmN2QwNWMzMDdiYTYwY2MyOGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ0ZjFkY2I1ZGY0ZmVjZjljOTFkZjUzYWFkNGZmZTMyY2RlNjU0OTlmNmUyMGI2YTZjMTk0ZTgwODU3ZjM4ODYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5NDIwYTZkZGJmYjhhNWJmZTJhODIxMWU2NjMxODRiZWNhOWI1ZTM3Y2RhYWE5MTZjYjc2YzUyNWY0MWQ1MWQifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/human_in_the_loop.py#L758-L859",
+          "version": "repo-lines-v1:sha256:3943e4668af0c3795be53d59428c008b2fc27ff1abe4aa657c964343efae8d7f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1M2UwMTAxNTNmZGYxMTVmNjViYTA3NjNkMTIzMGJhYjA1ZWRiZTJlZWYwMzEzZjdkMDVjMzA3YmE2MGNjMjhiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNmIwNDQ5MTQ2OTcyMmU4MzYzYTk0ZTQwNDQ1MzhlMDEzYTJhMjE3ZTM2YjFlNTY4YmE2MGFjYjdiNGM4ZjJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0MGFlMjQxMjI1MGQ0ODliNTM3YTllN2FjYTM2ZDJhMjBjYWZiOGEwNDgxYmJiNzg1NTIzOWNmNzk3NTUyZjMzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmOTQyMGE2ZGRiZmI4YTViZmUyYTgyMTFlNjYzMTg0YmVjYTliNWUzN2NkYWFhOTE2Y2I3NmM1MjVmNDFkNTFkIn0"
         },
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/human_in_the_loop.py#L541-L577",
-          "version": "repo-lines-v1:sha256:48e15a5cb6fc7b73beba33b6dacd10da9d0c18d97848d6bb9d4aef9bb9474e14:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkMGZkOTI4ZjAxZjZmOGJlNzNkNDYzZWUzOWIwZWFkMDc0ZTYwYzE1ZDczMjBiNDJhYWUxM2Q2OTA3Njg5ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3ODdmOTg4ZTQxYjVlOGEzY2M5Njk0N2JkNDQzYjE4NjFkNjI5ZjYxMjBiNDhmZDY5Yzg4NGI1MjhiZDc3NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3OTQwMWU1ZTg4ZDViNTIwYzRmYWM5ZTAxOTcyNDdhZmJmNzEzYzhlZmExMzBlOWFjM2M4ODFmYWIwY2EyZTEifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/human_in_the_loop.py#L979-L1010",
+          "version": "repo-lines-v1:sha256:9c0e2237728e0a57d12dead8a206bd6195d59ce95f8133c040472a0fbc74b6a4:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0NTJkY2RlODgxMjZjNGM1Njg1OTMwOGFjNzY3OWU1ODBkYmJiMWNhODNkYjVkYjAxZTJkMTJmMzVhNDdjZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5Y2FkMTQ5MTVkMTg5YTFkY2I1MTQ2NjAyZjAxNDg3ZGE5YzNhYWMyZTZmNzM3NTE4NDVmZjhlYzEyNDFhNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYyNGRlOGRiYzU4YmIyMmRjNDIzNjhlODY3MWMyNmJhOWQ1NGVhZmEzZWE5OWJkYzM2N2ZlZmFiOTJhMzE2OTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhkMzljOTgwOTA2NDFmNWU4NGRkY2QyZTJkYmVlNjZkNWJjNGY1OTQ4YjVlYWY0ZWZjODlkZWE0NTIwYmIzMzMifQ"
         }
       ]
     },
@@ -199,6 +199,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-28T08:35:20.640Z"
+    "at": "2026-10-16T08:25:55.096Z"
   }
 }

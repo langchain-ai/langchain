@@ -3,9 +3,6 @@ type: "Reference"
 title: "Callback System and Handler Integration"
 description: "Document the callback handler architecture, integration with runnables and chat models, and patterns for tracking execution events, streaming, and instrumentation."
 tags: ["callbacks", "observability", "handlers", "tracing", "streaming", "langsmith"]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
 sources:
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py
@@ -24,6 +21,9 @@ sources:
   - id: openwiki-source-bfd8b1aa6ad00852a2e99762
     resource: repo://libs/core/langchain_core/tracers/context.py
 generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-16T08:25:55.096Z
 ---
 
 

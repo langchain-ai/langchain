@@ -42,19 +42,21 @@ sources:
     resource: repo://libs/model-profiles/langchain_model_profiles/__init__.py
   - id: openwiki-source-738512768ef81ae009b097ac
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
+  - id: openwiki-source-b65307f1d05bd74532af2eee
+    resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
   - id: openwiki-source-bd29e79613d5f366a00068f5
     resource: repo://libs/standard-tests/langchain_tests/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-29T08:28:34.635Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-19T08:31:23.057Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-29T08:28:34.635Z
+    at: 2026-10-19T08:31:23.057Z
 ---
 
 ## Overview
 
 This page provides a quick reference for locating code by topic in the LangChain monorepo. The repository is organized as a multi-package workspace with a three-layer architecture: **langchain-core** (base abstractions), **langchain** (orchestration and agents), and **partners** (provider integrations). Use this map to navigate directly to the code responsible for a given concept.
 
-**Current Versions**: langchain-core v1.6.5, langchain v1.4.3
+**Current Versions**: langchain-core v1.6.12, langchain v1.4.6
 
 ## Concept-to-Path Mapping
 
@@ -65,6 +67,7 @@ This page provides a quick reference for locating code by topic in the LangChain
 | **Chat Models** | `repo://libs/core/langchain_core/language_models/chat_models.py` | `BaseChatModel` abstract base and unified provider interface for streaming, batching, and token counting |
 | **Chat Models (Core Interfaces)** | `repo://libs/core/langchain_core/language_models/` | Base language model classes, fake models for testing, and compatibility bridges |
 | **Chat Models (Partner Implementations)** | `repo://libs/partners/*/` (e.g., `openai/`, `anthropic/`, `ollama/`) | Provider-specific implementations: ChatOpenAI, ChatAnthropic, ChatOllama, etc. |
+| **Decisions (OpenAI)** | `repo://libs/partners/openai/langchain_openai/decisions/` | OpenAI structured outputs API integration for deterministic response marshaling and routing |
 | **Callbacks & Tracing** | `repo://libs/core/langchain_core/callbacks/` | Callback manager, base handlers, streaming output, and LangSmith integration |
 | **Messages** | `repo://libs/core/langchain_core/messages/` | Message types (AIMessage, HumanMessage, SystemMessage, ToolMessage) and content blocks |
 | **Model Initialization** | `repo://libs/langchain_v1/langchain/chat_models/base.py` | `init_chat_model()` factory for dynamic model discovery and loading by provider:model identifier |
@@ -91,7 +94,7 @@ This page provides a quick reference for locating code by topic in the LangChain
 
 ```
 /libs/
-├── core/                           # langchain-core: Base abstractions (v1.6.5)
+├── core/                           # langchain-core: Base abstractions (v1.6.12)
 │   ├── langchain_core/
 │   │   ├── language_models/        # BaseChatModel and language model abstractions
 │   │   ├── messages/               # Message types and content blocks
@@ -108,7 +111,7 @@ This page provides a quick reference for locating code by topic in the LangChain
 │   ├── Makefile
 │   └── pyproject.toml
 │
-├── langchain_v1/                   # langchain: Orchestration and agents (v1.4.3)
+├── langchain_v1/                   # langchain: Orchestration and agents (v1.4.6)
 │   ├── langchain/
 │   │   ├── agents/
 │   │   │   ├── factory.py          # Agent factory and graph construction
@@ -282,8 +285,8 @@ The `BaseTool` in `repo://libs/core/langchain_core/tools/base.py` provides:
 
 ```
 User Applications
-  ├─→ langchain (v1.4.3)
-  │    ├─→ langchain-core (v1.6.5)
+  ├─→ langchain (v1.4.6)
+  │    ├─→ langchain-core (v1.6.11)
   │    └─→ LangGraph (state machines)
   │
   ├─→ langchain-core (direct use)
