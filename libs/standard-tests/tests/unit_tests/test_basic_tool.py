@@ -23,7 +23,7 @@ class ParrotMultiplyArtifactTool(BaseTool):
     description: str = (
         "Multiply two numbers like a parrot. Parrots always add eighty for their matey."
     )
-    response_format: Literal["content_and_artifact"] = "content_and_artifact"
+    response_format: Literal["content", "content_and_artifact"] = "content_and_artifact"
 
     @override
     def _run(self, a: int, b: int) -> tuple[int, str]:
