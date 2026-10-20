@@ -51,6 +51,7 @@ from langchain_core.messages.ai import (
     InputTokenDetails,
     OutputTokenDetails,
     UsageMetadata,
+    subtract_usage,
 )
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import (
@@ -2216,12 +2217,14 @@ class ChatAnthropic(BaseChatModel):
             )
             block_start_event = None
             is_first_chunk = True
+            usage_state: dict[str, Any] = {}
             for event in stream:
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
                     coerce_content_to_string=coerce_content_to_string,
                     block_start_event=block_start_event,
+                    usage_state=usage_state,
                 )
                 if msg is not None:
                     chunk = ChatGenerationChunk(
@@ -2266,12 +2269,14 @@ class ChatAnthropic(BaseChatModel):
             )
             block_start_event = None
             is_first_chunk = True
+            usage_state: dict[str, Any] = {}
             async for event in stream:
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
                     coerce_content_to_string=coerce_content_to_string,
                     block_start_event=block_start_event,
+                    usage_state=usage_state,
                 )
                 if msg is not None:
                     chunk = ChatGenerationChunk(
@@ -2296,6 +2301,7 @@ class ChatAnthropic(BaseChatModel):
         stream_usage: bool = True,
         coerce_content_to_string: bool,
         block_start_event: anthropic.types.RawMessageStreamEvent | None = None,
+        usage_state: dict[str, Any] | None = None,
     ) -> tuple[AIMessageChunk | None, anthropic.types.RawMessageStreamEvent | None]:
         """Convert Anthropic streaming event to `AIMessageChunk`.
 
@@ -2309,6 +2315,11 @@ class ChatAnthropic(BaseChatModel):
                 content like tool calls and citations are maintained.
             block_start_event: Previous content block start event, used for tracking
                 tool use blocks and maintaining context across related events.
+            usage_state: Mutable dict threaded across events by `_stream`/`_astream`
+                carrying the last emitted cumulative usage snapshot under `"last"`.
+                When provided, `message_delta` chunks carry the increment between
+                snapshots (Anthropic deltas are cumulative); when `None`, the
+                delta's cumulative counts are emitted as-is (legacy behavior).
 
         Returns:
             Tuple with
@@ -2326,8 +2337,15 @@ class ChatAnthropic(BaseChatModel):
         # Reference: Anthropic SDK streaming implementation
         # https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
         if event.type == "message_start" and stream_usage:
-            # Capture model name, but don't include usage_metadata yet
-            # as it will be properly reported in message_delta with complete info
+            # Capture model name. When the caller threads `usage_state` (the
+            # `_stream`/`_astream` protocol), also capture the message_start
+            # usage snapshot: `message_delta` fields are cumulative but a delta
+            # may omit `input_tokens` (None = unchanged), so the start snapshot
+            # is the only reliable source for input usage. Each `message_delta`
+            # then emits only its increment against the last snapshot, so chunk
+            # aggregation reconstructs the SDK's final snapshot instead of
+            # double-counting the cumulative counts. Without `usage_state` the
+            # legacy contract is preserved (no usage on start chunks).
             if hasattr(event.message, "model"):
                 response_metadata: dict[str, Any] = {"model_name": event.message.model}
             else:
@@ -2337,6 +2355,10 @@ class ChatAnthropic(BaseChatModel):
                 content="" if coerce_content_to_string else [],
                 response_metadata=response_metadata,
             )
+            if usage_state is not None and hasattr(event.message, "usage"):
+                start_usage = _create_usage_metadata(event.message.usage)
+                message_chunk.usage_metadata = start_usage
+                usage_state["last"] = start_usage
 
         elif (
             event.type == "content_block_start"
@@ -2346,6 +2368,7 @@ class ChatAnthropic(BaseChatModel):
                 or "tool_use" in event.content_block.type
                 or "document" in event.content_block.type
                 or "redacted_thinking" in event.content_block.type
+                or "container_upload" in event.content_block.type
             )
         ):
             if coerce_content_to_string:
@@ -2486,7 +2509,24 @@ class ChatAnthropic(BaseChatModel):
 
         # Process final usage metadata and completion info
         elif event.type == "message_delta" and stream_usage:
-            usage_metadata = _create_usage_metadata(event.usage)
+            cumulative = _create_usage_metadata(event.usage)
+            if usage_state is not None:
+                last = usage_state.get("last")
+                # Deltas are cumulative snapshots; emit only the increment so that
+                # chunk aggregation (AIMessageChunk.__add__ / add_usage) rebuilds
+                # the final SDK snapshot. `subtract_usage` floors at 0, which also
+                # guards the legacy server case where input counts are omitted.
+                # `total_tokens` is derived, not additive: recompute it from the
+                # increment instead of subtracting the snapshots' totals.
+                if last is not None:
+                    increment = subtract_usage(cumulative, last)
+                    increment["total_tokens"] = (
+                        increment["input_tokens"] + increment["output_tokens"]
+                    )
+                    cumulative = increment
+                # First known snapshot becomes the baseline for the next delta.
+                usage_state["last"] = _create_usage_metadata(event.usage)
+            usage_metadata = cumulative
             response_metadata = {
                 "stop_reason": event.delta.stop_reason,
                 "stop_sequence": event.delta.stop_sequence,

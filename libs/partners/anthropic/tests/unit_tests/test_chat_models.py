@@ -3885,6 +3885,7 @@ def _aggregate_anthropic_events(
 ) -> AIMessageChunk | None:
     """Drive the handler over `events` and sum chunks like `_stream` does."""
     block_start_event = None
+    usage_state: dict[str, Any] = {}
     aggregate: AIMessageChunk | None = None
     for event in events:
         chunk, block_start_event = llm._make_message_chunk_from_anthropic_event(
@@ -3892,10 +3893,216 @@ def _aggregate_anthropic_events(
             stream_usage=True,
             coerce_content_to_string=coerce_content_to_string,
             block_start_event=block_start_event,
+            usage_state=usage_state,
         )
         if chunk is not None:
             aggregate = chunk if aggregate is None else aggregate + chunk
     return aggregate
+
+
+def test_streaming_usage_matches_sdk_snapshot() -> None:
+    """Regression test (#41319): aggregated stream usage must equal the SDK's.
+
+    Anthropic reports usage as cumulative snapshots: `message_start` carries the
+    input counts (output ~1), each `message_delta` repeats the cumulative total
+    and may omit `input_tokens` entirely. Summing those snapshots as increments
+    dropped input tokens (no input in the final delta) or double-counted them
+    (two deltas). The handler now emits the start snapshot plus per-delta
+    increments, so aggregation reconstructs the SDK's final snapshot.
+    """
+    from anthropic.types import (
+        MessageDeltaUsage,
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawMessageDeltaEvent,
+        RawMessageStartEvent,
+        RawMessageStopEvent,
+        TextDelta,
+    )
+    from anthropic.types.raw_message_delta_event import Delta
+
+    def _start(inp: int, out: int) -> RawMessageStartEvent:
+        return RawMessageStartEvent(
+            message=Message(
+                id="msg_repro",
+                content=[],
+                model=MODEL_NAME,
+                role="assistant",
+                stop_reason=None,
+                stop_sequence=None,
+                usage=Usage(input_tokens=inp, output_tokens=out),
+                type="message",
+            ),
+            type="message_start",
+        )
+
+    def _delta(
+        inp: int | None, out: int, stop: str | None = None
+    ) -> RawMessageDeltaEvent:
+        kwargs: dict[str, Any] = {"output_tokens": out}
+        if inp is not None:
+            kwargs["input_tokens"] = inp
+        return RawMessageDeltaEvent(
+            delta=Delta(stop_reason=stop, stop_sequence=None),
+            usage=MessageDeltaUsage(**kwargs),
+            type="message_delta",
+        )
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    # Case 1: input tokens appear only on message_start.
+    events = [
+        _start(25, 1),
+        RawContentBlockStartEvent(
+            content_block=TextBlock(text="", type="text"),
+            index=0,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=TextDelta(text="Hello", type="text_delta"),
+            index=0,
+            type="content_block_delta",
+        ),
+        _delta(None, 7, stop="end_turn"),
+        RawMessageStopEvent(type="message_stop"),
+    ]
+    aggregate = _aggregate_anthropic_events(llm, events, coerce_content_to_string=True)
+    assert aggregate is not None
+    usage = aggregate.usage_metadata
+    assert usage is not None
+    assert usage["input_tokens"] == 25, usage
+    assert usage["output_tokens"] == 7, usage
+    assert usage["total_tokens"] == 32, usage
+
+    # Case 2: two cumulative message_delta snapshots must not double-count.
+    events = [_start(25, 1), _delta(25, 3), _delta(25, 7, stop="end_turn")]
+    aggregate = _aggregate_anthropic_events(llm, events, coerce_content_to_string=True)
+    assert aggregate is not None
+    usage = aggregate.usage_metadata
+    assert usage["input_tokens"] == 25, usage
+    assert usage["output_tokens"] == 7, usage
+
+    # Case 3: cache token details reconstruct exactly once.
+    start_event = RawMessageStartEvent(
+        message=Message.model_validate(
+            {
+                "id": "msg_repro",
+                "content": [],
+                "model": MODEL_NAME,
+                "role": "assistant",
+                "stop_reason": None,
+                "stop_sequence": None,
+                "usage": {
+                    "input_tokens": 100,
+                    "output_tokens": 0,
+                    "cache_read_input_tokens": 25,
+                    "cache_creation_input_tokens": 10,
+                },
+                "type": "message",
+            }
+        ),
+        type="message_start",
+    )
+    delta_event = RawMessageDeltaEvent(
+        delta=Delta(stop_reason="end_turn", stop_sequence=None),
+        usage=MessageDeltaUsage.model_validate(
+            {
+                "output_tokens": 50,
+                "input_tokens": 100,
+                "cache_read_input_tokens": 25,
+                "cache_creation_input_tokens": 10,
+            }
+        ),
+        type="message_delta",
+    )
+    aggregate = _aggregate_anthropic_events(
+        llm, [start_event, delta_event], coerce_content_to_string=True
+    )
+    assert aggregate is not None
+    usage = aggregate.usage_metadata
+    assert usage["input_tokens"] == 135, usage  # 100 + 25 + 10, counted once
+    assert usage["output_tokens"] == 50, usage
+    details = usage.get("input_token_details", {})
+    assert details.get("cache_read") == 25
+    assert details.get("cache_creation") == 10
+
+
+def test_streaming_preserves_container_upload_block() -> None:
+    """Regression test (#41320): container_upload blocks survive streaming.
+
+    The `content_block_start` handler only built chunks for tool/document/
+    redacted_thinking/text/thinking blocks, so a `container_upload` block
+    (file uploaded to the code-execution container) was silently dropped from
+    streamed content while `invoke()` preserved it.
+    """
+    from anthropic.types import (
+        ContainerUploadBlock,
+        MessageDeltaUsage,
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawContentBlockStopEvent,
+        RawMessageDeltaEvent,
+        RawMessageStartEvent,
+        RawMessageStopEvent,
+        TextDelta,
+    )
+    from anthropic.types.raw_message_delta_event import Delta
+
+    block = ContainerUploadBlock(file_id="file_repro", type="container_upload")
+    events = [
+        RawMessageStartEvent(
+            message=Message(
+                id="msg_repro",
+                content=[],
+                model=MODEL_NAME,
+                role="assistant",
+                stop_reason=None,
+                stop_sequence=None,
+                usage=Usage(input_tokens=25, output_tokens=1),
+                type="message",
+            ),
+            type="message_start",
+        ),
+        RawContentBlockStartEvent(
+            content_block=block, index=0, type="content_block_start"
+        ),
+        RawContentBlockStopEvent(index=0, type="content_block_stop"),
+        RawContentBlockStartEvent(
+            content_block=TextBlock(text="", type="text"),
+            index=1,
+            type="content_block_start",
+        ),
+        RawContentBlockDeltaEvent(
+            delta=TextDelta(text="Hello", type="text_delta"),
+            index=1,
+            type="content_block_delta",
+        ),
+        RawContentBlockStopEvent(index=1, type="content_block_stop"),
+        RawMessageDeltaEvent(
+            delta=Delta(stop_reason="end_turn", stop_sequence=None),
+            usage=MessageDeltaUsage(output_tokens=7),
+            type="message_delta",
+        ),
+        RawMessageStopEvent(type="message_stop"),
+    ]
+
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    # Structured path (tools in play): block must survive with its file_id.
+    aggregate = _aggregate_anthropic_events(llm, events, coerce_content_to_string=False)
+    assert aggregate is not None
+    assert isinstance(aggregate.content, list)
+    uploads = [
+        b
+        for b in aggregate.content
+        if isinstance(b, dict) and b.get("type") == "container_upload"
+    ]
+    assert len(uploads) == 1, aggregate.content
+    assert uploads[0]["file_id"] == "file_repro"
+    assert uploads[0]["index"] == 0
+
+    # Text from the second block is still present.
+    assert "Hello" in aggregate.text
 
 
 def test_text_content_block_start_carries_initial_text() -> None:
