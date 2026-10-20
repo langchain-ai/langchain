@@ -1,3 +1,6 @@
+import subprocess
+import sys
+
 from langchain_core.utils import __all__
 
 EXPECTED_ALL = [
@@ -32,3 +35,13 @@ EXPECTED_ALL = [
 
 def test_all_imports() -> None:
     assert set(__all__) == set(EXPECTED_ALL)
+
+
+def test_pydantic_import_without_warnings() -> None:
+    result = subprocess.run(
+        [sys.executable, "-W", "error", "-c", "import langchain_core.utils.pydantic"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
