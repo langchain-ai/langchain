@@ -51,3 +51,35 @@ def test_explicit_constraints_are_preserved(constraint: dict[str, Any]) -> None:
     payload = {"type": "object", **constraint}
     schema = {"type": "object", "properties": {"payload": payload}}
     assert _normalize_mcp_schema(schema)["properties"]["payload"] == payload
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"type": "object"},
+        {"type": ["object", "null"]},
+    ],
+)
+async def test_nested_open_object_closes_under_strict(payload: dict[str, Any]) -> None:
+    """A nested bare object must be closed the same way a direct one is.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/41321.
+    """
+    schema = {
+        "type": "object",
+        "properties": {
+            "wrapper": {
+                "type": "object",
+                "properties": {"payload": payload},
+                "required": ["payload"],
+            }
+        },
+        "required": ["wrapper"],
+    }
+    mcp_tool = Tool(name="call_operation", input_schema=schema)
+    tool = await as_langchain_tool(mcp_tool, Client(FastMCP("test")))
+    parameters = convert_to_openai_tool(tool, strict=True)["function"]["parameters"]
+
+    nested = parameters["properties"]["wrapper"]["properties"]["payload"]
+    assert nested["additionalProperties"] is False
+    assert nested["type"] == payload["type"]

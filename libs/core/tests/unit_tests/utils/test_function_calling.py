@@ -32,6 +32,7 @@ from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
 from langchain_core.utils.function_calling import (
     _convert_typed_dict_to_openai_function,
     _parse_google_docstring,
+    _recursive_set_additional_properties_false,
     convert_to_json_schema,
     convert_to_openai_function,
     convert_to_openai_tool,
@@ -1502,3 +1503,69 @@ def test_convert_to_openai_function_without_tools_module_imported(
     result = convert_to_openai_function(my_func)
 
     assert result["name"] == "my_func"
+
+
+def test_strict_closes_a_bare_object_at_any_depth() -> None:
+    """A bare object must not convert differently depending on nesting depth.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/41321:
+    `_normalize_mcp_schema` marks direct properties with
+    `additionalProperties: true`, which the strict pass then flips to `false`,
+    so a direct bare object ended up closed while a nested one stayed open.
+    """
+    direct = _recursive_set_additional_properties_false({"type": "object"})
+    nested = _recursive_set_additional_properties_false(
+        {
+            "type": "object",
+            "properties": {"wrapper": {"type": "object"}},
+            "required": ["wrapper"],
+        }
+    )["properties"]["wrapper"]
+
+    assert direct == {"type": "object", "additionalProperties": False}
+    assert nested == direct
+
+
+@pytest.mark.parametrize(
+    "schema",
+    [
+        {"type": "object"},
+        {"type": ["object", "null"]},
+        {"type": ["null", "object"]},
+    ],
+)
+def test_strict_closes_object_typed_schemas(schema: dict[str, Any]) -> None:
+    assert (
+        _recursive_set_additional_properties_false(schema)["additionalProperties"]
+        is False
+    )
+
+
+def test_strict_closes_deeply_nested_bare_objects() -> None:
+    schema: dict[str, Any] = {
+        "type": "object",
+        "properties": {
+            "a": {
+                "type": "object",
+                "properties": {
+                    "b": {
+                        "type": "object",
+                        "properties": {"c": {"type": "object"}},
+                    }
+                },
+            }
+        },
+        "required": ["a"],
+    }
+    result = _recursive_set_additional_properties_false(schema)
+    innermost = result["properties"]["a"]["properties"]["b"]["properties"]["c"]
+    assert innermost["additionalProperties"] is False
+
+
+def test_strict_leaves_non_object_schemas_alone() -> None:
+    assert _recursive_set_additional_properties_false({"type": "string"}) == {
+        "type": "string"
+    }
+    assert _recursive_set_additional_properties_false(
+        {"type": "array", "items": {"type": "string"}}
+    ) == {"type": "array", "items": {"type": "string"}}

@@ -834,6 +834,17 @@ def _recursive_set_additional_properties_false(
 
         # Check if 'required' is a key at the current level or if the schema is empty,
         # in which case additionalProperties still needs to be specified.
+        # A bare object schema (`{"type": "object"}` with no `properties`, no
+        # `required` and no `additionalProperties`) satisfies none of the conditions
+        # below, so it stayed open - while the same shape one level up was closed,
+        # because `_normalize_mcp_schema` marks direct properties with
+        # `additionalProperties: true` first. That made the result depend on nesting
+        # depth and produced strict-mode schemas OpenAI rejects. Treat "object-typed"
+        # as a trigger too, so a bare object is closed wherever it appears.
+        schema_type = schema.get("type")
+        is_object = schema_type == "object" or (
+            isinstance(schema_type, list) and "object" in schema_type
+        )
         if (
             "required" in schema
             or ("properties" in schema and not schema["properties"])
@@ -842,6 +853,7 @@ def _recursive_set_additional_properties_false(
             # See: https://pydantic.dev/articles/pydantic-v2-11-release#changes
             # If it is already set to True, we need override it to False
             or "additionalProperties" in schema
+            or is_object
         ):
             schema["additionalProperties"] = False
 
