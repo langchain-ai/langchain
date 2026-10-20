@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, cast
+from typing import Any, Self, cast
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
@@ -11,7 +11,7 @@ from langchain_core.documents import Document
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.utils.pydantic import create_model
 from pydantic import BaseModel, ConfigDict, model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_classic.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain_classic.chains.llm import LLMChain

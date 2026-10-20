@@ -1,6 +1,6 @@
 """Module definitions of agent types together with corresponding agents."""
 
-from enum import Enum
+from enum import StrEnum
 
 from langchain_core._api import deprecated
 
@@ -12,7 +12,7 @@ from langchain_classic._api.deprecation import AGENT_DEPRECATION_WARNING
     message=AGENT_DEPRECATION_WARNING,
     removal="2.0.0",
 )
-class AgentType(str, Enum):
+class AgentType(StrEnum):
     """An enum for agent types."""
 
     ZERO_SHOT_REACT_DESCRIPTION = "zero-shot-react-description"

@@ -1,7 +1,7 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
 
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Self
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish
@@ -22,7 +22,6 @@ from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_function
 from pydantic import model_validator
-from typing_extensions import Self
 
 from langchain_classic.agents import BaseSingleActionAgent
 from langchain_classic.agents.format_scratchpad.openai_functions import (

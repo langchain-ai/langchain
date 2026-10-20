@@ -1,6 +1,6 @@
 """A mock Robot server."""
 
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, Any
 from uuid import uuid4
 
@@ -32,7 +32,7 @@ PASS_PHRASE = str(uuid4())
 _ROBOT_LOCATION = {"x": 0, "y": 0, "z": 0}
 
 
-class StateItems(str, Enum):
+class StateItems(StrEnum):
     location = "location"
     walking = "walking"
     speed = "speed"
@@ -55,14 +55,14 @@ _ROBOT_STATE = {
 }
 
 
-class Direction(str, Enum):
+class Direction(StrEnum):
     north = "north"
     south = "south"
     east = "east"
     west = "west"
 
 
-class Style(str, Enum):
+class Style(StrEnum):
     """The style of walking."""
 
     normal = "normal"
@@ -70,7 +70,7 @@ class Style(str, Enum):
     energetic = "energetic"
 
 
-class Cautiousness(str, Enum):
+class Cautiousness(StrEnum):
     low = "low"
     medium = "medium"
     high = "high"
