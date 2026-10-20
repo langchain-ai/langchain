@@ -61,9 +61,9 @@ def sanitize_for_postgres(text: str, replacement: str = "") -> str:
         The sanitized text with `NUL` bytes removed or replaced.
 
     Example:
-        >>> sanitize_for_postgres("Hello\\x00world")
+        >>> sanitize_for_postgres("Hello\x00world")
         'Helloworld'
-        >>> sanitize_for_postgres("Hello\\x00world", " ")
+        >>> sanitize_for_postgres("Hello\x00world", " ")
         'Hello world'
     """
     return text.replace("\x00", replacement)
