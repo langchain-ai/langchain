@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Self
 
 import httpx2
 from langchain_core._api import beta
@@ -19,7 +19,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_typesafe._state import serialize_state
 from langchain_typesafe._version import __version__

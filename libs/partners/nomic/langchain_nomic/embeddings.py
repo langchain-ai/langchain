@@ -145,5 +145,5 @@ class NomicEmbeddings(Embeddings):
         """
         return embed.image(
             images=uris,
-            model=self.vision_model,
+            **{"model": self.vision_model} if self.vision_model else {},
         )["embeddings"]

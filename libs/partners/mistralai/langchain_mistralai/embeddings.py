@@ -2,6 +2,7 @@ import asyncio
 import logging
 import warnings
 from collections.abc import Callable, Iterable
+from typing import Self
 
 import httpx
 from httpx import Response
@@ -17,8 +18,7 @@ from pydantic import (
     model_validator,
 )
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_fixed
-from tokenizers import Tokenizer  # type: ignore[import]
-from typing_extensions import Self
+from tokenizers import Tokenizer
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +164,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
     max_concurrent_requests: int = 64
 
-    tokenizer: Tokenizer = Field(default=None)
+    tokenizer: Tokenizer | None = Field(default=None)
 
     model: str = "mistral-embed"
 
@@ -213,7 +213,6 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                     "Falling back to a dummy tokenizer that uses `len()`.",
                     stacklevel=2,
                 )
-                self.tokenizer = DummyTokenizer()
         return self
 
     def _get_batches(self, texts: list[str]) -> Iterable[list[str]]:
@@ -221,9 +220,9 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         batch: list[str] = []
         batch_tokens = 0
 
-        text_token_lengths = [
-            len(encoded) for encoded in self.tokenizer.encode_batch(texts)
-        ]
+        tokenizer = self.tokenizer or DummyTokenizer()
+
+        text_token_lengths = [len(encoded) for encoded in tokenizer.encode_batch(texts)]
 
         for text, text_tokens in zip(texts, text_token_lengths, strict=False):
             if batch_tokens + text_tokens > MAX_TOKENS:

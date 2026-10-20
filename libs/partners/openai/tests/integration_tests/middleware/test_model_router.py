@@ -27,8 +27,10 @@ def _fake(name: str) -> GenericFakeChatModel:
     [
         ("What is 2 + 2?", "fast"),
         (
-            "Design a Byzantine fault tolerant consensus protocol and prove its "
-            "safety and liveness properties.",
+            (
+                "Design a Byzantine fault tolerant consensus protocol and prove its "
+                "safety and liveness properties."
+            ),
             "powerful",
         ),
     ],

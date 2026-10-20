@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, NotRequired, cast
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -20,7 +20,7 @@ from langchain.chat_models import init_chat_model
 from langchain_core._api import beta
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage, convert_to_openai_messages
-from typing_extensions import NotRequired, TypedDict, override
+from typing_extensions import TypedDict, override
 
 from langchain_openai.decisions import (
     Choice,

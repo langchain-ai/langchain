@@ -1130,7 +1130,8 @@ def test_responses_stream_function_call_preserves_namespace() -> None:
         ResponseFunctionCallArgumentsDoneEvent(
             arguments='{"query":"test"}',
             item_id="fc_123",
-            name="search_tool",
+            # name field is required with openai < 3.9
+            name="search_tool",  # type: ignore[call-arg]
             output_index=0,
             sequence_number=5,
             type="response.function_call_arguments.done",

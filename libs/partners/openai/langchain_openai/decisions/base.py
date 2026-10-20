@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Awaitable, Callable, Mapping
 from functools import cached_property
-from typing import Any, cast
+from typing import Any, Self, cast
 
 import openai
 from langchain_core._api import beta
@@ -15,7 +15,7 @@ from langchain_core.utils import from_env
 from langchain_core.utils._gateway import _resolve_gateway_config
 from langsmith.run_helpers import get_current_run_tree
 from pydantic import ConfigDict, Field, SecretStr, ValidationError, model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_openai._compat import httpx
 from langchain_openai.chat_models._client_utils import (
@@ -103,7 +103,7 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
     model: str = Field(min_length=1)
     """Decisions model name, such as `gpt-6-luna`."""
 
-    api_key: SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]] = None
+    api_key: SecretStr | Callable[[], str] | Callable[[], Awaitable[str]] | None = None
     """API key used to authenticate requests.
 
     Automatically inferred from env var `OPENAI_API_KEY` if not provided. When
