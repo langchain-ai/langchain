@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any, NotRequired, TypeAlias
 
 from langchain_core.tools import BaseTool
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
 
 from langchain.chat_models.base import _attempt_infer_model_provider
 

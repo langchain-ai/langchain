@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal, NotRequired
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.typing import ContextT
-from typing_extensions import NotRequired, override
+from typing_extensions import override
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,

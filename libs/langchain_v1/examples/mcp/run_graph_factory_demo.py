@@ -25,7 +25,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
 from pathlib import Path
 
 from fastmcp.server.auth.providers.jwt import RSAKeyPair
@@ -48,18 +47,15 @@ def _write_keyfile() -> Path:
     return path
 
 
-async def _wait_until_up(url: str, timeout: float = 60.0) -> None:
-    """Poll until the dev server has registered the `fleet` graph, or time out."""
-    deadline = time.monotonic() + timeout
+async def _wait_until_up(url: str) -> None:
+    """Poll until the dev server has registered the `fleet` graph."""
     client = get_client(url=url, headers={"x-user-id": "healthcheck"})
-    while time.monotonic() < deadline:
+    while True:
         with contextlib.suppress(Exception):
             assistants = await client.assistants.search(graph_id="fleet")
             if assistants:
                 return
         await asyncio.sleep(1.0)
-    msg = f"dev server at {url} never registered the 'fleet' graph"
-    raise RuntimeError(msg)
 
 
 async def _run_as(user: str) -> str:
@@ -85,7 +81,13 @@ async def _run_as(user: str) -> str:
 
 
 async def _drive() -> int:
-    await _wait_until_up(DEV_URL)
+    try:
+        async with asyncio.timeout(60.0):
+            await _wait_until_up(DEV_URL)
+    except TimeoutError as e:
+        msg = f"dev server at {DEV_URL} never registered the 'fleet' graph"
+        raise RuntimeError(msg) from e
+
     failures = 0
     for user in USERS:
         reply = await _run_as(user)

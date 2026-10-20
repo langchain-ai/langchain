@@ -12,6 +12,8 @@ from typing import (
     Any,
     Generic,
     Literal,
+    NotRequired,
+    Required,
     cast,
     overload,
 )
@@ -30,7 +32,7 @@ from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
 from langgraph.runtime import Runtime
 from langgraph.types import Command, TracePolicy, omit_payload
 from langgraph.typing import ContextT
-from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
+from typing_extensions import TypedDict, TypeVar, Unpack
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel

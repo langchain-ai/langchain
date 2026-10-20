@@ -15,7 +15,7 @@ import uuid
 import weakref
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal, cast, overload
+from typing import TYPE_CHECKING, Annotated, Any, Literal, NotRequired, cast, overload
 
 from langchain_core.messages import ToolMessage
 from langchain_core.runnables import run_in_executor
@@ -23,7 +23,7 @@ from langchain_core.tools.base import ToolException
 from langgraph.channels.untracked_value import UntrackedValue
 from pydantic import BaseModel, model_validator
 from pydantic.json_schema import SkipJsonSchema
-from typing_extensions import NotRequired, override
+from typing_extensions import override
 
 from langchain.agents.middleware._execution import (
     SHELL_TEMP_PREFIX,

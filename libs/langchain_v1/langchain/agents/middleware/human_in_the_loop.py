@@ -9,6 +9,7 @@ from typing import (
     Annotated,
     Any,
     Literal,
+    NotRequired,
     Protocol,
     Union,
     cast,
@@ -28,7 +29,7 @@ from pydantic import (
     WrapValidator,
     create_model,
 )
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
