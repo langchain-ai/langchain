@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 from warnings import warn
 
@@ -18,7 +18,7 @@ from langchain_classic.chains.base import Chain
 logger = logging.getLogger(__name__)
 
 
-class EvaluatorType(str, Enum):
+class EvaluatorType(StrEnum):
     """The types of the evaluators."""
 
     QA = "qa"

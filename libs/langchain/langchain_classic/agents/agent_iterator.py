@@ -29,7 +29,6 @@ from langchain_core.tools import BaseTool
 from langchain_core.utils.input import get_color_mapping
 
 from langchain_classic.schema import RUN_KEY
-from langchain_classic.utilities.asyncio import asyncio_timeout
 
 if TYPE_CHECKING:
     from langchain_classic.agents.agent import AgentExecutor, NextStepOutput
@@ -258,7 +257,7 @@ class AgentExecutorIterator:
             name=self.run_name,
         )
         try:
-            async with asyncio_timeout(self.agent_executor.max_execution_time):
+            async with asyncio.timeout(self.agent_executor.max_execution_time):
                 while self.agent_executor._should_continue(  # noqa: SLF001
                     self.iterations,
                     self.time_elapsed,
@@ -305,7 +304,7 @@ class AgentExecutorIterator:
                     # if final output reached, stop iteration
                     if is_final:
                         return
-        except (TimeoutError, asyncio.TimeoutError):
+        except TimeoutError:
             yield await self._astop(run_manager)
             return
         except BaseException as e:

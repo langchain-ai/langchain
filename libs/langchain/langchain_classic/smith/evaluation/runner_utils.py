@@ -11,7 +11,7 @@ import re
 import unicodedata
 import uuid
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -1278,7 +1278,7 @@ class _DatasetRunContainer:
             # Closing the project permits name changing and metric optimizations
             self.client.update_project(
                 self.project.id,
-                end_time=datetime.now(timezone.utc),
+                end_time=datetime.now(UTC),
             )
         except Exception as e:  # noqa: BLE001
             logger.debug("Failed to close project: %s", e, exc_info=True)
