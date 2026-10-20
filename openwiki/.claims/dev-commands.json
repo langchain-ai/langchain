@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0ec51ab0fa47477f5eb49c0577be6cd4558b283f0a678cd572dc0f65f65db57a",
+  "pageVersion": "sha256:1e077d6d230b10aa6ab972d1298a9c1184b176fb5533a82ad57fd71e41255e15",
   "claims": [
     {
       "id": "claim_42b2b3c1ac6e4a938efa7b2651c79b81",
@@ -173,10 +173,88 @@
           "version": "repo-lines-v1:sha256:c0433ebed594f01b0643c125280438a8183bd59aed0a94fdd5e84113fbccc255:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyYTMxYjRjNTM4MzU0MjU1YWM5ZDllODJmMzgyYzg4YzAzYTQ1ZjZiNTg4MGJjNjQ3NTNlZTUyMmVmN2MxNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyZTNjZGE3ODE1MTM2MDE1MmI4YWM1ZWEwYTdkNmU1NWJkNzQxYjM1YWU1YWE3ZGVjMzU5M2ZmOTlmNzY4N2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc0ZWJhYzU1OWIxOGIxZWE4ZTkxZWUzMGM3YmE0ZWMxMGY4YTU5OGQ5NDNkYThmZDI1NDRkMzJlNGZlZWYwMDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjYTkyZmFmYjU5MjhjZDgyOTUzZGU5OTNkMjBjNTIxZGMxYjdmNjhmN2E1ZTE2ZWRiOGFlZmFiZGJhMGYwMGIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_a07150e6a5244c0ab7fc6bec6f965d17",
+      "statement": "Pre-commit hooks can be bypassed temporarily using git commit --no-verify to skip all hooks, or via SKIP environment variables to skip specific hook IDs. This is useful for emergency fixes but should be used cautiously.",
+      "evidence": [
+        {
+          "resource": "repo://.pre-commit-config.yaml#L1-L20",
+          "version": "repo-lines-v1:sha256:74ca9ea8cd3247d7276c9ac077bd41e3c614e8c1cf9432ebbee628f0037d4947:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMTEwZGI1YTkzNTdjZGExZDc4MjE2Y2RjMGJmOGIyNTVlMzM4Y2JjMWYzMjdlMGRmMDhjZmM3NzM5MWRkZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxOGIxYmQ3ZGY4Y2M5ZDkyNDQ2ZGI1OWYyNDBmNDYzMzk4YzVhZTZiNWNhZTRjNWZhYTNiMWZiOTAwMzQ2ZTcifQ"
+        },
+        {
+          "resource": "repo://AGENTS.md#L104-L110",
+          "version": "repo-lines-v1:sha256:89359126bdc4975f884912b94afd456271823916329c98c027a51fc973c20ac6:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTk1NjkyZGQ0ZDdlN2M2ZjViYTM4MDczZmI3MTFlYTEwMGFmNTkzYjI0MmNhNzU1ZmU1MTdjNmQ2MzIyYjNlYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjU3NGU3ZDE3NjY3YjNkM2FjYTNlOWExNzkxMDdlYmFiYjQ3NzVkOGJkNGVhN2VmYWI2MWYzMjAzMDZkMzZjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmM3N2EzYWRhZjM4YzQ0NjNiNjNmOWFjYTgwY2YwMDZiNjFhYzg1ZjAxMGY3MDJiMTI5ODFlMDhjMjJjZTBjMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjk3YmI3MDA2ZTliZjljODU4YzA0ZDRiMGE5ODMyMGJlZjE3ZGRiNDY0ZjllYjNlOThlYjJiNmI2OTRiYjQxOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ea8ab007e4fe49ff83e7c06adbbbe76b",
+      "statement": "PR titles must follow Conventional Commits 1.0.0 format with required scope: type(scope): description. Types include feat, fix, chore, docs, refactor, perf, test. Scopes are required and include core, langchain, partner names, infra, or docs. Description starts lowercase unless first word is proper noun or code entity.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L104-L121",
+          "version": "repo-lines-v1:sha256:4fa7bb13d48776e098aeba194768d08690351f224233df3fc3718edaf9c7d91f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NTY5MmRkNGQ3ZTdjNmY1YmEzODA3M2ZiNzExZWExMDBhZjU5M2IyNDJjYTc1NWZlNTE3YzZkNjMyMmIzZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZjNzdhM2FkYWYzOGM0NDYzYjYzZjlhY2E4MGNmMDA2YjYxYWM4NWYwMTBmNzAyYjEyOTgxZTA4YzIyY2UwYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlYWEyMDdlOWEwZWY4ZWMyZjI0MjU2YmYyYmUzYTc4OGIzOWYxNjdlNjI4N2U5Mzc2MThhNjlhYmZhMThhNjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ea6e1f914acb4615bc55d8b9f39b2d76",
+      "statement": "Makefiles accept environment variables to customize test execution: UV_FROZEN=true prevents lock changes, TEST_FILE specifies test path (default tests/unit_tests/), PYTEST_EXTRA adds extra pytest flags, LANGGRAPH_TEST_FAST=1 uses in-memory services (fast mode) or =0 for Docker services (full mode).",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L6-L11",
+          "version": "repo-lines-v1:sha256:73679d7a19faa0fb0353c360aa9a7edc69a01c7796bfbb91a15d33f0587b8e24:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDlmM2E3MjQxYTY2Yjc2MDBiMzYzNWJmZDc3MTgwZTg0NjZhNmQzNjFkNGM4ZjVlODhmYTMxYWU1ODIxNmQ3ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGJmN2M4YzA4ZDAxZGRlYzllOTUxYTcwNTU4Y2U2MmRlYzFlY2ZjNmU0OTZkMWM2MzYzMTQ5YjQyYTY5MWRmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjQxMjY2NDYzYzFhN2RkODBhMjhjMTA0OWRiNjRiZjc3YmQxNjhmMTlhOWRhODliOTYzZDlkMDc2YTEyOWQyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmRhY2ZkNWNkNWFhNzhjNGVhMDE0YmM0MTVjMDE3ZGVmMDQ1NjdlZmM5NzM4ZmMyNjFkNDM1M2U4NjE5YmRkZSJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/Makefile#L40-L44",
+          "version": "repo-lines-v1:sha256:ae657b84ebf74f18cd8f352372e385423674748f29988c98ec68800c9db77695:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDAwN2I1MTE4ODQ1MWRiMzc5M2FlMjRlYTE3OTQ4NTgzNjcyZWM1NTE0MmFmYWI5NWYzMTQxM2RmMTFkNWI5ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjJlM2NkYTc4MTUxMzYwMTUyYjhhYzVlYTBhN2Q2ZTU1YmQ3NDFiMzVhZTVhYTdkZWMzNTkzZmY5OWY3Njg3ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODA2YjQ0OGUzY2QwN2QwNmQ1NTYzNmY0MDA1OTMwMDkxNTJlNzQ2ZTg4ZGYyYzFkYjMzZWUzZmI1ZDgyNmM4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWNhOTJmYWZiNTkyOGNkODI5NTNkZTk5M2QyMGM1MjFkYzFiN2Y2OGY3YTVlMTZlZGI4YWVmYWJkYmEwZjAwYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_aac1134248334f238d9eff8752b12b7a",
+      "statement": "Key uv commands for development are: uv sync --all-groups (install all dependency groups), uv sync --group test (install test group only), uv run --group test pytest (run command in environment), uv lock (update lock file), uv run --with 'pkg>=1.0' (temporarily add dependency). uv manages virtual environments automatically without manual activation.",
+      "evidence": [
+        {
+          "resource": "repo://AGENTS.md#L43-L92",
+          "version": "repo-lines-v1:sha256:f890ddafce615af5d0802ee7b1845641aefb47e84ee3ceaa94540b3efdea68bb:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxODcyM2ViODY5MjVhYmMxYTFlMDU3NjVlZGJlNDgwOTc5ZmQ0NjBjMmJmNWUyOGUzZTRjOTBiNDkwZDIzNDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyNjM5NDU2ZjM1NzY3NDE2NTFhNjg0ZjBjOGQ0YzA0MzUzNDVkODE5OTI2YjkwNjYwMTkyMmZkMmQwMDc2OGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM0NTEwNjhkNWY2ZjMyNGRlMTFmYTdmZTc0NzM4OGJmNWUzYjY2NWRjNDY3ODdhYjcwOTZlZjk1MjcxZGE1NWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_81a6443ef80645c2b8b69516ce08e140",
+      "statement": "Makefiles provide lint_diff and format_diff targets that operate on git diff output against master branch, enabling fast iteration by checking only changed files instead of entire codebase.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L51-L55",
+          "version": "repo-lines-v1:sha256:9f5a2e561e3275f46c3e9fa8ebe34939fe74f4eef608d61ae98f1d111a82f499:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjBlODAzYzhjNzA1ODZjODIwYjFlYTkyMDBkYmMyMzJjY2Y1NzZhM2QwZDA0MzVkNDU3OTg4Y2IwMzBjMDgxNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzJmZDZjYmEyOWNhYjZlZjI1MmExOWM5YWQwMThhNDM0MmU0MWVkNzk3Njc1ZDA1OTkzMGUyNzIxOGIwNTA0ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGMyYWUzN2NkNTJjZTk1MDY4ZDQ1OTRmYTM3YzIyN2EzZmEzNDYwYjMyZGM0MmEwYmM0OTkxZGVmZmQwYjYwZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzRlNThkM2VjZjA5ZWFhODM4NGFjNWQ1ZmJjM2QyYzFiNTRjMjdkYWE4OTJlMGY4MzJiMTZlMTdhN2RlODYzYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_f6155da0db5e46ae8d7144e735d35aa4",
+      "statement": "Partner packages like anthropic support testing with multiple SDK versions using uv run --with 'sdk>=version' syntax, allowing compatibility testing across major version boundaries defined in partner Makefiles.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/anthropic/Makefile#L16-L24",
+          "version": "repo-lines-v1:sha256:3f10aaecf4e2276489edb69ae64a3db24ef290b0c07ae96c0eb2e54e66ff39ea:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDliMzBjZTkzZjhkMmVlNmQ2NDdlYjNhN2RhYjQ0NjRiNWQ5Yjc5ZGExOTI4ZGE2MDY4MDQ3M2QyY2Y0ZTY4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDIzNzFjN2Y1YWRlNmI0ZWRkOTIyYTI2NWFiMDRmZDkxZGZmZDMyNzA3OTNjZmQ3ZGQ5MzRhM2FkNmY5MDUyZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTczZDhmNTY3ZTk0ZGI1NWM1NjQxMjFmZTkzMzgyZjhhNzc2NzFiZGVhNmFkZmIyZDg3NTY3Y2U5ZTZkYmVkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmNlNGVlYjJlZGM5OWFiNzIxYTJmNTJhOGZhODc5YjM0ODY1MzUzNWViZTA4ZTUxNDdmZmE2MzkwM2IxZjRkNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9e124714df034decb29e860484d2c3ee",
+      "statement": "The TEST_FILE parameter accepts file paths, directory paths, or pytest node identifiers (file::Class::method), enabling fine-grained test execution control via make test TEST_FILE=<specification>.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L6-L20",
+          "version": "repo-lines-v1:sha256:49331aac0aaf2f1f6605ffda4dd077faa6c95b17a8c6b0acb4b1dba1c78fa0de:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5ZjNhNzI0MWE2NmI3NjAwYjM2MzViZmQ3NzE4MGU4NDY2YTZkMzYxZDRjOGY1ZTg4ZmEzMWFlNTgyMTZkN2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3ZmJkODA0MTFhY2VjZGQ5MThiODg5ODQxNzE4NzBmOTVlOGYxN2E2YjQwNGJlODA2NGJhNzZiYTY3NjQ5NzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0MTI2NjQ2M2MxYTdkZDgwYTI4YzEwNDlkYjY0YmY3N2JkMTY4ZjE5YTlkYTg5Yjk2M2Q5ZDA3NmExMjlkMjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc4Mzc0NWU1NWEyM2JiNDM2Y2E1MTBhYjE4MDRkMjgzMDI4YTUyZTc3OTIxOWJjZTcwMjg0ZDlmN2IxMDA3MTAifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-28T08:35:20.640Z"
+    "at": "2026-10-20T08:25:57.412Z"
   }
 }

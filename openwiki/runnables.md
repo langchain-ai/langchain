@@ -1,8 +1,8 @@
 ---
 type: "Concept"
-title: "Runnable: Core Composition Layer"
-description: "Explain the Runnable protocol and how it enables composable chaining of LLM components through the LangChain Expression Language (LCEL)."
-tags: [runnable, lcel, composition, invoke, stream, batch, async, chaining]
+title: "Runnables: The Composition Protocol"
+description: "The Runnable protocol provides a unified, composable interface for every LangChain component. Runnable enables declarative composition through the pipe operator, orchestrates streaming, batch, and async execution, and carries configuration and callbacks through entire chains."
+tags: [runnable, lcel, composition, invoke, stream, batch, async, chaining, protocol]
 sources:
   - id: openwiki-source-a1981e868973f6fd7f71e12e
     resource: repo://libs/core/langchain_core/runnables/base.py
@@ -14,29 +14,29 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/fallbacks.py
   - id: openwiki-source-ebe3f825462d0b4a14ee3717
     resource: repo://libs/core/langchain_core/runnables/retry.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-16T08:25:55.096Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-16T08:25:55.096Z
+    at: 2026-10-20T08:25:57.412Z
+generated: { by: "openwiki/0.5.0", at: "2026-10-20T08:25:57.412Z" }
 ---
 
 ## Overview
 
-**Runnable** is the fundamental abstraction in LangChain's core layer. It defines a serializable, composable interface that every LLM component—prompts, models, tools, chains, output parsers—must implement. A `Runnable` is a unit of work that transforms input into output through five core operations: synchronous invoke, asynchronous invoke, batch processing, streaming, and introspection of input/output schemas.
+**Runnable** is the foundational protocol in LangChain's core layer. It defines a serializable, composable interface that every LLM component—prompts, models, tools, chains, output parsers—must implement. A `Runnable` is a unit of work that transforms input into output through a unified set of operations: synchronous and asynchronous invoke, batch processing, streaming, and schema introspection.
 
-The **LangChain Expression Language (LCEL)** leverages Runnables to build chains declaratively using composition operators. Any chain built from Runnables automatically inherits sync, async, batch, and streaming support without additional implementation. This unifies execution patterns and enables sophisticated control flows—sequential piping (`|`), parallel forking (`+`), branching, fallback handling, and retry logic—all composable as first-class operations.
+The **LangChain Expression Language (LCEL)** leverages Runnables to build chains declaratively using composition operators. Any chain built from Runnables automatically inherits sync, async, batch, and streaming support without additional implementation. This unifies execution patterns and enables sophisticated control flows—sequential piping (`|`), parallel forking (dict literals), branching, fallback handling, and retry logic—all composable as first-class operations.
 
-## Core Runnable Protocol
+## The Runnable Protocol
 
-**Location**: `repo://libs/core/langchain_core/runnables/base.py#L133-L265`
+**Location**: `repo://libs/core/langchain_core/runnables/base.py#L134-L265`
 
 The `Runnable` abstract base class defines the contract for all components. A Runnable is generic over input and output types (`Runnable[Input, Output]`) and must implement the abstract `invoke` method. All other execution methods have default implementations that subclasses can override for optimization.
 
-### Key Responsibilities
+### Core Responsibilities
 
-1. **Invoke**: Execute a single input synchronously and return a single output.
-2. **Batch**: Process multiple inputs in parallel (default uses thread pool, subclasses can optimize).
-3. **Stream**: Yield partial outputs as they are produced (default calls invoke once; specialized for streaming models).
+1. **Single invoke**: Execute a single input synchronously and return a single output.
+2. **Batch processing**: Process multiple inputs in parallel (default uses thread pool; subclasses can optimize).
+3. **Streaming**: Yield partial outputs as they are produced (default calls invoke once; specialized for streaming models).
 4. **Async variants**: Asynchronous versions of invoke, batch, and stream (default delegates to sync via executor; subclasses implement natively).
 5. **Schema introspection**: Expose input type, output type, and configuration schema as Pydantic models for validation and tooling.
 6. **Composition**: Support chaining with other Runnables via operators and methods.
@@ -79,9 +79,9 @@ def batch(
 - If `return_exceptions=True`, exceptions are returned as-is in the output list; otherwise, they are raised.
 - Subclasses override for batching-aware backends (e.g., LLMs with batch API support).
 
-**`batch_as_completed(inputs, config=None, return_exceptions=False)`** yields results as they complete, useful for streaming partial results while processing.
+**`batch_as_completed(inputs, config=None, return_exceptions=False)`** yields results as they complete, useful for streaming partial results while processing batches.
 
-**`stream(input, config=None)`** (`repo://libs/core/langchain_core/runnables/base.py#L1194-L1213`) yields partial outputs:
+**`stream(input, config=None)`** (`repo://libs/core/langchain_core/runnables/base.py#L1195-L1213`) yields partial outputs:
 
 ```python
 def stream(
@@ -91,10 +91,12 @@ def stream(
     **kwargs: Any | None,
 ) -> Iterator[Output]:
     """Default implementation of stream, which calls invoke."""
+    yield self.invoke(input, config, **kwargs)
 ```
 
 - **Default**: Yields one full output from `invoke`.
 - **Specialized implementations** (e.g., chat models, token-streaming parsers) yield chunks as they arrive.
+- **Transform methods**: Components implementing `transform(input_iterator)` can stream input to output without blocking. `RunnableSequence` optimizes streaming by chaining transform methods end-to-end; if any step lacks transform, streaming begins after that step.
 - Enables responsive UX by progressive output display.
 
 ### Asynchronous Methods
@@ -108,7 +110,7 @@ async def ainvoke(
     config: RunnableConfig | None = None,
     **kwargs: Any,
 ) -> Output:
-    """Transform a single input into an output."""
+    """Transform a single input into an output asynchronously."""
 ```
 
 - **Default**: Delegates to sync `invoke` via `run_in_executor`.
@@ -129,11 +131,11 @@ async def abatch(
 ```
 
 - Calls `ainvoke` for each input concurrently.
-- Respects `max_concurrency` from config to limit parallelism.
+- Respects `max_concurrency` from config to limit parallelism via `gather_with_concurrency`.
 
 **`abatch_as_completed(inputs, config=None, return_exceptions=False)`** yields completed async results as they finish.
 
-**`astream(input, config=None)`** (`repo://libs/core/langchain_core/runnables/base.py#L1215-L1234`) is the async streaming variant:
+**`astream(input, config=None)`** (`repo://libs/core/langchain_core/runnables/base.py#L1216-L1235`) is the async streaming variant:
 
 ```python
 async def astream(
@@ -171,7 +173,7 @@ def output_schema(self) -> TypeBaseModel:
 
 ## Composition Operators and Methods
 
-The heart of LCEL is declarative composition. Runnables are chained together using operators and methods that create new composite Runnables.
+The heart of LCEL is declarative composition. Runnables are chained together using operators and methods that create new composite Runnables without mutating the original.
 
 ### Sequential Composition: Pipe Operator `|`
 
@@ -188,6 +190,7 @@ def __or__(self, other):
 from langchain_core.runnables import RunnableLambda
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain_openai import ChatOpenAI
 
 prompt = PromptTemplate.from_template("Tell me about {topic}")
 model = ChatOpenAI()
@@ -253,9 +256,11 @@ sequence = RunnableSequence(
 ```
 
 **Key behavior**:
+
 - **Batching**: Each step in the sequence is called with the batch of inputs from the previous step. If a step's batch is optimized (e.g., for an LLM API), the entire chain benefits.
 - **Streaming**: If all steps implement `transform` (streaming input → streaming output), the sequence streams end-to-end. Otherwise, streaming begins after the last blocking step.
 - **Async**: Async variants call each step's async method in order via `asyncio.gather` for parallelizable steps within the chain.
+- **Flattening**: Nested sequences are flattened to avoid redundant nesting.
 
 ### Branching: RunnableBranch
 
@@ -329,7 +334,7 @@ result = model.invoke("Hello")  # Returns first successful result
 - **Streaming**: Delegates to the first successful runnable's `stream()` or `astream()`.
 - **Fallback exhaustion**: If all runnables fail, raises the first error encountered.
 
-**Retry**: `RunnableRetry` (`repo://libs/core/langchain_core/runnables/retry.py#L50-L386`)
+**Retry**: Retry logic is available via `with_retry()` method on any Runnable:
 
 ```python
 runnable = ChatOpenAI().with_retry(
@@ -340,11 +345,11 @@ runnable = ChatOpenAI().with_retry(
 # Retries on APIError up to 3 times with exponential backoff + jitter.
 ```
 
-- Wraps a `Runnable` via `RunnableBindingBase` to add retry logic powered by `tenacity`.
+- Wraps a `Runnable` to add retry logic powered by `tenacity`.
 - **Exception filtering**: `retry_exception_types` is either a tuple of exception types or a callable that returns `True` for exceptions to retry.
-- **Retry strategy**: Configurable via `max_attempt_number` (default 3) and `wait_exponential_jitter` (default `True`) for exponential backoff with random jitter.
-- **Jitter parameters**: Fine-tunable via `exponential_jitter_params` (initial, max, exp_base, jitter).
-- **Retry propagation**: Tracks per-attempt state via `_patch_config` to tag callback runs as `retry:attempt:N` for observability.
+- **Retry strategy**: Configurable via `stop_after_attempt` (default 3) and `wait_exponential_jitter` (default `True`) for exponential backoff with random jitter.
+- **Jitter parameters**: Fine-tunable via exponential jitter configuration (initial, max, exp_base, jitter).
+- **Retry propagation**: Tracks per-attempt state to tag callback runs as `retry:attempt:N` for observability.
 - **Batch retries**: Retries only failed inputs in a batch, re-invoking just the subset that did not succeed.
 - **Stream limitation**: `stream()` and `transform()` are not retried because stream retry semantics are ambiguous.
 - Best applied to individual runnables (e.g., LLM calls) rather than entire chains.
@@ -367,16 +372,49 @@ class RunnableConfig(TypedDict, total=False):
     run_id: uuid.UUID | None     # Unique execution ID
 ```
 
-- **Propagation**: Config is threaded through child runnables via context variables (`var_child_runnable_config`) and explicit parameter passing.
-- **Merging**: Configs are merged when passed down (e.g., tags accumulate: parent tags + child tags).
+- **Propagation**: Config is threaded through child runnables via context variables (`var_child_runnable_config`) and explicit parameter passing. When a Runnable invokes child runnables, configs are merged (tags and metadata accumulate).
+- **Merging**: `merge_configs()` combines parent and child configs, with child values taking precedence. Lists like `tags` are concatenated.
 - **Callbacks**: Attached callbacks receive hooks for all intermediate steps, enabling observability and custom logic.
-- **Configurable fields**: The `configurable` dict supplies runtime values for fields marked with `configurable_fields()` or `configurable_alternatives()`, enabling dynamic behavior.
+- **Configurable fields**: The `configurable` dict supplies runtime values for fields marked with `configurable_fields()` or `configurable_alternatives()`, enabling dynamic behavior without reconstruction.
+- **Context variables**: `var_child_runnable_config` is an `asyncio.ContextVar` that automatically passes config down the call stack for child runnables without explicit parameter passing.
+
+## Streaming and Event Flow
+
+Streaming is not an afterthought in Runnables; it is a first-class execution mode. The streaming protocol enables responsive, incremental output generation.
+
+### Streaming Semantics
+
+When `stream(input)` is called:
+
+1. **Default behavior**: If a Runnable does not override `stream()`, it yields a single output from `invoke()`.
+2. **Streaming models**: Chat models and other components override `stream()` to yield partial outputs (e.g., tokens) as they arrive.
+3. **Transform method**: Advanced streaming is implemented via `transform(input_iterator)`, which maps a stream of inputs to a stream of outputs without blocking. This enables progressive end-to-end streaming through entire chains.
+
+### RunnableSequence Streaming Optimization
+
+`RunnableSequence` optimizes streaming by analyzing each step:
+
+- If all steps implement `transform`, the sequence chains them: input flows through each step's transform, yielding outputs progressively.
+- If any step lacks `transform`, streaming begins after that step. Inputs before it are processed in full, then partial outputs flow through remaining steps.
+- This ensures end-to-end streaming when possible and graceful degradation when not.
+
+**Example**:
+```python
+# All steps stream-compatible: progressive token output
+chain = prompt | streaming_model | streaming_parser
+for chunk in chain.stream({"topic": "AI"}):
+    print(chunk, end="", flush=True)
+
+# Parser lacks transform: tokens blocked until parsing
+chain = prompt | streaming_model | slow_parser
+# Streaming begins after model completes and parser starts
+```
 
 ## Core Runnable Types
 
 ### RunnableLambda
 
-**Location**: `repo://libs/core/langchain_core/runnables/base.py#L4703-L4850`
+**Location**: `repo://libs/core/langchain_core/runnables/base.py#L4707-L4850`
 
 `RunnableLambda` wraps a Python callable into a `Runnable`:
 
@@ -404,7 +442,7 @@ await runnable.ainvoke(1)  # 2
 
 ### RunnableGenerator
 
-Wraps generator functions (sync or async) to create streaming runnables.
+Wraps generator functions (sync or async) to create streaming runnables. Useful for implementing custom streaming logic.
 
 ### RunnableParallel
 
@@ -448,7 +486,7 @@ chain.assign(new_field=some_runnable)
 # Output now includes original fields + new_field
 ```
 
-## Runnable Hierarchy
+## Runnable Type Hierarchy
 
 The following diagram shows the core Runnable class hierarchy:
 
@@ -505,11 +543,6 @@ classDiagram
         +fallbacks Sequence[Runnable]
     }
     
-    class RunnableRetry {
-        +bound Runnable
-        +max_attempt_number int
-    }
-    
     Runnable <|-- RunnableSerializable
     RunnableSerializable <|-- RunnableSequence
     RunnableSerializable <|-- RunnableParallel
@@ -517,7 +550,6 @@ classDiagram
     RunnableSerializable <|-- RunnableBranch
     RunnableSerializable <|-- RouterRunnable
     RunnableSerializable <|-- RunnableWithFallbacks
-    RunnableSerializable <|-- RunnableRetry
 ```
 
 Class hierarchy of core Runnable types and their relationships.
@@ -553,7 +585,7 @@ Execution flow through a sequential composition with config propagation.
 
 ## RunnableLike and Type Coercion
 
-**Location**: `repo://libs/core/langchain_core/runnables/base.py#L6608-L6664`
+**Location**: `repo://libs/core/langchain_core/runnables/base.py#L6612-L6668`
 
 `RunnableLike` is a union type that accepts anything composable:
 
@@ -655,14 +687,15 @@ A key design principle: **everything is a Runnable**. This includes:
 
 Because all are Runnables, any can be composed with any other via `|`, parallelized, retried, and monitored uniformly.
 
-## Simple Example: Prompt → Model → Parser Chain
+## Example: Prompt → Model → Parser Chain
 
 ```python
 from langchain_core.prompts import PromptTemplate
-from langchain_core.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import JsonOutputParser
+from pydantic import BaseModel
 
-# Define input schema
+# Define output schema
 class TopicInfo(BaseModel):
     topic: str
     examples: list[str]
@@ -686,14 +719,14 @@ result = chain.invoke({
 
 # Batch
 results = chain.batch([
-    {"topic": "AI", ...},
-    {"topic": "NLP", ...},
-    {"topic": "Vision", ...},
+    {"topic": "AI", "format_instructions": parser.get_format_instructions()},
+    {"topic": "NLP", "format_instructions": parser.get_format_instructions()},
+    {"topic": "Vision", "format_instructions": parser.get_format_instructions()},
 ])
 # results is a list of TopicInfo instances, processed in parallel
 
 # Stream
-for chunk in chain.stream({"topic": "Reinforcement Learning", ...}):
+for chunk in chain.stream({"topic": "Reinforcement Learning", "format_instructions": parser.get_format_instructions()}):
     print(chunk)  # Yields intermediate outputs as they arrive
 ```
 

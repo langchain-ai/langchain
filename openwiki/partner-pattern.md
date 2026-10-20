@@ -3,6 +3,9 @@ type: Integration Pattern
 title: Adding a New Chat Model Provider
 description: Step-by-step guide to integrate a new LLM provider into LangChain's monorepo, including package structure, ChatModel implementation, streaming, function calling, structured output, and standard tests. Covers message conversion, error handling, model profiles, and optional advanced API modes like Responses API.
 tags: [chat-models, provider-integration, llm, function-calling, structured-output, streaming]
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-20T08:25:57.412Z
 sources:
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
@@ -36,10 +39,7 @@ sources:
     resource: repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py
   - id: openwiki-source-025cad4ae99967890152b7e0
     resource: repo://libs/standard-tests/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-09-22T08:27:06.345Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-16T08:25:55.096Z
+generated: { by: "openwiki/0.5.0", at: "2026-10-20T08:25:57.412Z" }
 ---
 
 ## Overview
@@ -94,7 +94,7 @@ Create a new directory under `/libs/partners/` with the provider name in lowerca
 
 ### Package Metadata (pyproject.toml)
 
-Key configuration for a provider package (reference: `/libs/partners/openai/pyproject.toml#L1-L76`):
+Key configuration for a provider package (reference: `repo://libs/partners/openai/pyproject.toml`, `repo://libs/partners/anthropic/pyproject.toml`):
 
 ```toml
 [build-system]
@@ -108,7 +108,7 @@ requires-python = ">=3.10.0,<4.0.0"
 version = "0.1.0"
 
 dependencies = [
-    "langchain-core>=1.6.2,<2.0.0",           # Required: base LangChain
+    "langchain-core>=1.6.10,<2.0.0",          # Required: base LangChain (current minimum)
     "provider-client-library>=2.45.0,<4.0.0", # Provider's own SDK (pinned version)
     "certifi>=2024.6.2",                      # SSL certificates
 ]
@@ -139,7 +139,7 @@ constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 ```
 
 **Key patterns:**
-- **Lock provider SDK versions** to prevent breaking API changes (e.g., `openai>=2.45.0,<4.0.0`)
+- **Lock provider SDK versions** to prevent breaking API changes (e.g., `openai>=2.45.0,<4.0.0`, `anthropic>=0.120.0,<2.0.0`)
 - **Add version constraints to all test dependencies** for reproducibility
 - **Use `[tool.uv.sources]`** to reference local LangChain packages in monorepo
 - **Separate integration test dependencies** in a dedicated group (only needed in CI)
@@ -148,15 +148,16 @@ constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 
 ### BaseChatModel and Core Requirements
 
-All provider implementations must inherit from **`BaseChatModel`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L284-L2400`), which defines the contract for invoking and streaming chat models.
+All provider implementations must inherit from **`BaseChatModel`** (defined in `repo://libs/core/langchain_core/language_models/chat_models.py#L284-L2400`), which defines the contract for invoking and streaming chat models.
 
-**Core responsibilities** (location: `repo://libs/partners/anthropic/langchain_anthropic/chat_models.py#L1-L150`):
+**Core responsibilities:**
 
 1. **Inherit `BaseChatModel`** with type parameter `[AIMessage]`
-2. **Implement `_generate` method** (required sync): Transform messages into `ChatResult` with `ChatGeneration` objects wrapping `AIMessage` output
+2. **Implement `_generate` method** (required): Transform messages into `ChatResult` with `ChatGeneration` objects wrapping `AIMessage` output
 3. **Implement `_stream` method** (optional for streaming support): Yield `ChatGenerationChunk` objects containing `AIMessageChunk` with incremental tokens
-4. **Implement `_agenerate` method** (async variant of `_generate`) or `_astream` method (async variant of `_stream`)
+4. **Implement `_agenerate` or `_astream` method** (async variants): Provide native async support using `async def`
 5. **Set `_llm_type` property**: Return the provider identifier string for identification
+6. **Optional: Implement token counting methods** (`get_num_tokens`, `get_num_tokens_from_messages`) for accurate token accounting
 
 ### Minimal ChatModel Template
 
@@ -164,7 +165,7 @@ All provider implementations must inherit from **`BaseChatModel`** (`repo://libs
 """Provider chat model integration."""
 
 from typing import Any, Iterator
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
@@ -272,6 +273,7 @@ class ChatProviderModel(BaseChatModel):
                 accumulated_content += delta.content
                 
                 # 4. Yield chunk with incremental token
+                from langchain_core.messages import AIMessageChunk
                 chunk_message = AIMessageChunk(content=delta.content)
                 chunk = ChatGenerationChunk(message=chunk_message)
                 
@@ -280,6 +282,60 @@ class ChatProviderModel(BaseChatModel):
                     run_manager.on_llm_new_token(delta.content, chunk=chunk)
                 
                 yield chunk
+    
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        """Async variant of _generate using native async/await."""
+        payload = self._build_payload(messages, stop=stop, **kwargs)
+        response = await self._async_client.chat.completions.create(**payload)
+        return self._create_chat_result(response)
+    
+    async def _astream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ):
+        """Async streaming variant of _stream."""
+        payload = self._build_payload(messages, stop=stop, stream=True, **kwargs)
+        async for event in await self._async_client.chat.completions.create(**payload):
+            delta = event.choices[0].delta
+            if delta.content:
+                from langchain_core.messages import AIMessageChunk
+                chunk_message = AIMessageChunk(content=delta.content)
+                chunk = ChatGenerationChunk(message=chunk_message)
+                if run_manager:
+                    await run_manager.on_llm_new_token(delta.content, chunk=chunk)
+                yield chunk
+    
+    def get_num_tokens(self, text: str) -> int:
+        """Count tokens in text using provider-specific tokenizer (optional).
+        
+        Override this method if the provider has a specific tokenizer.
+        Falls back to base implementation if not overridden.
+        """
+        # Example: Use tiktoken for OpenAI models
+        # if self.model.startswith("gpt-"):
+        #     return len(encoding.encode(text))
+        return super().get_num_tokens(text)
+    
+    def get_num_tokens_from_messages(
+        self, messages: list[BaseMessage], tools: list[dict] | None = None
+    ) -> int:
+        """Count tokens in messages using provider-specific accounting (optional).
+        
+        This is more accurate than sum of individual token counts because
+        providers add overhead per message, role markers, etc.
+        """
+        # Example: Custom token counting logic
+        # return sum(self._count_tokens(m) for m in messages)
+        return super().get_num_tokens_from_messages(messages, tools=tools)
     
     def _convert_messages_to_provider_format(
         self, messages: list[BaseMessage]
@@ -297,7 +353,7 @@ class ChatProviderModel(BaseChatModel):
 
 ### Message Conversion and Content Blocks
 
-LangChain messages have a **unified, provider-agnostic content format** using **content blocks** (reference: `/openwiki/messages.md`). Each provider must translate between this format and its own API schema on both input and output.
+LangChain messages have a **unified, provider-agnostic content format** using **content blocks**. Each provider must translate between this format and its own API schema on both input and output.
 
 **Key message fields:**
 
@@ -330,9 +386,7 @@ LangChain messages have a **unified, provider-agnostic content format** using **
    - Populate `usage_metadata` (input/output token counts)
    - Store provider-specific metadata in `response_metadata`
 
-**Example: Message conversion (Anthropic reference):**
-
-The Anthropic provider converts both input and output (reference: `repo://libs/partners/anthropic/langchain_anthropic/chat_models.py#L1-L150`):
+**Example: Message conversion input (Anthropic reference, from `repo://libs/partners/anthropic/langchain_anthropic/chat_models.py`):**
 
 ```python
 def _convert_messages_to_provider_format(
@@ -387,7 +441,7 @@ After receiving a response from the provider API, convert it back to LangChain's
 4. **Populate metadata** - Capture usage info and provider-specific response metadata
 5. **Create AIMessage** - Construct the output message with all components
 
-**Example: OpenAI response conversion** (reference: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L217-L282`):
+**Example: OpenAI response conversion (reference: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L217-L282`, `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L404-L483`):**
 
 ```python
 from langchain_core.messages import AIMessage, UsageMetadata
@@ -461,7 +515,7 @@ Streaming returns `AIMessageChunk` objects incrementally as the model generates 
 5. **Wrap in `ChatGenerationChunk`** for the generation abstraction
 6. **Notify run_manager** via `on_llm_new_token` callback for observability
 
-**Key pattern** (Anthropic reference: `repo://libs/partners/anthropic/langchain_anthropic/chat_models.py#L1862-L1910`):
+**Key pattern (from `repo://libs/partners/anthropic/langchain_anthropic/chat_models.py#L1862-L1910`):**
 
 ```python
 def _stream(
@@ -520,30 +574,82 @@ async def _astream(
 
 ### Function Calling / Tool Use
 
-Implement `bind_tools()` (inherited from `BaseChatModel`) to support tool calling. Tools are converted to the provider's schema (OpenAI, Anthropic, JSON Schema, etc.) before sending to the API. The model response includes tool calls, which are extracted and populated in `AIMessage.tool_calls`.
+Implement `bind_tools()` to support tool calling. This is inherited from `BaseChatModel` but providers may override it to customize tool schema conversion. Tools are converted to the provider's schema before sending to the API, and the model response includes tool calls which are extracted and populated in `AIMessage.tool_calls`.
 
-**Implementation approach:**
+**Implementation approach (from `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2507-L2600`):**
 
-1. **Accept `BaseTool` objects, Pydantic models, or dicts** via `bind_tools()`
+1. **Accept `BaseTool` objects, Pydantic models, or dicts** via `bind_tools(tools, tool_choice=...)`
 2. **Convert to provider schema** using utility functions:
    - `convert_to_openai_tool()` - For OpenAI-compatible APIs
    - `convert_to_json_schema()` - For JSON Schema format
    - Provider-specific converters for custom formats
-3. **Include tools in API request** as part of the payload
-4. **Parse tool calls** from the response into `ToolCall` objects
+3. **Include tools in API request** as part of the payload (with optional tool_choice constraint)
+4. **Parse tool calls** from the response into `ToolCall` objects with `id`, `name`, `args` fields
 5. **Handle invalid/malformed tool calls** by storing them in `invalid_tool_calls`
+
+**Example: bind_tools signature:**
+
+```python
+def bind_tools(
+    self,
+    tools: Sequence[dict[str, Any] | type | Callable | BaseTool],
+    *,
+    tool_choice: dict | str | bool | None = None,
+    **kwargs: Any,
+) -> Runnable[LanguageModelInput, AIMessage]:
+    """Bind tool-like objects to this chat model.
+    
+    Args:
+        tools: A list of tool definitions.
+        tool_choice: Which tool to require (e.g., 'auto', 'required', tool name).
+        **kwargs: Additional provider-specific parameters.
+    
+    Returns:
+        A Runnable that includes tools in all invocations.
+    """
+    # Convert tools to provider format
+    formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
+    
+    # Return bound runnable with tools in kwargs
+    return self.bind(tools=formatted_tools, tool_choice=tool_choice, **kwargs)
+```
 
 ### Structured Output
 
 Implement `with_structured_output()` to enforce the model to return responses matching a Pydantic model or JSON schema. This typically maps to the provider's structured output or JSON mode feature.
 
-**Pattern:**
+**Pattern (from `repo://libs/partners/anthropic/langchain_anthropic/chat_models.py#L2866-L2950`):**
 
-1. Accept a Pydantic model or JSON schema
-2. Convert to provider's structured output format
-3. Include in API request
-4. Parse response and validate against schema
-5. Return parsed model instance or dict
+```python
+def with_structured_output(
+    self,
+    schema: dict | type,
+    *,
+    include_raw: bool = False,
+    method: Literal["function_calling", "json_schema"] = "function_calling",
+    **kwargs: Any,
+) -> Runnable[LanguageModelInput, dict | BaseModel]:
+    """Model wrapper that returns outputs formatted to match the given schema.
+    
+    Args:
+        schema: The output schema (Pydantic model, dict, or JSON schema).
+        include_raw: If True, return both raw and parsed output.
+        method: Which structured output method to use.
+        **kwargs: Additional parameters.
+    
+    Returns:
+        A Runnable that outputs instances of the schema or dicts.
+    """
+    # Convert schema to provider format
+    provider_schema = convert_to_provider_schema(schema, method=method)
+    
+    # Create a wrapper runnable that:
+    # 1. Calls the model with the schema
+    # 2. Parses the response
+    # 3. Validates against the schema
+    # 4. Returns parsed instance or dict
+    return self._create_structured_output_runnable(provider_schema, schema)
+```
 
 ### Vision / Multimodal Input
 
@@ -556,7 +662,7 @@ Translate these to provider-specific formats (e.g., OpenAI's `image_url`, Anthro
 
 ## 5. Provider Registration in init_chat_model
 
-Add your provider to the **built-in registry** to enable automatic factory instantiation (`repo://libs/langchain_v1/langchain/chat_models/base.py#L56-L97`):
+Add your provider to the **built-in registry** to enable automatic factory instantiation (from `repo://libs/langchain_v1/langchain/chat_models/base.py#L56-L99`):
 
 ```python
 _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
@@ -603,7 +709,7 @@ Add your provider's prefixes to the inference function to enable bare model name
 
 Profiles are dictionaries stored in `data/_profiles.py` and generated from the open-source [models.dev](https://github.com/sst/models.dev) project via the `langchain-model-profiles` CLI tool.
 
-**Sample profile** (reference: `repo://libs/partners/anthropic/langchain_anthropic/data/_profiles.py#L18-L52`):
+**Sample profile (from `repo://libs/partners/anthropic/langchain_anthropic/data/_profiles.py#L18-L90`):**
 
 ```python
 _PROFILES: dict[str, dict[str, Any]] = {
@@ -642,7 +748,7 @@ This downloads the latest model data, merges provider-specific augmentations fro
 
 ### Provider Augmentations
 
-Create `data/profile_augmentations.toml` for LangChain-specific capability overrides (reference: `repo://libs/partners/anthropic/langchain_anthropic/data/profile_augmentations.toml`):
+Create `data/profile_augmentations.toml` for LangChain-specific capability overrides (from `repo://libs/partners/anthropic/langchain_anthropic/data/profile_augmentations.toml`):
 
 ```toml
 provider = "provider_name"
@@ -664,7 +770,7 @@ LangChain provides a standard test suite for chat models via the `langchain-test
 
 ### Unit Tests
 
-Create `tests/unit_tests/chat_models/test_standard.py` (reference: `/libs/standard-tests/README.md`):
+Create `tests/unit_tests/chat_models/test_standard.py` (from `repo://libs/standard-tests/README.md`):
 
 ```python
 """Standard LangChain interface tests for ChatProviderModel."""
@@ -697,7 +803,7 @@ class TestProviderModelStandard(ChatModelUnitTests):
         }
 ```
 
-**Configurable test fixtures** (from `langchain-tests` README):
+**Configurable test fixtures (from `repo://libs/standard-tests/README.md#L38-L93`):**
 
 - `chat_model_class` (required): The `BaseChatModel` subclass to test
 - `chat_model_params`: Kwargs for instantiation (defaults to empty dict)
@@ -751,7 +857,7 @@ The standard test suite validates:
 
 If your provider supports advanced response modes (e.g., OpenAI's Responses API), create additional test classes for those modes:
 
-**Example: Responses API unit tests** (reference: `repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py`):
+**Example: Responses API unit tests (from `repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py`):**
 
 ```python
 """Standard tests with Responses API enabled."""
@@ -791,7 +897,7 @@ Integration tests for advanced modes should verify:
 
 Some providers (e.g., OpenAI) offer advanced response APIs alongside standard chat completions. These APIs typically support enhanced features like streaming tool execution, reasoning outputs, and structured response formats.
 
-**Example: OpenAI Responses API** (reference: `/openwiki/openai-provider.md`, `repo://libs/partners/openai/tests/integration_tests/chat_models/test_responses_api.py`):
+**Example: OpenAI Responses API (from `repo://libs/partners/openai/tests/integration_tests/chat_models/test_responses_api.py`):**
 
 The `ChatOpenAI` provider supports an optional `use_responses_api` parameter to switch between the Chat Completions API and the Responses API:
 
@@ -824,7 +930,7 @@ response = model.invoke("What is the capital of France?")
 
 **Message conversion for Responses API:**
 
-Provider implementations must convert Responses API output (which includes tool execution results, reasoning, and other structured items) back to unified `AIMessage` format. The OpenAI provider uses `_convert_from_v1_to_responses()` (reference: `repo://libs/partners/openai/langchain_openai/chat_models/_compat.py#L420-L514`) to translate content blocks:
+Provider implementations must convert Responses API output (which includes tool execution results, reasoning, and other structured items) back to unified `AIMessage` format. The OpenAI provider uses `_convert_from_v1_to_responses()` (from `repo://libs/partners/openai/langchain_openai/chat_models/_compat.py#L431-L515`) to translate content blocks:
 
 ```python
 # Responses API returns:
@@ -847,7 +953,7 @@ Provider implementations must convert Responses API output (which includes tool 
 
 ## 9. Error Handling
 
-Map provider-specific exceptions to LangChain's unified exception hierarchy (reference: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L54-L64`):
+Map provider-specific exceptions to LangChain's unified exception hierarchy (from `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L54-L64`):
 
 | Provider Exception | LangChain Exception |
 |---|---|
@@ -874,7 +980,7 @@ def _generate(self, messages, **kwargs):
 
 ## 10. Example: OpenAI Provider Reference
 
-The OpenAI provider (`repo://libs/partners/openai/langchain_openai/chat_models/base.py`) is a comprehensive reference implementation demonstrating:
+The OpenAI provider (from `repo://libs/partners/openai/langchain_openai/chat_models/base.py`) is a comprehensive reference implementation demonstrating:
 
 - **Message conversion**: Support for images, function calling, reasoning content
 - **Streaming**: Proper delta extraction and token counting
@@ -920,6 +1026,7 @@ pytest tests/integration_tests/
 - [ ] Parse and convert provider responses to `AIMessage`/`AIMessageChunk`
 - [ ] Implement `bind_tools()` for function calling (if supported)
 - [ ] Implement `with_structured_output()` for structured output (if supported)
+- [ ] Implement token counting methods (optional but recommended)
 - [ ] Map provider exceptions to LangChain exception hierarchy
 - [ ] Fetch and store model profiles via `langchain-model-profiles` CLI
 - [ ] Add provider to `_BUILTIN_PROVIDERS` registry in `init_chat_model`
@@ -933,6 +1040,6 @@ pytest tests/integration_tests/
 
 - [Chat Models Interface](/openwiki/chat-models.md) - Core chat model protocol
 - [Message Types](/openwiki/messages.md) - Message abstraction and content blocks
-- [Model Initialization](/openwiki/model-initialization.md) - `init_chat_model` factory details
+- [Integration Tests](/openwiki/integration-tests.md) - Standard test suite details
 - [OpenAI Provider](/openwiki/openai-provider.md) - Reference implementation
 - [LangChain Integrations Documentation](https://docs.langchain.com/oss/python/integrations/providers/overview) - User-facing guide
