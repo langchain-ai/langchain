@@ -357,7 +357,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ fromJSON(needs.compute-matrix.outputs.matrix).python-version }}
         package:
           - name: deepagents
             repo: langchain-ai/deepagents
