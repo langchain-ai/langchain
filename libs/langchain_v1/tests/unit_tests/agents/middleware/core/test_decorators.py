@@ -1,7 +1,7 @@
 """Consolidated tests for middleware decorators: before_model, after_model, and wrap_model_call."""
 
 from collections.abc import Awaitable, Callable
-from typing import Any, Generic
+from typing import Any, Generic, NotRequired
 
 import pytest
 from langchain_core.messages import (
@@ -15,7 +15,7 @@ from langgraph.prebuilt.tool_node import ToolCallRequest
 from langgraph.runtime import Runtime
 from langgraph.types import Command
 from syrupy.assertion import SnapshotAssertion
-from typing_extensions import NotRequired, override
+from typing_extensions import override
 
 from langchain.agents.factory import _get_can_jump_to, create_agent
 from langchain.agents.middleware.types import (

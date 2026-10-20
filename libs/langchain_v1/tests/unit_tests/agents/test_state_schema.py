@@ -6,11 +6,11 @@ AgentState without needing to create custom middleware.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, get_args, get_type_hints
+from typing import TYPE_CHECKING, Annotated, Any, NotRequired, Required, get_args, get_type_hints
 
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
-from typing_extensions import NotRequired, Required, override
+from typing_extensions import override
 
 from langchain.agents import create_agent, factory
 from langchain.agents.middleware.types import (

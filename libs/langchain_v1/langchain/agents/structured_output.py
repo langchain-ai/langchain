@@ -11,6 +11,7 @@ from typing import (
     Any,
     Generic,
     Literal,
+    Self,
     TypeVar,
     Union,
     get_args,
@@ -19,7 +20,7 @@ from typing import (
 
 from langchain_core.tools import BaseTool, StructuredTool
 from pydantic import BaseModel, TypeAdapter
-from typing_extensions import Self, is_typeddict
+from typing_extensions import is_typeddict
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
