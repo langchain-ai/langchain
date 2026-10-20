@@ -12,8 +12,10 @@ from langchain_core.language_models.base import (
     LanguageModelInput,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
+from langchain_core.language_models.fake_chat_models import (
+    FakeMessagesListChatModel,
+    GenericFakeChatModel,
+)
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -2744,8 +2746,6 @@ def test_async_summarizer_on_sync_path_raises() -> None:
 
 def test_empty_summary_model_raises_and_does_not_return_destructive_update() -> None:
     """Empty model summary must fail before RemoveMessage is returned (#41323)."""
-    from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
-
     summary_model = FakeMessagesListChatModel(responses=[AIMessage(content="")])
     middleware = SummarizationMiddleware(
         model=summary_model,
@@ -2782,8 +2782,6 @@ def test_empty_summary_model_raises_and_does_not_return_destructive_update() -> 
 @pytest.mark.asyncio
 async def test_empty_summary_model_raises_async() -> None:
     """Async path must also reject empty model summary (#41323)."""
-    from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
-
     summary_model = FakeMessagesListChatModel(responses=[AIMessage(content="")])
     middleware = SummarizationMiddleware(
         model=summary_model,
