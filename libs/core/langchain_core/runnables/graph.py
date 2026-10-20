@@ -16,6 +16,8 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+from pydantic import BaseModel
+
 from langchain_core.load.serializable import to_json_not_implemented
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.utils.pydantic import (
@@ -233,7 +235,9 @@ def node_data_json(
                 "type": "schema",
                 "data": node.data.model_json_schema(
                     schema_generator=_IgnoreUnserializable
-                ),
+                )
+                if issubclass(node.data, BaseModel)
+                else node.data.schema(),
             }
             if with_schemas
             else {
