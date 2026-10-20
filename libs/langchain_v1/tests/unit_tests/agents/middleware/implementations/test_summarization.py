@@ -13,6 +13,7 @@ from langchain_core.language_models.base import (
 )
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
+from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -2739,3 +2740,76 @@ def test_async_summarizer_on_sync_path_raises() -> None:
 
     with pytest.raises(TypeError, match="coroutine function synchronously"):
         middleware._create_summary([HumanMessage(content="hi")])
+
+
+def test_empty_summary_model_raises_and_does_not_return_destructive_update() -> None:
+    """Empty model summary must fail before RemoveMessage is returned (#41323)."""
+    from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
+
+    summary_model = FakeMessagesListChatModel(responses=[AIMessage(content="")])
+    middleware = SummarizationMiddleware(
+        model=summary_model,
+        trigger=("messages", 6),
+        keep=("messages", 2),
+    )
+    history = [
+        HumanMessage("Read alpha.txt and remember its secret token.", id="h1"),
+        AIMessage(
+            "",
+            id="a1",
+            tool_calls=[{"id": "c1", "name": "read_file", "args": {"path": "alpha.txt"}}],
+        ),
+        ToolMessage("secret-token: 4711", tool_call_id="c1", id="t1"),
+        AIMessage("The token is 4711.", id="a2"),
+        HumanMessage("Now read bravo.txt.", id="h2"),
+        AIMessage(
+            "",
+            id="a3",
+            tool_calls=[{"id": "c2", "name": "read_file", "args": {"path": "bravo.txt"}}],
+        ),
+        ToolMessage("bravo contents", tool_call_id="c2", id="t2"),
+    ]
+    state = {"messages": history}
+
+    with pytest.raises(ValueError, match="empty"):
+        middleware.before_model(state, Runtime())
+
+    # No successful update was produced; caller keeps original state.
+    assert state["messages"] is history
+    assert [m.id for m in history] == ["h1", "a1", "t1", "a2", "h2", "a3", "t2"]
+
+
+@pytest.mark.asyncio
+async def test_empty_summary_model_raises_async() -> None:
+    """Async path must also reject empty model summary (#41323)."""
+    from langchain_core.language_models.fake_chat_models import FakeMessagesListChatModel
+
+    summary_model = FakeMessagesListChatModel(responses=[AIMessage(content="")])
+    middleware = SummarizationMiddleware(
+        model=summary_model,
+        trigger=("messages", 6),
+        keep=("messages", 2),
+    )
+    history = [
+        HumanMessage("one", id="h1"),
+        AIMessage("two", id="a1"),
+        HumanMessage("three", id="h2"),
+        AIMessage("four", id="a2"),
+        HumanMessage("five", id="h3"),
+        AIMessage("six", id="a3"),
+        HumanMessage("seven", id="h4"),
+    ]
+    with pytest.raises(ValueError, match="empty"):
+        await middleware.abefore_model({"messages": history}, Runtime())
+
+
+def test_empty_custom_summarizer_raises() -> None:
+    """Custom summarizer returning whitespace-only must be rejected."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("messages", 2),
+        keep=("messages", 1),
+        summarizer=lambda _msgs: "   \n\t  ",
+    )
+    with pytest.raises(ValueError, match="empty"):
+        middleware._create_summary([HumanMessage("hello"), AIMessage("world")])

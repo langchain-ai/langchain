@@ -140,7 +140,11 @@ def _check_summary(summary: object) -> str:
     if not isinstance(summary, str):
         msg = f"`summarizer` must return a str, got {type(summary).__name__}."
         raise TypeError(msg)
-    return summary.strip()
+    text = summary.strip()
+    if not text:
+        msg = "Summarizer returned an empty summary."
+        raise ValueError(msg)
+    return text
 
 
 def _provider_matches(message_provider: str, model_ls_provider: str | None) -> bool:
@@ -949,7 +953,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             if retry_prompt is None:
                 raise
             response = self._summary_model.invoke(retry_prompt, config=_summary_config())
-        return response.text.strip()
+        return _check_summary(response.text)
 
     async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
         """Generate summary for the given messages.
@@ -983,7 +987,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             if retry_prompt is None:
                 raise
             response = await self._summary_model.ainvoke(retry_prompt, config=_summary_config())
-        return response.text.strip()
+        return _check_summary(response.text)
 
     def _format_summary_prompt(self, messages: list[AnyMessage]) -> str:
         """Render the summary prompt for the given messages."""
