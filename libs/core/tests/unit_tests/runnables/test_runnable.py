@@ -2960,6 +2960,48 @@ async def test_router_runnable_async() -> None:
     assert result2 == ["4", "2"]
 
 
+def test_router_runnable_batch_return_exceptions() -> None:
+    add = RunnableLambda(func=lambda x: x + 1)
+    router = RouterRunnable({"add": add})
+
+    inputs = [
+        {"key": "add", "input": 1},
+        {"key": "missing", "input": 2},
+    ]
+
+    with pytest.raises(
+        ValueError, match="One or more keys do not have a corresponding runnable"
+    ):
+        router.batch(inputs, return_exceptions=False)
+
+    results = router.batch(inputs, return_exceptions=True)
+    assert len(results) == 2
+    assert results[0] == 2
+    assert isinstance(results[1], ValueError)
+    assert str(results[1]) == "No runnable associated with key 'missing'"
+
+
+async def test_router_runnable_abatch_return_exceptions() -> None:
+    add = RunnableLambda(func=lambda x: x + 1)
+    router = RouterRunnable({"add": add})
+
+    inputs = [
+        {"key": "add", "input": 1},
+        {"key": "missing", "input": 2},
+    ]
+
+    with pytest.raises(
+        ValueError, match="One or more keys do not have a corresponding runnable"
+    ):
+        await router.abatch(inputs, return_exceptions=False)
+
+    results = await router.abatch(inputs, return_exceptions=True)
+    assert len(results) == 2
+    assert results[0] == 2
+    assert isinstance(results[1], ValueError)
+    assert str(results[1]) == "No runnable associated with key 'missing'"
+
+
 @freeze_time("2023-01-01")
 def test_higher_order_lambda_runnable(
     mocker: MockerFixture, snapshot: SnapshotAssertion
