@@ -4432,3 +4432,27 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+def test_create_documents_with_start_index_token_overlap() -> None:
+    """Regression: TokenTextSplitter.add_start_index must not yield -1.
+
+    `chunk_overlap` is measured in tokens, not characters, so the previous
+    character-offset based lookup could skip past the real chunk start and
+    return -1. See https://github.com/langchain-ai/langchain/issues/29884
+    """
+    text = (
+        '"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod '
+        "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, "
+        "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo "
+        "consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse "
+        "cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non "
+        "proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\""
+    )
+    splitter = TokenTextSplitter(add_start_index=True, chunk_size=10, chunk_overlap=5)
+    docs = splitter.create_documents([text])
+    assert docs, "expected at least one chunk"
+    for doc in docs:
+        start_index = doc.metadata["start_index"]
+        assert start_index != -1, "start_index must locate the chunk in the source text"
+        assert text[start_index : start_index + len(doc.page_content)] == doc.page_content
