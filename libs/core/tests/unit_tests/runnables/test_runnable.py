@@ -13,7 +13,7 @@ from collections.abc import (
 )
 from functools import partial
 from operator import itemgetter
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 import pytest
@@ -105,6 +105,9 @@ from tests.unit_tests.pydantic_utils import (
     skip_if_no_pydantic_v1,
 )
 from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
+
+if TYPE_CHECKING:
+    from langchain_core.runnables.router import RouterInput
 
 # Several tests assert the legacy `RunLog` / `RunLogPatch` output produced by
 # `astream_log`, which cannot be replaced by `astream` without losing coverage.
@@ -2958,6 +2961,42 @@ async def test_router_runnable_async() -> None:
         ]
     )
     assert result2 == ["4", "2"]
+
+
+def test_router_runnable_batch_return_exceptions() -> None:
+    router = RouterRunnable[Any]({"double": RunnableLambda(lambda value: value * 2)})
+    inputs: list[RouterInput] = [
+        {"key": "double", "input": 1},
+        {"key": "missing", "input": 2},
+    ]
+
+    # Unknown keys are reported per item instead of failing the whole batch.
+    results = router.batch(inputs, return_exceptions=True)
+    assert results[0] == 2
+    assert isinstance(results[1], ValueError)
+    assert str(results[1]) == "No runnable associated with key 'missing'"
+
+    # Without return_exceptions, an unknown key still raises upfront.
+    with pytest.raises(ValueError, match="One or more keys do not have a"):
+        router.batch(inputs)
+
+
+async def test_router_runnable_abatch_return_exceptions() -> None:
+    router = RouterRunnable[Any]({"double": RunnableLambda(lambda value: value * 2)})
+    inputs: list[RouterInput] = [
+        {"key": "double", "input": 1},
+        {"key": "missing", "input": 2},
+    ]
+
+    # Unknown keys are reported per item instead of failing the whole batch.
+    results = await router.abatch(inputs, return_exceptions=True)
+    assert results[0] == 2
+    assert isinstance(results[1], ValueError)
+    assert str(results[1]) == "No runnable associated with key 'missing'"
+
+    # Without return_exceptions, an unknown key still raises upfront.
+    with pytest.raises(ValueError, match="One or more keys do not have a"):
+        await router.abatch(inputs)
 
 
 @freeze_time("2023-01-01")
