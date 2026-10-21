@@ -292,3 +292,164 @@ async def test_default_afrom_documents(vs_class: type[VectorStore]) -> None:
     store = await vs_class.afrom_documents([original_document], embeddings, ids=["6"])
     assert original_document.id == "7"  # original document should not be modified
     assert await store.aget_by_ids(["6"]) == [Document(id="6", page_content="baz")]
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for https://github.com/langchain-ai/langchain/issues/32283
+#
+# When a VectorStore subclass overrides add_documents / aadd_documents with
+# `ids` as an *explicit* keyword-only parameter (like QdrantVectorStore does),
+# calling add_texts / aadd_texts with `ids` must NOT forward ids twice —
+# once through the explicit parameter AND once through **kwargs — otherwise
+# Python raises "TypeError: got multiple values for keyword argument 'ids'".
+# ---------------------------------------------------------------------------
+
+
+class ExplicitIdsAddDocumentsVectorstore(VectorStore):
+    """A VectorStore whose add_documents declares `ids` as an explicit kwarg.
+
+    This mirrors the signature used by QdrantVectorStore and similar
+    third-party integrations that triggered the 'multiple values' bug.
+    """
+
+    def __init__(self) -> None:
+        self.store: dict[str, Document] = {}
+        # Track how many times ids was received so we can assert no duplication.
+        self.add_documents_calls: list[dict] = []
+
+    @override
+    def add_documents(
+        self,
+        documents: list[Document],
+        *,
+        ids: list[str] | None = None,
+        **kwargs: Any,
+    ) -> list[str]:
+        """Override with ids as an explicit keyword-only parameter."""
+        # ids must NOT also appear inside kwargs — that is the regression.
+        assert "ids" not in kwargs, (
+            "ids was passed both explicitly and via **kwargs — "
+            "regression of github.com/langchain-ai/langchain/issues/32283"
+        )
+        self.add_documents_calls.append({"ids": ids, "kwargs": kwargs})
+        result_ids: list[str] = []
+        import uuid
+
+        ids_iter = iter(ids or [])
+        for doc in documents:
+            id_ = next(ids_iter, None) or doc.id or str(uuid.uuid4())
+            self.store[id_] = Document(
+                id=id_, page_content=doc.page_content, metadata=doc.metadata
+            )
+            result_ids.append(id_)
+        return result_ids
+
+    @override
+    async def aadd_documents(
+        self,
+        documents: list[Document],
+        *,
+        ids: list[str] | None = None,
+        **kwargs: Any,
+    ) -> list[str]:
+        """Async override with ids as an explicit keyword-only parameter."""
+        # ids must NOT also appear inside kwargs — that is the regression.
+        assert "ids" not in kwargs, (
+            "ids was passed both explicitly and via **kwargs — "
+            "regression of github.com/langchain-ai/langchain/issues/32283"
+        )
+        return self.add_documents(documents, ids=ids, **kwargs)
+
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
+        return [self.store[id_] for id_ in ids if id_ in self.store]
+
+    @classmethod
+    @override
+    def from_texts(
+        cls,
+        texts: list[str],
+        embedding: Embeddings,
+        metadatas: list[dict[str, Any]] | None = None,
+        **kwargs: Any,
+    ) -> ExplicitIdsAddDocumentsVectorstore:
+        store = ExplicitIdsAddDocumentsVectorstore()
+        store.add_texts(texts, metadatas=metadatas, **kwargs)
+        return store
+
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> list[Document]:
+        raise NotImplementedError
+
+
+def test_add_texts_with_explicit_ids_no_duplicate_kwarg() -> None:
+    """Regression test for #32283 (sync path).
+
+    add_texts(ids=...) must not pass `ids` twice to add_documents when the
+    subclass declares `ids` as an explicit keyword-only parameter.
+    """
+    store = ExplicitIdsAddDocumentsVectorstore()
+    # This must not raise TypeError: got multiple values for keyword argument 'ids'
+    returned_ids = store.add_texts(["hello", "world"], ids=["id-1", "id-2"])
+    assert returned_ids == ["id-1", "id-2"]
+    assert store.get_by_ids(["id-1", "id-2"]) == [
+        Document(id="id-1", page_content="hello"),
+        Document(id="id-2", page_content="world"),
+    ]
+
+
+def test_add_texts_without_ids_no_duplicate_kwarg() -> None:
+    """Regression test for #32283 (sync path, no ids).
+
+    add_texts() without ids must not accidentally inject ids into kwargs.
+    """
+    store = ExplicitIdsAddDocumentsVectorstore()
+    returned_ids = store.add_texts(["foo", "bar"])
+    assert len(returned_ids) == 2
+    # Verify each call received ids=None (or a list), never ids inside kwargs
+    for call in store.add_documents_calls:
+        assert "ids" not in call["kwargs"]
+
+
+async def test_aadd_texts_with_explicit_ids_no_duplicate_kwarg() -> None:
+    """Regression test for #32283 (async path).
+
+    aadd_texts(ids=...) must not pass `ids` twice to aadd_documents when the
+    subclass declares `ids` as an explicit keyword-only parameter.
+    """
+    store = ExplicitIdsAddDocumentsVectorstore()
+    # This must not raise TypeError: got multiple values for keyword argument 'ids'
+    returned_ids = await store.aadd_texts(["hello", "world"], ids=["id-1", "id-2"])
+    assert returned_ids == ["id-1", "id-2"]
+    assert await store.aget_by_ids(["id-1", "id-2"]) == [
+        Document(id="id-1", page_content="hello"),
+        Document(id="id-2", page_content="world"),
+    ]
+
+
+async def test_aadd_texts_without_ids_no_duplicate_kwarg() -> None:
+    """Regression test for #32283 (async path, no ids).
+
+    aadd_texts() without ids must not accidentally inject ids into kwargs.
+    """
+    store = ExplicitIdsAddDocumentsVectorstore()
+    returned_ids = await store.aadd_texts(["foo", "bar"])
+    assert len(returned_ids) == 2
+
+
+async def test_aadd_documents_with_explicit_ids_no_duplicate_kwarg() -> None:
+    """Regression test for #32283 (async aadd_documents delegation path).
+
+    aadd_documents(ids=...) must forward ids exactly once to aadd_texts when
+    the subclass overrides aadd_texts with an explicit `ids` parameter.
+    """
+    store = ExplicitIdsAddDocumentsVectorstore()
+    returned_ids = await store.aadd_documents(
+        [Document(page_content="hello"), Document(page_content="world")],
+        ids=["id-a", "id-b"],
+    )
+    assert returned_ids == ["id-a", "id-b"]
+    assert await store.aget_by_ids(["id-a", "id-b"]) == [
+        Document(id="id-a", page_content="hello"),
+        Document(id="id-b", page_content="world"),
+    ]
