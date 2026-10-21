@@ -4807,6 +4807,26 @@ def test_profile() -> None:
     assert model.profile == {"tool_calling": False}
 
 
+@pytest.mark.parametrize(
+    ("model", "anthropic_model"),
+    [
+        ("anthropic.claude-sonnet-4-5", "claude-sonnet-4-5"),
+        ("us.anthropic.claude-sonnet-4-5-20250929-v1:0", "claude-sonnet-4-5-20250929"),
+        (
+            "arn:aws:bedrock:us-east-1:123456789012:inference-profile/"
+            "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+            "claude-haiku-4-5-20251001",
+        ),
+        ("claude-opus-4-5@20251101", "claude-opus-4-5-20251101"),
+    ],
+)
+def test_profile_for_bedrock_and_vertex_ids(model: str, anthropic_model: str) -> None:
+    """Bedrock and Vertex AI IDs get the profile of the Anthropic model they serve."""
+    expected = ChatAnthropic(model=anthropic_model).profile
+    assert expected
+    assert ChatAnthropic(model=model).profile == expected
+
+
 def test_profile_1m_context_beta() -> None:
     model = ChatAnthropic(model="claude-sonnet-4-5")
     assert model.profile

@@ -121,16 +121,36 @@ def _add_gateway_metadata(generation_info: dict[str, Any], raw_response: Any) ->
         generation_info[GATEWAY_METADATA_RESPONSE_KEY] = gateway_metadata
 
 
+_BEDROCK_MODEL_PREFIX = re.compile(r"^(?:[a-z-]+\.)?anthropic\.")
+_BEDROCK_MODEL_VERSION = re.compile(r"-v\d+(?::\d+)?$")
+
+
+def _anthropic_model_id(model_name: str) -> str:
+    """Map a Bedrock or Vertex AI model ID to the Anthropic API ID it serves.
+
+    Bedrock IDs look like `us.anthropic.claude-haiku-4-5-20251001-v1:0` (or an
+    inference profile ARN ending in one); Vertex AI IDs look like
+    `claude-opus-4-5@20251101`.
+    """
+    name = model_name.rsplit("/", 1)[-1]
+    if _BEDROCK_MODEL_PREFIX.match(name):
+        return _BEDROCK_MODEL_VERSION.sub("", _BEDROCK_MODEL_PREFIX.sub("", name))
+    return name.replace("@", "-")
+
+
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     """Get the default profile for a model.
 
     Args:
-        model_name: The model identifier.
+        model_name: The model identifier, either an Anthropic API ID or the
+            Bedrock or Vertex AI ID for the same model.
 
     Returns:
         The model profile dictionary, or an empty dict if not found.
     """
-    default = _MODEL_PROFILES.get(model_name)
+    default = _MODEL_PROFILES.get(model_name) or _MODEL_PROFILES.get(
+        _anthropic_model_id(model_name)
+    )
     if default:
         return default.copy()
     return {}
