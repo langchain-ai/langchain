@@ -1,0 +1,22 @@
+libs/core/langchain_core/tracers/langchain.py
+  s_f37c3e6c74d99c::t_4913c3282af395 182
+libs/core/tests/unit_tests/tracers/test_langchain.py
+  s_f37c3e6c74d99c::t_5f5378eb40add4 1106,1117
+  s_f37c3e6c74d99c::t_4913c3282af395 1103-1105,1107-1116,1118-1125
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "63f6a494fe2ac39fad8119f72506a63d13098711",
+  "prompts": {},
+  "sessions": {
+    "s_f37c3e6c74d99c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "58d65281-fa2a-4474-8f57-377de80319ea",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Kiewan Villatel <kiewan@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+libs/core/tests/unit_tests/runnables/test_config.py
+  s_ea51ca488ce074::t_052402dd74da00 236-263
+libs/core/langchain_core/runnables/config.py
+  s_ea51ca488ce074::t_2615e85b812cfc 175
+  s_ea51ca488ce074::t_d5624562cc95e2 155-161
+  s_ea51ca488ce074::t_cbdc1951095faf 6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7919bc0e0112c60085991ef1092b68b6ee83fea3",
+  "prompts": {},
+  "sessions": {
+    "s_ea51ca488ce074": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e30c62d1-e1eb-4cb9-b30c-e95e4558577c",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Emil F <emil@langchain.dev>"
+    }
+  }
+}

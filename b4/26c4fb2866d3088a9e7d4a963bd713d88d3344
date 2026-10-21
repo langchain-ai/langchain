@@ -1,0 +1,23 @@
+libs/partners/typesafe/pyproject.toml
+  s_5b1ce1ef26a201::t_9dba58c467db1e 7
+libs/partners/typesafe/langchain_typesafe/_version.py
+  s_5b1ce1ef26a201::t_167767f3a0dfd8 3
+libs/partners/typesafe/uv.lock
+  s_5b1ce1ef26a201::t_12e4a958051120 440,629
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b426c4fb2866d3088a9e7d4a963bd713d88d3344",
+  "prompts": {},
+  "sessions": {
+    "s_5b1ce1ef26a201": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "28c1b81f-9dc4-4312-863d-34149b03df5b",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

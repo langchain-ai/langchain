@@ -1,0 +1,32 @@
+libs/partners/anthropic/langchain_anthropic/chat_models.py
+  s_ea51ca488ce074::t_c0ad7e0b17cd1e 1013-1019
+libs/partners/anthropic/tests/unit_tests/test_chat_models.py
+  s_ea51ca488ce074::t_91236e5f724cc3 4628-4641
+libs/partners/groq/langchain_groq/chat_models.py
+  s_ea51ca488ce074::t_04e818a060008d 487-493
+libs/partners/openai/langchain_openai/llms/base.py
+  s_ea51ca488ce074::t_d305b0ef763819 281-287
+libs/partners/openai/langchain_openai/chat_models/base.py
+  s_ea51ca488ce074::t_9a5bd0aabb75bc 835-841
+libs/partners/openai/tests/unit_tests/chat_models/test_base.py
+  s_ea51ca488ce074::t_91236e5f724cc3 4824-4837
+libs/partners/groq/tests/unit_tests/test_chat_models.py
+  s_ea51ca488ce074::t_0936291f39b715 23
+  s_ea51ca488ce074::t_91236e5f724cc3 1325-1338
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e385ef715d59c74eb91dd8373daef035fe599114",
+  "prompts": {},
+  "sessions": {
+    "s_ea51ca488ce074": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e30c62d1-e1eb-4cb9-b30c-e95e4558577c",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Emil F <emil@langchain.dev>"
+    }
+  }
+}

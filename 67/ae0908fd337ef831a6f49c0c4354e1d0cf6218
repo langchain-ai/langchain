@@ -1,0 +1,21 @@
+libs/partners/huggingface/tests/unit_tests/test_huggingface_endpoint.py
+  s_ea51ca488ce074::t_2b9aa172387b60 79-99
+libs/partners/huggingface/langchain_huggingface/llms/huggingface_endpoint.py
+  s_ea51ca488ce074::t_117317d739ec8d 111-112
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "67ae0908fd337ef831a6f49c0c4354e1d0cf6218",
+  "prompts": {},
+  "sessions": {
+    "s_ea51ca488ce074": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e30c62d1-e1eb-4cb9-b30c-e95e4558577c",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Emil F <emil@langchain.dev>"
+    }
+  }
+}

@@ -1,0 +1,113 @@
+libs/partners/typesafe/tests/unit_tests/__init__.py
+  s_f21a22b0ae0afc::t_96b228ad0334df 1
+libs/partners/typesafe/tests/integration_tests/test_compile.py
+  s_f21a22b0ae0afc::t_5acd35409ca121 1-8
+libs/partners/typesafe/tests/integration_tests/middleware/test_middleware.py
+  s_f21a22b0ae0afc::t_c4b4e08e681e0a 44,46
+  s_f21a22b0ae0afc::t_5acd35409ca121 1-43,45,47-166,169-191
+  s_f21a22b0ae0afc::t_57c67294e85675 167-168
+libs/partners/typesafe/LICENSE
+  s_f21a22b0ae0afc::t_96b228ad0334df 1-21
+libs/partners/typesafe/langchain_typesafe/middleware/model_router.py
+  s_f21a22b0ae0afc::t_0f91e87aae4e2c 1-136,138-246
+  s_f21a22b0ae0afc::t_344eb53ccc9f7e 137
+.github/ISSUE_TEMPLATE/privileged.yml
+  s_f21a22b0ae0afc::t_b7d40d32157de2 48
+.github/ISSUE_TEMPLATE/task.yml
+  s_f21a22b0ae0afc::t_b7d40d32157de2 119
+libs/partners/typesafe/tests/unit_tests/middleware/test_auto_mode.py
+  s_f21a22b0ae0afc::t_b32b0987348bf0 190,218-219,245
+  s_f21a22b0ae0afc::t_99959a339c90b8 1-189,191-217,220-244,246-361
+libs/partners/typesafe/README.md
+  s_f21a22b0ae0afc::t_9ff529a000833c 1-114
+.github/dependabot.yml
+  s_f21a22b0ae0afc::t_b7d40d32157de2 69
+libs/partners/typesafe/langchain_typesafe/_errors.py
+  s_f21a22b0ae0afc::t_7461f9d008a994 1-162
+.github/scripts/pr-labeler-config.json
+  s_f21a22b0ae0afc::t_b7d40d32157de2 50,78
+.github/workflows/integration_tests.yml
+  s_f21a22b0ae0afc::t_b7d40d32157de2 46,328
+libs/partners/typesafe/scripts/check_imports.py
+  s_f21a22b0ae0afc::t_96b228ad0334df 1-19
+libs/partners/typesafe/.gitignore
+  s_f21a22b0ae0afc::t_96b228ad0334df 1
+libs/partners/typesafe/tests/integration_tests/__init__.py
+  s_f21a22b0ae0afc::t_96b228ad0334df 1
+libs/partners/typesafe/tests/unit_tests/test_imports.py
+  s_f21a22b0ae0afc::t_42cad1d5ac8839 1-45
+libs/partners/typesafe/tests/integration_tests/middleware/__init__.py
+  s_f21a22b0ae0afc::t_14537638846898 1
+libs/partners/typesafe/tests/unit_tests/conftest.py
+  s_f21a22b0ae0afc::t_77facefc367ce1 7,12,15-18
+  s_f21a22b0ae0afc::t_14537638846898 1-6,8-11,13-14,19-80
+.github/ISSUE_TEMPLATE/feature-request.yml
+  s_f21a22b0ae0afc::t_b7d40d32157de2 72
+libs/partners/typesafe/Makefile
+  s_f21a22b0ae0afc::t_96b228ad0334df 1-54
+.github/workflows/_release.yml
+  s_f21a22b0ae0afc::t_b7d40d32157de2 85
+libs/partners/typesafe/scripts/check_version.py
+  s_f21a22b0ae0afc::t_96b228ad0334df 1-33
+libs/partners/typesafe/tests/unit_tests/middleware/__init__.py
+  s_f21a22b0ae0afc::t_14537638846898 1
+libs/partners/typesafe/langchain_typesafe/middleware/auto_mode.py
+  s_f21a22b0ae0afc::t_71db557ed9d9cd 1-16,22-316,318-324
+  s_f21a22b0ae0afc::t_344eb53ccc9f7e 17-21,317
+libs/partners/typesafe/tests/unit_tests/test_errors.py
+  s_f21a22b0ae0afc::t_42cad1d5ac8839 1-249
+libs/partners/typesafe/tests/unit_tests/middleware/test_skills.py
+  s_f21a22b0ae0afc::t_42cad1d5ac8839 87-89
+  s_f21a22b0ae0afc::t_77facefc367ce1 12,14-16
+  s_f21a22b0ae0afc::t_8c6f498d555150 325
+  s_f21a22b0ae0afc::t_19949ec61c9761 13,122,137,150,162,174,186,199,214,228
+  s_f21a22b0ae0afc::t_10f8debb1b1a50 1-11,17-86,90-121,123-136,138-149,151-161,163-173,175-185,187-198,200-213,215-227,229-324,326-397
+libs/partners/typesafe/langchain_typesafe/_classify.py
+  s_f21a22b0ae0afc::t_3b2b8ae637ff58 1-30,32-92,94-96,99-110,112-114,117-154
+  s_f21a22b0ae0afc::t_04e7a170510580 31,93,97-98,111,115-116,155
+libs/partners/typesafe/pyproject.toml
+  s_f21a22b0ae0afc::t_8c6f498d555150 107-108
+  s_f21a22b0ae0afc::t_000706d0513671 1-106,109-112
+libs/partners/typesafe/scripts/lint_imports.sh
+  s_f21a22b0ae0afc::t_96b228ad0334df 1-12
+libs/partners/typesafe/langchain_typesafe/middleware/skills.py
+  s_f21a22b0ae0afc::t_0b1fd6a29219b5 1-21,27-185,187-442
+  s_f21a22b0ae0afc::t_344eb53ccc9f7e 22-26,186
+.github/workflows/auto-label-by-package.yml
+  s_f21a22b0ae0afc::t_b7d40d32157de2 58
+libs/partners/typesafe/langchain_typesafe/_version.py
+  s_f21a22b0ae0afc::t_96b228ad0334df 1-3
+libs/partners/typesafe/langchain_typesafe/__init__.py
+  s_f21a22b0ae0afc::t_5443bf82d8bb98 1-35
+libs/partners/typesafe/langchain_typesafe/middleware/__init__.py
+  s_f21a22b0ae0afc::t_5443bf82d8bb98 1-17
+.github/ISSUE_TEMPLATE/bug-report.yml
+  s_f21a22b0ae0afc::t_b7d40d32157de2 73
+libs/partners/typesafe/tests/unit_tests/middleware/test_model_router.py
+  s_f21a22b0ae0afc::t_b32b0987348bf0 254-258
+  s_f21a22b0ae0afc::t_2e67063394ddc0 1-11,17-83,85-102,104-122,124-135,137-148,150-160,162-174,176-189,191-202,204-253,259-260
+  s_f21a22b0ae0afc::t_19949ec61c9761 13,84,103,123,136,149,161,175,190,203
+  s_f21a22b0ae0afc::t_77facefc367ce1 12,14-16
+.github/workflows/pr_lint.yml
+  s_f21a22b0ae0afc::t_b7d40d32157de2 119
+libs/partners/typesafe/tests/__init__.py
+  s_f21a22b0ae0afc::t_96b228ad0334df 1
+libs/partners/typesafe/uv.lock
+  s_f21a22b0ae0afc::t_cd281eb28c71db 1-3024
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "009c0176c8660eed222f1a6b417153e7681b08e8",
+  "prompts": {},
+  "sessions": {
+    "s_f21a22b0ae0afc": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f4fb8c13-4577-435b-b835-bb7808fd26ba",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Sydney Runkle <sydneymarierunkle@gmail.com>"
+    }
+  }
+}

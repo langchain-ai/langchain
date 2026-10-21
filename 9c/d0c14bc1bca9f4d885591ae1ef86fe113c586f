@@ -1,0 +1,22 @@
+libs/partners/anthropic/langchain_anthropic/chat_models.py
+  s_ea51ca488ce074::t_b46d7f502b7b87 1208-1225
+libs/partners/anthropic/tests/unit_tests/test_chat_models.py
+  s_ea51ca488ce074::t_178cceb8f27b90 4660,4664,4668
+  s_ea51ca488ce074::t_c7adcfd149a76d 4642-4659,4661-4663,4665-4667
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9cd0c14bc1bca9f4d885591ae1ef86fe113c586f",
+  "prompts": {},
+  "sessions": {
+    "s_ea51ca488ce074": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e30c62d1-e1eb-4cb9-b30c-e95e4558577c",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Emil F <emil@langchain.dev>"
+    }
+  }
+}
