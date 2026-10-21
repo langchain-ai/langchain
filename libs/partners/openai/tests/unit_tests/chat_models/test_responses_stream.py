@@ -22,6 +22,7 @@ from openai.types.responses import (
     ResponseOutputItemAddedEvent,
     ResponseOutputItemDoneEvent,
     ResponseOutputMessage,
+    ResponseOutputTextAnnotationAddedEvent,
     ResponseReasoningItem,
     ResponseReasoningSummaryPartAddedEvent,
     ResponseReasoningSummaryPartDoneEvent,
@@ -1401,3 +1402,114 @@ async def test_responses_astream_raises_on_failure(
     ):
         async for _ in llm.astream("test"):
             pass
+
+
+def test_annotation_on_function_call_item_is_not_replayed() -> None:
+    """A streaming annotation landing on a function_call block is not replayed.
+
+    Regression test for https://github.com/langchain-ai/langchain/issues/41358.
+
+    With the Responses API, a reasoning model writing cited text into a tool
+    call's arguments can stream ``response.output_text.annotation.added`` for
+    the ``function_call`` item. The reasoning item in front leaves
+    ``current_sub_index`` at 0, and the annotation event's ``content_index``
+    is 0 as well, so the annotation chunk shares the ``function_call`` block's
+    index and ``langchain-core`` merges it into that block. On the next turn
+    the merged ``annotations`` were forwarded as-is and the API rejected the
+    request with ``Unknown parameter: 'input[N].annotations'``.
+
+    The annotation still merges into the streamed message (that behaviour is
+    unchanged); the fix drops it when the block is replayed as a non-message
+    item, which can never carry annotations.
+    """
+    args = '{"html": "Founded in 1844 \ue200cite\ue202turn0search1\ue201"}'
+    call = dict(
+        type="function_call",
+        id="fc_1",
+        call_id="call_1",
+        name="show_widget",
+        status="completed",
+    )
+    events = [
+        ResponseOutputItemAddedEvent(
+            type="response.output_item.added",
+            sequence_number=0,
+            output_index=0,
+            item=ResponseReasoningItem(type="reasoning", id="rs_1", summary=[]),
+        ),
+        ResponseOutputItemAddedEvent(
+            type="response.output_item.added",
+            sequence_number=1,
+            output_index=1,
+            item=ResponseFunctionToolCallItem(**call, arguments=""),
+        ),
+        ResponseFunctionCallArgumentsDeltaEvent(
+            type="response.function_call_arguments.delta",
+            sequence_number=2,
+            output_index=1,
+            item_id="fc_1",
+            delta=args,
+        ),
+        ResponseOutputTextAnnotationAddedEvent(
+            type="response.output_text.annotation.added",
+            sequence_number=3,
+            output_index=1,
+            content_index=0,
+            item_id="fc_1",
+            annotation_index=0,
+            annotation={
+                "type": "url_citation",
+                "start_index": 25,
+                "end_index": 52,
+                "title": "Example",
+                "url": "https://example.com/",
+            },
+        ),
+        ResponseOutputItemDoneEvent(
+            type="response.output_item.done",
+            sequence_number=4,
+            output_index=1,
+            item=ResponseFunctionToolCallItem(**call, arguments=args),
+        ),
+    ]
+
+    index, output_index, sub_index = -1, -1, -1
+    item_output_indices: dict = {}
+    message = None
+    for event in events:
+        index, output_index, sub_index, chunk = (
+            _convert_responses_chunk_to_generation_chunk(
+                event,
+                index,
+                output_index,
+                sub_index,
+                item_output_indices=item_output_indices,
+            )
+        )
+        if chunk is not None:
+            message = chunk.message if message is None else message + chunk.message
+
+    # The annotation still merges into the streamed function_call block, as
+    # `langchain-core` aggregates blocks that share an index.
+    fc_blocks = [b for b in message.content if b.get("type") == "function_call"]
+    assert len(fc_blocks) == 1
+    assert fc_blocks[0]["annotations"] == [
+        {
+            "type": "url_citation",
+            "start_index": 25,
+            "end_index": 52,
+            "title": "Example",
+            "url": "https://example.com/",
+        }
+    ]
+
+    # Replaying the message must not forward the annotations on the
+    # function_call item -- the API rejects them.
+    from langchain_openai.chat_models.base import _construct_responses_api_input
+
+    replayed = _construct_responses_api_input([message])
+    function_call_items = [i for i in replayed if i.get("type") == "function_call"]
+    assert len(function_call_items) == 1
+    assert "annotations" not in function_call_items[0]
+    assert function_call_items[0]["arguments"] == args
+    assert function_call_items[0]["call_id"] == "call_1"

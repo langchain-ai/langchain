@@ -4882,16 +4882,25 @@ def _make_custom_tool_output_from_message(message: ToolMessage) -> dict | None:
     return custom_tool_output
 
 
-def _pop_index_and_sub_index(block: dict) -> dict:
+def _pop_index_and_sub_index(block: dict, drop_annotations: bool = False) -> dict:
     """When streaming, `langchain-core` uses `index` to aggregate text blocks.
 
     OpenAI API does not support this key, so we need to remove it.
+
+    With ``drop_annotations``, ``annotations`` is removed as well: a streaming
+    annotation event can land on a non-message item's content index (for
+    example a ``function_call`` produced right after a reasoning item), and
+    ``langchain-core`` merges it into that block. The Responses API rejects
+    ``annotations`` on anything but message content
+    (``Unknown parameter: 'input[N].annotations'``), so items that cannot
+    carry annotations must not replay them.
     """
-    new_block = {k: v for k, v in block.items() if k != "index"}
+    drop_keys = ("index", "annotations") if drop_annotations else ("index",)
+    new_block = {k: v for k, v in block.items() if k not in drop_keys}
     if "summary" in new_block and isinstance(new_block["summary"], list):
         new_summary = []
         for sub_block in new_block["summary"]:
-            new_sub_block = {k: v for k, v in sub_block.items() if k != "index"}
+            new_sub_block = {k: v for k, v in sub_block.items() if k not in drop_keys}
             new_summary.append(new_sub_block)
         new_block["summary"] = new_summary
     return new_block
@@ -5040,7 +5049,12 @@ def _construct_responses_api_input(
                             "apply_patch_call",
                             "apply_patch_call_output",
                         ):
-                            input_.append(_pop_index_and_sub_index(block))
+                            # These items carry no content the API accepts
+                            # annotations on; a streaming annotation merged
+                            # into one must not be replayed (issue #41358).
+                            input_.append(
+                                _pop_index_and_sub_index(block, drop_annotations=True)
+                            )
                         elif block_type == "image_generation_call":
                             # A previous image generation call can be referenced by ID
                             if store is not False:
