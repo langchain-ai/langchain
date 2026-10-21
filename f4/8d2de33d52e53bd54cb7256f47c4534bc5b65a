@@ -1,0 +1,21 @@
+libs/partners/anthropic/tests/unit_tests/test_chat_models.py
+  s_6522344368f48c::t_7dc43787879b1a 4810-4829
+libs/partners/anthropic/langchain_anthropic/chat_models.py
+  s_6522344368f48c::t_5e601703617e80 124-140,145-146,151-153
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f48d2de33d52e53bd54cb7256f47c4534bc5b65a",
+  "prompts": {},
+  "sessions": {
+    "s_6522344368f48c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "82de6520-048f-4336-848e-a4ffb24afdfa",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Bagatur Askaryan <baskaryan@gmail.com>"
+    }
+  }
+}
