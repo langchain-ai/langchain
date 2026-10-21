@@ -172,8 +172,15 @@ class XMLOutputParser(BaseTransformOutputParser[dict[str, Any]]):
         `'<foo>\n   <tag>\n   </tag>\n</foo>'`
     """
     encoding_matcher: re.Pattern[str] = re.compile(
-        r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL
+        r"<(\?xml[^<>]*encoding[^<>]*\?)>\n(.*)", re.MULTILINE | re.DOTALL
     )
+    """Matches an XML declaration with an `encoding` attribute and the text after it.
+
+    Only a declaration (`<?xml ... encoding="..."?>`) is matched, so an ordinary
+    element with an `encoding` attribute is left intact. The attribute scan is
+    bounded by `[^<>]` so that a failed attempt never rescans past the next `<`,
+    which keeps the search linear in the length of untrusted model output.
+    """
 
     parser: Literal["defusedxml", "xml"] = "defusedxml"
     """Parser to use for XML parsing.
