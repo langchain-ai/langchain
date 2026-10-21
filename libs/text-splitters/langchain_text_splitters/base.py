@@ -130,13 +130,16 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         metadatas_ = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
-            index = 0
+            index = -1
             previous_chunk_len = 0
             for chunk in self.split_text(text):
                 metadata = copy.deepcopy(metadatas_[i])
                 if self._add_start_index:
-                    offset = index + previous_chunk_len - self._chunk_overlap
-                    index = text.find(chunk, max(0, offset))
+                    index = text.find(
+                        chunk,
+                        max(0, index + 1),
+                        min(len(text), index + 1 + previous_chunk_len + len(chunk)),
+                    )
                     metadata["start_index"] = index
                     previous_chunk_len = len(chunk)
                 new_doc = Document(page_content=chunk, metadata=metadata)
