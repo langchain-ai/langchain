@@ -4821,10 +4821,17 @@ def test_profile() -> None:
     ],
 )
 def test_profile_for_bedrock_and_vertex_ids(model: str, anthropic_model: str) -> None:
-    """Bedrock and Vertex AI IDs get the profile of the Anthropic model they serve."""
-    expected = ChatAnthropic(model=anthropic_model).profile
-    assert expected
-    assert ChatAnthropic(model=model).profile == expected
+    """Bedrock and Vertex AI IDs get the profile of the Anthropic model they serve.
+
+    That includes the default `max_tokens`, which comes from the profile's
+    `max_output_tokens`.
+    """
+    expected = ChatAnthropic(model=anthropic_model)
+    assert expected.profile
+    actual = ChatAnthropic(model=model)
+    assert actual.profile == expected.profile
+    assert actual.max_tokens == expected.profile["max_output_tokens"]
+    assert actual.max_tokens > 4096
 
 
 def test_profile_1m_context_beta() -> None:
