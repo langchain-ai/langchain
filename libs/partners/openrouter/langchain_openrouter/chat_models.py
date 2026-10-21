@@ -136,7 +136,7 @@ class ChatOpenRouter(BaseChatModel):
         | ----- | ---- | ----------- |
         | `api_key` | `str | None` | OpenRouter API key. |
         | `base_url` | `str | None` | Base URL for API requests. |
-        | `timeout` | `int | None` | Timeout in milliseconds. |
+        | `timeout` | `float | None` | Timeout for requests in seconds. |
         | `app_url` | `str | None` | App URL for attribution. |
         | `app_title` | `str | None` | App title for attribution. |
         | `app_categories` | `list[str] | None` | Marketplace attribution categories. |
