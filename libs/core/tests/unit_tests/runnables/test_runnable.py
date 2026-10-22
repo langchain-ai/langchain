@@ -2960,6 +2960,38 @@ async def test_router_runnable_async() -> None:
     assert result2 == ["4", "2"]
 
 
+def test_router_runnable_batch_return_exceptions_for_unknown_key() -> None:
+    router = RouterRunnable({"known": RunnableLambda(lambda value: value)})
+
+    results = router.batch(
+        [
+            {"key": "known", "input": 1},
+            {"key": "missing", "input": 2},
+        ],
+        return_exceptions=True,
+    )
+
+    assert results[0] == 1
+    assert isinstance(results[1], ValueError)
+    assert str(results[1]) == "No runnable associated with key 'missing'"
+
+
+async def test_router_runnable_abatch_return_exceptions_for_unknown_key() -> None:
+    router = RouterRunnable({"known": RunnableLambda(lambda value: value)})
+
+    results = await router.abatch(
+        [
+            {"key": "known", "input": 1},
+            {"key": "missing", "input": 2},
+        ],
+        return_exceptions=True,
+    )
+
+    assert results[0] == 1
+    assert isinstance(results[1], ValueError)
+    assert str(results[1]) == "No runnable associated with key 'missing'"
+
+
 @freeze_time("2023-01-01")
 def test_higher_order_lambda_runnable(
     mocker: MockerFixture, snapshot: SnapshotAssertion

@@ -146,13 +146,18 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
         keys = [input_["key"] for input_ in inputs]
         actual_inputs = [input_["input"] for input_ in inputs]
-        if any(key not in self.runnables for key in keys):
-            msg = "One or more keys do not have a corresponding runnable"
-            raise ValueError(msg)
 
         def invoke(
-            runnable: Runnable[Input, Output], input_: Input, config: RunnableConfig
+            runnable: Runnable[Input, Output] | None,
+            input_: Input,
+            config: RunnableConfig,
+            key: str,
         ) -> Output | Exception:
+            if runnable is None:
+                msg = f"No runnable associated with key '{key}'"
+                if return_exceptions:
+                    return ValueError(msg)
+                raise ValueError(msg)
             if return_exceptions:
                 try:
                     return runnable.invoke(input_, config, **kwargs)
@@ -161,12 +166,12 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             else:
                 return runnable.invoke(input_, config, **kwargs)
 
-        runnables = [self.runnables[key] for key in keys]
+        runnables = [self.runnables.get(key) for key in keys]
         configs = get_config_list(config, len(inputs))
         with get_executor_for_config(configs[0]) as executor:
             return cast(
                 "list[Output]",
-                list(executor.map(invoke, runnables, actual_inputs, configs)),
+                list(executor.map(invoke, runnables, actual_inputs, configs, keys)),
             )
 
     @override
@@ -183,13 +188,18 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
         keys = [input_["key"] for input_ in inputs]
         actual_inputs = [input_["input"] for input_ in inputs]
-        if any(key not in self.runnables for key in keys):
-            msg = "One or more keys do not have a corresponding runnable"
-            raise ValueError(msg)
 
         async def ainvoke(
-            runnable: Runnable[Input, Output], input_: Input, config: RunnableConfig
+            runnable: Runnable[Input, Output] | None,
+            input_: Input,
+            config: RunnableConfig,
+            key: str,
         ) -> Output | Exception:
+            if runnable is None:
+                msg = f"No runnable associated with key '{key}'"
+                if return_exceptions:
+                    return ValueError(msg)
+                raise ValueError(msg)
             if return_exceptions:
                 try:
                     return await runnable.ainvoke(input_, config, **kwargs)
@@ -198,11 +208,11 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
             else:
                 return await runnable.ainvoke(input_, config, **kwargs)
 
-        runnables = [self.runnables[key] for key in keys]
+        runnables = [self.runnables.get(key) for key in keys]
         configs = get_config_list(config, len(inputs))
         return await gather_with_concurrency(
             configs[0].get("max_concurrency"),
-            *map(ainvoke, runnables, actual_inputs, configs),
+            *map(ainvoke, runnables, actual_inputs, configs, keys),
         )
 
     @override
