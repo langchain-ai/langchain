@@ -1,6 +1,7 @@
 """Test XMLOutputParser."""
 
 import importlib
+import time
 from collections.abc import AsyncIterator, Iterable
 
 import pytest
@@ -156,3 +157,35 @@ async def tests_billion_laughs_attack() -> None:
 
     with pytest.raises(OutputParserException):
         await parser.aparse(MALICIOUS_XML)
+
+
+def test_xml_parser_encoding_matcher_linear_time() -> None:
+    """`encoding_matcher` must stay linear in the number of `<` characters.
+
+    Regression test: the previous pattern scanned to the end of the string
+    from every `<`, making `parse` quadratic on model output with many `<`
+    and no `>` (e.g. 64k `<` took over a second).
+    """
+    xml_parser = XMLOutputParser(parser="xml")
+    text = "<" * 256_000
+
+    start = time.monotonic()
+    with pytest.raises(OutputParserException):
+        xml_parser.parse(text)
+    elapsed = time.monotonic() - start
+
+    # The old pattern needed ~17s here; a linear scan finishes in milliseconds.
+    assert elapsed < 2.0
+
+
+def test_xml_parser_element_with_encoding_attribute() -> None:
+    """Elements carrying an `encoding` attribute must not be mangled.
+
+    Regression test: the previous `encoding_matcher` matched any tag whose
+    attributes contained `encoding`, stripping the opening tag of ordinary
+    elements like `<data encoding="utf-8">` and breaking the parse.
+    """
+    xml_parser = XMLOutputParser(parser="xml")
+    assert xml_parser.parse('<data encoding="utf-8">\nvalue</data>') == {
+        "data": "\nvalue"
+    }
