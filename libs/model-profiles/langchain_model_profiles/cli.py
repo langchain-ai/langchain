@@ -198,7 +198,8 @@ def _ensure_safe_output_path(base_dir: Path, output_file: Path) -> None:
 
     if output_file.exists() and output_file.is_symlink():
         msg = (
-            f"profiles.py at {output_file} is a symlink; refusing to overwrite it.\n"
+            f"{output_file.name} at {output_file} is a symlink; "
+            "refusing to overwrite it.\n"
             "Delete the symlink or point --data-dir to a safe location."
         )
         print(f"❌ {msg}", file=sys.stderr)

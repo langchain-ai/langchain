@@ -10,6 +10,7 @@ import pytest
 from langchain_core.language_models.model_profile import ModelProfile
 
 from langchain_model_profiles.cli import (
+    _ensure_safe_output_path,
     _model_data_to_profile,
     _warn_undeclared_profile_keys,
     refresh,
@@ -174,6 +175,32 @@ def test_refresh_aborts_when_user_declines_external_directory(
     # Verify _profiles.py was NOT created
     profiles_file = data_dir / "_profiles.py"
     assert not profiles_file.exists()
+
+
+def test_symlink_error_names_the_actual_output_file(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The symlink refusal must name the file it refuses to overwrite."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    target = tmp_path / "target.py"
+    target.touch()
+    output_file = data_dir / "_profiles.py"
+    output_file.symlink_to(target)
+
+    with pytest.raises(SystemExit) as exc_info:
+        _ensure_safe_output_path(data_dir, output_file)
+
+    assert exc_info.value.code == 1
+
+    # The file name must be the one that is actually written. The path in the
+    # message already contains "_profiles.py", so only the name in front of it
+    # can tell the two apart.
+    first_line = capsys.readouterr().err.splitlines()[0]
+    assert first_line == (
+        f"❌ {output_file.name} at {output_file} is a symlink; "
+        "refusing to overwrite it."
+    )
 
 
 def test_refresh_includes_models_defined_only_in_augmentations(
