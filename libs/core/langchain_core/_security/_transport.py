@@ -1,10 +1,13 @@
-"""SSRF-safe httpx transport with DNS resolution and IP pinning."""
+"""SSRF-safe HTTPX transport with DNS resolution and IP pinning.
+
+Built on the HTTPX backend selected by `langchain_core._httpx` (`httpx2` when
+installed, otherwise `httpx`).
+"""
 
 import asyncio
 import socket
 
-import httpx
-
+from langchain_core._httpx import httpx
 from langchain_core._security._exceptions import SSRFBlockedError
 from langchain_core._security._policy import (
     DEFAULT_SSRF_POLICY,
@@ -29,7 +32,7 @@ _TRANSPORT_KWARGS = frozenset(
 
 
 class SSRFSafeTransport(httpx.AsyncBaseTransport):
-    """httpx async transport that validates DNS results against an SSRF policy.
+    """HTTPX async transport that validates DNS results against an SSRF policy.
 
     For every outgoing request the transport:
     1. Checks the URL scheme against `policy.allowed_schemes`.
@@ -99,10 +102,11 @@ class SSRFSafeTransport(httpx.AsyncBaseTransport):
         pinned_url = request.url.copy_with(host=pinned_ip)
 
         # Build extensions dict, adding sni_hostname for HTTPS so TLS
-        # certificate validation uses the original hostname.
+        # certificate validation uses the original hostname. The connection
+        # layer (httpcore / httpcore2) expects a `str` here, not `bytes`.
         extensions = dict(request.extensions)
         if scheme == "https":
-            extensions["sni_hostname"] = hostname.encode("ascii")
+            extensions["sni_hostname"] = hostname
 
         pinned_request = httpx.Request(
             method=request.method,
@@ -128,7 +132,7 @@ class SSRFSafeTransport(httpx.AsyncBaseTransport):
 
 
 class SSRFSafeSyncTransport(httpx.BaseTransport):
-    """httpx sync transport that validates DNS results against an SSRF policy.
+    """HTTPX sync transport that validates DNS results against an SSRF policy.
 
     Sync mirror of `SSRFSafeTransport`. See that class for full documentation.
     """
@@ -178,7 +182,7 @@ class SSRFSafeSyncTransport(httpx.BaseTransport):
 
         extensions = dict(request.extensions)
         if scheme == "https":
-            extensions["sni_hostname"] = hostname.encode("ascii")
+            extensions["sni_hostname"] = hostname
 
         pinned_request = httpx.Request(
             method=request.method,
