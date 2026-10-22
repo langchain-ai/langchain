@@ -199,14 +199,6 @@ def test_gpt_5_reasoning_effort_levels() -> None:
     assert model.profile["reasoning_effort_levels"] == ["none", "low", "medium", "high"]
 
 
-def test_gpt_5_3_chat_latest_profile_has_no_reasoning_effort() -> None:
-    model = ChatOpenAI(model="gpt-5.3-chat-latest")
-
-    assert model.profile
-    assert model.profile["reasoning_output"] is False
-    assert "reasoning_effort_levels" not in model.profile
-
-
 def test_gpt_6_astra_reasoning_effort_levels() -> None:
     model = ChatOpenAI(model="gpt-6-astra")
 

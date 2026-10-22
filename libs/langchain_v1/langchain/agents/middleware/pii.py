@@ -48,14 +48,15 @@ are typically well under 100) while bounding first-token latency.
 
 
 class _PIIStreamTransformer(StreamTransformer):
-    """Mutates `content-block-delta` text on `messages` events in flight.
+    """Mutates `content-block-delta` text and tool-call args in flight.
 
     Runs before built-in stream transformers so the redacted text is what
     every downstream consumer sees — both the main protocol event log and
     the `run.messages` projection that `MessagesTransformer` snapshots into.
 
-    Holds a sliding buffer of the most recent text per (run_id, content
-    block index) so PII patterns that straddle delta boundaries are caught.
+    Holds a sliding buffer of the most recent text or tool-call args per
+    (run_id, content block index) so PII patterns that straddle delta
+    boundaries are caught.
     Anything older than `lookback` characters is redacted with the resolved
     rule's strategy and emitted as the new delta text; the trailing tail
     stays in the buffer until a later delta extends it past the cap or the
@@ -75,7 +76,8 @@ class _PIIStreamTransformer(StreamTransformer):
         super().__init__(scope)
         self._rule = rule
         self._lookback = lookback
-        # Text/reasoning deltas keyed by `(run_id, content_block_index)`.
+        # Text/reasoning/tool-call-args deltas keyed by
+        # `(run_id, content_block_index)`.
         self._buffers: dict[tuple[str, int], str] = {}
         # Tool-output-delta buffers keyed by `tool_call_id`. Held in a
         # separate dict so `_drop_run` on the messages channel can't
@@ -335,13 +337,19 @@ class _PIIStreamTransformer(StreamTransformer):
             # `(run_id, index)` naturally disjoint from text-delta keys.
             self._mutate_string_field_delta(delta, payload, run_id, "reasoning")
             return
+        if delta_type == "tool-call-delta":
+            # Tool-call args slices append, like text, so they get the
+            # same lookback buffer. The withheld tail surfaces on
+            # `content-block-finish`, whose parsed args are redacted.
+            self._mutate_string_field_delta(delta, payload, run_id, "args")
+            return
         if delta_type == "block-delta":
             fields = delta.get("fields")
             if isinstance(fields, dict) and fields.get("type") in {
                 "tool_call_chunk",
                 "server_tool_call_chunk",
             }:
-                self._mutate_tool_call_chunk_delta(fields)
+                self._mutate_tool_call_chunk_delta(fields, payload, run_id)
         # Other delta types (`data-delta`, vendor block types) pass
         # through. The pre-streaming middleware scrubbed `.content` text
         # on state messages only; binary payloads and provider-specific
@@ -356,8 +364,9 @@ class _PIIStreamTransformer(StreamTransformer):
     ) -> None:
         """Apply the lookback-buffer redaction to a string field on a delta.
 
-        Shared by `text-delta` (`field="text"`) and `reasoning-delta`
-        (`field="reasoning"`). Buffer is keyed by `(run_id, block_index)`;
+        Shared by `text-delta` (`field="text"`), `reasoning-delta`
+        (`field="reasoning"`) and `tool-call-delta` (`field="args"`).
+        Buffer is keyed by `(run_id, block_index)`;
         block indices are unique within a message so different block
         types share the same key space without collision.
         """
@@ -388,14 +397,19 @@ class _PIIStreamTransformer(StreamTransformer):
         self._buffers[key] = combined[emit_end:]
         delta[field] = combined[:emit_end]
 
-    def _mutate_tool_call_chunk_delta(self, fields: dict[str, Any]) -> None:
+    def _mutate_tool_call_chunk_delta(
+        self,
+        fields: dict[str, Any],
+        payload: dict[str, Any],
+        run_id: str,
+    ) -> None:
         """Redact cumulative tool-call args with lookback withholding.
 
-        Each `tool_call_chunk` `block-delta` event carries the full
-        accumulated args string (verified against `_compat_bridge.py`
-        — `delta_source = current` for these block types — and against
-        the consumer-side `_merge_block_delta_into_store`, which
-        replaces wholesale rather than appends).
+        Cores that predate `tool-call-delta` stream tool-call args as
+        `block-delta` events whose `args` carry the full accumulated
+        string, which consumers apply as a replacement. Cores that emit
+        `tool-call-delta` slices go through `_mutate_string_field_delta`
+        instead.
 
         Detection runs on the full cumulative args so any complete PII
         anywhere in the string is redacted before emission. Lookback
@@ -415,6 +429,10 @@ class _PIIStreamTransformer(StreamTransformer):
         emit prefix — same residual exposure as PII longer than
         the lookback window on the text path. The `content-block-finish`
         snapshot redaction is the backstop.
+
+        A replacement becomes the prefix that later `tool-call-delta`
+        slices for the block append to, so the withheld tail is kept as
+        that block's lookback buffer.
         """
         args = fields.get("args")
         if not isinstance(args, str) or not args:
@@ -429,6 +447,9 @@ class _PIIStreamTransformer(StreamTransformer):
 
         emit_end = max(0, len(args) - self._lookback)
         fields["args"] = args[:emit_end]
+        index = payload.get("index")
+        if isinstance(index, int):
+            self._buffers[run_id, index] = args[emit_end:]
 
     def _finalize_block(self, payload: dict[str, Any], run_id: str) -> None:
         index = payload.get("index")
@@ -597,9 +618,10 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                 * Streamed AI text deltas (`content-block-delta` of type
                   `text-delta`)
                 * Streamed tool-call arguments (`content-block-delta`
-                  with `tool_call_chunk` / `server_tool_call_chunk`
-                  fields, plus the finalized `tool_call` content block
-                  on `content-block-finish`)
+                  of type `tool-call-delta`, or `block-delta` with
+                  `tool_call_chunk` / `server_tool_call_chunk` fields,
+                  plus the finalized `tool_call` content block on
+                  `content-block-finish`)
                 * Tool execution events on the `tools` channel
                   (`tool-started.input`, `tool-output-delta`,
                   `tool-finished.output`, `tool-error.message`)

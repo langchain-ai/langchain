@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e12eb01b934b7a55a3e84d53fac3c48f28f9c03b5b2e7d14f47df7d98f8253fc",
+  "pageVersion": "sha256:da5ba9e019af005b5bc6b68ae51a34dfb3d4f8ac1370d9207839f408f03f5df1",
   "claims": [
     {
       "id": "claim_cb5fe3f72803497eac3f09ebf02d97cd",
@@ -243,10 +243,70 @@
           "version": "repo-lines-v1:sha256:c471cb5fa38ddbdddb9877794899351fac37019114d3b43a7fd58dd3dbf401ea:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhY2ZmOWJkYTJhMDFlZTYzMjgxZmI3YzEzYzczODUxMzBjYjlmNDExYWM1ZTU4NDIwNmIxYTJmNWQxODM3YzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5ZTBkZWNmMzZiNTUwY2YyMjJiZTJiYzE3ZDUxYTg1MTYzZWM0Nzc2YjZiYTY2ZjU5OGM4MTBhOWIyYzI3ODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY5Yzc1MTJkNGI5ZDVmN2I2YjUzOWUzZWM3MjliZGMyNjg2NzQwMWRhY2NiZjFlZjZlNzM5ZDYxOTVjMmViMzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_a54c9526bb7843848baf8164db31f684",
+      "statement": "Pre-commit hooks (.pre-commit-config.yaml) enforce code quality standards locally for all developers, including branch protection, YAML/TOML validation, whitespace fixes, per-package format and lint targets (make format, make lint) for each library directory, and version consistency checks for core, langchain_v1, anthropic, chroma, and deepseek packages.",
+      "evidence": [
+        {
+          "resource": "repo://.pre-commit-config.yaml#L1-L200",
+          "version": "repo-lines-v1:sha256:d90a7db12e21999b427f58f7e8da653d632e6cb396c9bb0bde749a7da497ec7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YTExMGRiNWE5MzU3Y2RhMWQ3ODIxNmNkYzBiZjhiMjU1ZTMzOGNiYzFmMzI3ZTBkZjA4Y2ZjNzczOTFkZGVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2ZTk0MGY2NjliNzFlZWVlZWY3NjVmMmMxMjJiYTc3ZjRlNzhkMTJlMDAzZWZlYzg3NzQ0M2U4MjEwZjc4MTc5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjOGUzNDIyZmQwNDFiMzUxZDgwY2NjNWZiNjNmYjI1MjgxYzU2Y2E1YjI1MGE5NTM1YWU0Mjk5N2YxNDYxNDU2In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_e663da6820604e348bbac94410f82480",
+      "statement": "The check_diffs.yml workflow intelligently selects which CI checks to run based on changed files: core changes trigger full matrix testing and downstream packages; partner changes trigger package-specific linting and integration tests; changes to non-package files like .github/ or docs skip package CI; ci-ignore label prevents all checks.",
+      "evidence": [
+        {
+          "resource": "repo://.github/scripts/check_diff.py#L1-L150",
+          "version": "repo-lines-v1:sha256:9db69dc22cacc0b8c60d8a73a4c6ae6eb535a5b2b2a8ab99bf1ddd4ba9718ed1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMTVkNmNjYTE5MzIyZTFlMGM4NzhkZjc3NTc4OGVkZDhkNzExZGZiMjgwZWZiNWFmZjJkNjJlNGQyYTAxOGEzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJjMGM4NjFlNTJkMzY5OTUyZTQ0Mzg1OGMwM2YwNjA4MmRlODQwNzYyNWZmMjllNDdiMGQzYTQ0MDU2NGU1MmZmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxMTQ4ZTYyY2NiMGJmZjg5YTQ4ZjQ4MTRmMzM0MDcwZWM3OWVhZDUzOGNkYzZkODM3MGM3ZmJkMzEyNGJjYWI5In0"
+        },
+        {
+          "resource": "repo://.github/workflows/check_diffs.yml#L40-L75",
+          "version": "repo-lines-v1:sha256:294f09f7846c6320529d8fd1b500f2400bb4c92d8a10bf3f7e24db5634dbde93:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZDgwMTU0ZWQ0MmZjNWM3NzliMTMzMTU3OGI1OGI4OWM4MDFlYWNlNzRmMjRjZDQ4ZWI0YTIzNTc5NDBhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4ZmI3Mjc3ZmRkMjBkMmY4NDY2ZmM3M2I1ZTQyNzA0Nzg5YjA5OTkxNjYyODlkY2IxOTM1YzAwNDg1MTZlZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NGI2MDU1ODgxNTNmZGQ4NmQ2NWViNDUzNDJlMDRhYmUyODFkYjBjZDY4NGFmMGY4MTRlOGRhNTZkM2QwODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1OGZjYjUzYjUxOWNjNjk4NjFkYmY4NDE3NmE3NGM1MGE3NTFlYmZkY2ZiODM1ZmY3MzNlOGU0ODE0NjgzOGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8160e2acf11d41c59e27d465bb4c6805",
+      "statement": "Common CI failure patterns include linting violations (Ruff, MyPy, markdown-lint) debugged via make lint_package/make lint_tests; unit test failures on current vs minimum dependencies reproduced with get_min_versions.py and pip install; Pydantic compatibility failures reproduced by pinning Pydantic versions; VCR cassette staleness requiring re-recording; integration test compilation errors from import failures; release failures from version mismatches or PyPI conflicts; and PR title lint failures from non-Conventional Commits format.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_lint.yml#L56-L81",
+          "version": "repo-lines-v1:sha256:982121e07cd5f75c29a9930729c7a209856069184833c0734e87f74505e1325d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNTYyYjE2NWU4MjM1MjY0ZGZlNDc2YzNhMWY1NzM5OTBjOGE1NzAyNDY3YjhkNTc5OWFiMTFhNDNjMTI2N2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxMDM2ZTY3ZjMxNTRiM2Q5YWQwZmIwMTYzMGI2ODk0YTIwYmFmNmRkM2QwNmFkYWJjMjIyNGZkNjg4OGIwOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyODlkNmNiN2NkNDYyMjM5NTFkODE2NGI4NTM2ZWI0ZTc0YzkyODBjMjc4OTRmNjJjZmE2YThjMTM0NGJlYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/_release.yml#L190-L260",
+          "version": "repo-lines-v1:sha256:d6caf2e4b55d4a552288a6c7ea2872351ba3903e51cbb735c13141653081ac5a:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk0YmM5NmU3NzNhNjYzNjgwZjhhNjM0OWE0ZWM4NWMyMWEwNzVmYzExMmVmMGQxOTg3YzQ5NWI5NTE1ZTBlYTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliNGNkMTVkZGUyNTVjMTViOWJjYThlMzE0YzkwODg4YWExZWI4ZTQ2ZTRhNzcyMDVkNzVkMTVjNWRjYzUxMzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg2N2IzNmQxODRhOTEzYTU0MjBjYmUwYTdhZGRjMjBjOGMzMTQ3YjVlNzMxMTk3YmNjODMzYmRlNjJiZmQyYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyNDgwOWU3NzY4YzUzNWVmMTQzZmJiYmZkMTUzY2ZkYmM0MjY0NzU5ZWYzM2Q5NjY5YWI0MDcwMmMyNjAxNTgifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/_test.yml#L50-L85",
+          "version": "repo-lines-v1:sha256:3d852b9b3ae046bca854e1340849af7057c2683e9d521b68099b514d4384840a:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZhYjUzNzEwMzMxMGIxMzY5NGJhMzUyMjMwZDMxNmM3MDQ2M2M5ZDJkNWU1ZGRiODE4NDRlMjUyYzA4NmY0YjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNjMzMwYzU3MjBjZjQ4Mjg1MGQ0NWFkY2IyZmQ1MmVmNzdmY2VmOTkxNWY0MDE0ZWEwMjJhY2ZjMTU4MzEyMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFhNWM2Y2RhOGM4ODRmZDlmZjhmZjIxODU0NzdiNDhmYmU0ZmFiMjE4MzRmNDcxODAyZWQ4ZmZkZjQ1ZTQ1OTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e0da4f4035c047349c14c1799d478dce",
+      "statement": "CI workflows can be partially simulated locally: linting via make lint_package/lint_tests; unit tests via make test with current and minimum dependency versions; release pre-checks via uv build and wheel installation; and pre-commit hooks via pre-commit run commands.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_lint.yml#L56-L81",
+          "version": "repo-lines-v1:sha256:982121e07cd5f75c29a9930729c7a209856069184833c0734e87f74505e1325d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNTYyYjE2NWU4MjM1MjY0ZGZlNDc2YzNhMWY1NzM5OTBjOGE1NzAyNDY3YjhkNTc5OWFiMTFhNDNjMTI2N2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxMDM2ZTY3ZjMxNTRiM2Q5YWQwZmIwMTYzMGI2ODk0YTIwYmFmNmRkM2QwNmFkYWJjMjIyNGZkNjg4OGIwOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyODlkNmNiN2NkNDYyMjM5NTFkODE2NGI4NTM2ZWI0ZTc0YzkyODBjMjc4OTRmNjJjZmE2YThjMTM0NGJlYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/_release.yml#L410-L492",
+          "version": "repo-lines-v1:sha256:e76fd01a0d46c19853bce24d1bdf7321cba6e02c571224f650d6fe9222ac4bfb:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MzU3MmI1MzNmZGI0NWZkZmY2YjY4NWRkM2M1OTUwYTQ3NzY3MjAxNWFjMTkyMDMxZjFkNjY5ZTFiZTljOWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4YjUzZmMwMjFlNDkxZWY4YWE5YTU1M2MxN2ZjZGE5MmY0NTZlNTIyZGZlMTU3ZDQwMzY4MmYxZjA2OGQ0ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxYTllMjBmNWFiOTQxZDA0NGQ0NDNjYzJhMzkyNTcyMWZjNjA5MDNhMWY4ZWQxOTg5MDUwNjMyNDg1ZDc0MzUifQ"
+        },
+        {
+          "resource": "repo://.pre-commit-config.yaml#L23-L170",
+          "version": "repo-lines-v1:sha256:ff03a7d9d2684779b52ae774b382473b09885ff9361ab0b4fe1f13dadacc6a53:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmYTY4MWNlZGM0YzJlMTVlOTQzMjI4NmE4NTMzMTVjNGZmMTgyNTllZTU0NGI2MDI0MDM4YTYzYzBiNzg2MmZkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2ZTk0MGY2NjliNzFlZWVlZWY3NjVmMmMxMjJiYTc3ZjRlNzhkMTJlMDAzZWZlYzg3NzQ0M2U4MjEwZjc4MTc5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhMDhlNjlmZTk5ODQ0YjA5OGY2YTg2ZGIxZjc0YWQ2NGM3ZmIxMzY1ODY2NDA2MjRmZTRlZGJhYjM5NWYyZDIwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwOTRkN2IwZGVhNDdiZmVhNjYzZWJiMjI2ZDYyYmQxZmNjOTAxNjkxYmViYzE5ZDFkNGMzMmRiNmRhNDYzMGQwIn0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-16T08:25:55.096Z"
+    "at": "2026-10-20T08:25:57.412Z"
   }
 }

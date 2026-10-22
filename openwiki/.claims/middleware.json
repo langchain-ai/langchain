@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b8080e5df75c67cc4c69c2dc6ae72e2c8385efe2b711e32f89d064f4c2925191",
+  "pageVersion": "sha256:3e2a5b3cbf1f0cf13ad86c8a1be82a3e64735424a664221373888efa04be5322",
   "claims": [
     {
       "id": "claim_6ce968382a514edb90e74830ccdebef7",
@@ -195,10 +195,40 @@
           "version": "repo-lines-v1:sha256:7ef1873b30d8420a5f483c882f53c472a9a66cdd2300c0a6b2eb017f7231fb8b:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjkzMzljMzIxNmJjMDNjMjFmNDQzYzdhYjdmN2M2Y2JmMDFmMTUwZmIyMjVjMzcwNGRjOWQ2NTdhYWM5Y2QyZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDkxMzU2OTQ0NGM1ZjQwZjJiMTZkZmU3Y2EyYzc2YWJhYjgwODk2M2RiMTY1ODM5OGU2ODY5YmNiODg2ZWUzNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmNlZmM3YzlhOGMyNDMyNmM2MGIwMGNjN2E3YzIyZjMxMTQzNWE0OWFmMTMzNzg2ZDczZWExOTcwNTIwNzMzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNGViMjc1MTdkNmUzZjFiMDA4MTUyN2MxZDdhNzRlMTJjMjU2ZGZhZjhkOTRkNDllM2UwYTE4MGIxM2NmZDAwMiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_07ed755cb4694cccbd3f2945c6a157cf",
+      "statement": "ToolCallRequest is immutable; middleware must use request.override() to create a new request with modifications, preserving the original request.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L88-L158",
+          "version": "repo-lines-v1:sha256:f2f4c44da1619f24d77f6fa8d0957eeff9ecb4d07077d0afdfd56c8349be7359:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkM2FkMDdlNzE0NWQzMmE4MThkMWE5ODcwNDY4NDgxOTMwODgwYmMxZmJlMmQyYmNkNjY4N2U5MzAwODEwMTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZDAwY2YyNzA5NjRkNDRhMTNkZmFjODc1MmIwOWZjYzQzNWIwZjE5YjMxNmFiY2Y4MWE3YWE2NGJiMTIyZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2MTlmYmNkMDIyMzI5NDQ3ODAwMmU4Zjg2ZmNlZWU3ZDgyYjc0OWFhM2M1ZjhhMDZmYjM3Y2JkMjBhOGY5MTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2OTFmOTBmMzQ5M2RhYWM3NDdiOTQ4ZGI0MTg0MTQ0YjVjZmE3NGE2ODRhMjNiOTNlNDdlMjZlMjIwMTAxMDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4deaf0ceb27249bea0ff478a8faadda8",
+      "statement": "ToolRetryMiddleware wraps wrap_tool_call to automatically retry failed tool calls with exponential backoff; supports custom exception filtering, configurable on_failure behavior, optional jitter, and can target specific tools.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/tool_retry.py#L32-L79",
+          "version": "repo-lines-v1:sha256:0a4ebafd32fd92656bbcd18b004b8ebf8e1b7dc68538c973f83f1efd56850ce2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyOWUwZTVkOTZhZDgyZGJjOGZlMTgyOThmNGU4NTBhZTcyYzZhZGU1Mjc1MzMwOTA3ZWEwZTc5NDk3MDJiNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1ZWZmOThjODJiNjI2Y2JlOTZmN2M3MmEyNTlmMDBkYjMwNzhiNTU0ZmQ4N2M3YjM2M2VhNzMyZDQ5MTkwZjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM2MGQzMWI0YjhkMDBmZjQ1MWIwYzEwN2E0ODIyNWE2ZjYzNjljNGQ1OWI5YjQyNzc1OGUwZDM4YjA0YmQ0NGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNlMjEwYjczY2M4ZWYwODNmMjY2MWY2ZTRlNWRkZGRkMDUyY2FjMzczMGY2ZDBmYmRmNzljNzgzZjM4ZjQ1ZjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8d295bc97ca54a50b1073d5b4dbe4c99",
+      "statement": "ToolCallLimitMiddleware enforces maximum tool call counts per thread and per run; supports exit behaviors (continue blocks exceeded tools, error raises exception, end stops immediately with explanatory messages); tracks calls globally or per tool name.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/tool_call_limit.py#L141-L198",
+          "version": "repo-lines-v1:sha256:f5721e3e3328d58bf69cf8051fc75012395db99878440daeb08a2bd4eb83d31e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0MDI3YmYxNzU1MWFiM2UyZmZjZGVlZWJkMTM3ZDdlNmRjNjcxZDZhNzYyNzlmM2ZkMWIzMTYzNzU2NTcyMmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxOGFlMDAzNjJjOTVlZDRkNGQzYWI5MmUwYjc1NThkMjA5NTdlZGJhNDY2ZTY0YjE1ZjAwZjI3MGNmMDFkZjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlN2U1YWE2NDI3YWIwNWUxZjcwOWQyNTRmNWQ5OWQzNTFiYjY0YWY3NTc1NjNhNTQzOTYzNmM5MDhkYmFkNDEifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-16T08:25:55.096Z"
+    "at": "2026-10-20T08:25:57.412Z"
   }
 }
