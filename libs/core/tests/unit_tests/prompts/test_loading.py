@@ -304,7 +304,10 @@ def test_symlink_txt_to_py_is_blocked(tmp_path: Path) -> None:
     sensitive = tmp_path / "sensitive_source.py"
     sensitive.write_text("INTERNAL_SECRET='ABC-123-XYZ'")
     symlink = tmp_path / "exploit_link.txt"
-    symlink.symlink_to(sensitive)
+    try:
+        symlink.symlink_to(sensitive)
+    except OSError:
+        pytest.skip("Symlink creation not supported")
 
     config = {
         "_type": "prompt",
@@ -331,7 +334,10 @@ def test_symlink_jinja2_rce_is_blocked(tmp_path: Path) -> None:
         ".__import__('os').popen('id').read() }}"
     )
     symlink = tmp_path / "rce_bypass.txt"
-    symlink.symlink_to(payload)
+    try:
+        symlink.symlink_to(payload)
+    except OSError:
+        pytest.skip("Symlink creation not supported")
 
     config = {
         "_type": "prompt",
@@ -350,7 +356,10 @@ def test_save_symlink_to_py_is_blocked(tmp_path: Path) -> None:
     """Test that save() resolves symlinks before checking the file extension."""
     target = tmp_path / "malicious.py"
     symlink = tmp_path / "output.json"
-    symlink.symlink_to(target)
+    try:
+        symlink.symlink_to(target)
+    except OSError:
+        pytest.skip("Symlink creation not supported")
 
     prompt = PromptTemplate(input_variables=["name"], template="Hello {name}")
     with (
