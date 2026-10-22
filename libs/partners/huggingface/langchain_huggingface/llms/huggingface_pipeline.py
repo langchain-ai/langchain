@@ -4,7 +4,7 @@ import importlib.util
 import logging
 import warnings
 from collections.abc import Iterator, Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
@@ -19,6 +19,9 @@ from langchain_huggingface.utils.import_utils import (
     is_optimum_intel_available,
     is_optimum_intel_version,
 )
+
+if TYPE_CHECKING:
+    import torch
 
 DEFAULT_MODEL_ID = "gpt2"
 DEFAULT_TASK = "text-generation"
@@ -116,14 +119,18 @@ class HuggingFacePipeline(BaseLLM):
         model_id: str,
         task: str,
         backend: str = "default",
-        device: int | None = None,
+        device: int | str | torch.device | None = None,
         device_map: str | None = None,
         model_kwargs: dict | None = None,
         pipeline_kwargs: dict | None = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
         **kwargs: Any,
     ) -> HuggingFacePipeline:
-        """Construct the pipeline object from model_id and task."""
+        """Construct the pipeline object from model_id and task.
+
+        `device` may be an accelerator index (`-1` for CPU), a device string such
+        as `'xpu'`, `'cuda:1'` or `'cpu'`, or a `torch.device`.
+        """
         try:
             from transformers import (  # type: ignore[import]
                 AutoModelForCausalLM,
@@ -250,23 +257,42 @@ class HuggingFacePipeline(BaseLLM):
                 accelerator_device_count = torch.accelerator.device_count()
             else:
                 accelerator_device_count = torch.cuda.device_count()
-            if device < -1 or (device >= accelerator_device_count):
-                msg = (
-                    f"Got device=={device}, "
-                    f"device is required to be within [-1, {accelerator_device_count})"
-                )
-                raise ValueError(msg)
-            if device_map is not None and device < 0:
-                device = None
-            if device is not None and device < 0 and accelerator_device_count > 0:
-                logger.warning(
-                    "Device has %d accelerator(s) available. "
-                    "Provide device={deviceId} to `from_model_id` to use available"
-                    "accelerators for execution. deviceId is -1 (default) for CPU "
-                    "and can be a positive integer associated with the accelerator "
-                    "device id.",
-                    accelerator_device_count,
-                )
+            if isinstance(device, int):
+                if device < -1 or (device >= accelerator_device_count):
+                    msg = (
+                        f"Got device=={device}, device is required to be within "
+                        f"[-1, {accelerator_device_count})"
+                    )
+                    raise ValueError(msg)
+                if device_map is not None and device < 0:
+                    device = None
+                if device is not None and device < 0 and accelerator_device_count > 0:
+                    logger.warning(
+                        "Device has %d accelerator(s) available. "
+                        "Provide device={deviceId} to `from_model_id` to use available"
+                        "accelerators for execution. deviceId is -1 (default) for CPU "
+                        "and can be a positive integer associated with the accelerator "
+                        "device id.",
+                        accelerator_device_count,
+                    )
+            else:
+                torch_device = torch.device(device)
+                # Without `torch.accelerator`, leave validation to `transformers`.
+                if torch_device.type != "cpu" and hasattr(torch, "accelerator"):
+                    accelerator = torch.accelerator.current_accelerator()
+                    accelerator_type = accelerator.type if accelerator else None
+                    if torch_device.type != accelerator_type:
+                        msg = (
+                            f"Got device=={device!r}, but the available accelerator "
+                            f"is {accelerator_type}"
+                        )
+                        raise ValueError(msg)
+                    if (torch_device.index or 0) >= accelerator_device_count:
+                        msg = (
+                            f"Got device=={device!r}, device index is required to be "
+                            f"within [0, {accelerator_device_count})"
+                        )
+                        raise ValueError(msg)
         if device is not None and device_map is not None and backend == "openvino":
             logger.warning("Please set device for OpenVINO through: `model_kwargs`")
         if "trust_remote_code" in _model_kwargs:
@@ -372,7 +398,6 @@ class HuggingFacePipeline(BaseLLM):
     ) -> Iterator[GenerationChunk]:
         from threading import Thread
 
-        import torch
         from transformers import (
             StoppingCriteria,
             StoppingCriteriaList,

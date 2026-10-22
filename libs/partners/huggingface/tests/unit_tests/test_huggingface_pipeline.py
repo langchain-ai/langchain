@@ -1,6 +1,13 @@
+from collections.abc import Iterator
 from unittest.mock import MagicMock, patch
 
 import pytest
+import torch
+
+# On first import, `transformers.processing_utils` re-executes the `transformers`
+# package and replaces it in `sys.modules`. Import it up front so that
+# `patch("transformers....")` targets the module `from_model_id` imports from.
+import transformers.processing_utils  # noqa: F401
 
 from langchain_huggingface import HuggingFacePipeline
 
@@ -161,3 +168,91 @@ def test_from_model_id_raises_for_out_of_range_device(
         else:
             msg = "Expected ValueError to be raised for out-of-range device"
             raise AssertionError(msg)
+
+
+@pytest.fixture
+def mock_hf_model() -> Iterator[MagicMock]:
+    """Patch model and tokenizer loading and yield the mocked model."""
+    with (
+        patch("transformers.AutoTokenizer.from_pretrained") as mock_tokenizer,
+        patch("transformers.AutoModelForCausalLM.from_pretrained") as mock_model,
+    ):
+        mock_tokenizer.return_value = MagicMock(pad_token_id=0)
+        mock_model.return_value = MagicMock(
+            is_loaded_in_4bit=False, is_loaded_in_8bit=False
+        )
+        yield mock_model.return_value
+
+
+@pytest.fixture
+def mock_hf_pipeline(mock_hf_model: MagicMock) -> Iterator[MagicMock]:
+    """Patch `transformers.pipeline` and yield the mock."""
+    with patch("transformers.pipeline") as mock_pipeline:
+        mock_pipeline.return_value = MagicMock(task="text-generation")
+        yield mock_pipeline
+
+
+def _mock_accelerator(accelerator_type: str | None, device_count: int) -> MagicMock:
+    mock_accelerator = MagicMock()
+    mock_accelerator.device_count.return_value = device_count
+    mock_accelerator.current_accelerator.return_value = (
+        torch.device(accelerator_type) if accelerator_type else None
+    )
+    return mock_accelerator
+
+
+@pytest.mark.parametrize(
+    ("accelerator_type", "device"),
+    [
+        ("xpu", "xpu"),
+        ("xpu", "xpu:1"),
+        ("xpu", torch.device("xpu", 1)),
+        ("cuda", "cuda:1"),
+        ("mps", "mps"),
+        ("xpu", "cpu"),
+        (None, "cpu"),
+    ],
+)
+def test_from_model_id_accepts_device_string_or_torch_device(
+    mock_hf_pipeline: MagicMock,
+    accelerator_type: str | None,
+    device: str | torch.device,
+) -> None:
+    """Test `from_model_id` passes device strings and `torch.device` through.
+
+    The requested device type is checked against whichever accelerator
+    `torch.accelerator` reports, so no backend is special-cased.
+    """
+    with patch("torch.accelerator", _mock_accelerator(accelerator_type, 2)):
+        HuggingFacePipeline.from_model_id(
+            model_id="mock-model-id", task="text-generation", device=device
+        )
+
+    assert mock_hf_pipeline.call_args.kwargs["device"] == device
+
+
+@pytest.mark.parametrize(
+    ("accelerator_type", "device", "match"),
+    [
+        ("xpu", "cuda", "the available accelerator is xpu"),
+        ("cuda", torch.device("xpu"), "the available accelerator is cuda"),
+        (None, "xpu:0", "the available accelerator is None"),
+        ("xpu", "xpu:2", r"device index is required to be within \[0, 2\)"),
+    ],
+)
+def test_from_model_id_raises_for_unavailable_device(
+    mock_hf_pipeline: MagicMock,
+    accelerator_type: str | None,
+    device: str | torch.device,
+    match: str,
+) -> None:
+    """Test `from_model_id` rejects devices the accelerator cannot provide."""
+    with (
+        patch("torch.accelerator", _mock_accelerator(accelerator_type, 2)),
+        pytest.raises(ValueError, match=match),
+    ):
+        HuggingFacePipeline.from_model_id(
+            model_id="mock-model-id", task="text-generation", device=device
+        )
+
+    mock_hf_pipeline.assert_not_called()

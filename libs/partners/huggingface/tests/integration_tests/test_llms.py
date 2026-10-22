@@ -2,6 +2,7 @@ import os
 from collections.abc import Generator
 
 import pytest
+import torch
 
 from langchain_huggingface.llms import HuggingFacePipeline
 
@@ -25,11 +26,13 @@ def test_huggingface_pipeline_streaming() -> None:
 
 @pytest.mark.skipif(
     os.getenv("HF_TEST_DEVICE") is None,
-    reason="Set HF_TEST_DEVICE=<index> on an accelerator (XPU/CUDA) box to run.",
+    reason="Set HF_TEST_DEVICE=<index or device, e.g. 0 or xpu:1> on an "
+    "accelerator box to run.",
 )
 def test_from_model_id_runs_on_accelerator() -> None:
     """Load a model on an accelerator and confirm placement is not CPU."""
-    device = int(os.environ["HF_TEST_DEVICE"])
+    device_env = os.environ["HF_TEST_DEVICE"]
+    device: int | str = int(device_env) if device_env.isdigit() else device_env
     model_id = os.getenv("HF_TEST_MODEL_ID", "openai-community/gpt2")
 
     llm = HuggingFacePipeline.from_model_id(
@@ -50,3 +53,6 @@ def test_from_model_id_runs_on_accelerator() -> None:
         f"Expected model on accelerator, but it loaded on {model_device}. "
         "Check torch device ordering, HF_TEST_BACKEND, or device index."
     )
+    expected_index = device if isinstance(device, int) else torch.device(device).index
+    if expected_index is not None:
+        assert model_device.index == expected_index
