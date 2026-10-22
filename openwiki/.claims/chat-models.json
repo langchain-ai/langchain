@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:69ae6606835a7391ad452cf02839eb505c867719234e759cd642cacfeb3fd448",
+  "pageVersion": "sha256:8bb371995c4411cbcb263920b4a8cdb74eb132e7b8df4c5c63f057270e0abd3e",
   "claims": [
     {
       "id": "claim_d2cdcf05dd4149bb9ea0a5fb0d1568d8",
@@ -52,11 +52,19 @@
     },
     {
       "id": "claim_b7e494bdfca8440db5198397500c6093",
-      "statement": "ChatModelStream and AsyncChatModelStream are returned by stream_events(version='v3') and expose typed projections (.text, .reasoning, .tool_calls, .usage, .output) that accumulate protocol events as they arrive. Each projection can be iterated for deltas or awaited for the final value.",
+      "statement": "ChatModelStream and AsyncChatModelStream are returned by stream_events(version='v3') and expose typed projections (.text, .reasoning, .tool_calls, .output) for incremental content accumulation. Sync variants use SyncTextProjection/SyncProjection; async variants use AsyncTextProjection/AsyncProjection. Each projection can be iterated for deltas or awaited/drained for the final value. Token usage is not a separate projection; it is accessible via stream.output.usage_metadata after the stream finishes. Both stream types support raw event iteration (replay-buffer semantics).",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1-L46",
-          "version": "repo-lines-v1:sha256:da766bf0c8862bfef9808624d302620cb3140e480dcd61508c3351300de0cc2c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1MTcxNTdmOTc5MDY1N2FmMGViZGVjZjNjM2ZmMTA4ZTQ2MGNhYWEzMjQ5MjczOGIxYThlMzU2YTI2MGE3NTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwNTUyZmUyNDUxZmNkMGJjYWQ3Y2IzMWViM2NiYmRmODRlZjliNDBiNWE4ZDJiMmZkNGE2NDFkNjk3MzdkZjAifQ"
+          "resource": "repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1189-L1338",
+          "version": "repo-lines-v1:sha256:ab4982188cb77f29a0cbec87a818ba109ca0b0363d6405622d1bc473aa415da1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxZmQwZDA5NTU4YTYwODFlNjE1MzdlMTJlYTE4ZWUzMTI2OTU3MzAxNmVlZTA3OTlmY2ZiODg5Y2QwMzc1ZDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwODI2NzZjODg4YzFhNGQ5ZmE3NzJmY2RjMzAyZjc3M2JjNzI5MGVlYmZmOWRhMzZhMzlmNDRjMzIxMTk4Mzg1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiMjExNDYyMTg5ZTNmZjVmNWZkNWUzZmU2YmFmY2NkMTJmZGVmNTM1YThlYjkwOTczYzJjMGNlYjg0ZGZhNmJmIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1345-L1580",
+          "version": "repo-lines-v1:sha256:a7e3409ac73dfb6c367ff3d9cf7d6a9e9b0c7c8dcf418e91d1f4c40f4d05b6be:eyJzZWxlY3RlZExpbmVDb3VudCI6MjM2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiODhkNzZlZjYzMGFiYzA1NGNmMDEwYzFlNDljZGI4MzAzMThmZTE0MjA2YzRkNWUxOWM0YjE5ZTczZmM3Yjg3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwODI2NzZjODg4YzFhNGQ5ZmE3NzJmY2RjMzAyZjc3M2JjNzI5MGVlYmZmOWRhMzZhMzlmNDRjMzIxMTk4Mzg1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkMTc1ZDdiNDI4NTRiYWEwMDk5YjQzNjcyZTJkNWM2NWVmYTYyOGU1ODkwNmI3YWY3N2U4MzQxM2M3ZTlkMGI0In0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1318-L1321",
+          "version": "repo-lines-v1:sha256:3bc3bc1455df5e061514259e273261000d59d2b6c0c716b3a61cf14b25ab7db4:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhhOGQzY2NhZTFjNTdlM2NjYWY4NDMxM2RjN2NhMWQ1NzAwN2YxZmQwZWE5OWEzYjg1MjRiOGVmNTJhYWQ1NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjNiYWI4YTE1YWFhZGQxOWNhZjc3OTA2NTU1YTExMDA4NmQxMzg1ZjgyMWI4NzIyY2E4MDZmNDljNzg4NjQxOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTc5ZWYwM2E0NjBiNTE1M2EyZjVjNDE5MTE4ZjlkMDAzMGFiOGZhN2IxNTQ5YzEzMTIwZTdmYWMzYmVhMmE5NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWYyNGVjNTMzODhiMDc1ZjhkMDcwNTg2ODk5NGI1MTI5ODk5NzJkNjFhNzI3YzQ3MTZhYWI2NDM4YzA2NDE2OSJ9"
         }
       ]
     },
@@ -389,6 +397,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-20T08:25:57.412Z"
+    "at": "2026-10-22T08:26:56.662Z"
   }
 }
