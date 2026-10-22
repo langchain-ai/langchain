@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:48ea385d8432c2a0ff1d100837e0ca311a3ea341fe2963834d7c8eec9590d019",
+  "pageVersion": "sha256:b594d5497c4409f0fd87498a02ca117318c50856bf0bedeed627b72e4e2c2a8f",
   "claims": [
     {
       "id": "claim_87d5d462354440a7bccb6dbe992c60d3",
@@ -162,11 +162,23 @@
     },
     {
       "id": "claim_032b850893174b9a962418ae43d05154",
-      "statement": "Agents created via create_agent() support streaming via stream_events(version='v3'), exposing projections for tool_calls, output_deltas, messages, and subgraphs. Tool output streaming is enabled via runtime.emit_output_delta(), and hierarchical agents expose nested tool calls via subgraph handles. Stream events fire on_stream_event callbacks at event granularity rather than token granularity.",
+      "statement": "Agents created via create_agent() support streaming via stream_events(version='v3'), exposing projections for tool_calls (registered by ToolCallTransformer), output_deltas (streamed via runtime.emit_output_delta()), messages (from MessagesTransformer), and subgraphs (registered by SubagentTransformer for hierarchical agents). ToolCallTransformer and SubagentTransformer are registered by default on the compiled graph, and user-supplied transformers are appended after built-in ones.",
       "evidence": [
         {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1909-L1925",
+          "version": "repo-lines-v1:sha256:2c016bc18341021900d265969249afc0a0b398d1a9979f911f039a224309512c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4NjgwOGU1NTIzYTJjZTMwNTYxNGZmNDMyNmQ5Nzk0ODc0YjI4NjliZDFkM2M5NTJjZmI2OTUxYTg0YWEzYjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ODdmOWY0M2FkM2JlZGJhZWIyN2VhYjljOTAwNzg2MmFlOTNjNTEwZGM1ZTg2YTZkZDMzMWY4MDNiMzAwYzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU2NmNkNGEyMjc1Y2I4Zjc0YjlkNGE3YzhjMGRmNGI4MTc2NDliMDIzYjI2YmRkYjc4YzQ4ZjUyNmQ4NGM3ZGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxZjIxZWZmMTg3ZDdlZTVjODVmN2JmODJiOGViY2E1MGM5MjEzNWI1ODA3YWI1ZWNhMjljNTM4ZDliNmFiMjIifQ"
+        },
+        {
           "resource": "repo://libs/langchain_v1/tests/unit_tests/agents/test_agent_streaming.py#L1-L102",
-          "version": "repo-lines-v1:sha256:25758174bbd08af8beea7576102f76af4a376ed34133ff9f1b19b3e7f7456928:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3YTNhZGZjNTk1YjBmZTRhYWY5ODA4MzMzZTcwNjYxYjNhOWY2NGI3ZTFlZmM1MDg4NDUyNmRlNzcwOGQ3Yjg5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkZWU5NWQ1YjNhYmE3MzdlOTFjZjM1NGI5OTJhZGFiYjExMzNkZTk2NWNmYmQ4YmVkZWFkZTdmMjkwNDFlYjc5In0"
+          "version": "repo-lines-v1:sha256:575477a9570f54c0e9aaf922a35e405d76d75056678b2edf37d2852a77f0ec0f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3YTNhZGZjNTk1YjBmZTRhYWY5ODA4MzMzZTcwNjYxYjNhOWY2NGI3ZTFlZmM1MDg4NDUyNmRlNzcwOGQ3Yjg5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkZWU5NWQ1YjNhYmE3MzdlOTFjZjM1NGI5OTJhZGFiYjExMzNkZTk2NWNmYmQ4YmVkZWFkZTdmMjkwNDFlYjc5In0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/agents/test_agent_streaming.py#L112-L127",
+          "version": "repo-lines-v1:sha256:8bd80129580ca114ff79535a62b7b09c4768a1f3ec21da07054515cf16269ee2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4YTM4NTI5MDNkMjc3YTdkNzMzNTlkYmVhODVlZmE3M2U0Y2ViNWEzMDdkYjY0MDRjOGE2MTkyN2U4MGQ5ZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxYzBmMjI2N2YzNDUzMmIxZWU2MDI2ZTAzZjA1MDFiYzRjZWE0NjQ4ODg0NTNjMGE1OGNjYzIxYjgwMTY5MjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzYzBhYTg4NjAxYTg3MTRlNGUwMGMxY2RhNTViY2RlNjgyNDU1YTM3MWJkODUzMmY0M2U1Mzg0ZTUyY2U0YjkifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/agents/test_agent_streaming.py#L198-L264",
+          "version": "repo-lines-v1:sha256:468159d265dfb075c6a4a5bb10d6737650df5fd30a98524ce6b97abd0e216547:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY1Yjc3M2YzOTI4OTk1MGVkODBkMTlhMWE2ZWM5NjkyYjliNzMzMjRjMDg3N2M5ZjY4NzY2NjRmYmU1Y2Q2MmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiZmFmODA1MjlhODVmOTFiOWNjMGMyZjY0YWQ2MTViZjNmMDI1ZmVjYThiZjdlYTI0ZGM2YzU3YTJmOTcxMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU0YzQ0NWI1ZTdkYzEwMDJkMWNjMzJmZjRiOGUzNzkxZjdmYjI4ZjE0ZjExZjA0ZjI0OTcwOGY5ZWQ5ZGQ3MjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY3ZjE1ZWIwYWJlNDYwMDgwMTNlOWJkNTBhNjZkMzVlMjNlZTlkYWViNGQ4ZGZhZGM5Yjg2NTY4ZjM0ZjBiOWUifQ"
         }
       ]
     },
@@ -201,6 +213,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-28T08:35:20.640Z"
+    "at": "2026-10-20T08:25:57.412Z"
   }
 }

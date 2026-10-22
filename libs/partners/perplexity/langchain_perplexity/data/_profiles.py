@@ -18,6 +18,7 @@ from typing import Any
 _PROFILES: dict[str, dict[str, Any]] = {
     "sonar": {
         "name": "Sonar",
+        "status": "deprecated",
         "release_date": "2024-01-01",
         "last_updated": "2025-09-01",
         "open_weights": False,
@@ -38,6 +39,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "sonar-deep-research": {
         "name": "Perplexity Sonar Deep Research",
+        "status": "deprecated",
         "release_date": "2025-02-01",
         "last_updated": "2025-09-01",
         "open_weights": False,
@@ -58,6 +60,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "sonar-pro": {
         "name": "Sonar Pro",
+        "status": "deprecated",
         "release_date": "2024-01-01",
         "last_updated": "2025-09-01",
         "open_weights": False,
@@ -78,6 +81,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "sonar-reasoning-pro": {
         "name": "Sonar Reasoning Pro",
+        "status": "deprecated",
         "release_date": "2024-01-01",
         "last_updated": "2025-09-01",
         "open_weights": False,
