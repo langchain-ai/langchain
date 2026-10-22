@@ -10,6 +10,7 @@ import pytest
 from langchain_core.language_models.model_profile import ModelProfile
 
 from langchain_model_profiles.cli import (
+    _ensure_safe_output_path,
     _model_data_to_profile,
     _warn_undeclared_profile_keys,
     refresh,
@@ -468,3 +469,34 @@ class TestWarnUndeclaredProfileKeys:
             side_effect=TypeError("broken"),
         ):
             _warn_undeclared_profile_keys(profiles)
+
+
+class TestEnsureSafeOutputPath:
+    """Tests for the output-path safety check."""
+
+    def test_symlink_error_names_actual_output_file(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """The symlink error should name the real output file (``_profiles.py``).
+
+        Regression test: the message previously hardcoded ``profiles.py`` even
+        though the CLI writes ``_profiles.py``, so the diagnostic named a
+        different file than the one it refused to overwrite.
+        """
+        data_dir = tmp_path / "data"
+        data_dir.mkdir()
+        target = tmp_path / "target.py"
+        target.touch()
+        output_file = data_dir / "_profiles.py"
+        output_file.symlink_to(target)
+
+        with pytest.raises(SystemExit):
+            _ensure_safe_output_path(data_dir, output_file)
+
+        err = capsys.readouterr().err
+        # The message must name the real output file...
+        assert f"{output_file.name} at {output_file}" in err
+        # ...and must not use the old hardcoded (wrong) name. Guard against the
+        # substring trap: "_profiles.py" contains "profiles.py", so check that
+        # the message does not start the filename at a non-underscore boundary.
+        assert " profiles.py at " not in err
