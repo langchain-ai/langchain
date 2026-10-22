@@ -40,6 +40,7 @@ from langchain.agents.middleware.summarization import (
     ContextSize,
     SummarizationMiddleware,
     TriggerClause,
+    _check_summary,
     _provider_matches,
 )
 from langchain.chat_models import init_chat_model
@@ -2739,3 +2740,65 @@ def test_async_summarizer_on_sync_path_raises() -> None:
 
     with pytest.raises(TypeError, match="coroutine function synchronously"):
         middleware._create_summary([HumanMessage(content="hi")])
+
+
+class _EmptyReplyModel(BaseChatModel):
+    """Chat model whose sync and async summary calls succeed with empty text."""
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content=""))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "mock"
+
+
+def test_create_summary_raises_on_empty_summary() -> None:
+    """An empty summary must raise instead of wiping the conversation history.
+
+    `before_model` only builds the `RemoveMessage` update after `_create_summary`
+    returns, so raising here preserves the original messages.
+    """
+    middleware = SummarizationMiddleware(model=_EmptyReplyModel())
+    _skip_retry(middleware)
+
+    with pytest.raises(ValueError, match="empty summary"):
+        middleware._create_summary([HumanMessage(content="hi")])
+
+
+async def test_acreate_summary_raises_on_empty_summary() -> None:
+    """Async: `_acreate_summary` must raise on an empty summary."""
+    middleware = SummarizationMiddleware(model=_EmptyReplyModel())
+    _skip_retry(middleware)
+
+    with pytest.raises(ValueError, match="empty summary"):
+        await middleware._acreate_summary([HumanMessage(content="hi")])
+
+
+def test_check_summary_rejects_empty_text() -> None:
+    """A custom `summarizer` returning empty text is rejected like a failure."""
+    with pytest.raises(ValueError, match="empty summary"):
+        _check_summary("   ")
+
+
+def test_before_model_preserves_history_on_empty_summary() -> None:
+    """`before_model` must not delete messages when the summary comes back empty."""
+    middleware = SummarizationMiddleware(
+        model=_EmptyReplyModel(), trigger=("messages", 2), keep=("messages", 1)
+    )
+    _skip_retry(middleware)
+    history = [
+        HumanMessage(content="first", id="h1"),
+        AIMessage(content="second", id="a1"),
+        HumanMessage(content="third", id="h2"),
+    ]
+
+    with pytest.raises(ValueError, match="empty summary"):
+        middleware.before_model({"messages": history}, runtime=None)  # type: ignore[arg-type]
