@@ -171,8 +171,13 @@ class XMLOutputParser(BaseTransformOutputParser[dict[str, Any]]):
     3. A badly-formatted XML instance (unexpected 'tag' element):
         `'<foo>\n   <tag>\n   </tag>\n</foo>'`
     """
+    # Matches an XML declaration (`<?xml ... ?>`) that carries an `encoding`
+    # attribute, so it can be stripped from model output before parsing. The
+    # literal `<?xml` prefix keeps the search linear (a failed match at each
+    # `<` aborts immediately) and avoids matching ordinary elements that
+    # happen to have an `encoding` attribute.
     encoding_matcher: re.Pattern[str] = re.compile(
-        r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL
+        r"<\?xml[^>]*encoding[^>]*\?>\n(.*)", re.DOTALL
     )
 
     parser: Literal["defusedxml", "xml"] = "defusedxml"
@@ -240,7 +245,7 @@ class XMLOutputParser(BaseTransformOutputParser[dict[str, Any]]):
             text = match.group(2)
         encoding_match = self.encoding_matcher.search(text)
         if encoding_match:
-            text = encoding_match.group(2)
+            text = encoding_match.group(1)
 
         text = text.strip()
         try:
