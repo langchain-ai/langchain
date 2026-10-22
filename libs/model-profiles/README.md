@@ -34,13 +34,16 @@ For full documentation, see the [API reference](https://reference.langchain.com/
 
 ## Usage
 
-Update model profile data for a specific provider:
+Update model profile data for a specific provider. Run this from the root of the
+target integration package (e.g. `libs/partners/anthropic`), since `--data-dir`
+is resolved relative to the current working directory:
 
 ```bash
+# from libs/partners/anthropic
 langchain-profiles refresh --provider anthropic --data-dir ./langchain_anthropic/data
 ```
 
-This downloads the latest model data from models.dev, merges it with any augmentations defined in `profile_augmentations.toml`, and generates a `profiles.py` file.
+This downloads the latest model data from models.dev, merges it with any augmentations defined in `profile_augmentations.toml`, and generates a `_profiles.py` file in the data directory.
 
 ## Resources
 
