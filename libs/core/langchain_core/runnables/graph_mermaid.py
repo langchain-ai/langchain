@@ -236,15 +236,24 @@ def draw_mermaid(
     # Add empty subgraphs (subgraphs with no internal edges)
     if with_styles:
         for prefix, subgraph_node in subgraph_nodes.items():
-            if ":" not in prefix and prefix not in seen_subgraphs:
-                mermaid_graph += f"\tsubgraph {prefix}\n"
+            parts = prefix.split(":")
+            if all(part in seen_subgraphs for part in parts):
+                continue
 
-                # Add nodes that belong to this subgraph
-                for key, node in subgraph_node.items():
-                    mermaid_graph += render_node(key, node)
+            # Open subgraph blocks for each nesting level
+            opened = []
+            for part in parts:
+                if part not in seen_subgraphs:
+                    mermaid_graph += f"\tsubgraph {part}\n"
+                    seen_subgraphs.add(part)
+                    opened.append(part)
 
+            # Add nodes that belong to this subgraph
+            for key, node in subgraph_node.items():
+                mermaid_graph += render_node(key, node)
+
+            for _ in opened:
                 mermaid_graph += "\tend\n"
-                seen_subgraphs.add(prefix)
 
     # Add custom styles for nodes
     if with_styles:
