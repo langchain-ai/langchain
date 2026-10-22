@@ -256,3 +256,48 @@ def test_from_model_id_raises_for_unavailable_device(
         )
 
     mock_hf_pipeline.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "device_map_kwargs",
+    [{"device_map": "xpu:1"}, {"model_kwargs": {"device_map": "xpu:1"}}],
+)
+def test_from_model_id_keeps_single_device_map_placement(
+    mock_hf_model: MagicMock,
+    mock_hf_pipeline: MagicMock,
+    device_map_kwargs: dict,
+) -> None:
+    """Test a single-device `device_map` survives pipeline construction.
+
+    Such a map leaves `hf_device_map` unset, so `transformers.pipeline` would
+    otherwise move the model to accelerator 0.
+    """
+    mock_hf_model.hf_device_map = None
+    mock_hf_model.device = torch.device("xpu", 1)
+
+    HuggingFacePipeline.from_model_id(
+        model_id="mock-model-id", task="text-generation", **device_map_kwargs
+    )
+
+    assert mock_hf_pipeline.call_args.kwargs["device"] == torch.device("xpu", 1)
+
+
+@pytest.mark.parametrize(
+    ("device_map", "hf_device_map"),
+    [("auto", {"transformer.h.0": 0, "transformer.h.1": 1}), (None, None)],
+)
+def test_from_model_id_leaves_device_unset_without_single_device_map(
+    mock_hf_model: MagicMock,
+    mock_hf_pipeline: MagicMock,
+    device_map: str | None,
+    hf_device_map: dict | None,
+) -> None:
+    """Test `device` stays unset for `accelerate` maps or when no map is given."""
+    mock_hf_model.hf_device_map = hf_device_map
+    mock_hf_model.device = torch.device("cpu")
+
+    HuggingFacePipeline.from_model_id(
+        model_id="mock-model-id", task="text-generation", device_map=device_map
+    )
+
+    assert mock_hf_pipeline.call_args.kwargs["device"] is None

@@ -293,6 +293,15 @@ class HuggingFacePipeline(BaseLLM):
                             f"within [0, {accelerator_device_count})"
                         )
                         raise ValueError(msg)
+        if (
+            device is None
+            and _model_kwargs.get("device_map") is not None
+            and getattr(model, "hf_device_map", None) is None
+            and backend == "default"
+        ):
+            # A single-device `device_map` sets no `hf_device_map`, so without an
+            # explicit `device` the pipeline would move the model to accelerator 0.
+            device = model.device
         if device is not None and device_map is not None and backend == "openvino":
             logger.warning("Please set device for OpenVINO through: `model_kwargs`")
         if "trust_remote_code" in _model_kwargs:
