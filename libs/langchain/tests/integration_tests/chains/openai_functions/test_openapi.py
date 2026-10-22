@@ -33,7 +33,7 @@ api_spec = {
 def test_openai_openapi_chain() -> None:
     from langchain_openai import ChatOpenAI
 
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    llm = ChatOpenAI(model_name="gpt-4o-mini", temperature=0)
     chain = get_openapi_chain(json.dumps(api_spec), llm)
     output = chain.invoke({"query": "Fetch the top two posts."})
     assert len(output["response"]) == 2
