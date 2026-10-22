@@ -26,11 +26,11 @@ dependencies = [
     "langchain-core>=1.4.7,<2.0.0",
     "langchain-text-splitters>=1.1.2,<2.0.0",
     "langsmith>=0.14.4,<1.0.0",
-    "pydantic>=2.7.4,<3.0.0",
-    "SQLAlchemy>=1.4.0,<3.0.0",
-    "requests>=2.0.0,<3.0.0",
-    "PyYAML>=5.3.0,<7.0.0",
-    "async-timeout>=4.0.0,<5.0.0; python_version < \"3.11\"",
+    "pydantic>=2.7.4",
+    "SQLAlchemy>=1.4.0",
+    "requests>=2.0.0",
+    "PyYAML>=5.3.0",
+    "async-timeout>=4.0.0; python_version < \"3.11\"",
 ]
 
 [project.optional-dependencies]
