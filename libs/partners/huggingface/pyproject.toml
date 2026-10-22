@@ -23,9 +23,9 @@ classifiers = [
 version = "1.2.3"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.6.6,<2.0.0",
-    "tokenizers>=0.19.1,<1.0.0",
-    "huggingface-hub>=0.33.4,<2.0.0",
+    "langchain-core>=1.6.6",
+    "tokenizers>=0.19.1",
+    "huggingface-hub>=0.33.4",
 ]
 
 [project.urls]
@@ -40,8 +40,8 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [project.optional-dependencies]
 full = [
-    "transformers>=5.0.0,<6.0.0",
-    "sentence-transformers>=5.2.0,<6.0.0",
+    "transformers>=5.0.0",
+    "sentence-transformers>=5.2.0",
 ]
 
 [dependency-groups]

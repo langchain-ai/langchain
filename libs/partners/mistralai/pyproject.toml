@@ -23,11 +23,11 @@ classifiers = [
 version = "1.1.6"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.4.7,<2.0.0",
-    "tokenizers>=0.15.1,<1.0.0",
-    "httpx>=0.25.2,<1.0.0",
-    "httpx-sse>=0.3.1,<1.0.0",
-    "pydantic>=2.0.0,<3.0.0",
+    "langchain-core>=1.4.7",
+    "tokenizers>=0.15.1",
+    "httpx>=0.25.2",
+    "httpx-sse>=0.3.1",
+    "pydantic>=2.0.0",
 ]
 
 [project.urls]

@@ -22,9 +22,9 @@ classifiers = [
 ]
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "qdrant-client>=1.15.1,<2.0.0",
-    "pydantic>=2.7.4,<3.0.0",
-    "langchain-core>=1.4.7,<2.0.0",
+    "qdrant-client>=1.15.1",
+    "pydantic>=2.7.4",
+    "langchain-core>=1.4.7",
 ]
 
 [project.urls]
@@ -39,7 +39,7 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [project.optional-dependencies]
 fastembed = [
-    "fastembed>=0.8.0,<1.0.0; python_version < \"3.13\" and python_version >= \"3.9\"",
+    "fastembed>=0.8.0; python_version < \"3.13\" and python_version >= \"3.9\"",
 ]
 
 [dependency-groups]

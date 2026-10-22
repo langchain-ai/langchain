@@ -24,9 +24,9 @@ classifiers = [
 version = "1.4.7"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.6.13,<2.0.0",
-    "langgraph>=1.2.12,<1.3.0",
-    "pydantic>=2.7.4,<3.0.0",
+    "langchain-core>=1.6.13",
+    "langgraph>=1.2.12",
+    "pydantic>=2.7.4",
 ]
 
 [project.optional-dependencies]
@@ -48,7 +48,7 @@ deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
 meta = ["langchain-meta"]
-mcp = ["fastmcp>=4.0.11,<5.0.0"]
+mcp = ["fastmcp>=4.0.11"]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"
