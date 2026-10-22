@@ -1365,6 +1365,9 @@ class TestBedrockConverseToolCallArgs:
         assert text_blocks[0]["text"] == "Hello Boston!"
 
 
+_ARGS_SLICES = ['{"path": ', '"a.py", ', '"content": ', '"hi"}']
+
+
 class _StreamingToolCallModel(BaseChatModel):
     """Fake model that streams one tool call's args across several chunks."""
 
@@ -1391,8 +1394,7 @@ class _StreamingToolCallModel(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         del messages, stop, run_manager, kwargs
         # Opener carries the id and name; the args follow in slices.
-        parts = ["", '{"path": ', '"a.py", ', '"content": ', '"hi"}']
-        for i, part in enumerate(parts):
+        for i, part in enumerate(["", *_ARGS_SLICES]):
             yield ChatGenerationChunk(
                 message=AIMessageChunk(
                     content="",
@@ -1416,12 +1418,12 @@ _TOOL_CALL_DELTAS = [
         "args": args,
         "index": 0,
     }
-    for args in ['{"path": ', '"a.py", ', '"content": ', '"hi"}']
+    for args in _ARGS_SLICES
 ]
 
 
 class TestToolCallsYieldDeltas:
-    """`.tool_calls` yields args deltas, not the snapshots the bridge emits."""
+    """`.tool_calls` yields args deltas, as the bridge emits them."""
 
     def test_stream_events_v3_tool_calls_yield_deltas(self) -> None:
         stream = _StreamingToolCallModel().stream_events("hi", version="v3")
@@ -1433,6 +1435,16 @@ class TestToolCallsYieldDeltas:
         stream = await _StreamingToolCallModel().astream_events("hi", version="v3")
 
         assert [d async for d in stream.tool_calls] == _TOOL_CALL_DELTAS
+
+    def test_replayed_events_carry_each_args_slice(self) -> None:
+        stream = _StreamingToolCallModel().stream_events("hi", version="v3")
+        assert stream.output.tool_calls[0]["args"] == {"path": "a.py", "content": "hi"}
+
+        replayed = [e["delta"] for e in stream if e["event"] == "content-block-delta"]
+
+        assert replayed == [
+            {"type": "tool-call-delta", "args": args} for args in _ARGS_SLICES
+        ]
 
 
 class _CachedUsageModel(BaseChatModel):

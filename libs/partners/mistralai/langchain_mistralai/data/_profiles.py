@@ -742,7 +742,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "video_outputs": False,
         "reasoning_output": False,
         "tool_calling": False,
-        "attachment": False,
+        "attachment": True,
         "temperature": False,
     },
     "voxtral-mini-tts-latest": {
