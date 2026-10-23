@@ -9,6 +9,7 @@ from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
     InterruptOnConfig,
 )
+from langchain.agents.middleware.model_call_budget import ModelCallBudgetMiddleware
 from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
@@ -65,6 +66,7 @@ __all__ = [
     "InterruptOnConfig",
     "LLMToolEmulator",
     "LLMToolSelectorMiddleware",
+    "ModelCallBudgetMiddleware",
     "ModelCallLimitMiddleware",
     "ModelCallResult",
     "ModelFallbackMiddleware",
