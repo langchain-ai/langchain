@@ -16,8 +16,13 @@ class TestModelProfileExtraAllow:
     """Verify extra='allow' on ModelProfile TypedDict."""
 
     def test_accepts_declared_keys(self) -> None:
-        profile: ModelProfile = {"max_input_tokens": 100, "tool_calling": True}
+        profile: ModelProfile = {
+            "max_input_tokens": 100,
+            "tool_calling": True,
+            "file_mime_types": ["text/plain", "application/json"],
+        }
         assert profile["max_input_tokens"] == 100
+        assert profile["file_mime_types"] == ["text/plain", "application/json"]
 
     def test_extra_keys_accepted_via_typed_dict(self) -> None:
         """ModelProfile TypedDict allows extra keys at construction."""

@@ -100,6 +100,66 @@ pdf_inputs = true
     assert "pdf_inputs" in profiles_content
 
 
+@pytest.mark.parametrize("override", [None, ["application/json"]])
+def test_refresh_reads_generic_file_mime_types_from_v2(
+    tmp_path: Path,
+    mock_models_dev_response: dict[str, Any],
+    override: list[str] | None,
+) -> None:
+    """Use v2 generic file types without replacing v1 capabilities or overrides."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    if override is not None:
+        (data_dir / "profile_augmentations.toml").write_text(
+            '[overrides]\nfile_mime_types = ["application/json"]\n'
+        )
+    v1 = Mock()
+    v1.json.return_value = mock_models_dev_response
+    v2 = Mock()
+    v2.json.return_value = {
+        "anthropic": {
+            "models": {
+                "claude-3-opus": {
+                    "modalities": {
+                        "input": [
+                            "text",
+                            "image/png",
+                            "audio/wav",
+                            "video/mp4",
+                            "application/pdf",
+                            "text/plain",
+                            "text/csv",
+                        ]
+                    }
+                }
+            }
+        }
+    }
+    with (
+        patch("langchain_model_profiles.cli.httpx.get", side_effect=[v1, v2]) as get,
+        patch("builtins.input", return_value="y"),
+    ):
+        refresh("anthropic", data_dir)
+
+    assert get.call_args_list[1].args[0] == (
+        "https://models.dev/experimental/v2.0/api.json"
+    )
+    spec = importlib.util.spec_from_file_location(
+        "mime_profiles", data_dir / "_profiles.py"
+    )
+    assert spec
+    assert spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module._PROFILES["claude-3-opus"]["file_mime_types"] == (
+        override if override is not None else ["text/plain", "text/csv"]
+    )
+    assert module._PROFILES["claude-3-opus"]["image_inputs"] is True
+    assert "file_mime_types" not in module._PROFILES["claude-3-sonnet"] or (
+        override is not None
+    )
+
+
 def test_refresh_raises_error_for_missing_provider(
     tmp_path: Path, mock_models_dev_response: dict[str, Any]
 ) -> None:

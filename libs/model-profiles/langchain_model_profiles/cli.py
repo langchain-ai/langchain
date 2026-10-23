@@ -258,6 +258,26 @@ https://docs.langchain.com/oss/python/langchain/models#updating-or-overwriting-p
 """
 
 
+def _fetch_mime_models(provider: str) -> dict[str, Any]:
+    """Fetch v2 model metadata for generic file MIME types."""
+    api_url = "https://models.dev/experimental/v2.0/api.json"
+    print(f"Downloading file MIME types from {api_url}...")
+    try:
+        response = httpx.get(api_url, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+    except (httpx.HTTPError, json.JSONDecodeError) as e:
+        msg = f"Failed to download file MIME types from {api_url}: {e}"
+        print(f"❌ {msg}", file=sys.stderr)
+        sys.exit(1)
+    if not isinstance(data, dict):
+        msg = "Expected v2 API response to be a dictionary"
+        print(f"❌ {msg}", file=sys.stderr)
+        sys.exit(1)
+    models: dict[str, Any] = data.get(provider, {}).get("models", {})
+    return models
+
+
 def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     """Download and merge model profile data for a specific provider.
 
@@ -320,6 +340,8 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     models = provider_data.get("models", {})
     print(f"Extracted {len(models)} models for {provider}")
 
+    mime_models = _fetch_mime_models(provider)
+
     # Load augmentations
     print("Loading augmentations...")
     provider_aug, model_augs = _load_augmentations(data_dir)
@@ -328,6 +350,17 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     profiles: dict[str, dict[str, Any]] = {}
     for model_id, model_data in models.items():
         base_profile = _model_data_to_profile(model_data)
+        mime_types = [
+            modality
+            for modality in mime_models.get(model_id, {})
+            .get("modalities", {})
+            .get("input", [])
+            if "/" in modality
+            and modality != "application/pdf"
+            and not modality.startswith(("image/", "audio/", "video/"))
+        ]
+        if mime_types:
+            base_profile["file_mime_types"] = mime_types
         profiles[model_id] = _apply_overrides(
             base_profile, provider_aug, model_augs.get(model_id)
         )
