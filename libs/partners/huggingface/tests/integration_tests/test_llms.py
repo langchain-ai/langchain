@@ -1,7 +1,6 @@
 import os
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 
-import pytest
 import torch
 
 from langchain_huggingface.llms import HuggingFacePipeline
@@ -24,35 +23,39 @@ def test_huggingface_pipeline_streaming() -> None:
     assert len(stream_results_string.strip()) > 0
 
 
-@pytest.mark.skipif(
-    os.getenv("HF_TEST_DEVICE") is None,
-    reason="Set HF_TEST_DEVICE=<index or device, e.g. 0 or xpu:1> on an "
-    "accelerator box to run.",
-)
-def test_from_model_id_runs_on_accelerator() -> None:
+def test_from_model_id_runs_on_accelerator(
+    accelerator_device: int | str,
+    assert_on_accelerator: Callable[[torch.device], None],
+) -> None:
     """Load a model on an accelerator and confirm placement is not CPU."""
-    device_env = os.environ["HF_TEST_DEVICE"]
-    device: int | str = int(device_env) if device_env.isdigit() else device_env
     model_id = os.getenv("HF_TEST_MODEL_ID", "openai-community/gpt2")
 
     llm = HuggingFacePipeline.from_model_id(
         model_id=model_id,
         task="text-generation",
-        device=device,
+        device=accelerator_device,
         pipeline_kwargs={"max_new_tokens": 10},
     )
 
     result = llm.invoke("Hello")
     assert isinstance(result, str)
     assert result.strip()
+    assert_on_accelerator(llm.pipeline.model.device)
 
-    # Confirm the model is actually on the accelerator, not silently on CPU —
-    # a green run with a CPU fallback would prove nothing about XPU coverage.
-    model_device = llm.pipeline.model.device
-    assert model_device.type != "cpu", (
-        f"Expected model on accelerator, but it loaded on {model_device}. "
-        "Check torch device ordering, HF_TEST_BACKEND, or device index."
+
+def test_from_model_id_keeps_device_map_on_accelerator(
+    accelerator_device: int | str,
+    assert_on_accelerator: Callable[[torch.device], None],
+) -> None:
+    """Load a model with a single-device `device_map` and confirm it stays there."""
+    model_id = os.getenv("HF_TEST_MODEL_ID", "openai-community/gpt2")
+
+    llm = HuggingFacePipeline.from_model_id(
+        model_id=model_id,
+        task="text-generation",
+        device_map=accelerator_device,
+        pipeline_kwargs={"max_new_tokens": 10},
     )
-    expected_index = device if isinstance(device, int) else torch.device(device).index
-    if expected_index is not None:
-        assert model_device.index == expected_index
+
+    assert llm.invoke("Hello").strip()
+    assert_on_accelerator(llm.pipeline.model.device)
