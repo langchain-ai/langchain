@@ -100,18 +100,19 @@ pdf_inputs = true
     assert "pdf_inputs" in profiles_content
 
 
-@pytest.mark.parametrize("override", [None, ["application/json"]])
-def test_refresh_reads_generic_file_mime_types_from_v2(
+@pytest.mark.parametrize("override", [False, True])
+def test_refresh_reads_modalities_from_v2(
     tmp_path: Path,
     mock_models_dev_response: dict[str, Any],
-    override: list[str] | None,
+    *,
+    override: bool,
 ) -> None:
-    """Use v2 generic file types without replacing v1 capabilities or overrides."""
+    """Preserve v2 modalities verbatim without replacing v1 flags or overrides."""
     data_dir = tmp_path / "data"
     data_dir.mkdir()
-    if override is not None:
+    if override:
         (data_dir / "profile_augmentations.toml").write_text(
-            '[overrides]\nfile_mime_types = ["application/json"]\n'
+            '[overrides.modalities]\ninput = ["application/json"]\noutput = []\n'
         )
     v1 = Mock()
     v1.json.return_value = mock_models_dev_response
@@ -129,7 +130,10 @@ def test_refresh_reads_generic_file_mime_types_from_v2(
                             "application/pdf",
                             "text/plain",
                             "text/csv",
-                        ]
+                            "image/*",
+                            "future/modality",
+                        ],
+                        "output": ["text", "audio/wav"],
                     }
                 }
             }
@@ -151,13 +155,17 @@ def test_refresh_reads_generic_file_mime_types_from_v2(
     assert spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    assert module._PROFILES["claude-3-opus"]["file_mime_types"] == (
-        override if override is not None else ["text/plain", "text/csv"]
+    expected = (
+        {"input": ["application/json"], "output": []}
+        if override
+        else v2.json.return_value["anthropic"]["models"]["claude-3-opus"]["modalities"]
     )
+    assert module._PROFILES["claude-3-opus"]["modalities"] == expected
     assert module._PROFILES["claude-3-opus"]["image_inputs"] is True
-    assert "file_mime_types" not in module._PROFILES["claude-3-sonnet"] or (
-        override is not None
-    )
+    if override:
+        assert module._PROFILES["claude-3-sonnet"]["modalities"] == expected
+    else:
+        assert "modalities" not in module._PROFILES["claude-3-sonnet"]
 
 
 def test_refresh_raises_error_for_missing_provider(

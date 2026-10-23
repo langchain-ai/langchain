@@ -96,7 +96,7 @@ def _load_augmentations(
     model_augs: dict[str, dict[str, Any]] = {}
 
     for key, value in overrides.items():
-        if isinstance(value, dict):
+        if isinstance(value, dict) and key != "modalities":
             model_augs[key] = value
         else:
             provider_aug[key] = value
@@ -258,16 +258,16 @@ https://docs.langchain.com/oss/python/langchain/models#updating-or-overwriting-p
 """
 
 
-def _fetch_mime_models(provider: str) -> dict[str, Any]:
-    """Fetch v2 model metadata for generic file MIME types."""
+def _fetch_v2_models(provider: str) -> dict[str, Any]:
+    """Fetch v2 model metadata for input and output modalities."""
     api_url = "https://models.dev/experimental/v2.0/api.json"
-    print(f"Downloading file MIME types from {api_url}...")
+    print(f"Downloading modalities from {api_url}...")
     try:
         response = httpx.get(api_url, timeout=30)
         response.raise_for_status()
         data = response.json()
     except (httpx.HTTPError, json.JSONDecodeError) as e:
-        msg = f"Failed to download file MIME types from {api_url}: {e}"
+        msg = f"Failed to download modalities from {api_url}: {e}"
         print(f"❌ {msg}", file=sys.stderr)
         sys.exit(1)
     if not isinstance(data, dict):
@@ -340,7 +340,7 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     models = provider_data.get("models", {})
     print(f"Extracted {len(models)} models for {provider}")
 
-    mime_models = _fetch_mime_models(provider)
+    v2_models = _fetch_v2_models(provider)
 
     # Load augmentations
     print("Loading augmentations...")
@@ -350,17 +350,9 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     profiles: dict[str, dict[str, Any]] = {}
     for model_id, model_data in models.items():
         base_profile = _model_data_to_profile(model_data)
-        mime_types = [
-            modality
-            for modality in mime_models.get(model_id, {})
-            .get("modalities", {})
-            .get("input", [])
-            if "/" in modality
-            and modality != "application/pdf"
-            and not modality.startswith(("image/", "audio/", "video/"))
-        ]
-        if mime_types:
-            base_profile["file_mime_types"] = mime_types
+        modalities = v2_models.get(model_id, {}).get("modalities")
+        if modalities is not None:
+            base_profile["modalities"] = modalities
         profiles[model_id] = _apply_overrides(
             base_profile, provider_aug, model_augs.get(model_id)
         )
@@ -370,7 +362,15 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     if extra_models:
         print(f"Adding {len(extra_models)} models from augmentations only...")
     for model_id in sorted(extra_models):
-        profiles[model_id] = _apply_overrides({}, provider_aug, model_augs[model_id])
+        profiles[model_id] = _apply_overrides(
+            {
+                key: value
+                for key, value in v2_models.get(model_id, {}).items()
+                if key == "modalities"
+            },
+            provider_aug,
+            model_augs[model_id],
+        )
 
     _warn_undeclared_profile_keys(profiles)
 
