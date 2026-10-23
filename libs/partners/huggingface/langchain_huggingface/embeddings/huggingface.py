@@ -39,6 +39,7 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
         from langchain_huggingface import HuggingFaceEmbeddings
 
         model_name = "sentence-transformers/all-mpnet-base-v2"
+        # Defaults to the available accelerator; or set e.g. "cuda", "xpu:1", "cpu"
         model_kwargs = {"device": "cpu"}
         encode_kwargs = {"normalize_embeddings": False}
         hf = HuggingFaceEmbeddings(

@@ -260,7 +260,12 @@ def test_from_model_id_raises_for_unavailable_device(
 
 @pytest.mark.parametrize(
     "device_map_kwargs",
-    [{"device_map": "xpu:1"}, {"model_kwargs": {"device_map": "xpu:1"}}],
+    [
+        {"device_map": "xpu:1"},
+        {"device_map": {"": "xpu:1"}},
+        {"device_map": 1},
+        {"model_kwargs": {"device_map": "xpu:1"}},
+    ],
 )
 def test_from_model_id_keeps_single_device_map_placement(
     mock_hf_model: MagicMock,

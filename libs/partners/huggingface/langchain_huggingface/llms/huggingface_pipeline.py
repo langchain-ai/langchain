@@ -58,6 +58,25 @@ class HuggingFacePipeline(BaseLLM):
         )
         ```
 
+    Example placing the model on an accelerator:
+        ```python
+        from langchain_huggingface import HuggingFacePipeline
+
+        hf = HuggingFacePipeline.from_model_id(
+            model_id="gpt2",
+            task="text-generation",
+            device=0,  # accelerator index, or e.g. "cuda:1", "xpu:1", "mps", "cpu"
+            pipeline_kwargs={"max_new_tokens": 10},
+        )
+
+        # Or, with `accelerate` installed, shard a model across all accelerators
+        hf = HuggingFacePipeline.from_model_id(
+            model_id="Qwen/Qwen2.5-7B-Instruct",
+            task="text-generation",
+            device_map="auto",
+        )
+        ```
+
     Example passing pipeline in directly:
         ```python
         from langchain_huggingface import HuggingFacePipeline
@@ -120,7 +139,11 @@ class HuggingFacePipeline(BaseLLM):
         task: str,
         backend: str = "default",
         device: int | str | torch.device | None = None,
-        device_map: str | None = None,
+        device_map: str
+        | int
+        | torch.device
+        | dict[str, int | str | torch.device]
+        | None = None,
         model_kwargs: dict | None = None,
         pipeline_kwargs: dict | None = None,
         batch_size: int = DEFAULT_BATCH_SIZE,
@@ -130,6 +153,10 @@ class HuggingFacePipeline(BaseLLM):
 
         `device` may be an accelerator index (`-1` for CPU), a device string such
         as `'xpu'`, `'cuda:1'` or `'cpu'`, or a `torch.device`.
+
+        `device_map` is passed to `from_pretrained`: use `'auto'` to shard the model
+        across all available accelerators, a single device such as `'xpu:1'`, or a
+        dict mapping module names to devices. It cannot be combined with `device`.
         """
         try:
             from transformers import (  # type: ignore[import]
