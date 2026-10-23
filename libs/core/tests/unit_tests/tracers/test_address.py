@@ -250,10 +250,10 @@ def test_parent_destination_overrides_tracer() -> None:
     tracer.run_map[str(parent.id)] = parent
     tracer.order_map[parent.id] = (parent.trace_id, parent.dotted_order)
     run_id = uuid4()
-    tracer.on_chain_start({}, {}, run_id=run_id, parent_run_id=parent.id)
+    child = tracer.on_chain_start({}, {}, run_id=run_id, parent_run_id=parent.id)
     tracer.on_chain_end({}, run_id=run_id)
-    assert parent.child_runs[0].address == ADDRESS
-    assert parent.child_runs[0].session_name is None
+    assert child.address == ADDRESS
+    assert child.session_name is None
     assert client.create_run.call_args.kwargs["address"] == ADDRESS
 
 
@@ -465,7 +465,7 @@ def test_addressed_parent_replica_inherited_outside_context() -> None:
     tracer.run_map[str(parent.id)] = parent
     tracer.order_map[parent.id] = (parent.trace_id, parent.dotted_order)
     run_id = uuid4()
-    tracer.on_chain_start({}, {}, run_id=run_id, parent_run_id=parent.id)
+    child = tracer.on_chain_start({}, {}, run_id=run_id, parent_run_id=parent.id)
     tracer.on_chain_end({}, run_id=run_id)
     replica_client.create_run.assert_called_once()
     replica_client.update_run.assert_called_once()
@@ -473,7 +473,7 @@ def test_addressed_parent_replica_inherited_outside_context() -> None:
         replica_client.create_run.call_args.kwargs["session_name"] == "replica-project"
     )
     assert replica_client.create_run.call_args.kwargs.get("address") is None
-    assert parent.child_runs[0].address == ADDRESS
+    assert child.address == ADDRESS
     client.create_run.assert_not_called()
 
 

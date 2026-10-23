@@ -148,6 +148,7 @@ class LangChainTracer(BaseTracer):
         *,
         metadata: Mapping[str, str] | None = None,
         address: AgentAddress | None = None,
+        retain_child_runs: bool | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the LangChain tracer.
@@ -172,6 +173,17 @@ class LangChainTracer(BaseTracer):
                 !!! warning "Beta"
                     Agent addressing is in beta and must be enabled for the
                     LangSmith workspace.
+            retain_child_runs: Override automatic in-memory child-tree retention.
+
+                When omitted, compatible LangSmith SDKs request retention for
+                evaluation, `on_end` callbacks, or an explicit
+                `tracing_context(retain_child_runs=True)`. Ordinary tracing does
+                not retain children. Older SDKs retain children for compatibility.
+                Set to `True` when directly inspecting run trees without a callback.
+                Uploaded trace nesting is unchanged.
+
+                !!! warning "Experimental"
+                    An explicit `False` also disables children needed by evaluators.
             **kwargs: Additional keyword arguments.
         """
         super().__init__(**kwargs)
@@ -183,6 +195,7 @@ class LangChainTracer(BaseTracer):
         self.client = client or get_client()
         self.tags = tags or []
         self.latest_run: Run | None = None
+        self.retain_child_runs = retain_child_runs
         self.run_has_token_event_map: dict[str, bool] = {}
         self.tracing_metadata: dict[str, str] | None = (
             dict(metadata) if metadata is not None else None
@@ -217,7 +230,7 @@ class LangChainTracer(BaseTracer):
 
         merged_tags = sorted(set(self.tags + tags)) if tags else self.tags
 
-        return self.__class__(
+        tracer = self.__class__(
             example_id=self.example_id,
             project_name=self.project_name,
             address=self.address,
@@ -228,6 +241,14 @@ class LangChainTracer(BaseTracer):
             order_map=self.order_map,
             _external_run_ids=self._external_run_ids,
         )
+        tracer.retain_child_runs = self.retain_child_runs
+        return tracer
+
+    @override
+    def _should_retain_child_runs(self) -> bool:
+        if self.retain_child_runs is not None:
+            return self.retain_child_runs
+        return bool(get_tracing_context().get("retain_child_runs", True))
 
     def _get_run_kwargs(
         self, parent_run_id: UUID | None, extra: dict[str, Any]

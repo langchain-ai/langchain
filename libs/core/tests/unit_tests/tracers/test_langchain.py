@@ -1,8 +1,10 @@
 import concurrent.futures
+import gc
 import threading
 import time
 import unittest.mock
 import uuid
+import weakref
 from typing import Any
 from uuid import UUID
 
@@ -67,23 +69,87 @@ def test_example_id_assignment_threadsafe() -> None:
         assert example_ids == expected_example_ids
 
 
-def test_tracer_with_run_tree_parent() -> None:
+@pytest.mark.parametrize("retain_child_runs", [True, False])
+def test_tracer_with_run_tree_parent(*, retain_child_runs: bool) -> None:
     mock_session = unittest.mock.MagicMock()
     client = Client(session=mock_session, api_key="test")
     parent = RunTree(name="parent", inputs={"input": "foo"}, ls_client=client)
     run_id = uuid.uuid4()
-    tracer = LangChainTracer(client=client)
+    tracer = LangChainTracer(client=client, retain_child_runs=retain_child_runs)
     tracer.order_map[parent.id] = (parent.trace_id, parent.dotted_order)
     tracer.run_map[str(parent.id)] = parent
-    tracer.on_chain_start(
+    tracer._external_run_ids[str(parent.id)] = 0
+    child = tracer.on_chain_start(
         {"name": "child"}, {"input": "bar"}, run_id=run_id, parent_run_id=parent.id
     )
     tracer.on_chain_end({}, run_id=run_id)
-    assert parent.child_runs
-    assert len(parent.child_runs) == 1
-    assert parent.child_runs[0].id == run_id
-    assert parent.child_runs[0].trace_id == parent.id
-    assert parent.child_runs[0].parent_run_id == parent.id
+    assert parent.child_runs == ([child] if retain_child_runs else [])
+    assert child.id == run_id
+    assert child.trace_id == parent.id
+    assert child.parent_run_id == parent.id
+    assert child.dotted_order.startswith(parent.dotted_order + ".")
+    assert tracer.run_map == {}
+    assert tracer._external_run_ids == {}
+
+
+@pytest.mark.parametrize("retain_child_runs", [None, True, False])
+@pytest.mark.parametrize("context_retention", [None, True, False])
+@pytest.mark.parametrize("failed", [False, True])
+def test_chat_run_retention(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    retain_child_runs: bool | None,
+    context_retention: bool | None,
+    failed: bool,
+) -> None:
+    context = (
+        {} if context_retention is None else {"retain_child_runs": context_retention}
+    )
+    monkeypatch.setattr(
+        "langchain_core.tracers.langchain.get_tracing_context", lambda: context
+    )
+    expected_retention = (
+        retain_child_runs
+        if retain_child_runs is not None
+        else context.get("retain_child_runs", True)
+    )
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client, retain_child_runs=retain_child_runs)
+    root_id = uuid.uuid4()
+    root = tracer.on_chain_start({"name": "root"}, {}, run_id=root_id)
+    for count in range(1, 4):
+        child_id = uuid.uuid4()
+        child = tracer.on_chat_model_start(
+            {"name": "chat"},
+            [[AIMessage("history")]],
+            run_id=child_id,
+            parent_run_id=root_id,
+        )
+        child_ref = weakref.ref(child)
+        posted = client.create_run.call_args.kwargs
+        assert posted["id"] == child_id
+        assert posted["parent_run_id"] == root_id
+        assert posted["trace_id"] == root_id
+        assert posted["dotted_order"].startswith(root.dotted_order + ".")
+        assert posted["inputs"]["messages"][0][0]["kwargs"]["content"] == "history"
+        if failed:
+            tracer.on_llm_error(ValueError("failed"), run_id=child_id)
+            assert client.update_run.call_args.kwargs["error"]
+        else:
+            tracer.on_llm_end(
+                LLMResult(generations=[[ChatGeneration(message=AIMessage("done"))]]),
+                run_id=child_id,
+            )
+            assert client.update_run.call_args.kwargs["outputs"]
+        del child, posted
+        client.reset_mock()
+        gc.collect()
+        assert (child_ref() is not None) == expected_retention
+        assert len(root.child_runs) == (count if expected_retention else 0)
+        assert tracer.run_map == {str(root_id): root}
+    tracer.on_chain_end({}, run_id=root_id)
+    assert tracer.run_map == {}
 
 
 def test_log_lock() -> None:
@@ -836,14 +902,23 @@ class TestTracerMetadataCloning:
     @staticmethod
     def _make_tracer(
         metadata: dict[str, str] | None = None,
+        *,
+        retain_child_runs: bool | None = None,
     ) -> LangChainTracer:
         client = unittest.mock.MagicMock(spec=Client)
         client.tracing_queue = None
-        return LangChainTracer(client=client, metadata=metadata)
+        return LangChainTracer(
+            client=client, metadata=metadata, retain_child_runs=retain_child_runs
+        )
 
-    def test_copy_with_metadata_defaults_copies_configuration(self) -> None:
+    @pytest.mark.parametrize("retain_child_runs", [None, True, False])
+    def test_copy_with_metadata_defaults_copies_configuration(
+        self, *, retain_child_runs: bool | None
+    ) -> None:
         """Copied tracer keeps stable configuration but not identity."""
-        tracer = self._make_tracer(metadata={"env": "staging"})
+        tracer = self._make_tracer(
+            metadata={"env": "staging"}, retain_child_runs=retain_child_runs
+        )
         tracer.project_name = "project"
         tracer.tags = ["tag"]
 
@@ -858,6 +933,22 @@ class TestTracerMetadataCloning:
         assert copied.run_map is tracer.run_map
         assert copied.order_map is tracer.order_map
         assert copied.run_has_token_event_map == {}
+        assert copied.retain_child_runs == retain_child_runs
+
+    @pytest.mark.parametrize("retain_child_runs", [None, True, False])
+    def test_copy_preserves_subclass_constructor_keywords(
+        self, *, retain_child_runs: bool | None
+    ) -> None:
+        class LegacyTracer(LangChainTracer):
+            def __init__(self, **kwargs: Any) -> None:
+                assert "retain_child_runs" not in kwargs
+                super().__init__(retain_child_runs=retain_child_runs, **kwargs)
+
+        tracer = LegacyTracer(client=unittest.mock.MagicMock(spec=Client))
+        copied = tracer.copy_with_metadata_defaults(metadata={"service": "api"})
+        assert isinstance(copied, LegacyTracer)
+        assert copied.retain_child_runs == retain_child_runs
+        assert copied.tracing_metadata == {"service": "api"}
 
     def test_copy_with_metadata_defaults_does_not_mutate_original(self) -> None:
         """Metadata-default cloning leaves the source tracer unchanged."""
