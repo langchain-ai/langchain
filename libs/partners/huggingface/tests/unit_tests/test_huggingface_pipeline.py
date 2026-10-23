@@ -301,3 +301,33 @@ def test_from_model_id_leaves_device_unset_without_single_device_map(
     )
 
     assert mock_hf_pipeline.call_args.kwargs["device"] is None
+
+
+@pytest.mark.parametrize(("device", "valid"), [(1, True), (2, False)])
+def test_from_model_id_falls_back_to_torch_xpu_device_count(
+    mock_hf_pipeline: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    device: int,
+    valid: bool,  # noqa: FBT001
+) -> None:
+    """Test `from_model_id` counts XPU devices when `torch.accelerator` is missing.
+
+    `torch.cuda.device_count` alone would reject any index on an XPU-only machine.
+    """
+    # Simulate a `torch` version predating the `torch.accelerator` API.
+    monkeypatch.delattr(torch, "accelerator", raising=False)
+
+    with (
+        patch("torch.cuda.device_count", return_value=0),
+        patch("torch.xpu.device_count", return_value=2),
+    ):
+        if valid:
+            HuggingFacePipeline.from_model_id(
+                model_id="mock-model-id", task="text-generation", device=device
+            )
+            assert mock_hf_pipeline.call_args.kwargs["device"] == device
+        else:
+            with pytest.raises(ValueError, match=r"within \[-1, 2\)"):
+                HuggingFacePipeline.from_model_id(
+                    model_id="mock-model-id", task="text-generation", device=device
+                )

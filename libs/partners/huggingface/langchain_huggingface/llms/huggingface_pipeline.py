@@ -256,7 +256,11 @@ class HuggingFacePipeline(BaseLLM):
             if hasattr(torch, "accelerator"):
                 accelerator_device_count = torch.accelerator.device_count()
             else:
-                accelerator_device_count = torch.cuda.device_count()
+                # Before PyTorch 2.6 there is no device-agnostic API, so check the
+                # in-tree CUDA and XPU backends.
+                accelerator_device_count = torch.cuda.device_count() or (
+                    torch.xpu.device_count() if hasattr(torch, "xpu") else 0
+                )
             if isinstance(device, int):
                 if device < -1 or (device >= accelerator_device_count):
                     msg = (

@@ -18,6 +18,10 @@ def _accelerator_devices() -> list[str] | None:
     # `torch.accelerator` (added in PyTorch 2.6) detects CUDA, XPU, and other
     # accelerator backends.
     if not hasattr(torch, "accelerator"):
+        # Before PyTorch 2.6 there is no device-agnostic API; add the in-tree XPU
+        # backend, since `sentence-transformers` already covers CUDA and NPU.
+        if hasattr(torch, "xpu") and torch.xpu.is_available():
+            return [f"xpu:{i}" for i in range(torch.xpu.device_count())]
         return None
     accelerator = torch.accelerator.current_accelerator()
     if accelerator is None:

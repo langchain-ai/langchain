@@ -69,3 +69,30 @@ def test_multi_process_stops_pool_on_error(mock_client: MagicMock) -> None:
     mock_client.stop_multi_process_pool.assert_called_once_with(
         mock_client.start_multi_process_pool.return_value
     )
+
+
+@pytest.mark.parametrize(
+    ("xpu_available", "expected_devices"),
+    [(True, ["xpu:0", "xpu:1"]), (False, None)],
+)
+def test_multi_process_falls_back_to_xpu_without_torch_accelerator(
+    mock_client: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    xpu_available: bool,  # noqa: FBT001
+    expected_devices: list[str] | None,
+) -> None:
+    """Test XPU devices are still used when `torch.accelerator` is missing.
+
+    `sentence-transformers` already detects CUDA and NPU devices on its own.
+    """
+    # Simulate a `torch` version predating the `torch.accelerator` API.
+    monkeypatch.delattr(torch, "accelerator", raising=False)
+    embeddings = HuggingFaceEmbeddings(multi_process=True)
+
+    with (
+        patch("torch.xpu.is_available", return_value=xpu_available),
+        patch("torch.xpu.device_count", return_value=2),
+    ):
+        embeddings.embed_query("hello")
+
+    mock_client.start_multi_process_pool.assert_called_once_with(expected_devices)
