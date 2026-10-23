@@ -2455,6 +2455,9 @@ def _image_detail(block: dict[str, Any]) -> str:
     if not isinstance(detail, str):
         image_url = block.get("image_url")
         detail = image_url.get("detail") if isinstance(image_url, dict) else None
+    if not isinstance(detail, str):
+        extras = block.get("extras")
+        detail = extras.get("detail") if isinstance(extras, dict) else None
 
     return detail.lower() if isinstance(detail, str) else ""
 

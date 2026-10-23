@@ -8,6 +8,7 @@ from collections.abc import Callable, Sequence
 from typing import Any, TypedDict
 
 import pytest
+from pytest_mock import MockerFixture
 from typing_extensions import NotRequired, override
 
 from langchain_core.language_models.fake_chat_models import FakeChatModel
@@ -21,6 +22,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages.content import create_image_block
 from langchain_core.messages.utils import (
     MessageLikeRepresentation,
     convert_to_messages,
@@ -3030,7 +3032,7 @@ def test_count_tokens_approximately_low_detail_image_is_fixed_cost() -> None:
     )
     assert high_detail > 1000
 
-    # Both the raw Chat Completions shape and the normalized block carry `detail`
+    # Raw Chat Completions and legacy image blocks carry `detail` directly.
     nested = HumanMessage(
         content=[{"type": "image_url", "image_url": {"url": data_url, "detail": "low"}}]
     )
@@ -3047,6 +3049,77 @@ def test_count_tokens_approximately_low_detail_image_is_fixed_cost() -> None:
 
     for message in (nested, top_level):
         assert count_tokens_approximately([message]) < 100
+
+
+@pytest.mark.parametrize("normalize", [False, True], ids=["factory", "normalized"])
+@pytest.mark.parametrize(("width", "height"), [(1, 1), (1920, 1080)])
+def test_count_tokens_approximately_standard_low_detail_image_is_fixed_cost(
+    width: int, height: int, mocker: MockerFixture, *, normalize: bool
+) -> None:
+    """Standard blocks preserve low-detail counts and trimming without decoding."""
+    encoded = base64.b64encode(_png_bytes(width, height)).decode()
+    raw = HumanMessage(
+        content=[
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/png;base64,{encoded}",
+                    "detail": "low",
+                },
+            }
+        ]
+    )
+    standard = HumanMessage(
+        content_blocks=(
+            raw.content_blocks
+            if normalize
+            else [
+                create_image_block(base64=encoded, mime_type="image/png", detail="low")
+            ]
+        )
+    )
+    decode = mocker.spy(base64, "b64decode")
+
+    for message in (raw, standard):
+        assert count_tokens_approximately([message]) == 89
+        assert trim_messages(
+            [message], max_tokens=100, token_counter=count_tokens_approximately
+        ) == [message]
+        assert count_tokens_approximately([message], tokens_per_image=0) == 4
+
+    decode.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("extras", "expected"),
+    [
+        ({"detail": "LOW"}, 89),
+        ({"detail": "high"}, 259),
+        ({"detail": "auto"}, 259),
+        ({"detail": None}, 259),
+        ({"detail": 85}, 259),
+        ({}, 259),
+        (None, 259),
+        ("low", 259),
+        (["low"], 259),
+    ],
+)
+def test_count_tokens_approximately_image_detail_extras(
+    extras: Any, expected: int
+) -> None:
+    """Only a low-detail string in extras suppresses dimension-based estimation."""
+    message = HumanMessage(
+        content=[
+            {
+                "type": "image",
+                "base64": base64.b64encode(_png_bytes(1, 1)).decode(),
+                "mime_type": "image/png",
+                "extras": extras,
+            }
+        ]
+    )
+
+    assert count_tokens_approximately([message]) == expected
 
 
 def test_count_tokens_approximately_high_and_auto_detail_use_dimensions() -> None:
