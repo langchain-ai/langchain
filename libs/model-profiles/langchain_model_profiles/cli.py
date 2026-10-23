@@ -362,6 +362,7 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     if extra_models:
         print(f"Adding {len(extra_models)} models from augmentations only...")
     for model_id in sorted(extra_models):
+        # Seed fields sourced from models.dev v2 before applying local overrides.
         profiles[model_id] = _apply_overrides(
             {
                 key: value
