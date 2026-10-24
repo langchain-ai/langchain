@@ -10,6 +10,13 @@ from typing_extensions import TypedDict
 logger = logging.getLogger(__name__)
 
 
+class ModelModalities(TypedDict):
+    """Supported input and output modalities, using the models.dev v2 schema."""
+
+    input: list[str]
+    output: list[str]
+
+
 class ModelProfile(TypedDict, total=False):
     """Description of a chat model's capabilities, exposed via `model.profile`.
 
@@ -76,6 +83,9 @@ class ModelProfile(TypedDict, total=False):
     """Whether [video inputs](https://docs.langchain.com/oss/python/langchain/models#multimodal)
     are supported."""
     # TODO: add more detail about formats? e.g. bytes or base64
+
+    modalities: ModelModalities
+    """Input/output strings (`text`, MIME types, etc.); absent if unknown."""
 
     image_tool_message: bool
     """Whether images can be included in `ToolMessage` content."""
