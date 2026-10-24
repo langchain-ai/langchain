@@ -40,10 +40,10 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
   - id: openwiki-source-48ce5ee900993294d349b4e8
     resource: repo://libs/standard-tests/langchain_tests/__init__.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-22T08:26:56.662Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-24T08:22:45.862Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-22T08:26:56.662Z
+    at: 2026-10-24T08:22:45.862Z
 ---
 
 ## Welcome to LangChain Development
@@ -60,7 +60,8 @@ LangChain is organized as a **three-layer architecture** in `/libs/`:
 
 ```
 /libs/
-├── core/              # langchain-core (v1.6.13): Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
+├── core/              # langchain-core (v1.7.0): Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
+├── langchain/         # langchain-classic (v1.0.8): Legacy orchestration layer (no new features)
 ├── langchain_v1/      # langchain (v1.4.7): Agent orchestration, factory, middleware
 ├── partners/          # Provider-specific integrations (OpenAI, Anthropic, Ollama, etc.)
 ├── standard-tests/    # Shared test suites for component conformance
@@ -74,6 +75,7 @@ LangChain is organized as a **three-layer architecture** in `/libs/`:
 | Layer | Edit when you are… | Key files |
 |-------|-----|-----------|
 | **core** | Adding or modifying base abstractions and core interfaces: `Runnable`, `BaseChatModel`, messages, tools, prompts, callbacks, output parsers. | `libs/core/langchain_core/` |
+| **langchain** | Working on legacy features in langchain-classic (mostly read-only; new features go to langchain_v1). | `libs/langchain/langchain_classic/` |
 | **langchain_v1** | Building agent factory features (`create_agent`), middleware composition, model initialization (`init_chat_model`), or high-level orchestration. | `libs/langchain_v1/langchain/agents/factory.py`, `libs/langchain_v1/langchain/chat_models/base.py` |
 | **partners/{name}** | Adding a new LLM provider (OpenAI, Anthropic, etc.), implementing `ChatModel`, handling message conversion, or adding provider-specific features (streaming, tool calling, structured output). | `libs/partners/{provider}/langchain_{provider}/chat_models/base.py` |
 | **standard-tests** | Defining reusable test suites and test fixtures for evaluating chat models, embeddings, and tools across all providers. | `libs/standard-tests/langchain_tests/` |
@@ -280,7 +282,16 @@ core/
 └── pyproject.toml        # Package deps and metadata
 ```
 
-**langchain_v1/** — Agent orchestration (langchain package)
+**langchain/** — Legacy orchestration layer (langchain-classic v1.0.8, read-only)
+```
+langchain/
+├── langchain_classic/    # Legacy package (no new features)
+├── tests/
+├── Makefile
+└── pyproject.toml
+```
+
+**langchain_v1/** — Modern agent orchestration (langchain package v1.4.7)
 ```
 langchain_v1/
 ├── langchain/
