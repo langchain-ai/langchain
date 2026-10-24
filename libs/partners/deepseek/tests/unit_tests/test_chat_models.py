@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types import CompletionUsage
@@ -258,6 +258,65 @@ class TestChatDeepSeekCustomUnit:
         tool_message = ToolMessage(content="test string", tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == "test string"
+
+    def test_get_request_payload_preserves_reasoning_content(self) -> None:
+        """reasoning_content from AIMessage is passed through to the payload."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        messages = [
+            HumanMessage(content="Hello!"),
+            AIMessage(
+                content="Hi!",
+                additional_kwargs={"reasoning_content": "thinking..."},
+            ),
+        ]
+        payload = chat_model._get_request_payload(messages)
+        assert payload["messages"][1]["reasoning_content"] == "thinking..."
+
+    def test_get_request_payload_reasoning_content_with_list_content(self) -> None:
+        """reasoning_content survives assistant content-list normalization."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        messages = [
+            HumanMessage(content="Hello!"),
+            AIMessage(
+                content=[{"type": "text", "text": "Hi!"}],
+                additional_kwargs={"reasoning_content": "thinking..."},
+            ),
+        ]
+        payload = chat_model._get_request_payload(messages)
+        assert payload["messages"][1]["content"] == "Hi!"
+        assert payload["messages"][1]["reasoning_content"] == "thinking..."
+
+    def test_get_request_payload_without_reasoning_content(self) -> None:
+        """Assistant messages without reasoning_content don't get the key."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        messages = [
+            HumanMessage(content="Hello!"),
+            AIMessage(content="Just a normal reply."),
+        ]
+        payload = chat_model._get_request_payload(messages)
+        assert "reasoning_content" not in payload["messages"][1]
+
+    def test_get_request_payload_reasoning_content_multi_round(self) -> None:
+        """reasoning_content stays aligned across mixed-role multi-round history."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        messages = [
+            HumanMessage(content="Q1"),
+            AIMessage(
+                content="A1",
+                additional_kwargs={"reasoning_content": "r1"},
+            ),
+            ToolMessage(content="tool result", tool_call_id="call_1"),
+            AIMessage(content="A2"),
+            AIMessage(
+                content="A3",
+                additional_kwargs={"reasoning_content": "r3"},
+            ),
+        ]
+        payload = chat_model._get_request_payload(messages)
+        assert payload["messages"][1]["reasoning_content"] == "r1"
+        assert "reasoning_content" not in payload["messages"][2]
+        assert "reasoning_content" not in payload["messages"][3]
+        assert payload["messages"][4]["reasoning_content"] == "r3"
 
 
 class SampleTool(PydanticBaseModel):
