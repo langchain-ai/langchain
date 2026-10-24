@@ -1,11 +1,12 @@
 """Test base chat model."""
 
+import gc
 import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
 from contextlib import contextmanager
 from importlib.metadata import PackageNotFoundError
-from typing import TYPE_CHECKING, Any, Literal, get_type_hints
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, get_type_hints
 from unittest.mock import patch
 
 import pytest
@@ -1768,6 +1769,31 @@ def test_generate_response_from_error_handles_streaming_response_failure() -> No
     assert metadata["body"] is None
     assert metadata["headers"] == {"content-type": "application/json"}
     assert metadata["status_code"] == 400
+
+
+class MockAsyncResponse:
+    """Mock async client response whose `json()` is a coroutine (e.g. aiohttp)."""
+
+    status_code = 504
+    headers: ClassVar[dict[str, str]] = {"content-type": "application/json"}
+
+    async def json(self) -> dict[str, Any]:
+        return {"error": {"code": 504}}
+
+
+def test_generate_response_from_error_closes_an_async_json_coroutine() -> None:
+    error = MockAPIError("API Error", response=MockAsyncResponse())  # type: ignore[arg-type]
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        generations = _generate_response_from_error(error)
+        gc.collect()
+
+    assert not [w for w in caught if "never awaited" in str(w.message)]
+
+    metadata = generations[0].message.response_metadata
+    assert metadata["body"] is None
+    assert metadata["status_code"] == 504
 
 
 def test_filter_invocation_params_for_tracing() -> None:

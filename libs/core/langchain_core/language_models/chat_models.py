@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import builtins  # noqa: TC003  # runtime-evaluated; subclass `dict()` shadows the builtin
 import contextlib
+import inspect
 import json
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
@@ -116,7 +117,15 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
         generation_info: dict[str, Any] = {}
         if hasattr(response, "json"):
             try:
-                metadata["body"] = response.json()
+                body = response.json()
+                if inspect.iscoroutine(body):
+                    # An async client's response (e.g. aiohttp's
+                    # `ClientResponse`) returns a coroutine from `json()`. This
+                    # function is sync, so it cannot read the body: close the
+                    # coroutine so it is not reported as never awaited.
+                    body.close()
+                    body = None
+                metadata["body"] = body
             except Exception:
                 try:
                     metadata["body"] = getattr(response, "text", None)
