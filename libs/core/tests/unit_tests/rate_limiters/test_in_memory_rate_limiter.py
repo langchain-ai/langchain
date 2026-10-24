@@ -108,3 +108,24 @@ async def test_async_wait_max_bucket_size() -> None:
         # Assert that sync wait can proceed without blocking
         # since we have enough tokens
         await rate_limiter.aacquire(blocking=True)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"requests_per_second": 0}, "requests_per_second"),
+        ({"requests_per_second": -1}, "requests_per_second"),
+        ({"requests_per_second": float("nan")}, "requests_per_second"),
+        ({"requests_per_second": float("inf")}, "requests_per_second"),
+        ({"max_bucket_size": 0}, "max_bucket_size"),
+        ({"max_bucket_size": 0.5}, "max_bucket_size"),
+        ({"max_bucket_size": float("nan")}, "max_bucket_size"),
+        ({"check_every_n_seconds": 0}, "check_every_n_seconds"),
+        ({"check_every_n_seconds": -0.1}, "check_every_n_seconds"),
+        ({"check_every_n_seconds": float("nan")}, "check_every_n_seconds"),
+    ],
+)
+def test_invalid_configuration(kwargs: dict[str, float], match: str) -> None:
+    """Invalid token-bucket settings raise instead of hanging acquire()."""
+    with pytest.raises(ValueError, match=match):
+        InMemoryRateLimiter(**kwargs)
