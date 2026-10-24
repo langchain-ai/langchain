@@ -278,7 +278,7 @@ jobs:
         working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
       - name: Upload build
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
@@ -414,7 +414,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
@@ -561,13 +561,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
       - name: Publish to test PyPI
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
         with:
           packages-dir: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
           verbose: true
@@ -636,7 +636,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         if: startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core')
         with:
           name: dist
@@ -794,7 +794,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: dist/
@@ -854,13 +854,13 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
         with:
           packages-dir: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
           verbose: true
@@ -899,7 +899,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
