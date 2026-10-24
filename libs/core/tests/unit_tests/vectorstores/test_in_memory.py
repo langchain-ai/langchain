@@ -220,3 +220,38 @@ async def test_inmemory_call_embeddings_async() -> None:
     # Ensure the async embedding function is called
     assert embeddings_mock.aembed_documents.await_count == 1
     assert embeddings_mock.aembed_query.await_count == 1
+
+
+async def test_inmemory_negative_or_zero_k() -> None:
+    """Test handling of negative and zero k values (issue #41457)."""
+    store = await InMemoryVectorStore.afrom_texts(
+        ["foo", "bar", "baz"], DeterministicFakeEmbedding(size=3)
+    )
+
+    # k=0 should return empty list
+    assert store.similarity_search("foo", k=0) == []
+    assert await store.asimilarity_search("foo", k=0) == []
+    assert store.similarity_search_with_score("foo", k=0) == []
+    assert await store.asimilarity_search_with_score("foo", k=0) == []
+    assert store.max_marginal_relevance_search("foo", k=0) == []
+    assert await store.amax_marginal_relevance_search("foo", k=0) == []
+
+    # k < 0 should raise ValueError
+    with pytest.raises(ValueError, match="k must be non-negative"):
+        store.similarity_search("foo", k=-1)
+
+    with pytest.raises(ValueError, match="k must be non-negative"):
+        await store.asimilarity_search("foo", k=-1)
+
+    with pytest.raises(ValueError, match="k must be non-negative"):
+        store.similarity_search_with_score("foo", k=-1)
+
+    with pytest.raises(ValueError, match="k must be non-negative"):
+        await store.asimilarity_search_with_score("foo", k=-1)
+
+    with pytest.raises(ValueError, match="k must be non-negative"):
+        store.max_marginal_relevance_search("foo", k=-1)
+
+    with pytest.raises(ValueError, match="k must be non-negative"):
+        await store.amax_marginal_relevance_search("foo", k=-1)
+
