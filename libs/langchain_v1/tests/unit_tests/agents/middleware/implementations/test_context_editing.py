@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, cast
 
+import pytest
 from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -578,3 +579,76 @@ async def test_custom_token_counter_forces_clearing_async() -> None:
     cleared_tool = modified_request.messages[1]
     assert isinstance(cleared_tool, ToolMessage)
     assert cleared_tool.content == "[cleared]"
+
+
+SENSITIVE = "123-45-6789"
+
+# The same tool call as providers return it inside `content`.
+_TOOL_CALL_BLOCKS = [
+    pytest.param(
+        {"type": "tool_call", "id": "call-1", "name": "lookup", "args": {"ssn": SENSITIVE}},
+        "args",
+        {},
+        id="v1_tool_call",
+    ),
+    pytest.param(
+        {"type": "tool_use", "id": "call-1", "name": "lookup", "input": {"ssn": SENSITIVE}},
+        "input",
+        {},
+        id="anthropic_tool_use",
+    ),
+    pytest.param(
+        {
+            "type": "function_call",
+            "call_id": "call-1",
+            "id": "fc_1",
+            "name": "lookup",
+            "arguments": '{"ssn": "123-45-6789"}',
+        },
+        "arguments",
+        "{}",
+        id="openai_responses_function_call",
+    ),
+]
+
+
+@pytest.mark.parametrize(("block", "input_key", "cleared_value"), _TOOL_CALL_BLOCKS)
+def test_clear_tool_inputs_clears_content_blocks(
+    block: dict[str, Any], input_key: str, cleared_value: Any
+) -> None:
+    other_call = {"type": "tool_call", "id": "call-2", "name": "other", "args": {"q": "keep"}}
+    ai_message = AIMessage(
+        content=[{"type": "text", "text": "Looking that up."}, block, other_call],
+        tool_calls=[
+            {"id": "call-1", "name": "lookup", "args": {"ssn": SENSITIVE}},
+            {"id": "call-2", "name": "other", "args": {"q": "keep"}},
+        ],
+    )
+    tool_message = ToolMessage(content="x" * 200, tool_call_id="call-1")
+    _state, request = _make_state_and_request([ai_message, tool_message])
+    edit = ClearToolUsesEdit(trigger=50, keep=0, clear_tool_inputs=True)
+    middleware = ContextEditingMiddleware(edits=[edit])
+
+    modified_request = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal modified_request
+        modified_request = req
+        return ModelResponse(result=[AIMessage(content="mock response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    assert modified_request is not None
+    cleared_ai = modified_request.messages[0]
+    assert isinstance(cleared_ai, AIMessage)
+    assert SENSITIVE not in str(cleared_ai.content)
+    assert isinstance(cleared_ai.content, list)
+    text_block, cleared_block, kept_block = cleared_ai.content
+    assert text_block == {"type": "text", "text": "Looking that up."}
+    assert cleared_block == {**block, input_key: cleared_value}
+    assert kept_block == other_call
+
+    # Original request is unchanged
+    original_ai = request.messages[0]
+    assert isinstance(original_ai, AIMessage)
+    assert original_ai.content[1] == block

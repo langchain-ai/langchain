@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable, Iterable, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 from langchain_core.messages import (
     AIMessage,
@@ -33,6 +33,9 @@ from langchain.agents.middleware.types import (
 )
 
 DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
+
+# Content block types that carry a tool call and its inputs, as returned by providers.
+_TOOL_CALL_BLOCK_TYPES = frozenset({"tool_call", "tool_use", "function_call"})
 
 
 TokenCounter = Callable[
@@ -168,6 +171,19 @@ class ClearToolUsesEdit(ContextEdit):
                 cleared_any = True
             updated_tool_calls.append(updated_call)
 
+        # The same call is usually also present in `content` (as a `tool_call`,
+        # `tool_use` or `function_call` block), and that copy is what gets sent back
+        # to the model, so clear it there too.
+        updated_content = message.content
+        if isinstance(message.content, list):
+            updated_content = []
+            for block in message.content:
+                if isinstance(block, dict) and _is_tool_call_block(block, tool_call_id):
+                    updated_content.append(_clear_tool_call_block(block))
+                    cleared_any = True
+                else:
+                    updated_content.append(block)
+
         metadata = dict(getattr(message, "response_metadata", {}))
         context_entry = dict(metadata.get("context_editing", {}))
         if cleared_any:
@@ -178,10 +194,30 @@ class ClearToolUsesEdit(ContextEdit):
 
         return message.model_copy(
             update={
+                "content": updated_content,
                 "tool_calls": updated_tool_calls,
                 "response_metadata": metadata,
             }
         )
+
+
+def _is_tool_call_block(block: dict[str, Any], tool_call_id: str) -> bool:
+    if block.get("type") not in _TOOL_CALL_BLOCK_TYPES:
+        return False
+    # OpenAI Responses `function_call` blocks keep the tool call id in `call_id`
+    # and use `id` for the item id.
+    return tool_call_id in (block.get("id"), block.get("call_id"))
+
+
+def _clear_tool_call_block(block: dict[str, Any]) -> dict[str, Any]:
+    """Return a copy of a tool call block with its inputs emptied."""
+    cleared = dict(block)
+    for key in ("args", "input"):
+        if key in cleared:
+            cleared[key] = {}
+    if isinstance(cleared.get("arguments"), str):
+        cleared["arguments"] = "{}"
+    return cleared
 
 
 class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
