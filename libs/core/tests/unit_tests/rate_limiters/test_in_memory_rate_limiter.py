@@ -108,3 +108,36 @@ async def test_async_wait_max_bucket_size() -> None:
         # Assert that sync wait can proceed without blocking
         # since we have enough tokens
         await rate_limiter.aacquire(blocking=True)
+
+
+@pytest.mark.parametrize(
+    "invalid_rps",
+    [0, -1, -0.5, float("inf"), float("-inf"), float("nan")],
+)
+def test_invalid_requests_per_second(invalid_rps: float) -> None:
+    with pytest.raises(
+        ValueError, match="requests_per_second must be a positive finite number"
+    ):
+        InMemoryRateLimiter(requests_per_second=invalid_rps)
+
+
+@pytest.mark.parametrize(
+    "invalid_check_interval",
+    [0, -1, -0.1, float("inf"), float("-inf"), float("nan")],
+)
+def test_invalid_check_every_n_seconds(invalid_check_interval: float) -> None:
+    with pytest.raises(
+        ValueError, match="check_every_n_seconds must be a positive finite number"
+    ):
+        InMemoryRateLimiter(check_every_n_seconds=invalid_check_interval)
+
+
+@pytest.mark.parametrize(
+    "invalid_bucket_size",
+    [0, 0.9, -1, -5, float("inf"), float("-inf"), float("nan")],
+)
+def test_invalid_max_bucket_size(invalid_bucket_size: float) -> None:
+    with pytest.raises(
+        ValueError, match="max_bucket_size must be a finite number >= 1"
+    ):
+        InMemoryRateLimiter(max_bucket_size=invalid_bucket_size)
