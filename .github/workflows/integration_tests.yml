@@ -104,7 +104,7 @@ jobs:
           if [ -n "$PYTHON_VERSION_OVERRIDE" ]; then
             python_version="[\"$PYTHON_VERSION_OVERRIDE\"]"
             # Bound override version to >= 3.11 for packages requiring it
-            if [ "$(echo "$PYTHON_VERSION_OVERRIDE >= 3.11" | bc -l)" -eq 1 ]; then
+            if [ "$(printf '%s\n' 3.11 "$PYTHON_VERSION_OVERRIDE" | sort -V | head -n 1)" = "3.11" ]; then
               python_version_min_3_11="[\"$PYTHON_VERSION_OVERRIDE\"]"
             else
               python_version_min_3_11='["3.11"]'
@@ -145,7 +145,12 @@ jobs:
             done
             working_directory="$(jq -nc --argjson libs "$working_directory" --argjson excl "$exclude_paths" '$libs - $excl')"
           fi
-          matrix="{\"python-version\": $python_version, \"working-directory\": $working_directory}"
+          matrix="$(jq -nc --argjson libs "$working_directory" --argjson versions "$python_version" --argjson min311 "$python_version_min_3_11" '
+            {include: [$libs[] as $lib |
+              (if (["libs/partners/chroma", "libs/partners/huggingface", "libs/partners/nomic", "libs/partners/openai", "libs/partners/perplexity", "libs/partners/qdrant"] | index($lib))
+               then $min311 else $versions end)[] |
+              {"working-directory": $lib, "python-version": .}]}
+          ')"
           echo "$matrix"
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
           echo "python-version-min-3-11=$python_version_min_3_11" >> $GITHUB_OUTPUT
@@ -168,9 +173,7 @@ jobs:
       cancel-in-progress: false
     strategy:
       fail-fast: false
-      matrix:
-        python-version: ${{ fromJSON(needs.compute-matrix.outputs.matrix).python-version }}
-        working-directory: ${{ fromJSON(needs.compute-matrix.outputs.matrix).working-directory }}
+      matrix: ${{ fromJSON(needs.compute-matrix.outputs.matrix) }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
