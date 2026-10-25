@@ -5,7 +5,7 @@
 # Runs daily with the option to trigger manually.
 
 name: "⏰ Integration Tests"
-run-name: "Run Integration Tests - ${{ inputs.working-directory-override || (inputs.working-directory != 'all' && inputs.working-directory) || (inputs.exclude != '' && format('exclude:{0}', inputs.exclude)) || 'all libs' }} (Python ${{ inputs.python-version-override || '3.10, 3.14' }})"
+run-name: "Run Integration Tests - ${{ inputs.working-directory-override || (inputs.working-directory != 'all' && inputs.working-directory) || (inputs.exclude != '' && format('exclude:{0}', inputs.exclude)) || 'all libs' }} (Python ${{ inputs.python-version-override || '3.11, 3.14' }})"
 
 on:
   workflow_dispatch:
@@ -53,7 +53,7 @@ on:
         description: "Comma-separated short names to drop from the 'all' run (e.g. openai,anthropic). Ignored unless dropdown is 'all' and no working-directory-override is set."
       python-version-override:
         type: string
-        description: "Python version override — defaults to 3.10 and 3.14 in matrix (e.g. 3.11)"
+        description: "Python version override — defaults to 3.11 and 3.14 in matrix (e.g. 3.11)"
   schedule:
     - cron: "0 13 * * *" # Runs daily at 1PM UTC (9AM EDT/6AM PDT)
 
@@ -96,15 +96,15 @@ jobs:
           EXCLUDE: ${{ github.event.inputs.exclude || '' }}
         run: |
           # echo "matrix=..." where matrix is a json formatted str with keys python-version and working-directory
-          # python-version defaults to 3.10 and 3.14, overridden to [PYTHON_VERSION_OVERRIDE] if set
+          # python-version defaults to 3.11 and 3.14, overridden to [PYTHON_VERSION_OVERRIDE] if set
           # working-directory priority: override string > dropdown choice > DEFAULT_LIBS
-          python_version='["3.10", "3.14"]'
+          python_version='["3.11", "3.14"]'
           python_version_min_3_11='["3.11", "3.14"]'
           working_directory="$DEFAULT_LIBS"
           if [ -n "$PYTHON_VERSION_OVERRIDE" ]; then
             python_version="[\"$PYTHON_VERSION_OVERRIDE\"]"
             # Bound override version to >= 3.11 for packages requiring it
-            if [ "$(printf '%s\n' 3.11 "$PYTHON_VERSION_OVERRIDE" | sort -V | head -n 1)" = "3.11" ]; then
+            if [ "$(echo "$PYTHON_VERSION_OVERRIDE >= 3.11" | bc -l)" -eq 1 ]; then
               python_version_min_3_11="[\"$PYTHON_VERSION_OVERRIDE\"]"
             else
               python_version_min_3_11='["3.11"]'
@@ -145,12 +145,7 @@ jobs:
             done
             working_directory="$(jq -nc --argjson libs "$working_directory" --argjson excl "$exclude_paths" '$libs - $excl')"
           fi
-          matrix="$(jq -nc --argjson libs "$working_directory" --argjson versions "$python_version" --argjson min311 "$python_version_min_3_11" '
-            {include: [$libs[] as $lib |
-              (if (["libs/partners/chroma", "libs/partners/huggingface", "libs/partners/nomic", "libs/partners/openai", "libs/partners/perplexity", "libs/partners/qdrant"] | index($lib))
-               then $min311 else $versions end)[] |
-              {"working-directory": $lib, "python-version": .}]}
-          ')"
+          matrix="{\"python-version\": $python_version, \"working-directory\": $working_directory}"
           echo "$matrix"
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
           echo "python-version-min-3-11=$python_version_min_3_11" >> $GITHUB_OUTPUT
@@ -167,13 +162,15 @@ jobs:
     # Serialize same-package shards across workflow runs so a per-package
     # manual dispatch doesn't race the scheduled "all libs" run against the
     # same live API credentials. Keyed per (working-directory, python-version)
-    # so the 3.10/3.14 matrix legs within one run still execute in parallel.
+    # so the 3.11/3.14 matrix legs within one run still execute in parallel.
     concurrency:
       group: integration-tests-${{ matrix.working-directory }}-${{ matrix.python-version }}
       cancel-in-progress: false
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.compute-matrix.outputs.matrix) }}
+      matrix:
+        python-version: ${{ fromJSON(needs.compute-matrix.outputs.matrix).python-version }}
+        working-directory: ${{ fromJSON(needs.compute-matrix.outputs.matrix).working-directory }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
