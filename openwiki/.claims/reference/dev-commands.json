@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:a7e431b44d8f975b2ca362d69a0e86fd0488aa207f24754fcbc3e069d1794d27",
+  "claims": [
+    {
+      "id": "claim_2513ed136e6840e0bbacc76aed603ab8",
+      "statement": "Development commands documentation has been consolidated into the operations section, documenting the make-based task automation system used across the LangChain Python monorepo packages for linting, formatting, testing, type checking, and debugging workflows.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L1-L50",
+          "version": "repo-lines-v1:sha256:0b2124d028b0f042bcb1d5a26803897cdcea2c4004a75167fe3434bbc90c4db2:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3OWFlOTgzNzk4NzM0OGRiYzA2NjU0YzBmMGQyNjE2MGE5MjA0OTM1NzUzMTA3YzNkOWMzYWMxMGNmM2VlZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0NDJlZjM3N2Y0ZTI1MWI1YmMyM2Q1NzAyMTRkOGYwOWNhYzA0YmEyYzU5MTQ1YTU2YzNhYzllYzY1YTFhMTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmODcyZjg0YTkyODVkYTEwMTVhYmUwMGM0NjE3ZjZlNTVkZTdiNDkxNDBmNjU1NWJkMTdjMDhiZThlN2EwN2UifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:1d8b388c78913efdf49e892554ce8e75344b5208abbb674fd03455a18df93e99",
+  "claims": [
+    {
+      "id": "claim_302f5ebf43a74fb2a31f7614893cd310",
+      "statement": "Structured output is a system mechanism that ensures a language model returns responses matching a specific JSON schema, with the agent supporting three strategies (tool-based, provider-native, and automatic) to enforce schema compliance, parse responses, validate against the schema using Pydantic's TypeAdapter, and automatically retry on validation errors.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
+          "version": "repo-file-v1:sha256:cc4a7d9a620224558c4eddd4e13edc988a9ac9e328b7a67deeb71ed2c5ec5174"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py",
+          "version": "repo-file-v1:sha256:e3d5032f156d07531da71620710f0bb0231b3ba8ab241a5417759ebb810b71cf"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

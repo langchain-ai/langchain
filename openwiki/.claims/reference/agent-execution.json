@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:d01490fe3d27e2a4d347281612ff94834d907cc8e9226f3187fdf7970d9d0f55",
+  "claims": [
+    {
+      "id": "claim_bf4a816208b849fcbec8f49d366129d2",
+      "statement": "The /openwiki/reference/agent-execution.md page serves as a redirect to the primary Agent Execution documentation, which provides comprehensive coverage of the agent's structured, state-driven loop orchestrated by a LangGraph StateGraph, including initialization, model invocation, tool dispatch, result processing, termination logic, middleware hooks, and structured output handling.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
+          "version": "repo-file-v1:sha256:cc4a7d9a620224558c4eddd4e13edc988a9ac9e328b7a67deeb71ed2c5ec5174"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py",
+          "version": "repo-file-v1:sha256:56688206dce0334e7ca82125d7b809c23427890c234dfd69123dad038a387f31"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

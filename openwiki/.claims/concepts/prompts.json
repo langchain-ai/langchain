@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:2d9ff24a6f92462aa377ba919992b75d146c43539f51db00f66542ddb4e6a7bb",
+  "claims": [
+    {
+      "id": "claim_2744b97852c94bb9873ec92717376683",
+      "statement": "BasePromptTemplate (in langchain_core.prompts.base) extends RunnableSerializable[dict[str, Any], PromptValue] and manages input validation, variable management, immutable composition, and PromptValue output routing. It enforces that input_variables and partial_variables do not overlap, and reserves the variable name 'stop' for internal use.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/base.py#L38-L106",
+          "version": "repo-lines-v1:sha256:cb21cabaf35887c5a33bcc003d55152713d0ef71220e67ce5760c82164483d60:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4N2Y5MjEyNjY1ODMyZTQ2ZGY0M2RkYzA3MGI4NmJkYzU1ZjZiZDJhN2E4ZmEyMTQ4NjU2MTExMjMzODk1MWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyYWIwOTBiY2QxNjIwZmE2MmVhZWUxNTdhNzRmY2E2MzVhYTI5ZTEyY2JmZmQ2MThiNTc5MmQ4N2JjMDNhM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyNmZhZGQ5YWM2YzQzMDJjZWNlMjkxMWNiM2VhMzkzMDcwYzBjZmI1MTZhMTk2NzMxMjllOWUwYjE0MTVjMmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxM2QxNTY1OGFlNGYxMWMwYWE4Mzc1NWM2MDM0ZmI2MWZhMWY1OWFmMjRlNTYwOWI4NTc0MjJmOGQ3YTQyOTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f5eb50c18b8473695e5fe3de687ec0f",
+      "statement": "PromptTemplate supports three template formats: f-string (default, using Python string.Formatter), mustache (with {{variable}} syntax), and jinja2 (full templating with conditionals and filters). Jinja2 uses SandboxedEnvironment by default to block dunder attribute access, though sandboxing is best-effort. Template format validation and variable extraction differs per format.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/prompt.py#L77-L87",
+          "version": "repo-lines-v1:sha256:059b15e048d8563bdc6a79f730f6abb19f69e5869ac24bab8b69fbdc7743b492:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YTQ2ODY4ZjYzNGE3MThkMTg4M2RhYjdkZGYwMzA4OTdkM2EwYjY4ZWNmZWUwN2FlOWI3NmZmMzVmOGNiOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM4ZDJjNDBhZjhlNzY0YjY2M2FmZjY1MjYzNzM3MThlOWMzYWFmOGNmY2JjNGM0NGU2MmEwMDA5MDlmMGJlODciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyNDE2MzQzN2VlN2YwYmFjYTFiN2MzMTgxMjAyOTBkMjQ0NDIxN2Q5NmU0Y2Q2M2M2MjAwZmJmY2MzMDcxZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmMGQ5MjMzM2ExNDBiZDU0NTQ3MDhiYjRkOTA2MzZmZTc4Y2RhYTMyOTAwODA3NzQxM2I5NDlmMWVlMmU4OGUifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/string.py#L210-L220",
+          "version": "repo-lines-v1:sha256:e6a9b852382ea5471481f0a26a7a3342926a5cebe0bcf2bcd63f48e6dca99987:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ODdhOTIwMWJlYjIzOWI3Mjc3OGY5NzE3ZDljYzM3MjlkNWUyZGRkMWIzNjkwOTFiYTM4ZjM4ODdmODkyNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxODIwNTlmMjUyODY2NGQwMjRhMjkxYWU3ZTJmMmZlOTgyY2Q2NGY4NzA2N2Y5MzhlOGI3YWQzOGNkNDMyOTUifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/string.py#L30-L73",
+          "version": "repo-lines-v1:sha256:9215836e826ce934e49712ce727740f8c04fdffbaf667b11b02237b656d0bc88:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3YzA3ZWIxZTA5ZjNhM2FiNTMwNTZjYTMzNmJkZDJkMjcwMzA3ODliOWVhZjg1MjgxY2Y0MTIxZDU0NTE1NjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhYTZjY2Q2MGQxMDUzYTkxOGE5ZTY4N2VlN2Q2ZWJmMDQ2YWZiMGUxNzgwODExM2JjNTVmYjc3NTkxZGMzNjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM2OWQxMGNjNzI3NTdmZDgzMGIyMGM3M2IwNjAyYWZmZmJmYjY1OGZjNTA4MmE5M2M2NzdhMzUwMDg0ZGJlMjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f7217a5f503469baa69c06f5ef4ab42",
+      "statement": "ChatPromptTemplate sequences message templates into conversation structures, automatically inferring input_variables and optional_variables from embedded messages. When a ChatPromptTemplate has exactly one input variable, invoke() auto-wraps non-dict arguments. Message type strings ('system', 'human', 'ai', 'user', 'assistant', 'tool', 'function', 'placeholder') are mapped to specific message template classes.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/chat.py#L1-L52",
+          "version": "repo-lines-v1:sha256:c2c36bf1f21ba4c79c77edcef1ee67cc7adacf5b4092337fd7d3ed03b34547b8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmZGRjYTFjZDMwMjFlNzA0YjcxMjNiMTYwMGIzOGM3ZDExNTRhYWZiNGJlNzEwOTA1ZTVkZDE1MjBlNzk0NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxNjRiMTk4NjEyZGFhY2M4N2U4NmExYjY3N2M1ZTNlMGFkOTdlNjU4MDY2YzJlNDU4ZjAxZmE2ZTg4ZjY1N2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_693d3738d0f7407d930a994c0795322a",
+      "statement": "MessagesPlaceholder injects pre-formatted message lists at specific points in chat prompts, supporting conversation history injection. It has fields optional (default False, allowing omission from inputs if True), n_messages (limiting recent messages), and input_variables that returns [variable_name] if not optional, [] if optional. Optional placeholders are auto-populated with [] as partial defaults.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/chat.py#L53-L199",
+          "version": "repo-lines-v1:sha256:de7fda1609e7c00d93e06ceeaf94f3833e3527a326ab5427f2276716e1216bd1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyZWU2MGYwNzI2YmVkNmQ5ZTU0MTVmNDgwNTE3YmEyOWY0YTY3ZTYzNmQ5Y2M1MTE3YmM1YzNiODYyMGE2YWVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxMTVhYzkxYjhiMmEzYzU4ZWZjZmZhOGQyOTQ0MDBhNTRlMGUzNWI1ZThiYjAxYjQyOTM4MGVlZjdmZjllMWFmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5OGUwZGFmOTYwNDEwZWU2ODM2MDQ5NWMwMmY4MTY4M2NkNjNhNWYxMDY1NDA3MTZhMWFmNjc4ZDRlZTgxZmNjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5MzM3NTcwYjk5OThkYTI0MzM2MTJkOThiYTdlMTBmNjFiODE0YjdjNzk2NTg1YzM4MjNmY2QwYWMyNWNjNDQ1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_342e6c9a478c4b84b8c491f7f9918e00",
+      "statement": "PromptValue is an abstract base enabling format-agnostic routing: StringPromptValue wraps formatted strings and converts to messages by wrapping as HumanMessage; ChatPromptValue wraps message sequences and converts to string via get_buffer_string(). Both implement to_string() and to_messages() methods, allowing downstream components to accept either representation flexibly.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompt_values.py#L24-L105",
+          "version": "repo-lines-v1:sha256:abe75a7764c81f1187a26f7fd65c2010f03d4c6efa620208dc44f8aa6cc51a63:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiMGIxMDllMjZkNzcxNzAwOWFhNjJhMjM5YTBiNzhjMmIyNTAwODhlN2FiYjIzNzM3NmQwOWIxY2Q2Y2NkMzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU5NjU2NGExNmRmM2EyNDU2YWZlMTcwMTQ5YzBkYjIxMjhhYTc2YjUyMzU5ZDAzZjJkODA0MmI3NGYwZDM2ZDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cfa4bbe1ce4c4d9ab064c2b5d4fa2933",
+      "statement": "The partial() method (in BasePromptTemplate) pre-fills variables by creating a new instance with updated input_variables and partial_variables, without mutating the original. Partial variable values can be callables that are invoked at format time, enabling lazy evaluation. This immutability pattern enables safe reuse and caching.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/base.py#L289-L305",
+          "version": "repo-lines-v1:sha256:f0b70ef20f8e415ad500cfe89851200dd312776c275c46ce989b2e9e3fe75500:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyN2FmM2YxYzYyYjdlY2IwY2U4ZGQwNzgwNDczZTA2MmQ4YWEyNmFkNjI4MTM0OWI0NmQxZWNhYzE4NWZhODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMjRjNDMzOGIwZjJmMGU5MDNlNjVmNmM2NDUxMTdkYzdhYzZjMWIwMTM5ZDFjOWMzYzEwN2Q0NWJmOGQzZDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI1M2EwNjU0NDQ3YzE5NmMyYTVhMWZiYjVlNzcwNjU0ODU1Y2M0ZTc0YzI3N2M3MjA3MjBlZDM5OTA2OTcyM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyMjgzYzEyODkzNTliNzRmZGU1NjY3NjcwNTExMzU4ZGUyNzZkOGNjZWRlZjNkZDM2OWJlNDlhYzZhZjNlZmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_23dfd2785c8a4ebda840bf98f5e44bc6",
+      "statement": "BasePromptTemplate validates at format/invoke time that all required input_variables are provided via _validate_input(). It generates helpful error messages listing expected variables and suggesting that missing variables be escaped with double braces if they should be literal. The 'stop' variable name is reserved and raises ValueError.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/base.py#L161-L195",
+          "version": "repo-lines-v1:sha256:24a40398a32cb27deaa3a91eb06f5a86ae1e017f8dabf82369476b238695f476:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNDY4MTVjZjE3NGI1ZDQxNzk3YWNhMTk3MDQ3Yzg2N2FjODgxODk2YmRiMzZhOWVlNTViNzIyYTNiMDU0MDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxNmRhMTg3ZTFlZGNlYTExNzAyNGFlOTY2MmFiN2RlNTc2Mjc3N2FjNzQ2ODRlOGI4MTYyNmY0OWVjYTAxZjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwMGU2Yzc0ZDBkZTUzNzk1MGRkMGY2ZjNiZjQwYWQxNTk0NGMwOTg5YTRiNzMwNWI3YmQ4NmEyYzE5YzZkYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzMDI5MzQ4MmMwNmVkNGFhMzkxZDNiZWNiNjc4Yjc4NDYyNGI0ZWE2ZjdhMjJiOTk0NDkyMmYwMWMwZDczNzQifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/base.py#L80-L105",
+          "version": "repo-lines-v1:sha256:10e7ee53a0188d4b03cc064f30deb1f9dedd8e6042aba2a5638de742552ea50f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZjFjZGQwZjU3NDMzY2U1MDc3OTA3MjJlMmY1MWQ5NzM1NmNiZmZhN2IyNGRkN2NhMTM0NDgzMmQ0ZTUyNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3NTRiMWE5MjNjNmNlMTA4NzdkNzBkNDJlODYzYjM0NDMyM2VkMzE5NWJjOGY0NTE0NDk4YmVmY2ViYzAzYjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxYjkwOWJkZDE3YWQwZGNiZjA1YmMzMmI3MGJiZDMyNDUwY2VjYTc0YmE2ZGQ0MzZmMjAzZWMwYTJhNzJmODMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_68e224d5f9dc4c04a7f6c7b66c180b7b",
+      "statement": "FewShotPromptTemplate (string-based) formats examples into a single string via prefix, formatted examples, and suffix components joined by example_separator. It supports either static examples list or dynamic selection via example_selector (mutually exclusive). Example formatting uses an example_prompt PromptTemplate applied to each example.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/few_shot.py#L121-L239",
+          "version": "repo-lines-v1:sha256:1ed2a3f7e9232ea7dbccea5421d1ca563040b6994765fc7dfdcda7126113e36d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiMzcyZmEzN2U2MzlhYjY3NjE2NTZhYmIyZWQzMTZjZDY1ZjcwYmJkYTUxNzU3NWVlOGNjMzQ2ZTdjMTI3YjA4IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0YzE3NDdjZTAwZjA0NWZiYmZlOGY2YWEyNTU1YWQwYmVkZGY5M2UyOWQ0MGI3MWU5NThhNWQ0NjA5ZWQ2YTk2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhYjhmMDU4Zjc3ZWI4NTQwOTA2MWQ4NmIyMzA4OTM0NjMwYWUxMTc5ZDA5MDQ3ZTE0ZDM0ZDhjZmE1OGY1NzFiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzYmQwYzQwZDQyMDY4Yjc2ODRjZWY5N2VkYzNlY2JiN2IwZmMyMjZlNzE4MGUzNmJmMDJiMDE2YThmMGQ0ODU3In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_ce25a32acf814d4483932aa072d7748a",
+      "statement": "FewShotChatMessagePromptTemplate embeds examples as message pairs within chat sequences. It uses an example_prompt ChatPromptTemplate to format each example as a sequence of messages, and can be embedded directly in a ChatPromptTemplate.from_messages() list alongside other message templates.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/few_shot.py#L262-L340",
+          "version": "repo-lines-v1:sha256:87686a4204dd76eefd9f357ac25a89863fe3a223bee8632b701fac4eeda22625:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxN2YyY2YyYzRhYjQzNjIxNGU2MGVhNTJjYTgwNDcyMTkxZmEwMTllODE2YjRiMmM5NzI1NGE3YWY3ODAzN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhNDYyOTliZGEwMjk1ZmY5Y2Y1ZDNjMjg4YzVmNWQxYjhkNzA5M2Q3NmZhMjUzYmNlM2JiNzc5OWExNzBkZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmZWZjNjcwM2M4MTg0Y2FkNGFmMWYyNDFkYjIwMDA1MTc0MjNkZDliNDI3YjNiODc4MzgwYzQ3NmUxOWI0ZWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c0246de55b234265b2ce963bd73dde41",
+      "statement": "BaseExampleSelector defines select_examples(input_variables: dict) → list[dict] for dynamic example selection and add_example() for adding new examples. SemanticSimilarityExampleSelector selects via vector similarity (requires VectorStore and embeddings model, with k parameter controlling result count). LengthBasedExampleSelector greedily includes examples up to max_length threshold determined by get_text_length callable.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/few_shot.py#L34-L119",
+          "version": "repo-lines-v1:sha256:c13e0672df06de3cecae4bbf711dfd8122e4336ad0e619fe6300e56ccd56ebc7:eyJzZWxlY3RlZExpbmVDb3VudCI6ODYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkNGRmODMzZDQ1ZTdmYmNiNmNjODRmNjJlYzJlZjNmOTk2YzM5MjhkZTIzMjgxZWFkN2NmY2RlMmNlNDMxZWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NmI1NjA4NTQ2YmIzZWMzM2QwMGJhOTBhMTM3MTlkMjcxNGUwM2I1ZDY5ODljODY3ZGZhZjlmN2UwMmVhOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjExYWRmZWM2ZWVkNGU5ZjA4Mjg2NTMzNzgxOWY3ZGIwNDY1ZjVjYzQ0MTdmNzIwM2JjMzFkM2JlYTY1NWI1MDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b6007808e6e2431e92e89eefb62b8f58",
+      "statement": "BasePromptTemplate extends RunnableSerializable, implementing invoke(), ainvoke(), batch(), and stream() methods. invoke() calls _format_prompt_with_error_handling() and returns PromptValue; metadata and tags are merged from the template into the runnable config before invocation. This enables prompts to compose seamlessly with models and output parsers via the | operator.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/base.py#L209-L265",
+          "version": "repo-lines-v1:sha256:2707790d91e39e81fdae7a9b3c815158a1a72490098cc17cb666e3416a3818fb:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZGE5MzUwMDE5ZGMxZTY2NzQ1MjY0Mzg3MzE2MTk5NzIyNWU5Y2U2MDEwN2FmN2I2NGY4NDBkZGVjZmRhNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcyYWRlMDc4MmY4ZDk2NmEyOTNkNjI3MmRmMjk0NWMxZjc1OGI1ZjMyNDhjZjY3ZTZkMDc4YmFmZGIyNjVmYjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxODAwODI4NjdjOTg5Mjk1NmRjNzJmMTNjZjUyMjIwNWYyMjE3Y2MyMzJjNjE0ODMyOTlkOThiODhjNzhiMzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_268a20c672434b25a9f69e2332ebe67e",
+      "statement": "ChatPromptTemplate and PromptTemplate support the + operator for composition. When composing ChatPromptTemplate instances, messages concatenate and input_variables merge. When composing PromptTemplate instances, both must have the same template_format, and templates concatenate. Conflicting partial_variables raise ValueError. The + operator returns a new instance without mutating operands.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/prompt.py#L142-L184",
+          "version": "repo-lines-v1:sha256:48d6f7aadd76acbbe01e11ec5724decd61a2baf0857c6f81e0e5f87769a25c89:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1N2UwYWEwOWE1NDE2N2VhZDIxNTcxZWUzYjRhZTk2YTEzMzQxYmM0OWY5N2RlYjc2ZDcwZDNkZjJmOTUwMGIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzM2IzNjc5NjdlODc3ZWJhMmRhMTZmNDBmYjljMDgwYzAwZjM3MmNmODE2ZmU2N2MxNjczMWNmMzJlN2FhNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ0MWMyMTE3NDNjYzlmZTkwNGU5NzFlOWU0MmUwYWYwY2I0MTQ2ZjQzOGM3NzI5OTNhMGE2Nzk3NDhmODkyYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2Nzg5ODU5N2E2MDA0MjNkZGNkOWQxMmU0MTUyYTU3ZDQyOGIwYWUyNmNhNTNhYzhjM2VmZTllNTk2MmU5MTcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_167a6d30d524411096044f31bf8dc9ba",
+      "statement": "Prompts serialize via langchain_core.load using dumpd() and loads() (recommended modern API). The older save()/load_prompt_from_config() API is deprecated (since 1.2.21, removal 2.0.0). Serialization preserves template content, format, input_variables, partial_variables, and message structure. Selectors using external resources (e.g., SemanticSimilarityExampleSelector with vector stores) are not serializable.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/base.py#L381-L400",
+          "version": "repo-lines-v1:sha256:dbb78384eeb0de806904d1744938d48a475849b57aa03993b03ebd04464b6baf:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlODA1ZjZmZThmMzQ1ZGI3MWNmZjk5NzgxM2U1ZjUxOWIxMmU2NjE1MmM1NDRiNDViNDhjZWFhYTUxMDdjNDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMzOTM0NzZmZmFjYzFjMDQxOTA2ZGU0MDJlZmY2YTQ1ODU0Nzc4ZGMwNGNlNjUwYzhlYzUyNjcxYzRmM2MyZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0MWMxZDQ3NDlhNjU0ZWQ5YzNhMThhYzU4YjM4Y2NkMmMyNjg0ZjY4ZTYxZTZhMzYyODRjNWRkOTE3OGE4OGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5Y2QwMjg2MTk2ZGY4MGI0NDQ3YTYyMGRhOGM3OTVhYWM0MGRlNmEwOTc4YjIzODhjOGQ1N2RjZmFjNDA1MzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_61bbebb3a7c74c58a712cf43c9612742",
+      "statement": "Jinja2 templates use SandboxedEnvironment to block dunder attribute access (__class__, __globals__, etc.), but sandboxing is best-effort, not foolproof. Regular method calls and attribute access are allowed. LangChain recommends avoiding Jinja2 templates from untrusted sources and preferring f-string or mustache formats for user-controlled inputs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/string.py#L33-L72",
+          "version": "repo-lines-v1:sha256:3eb15a01f0316c49c66b1a4792a8bcd7865e96c024007619c266256967aa1139:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTA1ZjllYTNkMmFhNWRkMjk4NWY5M2NlZGIyYzJjYWMzZDI4ZDdiMjAzNGJhZjdmOTQ5OTQyOTAyOTExOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlZGFiM2Y2MzY4YWY2MjQyYjMzYjg1OTgyMjQ1YWQ2ODdhMTBhMDMwNTg0NzhhYmM0NzcxMTUxOWZlNjQ0Y2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlZWE4Zjc4Y2FiNTZhMGYxMzkzOGM3NDIyNDZiMDgwM2NlMmMzMjBjOGFlOTkyZDEzYzIxZGMwMTg4MDEyMzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZiNGE3MjQ4ZTU2MTZkMjIyODJkNzBjNDc0ZDcxM2Y2YTE1MTM4NTJmNzZmZmQ5MDJiODdhZDg5MDFiYzQzMzIifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

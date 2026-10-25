@@ -46,10 +46,10 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
   - id: openwiki-source-bd29e79613d5f366a00068f5
     resource: repo://libs/standard-tests/langchain_tests/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-24T08:22:45.862Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-24T08:22:45.862Z
+    at: 2026-10-25T08:23:03.589Z
 ---
 
 ## Overview
@@ -511,8 +511,8 @@ model.bind_tools([tool1, tool2])  # Binds tools via provider API
 
 ```
 User Applications
-  ├─→ langchain (v1.4.6)
-  │    ├─→ langchain-core (v1.6.12)
+  ├─→ langchain (v1.4.7)
+  │    ├─→ langchain-core (v1.7.0)
   │    └─→ LangGraph (state machines, runtime)
   │
   ├─→ langchain-core (direct use)
