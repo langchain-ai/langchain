@@ -220,3 +220,37 @@ async def test_inmemory_call_embeddings_async() -> None:
     # Ensure the async embedding function is called
     assert embeddings_mock.aembed_documents.await_count == 1
     assert embeddings_mock.aembed_query.await_count == 1
+
+
+async def test_inmemory_negative_k_similarity_search() -> None:
+    store = InMemoryVectorStore.from_texts(
+        ["foo", "bar"], DeterministicFakeEmbedding(size=3)
+    )
+
+    with pytest.raises(ValueError, match="k must be a non-negative integer"):
+        store.similarity_search("foo", k=-1)
+
+    with pytest.raises(ValueError, match="k must be a non-negative integer"):
+        store.similarity_search_by_vector([1.0, 0.0, 0.0], k=-1)
+
+    with pytest.raises(ValueError, match="k must be a non-negative integer"):
+        await store.asimilarity_search("foo", k=-1)
+
+    assert store.similarity_search("foo", k=0) == []
+
+
+async def test_inmemory_negative_k_mmr() -> None:
+    store = InMemoryVectorStore.from_texts(
+        ["foo", "bar"], DeterministicFakeEmbedding(size=3)
+    )
+
+    with pytest.raises(ValueError, match="k must be a non-negative integer"):
+        store.max_marginal_relevance_search("foo", k=-1)
+
+    with pytest.raises(ValueError, match="fetch_k must be a non-negative integer"):
+        store.max_marginal_relevance_search("foo", fetch_k=-1)
+
+    with pytest.raises(ValueError, match="k must be a non-negative integer"):
+        await store.amax_marginal_relevance_search("foo", k=-1)
+
+    assert store.max_marginal_relevance_search("foo", k=0) == []
