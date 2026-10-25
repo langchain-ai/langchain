@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:ce9c1c4931d774a5bae6c73252adad57788e454ce3a07b9194ccead6ce695e13",
+  "claims": [
+    {
+      "id": "claim_3809b82745de4417a40c74d06dc63d06",
+      "statement": "LangChain callback system fires sequential events (start, end/error) at key points in execution of LLMs, chains, tools, and retrievers, enabling monitoring and custom instrumentation of component lifecycle.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/base.py#L24-L277",
+          "version": "repo-lines-v1:sha256:b5a054867ec147c1e3a9b097bce829c8abafa8d6c7d41e7a27e74fe5ccec56e8:eyJzZWxlY3RlZExpbmVDb3VudCI6MjU0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlMjg2OTIyYTY3NjNhYWFhZTI3YTI0YzQ3YjBkZGE0ZGM0ZTQ0ZjA3MDg1OTZkOGRiNzkzM2Y0YmY3ZDc4ZDRhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4NjQ0MWU3ZDEwYmVhZmUwYTc1NDkxNDg5ZDBhYWIxYWQ1MzE2ZjllZTgyZjMxMDc0MDJjYTNlMDQ4OTQ3ZmQwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNzFkNzBlNDFiODJiZDk2ZWNiY2Y4Yjk4MjRiZjNiYzYxMDBjYmNlYzUyNWQzODM2ZDZhMTlmNTU4YzAwOTNiIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/base.py#L496-L546",
+          "version": "repo-lines-v1:sha256:d723f5a7310cbc3ff40d2189bbb0d1ae8f86c18ecf557e1e4c233eb69ec3b81f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYjFmOWJkODZiNzhlYWM3NmI4ZWVmMTk1NWNlNDQ2OGI0NDU4ZWJkNTU0YzAxMjU2M2Q0MWE3YTY2N2JkMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4MzA2YjE3YTFjM2I3MjA4Mzc2OWI4OGM1YjAwN2I5NmEzNWEwNDJmNzllYWI1ODUzMDY3Y2JlZGQ0MWFjOTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwMDFmM2NjZGQxNjYxNDg3ZjBiZjYxOGQ1ZGU3ZjcwMmI0NTg4MGUxNWY5MzJiOTRmMjRhNjJlNzAwMzdjZDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1ca699d9795f4ec0abf975c392fad4d8",
+      "statement": "BaseCallbackHandler defines the core callback interface through mixins (LLMManagerMixin, ChainManagerMixin, ToolManagerMixin, RetrieverManagerMixin) for each component type, with optional event methods that handlers override and properties to filter event types (ignore_llm, ignore_chain, etc.).",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/__init__.py#L49-L84",
+          "version": "repo-lines-v1:sha256:3d893688bcc87ea9a4dbd43bea37609a65f596322ce44044f262847db51d6277:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMmI0NWVmMjAzNjVlZTM4YWEwMjZjZGZlOGZhZjc1YjZjMjExZWEzNmNhYWZhZjY3NmEzMzc3MmVjYTM0OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzY2MzY2MzYWExMmU0YzZkNDM4MzhkN2FlNWYxYWMyZDA0NTY1ODM3Yzc4MzQyNDYyYzFjNDk3YWEwMTNkOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhOTA1MDc0ODEzNzM0Mjc4OTRjNGYzMGNmOWExZDgwZjI0NzE0OGViYTc0ZWRhYzk2NWI2ZDVhNzUzMjcyM2YifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/base.py#L24-L546",
+          "version": "repo-lines-v1:sha256:5228e00e1a5b83b764e0ad2b4d9459f2f5d692c9578a4a00c38268765b51634f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlMjg2OTIyYTY3NjNhYWFhZTI3YTI0YzQ3YjBkZGE0ZGM0ZTQ0ZjA3MDg1OTZkOGRiNzkzM2Y0YmY3ZDc4ZDRhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4NjQ0MWU3ZDEwYmVhZmUwYTc1NDkxNDg5ZDBhYWIxYWQ1MzE2ZjllZTgyZjMxMDc0MDJjYTNlMDQ4OTQ3ZmQwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjMDAxZjNjY2RkMTY2MTQ4N2YwYmY2MThkNWRlN2Y3MDJiNDU4ODBlMTVmOTMyYjk0ZjI0YTYyZTcwMDM3Y2Q0In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_6a2c46f8d13a49b795e9ba92efc9a9ad",
+      "statement": "AsyncCallbackHandler extends BaseCallbackHandler with async method signatures, enabling non-blocking callback execution in async contexts; sync and async methods coexist in the same handler for compatibility.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/base.py#L548-L720",
+          "version": "repo-lines-v1:sha256:19b5f69bcdf060e09831af197bbd071eaf466822e798fdd3cefb42e5ba1e7271:eyJzZWxlY3RlZExpbmVDb3VudCI6MTczLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4ZGEwNzQwNDA1Nzg3Zjc4MTgyNTJmMzU2M2Q3OWZlM2U3ZTdiNTU1YjA0M2JiNWM0N2E0NDFkMDkwNDQ5YjUxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmOTllZmVkZmQyZDk3MDZkODkxYzdiYTk4M2U3Zjg0ZTA1YWQwZTAxOTFjMTMyNzk4YmU1ZTNjMWNjNTMwNDI2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxZWRiMzcxNTVhODRlNjA4YjM0NjY0MDY1YjYwNWRjN2RmOGY4ZGQyMzQxNTg2YTJiMDRkY2JkYWI0MThjMzc3In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_4f3a6a73f49c4711836f9b954340cbb0",
+      "statement": "Callback events carry run_id, parent_run_id, tags, and metadata parameters that identify individual executions, establish parent-child relationships, and propagate context through nested runs for filtering and correlation.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/base.py#L282-L432",
+          "version": "repo-lines-v1:sha256:44d81da889308cd3fc542c198570f8dd6dc2f46eeaf224b92c4f12f120660350:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjNDJiOTRiZWRkNzRlNDJiNzYzNjkyMDNhODk4OTE3NmUxODYwMjM5MzdjODVmNjM2Y2IxYmFlODRlNjI0YjdlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1MGRlMjU4NzE5NjE0OTI2MDcxYzhmYjE5ZmQ4NjYxNTA1NTVmMWIwMTM1NGY4Y2QxNjAzYTEwOWE3ZGRhZTQwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlMmU4YzFmYjk5NGVmZjI5ODE3Njk5YTlhY2U2NTIxNzVhNjVhMWMwNjg4ZDliOWFlZmJkNDg5NjFhZjJmZjVkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkOTNhNzZlNTJiNTNjNGUwNWQ5YTI2NjI1NzBkY2ZmYmQwNWZiNjMwMGIzMTMwMWQ2NGQ0YjE4OTIzMWYwMmU2In0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py#L501-L555",
+          "version": "repo-lines-v1:sha256:ee7a3c15f4da51f2ce1fc36a800e2c9648a07f99a3b4a879ed4229e76afcfc74:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlM2QxOGNhZmFmYWQ5ZjYzZDA3Y2ZlNzBkMDBjMjhmMjBkZGFlYjBiNzY4MjFhYzVjNGYxZGExYmVlMDE0OWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxZTdhNDQ4ZTIxYmE3OWJmZmFmMmFkNDhiYzRhYTZjNDA1MDI5ZDk0MDViNzUxNWE5MDU5Yjg4ZmJiN2Q3MTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1020da4f168d4898b1d24186a44828c9",
+      "statement": "BaseCallbackManager and its subclasses (CallbackManager, AsyncCallbackManager) coordinate handler dispatch, maintain handler and inheritable handler lists, manage tags and metadata, and return specialized run managers (CallbackManagerForLLMRun, CallbackManagerForChainRun, etc.) that bind to specific executions.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/base.py#L1004-L1206",
+          "version": "repo-lines-v1:sha256:01beab8b24729089fb999ab95dcc0d5990a891af657bc1a39037641335a9ab20:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhN2EyY2E2ZTQ5OGM3MmE1ZWQyZDgyMTdiOGVmMDEzZTVhYzk0ZmY3ZjRiM2Y0MWRjNWRjNTIyNmMyODZkMzkzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5OGQzNzkzMWYxMGU3OWRlMmIwNjA4YjUyZTFkZTJiOGI3YjlmMzRlODMxY2Q2YWFkZjMyNzcyNzZlMTMzOTkxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzODMwNmIxN2ExYzNiNzIwODM3NjliODhjNWIwMDdiOTZhMzVhMDQyZjc5ZWFiNTg1MzA2N2NiZWRkNDFhYzkzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1ZWM0Y2Q4MjYzYjE1MDlmNWJmMjkzZjNlYTE2YmMwNmFmZTlmNzMxY2Y1MTZiY2MxOTdhZTJmYzhmMGYxZDdhIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py#L1388-L1600",
+          "version": "repo-lines-v1:sha256:cf548e9f4db98b0695b16aa6270d97479c23a43dc3f41bc056e8aa2ca2daff7f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmODNkY2VkNmY2MWI1OGMxODZmMTBmYWE2NDNlZjQyM2E0NDgxZDU4MDFmMjg2NWZkZTA5ZmMxZDhkMGExYjIwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiM2RmMmFjZjA2ZThjM2YwM2M3MTM1YzZlOGFjNWE5Y2E1NDMyYWJlMDZhNzRhY2EwZmRkOWE1M2EwMDhmOTg3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmMzE5ZWQyOWZlMjM5YTFjOGE5OWQwZjc1YTJkYjg3ZGRmYmY4MGE3ZGNhZTY2NzUwMDU0ZDg2NGEwY2ZiNTVmIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_165b8a3b618044798f76fb82132808d7",
+      "statement": "Run managers (CallbackManagerForChainRun, etc.) extend ParentRunManager and support get_child() to create child managers that inherit inheritable_handlers and inheritable_tags, enabling automatic propagation of observability context through nested executions.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py#L610-L630",
+          "version": "repo-lines-v1:sha256:9bbb2291b36c8f4221990f9b23642b522568d49117d4a148c471cb7c659161e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0MzIxMDc1NWM2MGMyNTQ0MTdiNTkzYzEwODllMTc5ZjhmMTE3MDJmNzc0NTIzMDcxZjVlMjE5Y2ZiNmVlYTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzZGYyYWNmMDZlOGMzZjAzYzcxMzVjNmU4YWM1YTljYTU0MzJhYmUwNmE3NGFjYTBmZGQ5YTUzYTAwOGY5ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1MjhmNmE2MmFiY2Y1MTNjOTFlMWJiMGNjODZiZTA1ZjI4ZTZiNDhmMWUwNjYwODg0YjA3NGFkNWRlNDBkN2MifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py#L939-L987",
+          "version": "repo-lines-v1:sha256:2ccd0591c2edb29092701d84017154dc06f83ae9119b55f674b6a0593b2ca3d9:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmZGM4NDQ0ZDk4YmU1YWFkZWRhOTM5NDZiNWQ3MTlmMDRjMmJiNjU0YzU0Y2M2MDI1NTRiNDU4OGVlOGRhOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzZGYyYWNmMDZlOGMzZjAzYzcxMzVjNmU4YWM1YTljYTU0MzJhYmUwNmE3NGFjYTBmZGQ5YTUzYTAwOGY5ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3NTlmM2Q5ODBhMDJiNzM4ZjEzMTYzNGU1OWMxZTRlNmIzYTI0NThlY2QxNGEzZWU3Njg1OGQyYmM5NGZkNGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d74550145bd04b89b96a5237c5919a21",
+      "statement": "handle_event (sync) and ahandle_event (async) dispatch events to handlers, detect ignore conditions, collect coroutines from async handlers invoked synchronously, and execute them in a thread pool to avoid blocking event loops.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py#L296-L412",
+          "version": "repo-lines-v1:sha256:27d55be75e5df75bfd98bdb13bfd3a971e405068125410f7f0ece1df990086c4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyZjZlZjAxNDUzZDZmYjJmOWI5YjM4NWJlNWZhNjYwZmIzMThlODk0M2ZhNWFhODc0YWJlYmI1NmQ0NzhmOTgwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0Yzk1NzUyMDU5ZTM1NWQ1ZDg2OGRhZDIzYTZkM2M1MGE3ODU4NGRmNzA4YzA0NzM2ZmZkNzhkYTcxYjc4NjdiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiM2RmMmFjZjA2ZThjM2YwM2M3MTM1YzZlOGFjNWE5Y2E1NDMyYWJlMDZhNzRhY2EwZmRkOWE1M2EwMDhmOTg3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0MDg2Y2Q4YzM0Yjc1MDAyMzYxYzk0MTU5MzkzOWM1ZDQzOWEwMmYzMmZhYjBlZDBhYzQ2M2Q4YzRlN2I0YTA4In0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py#L464-L498",
+          "version": "repo-lines-v1:sha256:d7e942231aa70081074514c8e0c5b2922444d098dc77bb259a02ffd2c01f4bda:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiODQ2Y2ViMmM5ZjE4NGQwNGI1ODMwN2I3NjJmMDczNTkyMDYzYWE5Yjk4MmFkOTU1ZmExMGY5ZTY4OTZmOGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxMmIzNWM5YTE3NDNhODgwOWMzMjI0NzA5YmU5NGM5Y2Q3M2YzMzhhY2IwMDIzYjg1YzU1MDc2NzFlZjcxZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0ZGQ3NTc0Y2E3NDEzNzFkYTEwODIyMzFkNDRkMTM0YWIyYWY1YTk5ZjM2NzE0ZTI3NjU5YWMzMWZmOGM2ZmUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cbc21ee308044f3abbeeaa5f3587c8fb",
+      "statement": "When a handler's on_chat_model_start raises NotImplementedError, the callback system falls back to on_llm_start with message lists converted to prompt strings, enabling handlers to support chat models through legacy LLM interface.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/base.py#L311-L361",
+          "version": "repo-lines-v1:sha256:440d01d0eee7f56dbb1ecb248a3b507ecfb08f6f2db89b2cfda32e411f76160d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2Yjc2YTI5YzNkZmNmZGU4YTRiNTczNWRhMTA1MjBlNDdjODY0MGNkNGM4MzM2YzE2NTFhMGRkMmY2MjMxOTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzM2IzNjc5NjdlODc3ZWJhMmRhMTZmNDBmYjljMDgwYzAwZjM3MmNmODE2ZmU2N2MxNjczMWNmMzJlN2FhNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkMzU5NDA3MGIwNDFmZTUwNWNjMTNhYWQwOTcyZWNjM2NhNDU2NTRiNTQwZmEwZDFhNzA4NjNkZThmNmFjZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3Nzc4NTNkMjMxYTJkZDQ5ZDg4Njc3YTcyODNkYWUwYTRkMGM2OWM3YzI4YzMzZjJmY2QxYmEyZDJkY2EzOTkifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py#L267-L350",
+          "version": "repo-lines-v1:sha256:f1f54b3631e5a5c9bc56f1d033785e4e2378cd4cee8f56ede7caf9b64a79580f:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjliOTY4MjhkNTkyNzA3MjFhMWVlZTlhNGZjZDRkOWNmNzJkNDFhMDEyOTA4MjYzZjcwYTRlMzRjMTQzNTczODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMDEwNWUwYTY4NTIxYzNkMzMyNjE1MzkwZTg1OWUzOWNmMjQxMjc0YTdkNzgxZDE5NmEzYWRhMDdiMTBmZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyMTRhYzY0MTAwYWMzMzhmMjJkMDdhYzU3OWI0N2RkZjY1NDgwY2NjZGZkYWFjNjM0M2IxYThjYzMzYWFiMzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZlM2Q1NjhiNjJjOTI0YzJlMGI0YjVjMmIzNTJlNWQ5NmQxYjcxNTNlZjM4MGI3MTdiNTdhNWM0N2Y4NTNlYmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_339645dc07614d93b335609cfa7ba9a3",
+      "statement": "trace_as_chain_group and atrace_as_chain_group context managers create a parent run that groups multiple unrelated LangChain calls as children, enabling logical grouping for tracing and observability without modifying component code.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py#L141-L227",
+          "version": "repo-lines-v1:sha256:d35881a3f9c92dd41596e47547c35b05665d547b93a6da684eac72cac648191f:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3Y2ZmM2YxNzg0MmRlYzZlN2U5MWMzZTNiOGZjZTBhODIyZmMzMTEyNzM4MWIwMGY0NGE5ZjEzMzMzMDNhMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZhMWU2OWE3MzVmMWQ3YzllNTU2NjY4NTRjNTRmOGIzMjU2YWVmMmQwNmNlNmE5MDkyZjQyYmNkYWI4NmI4N2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1ZTJmZTAxZWE2ZmZhZjFjMDgzZDUzNGJhMjE5Mjc5NTYwMzk5Y2FhMTZjZTk3ZDU1OTNmNzgyYzAwM2MwMDYifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py#L56-L139",
+          "version": "repo-lines-v1:sha256:0841e6c1833caaf06781aa70caa98832bfefd871cb907b7d69d50ef6cbe8f6fb:eyJzZWxlY3RlZExpbmVDb3VudCI6ODQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2MWYzM2MxMzI1NjlhNzQ5NDZiMmZjZjU0NmNhM2M0NDI1ZGEwY2E1Y2Y2YjY4NmMyNjA5MGZhYTlkMTEyYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ4ZWFhMTI4Nzg4ZGE4ODYwNjExOTAyY2NiZWI1ZGVkYzk0NGNkZmIxNWYzYjQ5ODc2YTc5ZTUyYmRhZGNlZDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwNzExZjJlM2U0MTEyODY3YTQyZDJmZGFkZjNmNWRlNWMyNDgyMjY0ODY2NTA2YTQ0ZDgyY2I3YmI1ZmFmNDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a1185d98e3b54cd09e63ae63f665468b",
+      "statement": "LangChainTracer callback handler integrates with LangSmith service to send traces to configured projects; enabled automatically via LANGCHAIN_TRACING_V2 environment variable or manually via tracing_v2_enabled() context manager.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/tracers/context.py#L40-L90",
+          "version": "repo-lines-v1:sha256:e3106dc2135f954fcb9221c1aded6a09ed94258dc3d199d33e07b747af8961d3:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2MWYzM2MxMzI1NjlhNzQ5NDZiMmZjZjU0NmNhM2M0NDI1ZGEwY2E1Y2Y2YjY4NmMyNjA5MGZhYTlkMTEyYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NjUzMzJkMjA2Y2FkMmJkNjkwNmVjZWM3ZjA5OTIzNmM4MjQ5ZGVkMzdjODM0MWIxOGQ4ZTZlOTRjNmU1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5N2I4YTg4ZTYzYTY2NGQwM2U1NzU2YWJjOGJhMTkwYTcyZWRjNDU1OTMwN2YzYWZiNDJhNzFhZjNjYzMxNzEifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/tracers/langchain.py#L1-L100",
+          "version": "repo-lines-v1:sha256:75bc5c7215a70e61595ebe42dd3145b3bc80701ea676a982d8b0ec63280c5b3d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2YjA0NDkyMDM5Y2ZjYzUzNGVhYmYwMjA2MDJkMTgzMDUxZTkzYTA2NjFmYWQ1OGMxYWQyZGUwNGY5YjliOTk3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyNmEwZGJkZjRlMzRjYjVjZDE1NGY5YTdhNmE2OWNkNWZmZGU5MWE5N2FkZDdlYTU3Njg1YTY0YTRkM2FmZTY5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlYzgxMGViYTE0NTk4N2Q3YTUxMzZiMWZlZmJlMTJjMzRiOTM5Nzk1OTAwY2E3YzNjMzY2YWUxMDY4NjY0YTQzIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_68284043bfb74a5bb874873491019ec1",
+      "statement": "dispatch_custom_event and adispatch_custom_event enable applications to emit custom instrumentation events with arbitrary data; handlers implement on_custom_event to react to application-specific events.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/base.py#L472-L493",
+          "version": "repo-lines-v1:sha256:18c81d38b602cbc6df52c929f0c8674d9bc22759fe9cb4a17f080667ea00dd29:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3MGIyZTI0ZDcwNzUxZGY3YjIzYjdkNTNiZmYxMzJlNTNhZjhhYmVhNTM4NWQzMTEzOTc0NWNkMDNmMWRjZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZGUyNTg3MTk2MTQ5MjYwNzFjOGZiMTlmZDg2NjE1MDU1NWYxYjAxMzU0ZjhjZDE2MDNhMTA5YTdkZGFlNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkMzU5NDA3MGIwNDFmZTUwNWNjMTNhYWQwOTcyZWNjM2NhNDU2NTRiNTQwZmEwZDFhNzA4NjNkZThmNmFjZjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwMDg2MDIwMDRlMTY3NzFlNGM1ZmRhNzM4MTExMDI3YjFlMmRjZDI0NjExZjJlNjVkNzhlYjUzOGI5MzE5MjgifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py#L1649-L1691",
+          "version": "repo-lines-v1:sha256:66a5a200c78fabbb48203c9384188c9330f7ab39baf25c4e36e04faa1ac0ae59:eyJzZWxlY3RlZExpbmVDb3VudCI6NDMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ3MGIyZTI0ZDcwNzUxZGY3YjIzYjdkNTNiZmYxMzJlNTNhZjhhYmVhNTM4NWQzMTEzOTc0NWNkMDNmMWRjZDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFkMzIxOGNmOTk2NmM4YTNjODY2ZmNiOWJiNWRkZjM1MGY2ZTA2ODEzOTA4OWMzY2YzOTZjZTdkZTIwMmYxN2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI2MzAzODJlZTJiNTJhYzcxNWVkMGMwYWNiYjlhYmFhZDc3MzcwNmI1OTJlNjEzMTcyMTE5NDdhYzY1MTYxNjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7cd1c2ae94c04a0db79b89304ed8b1a8",
+      "statement": "LangChain provides built-in handlers: StdOutCallbackHandler for formatted output, StreamingStdOutCallbackHandler for token streaming, FileCallbackHandler for file logging, and UsageMetadataCallbackHandler for token usage tracking.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/__init__.py#L49-L84",
+          "version": "repo-lines-v1:sha256:3d893688bcc87ea9a4dbd43bea37609a65f596322ce44044f262847db51d6277:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMmI0NWVmMjAzNjVlZTM4YWEwMjZjZGZlOGZhZjc1YjZjMjExZWEzNmNhYWZhZjY3NmEzMzc3MmVjYTM0OWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzY2MzY2MzYWExMmU0YzZkNDM4MzhkN2FlNWYxYWMyZDA0NTY1ODM3Yzc4MzQyNDYyYzFjNDk3YWEwMTNkOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhOTA1MDc0ODEzNzM0Mjc4OTRjNGYzMGNmOWExZDgwZjI0NzE0OGViYTc0ZWRhYzk2NWI2ZDVhNzUzMjcyM2YifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/stdout.py#L16-L100",
+          "version": "repo-lines-v1:sha256:f555a68cceb1d877c0b9035d4b09368f02a722b8464555e97e377876db639927:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyY2JiMzExOGQ5Y2RmMTI1YTY2NmQyY2UwODk1NDEwN2Q5NTZkMWIxMDdlZGRiODNjNTI1NTYzMDVmZmNjZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmZWQ4ZmM1NDk4Yjg0ZTVlMWNkMDI0ZjI5MjY3YjI1NGIxYjYzNTM1NGIxZWNlZWFhYmZmNDY5NGM3MTMzODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJiZTMyNTY4MDdlOWY0YjA4NmYwNDA0YmQ4NDQ0MDIxMDlmNjJmYjRiOTY4ZmZhMjY2ZDg5MzMyN2Y5OTA5OWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzMjc2M2ExMDA5ODM1MzQxNTI1OTdjMGI0OWQwZmQzYzQ4NzhhZjc1MjdhZjNjMjE4NGNjZWY1ZmFmOWJkYmYifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/usage.py#L18-L77",
+          "version": "repo-lines-v1:sha256:b667c4379111c7960f8010b68a37512c6279543d1228b6f583871eaf23696fff:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMjdiMTk0NDA5NjEyYWNkY2FiNjYwZGRiYmYwNzZhNWE0YWNkNjkwNzZlYjdmMTY2MjZkZmI4OWVkNGI5MWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMDEwNWUwYTY4NTIxYzNkMzMyNjE1MzkwZTg1OWUzOWNmMjQxMjc0YTdkNzgxZDE5NmEzYWRhMDdiMTBmZDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlYTEzNWExNGE1N2E5MjI2NmM1N2VmOGIwZWQyOTg0YmIzNzg5NWRjM2MyZjNlNDRmMGZjYzhhNTAyZWQwYWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5N2I4YTg4ZTYzYTY2NGQwM2U1NzU2YWJjOGJhMTkwYTcyZWRjNDU1OTMwN2YzYWZiNDJhNzFhZjNjYzMxNzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_eb0207bee96c41359a4d9b5449bc2243",
+      "statement": "CallbackManager.configure() class method aggregates inheritable and local callbacks, tags, and metadata with environment variable integration and verbose mode support, returning a configured manager for runnables.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py#L1693-L1736",
+          "version": "repo-lines-v1:sha256:b4951ef86c8cfeb791627e3fbd5f48f692a9b44e75795f4dadb6b1bd04b21770:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyMGI0NTNmNWUwYzkyZDVmNmMyNTFhNWVhMTk2MGQ3MmYzYmQwNzk1NmFlODU3ZGEyMGUzMWE4OGM1NTk2OWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjYWU4OTcyYTE1MThjZDNjN2I5Nzk0ZTMyNDY5YjViODA1ZTUzOTE1OGU3OWUwNmU3NTE4NTNlMzU2OGVhYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc3ZDY1MWU0NGI4NzQwYzg1NmQwYTQwMzdmODIyMTgzMWYxNjQ0MDJmNzg0NzI5NDBiZmQ1MmRjM2Q0MmZiZjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a37910eca79747c787a8eeca4f44908e",
+      "statement": "RunCollectorCallbackHandler and collect_runs() context manager gather traced runs in memory for testing and debugging without LangSmith, enabling inspection of execution flow and event ordering.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/tracers/context.py#L93-L110",
+          "version": "repo-lines-v1:sha256:d5ad4d9a0ceffbd49c38cf70315a5b918c3b393db38db1a46e1b9d03603750d2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2MWYzM2MxMzI1NjlhNzQ5NDZiMmZjZjU0NmNhM2M0NDI1ZGEwY2E1Y2Y2YjY4NmMyNjA5MGZhYTlkMTEyYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2NjQ5ZjJkOWJlOTNjODk2YmY1NTUwMWMyYzgwNzQyYzkzN2U2OGRkMWIwNzI5MmZlNTNkMGNhMWZjOWNmMTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3YjE5NzM5NjYxMTQwNWI2OGM5MTFlZjQ5OGYxOGRjMjczNDdiYzdiYzE3ZjNjNmU3MDBlMTI5ZDIxMjNkZjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYwMDQ1ZTI3ZjlmZDY0Nzk5ZjY4MzdjMjI3NDg5NDQ2MTE1MzdlNjc1NWI3NWVlZjg1YmE5ZTYyNTQ0Y2M3ZDQifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

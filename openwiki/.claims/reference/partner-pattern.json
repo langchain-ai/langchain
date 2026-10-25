@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:eaf4bc02ac9b5476c02b183d7dfcf06a32616522de48f363fae7492c8305dd59",
+  "claims": [
+    {
+      "id": "claim_1f409f960edf4fbcb921c8bef2c2f424",
+      "statement": "Partner packages like langchain-openai follow a standardized structure where core abstractions are exported through a public __init__.py module, including ChatModel implementations (ChatOpenAI, AzureChatOpenAI), legacy completion models (OpenAI, AzureOpenAI), embeddings integrations (OpenAIEmbeddings), and provider-specific utilities.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/__init__.py",
+          "version": "repo-file-v1:sha256:5673ccbe8f53267c2027dd390051424928a6e1e744c2f8c8a418960a29dccf4d"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}
