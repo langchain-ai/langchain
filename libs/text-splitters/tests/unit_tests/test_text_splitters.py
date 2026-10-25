@@ -3750,6 +3750,47 @@ def test_html_splitter_with_href_links() -> None:
 
 
 @pytest.mark.requires("bs4")
+@pytest.mark.parametrize(
+    ("link_html", "label"),
+    [
+        ("LangChain <span>docs</span>", "LangChain docs"),
+        ("<span>LangChain</span> docs", "LangChain docs"),
+        ("<strong>LangChain </strong><em>docs</em>", "LangChain docs"),
+        ("<span>one</span> <span>two</span>", "one two"),
+        ("<span>one </span><span> two</span>", "one two"),
+        ("<span>read</span>, <em>more</em>", "read, more"),
+        ("<span>Terms</span>&nbsp;<span>conditions</span>", "Terms conditions"),
+        ("Hel<span>lo</span>", "Hello"),
+        ("<span>图</span>像", "图像"),
+        ("  Plain label  ", "Plain label"),
+        (" <span>  label </span> ", "label"),
+        ("<em>Research</em> &amp; <span>development</span>", "Research & development"),
+    ],
+)
+def test_html_splitter_preserves_link_label_whitespace(
+    link_html: str, label: str
+) -> None:
+    # Document creation still normalizes whitespace; word boundaries must survive.
+    html_content = (
+        '<h1>Links</h1><p>Read <a href="https://example.com/docs">'
+        f"{link_html}</a> today.</p>"
+    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            preserve_links=True,
+            max_chunk_size=1000,
+        )
+
+    assert splitter.split_text(html_content) == [
+        Document(
+            page_content=f"Read [{label}](https://example.com/docs) today.",
+            metadata={"Header 1": "Links"},
+        )
+    ]
+
+
+@pytest.mark.requires("bs4")
 def test_html_splitter_with_nested_elements() -> None:
     """Test HTML splitting with nested elements."""
     html_content = """
