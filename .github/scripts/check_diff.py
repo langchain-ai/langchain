@@ -24,6 +24,7 @@ from typing import Dict, List, Set
 import tomllib
 from get_min_versions import get_min_version_from_toml
 from packaging.requirements import Requirement
+from packaging.specifiers import SpecifierSet
 
 LANGCHAIN_DIRS = [
     "libs/core",
@@ -147,10 +148,31 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
                 "codspeed-mode": mode,
             }
         ]
-    if dir_ == "libs/core":
-        py_versions = ["3.10", "3.11", "3.12", "3.13", "3.14"]
-    else:
-        py_versions = ["3.10", "3.14"]
+    package_dir = Path(dir_)
+    manifests = [package_dir / "pyproject.toml"]
+    extended_deps = package_dir / "extended_testing_deps.txt"
+    if job == "extended-tests" and extended_deps.exists():
+        manifests.extend(
+            package_dir / line.removeprefix("-e ").strip() / "pyproject.toml"
+            for line in extended_deps.read_text().splitlines()
+            if line.startswith("-e ")
+        )
+    python_requirements = []
+    for manifest in manifests:
+        with manifest.open("rb") as f:
+            python_requirements.append(
+                SpecifierSet(tomllib.load(f)["project"]["requires-python"])
+            )
+    py_versions = [
+        version
+        for version in ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        if all(version in requirement for requirement in python_requirements)
+    ]
+    if not py_versions:
+        msg = f"No supported CI Python versions for {job} in {dir_}"
+        raise ValueError(msg)
+    if dir_ != "libs/core":
+        py_versions = sorted({py_versions[0], py_versions[-1]})
 
     return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
 
@@ -351,11 +373,8 @@ if __name__ == "__main__":
             ] != ["README.md"]:
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
                 # Only add to codspeed if the partner has benchmarks and is not ignored
-                if (
-                    partner_dir not in IGNORED_PARTNERS
-                    and os.path.isdir(
-                        f"libs/partners/{partner_dir}/tests/benchmarks"
-                    )
+                if partner_dir not in IGNORED_PARTNERS and os.path.isdir(
+                    f"libs/partners/{partner_dir}/tests/benchmarks"
                 ):
                     dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
