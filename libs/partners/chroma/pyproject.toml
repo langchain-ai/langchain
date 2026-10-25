@@ -69,6 +69,7 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 constraint-dependencies = [
     "urllib3>=2.6.3",
     "pygments>=2.21.0",
+    # Knowingly retains GHSA-69hj-f68j-2879 and GHSA-8mx5-7m5m-r77g; remove when Python 3.10 support is dropped.
     "filelock==3.20.3; python_version < '3.11'",
     "filelock>=4.2.1; python_version >= '3.11'",
 ]
