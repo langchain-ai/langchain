@@ -3,7 +3,8 @@ import json
 import math
 import re
 from collections.abc import Callable, Sequence
-from typing import Any, TypedDict
+from functools import partial
+from typing import Any, Literal, TypedDict
 
 import pytest
 from typing_extensions import NotRequired, override
@@ -462,6 +463,57 @@ def test_trim_messages_last_allow_partial_one_message() -> None:
 
     assert actual == expected
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
+
+
+def _request_level_counter() -> Callable[[list[BaseMessage]], int]:
+    """Return a counter where every call pays for a tool definition."""
+    tool = {
+        "type": "function",
+        "function": {
+            "name": "lookup_order",
+            "description": "Look up an order by ID.",
+            "parameters": {
+                "type": "object",
+                "properties": {"order_id": {"type": "string"}},
+                "required": ["order_id"],
+            },
+        },
+    }
+    return partial(count_tokens_approximately, tools=[tool])
+
+
+def test_trim_messages_counts_request_level_tokens_once() -> None:
+    counter = _request_level_counter()
+    messages = [SystemMessage("You are helpful."), HumanMessage("Where is order 123?")]
+
+    actual = trim_messages(
+        messages,
+        max_tokens=counter(messages),
+        token_counter=counter,
+        include_system=True,
+        start_on="human",
+    )
+
+    assert actual == messages
+
+
+@pytest.mark.parametrize("strategy", ["first", "last"])
+def test_trim_messages_allow_partial_counts_request_level_tokens_once(
+    strategy: Literal["first", "last"],
+) -> None:
+    counter = _request_level_counter()
+    expected = [HumanMessage("A" * 16)]
+
+    actual = trim_messages(
+        [HumanMessage("A" * 100)],
+        max_tokens=counter(expected),
+        token_counter=counter,
+        strategy=strategy,
+        allow_partial=True,
+        text_splitter=list,
+    )
+
+    assert actual == expected
 
 
 def test_trim_messages_allow_partial_text_splitter() -> None:

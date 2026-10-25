@@ -1988,13 +1988,22 @@ def _first_max_tokens(
     text_splitter: Callable[[str], list[str]],
     partial_strategy: Literal["first", "last"] | None = None,
     end_on: str | type[BaseMessage] | Sequence[str | type[BaseMessage]] | None = None,
+    baseline: Sequence[BaseMessage] = (),
 ) -> list[BaseMessage]:
     messages = list(messages)
     if not messages:
         return messages
 
+    baseline = list(baseline)
+
+    def counter(candidates: Sequence[BaseMessage]) -> int:
+        # Count the candidates together with the baseline instead of adding two
+        # separately counted lists. Token counters may charge request-level costs
+        # (e.g. tool definitions) on every call, which would be counted twice.
+        return token_counter([*baseline, *candidates])
+
     # Check if all messages already fit within token limit
-    if token_counter(messages) <= max_tokens:
+    if counter(messages) <= max_tokens:
         # When all messages fit, only apply end_on filtering if needed
         if end_on:
             for _ in range(len(messages)):
@@ -2011,7 +2020,7 @@ def _first_max_tokens(
         if left >= right:
             break
         mid = (left + right + 1) // 2
-        if token_counter(messages[:mid]) <= max_tokens:
+        if counter(messages[:mid]) <= max_tokens:
             left = mid
             idx = mid
         else:
@@ -2031,7 +2040,7 @@ def _first_max_tokens(
                 excluded.content = list(reversed(excluded.content))
             for _ in range(1, num_block):
                 excluded.content = excluded.content[:-1]
-                if token_counter([*messages[:idx], excluded]) <= max_tokens:
+                if counter([*messages[:idx], excluded]) <= max_tokens:
                     messages = [*messages[:idx], excluded]
                     idx += 1
                     included_partial = True
@@ -2061,7 +2070,6 @@ def _first_max_tokens(
                     excluded = excluded.model_copy(deep=True)
 
                 split_texts = text_splitter(text)
-                base_message_count = token_counter(messages[:idx])
                 if partial_strategy == "last":
                     split_texts = list(reversed(split_texts))
 
@@ -2073,7 +2081,7 @@ def _first_max_tokens(
                         break
                     mid = (left + right + 1) // 2
                     excluded.content = "".join(split_texts[:mid])
-                    if base_message_count + token_counter([excluded]) <= max_tokens:
+                    if counter([*messages[:idx], excluded]) <= max_tokens:
                         left = mid
                     else:
                         right = mid - 1
@@ -2128,19 +2136,16 @@ def _last_max_tokens(
     # Reverse messages to use _first_max_tokens with reversed logic
     reversed_messages = messages[::-1]
 
-    # Calculate remaining tokens after accounting for system message if present
-    remaining_tokens = max_tokens
-    if system_message:
-        system_tokens = token_counter([system_message])
-        remaining_tokens = max(0, max_tokens - system_tokens)
-
+    # Keep the system message as a baseline so the budget covers the whole request
+    # instead of subtracting a separately counted system message
     reversed_result = _first_max_tokens(
         reversed_messages,
-        max_tokens=remaining_tokens,
+        max_tokens=max_tokens,
         token_counter=token_counter,
         text_splitter=text_splitter,
         partial_strategy="last" if allow_partial else None,
         end_on=start_on,
+        baseline=[system_message] if system_message else (),
     )
 
     # Re-reverse the messages and add back the system message if needed
