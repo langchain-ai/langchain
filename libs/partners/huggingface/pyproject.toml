@@ -70,7 +70,11 @@ typing = [
 ]
 
 [tool.uv]
-constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
+constraint-dependencies = [
+    "pygments>=2.20.0",  # CVE-2026-4539
+    "filelock==3.20.3; python_version < '3.11'",
+    "filelock>=4.2.1; python_version >= '3.11'",
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
