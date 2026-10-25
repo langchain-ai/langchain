@@ -157,16 +157,16 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
             for line in extended_deps.read_text().splitlines()
             if line.startswith("-e ")
         )
-    python_requirements = []
+    supported_python = SpecifierSet()
     for manifest in manifests:
         with manifest.open("rb") as f:
-            python_requirements.append(
-                SpecifierSet(tomllib.load(f)["project"]["requires-python"])
+            supported_python &= SpecifierSet(
+                tomllib.load(f)["project"]["requires-python"]
             )
     py_versions = [
         version
         for version in ["3.10", "3.11", "3.12", "3.13", "3.14"]
-        if all(version in requirement for requirement in python_requirements)
+        if version in supported_python
     ]
     if not py_versions:
         msg = f"No supported CI Python versions for {job} in {dir_}"
@@ -373,8 +373,11 @@ if __name__ == "__main__":
             ] != ["README.md"]:
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
                 # Only add to codspeed if the partner has benchmarks and is not ignored
-                if partner_dir not in IGNORED_PARTNERS and os.path.isdir(
-                    f"libs/partners/{partner_dir}/tests/benchmarks"
+                if (
+                    partner_dir not in IGNORED_PARTNERS
+                    and os.path.isdir(
+                        f"libs/partners/{partner_dir}/tests/benchmarks"
+                    )
                 ):
                     dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
