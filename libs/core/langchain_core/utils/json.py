@@ -125,10 +125,14 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
         # Attempt to parse the modified string as JSON.
         try:
             return json.loads("".join(new_chars + stack), strict=strict)
-        except json.JSONDecodeError:
-            # If we still can't parse the string as JSON,
-            # try removing the last character
-            new_chars.pop()
+        except json.JSONDecodeError as e:
+            # Every longer candidate still contains the character the decoder
+            # rejected, in the same context, so it fails the same way. Skip
+            # straight past them instead of retrying one character at a time.
+            if e.pos < len(new_chars):
+                del new_chars[e.pos :]
+            else:
+                new_chars.pop()
 
     # If we got here, we ran out of characters to remove
     # and still couldn't parse the string as JSON, so return the parse error
