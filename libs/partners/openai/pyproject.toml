@@ -12,7 +12,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -21,7 +20,7 @@ classifiers = [
 ]
 
 version = "1.7.2"
-requires-python = ">=3.10.0,<4.0.0"
+requires-python = ">=3.11.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.6.10,<2.0.0",
     "certifi>=2024.6.2",
@@ -67,7 +66,7 @@ lint = ["ruff>=0.13.1,<0.17.0"]
 dev = []
 test_integration = [
     "httpx>=0.27.0,<1.0.0",
-    "pillow>=12.1.1,<13.0.0",
+    "pillow>=13.0.0,<14.0.0",
     "numpy>=1.26.4; python_version < '3.13'",
     "numpy>=2.1.0; python_version >= '3.13'",
 ]
@@ -89,6 +88,9 @@ disallow_untyped_defs = true
 [[tool.mypy.overrides]]
 module = "transformers"
 ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py310"
 
 [tool.ruff.format]
 docstring-code-format = true

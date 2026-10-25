@@ -12,7 +12,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -21,7 +20,7 @@ classifiers = [
 ]
 
 version = "1.2.3"
-requires-python = ">=3.10.0,<4.0.0"
+requires-python = ">=3.11.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.6.6,<2.0.0",
     "tokenizers>=0.19.1",
@@ -70,7 +69,10 @@ typing = [
 ]
 
 [tool.uv]
-constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
+constraint-dependencies = [
+    "pygments>=2.20.0",  # CVE-2026-4539
+    "filelock>=4.2.1",
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
@@ -83,6 +85,9 @@ disallow_untyped_defs = true
 [[tool.mypy.overrides]]
 module = ["torch", "torch.*", "langchain_community", "langchain_community.*",]
 ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py310"
 
 [tool.ruff.format]
 docstring-code-format = true
