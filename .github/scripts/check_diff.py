@@ -160,8 +160,12 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     supported_python = SpecifierSet()
     for manifest in manifests:
         with manifest.open("rb") as f:
+            metadata = tomllib.load(f)
+        supported_python &= SpecifierSet(metadata["project"]["requires-python"])
+        if job in {"lint", "compile-integration-tests"}:
+            group = metadata.get("tool", {}).get("uv", {}).get("dependency-groups", {})
             supported_python &= SpecifierSet(
-                tomllib.load(f)["project"]["requires-python"]
+                group.get("test_integration", {}).get("requires-python", "")
             )
     py_versions = [
         version
