@@ -62,6 +62,7 @@ jobs:
           ALL_CHANGED_FILES: ${{ steps.files.outputs.all }}
         run: |
           python -m pip install packaging requests
+          python -m unittest discover -s .github/scripts -p test_check_diff.py
           python .github/scripts/check_diff.py "$ALL_CHANGED_FILES" >> $GITHUB_OUTPUT
     outputs:
       lint: ${{ steps.set-matrix.outputs.lint }}
