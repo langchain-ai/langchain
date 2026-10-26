@@ -108,6 +108,7 @@ langchain-anthropic = { path = "../partners/anthropic", editable = true }
 line-length = 100
 
 [tool.mypy]
+exclude = ['^examples/mcp/run_graph_factory_demo\.py$']
 plugins = ["pydantic.mypy"]
 strict = true
 enable_error_code = "deprecated"
