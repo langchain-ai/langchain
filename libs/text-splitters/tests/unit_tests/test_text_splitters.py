@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import random
 import re
 import string
@@ -4432,3 +4433,43 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+def test_merge_splits_warning_on_oversized_final_chunk(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Test _merge_splits warns when the final chunk exceeds chunk_size."""
+    splitter = CharacterTextSplitter(
+        separator=" ",
+        chunk_size=5,
+        chunk_overlap=0,
+    )
+
+    # 1. Single chunk exceeding chunk_size
+    with caplog.at_level(logging.WARNING):
+        caplog.clear()
+        docs = splitter.split_text("toolongword")
+        assert docs == ["toolongword"]
+        assert len(caplog.records) == 1
+        assert (
+            "Created a chunk of size 11, which is longer than the specified 5"
+            in caplog.text
+        )
+
+    # 2. Trailing chunk exceeding chunk_size
+    with caplog.at_level(logging.WARNING):
+        caplog.clear()
+        docs = splitter.split_text("hello world toolongword")
+        assert docs == ["hello", "world", "toolongword"]
+        assert len(caplog.records) == 1
+        assert (
+            "Created a chunk of size 11, which is longer than the specified 5"
+            in caplog.text
+        )
+
+    # 3. Normal chunks <= chunk_size do not warn
+    with caplog.at_level(logging.WARNING):
+        caplog.clear()
+        docs = splitter.split_text("hi")
+        assert docs == ["hi"]
+        assert len(caplog.records) == 0
