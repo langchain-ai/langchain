@@ -2084,18 +2084,17 @@ def _make_tools_to_model_edge(
             return model_destination
 
         # 2. Exit condition: All executed tools have return_direct=True
-        # Filter to only client-side tools (provider tools are not in tool_node)
-        # Prefer tool name from ToolMessage due to redirects (e.g., from HITL)
-        executed_by_id = {
-            t.tool_call_id: t.name for t in tool_messages if t.name in tool_node.tools_by_name
-        }
+        # Prefer tool name from ToolMessage due to redirects (e.g., from HITL).
+        # Unknown names (including runtime-registered tools) are not direct-return tools.
+        executed_by_id = {t.tool_call_id: t.name for t in tool_messages}
         executed_names = [
-            name
+            executed_by_id[c["id"] or ""] or c["name"]
             for c in last_ai_message.tool_calls
-            if (name := executed_by_id.get(c["id"] or "", c["name"])) in tool_node.tools_by_name
+            if (c["id"] or "") in executed_by_id
         ]
         if executed_names and all(
-            tool_node.tools_by_name[name].return_direct for name in executed_names
+            name in tool_node.tools_by_name and tool_node.tools_by_name[name].return_direct
+            for name in executed_names
         ):
             return end_destination
 
