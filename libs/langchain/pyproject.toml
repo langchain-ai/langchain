@@ -149,6 +149,7 @@ select = [ "ALL",]
 ignore = [
     "C90",     # McCabe complexity
     "COM812",  # Messes with the formatter
+    "CPY001",
     "FIX002",  # Line contains TODO
     "PERF203", # Rarely useful
     "PLR09",   # Too many something (arg, statements, etc)
