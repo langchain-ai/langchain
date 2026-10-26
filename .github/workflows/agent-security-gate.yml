@@ -1,0 +1,25 @@
+name: Agent Invariant Sentinel
+
+on:
+  pull_request:
+    paths:
+      - 'libs/langchain/**'
+      - 'libs/core/**'
+      - 'libs/community/**'
+  push:
+    branches: [master, main]
+
+jobs:
+  btp-gate:
+    name: Deterministic AST Invariant Sentinel & Secret Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Bartholomew Invariant Sentinel
+        uses: ivegotahunnitonit/bartholomew@main
+        with:
+          audit-path: "."
+          fail-on-violation: false
+          min-score: 80
