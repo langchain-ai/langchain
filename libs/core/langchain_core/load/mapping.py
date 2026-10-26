@@ -268,6 +268,11 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat_models",
         "ChatAnthropic",
     ),
+    ("langchain", "classifiers", "typesafe", "TypeSafeClassifier"): (
+        "langchain_typesafe",
+        "classifier",
+        "TypeSafeClassifier",
+    ),
     ("langchain_groq", "chat_models", "ChatGroq"): (
         "langchain_groq",
         "chat_models",
