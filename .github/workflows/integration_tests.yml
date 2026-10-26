@@ -43,6 +43,7 @@ on:
           - "openrouter"
           - "perplexity"
           - "qdrant"
+          - "typesafe"
           - "xai"
       working-directory-override:
         type: string
@@ -144,7 +145,14 @@ jobs:
             done
             working_directory="$(jq -nc --argjson libs "$working_directory" --argjson excl "$exclude_paths" '$libs - $excl')"
           fi
-          matrix="{\"python-version\": $python_version, \"working-directory\": $working_directory}"
+          matrix="$(jq -nc \
+            --argjson versions "$python_version" \
+            --argjson integration_versions "$python_version_min_3_11" \
+            --argjson directories "$working_directory" \
+            '{include: [$directories[] as $dir |
+              (if ($dir == "libs/partners/openai" or $dir == "libs/partners/perplexity")
+               then $integration_versions else $versions end)[] |
+              {"working-directory": $dir, "python-version": .}]}')"
           echo "$matrix"
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
           echo "python-version-min-3-11=$python_version_min_3_11" >> $GITHUB_OUTPUT
@@ -168,8 +176,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ${{ fromJSON(needs.compute-matrix.outputs.matrix).python-version }}
-        working-directory: ${{ fromJSON(needs.compute-matrix.outputs.matrix).working-directory }}
+        include: ${{ fromJSON(needs.compute-matrix.outputs.matrix).include }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
@@ -191,7 +198,7 @@ jobs:
           repository: langchain-ai/langchain-aws
           path: langchain-aws
       - name: "🔐 Configure AWS Credentials"
-        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -288,8 +295,9 @@ jobs:
           LANGSMITH_PROJECT: ${{ vars.LANGSMITH_PROJECT || 'scheduled-testing-py' }}
           LANGSMITH_TAGS: "github-actions,${{ matrix.working-directory }},python-${{ matrix.python-version }},sha-${{ github.sha }}"
 
+          LANGSMITH_GATEWAY: ${{ secrets.LANGSMITH_GATEWAY }}
+          LANGSMITH_GATEWAY_API_KEY: ${{ secrets.LANGSMITH_GATEWAY_API_KEY }}
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
           ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
           ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_API_ENDPOINT }}
@@ -323,6 +331,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
           WATSONX_APIKEY: ${{ secrets.WATSONX_APIKEY }}
           WATSONX_PROJECT_ID: ${{ secrets.WATSONX_PROJECT_ID }}

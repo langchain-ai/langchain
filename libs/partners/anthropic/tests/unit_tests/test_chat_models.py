@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import copy
+import json
 import os
 import warnings
 from collections.abc import Callable
+from types import SimpleNamespace
 from typing import Any, Literal, cast
 from unittest.mock import MagicMock, patch
 
@@ -13,10 +15,22 @@ import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
-from langchain_core.exceptions import ContextOverflowError
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    BaseMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
@@ -26,14 +40,17 @@ from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
-from pydantic import BaseModel, Field, SecretStr, ValidationError
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
+from pydantic import BaseModel, Field, RootModel, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
 from langchain_anthropic import ChatAnthropic
+from langchain_anthropic._sdk_compat import _unsupported_sampling_params
 from langchain_anthropic._version import __version__
 from langchain_anthropic.chat_models import (
     _TOOL_CALL_ID_PATTERN,
     _create_usage_metadata,
+    _drop_unsupported_root_composition_tools,
     _format_image,
     _format_messages,
     _is_builtin_tool,
@@ -42,10 +59,206 @@ from langchain_anthropic.chat_models import (
     _thinking_in_params,
     convert_to_anthropic_tool,
 )
+from tests.unit_tests._httpx_compat import httpx
 
 os.environ["ANTHROPIC_API_KEY"] = "foo"
 
 MODEL_NAME = "claude-sonnet-4-5-20250929"
+
+MID_CONVERSATION_SYSTEM_MODEL = "claude-opus-5"
+
+
+class _GatewayMetadataTracer(BaseTracer):
+    """Captures gateway metadata promoted onto completed LLM runs."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.gateway_metadata: dict[str, Any] | None = None
+
+    def _persist_run(self, run: Run) -> None:
+        """No-op; runs are inspected as they complete."""
+
+    def _on_llm_end(self, run: Run) -> None:
+        metadata = run.extra.get("metadata", {})
+        gateway_metadata = metadata.get("ls_gateway_info")
+        if isinstance(gateway_metadata, dict):
+            self.gateway_metadata = gateway_metadata
+
+
+_GATEWAY_METADATA = {"provider": "anthropic"}
+_MESSAGE_RESPONSE = {
+    "id": "msg_123",
+    "content": [{"type": "text", "text": "Bar Baz", "citations": None}],
+    "model": MODEL_NAME,
+    "role": "assistant",
+    "stop_reason": "end_turn",
+    "stop_sequence": None,
+    "usage": {"input_tokens": 2, "output_tokens": 1},
+    "type": "message",
+}
+_STREAM_EVENTS: list[dict[str, Any]] = [
+    {
+        "type": "message_start",
+        "message": {
+            **_MESSAGE_RESPONSE,
+            "content": [],
+            "stop_reason": None,
+            "usage": {"input_tokens": 2, "output_tokens": 0},
+        },
+    },
+    {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {"type": "text_delta", "text": "Bar Baz"},
+    },
+    {
+        "type": "message_delta",
+        "delta": {"stop_reason": "end_turn", "stop_sequence": None},
+        "usage": {"input_tokens": 2, "output_tokens": 1},
+    },
+    {"type": "message_stop"},
+]
+
+
+def _gateway_handler(
+    expected_beta: str | None,
+) -> Callable[[Any], Any]:
+    # Annotated `Any`: the concrete request/response classes come from `httpx`
+    # or `httpx2` depending on the installed anthropic SDK.
+    def handler(request: Any) -> Any:
+        assert request.headers.get("anthropic-beta") == expected_beta
+        headers = {"x-langsmith-gateway-metadata": json.dumps(_GATEWAY_METADATA)}
+        if json.loads(request.content).get("stream"):
+            stream = "".join(
+                f"event: {event['type']}\ndata: {json.dumps(event)}\n\n"
+                for event in _STREAM_EVENTS
+            )
+            return httpx.Response(
+                200,
+                text=stream,
+                headers={**headers, "content-type": "text/event-stream"},
+            )
+        return httpx.Response(200, json=_MESSAGE_RESPONSE, headers=headers)
+
+    return handler
+
+
+def _sync_gateway_client(betas: list[str] | None) -> anthropic.Client:
+    return anthropic.Client(
+        api_key="lsv2_pt_example",
+        http_client=httpx.Client(
+            transport=httpx.MockTransport(
+                _gateway_handler(",".join(betas) if betas else None)
+            )
+        ),
+    )
+
+
+def _async_gateway_client(betas: list[str] | None) -> anthropic.AsyncClient:
+    return anthropic.AsyncClient(
+        api_key="lsv2_pt_example",
+        http_client=httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                _gateway_handler(",".join(betas) if betas else None)
+            )
+        ),
+    )
+
+
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+def test_anthropic_invoke_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
+    """Gateway metadata header is surfaced on `generation_info`, not the message."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
+    )
+    client = _sync_gateway_client(betas)
+    tracer = _GatewayMetadataTracer()
+    try:
+        with patch.object(llm, "_client", client):
+            result = llm.invoke("bar", config={"callbacks": [tracer]})
+    finally:
+        client.close()
+
+    assert tracer.gateway_metadata == _GATEWAY_METADATA
+    assert GATEWAY_METADATA_RESPONSE_KEY not in result.response_metadata
+
+
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+async def test_anthropic_ainvoke_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
+    """Async gateway responses surface metadata on `generation_info`."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
+    )
+    client = _async_gateway_client(betas)
+    tracer = _GatewayMetadataTracer()
+    try:
+        with patch.object(llm, "_async_client", client):
+            result = await llm.ainvoke("bar", config={"callbacks": [tracer]})
+    finally:
+        await client.close()
+
+    assert tracer.gateway_metadata == _GATEWAY_METADATA
+    assert GATEWAY_METADATA_RESPONSE_KEY not in result.response_metadata
+
+
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+def test_anthropic_stream_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
+    """Gateway metadata is attached to the first streaming generation chunk."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
+    )
+    client = _sync_gateway_client(betas)
+    try:
+        with patch.object(llm, "_client", client):
+            chunks = list(llm._stream([HumanMessage("bar")]))
+    finally:
+        client.close()
+
+    assert [chunk.generation_info for chunk in chunks] == [
+        {GATEWAY_METADATA_RESPONSE_KEY: _GATEWAY_METADATA},
+        None,
+        None,
+    ]
+
+
+@pytest.mark.parametrize("betas", [None, ["test-beta"]])
+async def test_anthropic_astream_surfaces_gateway_metadata(
+    betas: list[str] | None,
+) -> None:
+    """Async gateway metadata is attached to the first streaming chunk."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="lsv2_pt_example",
+        betas=betas,
+        max_tokens=10,
+    )
+    client = _async_gateway_client(betas)
+    try:
+        with patch.object(llm, "_async_client", client):
+            chunks = [chunk async for chunk in llm._astream([HumanMessage("bar")])]
+    finally:
+        await client.close()
+
+    assert [chunk.generation_info for chunk in chunks] == [
+        {GATEWAY_METADATA_RESPONSE_KEY: _GATEWAY_METADATA},
+        None,
+        None,
+    ]
 
 
 def test_initialization() -> None:
@@ -147,10 +360,6 @@ def test_set_default_max_tokens() -> None:
     # Test claude-sonnet-4-5 models
     llm = ChatAnthropic(model="claude-sonnet-4-5-20250929", anthropic_api_key="test")
     assert llm.max_tokens == 64000
-
-    # Test claude-opus-4-1 models
-    llm = ChatAnthropic(model="claude-opus-4-1-20250805", anthropic_api_key="test")
-    assert llm.max_tokens == 32000
 
     # Test claude-haiku-4-5 models
     llm = ChatAnthropic(model="claude-haiku-4-5-20251001", anthropic_api_key="test")
@@ -426,6 +635,31 @@ def test__merge_messages() -> None:
     ]
     actual = _merge_messages(messages)
     assert expected == actual
+
+
+def test__merge_messages_coalesces_adjacent_system_messages() -> None:
+    """Test adjacent system messages are merged."""
+    messages = [
+        SystemMessage("bar"),  # type: ignore[misc]
+        SystemMessage("baz"),  # type: ignore[misc]
+        SystemMessage(  # type: ignore[misc]
+            [
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+            ],
+        ),
+        HumanMessage("hi"),  # type: ignore[misc]
+    ]
+    expected = [
+        SystemMessage(  # type: ignore[misc]
+            [
+                {"type": "text", "text": "bar"},
+                {"type": "text", "text": "baz"},
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+            ],
+        ),
+        HumanMessage("hi"),  # type: ignore[misc]
+    ]
+    assert _merge_messages(messages) == expected
 
 
 def test__merge_messages_mutation() -> None:
@@ -754,14 +988,16 @@ def test__format_messages_with_tool_calls() -> None:
             },
         ],
     )
-    actual = _format_messages(messages)
+    actual = _format_messages(messages, model=MODEL_NAME)
     assert expected == actual
 
     # Check handling of empty AIMessage
     empty_contents: list[str | list[str | dict[str, Any]]] = ["", []]
     for empty_content in empty_contents:
         ## Permit message in final position
-        _, anthropic_messages = _format_messages([human, AIMessage(empty_content)])
+        _, anthropic_messages = _format_messages(
+            [human, AIMessage(empty_content)], model=MODEL_NAME
+        )
         expected_messages = [
             {"role": "user", "content": "foo"},
             {"role": "assistant", "content": empty_content},
@@ -770,7 +1006,7 @@ def test__format_messages_with_tool_calls() -> None:
 
         ## Remove message otherwise
         _, anthropic_messages = _format_messages(
-            [human, AIMessage(empty_content), human]
+            [human, AIMessage(empty_content), human], model=MODEL_NAME
         )
         expected_messages = [
             {"role": "user", "content": "foo"},
@@ -779,7 +1015,7 @@ def test__format_messages_with_tool_calls() -> None:
         assert expected_messages == anthropic_messages
 
         actual = _format_messages(
-            [system, human, ai, tool, AIMessage(empty_content), human]
+            [system, human, ai, tool, AIMessage(empty_content), human], model=MODEL_NAME
         )
         assert actual[0] == "fuzz"
         assert [message["role"] for message in actual[1]] == [
@@ -832,7 +1068,7 @@ def test__format_messages_normalizes_cross_provider_tool_call_ids() -> None:
     )
     tool = ToolMessage("done", tool_call_id=bad_id)
 
-    _, formatted = _format_messages([HumanMessage("hi"), ai, tool])
+    _, formatted = _format_messages([HumanMessage("hi"), ai, tool], model=MODEL_NAME)
 
     tool_use = formatted[1]["content"][0]
     tool_result = formatted[2]["content"][0]
@@ -862,7 +1098,7 @@ def test__format_messages_normalizes_prestructured_tool_result_id() -> None:
         tool_call_id=bad_id,
     )
 
-    _, formatted = _format_messages([HumanMessage("hi"), ai, tool])
+    _, formatted = _format_messages([HumanMessage("hi"), ai, tool], model=MODEL_NAME)
 
     tool_use = formatted[1]["content"][0]
     tool_result = formatted[2]["content"][0]
@@ -882,7 +1118,7 @@ def test__format_messages_normalizes_inline_tool_use_block() -> None:
     )
     tool = ToolMessage("result", tool_call_id=bad_id)
 
-    _, formatted = _format_messages([HumanMessage("hi"), ai, tool])
+    _, formatted = _format_messages([HumanMessage("hi"), ai, tool], model=MODEL_NAME)
 
     tool_use = formatted[1]["content"][0]
     tool_result = formatted[2]["content"][0]
@@ -902,7 +1138,7 @@ def test__format_messages_dedupes_overlapping_normalized_tool_use() -> None:
         tool_calls=[{"name": "write_todos", "id": bad_id, "args": {"a": 1}}],
     )
 
-    _, formatted = _format_messages([HumanMessage("hi"), ai])
+    _, formatted = _format_messages([HumanMessage("hi"), ai], model=MODEL_NAME)
 
     tool_use_blocks = [b for b in formatted[1]["content"] if b["type"] == "tool_use"]
     assert len(tool_use_blocks) == 1
@@ -923,7 +1159,9 @@ def test__format_messages_normalizes_distinct_ids_independently() -> None:
     tool_a = ToolMessage("a", tool_call_id=id_a)
     tool_b = ToolMessage("b", tool_call_id=id_b)
 
-    _, formatted = _format_messages([HumanMessage("hi"), ai, tool_a, tool_b])
+    _, formatted = _format_messages(
+        [HumanMessage("hi"), ai, tool_a, tool_b], model=MODEL_NAME
+    )
 
     tool_uses = formatted[1]["content"]
     results = formatted[2]["content"]
@@ -957,7 +1195,7 @@ def test__format_tool_use_block() -> None:
             },
         ]
     )
-    result = _format_messages([message])
+    result = _format_messages([message], model=MODEL_NAME)
     expected = {
         "role": "assistant",
         "content": [
@@ -1018,7 +1256,7 @@ def test__format_messages_with_str_content_and_tool_calls() -> None:
             },
         ],
     )
-    actual = _format_messages(messages)
+    actual = _format_messages(messages, model=MODEL_NAME)
     assert expected == actual
 
 
@@ -1063,7 +1301,7 @@ def test__format_messages_with_list_content_and_tool_calls() -> None:
             },
         ],
     )
-    actual = _format_messages(messages)
+    actual = _format_messages(messages, model=MODEL_NAME)
     assert expected == actual
 
 
@@ -1115,7 +1353,7 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
             },
         ],
     )
-    actual = _format_messages(messages)
+    actual = _format_messages(messages, model=MODEL_NAME)
     assert expected == actual
 
 
@@ -1148,7 +1386,7 @@ def test__format_messages_with_cache_control() -> None:
             ],
         },
     ]
-    actual_system, actual_messages = _format_messages(messages)
+    actual_system, actual_messages = _format_messages(messages, model=MODEL_NAME)
     assert expected_system == actual_system
     assert expected_messages == actual_messages
 
@@ -1170,7 +1408,7 @@ def test__format_messages_with_cache_control() -> None:
             ],
         ),
     ]
-    actual_system, actual_messages = _format_messages(messages)
+    actual_system, actual_messages = _format_messages(messages, model=MODEL_NAME)
     assert actual_system is None
     expected_messages = [
         {
@@ -1211,7 +1449,7 @@ def test__format_messages_with_cache_control() -> None:
             ],
         ),
     ]
-    actual_system, actual_messages = _format_messages(messages)
+    actual_system, actual_messages = _format_messages(messages, model=MODEL_NAME)
     assert actual_system is None
     expected_messages = [
         {
@@ -1252,7 +1490,7 @@ def test__format_messages_with_cache_control() -> None:
             ],
         ),
     ]
-    actual_system, actual_messages = _format_messages(messages)
+    actual_system, actual_messages = _format_messages(messages, model=MODEL_NAME)
     assert actual_system is None
     expected_messages = [
         {
@@ -1302,7 +1540,7 @@ def test__format_messages_with_cache_control() -> None:
                 ],
             ),
         ]
-        actual_system, actual_messages = _format_messages(messages)
+        actual_system, actual_messages = _format_messages(messages, model=MODEL_NAME)
         assert actual_system is None
         expected_messages = [
             {
@@ -1349,7 +1587,7 @@ def test__format_messages_with_cache_control() -> None:
                 ],
             ),
         ]
-        actual_system, actual_messages = _format_messages(messages)
+        actual_system, actual_messages = _format_messages(messages, model=MODEL_NAME)
         assert actual_system is None
         expected_messages = [
             {
@@ -1404,7 +1642,7 @@ def test__format_messages_with_citations() -> None:
             ],
         },
     ]
-    actual_system, actual_messages = _format_messages(input_messages)
+    actual_system, actual_messages = _format_messages(input_messages, model=MODEL_NAME)
     assert actual_system is None
     assert actual_messages == expected_messages
 
@@ -1426,7 +1664,7 @@ def test__format_messages_openai_image_format() -> None:
             },
         ],
     )
-    actual_system, actual_messages = _format_messages([message])
+    actual_system, actual_messages = _format_messages([message], model=MODEL_NAME)
     assert actual_system is None
     expected_messages = [
         {
@@ -1460,6 +1698,7 @@ def test__format_messages_openai_image_format() -> None:
 
 
 def test__format_messages_with_multiple_system() -> None:
+    """Test a trailing run of system messages is sent in place."""
     messages = [
         HumanMessage("baz"),
         SystemMessage("bar"),
@@ -1470,13 +1709,45 @@ def test__format_messages_with_multiple_system() -> None:
             ],
         ),
     ]
+    expected_messages = [
+        {"role": "user", "content": "baz"},
+        {
+            "role": "system",
+            "content": [
+                {"type": "text", "text": "bar"},
+                {"type": "text", "text": "baz"},
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+            ],
+        },
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system is None
+    assert expected_messages == actual_messages
+
+
+def test__format_messages_with_multiple_leading_system() -> None:
+    """A leading run of system messages is hoisted as one block array."""
+    messages = [
+        SystemMessage("bar"),
+        SystemMessage("baz"),
+        SystemMessage(
+            [
+                {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
+            ],
+        ),
+        HumanMessage("baz"),
+    ]
     expected_system = [
         {"type": "text", "text": "bar"},
         {"type": "text", "text": "baz"},
         {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
     ]
     expected_messages = [{"role": "user", "content": "baz"}]
-    actual_system, actual_messages = _format_messages(messages)
+    actual_system, actual_messages = _format_messages(messages, model=MODEL_NAME)
     assert expected_system == actual_system
     assert expected_messages == actual_messages
 
@@ -1490,7 +1761,7 @@ def test__format_messages_system_v1_content_blocks_drop_id() -> None:
         SystemMessage(content_blocks=[create_text_block("You are helpful.")]),
         HumanMessage("hi"),
     ]
-    actual_system, actual_messages = _format_messages(messages)
+    actual_system, actual_messages = _format_messages(messages, model=MODEL_NAME)
     assert actual_system == [{"type": "text", "text": "You are helpful."}]
     assert actual_messages == [{"role": "user", "content": "hi"}]
 
@@ -1510,10 +1781,809 @@ def test__format_messages_system_text_block_preserves_supported_fields() -> None
         ),
         HumanMessage("hi"),
     ]
-    actual_system, _ = _format_messages(messages)
+    actual_system, _ = _format_messages(messages, model=MODEL_NAME)
     assert actual_system == [
         {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
     ]
+
+
+_HOIST_WARNING = "A non-leading `SystemMessage` was moved"
+
+
+def test__format_messages_leading_system_string_content_unchanged() -> None:
+    """Test leading string system content stays a string."""
+    messages = [
+        SystemMessage("You are a code reviewer."),
+        HumanMessage("Review foo()"),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system == "You are a code reviewer."
+    assert actual_messages == [{"role": "user", "content": "Review foo()"}]
+
+
+def test__format_messages_trailing_system_sent_in_place() -> None:
+    """A trailing system message on a supporting model is sent at its position."""
+    messages = [
+        SystemMessage("You are a code reviewer."),
+        HumanMessage("Review foo()"),
+        AIMessage("Looks fine."),
+        HumanMessage("Review bar()"),
+        SystemMessage("Every suggestion must include type annotations."),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system == "You are a code reviewer."
+    assert actual_messages == [
+        {"role": "user", "content": "Review foo()"},
+        {"role": "assistant", "content": "Looks fine."},
+        {"role": "user", "content": "Review bar()"},
+        {
+            "role": "system",
+            "content": "Every suggestion must include type annotations.",
+        },
+    ]
+
+
+def test__format_messages_non_leading_system_only_run_sent_in_place() -> None:
+    """With nothing hoisted, a legal non-leading run still goes in place."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage("Be concise."),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system is None
+    assert actual_messages == [
+        {"role": "user", "content": "Review foo()"},
+        {"role": "system", "content": "Be concise."},
+    ]
+
+
+def test__format_messages_system_between_user_and_ai_sent_in_place() -> None:
+    """A system message followed by an assistant turn is a legal position."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage("Be concise."),
+        AIMessage("Looks fine."),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system is None
+    assert actual_messages == [
+        {"role": "user", "content": "Review foo()"},
+        {"role": "system", "content": "Be concise."},
+        {"role": "assistant", "content": "Looks fine."},
+    ]
+
+
+def test__format_messages_system_after_tool_message_sent_in_place() -> None:
+    """Test a system message follows the folded tool-result turn."""
+    ai = AIMessage(
+        "",
+        tool_calls=[{"name": "search", "args": {"q": "foo"}, "id": "toolu_1"}],
+    )
+    messages = [
+        HumanMessage("Review foo()"),
+        ai,
+        ToolMessage("results", tool_call_id="toolu_1"),
+        SystemMessage("Be concise."),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system is None
+    assert [message["role"] for message in actual_messages] == [
+        "user",
+        "assistant",
+        "user",
+        "system",
+    ]
+    assert actual_messages[-1]["content"] == "Be concise."
+
+
+@pytest.mark.parametrize(
+    "block_type",
+    [
+        "web_search_tool_result",
+        "code_execution_tool_result",
+        "mcp_tool_result",
+        "future_server_tool_result",
+    ],
+)
+def test__format_messages_system_after_server_tool_result_sent_in_place(
+    block_type: str,
+) -> None:
+    """An assistant turn ending in a server tool result is a legal predecessor."""
+    block = {
+        "type": block_type,
+        "tool_use_id": "srvtoolu_1",
+        "content": [{"type": "text", "text": "results"}],
+    }
+    ai = AIMessage([block], response_metadata={"model_provider": "anthropic"})
+    messages = [
+        HumanMessage("Review foo()"),
+        ai,
+        SystemMessage("Be concise."),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system is None
+    assert [message["role"] for message in actual_messages] == [
+        "user",
+        "assistant",
+        "system",
+    ]
+    # Forward compatibility: an unrecognized server tool result block reaches the
+    # wire untouched, which is what makes it a legal predecessor in the first place.
+    assert actual_messages[1]["content"] == [block]
+
+
+def test__format_messages_system_after_client_tool_result_hoisted() -> None:
+    """Test client-side tool results are not server tool results."""
+    messages = [
+        HumanMessage("Review foo()"),
+        AIMessage(
+            [{"type": "tool_result", "tool_use_id": "toolu_1", "content": "results"}],
+        ),
+        SystemMessage("Be concise."),
+    ]
+    with pytest.warns(UserWarning, match=_HOIST_WARNING):
+        actual_system, actual_messages = _format_messages(
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+    assert actual_system == "Be concise."
+    assert [message["role"] for message in actual_messages] == ["user", "assistant"]
+
+
+def test__format_messages_system_after_plain_ai_turn_hoisted() -> None:
+    """An assistant turn that is not a server tool result is an illegal predecessor."""
+    messages = [
+        HumanMessage("Review foo()"),
+        AIMessage("Looks fine."),
+        SystemMessage("Be concise."),
+    ]
+    with pytest.warns(UserWarning, match=_HOIST_WARNING):
+        actual_system, actual_messages = _format_messages(
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+    assert actual_system == "Be concise."
+    assert actual_messages == [
+        {"role": "user", "content": "Review foo()"},
+        {"role": "assistant", "content": "Looks fine."},
+    ]
+
+
+def test__format_messages_system_followed_by_user_turn_hoisted() -> None:
+    """A system message followed by a user turn is an illegal position."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage("Be concise."),
+        HumanMessage("Review bar()"),
+    ]
+    with pytest.warns(UserWarning, match=_HOIST_WARNING):
+        actual_system, actual_messages = _format_messages(
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+    assert actual_system == "Be concise."
+    assert actual_messages == [
+        {"role": "user", "content": "Review foo()"},
+        {"role": "user", "content": "Review bar()"},
+    ]
+
+
+def test__format_messages_leading_run_hoisted_and_later_run_in_place() -> None:
+    """A leading run is hoisted while a later legal run goes in place."""
+    messages = [
+        SystemMessage("You are a code reviewer."),
+        SystemMessage("Be concise."),
+        HumanMessage("Review foo()"),
+        SystemMessage("Every suggestion must include type annotations."),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system == [
+        {"type": "text", "text": "You are a code reviewer."},
+        {"type": "text", "text": "Be concise."},
+    ]
+    assert actual_messages == [
+        {"role": "user", "content": "Review foo()"},
+        {
+            "role": "system",
+            "content": "Every suggestion must include type annotations.",
+        },
+    ]
+
+
+def test__format_messages_several_non_contiguous_system_runs_in_place() -> None:
+    """Instructions can be layered at several points in a long session."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage("Be concise."),
+        AIMessage("Looks fine."),
+        HumanMessage("Review bar()"),
+        SystemMessage("Include type annotations."),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system is None
+    assert actual_messages == [
+        {"role": "user", "content": "Review foo()"},
+        {"role": "system", "content": "Be concise."},
+        {"role": "assistant", "content": "Looks fine."},
+        {"role": "user", "content": "Review bar()"},
+        {"role": "system", "content": "Include type annotations."},
+    ]
+
+
+def test__format_messages_keeps_both_runs_when_turn_between_is_dropped() -> None:
+    """Test both system runs survive a dropped intermediate turn."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage("Be concise."),
+        AIMessage(""),
+        SystemMessage("Include type annotations."),
+        AIMessage("Looks fine."),
+        HumanMessage("Review bar()"),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system is None
+    assert actual_messages == [
+        {"role": "user", "content": "Review foo()"},
+        {"role": "system", "content": "Be concise."},
+        {"role": "system", "content": "Include type annotations."},
+        {"role": "assistant", "content": "Looks fine."},
+        {"role": "user", "content": "Review bar()"},
+    ]
+
+
+def test__format_messages_two_held_back_runs_before_a_user_turn_raise() -> None:
+    """Test two unplaceable pending system runs raise."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage("Be concise."),
+        AIMessage(""),
+        SystemMessage("Include type annotations."),
+        HumanMessage("Review bar()"),
+    ]
+    with pytest.raises(
+        ValueError, match=r"Received multiple non-consecutive system messages\."
+    ):
+        _format_messages(
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+
+
+def test__format_messages_non_leading_system_hoisted_by_default() -> None:
+    """Without the capability, it is hoisted, and the warning omits its text."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage("Be concise."),
+    ]
+    with pytest.warns(UserWarning, match=_HOIST_WARNING) as warnings:
+        actual_system, actual_messages = _format_messages(
+            messages, model="claude-3-5-haiku-20241022"
+        )
+    assert "Be concise" not in str(warnings[0].message)
+    assert actual_system == "Be concise."
+    assert actual_messages == [{"role": "user", "content": "Review foo()"}]
+
+
+def test_non_leading_system_in_place_when_profile_declares_it() -> None:
+    """The profile decides, so a Bedrock model ID sends it in place too."""
+    model = ChatAnthropic(
+        model="global.anthropic.claude-opus-5-5",
+        profile={"mid_conversation_system_messages": True},
+    )
+    payload = model._get_request_payload(
+        [HumanMessage("Review foo()"), SystemMessage("Be concise.")]
+    )
+    assert "system" not in payload
+    assert payload["messages"][-1] == {"role": "system", "content": "Be concise."}
+
+
+@pytest.mark.parametrize("profile", [{}, {"mid_conversation_system_messages": False}])
+def test_non_leading_system_hoisted_when_profile_does_not_declare_it(
+    profile: dict,
+) -> None:
+    """Absent or `False` both hoist, even for a model that supports it."""
+    model = ChatAnthropic(model="claude-opus-5-5", profile=profile)
+    with pytest.warns(UserWarning, match=_HOIST_WARNING):
+        payload = model._get_request_payload(
+            [HumanMessage("Review foo()"), SystemMessage("Be concise.")]
+        )
+    assert payload["system"] == "Be concise."
+    assert payload["messages"] == [{"role": "user", "content": "Review foo()"}]
+
+
+@pytest.mark.parametrize(
+    ("model", "system_messages", "tools"),
+    [
+        ("claude-opus-5-5", True, True),
+        ("claude-haiku-5-5", True, True),
+        # Sonnet 5 accepts a mid-conversation system message but rejects tools in it.
+        ("claude-sonnet-5", True, False),
+        # Mythos isn't in models.dev, so its profile comes from augmentations alone.
+        ("claude-mythos-5", True, True),
+        ("claude-mythos-5-1", True, True),
+        ("claude-mythos-preview", None, None),
+        ("claude-opus-4-5", None, None),
+    ],
+)
+def test_profile_declares_mid_conversation_capabilities(
+    model: str, *, system_messages: bool | None, tools: bool | None
+) -> None:
+    """Profiles carry the capabilities live probes show each model accepts."""
+    profile = ChatAnthropic(model=model).profile or {}
+    assert profile.get("mid_conversation_system_messages") is system_messages
+    assert profile.get("mid_conversation_tools") is tools
+
+
+def test__format_messages_second_unplaceable_system_run_raises() -> None:
+    """Test a second unplaceable system run raises."""
+    messages = [
+        SystemMessage("You are a code reviewer."),
+        HumanMessage("Review foo()"),
+        SystemMessage("Be concise."),
+        HumanMessage("Review bar()"),
+    ]
+    with pytest.raises(
+        ValueError, match=r"Received multiple non-consecutive system messages\."
+    ):
+        _format_messages(
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+
+
+def test__format_messages_system_cache_control_preserved_in_both_paths() -> None:
+    """`cache_control` on a system text block survives either placement."""
+    block = {
+        "type": "text",
+        "text": "Be concise.",
+        "cache_control": {"type": "ephemeral"},
+    }
+    in_place_messages = [HumanMessage("Review foo()"), SystemMessage([block])]
+    actual_system, actual_messages = _format_messages(
+        in_place_messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system is None
+    assert actual_messages[-1] == {"role": "system", "content": [block]}
+
+    with pytest.warns(UserWarning, match=_HOIST_WARNING):
+        actual_system, _ = _format_messages(in_place_messages, model=MODEL_NAME)
+    assert actual_system == [block]
+
+
+def test__format_messages_system_v1_content_blocks_drop_id_in_place() -> None:
+    """Framework-internal block fields are stripped on the in-place path too."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage(content_blocks=[create_text_block("Be concise.")]),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system is None
+    assert actual_messages[-1] == {
+        "role": "system",
+        "content": [{"type": "text", "text": "Be concise."}],
+    }
+
+
+def test__format_messages_final_assistant_turn_trimmed_past_system() -> None:
+    """Test a later system message does not disable assistant trimming."""
+    human = HumanMessage("Review foo()")
+    system = SystemMessage("Be concise.")
+
+    with pytest.warns(UserWarning, match=_HOIST_WARNING):
+        _, actual_messages = _format_messages(
+            [human, AIMessage("thought "), system],
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+    assert actual_messages[-1]["content"] == "thought"
+
+    with pytest.warns(UserWarning, match=_HOIST_WARNING):
+        _, actual_messages = _format_messages(
+            [human, AIMessage([{"type": "text", "text": "thought "}]), system],
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+    assert actual_messages[-1]["content"][0]["text"] == "thought"  # type: ignore[index]
+
+
+def test__format_messages_empty_final_assistant_turn_kept_past_system() -> None:
+    """Test an empty final assistant turn is kept before a hoisted system."""
+    with pytest.warns(UserWarning, match=_HOIST_WARNING):
+        _, actual_messages = _format_messages(
+            [HumanMessage("Review foo()"), AIMessage(""), SystemMessage("Be concise.")],
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+    assert actual_messages == [
+        {"role": "user", "content": "Review foo()"},
+        {"role": "assistant", "content": ""},
+    ]
+
+
+def test__format_messages_system_position_judged_against_wire_sequence() -> None:
+    """Test placement against the formatted wire sequence."""
+    messages = [
+        HumanMessage("Review foo()"),
+        AIMessage(""),
+        SystemMessage("Be concise."),
+        AIMessage("Looks fine."),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system is None
+    assert actual_messages == [
+        {"role": "user", "content": "Review foo()"},
+        {"role": "system", "content": "Be concise."},
+        {"role": "assistant", "content": "Looks fine."},
+    ]
+
+
+def test__format_messages_system_hoisted_when_next_ai_turn_is_dropped() -> None:
+    """Test a dropped assistant successor makes system placement illegal."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage("Be concise."),
+        AIMessage(""),
+        HumanMessage("Review bar()"),
+    ]
+    with pytest.warns(UserWarning, match=_HOIST_WARNING):
+        actual_system, actual_messages = _format_messages(
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+    assert actual_system == "Be concise."
+    assert actual_messages == [
+        {"role": "user", "content": "Review foo()"},
+        {"role": "user", "content": "Review bar()"},
+    ]
+
+
+def test__format_messages_non_string_model_hoists() -> None:
+    """A misbehaving subclass with a non-string model falls back to hoisting."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage("Be concise."),
+    ]
+    with pytest.warns(UserWarning, match=_HOIST_WARNING):
+        actual_system, _ = _format_messages(
+            messages,
+            model=object(),  # type: ignore[arg-type]
+        )
+    assert actual_system == "Be concise."
+
+
+def test__format_messages_system_citations_preserved_in_place() -> None:
+    """Supported system text block fields survive the in-place path."""
+    block = {
+        "type": "text",
+        "text": "Be concise.",
+        "id": "lc_abc123",
+        "citations": [{"type": "char_location", "cited_text": "foo", "file_id": None}],
+    }
+    _, actual_messages = _format_messages(
+        [HumanMessage("Review foo()"), SystemMessage([block])],
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_messages[-1] == {
+        "role": "system",
+        "content": [
+            {
+                "type": "text",
+                "text": "Be concise.",
+                "citations": [{"type": "char_location", "cited_text": "foo"}],
+            },
+        ],
+    }
+
+
+_TOOL_REMOVAL_BLOCK = {
+    "type": "tool_removal",
+    "tool": {"type": "tool_reference", "name": "get_weather"},
+}
+_TOOL_ADDITION_BLOCK = {
+    "type": "tool_addition",
+    "tool": {"type": "tool_reference", "name": "get_weather"},
+}
+_TOOL_CHANGE_UNSUPPORTED_WARNING = "Tool-change block"
+_UNRECOGNIZED_SYSTEM_BLOCK_WARNING = "Unrecognized system content block"
+
+
+@pytest.mark.parametrize("block", [_TOOL_REMOVAL_BLOCK, _TOOL_ADDITION_BLOCK])
+def test__format_messages_system_tool_change_block_sent_in_place(
+    block: dict,
+) -> None:
+    """Tool-change blocks reach the wire verbatim from an in-place system message."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage([block]),
+        AIMessage("Looks fine."),
+    ]
+    actual_system, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system is None
+    assert actual_messages[1] == {"role": "system", "content": [block]}
+
+
+@pytest.mark.parametrize("block", [_TOOL_REMOVAL_BLOCK, _TOOL_ADDITION_BLOCK])
+def test__format_messages_system_tool_change_block_spellings_match(
+    block: dict,
+) -> None:
+    """A bare dict and a `non_standard` wrapper produce identical wire output."""
+    bare = [
+        HumanMessage("Review foo()"),
+        SystemMessage([block]),
+        AIMessage("Looks fine."),
+    ]
+    wrapped = [
+        HumanMessage("Review foo()"),
+        SystemMessage([{"type": "non_standard", "value": block}]),
+        AIMessage("Looks fine."),
+    ]
+    assert _format_messages(
+        bare, model=MID_CONVERSATION_SYSTEM_MODEL, mid_conversation_system_messages=True
+    ) == (
+        _format_messages(
+            wrapped,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+    )
+
+
+@pytest.mark.parametrize("block", [_TOOL_REMOVAL_BLOCK, _TOOL_ADDITION_BLOCK])
+def test__format_messages_tool_change_block_survives_content_blocks(
+    block: dict,
+) -> None:
+    """The payload reaches the converter untranslated via either accessor.
+
+    A bare provider-native dict wraps into `non_standard` when read through
+    `content_blocks`, and an already-wrapped one stays put; neither is rewritten.
+    The converter unwraps both, so the accessor a caller uses cannot change the
+    wire output.
+    """
+    bare = SystemMessage([block])
+    wrapped = SystemMessage(content_blocks=[{"type": "non_standard", "value": block}])
+    expected = [{"type": "non_standard", "value": block}]
+    assert bare.content_blocks == expected
+    assert wrapped.content_blocks == expected
+
+    conversation = [HumanMessage("Review foo()"), AIMessage("Looks fine.")]
+    assert _format_messages(
+        [conversation[0], bare, conversation[1]],
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    ) == _format_messages(
+        [conversation[0], wrapped, conversation[1]],
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+
+
+def test__format_messages_system_tool_change_block_beside_text() -> None:
+    """Siblings of a tool-change block survive alongside it."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage([{"type": "text", "text": "Be concise."}, _TOOL_REMOVAL_BLOCK]),
+        AIMessage("Looks fine."),
+    ]
+    _, actual_messages = _format_messages(
+        messages,
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_messages[1] == {
+        "role": "system",
+        "content": [{"type": "text", "text": "Be concise."}, _TOOL_REMOVAL_BLOCK],
+    }
+
+
+def test__format_messages_system_unrecognized_block_dropped_with_warning() -> None:
+    """An unrecognized system content block is dropped with a warning."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage(
+            [
+                {"type": "text", "text": "Be concise."},
+                {"type": "made_up_block", "foo": "bar"},
+            ],
+        ),
+        AIMessage("Looks fine."),
+    ]
+    with pytest.warns(UserWarning, match=_UNRECOGNIZED_SYSTEM_BLOCK_WARNING):
+        _, actual_messages = _format_messages(
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+    assert actual_messages[1] == {
+        "role": "system",
+        "content": [{"type": "text", "text": "Be concise."}],
+    }
+
+
+def test__format_messages_leading_system_unrecognized_block_dropped() -> None:
+    """The hoisted leading system path drops unrecognized blocks too."""
+    messages = [
+        SystemMessage(
+            [
+                {"type": "text", "text": "Be concise."},
+                {"type": "made_up_block", "foo": "bar"},
+            ],
+        ),
+        HumanMessage("Review foo()"),
+    ]
+    with pytest.warns(UserWarning, match=_UNRECOGNIZED_SYSTEM_BLOCK_WARNING):
+        actual_system, _ = _format_messages(
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+    assert actual_system == [{"type": "text", "text": "Be concise."}]
+
+
+@pytest.mark.parametrize("block", [_TOOL_REMOVAL_BLOCK, _TOOL_ADDITION_BLOCK])
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+def test__format_messages_leading_system_tool_change_block_forwarded(
+    block: dict,
+    spelling: str,
+) -> None:
+    """Anthropic validates tool-change blocks on the top-level system field."""
+    content: list[str | dict] = (
+        [block] if spelling == "bare" else [{"type": "non_standard", "value": block}]
+    )
+    actual_system, actual_messages = _format_messages(
+        [SystemMessage(content), HumanMessage("Review foo()")],
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_system == [block]
+    assert actual_messages == [{"role": "user", "content": "Review foo()"}]
+
+
+def test__format_messages_system_tool_change_block_stripped_on_unsupported_model() -> (
+    None
+):
+    """An unsupported model strips the tool-change block and hoists the text."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage([{"type": "text", "text": "Be concise."}, _TOOL_REMOVAL_BLOCK]),
+        AIMessage("Looks fine."),
+    ]
+    with pytest.warns(UserWarning, match=_TOOL_CHANGE_UNSUPPORTED_WARNING) as record:
+        actual_system, actual_messages = _format_messages(messages, model=MODEL_NAME)
+    messages_warned = [str(warning.message) for warning in record]
+    assert any(_TOOL_CHANGE_UNSUPPORTED_WARNING in m for m in messages_warned)
+    assert any(_HOIST_WARNING in m for m in messages_warned)
+    assert actual_system == [{"type": "text", "text": "Be concise."}]
+    assert [message["role"] for message in actual_messages] == ["user", "assistant"]
+
+
+def test__format_messages_system_tool_change_block_stripped_on_illegal_position() -> (
+    None
+):
+    """A hoisted system message on a supported model also strips tool changes."""
+    messages = [
+        HumanMessage("Review foo()"),
+        AIMessage("Looks fine."),
+        SystemMessage([{"type": "text", "text": "Be concise."}, _TOOL_REMOVAL_BLOCK]),
+    ]
+    with pytest.warns(UserWarning, match=_TOOL_CHANGE_UNSUPPORTED_WARNING) as record:
+        actual_system, _ = _format_messages(
+            messages,
+            model=MID_CONVERSATION_SYSTEM_MODEL,
+            mid_conversation_system_messages=True,
+        )
+    messages_warned = [str(warning.message) for warning in record]
+    assert any(_TOOL_CHANGE_UNSUPPORTED_WARNING in m for m in messages_warned)
+    assert actual_system == [{"type": "text", "text": "Be concise."}]
+
+
+def test__format_messages_system_stripped_to_empty_hoists_empty_list() -> None:
+    """Stripping every block leaves an empty system array, not `None`."""
+    messages = [
+        HumanMessage("Review foo()"),
+        SystemMessage([_TOOL_REMOVAL_BLOCK]),
+        AIMessage("Looks fine."),
+    ]
+    with pytest.warns(UserWarning, match=_TOOL_CHANGE_UNSUPPORTED_WARNING):
+        actual_system, _ = _format_messages(messages, model=MODEL_NAME)
+    assert actual_system == []
+
+
+def test__format_messages_does_not_mutate_input_content() -> None:
+    """Formatting must leave the caller's own message content untouched."""
+    text_block = {"type": "text", "text": "Be concise.", "id": "lc_abc123"}
+    tool_change_block = {
+        "type": "tool_removal",
+        "tool": {"type": "tool_reference", "name": "get_weather"},
+    }
+    content: list[str | dict] = [text_block, tool_change_block]
+    before = copy.deepcopy(content)
+    _format_messages(
+        [
+            HumanMessage("Review foo()"),
+            SystemMessage(content),
+            AIMessage("Looks fine."),
+        ],
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert content == before
+
+
+def test__format_messages_human_native_image_block_preserved() -> None:
+    """Regression guard: native Anthropic image blocks still reach the wire."""
+    block = {
+        "type": "image",
+        "source": {"type": "base64", "media_type": "image/png", "data": "aGk="},
+    }
+    _, actual_messages = _format_messages(
+        [HumanMessage([block])],
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        mid_conversation_system_messages=True,
+    )
+    assert actual_messages == [{"role": "user", "content": [block]}]
+
+
+def test__format_messages_requires_model() -> None:
+    """Test the model argument is required."""
+    with pytest.raises(TypeError):
+        _format_messages([HumanMessage("hi")])  # type: ignore[call-arg]
 
 
 def test_anthropic_api_key_is_secret_string() -> None:
@@ -1622,6 +2692,394 @@ def test_anthropic_bind_tools_does_not_mutate_tool_choice() -> None:
     }
 
 
+def test_bind_tools_drops_top_level_composition() -> None:
+    """Tools with a root `oneOf`/`anyOf` are dropped with a warning.
+
+    The Anthropic API rejects tool schemas carrying these keywords at the top
+    level, failing the whole request. MCP servers can emit them. See
+    https://github.com/langchain-ai/langchain/issues/39271.
+    """
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    valid_tool = {
+        "name": "search",
+        "description": "Search",
+        "input_schema": {
+            "type": "object",
+            "properties": {"query": {"type": "string"}},
+            "required": ["query"],
+        },
+    }
+    invalid_tool = {
+        "name": "notion_create_attachment",
+        "description": "Create an attachment",
+        "input_schema": {
+            "type": "object",
+            "anyOf": [
+                {
+                    "type": "object",
+                    "properties": {"content": {"type": "string"}},
+                    "required": ["content"],
+                },
+                {
+                    "type": "object",
+                    "properties": {"source_url": {"type": "string"}},
+                    "required": ["source_url"],
+                },
+            ],
+        },
+    }
+    with pytest.warns(UserWarning, match="notion_create_attachment"):
+        chat_model_with_tools = chat_model.bind_tools([valid_tool, invalid_tool])
+
+    bound = cast("RunnableBinding", chat_model_with_tools).kwargs["tools"]
+    assert [t["name"] for t in bound] == ["search"]
+
+
+def test_bind_tools_keeps_nested_composition_without_warning() -> None:
+    """Combinators nested under `properties` are valid and left untouched."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    tool = {
+        "name": "search",
+        "description": "Search",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "value": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+            },
+            "required": ["value"],
+        },
+    }
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # no warning expected
+        chat_model_with_tools = chat_model.bind_tools([tool])
+
+    bound = cast("RunnableBinding", chat_model_with_tools).kwargs["tools"]
+    assert [t["name"] for t in bound] == ["search"]
+    assert bound[0]["input_schema"] == tool["input_schema"]
+
+
+def _composition_tool(name: str, keyword: str = "anyOf") -> dict:
+    """A tool whose root `input_schema` uses a top-level combinator."""
+    return {
+        "name": name,
+        "description": "Root schema composition.",
+        "input_schema": {
+            "type": "object",
+            keyword: [
+                {
+                    "type": "object",
+                    "properties": {"content": {"type": "string"}},
+                    "required": ["content"],
+                }
+            ],
+        },
+    }
+
+
+def _plain_tool(name: str) -> dict:
+    """A tool with a supported root `input_schema`."""
+    return {
+        "name": name,
+        "description": "Supported.",
+        "input_schema": {"type": "object", "properties": {}},
+    }
+
+
+@pytest.mark.parametrize("keyword", ["oneOf", "anyOf"])
+def test_bind_tools_drops_each_root_combinator(keyword: str) -> None:
+    """Every combinator in the unsupported set is filtered and named in the warning."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    with pytest.warns(UserWarning, match=f"top-level {keyword}") as record:
+        bound = chat_model.bind_tools(
+            [_plain_tool("search"), _composition_tool("attach", keyword)]
+        )
+
+    assert [t["name"] for t in cast("RunnableBinding", bound).kwargs["tools"]] == [
+        "search"
+    ]
+    assert "attach" in str(record[0].message)
+
+
+def test_bind_tools_keeps_root_all_of_without_warning() -> None:
+    """A root `allOf` schema is supported and remains available to the model."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    tool = _composition_tool("attach", "allOf")
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        bound = chat_model.bind_tools([tool])
+
+    bound_tools = cast("RunnableBinding", bound).kwargs["tools"]
+    assert [tool["name"] for tool in bound_tools] == ["attach"]
+    assert bound_tools[0]["input_schema"] == tool["input_schema"]
+
+
+def test_bind_tools_warning_names_every_offending_combinator() -> None:
+    """A schema with several root combinators reports all of them."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    tool = _composition_tool("attach")
+    tool["input_schema"]["oneOf"] = [{"type": "object", "properties": {}}]
+    with pytest.warns(UserWarning, match="top-level oneOf/anyOf"):
+        chat_model.bind_tools([_plain_tool("search"), tool])
+
+
+def test_bind_tools_passes_builtin_tools_through_unfiltered() -> None:
+    """Built-in server-side tools have no `input_schema` and are never dropped."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    builtin = {"type": "mcp_toolset", "mcp_server_name": "notion"}
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")  # no warning expected
+        bound = chat_model.bind_tools([builtin])
+
+    assert cast("RunnableBinding", bound).kwargs["tools"] == [builtin]
+
+
+def test_drop_unsupported_tools_describes_unnamed_tool() -> None:
+    """A dropped tool with no `name` is described, not rendered as `None`.
+
+    Exercised on the helper directly: `convert_to_anthropic_tool` rejects a
+    nameless tool before `bind_tools` could ever reach this branch.
+    """
+    unnamed = _composition_tool("attach")
+    del unnamed["name"]
+    with pytest.warns(UserWarning, match="Dropping tool with no name") as record:
+        kept, dropped_names = _drop_unsupported_root_composition_tools([unnamed])
+
+    assert kept == []
+    assert dropped_names == set()
+    assert "None" not in str(record[0].message)
+
+
+def test_bind_tools_all_tools_dropped_raises() -> None:
+    """No usable tool remains, so there is nothing to salvage by dropping."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    with (
+        pytest.warns(UserWarning, match="Dropping tool"),
+        pytest.raises(ValueError, match="All 1 bound tool"),
+    ):
+        chat_model.bind_tools([_composition_tool("attach")])
+
+
+def test_bind_tools_no_tools_does_not_claim_tools_were_dropped() -> None:
+    """An empty tool list is not a dropped tool list, and must not say so."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    bound = chat_model.bind_tools([], tool_choice="any")
+    assert cast("RunnableBinding", bound).kwargs["tools"] == []
+
+
+@pytest.mark.parametrize("tool_choice", ["attach", {"type": "tool", "name": "attach"}])
+def test_bind_tools_dropped_tool_forced_by_tool_choice_raises(
+    tool_choice: str | dict,
+) -> None:
+    """A dropped forced tool raises locally even when valid tools remain."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    with (
+        pytest.warns(UserWarning, match="Dropping tool"),
+        pytest.raises(ValueError, match="tool_choice forces 'attach'"),
+    ):
+        chat_model.bind_tools(
+            [_plain_tool("search"), _composition_tool("attach")],
+            tool_choice=tool_choice,
+        )
+
+
+@pytest.mark.parametrize("tool_choice", ["any", {"type": "any"}])
+def test_bind_tools_partial_drop_under_forced_any_raises(
+    tool_choice: str | dict,
+) -> None:
+    """Forcing tool use depends on the whole tool set, so losing any member is fatal.
+
+    Under `create_agent`'s `ToolStrategy`, `tool_choice='any'` plus a dropped
+    structured-output tool would otherwise loop until `GraphRecursionError`.
+    """
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    with (
+        pytest.warns(UserWarning, match="Dropping tool"),
+        pytest.raises(ValueError, match="tool_choice='any' forces the model"),
+    ):
+        chat_model.bind_tools(
+            [_plain_tool("search"), _composition_tool("attach")],
+            tool_choice=tool_choice,
+        )
+
+
+def test_bind_tools_unknown_forced_tool_choice_is_left_to_the_api() -> None:
+    """Names the client can't see are not rejected locally.
+
+    `mcp_toolset` tools expose no per-tool `name` -- the names live on the MCP
+    server -- so a forced choice naming one is only resolvable server-side.
+    """
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    bound = chat_model.bind_tools(
+        [{"type": "mcp_toolset", "mcp_server_name": "notion"}],
+        tool_choice="notion_create_attachment",
+    )
+    assert cast("RunnableBinding", bound).kwargs["tool_choice"] == {
+        "type": "tool",
+        "name": "notion_create_attachment",
+    }
+
+
+def test_with_structured_output_root_combinator_raises_actionable_error() -> None:
+    """A root-combinator schema fails at bind time, naming the real remedy."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+
+    class _Left(BaseModel):
+        a: int
+
+    class _Right(BaseModel):
+        b: str
+
+    class _Either(RootModel):
+        root: _Left | _Right
+
+    with (
+        pytest.warns(UserWarning, match="Dropping tool"),
+        pytest.raises(ValueError, match="method='json_schema'"),
+    ):
+        chat_model.with_structured_output(_Either, method="function_calling")
+
+
+def test_with_structured_output_root_combinator_raises_when_thinking_enabled() -> None:
+    """The thinking path must not degrade to a toolless request and a wrong error.
+
+    Without the bind-time raise, this spends an API call and then reports the
+    failure as a `thinking` limitation rather than a schema problem.
+    """
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking={"type": "enabled", "budget_tokens": 1024},
+    )
+
+    class _Left(BaseModel):
+        a: int
+
+    class _Right(BaseModel):
+        b: str
+
+    class _Either(RootModel):
+        root: _Left | _Right
+
+    with (
+        pytest.warns(UserWarning, match="Dropping tool"),
+        pytest.raises(ValueError, match="All 1 bound tool"),
+    ):
+        chat_model.with_structured_output(_Either, method="function_calling")
+
+
+class _Person(BaseModel):
+    name: str
+
+
+_ANTHROPIC_TOOL_SCHEMA = {
+    "name": "_Person",
+    "input_schema": {"type": "object", "properties": {"name": {"type": "string"}}},
+}
+
+
+@pytest.mark.parametrize("model", ["claude-opus-5-5", "claude-fable-5-1"])
+@pytest.mark.parametrize("schema", [_Person, _ANTHROPIC_TOOL_SCHEMA])
+@pytest.mark.parametrize("thinking", [None, {"type": "adaptive"}])
+def test_with_structured_output_skips_forced_tool_choice_when_unsupported(
+    model: str,
+    schema: type[BaseModel] | dict[str, Any],
+    thinking: dict[str, Any] | None,
+) -> None:
+    """Models that reject forced `tool_choice` bind the tool without forcing it."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=model,
+        anthropic_api_key="secret-api-key",
+        thinking=thinking,
+    )
+
+    with pytest.warns(UserWarning, match="method='json_schema'"):
+        structured = chat_model.with_structured_output(schema)
+
+    bound = cast("RunnableBinding", structured.first)  # type: ignore[attr-defined]
+    assert [t["name"] for t in bound.kwargs["tools"]] == ["_Person"]
+    assert "tool_choice" not in bound.kwargs
+    assert "output_config" not in bound.kwargs
+
+
+def test_with_structured_output_forces_tool_choice_when_supported() -> None:
+    """Models that accept forced `tool_choice` keep `function_calling`."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model="claude-opus-5",
+        anthropic_api_key="secret-api-key",
+    )
+
+    class Person(BaseModel):
+        name: str
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        structured = chat_model.with_structured_output(Person)
+
+    bound = cast("RunnableBinding", structured.first)  # type: ignore[attr-defined]
+    assert bound.kwargs["tool_choice"] == {"type": "tool", "name": "Person"}
+    assert "output_config" not in bound.kwargs
+
+
+def test_get_num_tokens_from_messages_filters_unsupported_tools() -> None:
+    """Token counting and sending agree on which tools the API will accept."""
+    chat_model = ChatAnthropic(  # type: ignore[call-arg, call-arg]
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+    )
+    counted: dict[str, Any] = {}
+
+    def _count_tokens(**kwargs: Any) -> Any:
+        counted.update(kwargs)
+        return SimpleNamespace(input_tokens=42)
+
+    with (
+        patch.object(chat_model._client.messages, "count_tokens", _count_tokens),
+        pytest.warns(UserWarning, match="Dropping tool"),
+    ):
+        chat_model.get_num_tokens_from_messages(
+            [HumanMessage("hi")],
+            tools=[_plain_tool("search"), _composition_tool("attach")],
+        )
+
+    assert [t["name"] for t in counted["tools"]] == ["search"]
+
+
 def test_fine_grained_tool_streaming_beta() -> None:
     """Test that fine-grained tool streaming beta can be enabled."""
     # Test with betas parameter at initialization
@@ -1661,13 +3119,15 @@ def test_fine_grained_tool_streaming_beta() -> None:
         "fine-grained-tool-streaming-2025-05-14",
     }
 
-    # Test that _create routes to beta client when betas are present
+    # Test that _create routes to the beta raw-response client when betas are present
     model = ChatAnthropic(
         model=MODEL_NAME, betas=["fine-grained-tool-streaming-2025-05-14"]
     )
     payload = {"betas": ["fine-grained-tool-streaming-2025-05-14"], "stream": True}
 
-    with patch.object(model._client.beta.messages, "create") as mock_beta_create:
+    with patch.object(
+        model._client.beta.messages.with_raw_response, "create"
+    ) as mock_beta_create:
         model._create(payload)
         mock_beta_create.assert_called_once_with(**payload)
 
@@ -1703,6 +3163,36 @@ def test_get_num_tokens_from_messages_passes_kwargs() -> None:
     assert call_args["context_management"] == {
         "edits": [{"type": "clear_tool_uses_20250919"}]
     }
+
+
+def test_get_num_tokens_from_messages_forwards_block_system_prompt() -> None:
+    """A block-array system prompt must reach the counting API, not be dropped."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    messages = [
+        SystemMessage([{"type": "text", "text": "You are a scientist"}]),
+        HumanMessage("Hello, Claude"),
+    ]
+
+    with patch.object(anthropic, "Client") as _client:
+        llm.get_num_tokens_from_messages(messages)
+
+    call_args = _client.return_value.messages.count_tokens.call_args.kwargs
+    assert call_args["system"] == [{"type": "text", "text": "You are a scientist"}]
+
+
+def test_get_num_tokens_from_messages_keeps_mid_conversation_system_in_place() -> None:
+    """Counting reads the profile like a request does, so the turn stays in place."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, profile={"mid_conversation_system_messages": True}
+    )
+    messages = [HumanMessage("Review foo()"), SystemMessage("Be concise.")]
+
+    with patch.object(anthropic, "Client") as _client:
+        llm.get_num_tokens_from_messages(messages)
+
+    call_args = _client.return_value.messages.count_tokens.call_args.kwargs
+    assert "system" not in call_args
+    assert call_args["messages"][-1] == {"role": "system", "content": "Be concise."}
 
 
 def test_usage_metadata_standardization() -> None:
@@ -1742,6 +3232,42 @@ def test_usage_metadata_standardization() -> None:
     assert result["input_tokens"] == 0
     assert result["output_tokens"] == 0
     assert result["total_tokens"] == 0
+
+
+def test_usage_metadata_reasoning_tokens() -> None:
+    """Reasoning tokens should be surfaced via `output_token_details.reasoning`.
+
+    Anthropic reports these through `output_tokens_details.thinking_tokens` as a
+    decomposition of `output_tokens` (not additive).
+    """
+
+    class OutputTokensDetails(BaseModel):
+        thinking_tokens: int = 20
+
+    class UsageWithReasoning(BaseModel):
+        input_tokens: int = 100
+        output_tokens: int = 50
+        output_tokens_details: OutputTokensDetails | None = OutputTokensDetails()
+
+    # Case 1: reasoning tokens present
+    result = _create_usage_metadata(UsageWithReasoning())
+    assert result["input_tokens"] == 100
+    assert result["output_tokens"] == 50
+    assert result["total_tokens"] == 150
+    assert result.get("output_token_details") == {"reasoning": 20}
+
+    # Case 2: output_tokens_details explicitly None
+    result = _create_usage_metadata(UsageWithReasoning(output_tokens_details=None))
+    assert result["output_tokens"] == 50
+    assert "output_token_details" not in result
+
+    # Case 3: output_tokens_details field absent (older models)
+    class UsageNoDetails(BaseModel):
+        input_tokens: int = 100
+        output_tokens: int = 50
+
+    result = _create_usage_metadata(UsageNoDetails())
+    assert "output_token_details" not in result
 
 
 def test_usage_metadata_cache_creation_ttl() -> None:
@@ -1931,6 +3457,24 @@ def test_mcp_tracing() -> None:
     assert payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"  # noqa: S105
 
 
+def test_sampling_params_reach_the_request_payload() -> None:
+    """`temperature`/`top_p`/`top_k` land wherever the installed SDK accepts them.
+
+    `anthropic>=1` dropped them as named arguments, so they are relocated to
+    `extra_body`; the resulting wire payload is the same on both majors.
+    """
+    llm = ChatAnthropic(model=MODEL_NAME, temperature=0, top_p=0.9, top_k=5)
+    payload = llm._get_request_payload([HumanMessage("foo")])
+
+    sampling = {"temperature": 0, "top_p": 0.9, "top_k": 5}
+    if _unsupported_sampling_params():
+        assert payload["extra_body"] == sampling
+        assert not sampling.keys() & payload.keys()
+    else:
+        assert {k: payload[k] for k in sampling} == sampling
+        assert "extra_body" not in payload
+
+
 def test_cache_control_kwarg() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
@@ -1958,6 +3502,35 @@ class _BedrockLikeAnthropic(ChatAnthropic):
     @property
     def _llm_type(self) -> str:
         return "anthropic-bedrock-chat"
+
+
+def test_cache_control_breakpoint_lands_on_trailing_system_turn() -> None:
+    """A trailing in-place system turn is the true end of the stable prefix.
+
+    Anthropic documents mid-conversation system messages as cacheable, so the
+    breakpoint must be allowed to land there rather than being placed early and
+    re-processing the system message on every later turn. Also shows that the
+    feature is not gated on the transport: Anthropic supports mid-conversation
+    system messages on Bedrock and Google Cloud too.
+    """
+    llm = _BedrockLikeAnthropic(model=MID_CONVERSATION_SYSTEM_MODEL)
+
+    payload = llm._get_request_payload(
+        [HumanMessage("Review foo()"), SystemMessage("Be concise.")],
+        cache_control={"type": "ephemeral"},
+    )
+
+    assert payload.get("system") is None
+    assert payload["messages"][-1] == {
+        "role": "system",
+        "content": [
+            {
+                "type": "text",
+                "text": "Be concise.",
+                "cache_control": {"type": "ephemeral"},
+            },
+        ],
+    }
 
 
 def test_cache_control_kwarg_bedrock_injects_into_blocks() -> None:
@@ -2653,6 +4226,101 @@ def test_format_messages_preserves_nonempty_thinking_field() -> None:
     assert block["signature"] == "sig_xyz"
 
 
+@pytest.mark.parametrize(
+    ("args", "expected_input"),
+    [('{"city":', {}), ('{"city":"Paris"}', {"city": "Paris"}), ("[1]", {})],
+)
+def test_invalid_tool_call_retains_tool_use_for_error_result(
+    args: str, expected_input: dict[str, Any]
+) -> None:
+    tool_call_id = "toolu_invalid"
+    ai_message = AIMessage(
+        content=[{"type": "text", "text": "Calling tool"}],
+        invalid_tool_calls=[{"name": "get_weather", "args": args, "id": tool_call_id}],
+    )
+    tool_message = ToolMessage(
+        "Tool call arguments were malformed.",
+        tool_call_id=tool_call_id,
+        status="error",
+    )
+
+    _, messages = _format_messages(
+        [HumanMessage("Check the weather"), ai_message, tool_message],
+        model=MODEL_NAME,
+    )
+
+    assert messages[1]["content"] == [
+        {"type": "text", "text": "Calling tool"},
+        {
+            "type": "tool_use",
+            "name": "get_weather",
+            "input": expected_input,
+            "id": tool_call_id,
+        },
+    ]
+    assert messages[2]["content"][0]["tool_use_id"] == tool_call_id
+    assert messages[2]["content"][0]["is_error"] is True
+
+
+def test_invalid_tool_call_does_not_duplicate_existing_tool_use() -> None:
+    ai_message = AIMessage(
+        content=[
+            {"type": "tool_use", "name": "get_weather", "input": {}, "id": "toolu_1"}
+        ],
+        tool_calls=[{"name": "get_weather", "args": {}, "id": "toolu_2"}],
+        invalid_tool_calls=[
+            {"name": "get_weather", "args": "bad", "id": "toolu_1"},
+            {"name": "get_weather", "args": "bad", "id": "toolu_2"},
+            {"name": "get_weather", "args": "bad", "id": None},
+        ],
+    )
+
+    _, messages = _format_messages([ai_message], model=MODEL_NAME)
+
+    assert [block["id"] for block in messages[0]["content"]] == ["toolu_1", "toolu_2"]
+
+
+def test_v1_invalid_tool_call_retains_tool_use_for_error_result() -> None:
+    """An error result must retain its Anthropic tool-use block on replay."""
+    tool_call_id = "toolu_invalid"
+    invalid_tool_call = {
+        "type": "invalid_tool_call",
+        "id": tool_call_id,
+        "name": "get_weather",
+        "args": '{"location":',
+        "error": "Failed to parse tool call arguments as JSON",
+    }
+    ai_message = AIMessage(
+        content=[invalid_tool_call],
+        invalid_tool_calls=[invalid_tool_call],
+        response_metadata={"model_provider": "anthropic", "output_version": "v1"},
+    )
+    tool_message = ToolMessage(
+        "Tool call arguments were malformed.",
+        tool_call_id=tool_call_id,
+        status="error",
+    )
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    payload = llm._get_request_payload(
+        [HumanMessage("Check the weather"), ai_message, tool_message]
+    )
+
+    assert payload["messages"][1] == {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "tool_use",
+                "id": tool_call_id,
+                "name": "get_weather",
+                "input": {},
+            }
+        ],
+    }
+    assert payload["messages"][2]["content"][0]["tool_use_id"] == tool_call_id
+    assert payload["messages"][2]["content"][0]["is_error"] is True
+
+
 def test_strict_tool_use() -> None:
     model = ChatAnthropic(
         model=MODEL_NAME,  # type: ignore[call-arg]
@@ -2845,6 +4513,7 @@ def test_advisor_is_builtin_tool() -> None:
         **bound.kwargs,  # type: ignore[attr-defined]
     )
     assert advisor_tool in payload["tools"]
+    assert "advisor-tool-2026-03-01" in payload["betas"]
 
 
 def test_tool_search_beta_headers() -> None:
@@ -2964,7 +4633,7 @@ def test_tool_search_result_formatting() -> None:
         ),
     ]
 
-    _, formatted = _format_messages(messages)
+    _, formatted = _format_messages(messages, model=MODEL_NAME)
 
     # Verify the tool_result block is preserved correctly
     assistant_msg = formatted[1]
@@ -2985,6 +4654,35 @@ def test_tool_search_result_formatting() -> None:
     assert tool_result_block["content"][0]["tool_name"] == "get_weather"
     assert tool_result_block["content"][1]["type"] == "tool_reference"
     assert tool_result_block["content"][1]["tool_name"] == "weather_forecast"
+
+
+# Regression test for https://github.com/langchain-ai/langchain/issues/37584
+def test__format_messages_tool_search_result_drops_streaming_index() -> None:
+    """Test that streaming-only indexes are not sent to Anthropic."""
+    messages = [
+        AIMessage(  # type: ignore[misc]
+            [
+                {
+                    "type": "tool_search_tool_result",
+                    "tool_use_id": "srvtoolu_123",
+                    "content": [
+                        {"type": "tool_reference", "tool_name": "get_weather"},
+                    ],
+                    "index": 1,
+                },
+            ],
+        ),
+    ]
+
+    _, formatted = _format_messages(messages, model=MODEL_NAME)
+
+    assert formatted[0]["content"][0] == {
+        "type": "tool_search_tool_result",
+        "tool_use_id": "srvtoolu_123",
+        "content": [
+            {"type": "tool_reference", "tool_name": "get_weather"},
+        ],
+    }
 
 
 def test_auto_append_betas_for_mcp_servers() -> None:
@@ -3112,7 +4810,7 @@ def test_profile() -> None:
 def test_profile_1m_context_beta() -> None:
     model = ChatAnthropic(model="claude-sonnet-4-5")
     assert model.profile
-    assert model.profile["max_input_tokens"] == 1000000
+    assert model.profile["max_input_tokens"] == 200000
 
     model = ChatAnthropic(model="claude-sonnet-4-5", betas=["context-1m-2025-08-07"])
     assert model.profile
@@ -3123,7 +4821,7 @@ def test_profile_1m_context_beta() -> None:
         betas=["token-efficient-tools-2025-02-19"],
     )
     assert model.profile
-    assert model.profile["max_input_tokens"] == 1000000
+    assert model.profile["max_input_tokens"] == 200000
 
 
 async def test_model_profile_not_blocking() -> None:
@@ -3282,6 +4980,36 @@ def test_reasoning_effort_yields_to_effort() -> None:
 
     payload = model._get_request_payload("Test query")
     assert payload["output_config"]["effort"] == "high"
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"thinking": {"type": "disabled"}}, r"not supported for claude-fable-5-1"),
+        ({"top_k": 1}, r"`top_k` is not supported"),
+        ({"top_p": 0.9}, r"`top_p` is not supported"),
+        ({"temperature": 0.1}, r"`temperature` is not supported"),
+    ],
+)
+def test_fable_5_1_rejects_unsupported_parameters(
+    kwargs: dict[str, object], match: str
+) -> None:
+    """Fable 5.1 only supports adaptive thinking and default sampling."""
+    model = ChatAnthropic(model="claude-fable-5-1", **kwargs)
+
+    with pytest.raises(ValueError, match=match):
+        model._get_request_payload("Test query")
+
+
+def test_fable_5_1_rejects_manual_thinking() -> None:
+    """Fable 5.1 does not support manual thinking budgets."""
+    model = ChatAnthropic(
+        model="claude-fable-5-1",
+        thinking={"type": "enabled", "budget_tokens": 1_024},
+    )
+
+    with pytest.raises(ValueError, match=r"use adaptive thinking"):
+        model._get_request_payload("Test query")
 
 
 def test_reasoning_effort_defaults_adaptive_thinking() -> None:
@@ -3599,14 +5327,14 @@ def test__format_messages_filters_non_anthropic_blocks(block_type: str) -> None:
         content=[block, {"type": "text", "text": "hello"}],
         response_metadata={"model_provider": "openai"},
     )
-    _, msgs = _format_messages([human, ai])
+    _, msgs = _format_messages([human, ai], model=MODEL_NAME)
     assert msgs[1]["content"] == [{"type": "text", "text": "hello"}]
 
     ai_anthropic = AIMessage(  # type: ignore[misc]
         content=[block, {"type": "text", "text": "hello"}],
         response_metadata={"model_provider": "anthropic"},
     )
-    _, msgs = _format_messages([human, ai_anthropic])
+    _, msgs = _format_messages([human, ai_anthropic], model=MODEL_NAME)
     assert any(b["type"] == block_type for b in msgs[1]["content"])
 
 
@@ -3616,17 +5344,19 @@ def test__format_messages_trailing_whitespace() -> None:
 
     # Test string content
     ai_string = AIMessage("thought ")  # type: ignore[misc]
-    _, anthropic_messages = _format_messages([human, ai_string])
+    _, anthropic_messages = _format_messages([human, ai_string], model=MODEL_NAME)
     assert anthropic_messages[-1]["content"] == "thought"
 
     # Test list content
     ai_list = AIMessage([{"type": "text", "text": "thought "}])  # type: ignore[misc]
-    _, anthropic_messages = _format_messages([human, ai_list])
+    _, anthropic_messages = _format_messages([human, ai_list], model=MODEL_NAME)
     assert anthropic_messages[-1]["content"][0]["text"] == "thought"  # type: ignore[index]
 
     # Test that intermediate messages are NOT trimmed
     ai_intermediate = AIMessage("thought ")  # type: ignore[misc]
-    _, anthropic_messages = _format_messages([human, ai_intermediate, human])
+    _, anthropic_messages = _format_messages(
+        [human, ai_intermediate, human], model=MODEL_NAME
+    )
     assert anthropic_messages[1]["content"] == "thought "
 
 
@@ -3644,12 +5374,72 @@ _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR = anthropic.BadRequestError(
 )
 
 
+@pytest.mark.parametrize(
+    ("status_code", "sdk_error_type", "model_error_type", "is_retryable"),
+    [
+        (400, anthropic.BadRequestError, ModelInvalidRequestError, False),
+        (401, anthropic.AuthenticationError, ModelAuthenticationError, False),
+        (403, anthropic.PermissionDeniedError, ModelPermissionDeniedError, False),
+        (404, anthropic.NotFoundError, ModelNotFoundError, False),
+        (429, anthropic.RateLimitError, ModelRateLimitError, True),
+        (500, anthropic.InternalServerError, ModelAPIError, True),
+        (529, anthropic.OverloadedError, ModelAPIError, True),
+    ],
+)
+def test_anthropic_error_classification(
+    status_code: int,
+    sdk_error_type: type[anthropic.APIStatusError],
+    model_error_type: type[ModelError],
+    *,
+    is_retryable: bool,
+) -> None:
+    """Provider errors are raised as both the SDK type and the LangChain type."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    sdk_error = sdk_error_type(
+        "model request failed",
+        response=MagicMock(status_code=status_code),
+        body=None,
+    )
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
+        pytest.raises(sdk_error_type) as exc_info,
+    ):
+        mock_create.side_effect = sdk_error
+        llm.invoke([HumanMessage(content="test")])
+
+    assert isinstance(exc_info.value, model_error_type)
+    assert exc_info.value.is_retryable is is_retryable
+
+
+def test_anthropic_transport_error_classification() -> None:
+    """Timeout and connection failures are classified without a status code."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+
+    for sdk_error, model_error_type in (
+        (anthropic.APITimeoutError(request), ModelTimeoutError),
+        (anthropic.APIConnectionError(request=request), ModelConnectionError),
+    ):
+        with (  # noqa: PT012
+            patch.object(
+                llm._client.messages.with_raw_response, "create"
+            ) as mock_create,
+            pytest.raises(type(sdk_error)) as exc_info,
+        ):
+            mock_create.side_effect = sdk_error
+            llm.invoke([HumanMessage(content="test")])
+
+        assert isinstance(exc_info.value, model_error_type)
+        assert exc_info.value.is_retryable is True
+
+
 def test_context_overflow_error_invoke_sync() -> None:
     """Test context overflow error on invoke (sync)."""
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -3663,7 +5453,9 @@ async def test_context_overflow_error_invoke_async() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._async_client.messages, "create") as mock_create,
+        patch.object(
+            llm._async_client.messages.with_raw_response, "create"
+        ) as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -3677,7 +5469,7 @@ def test_context_overflow_error_stream_sync() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -3691,7 +5483,9 @@ async def test_context_overflow_error_stream_async() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._async_client.messages, "create") as mock_create,
+        patch.object(
+            llm._async_client.messages.with_raw_response, "create"
+        ) as mock_create,
         pytest.raises(ContextOverflowError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -3706,7 +5500,7 @@ def test_context_overflow_error_backwards_compatibility() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
 
     with (  # noqa: PT012
-        patch.object(llm._client.messages, "create") as mock_create,
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
         pytest.raises(anthropic.BadRequestError) as exc_info,
     ):
         mock_create.side_effect = _CONTEXT_OVERFLOW_BAD_REQUEST_ERROR
@@ -3771,6 +5565,49 @@ def test_bind_tools_drops_forced_tool_choice_when_thinking_enabled() -> None:
         )
     assert "tool_choice" not in cast("RunnableBinding", result).kwargs
     assert len(w) == 1
+
+
+@pytest.mark.parametrize(
+    "thinking",
+    [
+        pytest.param({"type": "enabled", "budget_tokens": 5000}, id="enabled"),
+        pytest.param({"type": "adaptive"}, id="adaptive"),
+    ],
+)
+def test_bind_tools_drops_forced_choice_for_filtered_tool_when_thinking_enabled(
+    thinking: dict[str, Any],
+) -> None:
+    """Thinking takes precedence over forced-choice validation.
+
+    Thinking discards a forced `tool_choice` before the request is sent, so the
+    choice need not survive filtering. A usable tool must remain, though --
+    otherwise the all-tools-dropped guard applies regardless of thinking.
+    """
+    chat_model = ChatAnthropic(
+        model=MODEL_NAME,
+        anthropic_api_key="secret-api-key",
+        thinking=thinking,
+    )
+    unsupported_tool = {
+        "name": "unsupported_tool",
+        "description": "A tool with an unsupported root schema composition.",
+        "input_schema": {"oneOf": [{"type": "string"}, {"type": "number"}]},
+    }
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = chat_model.bind_tools(
+            [_plain_tool("search"), unsupported_tool],
+            tool_choice="unsupported_tool",
+        )
+
+    assert "tool_choice" not in cast("RunnableBinding", result).kwargs
+    assert [t["name"] for t in cast("RunnableBinding", result).kwargs["tools"]] == [
+        "search"
+    ]
+    assert len(w) == 2
+    assert "unsupported_tool" in str(w[0].message)
+    assert "thinking is enabled" in str(w[1].message)
 
 
 def test_bind_tools_drops_forced_tool_choice_when_adaptive_thinking() -> None:
@@ -3940,6 +5777,134 @@ def test_no_task_budget_no_beta() -> None:
         assert "task-budgets-2026-03-13" not in betas
 
 
+_MID_CONVERSATION_TOOL_CHANGES_BETA = "mid-conversation-tool-changes-2026-07-01"
+_INLINE_TOOLS_BETA = "inline-tools-2026-09-15"
+_INLINE_TOOL_ADDITION_BLOCK = {
+    "type": "tool_addition",
+    "tool": {
+        "type": "tool_definition",
+        "definition": {
+            "name": "db_query",
+            "description": "Run a read-only query.",
+            "input_schema": {
+                "type": "object",
+                "properties": {"sql": {"type": "string"}},
+                "required": ["sql"],
+            },
+        },
+    },
+}
+
+
+def _tool_change_conversation() -> list[BaseMessage]:
+    return [
+        HumanMessage("Review foo()"),
+        SystemMessage([_TOOL_REMOVAL_BLOCK]),
+        AIMessage("Looks fine."),
+    ]
+
+
+def test_tool_change_block_auto_appends_beta() -> None:
+    """A tool-change block that reaches the wire enables the beta."""
+    model = ChatAnthropic(model=MID_CONVERSATION_SYSTEM_MODEL)
+    payload = model._get_request_payload(_tool_change_conversation())
+    assert payload["betas"] == [_MID_CONVERSATION_TOOL_CHANGES_BETA]
+
+
+def test_tool_change_block_beta_not_duplicated() -> None:
+    """The tool-change beta is appended at most once."""
+    model = ChatAnthropic(
+        model=MID_CONVERSATION_SYSTEM_MODEL,
+        betas=[_MID_CONVERSATION_TOOL_CHANGES_BETA],
+    )
+    payload = model._get_request_payload(_tool_change_conversation())
+    assert payload["betas"].count(_MID_CONVERSATION_TOOL_CHANGES_BETA) == 1
+
+
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+def test_inline_tool_definition_auto_appends_beta(spelling: str) -> None:
+    """Inline definitions use their beta and preserve the native wire payload."""
+    block = (
+        _INLINE_TOOL_ADDITION_BLOCK
+        if spelling == "bare"
+        else {"type": "non_standard", "value": _INLINE_TOOL_ADDITION_BLOCK}
+    )
+    model = ChatAnthropic(model="claude-opus-5-5")
+    payload = model._get_request_payload(
+        [HumanMessage("Review data"), SystemMessage([block])]
+    )
+    assert payload["messages"][-1]["content"] == [_INLINE_TOOL_ADDITION_BLOCK]
+    assert payload["betas"] == [_INLINE_TOOLS_BETA]
+
+
+def test_inline_tool_definition_supersedes_reference_beta() -> None:
+    """One inline beta covers mixed inline and reference-based changes."""
+    model = ChatAnthropic(model="claude-opus-5-5")
+    payload = model._get_request_payload(
+        [
+            HumanMessage("Review data"),
+            SystemMessage([_TOOL_REMOVAL_BLOCK, _INLINE_TOOL_ADDITION_BLOCK]),
+        ]
+    )
+    assert payload["betas"] == [_INLINE_TOOLS_BETA]
+
+
+def test_explicit_inline_beta_covers_reference_tool_change() -> None:
+    """An explicit inline beta prevents inference of the older reference beta."""
+    model = ChatAnthropic(
+        model="claude-opus-5-5",
+        betas=[_INLINE_TOOLS_BETA],
+    )
+    payload = model._get_request_payload(_tool_change_conversation())
+    assert payload["betas"] == [_INLINE_TOOLS_BETA]
+
+
+@pytest.mark.parametrize(
+    "betas",
+    [
+        [_INLINE_TOOLS_BETA],
+        [_MID_CONVERSATION_TOOL_CHANGES_BETA, _INLINE_TOOLS_BETA],
+    ],
+)
+def test_inline_tool_beta_preserved_without_duplication(betas: list[str]) -> None:
+    """Explicit beta order is preserved and inline beta is not duplicated."""
+    model = ChatAnthropic(model="claude-opus-5-5", betas=betas)
+    payload = model._get_request_payload(
+        [HumanMessage("Review data"), SystemMessage([_INLINE_TOOL_ADDITION_BLOCK])]
+    )
+    assert payload["betas"] == betas
+    assert payload["betas"].count(_INLINE_TOOLS_BETA) == 1
+
+
+def test_system_stripped_to_empty_omits_system_field() -> None:
+    """An empty block array carries no instructions, so it is not sent."""
+    model = ChatAnthropic(model=MODEL_NAME)
+    with pytest.warns(UserWarning, match="Tool-change block"):
+        payload = model._get_request_payload(_tool_change_conversation())
+    assert "system" not in payload
+
+
+def test_no_tool_change_block_no_beta() -> None:
+    """A conversation without tool-change blocks does not enable the beta."""
+    model = ChatAnthropic(model=MID_CONVERSATION_SYSTEM_MODEL)
+    payload = model._get_request_payload(
+        [
+            HumanMessage("Review foo()"),
+            SystemMessage("Be concise."),
+            AIMessage("Looks fine."),
+        ],
+    )
+    assert _MID_CONVERSATION_TOOL_CHANGES_BETA not in (payload.get("betas") or [])
+
+
+def test_stripped_tool_change_block_no_beta() -> None:
+    """A tool-change block narrowed away on an unsupported model enables nothing."""
+    model = ChatAnthropic(model=MODEL_NAME)
+    with pytest.warns(UserWarning, match="Tool-change block"):
+        payload = model._get_request_payload(_tool_change_conversation())
+    assert _MID_CONVERSATION_TOOL_CHANGES_BETA not in (payload.get("betas") or [])
+
+
 def test_anthropic_stream_events_v3_lifecycle() -> None:
     """Validate lifecycle events across a thinking + text + tool_use stream.
 
@@ -4065,8 +6030,8 @@ def test_anthropic_stream_events_v3_lifecycle() -> None:
         thinking={"type": "enabled", "budget_tokens": 1024},
     )
 
-    def mock_create(_payload: Any) -> list:
-        return events
+    def mock_create(_payload: Any) -> Any:
+        return SimpleNamespace(parse=lambda: events)
 
     with patch.object(llm, "_create", mock_create):
         stream_events = list(llm.stream_events("Test query", version="v3"))
@@ -4187,3 +6152,163 @@ def test_langsmith_gateway_provider_base_url_uses_provider_key(
     llm = ChatAnthropic(model=MODEL_NAME)
     assert llm.anthropic_api_url == "https://api.anthropic.com"
     assert llm.anthropic_api_key.get_secret_value() == "provider-key"
+
+
+_MISSING_CREDENTIALS_TYPE_ERROR = TypeError(
+    "Could not resolve authentication method. Expected one of api_key, "
+    "auth_token, or credentials to be set. Or for one of the `X-Api-Key` or "
+    "`Authorization` headers to be explicitly omitted"
+)
+
+
+def _clear_auth_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_URL", raising=False)
+    monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
+
+
+def test_missing_credentials_error_sync(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Missing credentials raise a `TypeError` with LangChain guidance."""
+    _clear_auth_env(monkeypatch)
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
+        pytest.raises(TypeError, match="ANTHROPIC_API_KEY") as exc_info,
+    ):
+        mock_create.side_effect = _MISSING_CREDENTIALS_TYPE_ERROR
+        llm.invoke([HumanMessage(content="test")])
+
+    assert exc_info.value.__cause__ is _MISSING_CREDENTIALS_TYPE_ERROR
+
+
+async def test_missing_credentials_error_async(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Missing credentials raise a `TypeError` with LangChain guidance (async)."""
+    _clear_auth_env(monkeypatch)
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with (  # noqa: PT012
+        patch.object(
+            llm._async_client.messages.with_raw_response, "create"
+        ) as mock_create,
+        pytest.raises(TypeError, match="ANTHROPIC_API_KEY") as exc_info,
+    ):
+        mock_create.side_effect = _MISSING_CREDENTIALS_TYPE_ERROR
+        await llm.ainvoke([HumanMessage(content="test")])
+
+    assert exc_info.value.__cause__ is _MISSING_CREDENTIALS_TYPE_ERROR
+
+
+def test_unrelated_type_error_propagates_unchanged() -> None:
+    """A `TypeError` not about authentication is re-raised as-is."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    unrelated_error = TypeError("some unrelated client error")
+
+    with (  # noqa: PT012
+        patch.object(llm._client.messages.with_raw_response, "create") as mock_create,
+        pytest.raises(TypeError) as exc_info,
+    ):
+        mock_create.side_effect = unrelated_error
+        llm.invoke([HumanMessage(content="test")])
+
+    assert exc_info.value is unrelated_error
+
+
+_CODE_EXECUTION_TOOL = [{"type": "code_execution_20250825", "name": "code_execution"}]
+_PPTX_SKILL = [{"type": "anthropic", "skill_id": "pptx", "version": "latest"}]
+
+
+def test_container_init_param() -> None:
+    """`container` set at construction is included in the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
+    payload = llm._get_request_payload(
+        [HumanMessage("Hello, world!")], tools=_CODE_EXECUTION_TOOL
+    )
+    assert payload["container"] == {"skills": _PPTX_SKILL}
+
+
+def test_container_runtime_overrides_init() -> None:
+    """A call-time `container` takes precedence over the init value."""
+    llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
+    payload = llm._get_request_payload(
+        [HumanMessage("Hello, world!")],
+        tools=_CODE_EXECUTION_TOOL,
+        container="container_runtime",
+    )
+    assert payload["container"] == "container_runtime"
+
+
+def test_container_merged_with_reused_container() -> None:
+    """`reuse_last_container` supplies an ID without dropping other keys."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, container={"skills": _PPTX_SKILL}, reuse_last_container=True
+    )
+    messages = [
+        HumanMessage("Hello, world!"),
+        AIMessage("Done.", response_metadata={"container": {"id": "container_123"}}),
+        HumanMessage("Now edit it."),
+    ]
+    payload = llm._get_request_payload(messages, tools=_CODE_EXECUTION_TOOL)
+    assert payload["container"] == {"id": "container_123", "skills": _PPTX_SKILL}
+
+
+def test_reuse_last_container_without_container_param() -> None:
+    """Without a `container`, a reused container is passed as a bare ID."""
+    llm = ChatAnthropic(model=MODEL_NAME, reuse_last_container=True)
+    messages = [
+        HumanMessage("Hello, world!"),
+        AIMessage("Done.", response_metadata={"container": {"id": "container_123"}}),
+        HumanMessage("Again."),
+    ]
+    payload = llm._get_request_payload(messages, tools=_CODE_EXECUTION_TOOL)
+    assert payload["container"] == "container_123"
+
+
+def test_reuse_last_container_does_not_override_explicit_id() -> None:
+    """An explicitly passed container ID wins over `reuse_last_container`."""
+    llm = ChatAnthropic(model=MODEL_NAME, reuse_last_container=True)
+    messages = [
+        HumanMessage("Hello, world!"),
+        AIMessage("Done.", response_metadata={"container": {"id": "container_123"}}),
+        HumanMessage("Again."),
+    ]
+    payload = llm._get_request_payload(
+        messages, tools=_CODE_EXECUTION_TOOL, container="container_explicit"
+    )
+    assert payload["container"] == "container_explicit"
+
+
+def test_container_absent_by_default() -> None:
+    """When unset, `container` is stripped from the payload."""
+    llm = ChatAnthropic(model=MODEL_NAME)
+    payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "container" not in payload
+
+
+def test_skills_without_code_execution_tool_warns() -> None:
+    """Skills are inert without a code execution tool, so warn."""
+    llm = ChatAnthropic(model=MODEL_NAME, container={"skills": _PPTX_SKILL})
+    with pytest.warns(UserWarning, match="code execution tool"):
+        llm._get_request_payload([HumanMessage("Hello, world!")])
+
+
+def test_thinking_display_updates_enables_beta() -> None:
+    """`display="updates"` auto-enables its beta, routing through beta.messages."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, thinking={"type": "adaptive", "display": "updates"}
+    )
+    payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "thinking-display-updates-2026-08-18" in payload["betas"]
+
+
+def test_thinking_display_summarized_does_not_enable_beta() -> None:
+    """Other `display` values are generally available."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME, thinking={"type": "adaptive", "display": "summarized"}
+    )
+    payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "betas" not in payload

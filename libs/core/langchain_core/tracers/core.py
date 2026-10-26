@@ -16,6 +16,7 @@ from typing import (
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
 from langchain_core.tracers.schemas import Run
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 
 if TYPE_CHECKING:
     from collections.abc import Coroutine, Sequence
@@ -35,6 +36,31 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 SCHEMA_FORMAT_TYPE = Literal["original", "streaming_events"]
+
+# Key under which gateway metadata is attached to a run's metadata for tracing.
+_GATEWAY_RUN_METADATA_KEY = "ls_gateway_info"
+
+
+def _extract_gateway_metadata(response: LLMResult) -> dict[str, Any] | None:
+    """Extract LangSmith gateway metadata from a model response.
+
+    When a request is routed through the LangSmith gateway, the gateway returns
+    metadata (e.g. the resolved provider and model) that integrations surface on
+    the generation's `generation_info` under `GATEWAY_METADATA_RESPONSE_KEY`.
+
+    Args:
+        response: The `LLMResult` produced by the model.
+
+    Returns:
+        The gateway metadata, or `None` if the response carries none.
+    """
+    for generations in response.generations:
+        for generation in generations:
+            generation_info = getattr(generation, "generation_info", None) or {}
+            gateway_metadata = generation_info.get(GATEWAY_METADATA_RESPONSE_KEY)
+            if isinstance(gateway_metadata, dict):
+                return gateway_metadata
+    return None
 
 
 class _TracerCore(ABC):
@@ -148,6 +174,14 @@ class _TracerCore(ABC):
         self.order_map[run.id] = (run.trace_id, run.dotted_order)
         self.run_map[str(run.id)] = run
 
+    def _get_run_kwargs(
+        self,
+        parent_run_id: UUID | None,  # noqa: ARG002
+        extra: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Return construction arguments for a run."""
+        return {"extra": extra}
+
     def _get_run(self, run_id: UUID, run_type: str | set[str] | None = None) -> Run:
         try:
             run = self.run_map[str(run_id)]
@@ -200,7 +234,7 @@ class _TracerCore(ABC):
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"messages": [[dumpd(msg) for msg in batch] for batch in messages]},
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             # WARNING: This is valid ONLY for streaming_events.
@@ -232,7 +266,7 @@ class _TracerCore(ABC):
             serialized=serialized,
             # TODO: Figure out how to expose kwargs here
             inputs={"prompts": prompts},
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             run_type="llm",
@@ -319,7 +353,22 @@ class _TracerCore(ABC):
         if tool_call_count > 0:
             llm_run.extra["tool_call_count"] = tool_call_count
 
+        self._attach_gateway_metadata(llm_run, response)
+
         return llm_run
+
+    def _attach_gateway_metadata(self, run: Run, response: LLMResult) -> None:
+        """Promote LangSmith gateway metadata from the response to run metadata."""
+        gateway_metadata = _extract_gateway_metadata(response)
+        if gateway_metadata is None:
+            return
+        metadata = run.extra.setdefault("metadata", {})
+        metadata[_GATEWAY_RUN_METADATA_KEY] = gateway_metadata
+        # The resolved gateway identity takes precedence over request-time metadata.
+        for source, target in (("model", "ls_model_name"), ("provider", "ls_provider")):
+            value = gateway_metadata.get(source)
+            if isinstance(value, str) and (value := value.strip()):
+                metadata[target] = value
 
     def _errored_llm_run(
         self, error: BaseException, run_id: UUID, response: LLMResult | None = None
@@ -340,6 +389,7 @@ class _TracerCore(ABC):
                         output_generation["message"] = dumpd(
                             cast("ChatGeneration", generation).message
                         )
+            self._attach_gateway_metadata(llm_run, response)
         llm_run.end_time = datetime.now(timezone.utc)
         llm_run.events.append({"name": "error", "time": llm_run.end_time})
 
@@ -366,7 +416,7 @@ class _TracerCore(ABC):
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs=self._get_chain_inputs(inputs),
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             child_runs=[],
@@ -462,7 +512,7 @@ class _TracerCore(ABC):
             serialized=serialized,
             # Wrapping in dict since Run requires a dict object.
             inputs=inputs,
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             child_runs=[],
@@ -519,7 +569,7 @@ class _TracerCore(ABC):
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"query": query},
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             tags=tags,

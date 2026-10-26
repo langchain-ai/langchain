@@ -9,6 +9,8 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    commit-message:
+      prefix: "chore(deps)"
     groups:
       minor-and-patch:
         patterns:
@@ -29,6 +31,8 @@ updates:
       - "/libs/langchain_v1/"
     schedule:
       interval: "monthly"
+    commit-message:
+      prefix: "chore(deps)"
     versioning-strategy: increase
     ignore:
       - dependency-name: "langchain-core"
@@ -66,9 +70,12 @@ updates:
       - "/libs/partners/openrouter/"
       - "/libs/partners/perplexity/"
       - "/libs/partners/qdrant/"
+      - "/libs/partners/typesafe/"
       - "/libs/partners/xai/"
     schedule:
       interval: "monthly"
+    commit-message:
+      prefix: "chore(deps)"
     versioning-strategy: increase
     ignore:
       - dependency-name: "langchain-core"
@@ -97,6 +104,8 @@ updates:
       - "/libs/model-profiles/"
     schedule:
       interval: "monthly"
+    commit-message:
+      prefix: "chore(deps)"
     versioning-strategy: increase
     ignore:
       - dependency-name: "langchain-core"
@@ -105,6 +114,28 @@ updates:
       - dependency-name: "langchain-text-splitters"
       - dependency-name: "langchain-tests"
       - dependency-name: "langchain-model-profiles"
+    groups:
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      major:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+
+
+  - package-ecosystem: "docker"
+    directories:
+      - "/.devcontainer/"
+      - "/libs/langchain/"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "chore(deps)"
     groups:
       minor-and-patch:
         patterns:

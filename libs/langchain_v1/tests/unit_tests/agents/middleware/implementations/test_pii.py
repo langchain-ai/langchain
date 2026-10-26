@@ -1,6 +1,13 @@
 """Tests for PII detection middleware."""
 
+# `run.tool_calls`/`run.subagents` are stream projections registered dynamically by
+# `create_agent` (via langgraph-prebuilt's `ToolCallTransformer` and langchain's
+# `SubagentTransformer`), not declared on langgraph's typed `GraphRunStream`
+# (langgraph#8389). The `# type: ignore[attr-defined]` below self-remove once
+# langgraph adds a `__getattr__` fallback (strict mode's `warn_unused_ignores`).
+
 import re
+from collections.abc import Callable
 from typing import Any
 
 import pytest
@@ -19,7 +26,9 @@ from langgraph.stream._types import ProtocolEvent
 from langgraph.stream.transformers import MessagesTransformer
 
 from langchain.agents import AgentState
+from langchain.agents import middleware as middleware_package
 from langchain.agents.factory import create_agent
+from langchain.agents.middleware import PIIMatch as PublicPIIMatch
 from langchain.agents.middleware._redaction import RedactionRule
 from langchain.agents.middleware.pii import (
     PIIDetectionError,
@@ -33,6 +42,24 @@ from langchain.agents.middleware.pii import (
     detect_url,
 )
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+# ============================================================================
+# Public Export Tests
+# ============================================================================
+
+
+class TestPIIMatchPublicExport:
+    """Test that `PIIMatch` is importable from the public middleware package.
+
+    Regression test: `PIIMatch` was only exported from the private
+    `_redaction` module, forcing custom-detector authors to import from it
+    directly instead of `langchain.agents.middleware`.
+    """
+
+    def test_pii_match_importable_from_middleware_package(self) -> None:
+        assert PublicPIIMatch is PIIMatch
+        assert "PIIMatch" in middleware_package.__all__
+
 
 # ============================================================================
 # Detection Function Tests
@@ -525,6 +552,89 @@ class TestPIIMiddlewareIntegration:
         messages = result["messages"]
         assert any("[REDACTED_EMAIL]" in str(msg.content) for msg in messages)
 
+    def test_input_list_content_preserved(self) -> None:
+        """List-of-content-blocks input is redacted in place, not stringified.
+
+        Regression: `str(msg.content)` flattened block-list content into its
+        `repr`, so the stored content became the literal string
+        `"[{'type': 'text', 'text': '...'}]"`.
+        """
+        middleware = PIIMiddleware("email", strategy="redact")
+        state = AgentState[Any](
+            messages=[
+                HumanMessage(content=[{"type": "text", "text": "my email is test@example.com"}])
+            ]
+        )
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][0].content
+        assert content == [{"type": "text", "text": "my email is [REDACTED_EMAIL]"}]
+        assert "test@example.com" not in str(content)
+
+    def test_output_list_content_preserved(self) -> None:
+        """List-of-content-blocks AI output is redacted in place, not stringified."""
+        middleware = PIIMiddleware(
+            "email", strategy="redact", apply_to_input=False, apply_to_output=True
+        )
+        state = AgentState[Any](
+            messages=[AIMessage(content=[{"type": "text", "text": "reach me at ai@example.com"}])]
+        )
+
+        result = middleware.after_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][0].content
+        assert content == [{"type": "text", "text": "reach me at [REDACTED_EMAIL]"}]
+        assert "ai@example.com" not in str(content)
+
+    def test_redaction_preserves_message_fields(self) -> None:
+        """Redacting keeps fields the hooks never enumerated when rebuilding messages."""
+        middleware = PIIMiddleware("email", strategy="redact")
+        original = HumanMessage(
+            content="my email is test@example.com",
+            id="msg_1",
+            name="alice",
+            additional_kwargs={"source": "web"},
+        )
+        state = AgentState[Any](messages=[original])
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        redacted = result["messages"][0]
+        assert redacted.content == "my email is [REDACTED_EMAIL]"
+        assert redacted.id == "msg_1"
+        assert redacted.name == "alice"
+        assert redacted.additional_kwargs == {"source": "web"}
+
+    def test_tool_result_list_content_preserved(self) -> None:
+        """List-of-content-blocks tool results are redacted in place."""
+        middleware = PIIMiddleware(
+            "email", strategy="redact", apply_to_input=False, apply_to_tool_results=True
+        )
+        state = AgentState[Any](
+            messages=[
+                HumanMessage("Search for user"),
+                AIMessage(
+                    content="",
+                    tool_calls=[ToolCall(name="search", args={}, id="call_1", type="tool_call")],
+                ),
+                ToolMessage(
+                    content=[{"type": "text", "text": "found: john@example.com"}],
+                    tool_call_id="call_1",
+                ),
+            ]
+        )
+
+        result = middleware.before_model(state, Runtime())
+
+        assert result is not None
+        content = result["messages"][2].content
+        assert content == [{"type": "text", "text": "found: [REDACTED_EMAIL]"}]
+        assert "john@example.com" not in str(content)
+
 
 class TestCustomDetector:
     """Test custom detector functionality."""
@@ -774,6 +884,53 @@ def _emitted_text(events: list[ProtocolEvent]) -> tuple[str, dict[int, str]]:
     # Concatenated delta stream is what the consumer sees in real time;
     # finalized text is the snapshot. Return both via a tuple-like dict.
     return "".join(parts), final_by_index
+
+
+def _make_tool_call_delta_event(
+    delta: dict[str, Any], *, index: int = 0, run_id: str = "r1"
+) -> ProtocolEvent:
+    """Build a `messages` protocol event for a tool-call content-block delta."""
+    return {
+        "type": "event",
+        "method": "messages",
+        "params": {
+            "namespace": [],
+            "timestamp": 0,
+            "data": (
+                {"event": "content-block-delta", "index": index, "delta": delta},
+                {"run_id": run_id},
+            ),
+        },
+    }
+
+
+def _tool_call_slice(args: str) -> dict[str, Any]:
+    return {"type": "tool-call-delta", "args": args}
+
+
+def _tool_call_snapshot(args: str | None = None, **fields: Any) -> dict[str, Any]:
+    if args is not None:
+        fields["args"] = args
+    return {"type": "block-delta", "fields": {"type": "tool_call_chunk", **fields}}
+
+
+def _emitted_tool_call_args(events: list[ProtocolEvent]) -> str:
+    """Rebuild streamed tool-call args the way a consumer would.
+
+    `tool-call-delta` appends its slice; a `block-delta` carrying `args`
+    replaces them.
+    """
+    args = ""
+    for event in events:
+        payload = event["params"]["data"][0]
+        if payload.get("event") != "content-block-delta":
+            continue
+        delta = payload["delta"]
+        if delta.get("type") == "tool-call-delta":
+            args += delta["args"]
+        elif delta.get("type") == "block-delta" and "args" in delta["fields"]:
+            args = delta["fields"]["args"]
+    return args
 
 
 def _run_transformer(transformer: Any, events: list[ProtocolEvent]) -> list[ProtocolEvent]:
@@ -1641,6 +1798,93 @@ class TestPIIStreamTransformer:
         with pytest.raises(PIIDetectionError):
             transformer.process(event)
 
+    @pytest.mark.parametrize(
+        "make_delta",
+        [
+            pytest.param(_tool_call_slice, id="slices"),
+            pytest.param(_tool_call_snapshot, id="snapshots"),
+        ],
+    )
+    def test_tool_call_pii_straddling_deltas_is_redacted(
+        self, make_delta: Callable[[str], dict[str, Any]]
+    ) -> None:
+        """PII split across tool-call deltas never reaches the wire, in either form.
+
+        `tool-call-delta` slices go through the same lookback buffer as
+        text; `block-delta` snapshots (older cores) are redacted whole.
+        Either way the consumer rebuilds the same args: the redacted args
+        minus the held-back tail that `content-block-finish` carries.
+        """
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=8)
+
+        slices = ['{"to": "alice', '@example.com", ', '"subject": "hi"}']
+        args = ["".join(slices[: i + 1]) for i in range(len(slices))]
+        parts = slices if make_delta is _tool_call_slice else args
+        events = [_make_tool_call_delta_event(make_delta(p)) for p in parts]
+        _run_transformer(transformer, events)
+
+        assert _emitted_tool_call_args(events) == '{"to": "[REDACTED_EMAIL]", "subject'
+
+    def test_unknown_delta_variant_passes_through(self) -> None:
+        """An unknown delta variant is left as is and doesn't disturb the buffer."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=8)
+
+        unknown = {"type": "future-delta", "args": "x"}
+        events = [
+            _make_tool_call_delta_event(_tool_call_slice('{"to": "alice')),
+            _make_tool_call_delta_event(dict(unknown)),
+            _make_tool_call_delta_event(_tool_call_slice('@example.com", ')),
+            _make_tool_call_delta_event(_tool_call_slice('"subject": "hi"}')),
+        ]
+        _run_transformer(transformer, events)
+
+        assert events[1]["params"]["data"][0]["delta"] == unknown
+        assert _emitted_tool_call_args(events) == '{"to": "[REDACTED_EMAIL]", "subject'
+
+    def test_tool_call_slices_after_a_snapshot_extend_what_it_emitted(self) -> None:
+        """A snapshot's withheld tail is the prefix later slices append to."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=8)
+
+        events = [
+            _make_tool_call_delta_event(_tool_call_snapshot('{"to": "alice')),
+            _make_tool_call_delta_event(_tool_call_slice('@example.com", ')),
+            _make_tool_call_delta_event(_tool_call_slice('"subject": "hi"}')),
+        ]
+        _run_transformer(transformer, events)
+
+        assert _emitted_tool_call_args(events) == '{"to": "[REDACTED_EMAIL]", "subject'
+
+    def test_tool_call_delta_block_strategy_raises(self) -> None:
+        """`block` raises as soon as PII completes across tool-call slices."""
+        rule = RedactionRule(pii_type="email", strategy="block").resolve()
+        transformer = _PIIStreamTransformer(rule=rule)
+
+        transformer.process(_make_tool_call_delta_event(_tool_call_slice('{"to": "alice')))
+        with pytest.raises(PIIDetectionError):
+            transformer.process(_make_tool_call_delta_event(_tool_call_slice('@example.com"}')))
+
+    def test_args_free_block_delta_between_slices_passes_through(self) -> None:
+        """A late `id` / `name` update leaves the slices' buffer intact."""
+        rule = RedactionRule(pii_type="email").resolve()
+        transformer = _PIIStreamTransformer(rule=rule, lookback=8)
+
+        late_id = _tool_call_snapshot(id="c1", name="send_email")
+        events = [
+            _make_tool_call_delta_event(_tool_call_slice('{"to": "alice')),
+            _make_tool_call_delta_event(late_id),
+            _make_tool_call_delta_event(_tool_call_slice('@example.com", ')),
+            _make_tool_call_delta_event(_tool_call_slice('"subject": "hi"}')),
+        ]
+        _run_transformer(transformer, events)
+
+        assert events[1]["params"]["data"][0]["delta"] == _tool_call_snapshot(
+            id="c1", name="send_email"
+        )
+        assert _emitted_tool_call_args(events) == '{"to": "[REDACTED_EMAIL]", "subject'
+
     def test_pii_fully_inside_one_delta_is_redacted_on_finalize(self) -> None:
         """A delta shorter than `lookback` is held until finalize redacts the snapshot."""
         rule = RedactionRule(pii_type="email").resolve()
@@ -2093,8 +2337,6 @@ class TestPIIStreamingEndToEnd:
         surfaces: list[str] = []
         run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
         async for event in run:
-            if not isinstance(event, dict):
-                continue
             data = event.get("params", {}).get("data")
             if isinstance(data, tuple) and len(data) == 2:
                 p = data[0]
@@ -2112,7 +2354,9 @@ class TestPIIStreamingEndToEnd:
                             surfaces.append(str(c.get("args")))
                     elif p.get("event") == "content-block-delta":
                         d = p.get("delta") or {}
-                        if d.get("type") == "block-delta":
+                        if d.get("type") == "tool-call-delta":
+                            surfaces.append(str(d.get("args", "")))
+                        elif d.get("type") == "block-delta":
                             f = d.get("fields") or {}
                             if f.get("type") in {
                                 "tool_call_chunk",
@@ -2167,8 +2411,6 @@ class TestPIIStreamingEndToEnd:
         surfaces: list[str] = []
         run = await agent.astream_events({"messages": [HumanMessage("hi")]}, version="v3")
         async for event in run:
-            if not isinstance(event, dict):
-                continue
             data = event.get("params", {}).get("data")
             if isinstance(data, tuple) and len(data) == 2:
                 p = data[0]

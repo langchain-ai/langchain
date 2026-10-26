@@ -1322,3 +1322,11 @@ def test_handle_invalid_request_ignores_max_tokens_error() -> None:
         _handle_groq_invalid_request(err)
 
     assert not isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_with_structured_output_documents_method_once() -> None:
+    """`method` was documented twice, and the stale block omitted `json_schema`."""
+    doc = ChatGroq.with_structured_output.__doc__
+    assert doc is not None
+    assert doc.count("method:") == 1
+    assert "json_schema" in doc

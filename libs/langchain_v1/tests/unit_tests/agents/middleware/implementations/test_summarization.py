@@ -5,12 +5,14 @@ from unittest.mock import patch
 
 import pytest
 from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
+from langchain_core.exceptions import ContextOverflowError, ModelAuthenticationError
 from langchain_core.language_models import ModelProfile
 from langchain_core.language_models.base import (
     LangSmithParams,
     LanguageModelInput,
 )
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -22,13 +24,18 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.utils import count_tokens_approximately, get_buffer_string
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables import RunnableConfig, RunnableLambda
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.runtime import Runtime
 from pydantic import Field
 from typing_extensions import override
 
-from langchain.agents import AgentState
+from langchain.agents import AgentState, create_agent
+from langchain.agents.middleware.internal_call_transformer import (
+    INTERNAL_CALL_METADATA_KEY,
+    internal_call_metadata,
+)
 from langchain.agents.middleware.summarization import (
     ContextSize,
     SummarizationMiddleware,
@@ -241,14 +248,328 @@ def test_summarization_middleware_summary_creation() -> None:
             return "mock"
 
     middleware_error = SummarizationMiddleware(model=ErrorModel(), trigger=("tokens", 1000))
-    summary = middleware_error._create_summary(messages)
-    assert "Error generating summary: Model error" in summary
+    # Bypass the retry wrapper so this test isn't slowed by real backoff delay; retry
+    # behavior itself is covered by test_summarization_middleware_retries_transient_failure_in_call.
+    middleware_error._summary_model = middleware_error.model
+    with pytest.raises(ValueError, match="Model error"):
+        middleware_error._create_summary(messages)
 
     # Test we raise warning if max_tokens_before_summary or messages_to_keep is specified
     with pytest.warns(DeprecationWarning, match="max_tokens_before_summary is deprecated"):
         SummarizationMiddleware(model=MockChatModel(), max_tokens_before_summary=500)
     with pytest.warns(DeprecationWarning, match="messages_to_keep is deprecated"):
         SummarizationMiddleware(model=MockChatModel(), messages_to_keep=5)
+
+
+def test_summarization_middleware_retries_transient_failure_in_call() -> None:
+    """A transient failure must be retried in-process via `Runnable.with_retry`.
+
+    A single `_create_summary` call must succeed if the underlying model recovers
+    within 3 attempts, without the caller ever observing a failure.
+    """
+
+    class FlakyModel(BaseChatModel):
+        """Model that fails a fixed number of times, then succeeds."""
+
+        fail_count: int = Field(default=0)
+        attempts: int = Field(default=0)
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            self.attempts += 1
+            if self.attempts <= self.fail_count:
+                msg = "429 Too Many Requests (simulated transient failure)"
+                raise RuntimeError(msg)
+            return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary."))])
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+    model = FlakyModel(fail_count=2)
+    middleware = SummarizationMiddleware(model=model, trigger=("messages", 2))
+    # No delay between attempts so the test runs fast and deterministically; the
+    # retry count itself (3, `Runnable.with_retry`'s own default) is untouched.
+    middleware._summary_model.wait_exponential_jitter = False  # type: ignore[attr-defined]
+
+    summary = middleware._create_summary([HumanMessage(content="hi")])
+
+    assert summary == "Summary."
+    assert model.attempts == 3
+
+
+class _AlwaysFailingModel(BaseChatModel):
+    """Chat model whose sync and async summary calls always raise."""
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        msg = "429 Too Many Requests"
+        raise RuntimeError(msg)
+
+    @override
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        msg = "429 Too Many Requests"
+        raise RuntimeError(msg)
+
+    @property
+    def _llm_type(self) -> str:
+        return "mock"
+
+
+def _skip_retry(middleware: SummarizationMiddleware) -> None:
+    """Bypass the retry wrapper so failure-path tests aren't slowed by real backoff.
+
+    Retry behavior itself is covered by
+    `test_summarization_middleware_retries_transient_failure_in_call`.
+    """
+    middleware._summary_model = middleware.model
+
+
+def test_create_summary_raises_on_failure() -> None:
+    """`_create_summary` must raise, never fabricate a fake summary string."""
+    middleware = SummarizationMiddleware(model=_AlwaysFailingModel())
+    _skip_retry(middleware)
+
+    with pytest.raises(RuntimeError, match="429 Too Many Requests"):
+        middleware._create_summary([HumanMessage(content="hi")])
+
+
+async def test_acreate_summary_raises_on_failure() -> None:
+    """Async: `_acreate_summary` must raise on failure."""
+    middleware = SummarizationMiddleware(model=_AlwaysFailingModel())
+    _skip_retry(middleware)
+
+    with pytest.raises(RuntimeError, match="429 Too Many Requests"):
+        await middleware._acreate_summary([HumanMessage(content="hi")])
+
+
+class _OverflowingModel(BaseChatModel):
+    """Raises `ContextOverflowError` for prompts longer than `max_chars`."""
+
+    max_chars: int
+    prompts: list[str] = Field(default_factory=list)
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        prompt = messages[-1].text
+        self.prompts.append(prompt)
+        if len(prompt) > self.max_chars:
+            msg = "prompt is too long"
+            raise ContextOverflowError(msg)
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary."))])
+
+    @property
+    def _llm_type(self) -> str:
+        return "mock"
+
+
+def _long_history() -> list[AnyMessage]:
+    return [HumanMessage(content=f"turn-{i} " * 500) for i in range(10)]
+
+
+def test_create_summary_does_not_retry_non_retryable_errors() -> None:
+    class AuthFailingModel(BaseChatModel):
+        attempts: int = 0
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            self.attempts += 1
+            msg = "invalid api key"
+            raise ModelAuthenticationError(msg)
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+    model = AuthFailingModel()
+    middleware = SummarizationMiddleware(model=model)
+    middleware._summary_model.wait_exponential_jitter = False  # type: ignore[attr-defined]
+
+    with pytest.raises(ModelAuthenticationError):
+        middleware._create_summary([HumanMessage(content="hi")])
+    assert model.attempts == 1
+
+
+def test_create_summary_recovers_from_context_overflow() -> None:
+    model = _OverflowingModel(max_chars=25_000)
+    middleware = SummarizationMiddleware(model=model, trim_tokens_to_summarize=None)
+
+    assert middleware._create_summary(_long_history()) == "Summary."
+    assert len(model.prompts) == 2
+    retry_prompt = model.prompts[1]
+    assert "turn-0" in retry_prompt
+    assert "turn-5" not in retry_prompt
+    assert "turn-9" in retry_prompt
+
+
+async def test_acreate_summary_recovers_from_context_overflow() -> None:
+    model = _OverflowingModel(max_chars=25_000)
+    middleware = SummarizationMiddleware(model=model, trim_tokens_to_summarize=None)
+
+    assert await middleware._acreate_summary(_long_history()) == "Summary."
+    assert len(model.prompts) == 2
+    assert "turn-0" in model.prompts[1]
+    assert "turn-5" not in model.prompts[1]
+    assert "turn-9" in model.prompts[1]
+
+
+def test_create_summary_raises_on_persistent_context_overflow() -> None:
+    model = _OverflowingModel(max_chars=10)
+    middleware = SummarizationMiddleware(model=model, trim_tokens_to_summarize=None)
+
+    with pytest.raises(ContextOverflowError):
+        middleware._create_summary(_long_history())
+    assert len(model.prompts) == 2
+
+
+def test_summarization_middleware_before_model_raises_on_summary_failure() -> None:
+    """A failed summary generation must raise, never fabricate a summary or delete history."""
+    middleware = SummarizationMiddleware(
+        model=_AlwaysFailingModel(), trigger=("messages", 2), keep=("messages", 1)
+    )
+    _skip_retry(middleware)
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),
+        AIMessage(content="hello", id="a0"),
+        HumanMessage(content="how are you", id="h1"),
+    ]
+    state = AgentState[Any](messages=messages)
+
+    with pytest.raises(RuntimeError, match="429 Too Many Requests"):
+        middleware.before_model(state, Runtime())
+
+    # The original message list is untouched - no fabricated summary, no deletion.
+    assert state["messages"] == messages
+
+
+async def test_summarization_middleware_abefore_model_raises_on_summary_failure() -> None:
+    """Async: same raise-on-failure behavior as `before_model`."""
+    middleware = SummarizationMiddleware(
+        model=_AlwaysFailingModel(), trigger=("messages", 2), keep=("messages", 1)
+    )
+    _skip_retry(middleware)
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),
+        AIMessage(content="hello", id="a0"),
+        HumanMessage(content="how are you", id="h1"),
+    ]
+    state = AgentState[Any](messages=messages)
+
+    with pytest.raises(RuntimeError, match="429 Too Many Requests"):
+        await middleware.abefore_model(state, Runtime())
+
+    assert state["messages"] == messages
+
+
+def test_summarization_middleware_e2e_failure_raises_without_corrupting_history() -> None:
+    """End-to-end regression test.
+
+    Verifies that exhausted summary retries raise an error without corrupting
+    checkpointed history, and that summarization succeeds on a later invocation
+    once the model recovers.
+    """
+
+    class TemporarilyFailingSummaryModel(BaseChatModel):
+        """Summary-only model that fails until `working` is set to `True`."""
+
+        working: bool = Field(default=False)
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            if not self.working:
+                msg = "429 Too Many Requests (simulated persistent failure)"
+                raise RuntimeError(msg)
+            summary = AIMessage(content="Summary of the conversation so far.")
+            return ChatResult(generations=[ChatGeneration(message=summary)])
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+    main_model = FakeToolCallingModel()
+    summary_model = TemporarilyFailingSummaryModel()
+    middleware = SummarizationMiddleware(
+        model=summary_model, trigger=("messages", 6), keep=("messages", 2)
+    )
+    _skip_retry(middleware)
+
+    agent = create_agent(
+        model=main_model,
+        tools=[],
+        middleware=[middleware],
+        checkpointer=InMemorySaver(),
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "e2e-summary-failure"}}
+
+    # Build up history below the ("messages", 6) trigger threshold.
+    for i in range(3):
+        agent.invoke({"messages": [HumanMessage(f"turn {i}")]}, config)
+
+    messages_below_threshold = agent.get_state(config).values["messages"]
+    assert len(messages_below_threshold) == 6
+
+    # This turn triggers summarization, which fails and raises. The new human
+    # message is checkpointed, but no AI response, summary, or message removal occurs.
+    with pytest.raises(RuntimeError, match="429 Too Many Requests"):
+        agent.invoke({"messages": [HumanMessage("turn 3")]}, config)
+
+    messages_after_failed_summary = agent.get_state(config).values["messages"]
+    assert messages_after_failed_summary[:-1] == messages_below_threshold
+    assert messages_after_failed_summary[-1].content == "turn 3"
+    assert not any(
+        "Error generating summary" in (m.content or "") for m in messages_after_failed_summary
+    )
+
+    # Once the summarizer is fixed, retrying the same turn must succeed and
+    # actually summarize, proving the earlier failure didn't corrupt anything.
+    summary_model.working = True
+    agent.invoke({"messages": [HumanMessage("turn 3")]}, config)
+
+    messages_after_recovered_summary = agent.get_state(config).values["messages"]
+    assert len(messages_after_recovered_summary) < len(messages_after_failed_summary)
+    assert any(
+        "summary of the conversation" in (m.content or "").lower()
+        for m in messages_after_recovered_summary
+    )
+    assert not any(m.content == "turn 0" for m in messages_after_recovered_summary), (
+        "history should actually be trimmed once summarization succeeds"
+    )
 
 
 def test_summarization_middleware_trim_limit_none_keeps_all_messages() -> None:
@@ -936,9 +1257,10 @@ async def test_summarization_middleware_async_error_handling() -> None:
             return "mock"
 
     middleware = SummarizationMiddleware(model=ErrorAsyncModel(), trigger=("messages", 5))
+    _skip_retry(middleware)
     messages: list[AnyMessage] = [HumanMessage(content="test")]
-    summary = await middleware._acreate_summary(messages)
-    assert "Error generating summary: Async model error" in summary
+    with pytest.raises(ValueError, match="Async model error"):
+        await middleware._acreate_summary(messages)
 
 
 def test_summarization_middleware_cutoff_at_boundary() -> None:
@@ -2107,3 +2429,313 @@ async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None
     assert config is not None
     assert "metadata" in config
     assert config["metadata"]["lc_source"] == "summarization"
+    assert (
+        config["metadata"][INTERNAL_CALL_METADATA_KEY]
+        == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
+    )
+
+
+class TestSummarizationStreamingEndToEnd:
+    """End-to-end: a real summarization call must not leak into `run.messages`."""
+
+    async def test_summarization_call_excluded_from_messages_projection(self) -> None:
+        """Drives `create_agent` with a triggered summarization mid-run.
+
+        Uses `GenericFakeChatModel` for both the main agent and the
+        summarizer (it actually streams via `_astream`, unlike
+        `FakeToolCallingModel`), then asserts `run.messages` surfaces only
+        the agent's real answer.
+        """
+        main_model = GenericFakeChatModel(messages=iter([AIMessage(content="Final answer.")]))
+        summarizer_model = GenericFakeChatModel(
+            messages=iter([AIMessage(content="Summary of prior turns.")])
+        )
+        middleware = SummarizationMiddleware(model=summarizer_model, trigger=("messages", 1))
+
+        agent = create_agent(model=main_model, tools=[], middleware=[middleware])
+
+        run = await agent.astream_events(
+            {
+                "messages": [
+                    HumanMessage("hi"),
+                    HumanMessage("there"),
+                    HumanMessage("again"),
+                ]
+            },
+            version="v3",
+        )
+
+        texts: list[str] = []
+        async for msg in run.messages:
+            text = ""
+            async for chunk in msg.text:
+                text += chunk
+            texts.append(text)
+
+        assert texts == ["Final answer."]
+
+
+def test_summarizer_replaces_model_call() -> None:
+    """A `summarizer` writes the summary; the model and `summary_prompt` are not used."""
+    received: list[list[AnyMessage]] = []
+
+    def summarizer(messages: list[AnyMessage]) -> str:
+        received.append(messages)
+        return "  Custom summary  "
+
+    middleware = SummarizationMiddleware(
+        model=_AlwaysFailingModel(),
+        trigger=("messages", 3),
+        keep=("messages", 1),
+        summary_prompt="unused {messages}",
+        summarizer=summarizer,
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),
+        AIMessage(content="hello", id="a0"),
+        HumanMessage(content="how are you", id="h1"),
+    ]
+
+    result = middleware.before_model(AgentState[Any](messages=messages), Runtime())
+
+    assert result is not None
+    assert received == [messages[:2]]
+    assert isinstance(result["messages"][1], HumanMessage)
+    assert result["messages"][1].text.endswith("Custom summary")
+    assert result["messages"][2:] == messages[2:]
+
+
+def test_summarizer_receives_trimmed_messages() -> None:
+    """The summarizer sees the messages after `trim_tokens_to_summarize` is applied."""
+    received: list[list[AnyMessage]] = []
+
+    def summarizer(messages: list[AnyMessage]) -> str:
+        received.append(messages)
+        return "summary"
+
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trim_tokens_to_summarize=None, summarizer=summarizer
+    )
+    messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(5)]
+    with patch.object(middleware, "_trim_messages_for_summary", return_value=messages[-2:]) as trim:
+        assert middleware._create_summary(messages) == "summary"
+
+    trim.assert_called_once_with(messages)
+    assert received == [messages[-2:]]
+
+
+def test_summarizer_accepts_runnable_and_gets_summarization_metadata() -> None:
+    """A `Runnable` summarizer is invoked with the summarization metadata."""
+    configs: list[RunnableConfig] = []
+
+    def summarize(messages: list[AnyMessage], config: RunnableConfig) -> str:
+        configs.append(config)
+        return get_buffer_string(messages)
+
+    middleware = SummarizationMiddleware(
+        model=_AlwaysFailingModel(), summarizer=RunnableLambda(summarize)
+    )
+
+    assert middleware._create_summary([HumanMessage(content="hi")]) == "Human: hi"
+    metadata = configs[0]["metadata"]
+    assert metadata["lc_source"] == "summarization"
+    assert (
+        metadata[INTERNAL_CALL_METADATA_KEY] == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
+    )
+
+
+async def test_summarizer_async() -> None:
+    """Async invocation uses the summarizer's async implementation."""
+
+    async def summarize(messages: list[AnyMessage]) -> str:
+        return f"{len(messages)} messages"
+
+    middleware = SummarizationMiddleware(
+        model=_AlwaysFailingModel(),
+        trigger=("messages", 3),
+        keep=("messages", 1),
+        summarizer=summarize,
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),
+        AIMessage(content="hello", id="a0"),
+        HumanMessage(content="how are you", id="h1"),
+    ]
+
+    result = await middleware.abefore_model(AgentState[Any](messages=messages), Runtime())
+
+    assert result is not None
+    assert result["messages"][1].text.endswith("2 messages")
+
+
+def test_summarizer_errors_propagate() -> None:
+    """Errors raised by the summarizer propagate and leave history untouched."""
+
+    def summarizer(_: list[AnyMessage]) -> str:
+        msg = "summarizer down"
+        raise RuntimeError(msg)
+
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("messages", 2),
+        keep=("messages", 1),
+        summarizer=summarizer,
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="hi", id="h0"),
+        AIMessage(content="hello", id="a0"),
+    ]
+    state = AgentState[Any](messages=messages)
+
+    with pytest.raises(RuntimeError, match="summarizer down"):
+        middleware.before_model(state, Runtime())
+    assert state["messages"] == messages
+
+
+def test_summarizer_empty_history_skips_summarizer() -> None:
+    """The built-in empty-history message is returned without calling the summarizer."""
+
+    def summarizer(_: list[AnyMessage]) -> str:
+        msg = "should not be called"
+        raise AssertionError(msg)
+
+    middleware = SummarizationMiddleware(model=MockChatModel(), summarizer=summarizer)
+
+    assert middleware._create_summary([]) == "No previous conversation history."
+
+
+def test_chat_model_summarizer_uses_summary_prompt() -> None:
+    """A chat model `summarizer` writes summaries with `summary_prompt`; `model` isn't called."""
+    summary_model = _OverflowingModel(max_chars=1_000_000)
+    middleware = SummarizationMiddleware(
+        model=_AlwaysFailingModel(),
+        summary_prompt="Summarize this: {messages}",
+        summarizer=summary_model,
+    )
+
+    assert middleware._create_summary([HumanMessage(content="hi")]) == "Summary."
+    assert len(summary_model.prompts) == 1
+    assert summary_model.prompts[0].startswith("Summarize this: ")
+    assert "hi" in summary_model.prompts[0]
+    assert middleware.summarizer is None
+
+
+async def test_chat_model_summarizer_async() -> None:
+    summary_model = _OverflowingModel(max_chars=1_000_000)
+    middleware = SummarizationMiddleware(model=_AlwaysFailingModel(), summarizer=summary_model)
+
+    assert await middleware._acreate_summary([HumanMessage(content="hi")]) == "Summary."
+    assert len(summary_model.prompts) == 1
+
+
+def test_chat_model_summarizer_keeps_profile_of_model() -> None:
+    """Fractional limits still come from `model`'s profile, not the summarizer's."""
+    summary_model = _OverflowingModel(max_chars=1_000_000)
+    middleware = SummarizationMiddleware(
+        model=ProfileChatModel(),
+        trigger=("fraction", 0.5),
+        summarizer=summary_model,
+    )
+
+    assert middleware._get_profile_limits() == 1000
+    assert middleware.model is not summary_model
+
+
+def test_string_summarizer_is_resolved_with_init_chat_model() -> None:
+    summary_model = _OverflowingModel(max_chars=1_000_000)
+    with patch(
+        "langchain.agents.middleware.summarization.init_chat_model",
+        return_value=summary_model,
+    ) as init:
+        middleware = SummarizationMiddleware(
+            model=_AlwaysFailingModel(), summarizer="openai:gpt-5-mini"
+        )
+
+    init.assert_called_once_with("openai:gpt-5-mini")
+    assert middleware._create_summary([HumanMessage(content="hi")]) == "Summary."
+
+
+def test_chat_model_summarizer_does_not_retry_non_retryable_errors() -> None:
+    class AuthFailingModel(BaseChatModel):
+        attempts: int = 0
+
+        @override
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            self.attempts += 1
+            msg = "invalid api key"
+            raise ModelAuthenticationError(msg)
+
+        @property
+        def _llm_type(self) -> str:
+            return "mock"
+
+    summary_model = AuthFailingModel()
+    middleware = SummarizationMiddleware(model=MockChatModel(), summarizer=summary_model)
+    middleware._summary_model.wait_exponential_jitter = False  # type: ignore[attr-defined]
+
+    with pytest.raises(ModelAuthenticationError):
+        middleware._create_summary([HumanMessage(content="hi")])
+    assert summary_model.attempts == 1
+
+
+def test_chat_model_summarizer_overflow_budget_uses_summarizer_profile() -> None:
+    """The overflow retry is sized to the summary model's context window."""
+    uncapped = _OverflowingModel(max_chars=25_000)
+    SummarizationMiddleware(
+        model=MockChatModel(), trim_tokens_to_summarize=None, summarizer=uncapped
+    )._create_summary(_long_history())
+
+    capped = _OverflowingModel(max_chars=25_000, profile=ModelProfile(max_input_tokens=1000))
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trim_tokens_to_summarize=None, summarizer=capped
+    )
+
+    assert middleware._create_summary(_long_history()) == "Summary."
+    assert len(capped.prompts) == 2
+    assert "turn-9" in capped.prompts[1]
+    assert len(capped.prompts[1]) < len(uncapped.prompts[1])
+
+
+def test_summarizer_non_str_return_raises_type_error() -> None:
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        summarizer=lambda _: AIMessage(content="not a str"),  # type: ignore[arg-type]
+    )
+
+    with pytest.raises(TypeError, match="`summarizer` must return a str, got AIMessage"):
+        middleware._create_summary([HumanMessage(content="hi")])
+
+
+async def test_summarizer_non_str_return_raises_type_error_async() -> None:
+    async def summarize(_: list[AnyMessage]) -> Any:
+        return None
+
+    middleware = SummarizationMiddleware(model=MockChatModel(), summarizer=summarize)
+
+    with pytest.raises(TypeError, match="`summarizer` must return a str, got NoneType"):
+        await middleware._acreate_summary([HumanMessage(content="hi")])
+
+
+async def test_sync_summarizer_on_async_path() -> None:
+    def summarize(messages: list[AnyMessage]) -> str:
+        return f"{len(messages)} messages"
+
+    middleware = SummarizationMiddleware(model=_AlwaysFailingModel(), summarizer=summarize)
+
+    assert await middleware._acreate_summary([HumanMessage(content="hi")]) == "1 messages"
+
+
+def test_async_summarizer_on_sync_path_raises() -> None:
+    async def summarize(_: list[AnyMessage]) -> str:
+        return "summary"
+
+    middleware = SummarizationMiddleware(model=MockChatModel(), summarizer=summarize)
+
+    with pytest.raises(TypeError, match="coroutine function synchronously"):
+        middleware._create_summary([HumanMessage(content="hi")])

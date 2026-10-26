@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:0dd3bd99c45778d5d3c5c3acd0f178428d778f015856db2c408bb6d068d26253",
+  "claims": [
+    {
+      "id": "claim_6953198e8c5d4886a865c2f3b32d9b22",
+      "statement": "LangChain packages use uv with dependency groups defined in pyproject.toml: lint (ruff), typing (mypy), test (pytest and utilities), test_integration (integration testing tools), and dev (development tools like Jupyter); uv sync --all-groups installs all groups, while group-specific flags like uv sync --group test install only that group",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/pyproject.toml#L49-L80",
+          "version": "repo-lines-v1:sha256:0de599ee6b7445184a3ef90c23db36a43896c3b2eccb0c38ce6820323a2319c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYjc0OTliMWNlMWM0ZjRiMjUyN2YzYTMyODRjYWM2YjZhMWUzYmY0OTg4YjU2Nzk4MmMzZGM4ZTlhMTdmMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1NTkwMTRiYzkzMDk3ZTg3MWNiYjg0ZWUzZTYxNWZkMjExMDM2MDc4NjA0MjQ3NjAzZTQ5ZWJhZGM1ZWRhNjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1MDVjOTY3ZWE1MDEyYWZmNTM0NjFmNzQ3ZDJlMzJhNjViOTQxN2MwNmEzMzc1YWRlYWMzY2FkOWI0N2NhZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiNzAwYjhhOThkMTg2MTZmZTc3NjU0MWYwNzI1YWIwMzM2YWFlOWFhZGQ3MmRhNWFkNWE4NjcwYTk3MzJkMGYifQ"
+        },
+        {
+          "resource": "repo://libs/langchain/Makefile#L14-L26",
+          "version": "repo-lines-v1:sha256:69f783308ba12e97788ecc4e1e20b1d7271c79ce7209d7bc677cd54187c440b0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYzhmMjk2MzFkY2JjNjhhZTY3MGE3NjFjZTZkMzMzNjI0OTcxY2M0MDI2Zjk2NDg5YmQ1YjFjMjE0NzY4YmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE3ZmJkODA0MTFhY2VjZGQ5MThiODg5ODQxNzE4NzBmOTVlOGYxN2E2YjQwNGJlODA2NGJhNzZiYTY3NjQ5NzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlYTRjZjkyYWRmYTVjYzdlNjc5NDIzNTJjZTNlOWExYmY5YzMyYjgwYTQ0OWU1ZWVmMjVkNDRiMGY3Yzg5YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjNDMwNzQ3OWRkNDIwYzFiOTYyYTVhYWMxNDBkODU3MzQ3NjYzYWNlY2FiYjEyMjdiMGUwYmVhZDMyYjQ0NTcifQ"
+        },
+        {
+          "resource": "repo://libs/langchain/pyproject.toml#L63-L95",
+          "version": "repo-lines-v1:sha256:c2f5cdead66071d8e01501a37af8ae2848f1f40f0d4e86ce5cf9f866b15d147f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwMTRhOTU3ZjA2NDUxYmZkNzllZTk1Mzk0OTc3MDExZjBiNjE1ZWI3Y2Y2ZGM0ZTAyYTNmNjA3OTBhOTg1OTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0MGU2Y2VhOTEyZjRjYWQ0OWRlOWVlMTE4NTVlMmUzNWEwYTM5MGFmNjIxYzQ5ZDU1M2E4NmQzNjYxNTk5NzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1NDFiM2M5NGIwNTQ0NzY4ZDdiMDNhNmE4NzM3MGEzNjY2ZmRjZDU3YmUxMzU4NjVkYzM2NzAzMzc3NGRkY2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlNjFkNWUxNTA0YzliOTYwOTBhNjhjYTIzNThhYmFiYWUxYTUxZTA0MTEwZjE2YjgxN2EyNmEyMGNkMDQ5ZjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d0fde47d1dcb4d4bb1b9a3eb356352aa",
+      "statement": "Pre-commit hooks in .pre-commit-config.yaml enforce code quality through: standard validation (YAML/TOML syntax, file endings, whitespace), text normalization (curly quotes, non-standard spaces), per-package format/lint via make (local hooks for core, langchain, langchain_v1, standard-tests, text-splitters, and partners), version consistency checks (make check_version for each package), and branch protection (no direct commits to master)",
+      "evidence": [
+        {
+          "resource": "repo://.pre-commit-config.yaml#L1-L120",
+          "version": "repo-lines-v1:sha256:15a259204f0c0ecea47b207597974abc04a222a69f210bc7f372c9497892e736:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YTExMGRiNWE5MzU3Y2RhMWQ3ODIxNmNkYzBiZjhiMjU1ZTMzOGNiYzFmMzI3ZTBkZjA4Y2ZjNzczOTFkZGVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiNDRjNTVkYTg5MjBiYjE3ZGQxMDEyNjExNzAzMjI2ZWU1NzM5ZGJjMThiMDRiNDc5NDQ5Y2I2NDg0MDdmODg3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyMDYyMWQ3OWI5Y2YwOTMzMzgwNjg3NDhiYmM0ODFlZTVmZWY4NDViOGFiODFmMDQ5YzFhODc1ZmFlNjVhMjg2In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_f9d3c2dd60aa4aa3ac0d653301588226",
+      "statement": "All packages define make test targets that run pytest with xdist parallelization (-n auto), socket restrictions (--disable-socket --allow-unix-socket), and support TEST_FILE parameter to run specific files/directories; test_watch target uses pytest-watcher for auto-rerun; integration_tests target requires --group test_integration and allows testing with multiple SDK versions via uv run --with",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L13-L29",
+          "version": "repo-lines-v1:sha256:310fab8d87504b8a6b280f5222390e5e6bf8bbee2bc01533a2ce72f5cad49b14:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5YjMwY2U5M2Y4ZDJlZTZkNjQ3ZWIzYTdkYWI0NDY0YjVkOWI3OWRhMTkyOGRhNjA2ODA0NzNkMmNmNGU2ODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwOWYyZDU4NjhlMDVhZjIzNTliY2E2NmYzYzIwY2M2ODgyMmFlMTU0NDVhZjgzMWEwZmI0YWI2NmRkMWU3YmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI0NjNkZTM4NmUwNzkxYWRkNTJlM2Y2ZTNhMDlmMmJmNjQ4ZmU0MzEzMThlMTkxNWI3ZTVkZTk5ZjdhNTg0NTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0ODJlOGY2MGUyODlmNWY4OTJkY2MzOWE2NTNmYTAzZjE0NzYxOGIxM2YwMjU2MzUwNGY5ODEyMGM5ZTc5NjQifQ"
+        },
+        {
+          "resource": "repo://libs/langchain/Makefile#L25-L38",
+          "version": "repo-lines-v1:sha256:864ac5a94f4a0b7574499486011ea59cf489af84c623798e3627e19b28c0da18:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5YjMwY2U5M2Y4ZDJlZTZkNjQ3ZWIzYTdkYWI0NDY0YjVkOWI3OWRhMTkyOGRhNjA2ODA0NzNkMmNmNGU2ODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5MWVlZjU3M2QzM2YyOGRiODcwZTdmZDMwNWQ1MjNiYzNkMGNjZWUxMjIxNzJiMDIzMzU5YTZlNzdlMGU0YjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkODZjNGU2OGZhODQ2NmVlZWJkMTcyNTUyMzlmYzViYTFiOGVhMTk2Njc1ZjdlNGFhZjM1MTYxZTgyYTRjNzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2N2E0ODFmMDk2NDAyYTA4MWZkOGQxMWIzMGY3MWJlNDJmNmI4MzgyZGNmY2FkODg5YTU0NjE2OWUxNDdjOTEifQ"
+        },
+        {
+          "resource": "repo://libs/partners/anthropic/Makefile#L16-L24",
+          "version": "repo-lines-v1:sha256:3f10aaecf4e2276489edb69ae64a3db24ef290b0c07ae96c0eb2e54e66ff39ea:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDliMzBjZTkzZjhkMmVlNmQ2NDdlYjNhN2RhYjQ0NjRiNWQ5Yjc5ZGExOTI4ZGE2MDY4MDQ3M2QyY2Y0ZTY4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDIzNzFjN2Y1YWRlNmI0ZWRkOTIyYTI2NWFiMDRmZDkxZGZmZDMyNzA3OTNjZmQ3ZGQ5MzRhM2FkNmY5MDUyZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTczZDhmNTY3ZTk0ZGI1NWM1NjQxMjFmZTkzMzgyZjhhNzc2NzFiZGVhNmFkZmIyZDg3NTY3Y2U5ZTZkYmVkMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmNlNGVlYjJlZGM5OWFiNzIxYTJmNTJhOGZhODc5YjM0ODY1MzUzNWViZTA4ZTUxNDdmZmE2MzkwM2IxZjRkNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_310ea7dd5a9d4defb6747d97d169d10b",
+      "statement": "Make lint target runs three sequential checks: import lint via ./scripts/lint_imports.sh, ruff check for logical errors and code smells, ruff format --diff for format checking without modification, and mypy for static type checking; make format applies ruff format and ruff check --fix for auto-fixes; lint_diff and format_diff run on git diff against master; lint_package and lint_tests variants run on specific code paths",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L51-L71",
+          "version": "repo-lines-v1:sha256:769a86f8c32635701b63eea1859e6643e663c266bad6cff56b073defbe7c522e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZTgwM2M4YzcwNTg2YzgyMGIxZWE5MjAwZGJjMjMyY2NmNTc2YTNkMGQwNDM1ZDQ1Nzk4OGNiMDMwYzA4MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3NWI4N2NiNTcyYzgyOThhN2QzM2JjM2I1MDBkOTg3MzM2YzEyMzIzNDg0OGNmMjBhZWM1NWJlNmRmZWFhMjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjMmFlMzdjZDUyY2U5NTA2OGQ0NTk0ZmEzN2MyMjdhM2ZhMzQ2MGIzMmRjNDJhMGJjNDk5MWRlZmZkMGI2MGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg3YzBmYjdkNTgxYWNiNWNiYWIzZGU4NTk2NTRhOWY0NWJmNGVlMzE5N2U3Y2U4NzI0NGQ2NmM2ZjhjMjRkYWEifQ"
+        },
+        {
+          "resource": "repo://libs/langchain/Makefile#L50-L71",
+          "version": "repo-lines-v1:sha256:e6515fe0a517e2d6077103999b73f48f2b1a62266f2a7bd51b43b414ce0b0a49:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZTgwM2M4YzcwNTg2YzgyMGIxZWE5MjAwZGJjMjMyY2NmNTc2YTNkMGQwNDM1ZDQ1Nzk4OGNiMDMwYzA4MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjMmFlMzdjZDUyY2U5NTA2OGQ0NTk0ZmEzN2MyMjdhM2ZhMzQ2MGIzMmRjNDJhMGJjNDk5MWRlZmZkMGI2MGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxYTZkMzQ3NDMzNzZlNzE5ZDM3ZmQ4NzU5NmI5MmIyMDYzZDA3Y2U0MGZlYTczZmI1ZjYyZjdkYWRjM2ViNzMifQ"
+        },
+        {
+          "resource": "repo://libs/partners/anthropic/Makefile#L40-L61",
+          "version": "repo-lines-v1:sha256:761a1954923e2f8f8f98102411fe841c64897de0c5583bd32ffb6a8bc0bc5d54:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwZTgwM2M4YzcwNTg2YzgyMGIxZWE5MjAwZGJjMjMyY2NmNTc2YTNkMGQwNDM1ZDQ1Nzk4OGNiMDMwYzA4MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjMmFlMzdjZDUyY2U5NTA2OGQ0NTk0ZmEzN2MyMjdhM2ZhMzQ2MGIzMmRjNDJhMGJjNDk5MWRlZmZkMGI2MGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0YWY1MmI0ZGZkZjQyYTg4OWM5MjNjZWUzZTE1Y2YxMWU1OTgzYTg2MTllOWI3ZDk3MzU4ZjhmM2EyMDYwZjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6ecd05de6df74f4cbb45938ad238bec0",
+      "statement": "All package Makefiles set UV_FROZEN=true via .EXPORT_ALL_VARIABLES to prevent unintended lock file changes during uv sync; developers update locks explicitly with uv lock command or via cd libs && make lock for all packages; uv lock --check verifies lock files are up-to-date",
+      "evidence": [
+        {
+          "resource": "repo://libs/Makefile#L6-L19",
+          "version": "repo-lines-v1:sha256:19467f0f363b189d261a0e5c884be610ca330ecac927a14f6f64a21f04803b81:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2NmM1MTM4ZTA3ODA4NDMzYjY2MGE0MjdhZmVhN2FlYmFiZmM3MGM4MjEyMWY1YzQ0NmExNDg5Njc3ODkxZjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0YmZiYWMzMmUzM2EyOGI1Zjc4NmJmYTAxZGY4Yjc0OTZjNjc1Y2ZmMWQyMTFlZjNiMzE5ZThkYjk4NWE2ODMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmZDBjZTQ2Yjk2NTUxMDYzMDU0NzE0MmJkNTc2MWE1ZGIxOTFhZjE5YzNlZDI3ZWU4N2M4ZmQ3OTBiMDgyM2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ4OWEwZmIyMTcxZjliNTk0YmQyZjA5YzQwMmEwYjU1MmRiNjNiNTBlZDBhNzE1OGEzMWQzMGFlYWRhYjVjMzgifQ"
+        },
+        {
+          "resource": "repo://libs/core/Makefile#L10-L11",
+          "version": "repo-lines-v1:sha256:3227bd380fca6b422c3023518bfd0c5068ed6ab7e74ccd5806700d0fee0b7be5:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWJjOGYyOTYzMWRjYmM2OGFlNjcwYTc2MWNlNmQzMzM2MjQ5NzFjYzQwMjZmOTY0ODliZDViMWMyMTQ3NjhiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGJmN2M4YzA4ZDAxZGRlYzllOTUxYTcwNTU4Y2U2MmRlYzFlY2ZjNmU0OTZkMWM2MzYzMTQ5YjQyYTY5MWRmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmVhNGNmOTJhZGZhNWNjN2U2Nzk0MjM1MmNlM2U5YTFiZjljMzJiODBhNDQ5ZTVlZWYyNWQ0NGIwZjdjODliYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmRhY2ZkNWNkNWFhNzhjNGVhMDE0YmM0MTVjMDE3ZGVmMDQ1NjdlZmM5NzM4ZmMyNjFkNDM1M2U4NjE5YmRkZSJ9"
+        },
+        {
+          "resource": "repo://libs/langchain/Makefile#L14-L15",
+          "version": "repo-lines-v1:sha256:3227bd380fca6b422c3023518bfd0c5068ed6ab7e74ccd5806700d0fee0b7be5:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWJjOGYyOTYzMWRjYmM2OGFlNjcwYTc2MWNlNmQzMzM2MjQ5NzFjYzQwMjZmOTY0ODliZDViMWMyMTQ3NjhiYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGJmN2M4YzA4ZDAxZGRlYzllOTUxYTcwNTU4Y2U2MmRlYzFlY2ZjNmU0OTZkMWM2MzYzMTQ5YjQyYTY5MWRmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmVhNGNmOTJhZGZhNWNjN2U2Nzk0MjM1MmNlM2U5YTFiZjljMzJiODBhNDQ5ZTVlZWYyNWQ0NGIwZjdjODliYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzVlMzY3NzczY2Y0MmYyODU5ODNmNWM2ZTUxYTkyZDk3ODUzYWQzOGFhZTkwYzI1ZTA3ZmFmZmIzN2FjNjM5NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_365ba239ca1848a19c1151cce4a0f1aa",
+      "statement": "Unit tests in tests/unit_tests/ run with --disable-socket --allow-unix-socket flags to prevent accidental network calls; integration tests in tests/integration_tests/ run with --group test_integration and allow network access; socket restrictions can be bypassed with --disable-socket=false for debugging",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L13-L20",
+          "version": "repo-lines-v1:sha256:ab8103f9ee7c85d9fb1c9d3d0cbe6264d1384aac292f90c74f84c77c06ed5398:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDliMzBjZTkzZjhkMmVlNmQ2NDdlYjNhN2RhYjQ0NjRiNWQ5Yjc5ZGExOTI4ZGE2MDY4MDQ3M2QyY2Y0ZTY4MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ2M2RlMzg2ZTA3OTFhZGQ1MmUzZjZlM2EwOWYyYmY2NDhmZTQzMTMxOGUxOTE1YjdlNWRlOTlmN2E1ODQ1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzgzNzQ1ZTU1YTIzYmI0MzZjYTUxMGFiMTgwNGQyODMwMjhhNTJlNzc5MjE5YmNlNzAyODRkOWY3YjEwMDcxMCJ9"
+        },
+        {
+          "resource": "repo://libs/langchain/Makefile#L25-L38",
+          "version": "repo-lines-v1:sha256:864ac5a94f4a0b7574499486011ea59cf489af84c623798e3627e19b28c0da18:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5YjMwY2U5M2Y4ZDJlZTZkNjQ3ZWIzYTdkYWI0NDY0YjVkOWI3OWRhMTkyOGRhNjA2ODA0NzNkMmNmNGU2ODEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5MWVlZjU3M2QzM2YyOGRiODcwZTdmZDMwNWQ1MjNiYzNkMGNjZWUxMjIxNzJiMDIzMzU5YTZlNzdlMGU0YjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkODZjNGU2OGZhODQ2NmVlZWJkMTcyNTUyMzlmYzViYTFiOGVhMTk2Njc1ZjdlNGFhZjM1MTYxZTgyYTRjNzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2N2E0ODFmMDk2NDAyYTA4MWZkOGQxMWIzMGY3MWJlNDJmNmI4MzgyZGNmY2FkODg5YTU0NjE2OWUxNDdjOTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_19ede4cbb94a47ea90c3faea7f0a9b97",
+      "statement": "Make coverage target runs pytest with --cov, --cov-config=.coveragerc, and generates both xml and term-missing reports to show untested code paths",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain/Makefile#L17-L23",
+          "version": "repo-lines-v1:sha256:cc0d36e24202705766c18d437e42c8aed161e1a0cf68dd0209b010a18650bb8d:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjM4NDJjMWU3ZTQ2YWYzMDlhZTcyZDlmZGIzMzljN2JkZjFjZTg5NjE0ZDU0NGRhYTlkNWU2OWQ2YWYxMTdhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGMxZTk2NTdjYTQ4YmE3NmQzMTg1M2VmNGZmMmJlMWQzNGQzNzVjMWJlNmQ2YWIzMWJiM2MwM2M0YzU3NjUzMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQ2M2RlMzg2ZTA3OTFhZGQ1MmUzZjZlM2EwOWYyYmY2NDhmZTQzMTMxOGUxOTE1YjdlNWRlOTlmN2E1ODQ1MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWFlYmEwZTgxZTgwN2Q1NWM2MWEyYTk3YzY3MjZmNWI1ODhkMDdmN2Q0MWVjMjA5M2E4OGMzNTdlNTQ5YmZjMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_82b6c970b80c4ebc87ebefbc21a9c502",
+      "statement": "Per-package pre-commit local hooks execute make -C libs/<package> format lint for each package directory (core, langchain, langchain_v1, standard-tests, text-splitters, anthropic, chroma, exa, fireworks, groq, huggingface, mistralai, nomic, ollama, openai, qdrant, etc.) with files patterns that trigger on changes to each package's source",
+      "evidence": [
+        {
+          "resource": "repo://.pre-commit-config.yaml#L22-L112",
+          "version": "repo-lines-v1:sha256:2a67c2b60e0ca29ad68bb528f2ac4a16e81a913ee3f62994ae9ee05fa8efaec4:eyJzZWxlY3RlZExpbmVDb3VudCI6OTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNWFjN2E3OGNlODgzZmExOGI3MDdlODJmMzU1ZjRkZDQ0OWNmZWNjNzkyZmVkMWYwZGQyOGFlM2Y2MDk4NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNDY2MTI0MjU5ZGM1MmQ1NzUwZGM0NDFhMTZjNjFjYzg5NzU3NzlmZjFhNDdiNjQxOTU0M2Y2ZDU4ZWUwMTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2OWZiNTExYTU3YWRhNGZlYzg5ZTRkNGRhZjE0Y2I4ODU4MDRlMDllY2Q1NTY2NTkxMmRlN2E3MmFjZTFmYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMDVkYWUxZDY5NDAxZDlmOTNlYWUzOTcwZjQ1NmFkZTA3MWIxNjk5YTQ4NWY1MDZhMjMwNGY1MGM3NGQwYTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a0dba6055f2c4e709372dc9c6c2abc92",
+      "statement": "Pre-commit version consistency hooks check that pyproject.toml version matches source code version files (e.g., langchain_core/version.py, langchain/__init__.py, langchain_anthropic/_version.py) by running make check_version for each package that requires it",
+      "evidence": [
+        {
+          "resource": "repo://.pre-commit-config.yaml#L114-L215",
+          "version": "repo-lines-v1:sha256:60a60a2c48cde1b7fa504c573c9e5abcf9c5a737bdb3f333300761cfe8e3394c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjZjUyYzZjYzM2Nzk3M2ViNTFkODgyNjliOGVmMDA0M2Q3NjU1N2M5YzViYjNiNDA2MzAzMTA2NDY1ZTc2YmIzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5MTc4NmJkM2Q0OWJhOTNiMjZjNDQ2ODM1MmQ1ZWIwNzliNWZjZTRmZGZkNjM2ODM4NjQyMWRlZmMyNjcwNGUzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmYzgxZTYwMDE4NjhjMTcxMWNhMmQ5OTU3ZWYzN2IyODBlZGRmNzk4MjFmODcxYTcyMjU1NTg4ZmNjNTQ1MzVlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_715a4e956c0f4d579fd3e85253562a2b",
+      "statement": "All packages define typing dependency group with mypy>=2.1.0,<2.2.0 and type stubs (types-pyyaml, types-requests, etc.); make type target creates .mypy_cache directory and runs mypy with strict mode enabled",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L66-L67",
+          "version": "repo-lines-v1:sha256:d3055097165dec9a82b8719769b38395b555813264a3da6de5b44c4b7ed4e74c:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2RhMWY2NDg1YzFhNTljZTczZDRmZDZkNmRlOWM1OWU3Y2M0Y2Q2YzBhOTRlMTcyMDY1Y2M1MjNlYjA3MWFkZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjI2NGUxNzEyMGQxMDU3NjNiYTkzYjkyYWEwN2M3YzRmYjE5MzM0NzMzMWZlNWMwNDI5MmM5MDk4OTE5NWZmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTg3YjUzNDQ4NGQ0OTM3MDVmYjY4MWI4YmNlMWY1NTg1ODFjMmFmYWJhZGEzMTY4MTg2NDk2NWRiYmZkMzU3MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWU2NDJiYTYwOTY2OTA4MDMzOTY3ZGE2OTUzZDdlYzkwMzM3YzkwMDZmNWJiZGVjMTIwZmZiZTM3ZTg5N2NiYSJ9"
+        },
+        {
+          "resource": "repo://libs/core/pyproject.toml#L51-L56",
+          "version": "repo-lines-v1:sha256:b7b8bad773a3683902e2d375c1b81ebdd22ce7ed90ab7bf4ee752c5eef8c80dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2FjZjNkNTMzMjlhN2NjMGQxZWVlNTk1OTU0ODY0YmU2NjAxNGEwYThiMzU0ZjNjN2E3MTIzMjdiOGE2NTVlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTU3ZjZlMDhmYTgzOGQ0OWYwY2M5N2Y5NDY1MTk3OTBhNDg5ODU4NDA5YzQwY2MwYmVhNTllM2U3NDUzNzE1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2Q5MjE3NWNmM2EzNWZmYTJhNTIzMmZmYzkzOTBjYjQ3NjY1ZjQ2YTI3NjU0MjQ0YThlZDQ0ZDczMDM2MzZlMCJ9"
+        },
+        {
+          "resource": "repo://libs/langchain/pyproject.toml#L83-L87",
+          "version": "repo-lines-v1:sha256:cd49845220f38ee09f9e0716e683a353967c783fa9357f433f69ee8df0791bbb:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWY4NTNmZDUzNGQ0M2EyNjYwZjhiYmVmMjQwZmEzNjc3MzgzZjdlNzhkODhjMDE4NDRiNTEwN2E0NTU4MDc2ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmNkNjVlOWFmZTBhZjA3OWIzOTVhMmZiZTQ4ODBjOTBiMzg2N2FlNTMzZGY4NWJiYjViOTJlNjgzYzBkNjhhMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDE3NjI3ZjQ0MDE0MjU5OGRmZTNlOWRmOTM3YzQzMjQ5ZmQwY2MyMzQzZDY3NTAyMzhlNjMzYjJiMDc0YWQ5NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_0deb26c19d9f4e03a080bcaf79c9b0c4",
+      "statement": "Ruff linting is configured in pyproject.toml with select=['ALL'] and package-specific ignore rules for linting; make format runs ruff format (for Python and Jupyter notebooks) then ruff check --fix to auto-fix formatting and logical issues",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/pyproject.toml#L96-L125",
+          "version": "repo-lines-v1:sha256:4ef1161d30a1334cf1facaace76bb29a9fe6d03adb91ffca9d4911dc313ee988:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIyZTZhNWVjOWZhNzFjMjZlMTU5Yjg3YWU0MmQ0NzgzYjZkOGRmYWVkZDJhNWJiYjAyY2E2ZTk3MDliNmM2YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyNjJkMDFiYzg3MzNiNmFkNzhjM2UyODcyN2Y1MzJiNGQyZWEwNzBjZGVlNWU1NDhjMjdmYjc5OTg3YTc3MzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkMThjM2M5YjE3ZDk2YzcyODIwZWI2ZWJhOGNlOGQzY2IxZmFhZmE0MmVjNGE1ZjM1NzRkOGI5MWVlOWUxODcifQ"
+        },
+        {
+          "resource": "repo://libs/langchain/Makefile#L68-L71",
+          "version": "repo-lines-v1:sha256:e82790967b6464c3f65170fa5ee8a51ab861a0a39d8b9ed692c2d84707674b58:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2IzZTE2NzgzNDRjNGM3ODdmYmRkYjI2MzlkMTM2OGFkYTc0OGRkZDliNzg1ZTQ1NTZjNWY1ODkxMjY3MTNiMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTNjNWM5MjBjYTJiNzdlNDI0MGYwMDc0YTAzNzU2ZDM3ZGE0YWQ2N2E5YjU4M2EwNDdkZGFjNzNiZWRlYzM3OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjFhNmQzNDc0MzM3NmU3MTlkMzdmZDg3NTk2YjkyYjIwNjNkMDdjZTQwZmVhNzNmYjVmNjJmN2RhZGMzZWI3MyJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

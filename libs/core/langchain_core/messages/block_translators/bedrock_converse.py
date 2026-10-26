@@ -159,11 +159,16 @@ def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]
         # Converse outputs multiple chunks containing response metadata
         return []
 
-    if isinstance(message.content, str):
-        message.content = [{"type": "text", "text": message.content}]
+    # Translated through a local list so that reading `content_blocks` leaves
+    # `message.content` untouched.
+    content: list[str | dict[str, Any]] = (
+        [{"type": "text", "text": message.content}]
+        if isinstance(message.content, str)
+        else message.content
+    )
 
     def _iter_blocks() -> Iterator[types.ContentBlock]:
-        for block in message.content:
+        for block in content:
             if not isinstance(block, dict):
                 continue
             block_type = block.get("type")
@@ -190,6 +195,10 @@ def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]
                         if "extras" not in reasoning_block:
                             reasoning_block["extras"] = {}
                         reasoning_block["extras"]["signature"] = signature
+                    if redacted := reasoning_content.get("redacted_content"):
+                        if "extras" not in reasoning_block:
+                            reasoning_block["extras"] = {}
+                        reasoning_block["extras"]["redacted_content"] = redacted
 
                 if "index" in block:
                     reasoning_block["index"] = block["index"]
@@ -269,12 +278,17 @@ def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]
                 yield tool_call_chunk
 
             else:
-                new_block: types.NonStandardContentBlock = {
-                    "type": "non_standard",
-                    "value": block,
-                }
-                if "index" in new_block["value"]:
-                    new_block["index"] = new_block["value"].pop("index")
+                if "index" in block:
+                    # Copy before lifting `index` off the block.
+                    value = block.copy()
+                    index = value.pop("index")
+                    new_block: types.NonStandardContentBlock = {
+                        "type": "non_standard",
+                        "value": value,
+                        "index": index,
+                    }
+                else:
+                    new_block = {"type": "non_standard", "value": block}
                 yield new_block
 
     return list(_iter_blocks())

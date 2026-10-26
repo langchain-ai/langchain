@@ -52,10 +52,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
     Example:
         ```python
-        from langchain_core.chat_models.openai import ChatOpenAI
-        from langchain_core.chat_models.anthropic import ChatAnthropic
+        from langchain_anthropic import ChatAnthropic
+        from langchain_openai import ChatOpenAI
 
-        model = ChatAnthropic(model="claude-sonnet-4-6").with_fallbacks(
+        model = ChatAnthropic(model="claude-sonnet-5").with_fallbacks(
             [ChatOpenAI(model="gpt-5.4-mini")]
         )
         # Will usually use ChatAnthropic, but fallback to ChatOpenAI
@@ -604,8 +604,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             from langchain_openai import ChatOpenAI
             from langchain_anthropic import ChatAnthropic
 
-            gpt_55 = ChatOpenAI(model="openai:gpt-5.5")
-            claude_3_sonnet = ChatAnthropic(model="claude-sonnet-4-5-20250929")
+            gpt_55 = ChatOpenAI(model="gpt-5.5")
+            claude_3_sonnet = ChatAnthropic(model="claude-sonnet-5")
             model = gpt_55.with_fallbacks([claude_3_sonnet])
 
             model.model_name

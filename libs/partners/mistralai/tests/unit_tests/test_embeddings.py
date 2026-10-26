@@ -1,6 +1,6 @@
 import os
 from typing import cast
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import httpx
 from pydantic import SecretStr
@@ -15,12 +15,16 @@ os.environ["MISTRAL_API_KEY"] = "foo"
 
 
 def test_mistral_init() -> None:
-    for model in [
-        MistralAIEmbeddings(model="mistral-embed", mistral_api_key="test"),  # type: ignore[call-arg]
-        MistralAIEmbeddings(model="mistral-embed", api_key="test"),  # type: ignore[arg-type]
-    ]:
-        assert model.model == "mistral-embed"
-        assert cast("SecretStr", model.mistral_api_key).get_secret_value() == "test"
+    with patch(
+        "langchain_mistralai.embeddings.Tokenizer.from_pretrained",
+        return_value=MagicMock(),
+    ):
+        for model in [
+            MistralAIEmbeddings(model="mistral-embed", mistral_api_key="test"),  # type: ignore[call-arg]
+            MistralAIEmbeddings(model="mistral-embed", api_key="test"),  # type: ignore[arg-type]
+        ]:
+            assert model.model == "mistral-embed"
+            assert cast("SecretStr", model.mistral_api_key).get_secret_value() == "test"
 
 
 def test_is_retryable_error_timeout() -> None:

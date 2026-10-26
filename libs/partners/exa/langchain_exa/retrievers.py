@@ -27,12 +27,9 @@ def _get_metadata(result: Any) -> dict[str, Any]:
         "published_date": result.published_date,
         "author": result.author,
     }
-    if getattr(result, "highlights"):
-        metadata["highlights"] = result.highlights
-    if getattr(result, "highlight_scores"):
-        metadata["highlight_scores"] = result.highlight_scores
-    if getattr(result, "summary"):
-        metadata["summary"] = result.summary
+    for attribute in ("highlights", "highlight_scores", "summary"):
+        if value := getattr(result, attribute, None):
+            metadata[attribute] = value
     return metadata
 
 

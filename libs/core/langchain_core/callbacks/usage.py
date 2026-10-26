@@ -114,6 +114,11 @@ def get_usage_metadata_callback(
     )
     register_configure_hook(usage_metadata_callback_var, inheritable=True)
     cb = UsageMetadataCallbackHandler()
-    usage_metadata_callback_var.set(cb)
-    yield cb
-    usage_metadata_callback_var.set(None)
+    token = usage_metadata_callback_var.set(cb)
+    try:
+        yield cb
+    finally:
+        # Always clear the context var, including when the with-block raises.
+        # Without finally, post-block model calls keep accumulating into cb
+        # (see #38989).
+        usage_metadata_callback_var.reset(token)

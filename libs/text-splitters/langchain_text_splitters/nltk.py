@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import override
 
@@ -54,7 +54,9 @@ class NLTKTextSplitter(TextSplitter):
     def _sent_tokenizer(language: str) -> Callable[[str], list[str]]:
         import nltk  # noqa: PLC0415
 
-        return lambda text: nltk.tokenize.sent_tokenize(text, language)
+        return lambda text: cast(
+            "list[str]", nltk.tokenize.sent_tokenize(text, language)
+        )
 
     @staticmethod
     def _span_tokenizer(language: str) -> Callable[[str], list[str]]:

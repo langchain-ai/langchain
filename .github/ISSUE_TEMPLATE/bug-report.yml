@@ -70,6 +70,7 @@ body:
         - label: langchain-openrouter
         - label: langchain-perplexity
         - label: langchain-qdrant
+        - label: langchain-typesafe
         - label: langchain-xai
         - label: Other / not sure / general
   - type: textarea
@@ -151,3 +152,14 @@ body:
         python -m langchain_core.sys_info
     validations:
       required: true
+  - type: textarea
+    id: social-handles
+    attributes:
+      label: Social handles (optional)
+      description: |
+        If you'd like a shoutout on release, add your socials below.
+      placeholder: |
+        Twitter: @
+        LinkedIn: https://linkedin.com/in/
+    validations:
+      required: false

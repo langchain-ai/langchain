@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from uuid import UUID
 
     from langchain_protocol.protocol import MessagesData
+    from langsmith.address import AgentAddress
     from tenacity import RetryCallState
 
     from langchain_core.agents import AgentAction, AgentFinish
@@ -59,6 +60,7 @@ def trace_as_chain_group(
     *,
     inputs: dict[str, Any] | None = None,
     project_name: str | None = None,
+    address: AgentAddress | None = None,
     example_id: str | UUID | None = None,
     run_id: UUID | None = None,
     tags: list[str] | None = None,
@@ -74,6 +76,10 @@ def trace_as_chain_group(
         callback_manager: The callback manager to use.
         inputs: The inputs to the chain group.
         project_name: The name of the project.
+        address: The agent address to send traces to instead of a project.
+
+            !!! warning "Beta"
+                Agent addressing must be enabled for the LangSmith workspace.
         example_id: The ID of the example.
         run_id: The ID of the run.
         tags: The inheritable tags to apply to all runs.
@@ -101,7 +107,7 @@ def trace_as_chain_group(
     )
 
     cb = _get_trace_callbacks(
-        project_name, example_id, callback_manager=callback_manager
+        project_name, example_id, callback_manager=callback_manager, address=address
     )
     cm = CallbackManager.configure(
         inheritable_callbacks=cb,
@@ -123,7 +129,7 @@ def trace_as_chain_group(
     )
     try:
         yield group_cm
-    except Exception as e:
+    except BaseException as e:
         if not group_cm.ended:
             run_manager.on_chain_error(e)
         raise
@@ -139,6 +145,7 @@ async def atrace_as_chain_group(
     *,
     inputs: dict[str, Any] | None = None,
     project_name: str | None = None,
+    address: AgentAddress | None = None,
     example_id: str | UUID | None = None,
     run_id: UUID | None = None,
     tags: list[str] | None = None,
@@ -155,6 +162,10 @@ async def atrace_as_chain_group(
             other callback behavior.
         inputs: The inputs to the chain group.
         project_name: The name of the project.
+        address: The agent address to send traces to instead of a project.
+
+            !!! warning "Beta"
+                Agent addressing must be enabled for the LangSmith workspace.
         example_id: The ID of the example.
         run_id: The ID of the run.
         tags: The inheritable tags to apply to all runs.
@@ -184,7 +195,7 @@ async def atrace_as_chain_group(
     )
 
     cb = _get_trace_callbacks(
-        project_name, example_id, callback_manager=callback_manager
+        project_name, example_id, callback_manager=callback_manager, address=address
     )
     cm = AsyncCallbackManager.configure(
         inheritable_callbacks=cb, inheritable_tags=tags, inheritable_metadata=metadata
@@ -206,7 +217,7 @@ async def atrace_as_chain_group(
     )
     try:
         yield group_cm
-    except Exception as e:
+    except BaseException as e:
         if not group_cm.ended:
             await run_manager.on_chain_error(e)
         raise
@@ -2427,7 +2438,7 @@ def _configure(
 
     from langchain_core.tracers.context import (  # noqa: PLC0415
         _configure_hooks,
-        _get_tracer_project,
+        _get_tracer_kwargs,
         _tracing_v2_is_enabled,
         tracing_v2_callback_var,
     )
@@ -2505,7 +2516,6 @@ def _configure(
         )
         raise RuntimeError(msg)
 
-    tracer_project = _get_tracer_project()
     debug = _get_debug()
     if verbose or debug or tracing_v2_enabled_:
         if verbose and not any(
@@ -2529,16 +2539,7 @@ def _configure(
                 callback_manager.add_handler(tracer_v2)
             else:
                 try:
-                    handler = LangChainTracer(
-                        project_name=tracer_project,
-                        client=(
-                            run_tree.client
-                            if run_tree is not None
-                            else tracing_context["client"]
-                        ),
-                        tags=tracing_tags,
-                        metadata=tracing_metadata,
-                    )
+                    handler = LangChainTracer(**_get_tracer_kwargs())
                     callback_manager.add_handler(handler)
                 except Exception as e:
                     logger.warning(

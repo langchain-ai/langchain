@@ -147,7 +147,12 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
                 "codspeed-mode": mode,
             }
         ]
-    if dir_ == "libs/core":
+    if job in {"compile-integration-tests", "lint"} and dir_ in {
+        "libs/partners/openai",
+        "libs/partners/perplexity",
+    }:
+        py_versions = ["3.11", "3.14"]
+    elif dir_ == "libs/core":
         py_versions = ["3.10", "3.11", "3.12", "3.13", "3.14"]
     else:
         py_versions = ["3.10", "3.14"]

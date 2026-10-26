@@ -23,6 +23,14 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.exceptions import (
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+)
 from langchain_core.language_models import (
     LanguageModelInput,
     ModelProfile,
@@ -219,6 +227,58 @@ def _convert_mistral_chat_message_to_message(
     )
 
 
+class MistralAIAuthenticationError(httpx.HTTPStatusError, ModelAuthenticationError):
+    """Mistral AI authentication error classified as a LangChain model error."""
+
+
+class MistralAIPermissionDeniedError(httpx.HTTPStatusError, ModelPermissionDeniedError):
+    """Mistral AI permission error classified as a LangChain model error."""
+
+
+class MistralAIInvalidRequestError(httpx.HTTPStatusError, ModelInvalidRequestError):
+    """Mistral AI invalid-request error classified as a LangChain model error."""
+
+
+class MistralAIModelNotFoundError(httpx.HTTPStatusError, ModelNotFoundError):
+    """Mistral AI not-found error classified as a LangChain model error."""
+
+
+class MistralAIRateLimitError(httpx.HTTPStatusError, ModelRateLimitError):
+    """Mistral AI rate-limit error classified as a LangChain model error."""
+
+
+class MistralAIAPIError(httpx.HTTPStatusError, ModelAPIError):
+    """Mistral AI server error classified as a LangChain model error."""
+
+
+_STATUS_ERROR_TYPES: dict[int, type[httpx.HTTPStatusError]] = {
+    400: MistralAIInvalidRequestError,
+    401: MistralAIAuthenticationError,
+    403: MistralAIPermissionDeniedError,
+    404: MistralAIModelNotFoundError,
+    422: MistralAIInvalidRequestError,
+    429: MistralAIRateLimitError,
+}
+"""HTTP status codes the Mistral AI API reports, keyed to LangChain error types."""
+
+
+def _status_error_type(status_code: int) -> type[httpx.HTTPStatusError]:
+    """Return the error type to raise for an HTTP status code.
+
+    Args:
+        status_code: The HTTP status code of the error response.
+
+    Returns:
+        The classified error type, or plain `httpx.HTTPStatusError` for status codes
+        the taxonomy does not cover.
+    """
+    if error_type := _STATUS_ERROR_TYPES.get(status_code):
+        return error_type
+    if status_code >= 500:
+        return MistralAIAPIError
+    return httpx.HTTPStatusError
+
+
 def _raise_on_error(response: httpx.Response) -> None:
     """Raise an error if the response is an error."""
     if httpx.codes.is_error(response.status_code):
@@ -227,7 +287,7 @@ def _raise_on_error(response: httpx.Response) -> None:
             f"Error response {response.status_code} "
             f"while fetching {response.url}: {error_message}"
         )
-        raise httpx.HTTPStatusError(
+        raise _status_error_type(response.status_code)(
             msg,
             request=response.request,
             response=response,
@@ -242,7 +302,7 @@ async def _araise_on_error(response: httpx.Response) -> None:
             f"Error response {response.status_code} "
             f"while fetching {response.url}: {error_message}"
         )
-        raise httpx.HTTPStatusError(
+        raise _status_error_type(response.status_code)(
             msg,
             request=response.request,
             response=response,

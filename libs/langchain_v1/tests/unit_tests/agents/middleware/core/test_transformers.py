@@ -1,5 +1,11 @@
 """Tests for middleware-registered stream transformers."""
 
+# `run.tool_calls`/`run.subagents` are stream projections registered dynamically by
+# `create_agent` (via langgraph-prebuilt's `ToolCallTransformer` and langchain's
+# `SubagentTransformer`), not declared on langgraph's typed `GraphRunStream`
+# (langgraph#8389). The `# type: ignore[attr-defined]` below self-remove once
+# langgraph adds a `__getattr__` fallback (strict mode's `warn_unused_ignores`).
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any

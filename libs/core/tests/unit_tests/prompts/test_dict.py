@@ -116,3 +116,46 @@ def test_prompt_template_blocks_attribute_access() -> None:
         ValueError, match="Variable names cannot contain attribute access"
     ):
         PromptTemplate.from_template("{name.__class__}", template_format="f-string")
+
+
+def test_dict_prompt_template_preserves_non_str_items_in_list() -> None:
+    """Non-str/non-dict items inside lists must be preserved, not silently dropped.
+
+    Regression test for #39152: int, float, bool, None and other scalars nested
+    inside a list value were silently discarded by _insert_input_variables.
+    """
+    template = {
+        "type": "tool_use",
+        "id": "call_1",
+        "name": "search",
+        "input": {
+            "query": "{q}",
+            "top_k_scores": [1, 2, 3],
+            "flags": [True, None],
+        },
+    }
+    prompt = DictPromptTemplate(template=template, template_format="f-string")
+    result = prompt.format(q="cats")
+
+    assert result["input"]["query"] == "cats"
+    assert result["input"]["top_k_scores"] == [1, 2, 3]
+    assert result["input"]["flags"] == [True, None]
+
+
+def test_dict_prompt_template_preserves_mixed_list() -> None:
+    """Mixed-type lists must survive formatting unchanged (except str interpolation)."""
+    template = {
+        "type": "x",
+        "mixed": ["a {v}", 1, 2.5, {"k": "val"}, None, True],
+    }
+    prompt = DictPromptTemplate(template=template, template_format="f-string")
+    result = prompt.format(v="b")
+
+    assert result["mixed"] == ["a b", 1, 2.5, {"k": "val"}, None, True]
+
+
+def test_dict_prompt_template_preserves_list_with_no_variables() -> None:
+    """Items must survive even when the template has no variables at all."""
+    template = {"nums": [1, 2]}
+    prompt = DictPromptTemplate(template=template, template_format="mustache")
+    assert prompt.format() == {"nums": [1, 2]}

@@ -8,7 +8,6 @@ from __future__ import annotations
 import asyncio
 import builtins
 import functools
-import inspect
 import json
 import logging
 from abc import ABC, abstractmethod
@@ -58,6 +57,7 @@ from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunIn
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
 from langchain_core.runnables import RunnableConfig, ensure_config, get_config_list
 from langchain_core.runnables.config import run_in_executor
+from langchain_core.utils._signature import _signature_parameters
 
 if TYPE_CHECKING:
     import builtins
@@ -182,13 +182,13 @@ def get_prompts(
 
     llm_cache = _resolve_cache(cache=cache)
     for i, prompt in enumerate(prompts):
-        if llm_cache:
+        if llm_cache is not None:
             cache_val = llm_cache.lookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 existing_prompts[i] = cache_val
-            else:
-                missing_prompts.append(prompt)
-                missing_prompt_idxs.append(i)
+                continue
+        missing_prompts.append(prompt)
+        missing_prompt_idxs.append(i)
     return existing_prompts, llm_string, missing_prompt_idxs, missing_prompts
 
 
@@ -217,13 +217,13 @@ async def aget_prompts(
     existing_prompts = {}
     llm_cache = _resolve_cache(cache=cache)
     for i, prompt in enumerate(prompts):
-        if llm_cache:
+        if llm_cache is not None:
             cache_val = await llm_cache.alookup(prompt, llm_string)
             if isinstance(cache_val, list):
                 existing_prompts[i] = cache_val
-            else:
-                missing_prompts.append(prompt)
-                missing_prompt_idxs.append(i)
+                continue
+        missing_prompts.append(prompt)
+        missing_prompt_idxs.append(i)
     return existing_prompts, llm_string, missing_prompt_idxs, missing_prompts
 
 
@@ -288,7 +288,7 @@ async def aupdate_cache(
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
-        if llm_cache:
+        if llm_cache is not None:
             await llm_cache.aupdate(prompt, llm_string, result)
     return new_results.llm_output
 
@@ -1006,9 +1006,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             missing_prompt_idxs,
             missing_prompts,
         ) = get_prompts(params, prompts, self.cache)
-        new_arg_supported = inspect.signature(self._generate).parameters.get(
-            "run_manager"
-        )
+        new_arg_supported = _signature_parameters(self._generate).get("run_manager")
         if (self.cache is None and get_llm_cache() is None) or self.cache is False:
             run_managers = [
                 callback_manager.on_llm_start(
@@ -1281,9 +1279,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         # Verify whether the cache is set, and if the cache is set,
         # verify whether the cache is available.
-        new_arg_supported = inspect.signature(self._agenerate).parameters.get(
-            "run_manager"
-        )
+        new_arg_supported = _signature_parameters(self._agenerate).get("run_manager")
         if (self.cache is None and get_llm_cache() is None) or self.cache is False:
             run_managers = await asyncio.gather(
                 *[
@@ -1540,7 +1536,7 @@ class LLM(BaseLLM):
     ) -> LLMResult:
         # TODO: add caching here.
         generations = []
-        new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
+        new_arg_supported = _signature_parameters(self._call).get("run_manager")
         for prompt in prompts:
             text = (
                 self._call(prompt, stop=stop, run_manager=run_manager, **kwargs)
@@ -1558,7 +1554,7 @@ class LLM(BaseLLM):
         **kwargs: Any,
     ) -> LLMResult:
         generations = []
-        new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
+        new_arg_supported = _signature_parameters(self._acall).get("run_manager")
         for prompt in prompts:
             text = (
                 await self._acall(prompt, stop=stop, run_manager=run_manager, **kwargs)

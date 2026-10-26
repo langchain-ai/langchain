@@ -25,12 +25,12 @@ requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.4.7,<2.0.0",
     "langchain-text-splitters>=1.1.2,<2.0.0",
-    "langsmith>=0.1.17,<1.0.0",
-    "pydantic>=2.7.4,<3.0.0",
-    "SQLAlchemy>=1.4.0,<3.0.0",
-    "requests>=2.0.0,<3.0.0",
-    "PyYAML>=5.3.0,<7.0.0",
-    "async-timeout>=4.0.0,<5.0.0; python_version < \"3.11\"",
+    "langsmith>=0.14.4,<1.0.0",
+    "pydantic>=2.7.4",
+    "SQLAlchemy>=1.4.0",
+    "requests>=2.0.0",
+    "PyYAML>=5.3.0",
+    "async-timeout>=4.0.0; python_version < \"3.11\"",
 ]
 
 [project.optional-dependencies]
@@ -86,7 +86,7 @@ test = [
     "langchain-openai",
 ]
 test_integration = [
-    "vcrpy>=8.0.0,<9.0.0",
+    "vcrpy>=8.2.0,<9.0.0",
     "wrapt>=1.15.0,<3.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
     "cassio>=0.1.0,<1.0.0; python_version < '3.14'",
@@ -110,7 +110,7 @@ typing = [
 dev = [
     "jupyter>=1.0.0,<2.0.0",
     "playwright>=1.28.0,<2.0.0",
-    "setuptools>=67.6.1,<84.0.0",
+    "setuptools>=67.6.1,<85.0.0",
 ]
 
 

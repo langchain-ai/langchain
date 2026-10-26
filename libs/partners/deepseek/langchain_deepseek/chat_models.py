@@ -19,6 +19,7 @@ from langchain_core.language_models import (
     ModelProfileRegistry,
 )
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
@@ -43,6 +44,67 @@ _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     default = _MODEL_PROFILES.get(model_name) or {}
     return default.copy()
+
+
+def _get_prompt_cache_hit_tokens(response: dict | openai.BaseModel) -> int | None:
+    """Read DeepSeek's top-level `prompt_cache_hit_tokens` usage field.
+
+    DeepSeek reports context-cache usage as top-level `prompt_cache_hit_tokens`
+    and `prompt_cache_miss_tokens` fields rather than OpenAI's nested
+    `prompt_tokens_details.cached_tokens`, so the count is not visible to the
+    base class.
+
+    Args:
+        response: A chat completion response or a streaming chunk.
+
+    Returns:
+        The number of prompt tokens served from the context cache, or `None` if
+        the field is absent.
+    """
+    usage: Any = (
+        response.get("usage")
+        if isinstance(response, dict)
+        else getattr(response, "usage", None)
+    )
+    if isinstance(usage, openai.BaseModel):
+        # Fields DeepSeek adds beyond OpenAI's schema are preserved as extras,
+        # which `model_dump` includes.
+        usage = usage.model_dump()
+    if not isinstance(usage, dict):
+        return None
+    cache_hit_tokens = usage.get("prompt_cache_hit_tokens")
+    if not isinstance(cache_hit_tokens, int):
+        return None
+    return cache_hit_tokens
+
+
+def _add_cache_read_tokens(message: BaseMessage, cache_hit_tokens: int) -> None:
+    """Record cached prompt tokens as `cache_read` in a message's usage metadata.
+
+    Only cache hits are recorded. DeepSeek defines `prompt_tokens` as
+    `prompt_cache_hit_tokens + prompt_cache_miss_tokens`, so a miss is an
+    ordinary uncached input token rather than a cache write, and mapping it to
+    `cache_creation` would misreport it.
+
+    An existing `cache_read` count is left untouched, since DeepSeek served
+    through an OpenAI-compatible gateway may report the nested form that the
+    base class already handles.
+
+    Args:
+        message: The message whose `usage_metadata` should be updated.
+        cache_hit_tokens: Prompt tokens served from DeepSeek's context cache.
+    """
+    if not isinstance(message, AIMessage) or message.usage_metadata is None:
+        return
+    input_token_details = message.usage_metadata.get("input_token_details") or {}
+    if "cache_read" in input_token_details:
+        return
+    usage_metadata: dict[str, Any] = dict(message.usage_metadata)
+    usage_metadata["input_token_details"] = cast(
+        "InputTokenDetails",
+        {**input_token_details, "cache_read": cache_hit_tokens},
+    )
+    message.usage_metadata = cast("UsageMetadata", usage_metadata)
 
 
 class ChatDeepSeek(BaseChatOpenAI):
@@ -272,6 +334,19 @@ class ChatDeepSeek(BaseChatOpenAI):
     def _resolve_model_profile(self) -> ModelProfile | None:
         return _get_default_model_profile(self.model_name) or None
 
+    def _with_beta_api_base(self) -> Self:
+        """Return a copy of this model that targets DeepSeek's beta endpoint."""
+        beta_model = self.model_copy(
+            update={
+                "api_base": DEFAULT_BETA_API_BASE,
+                "client": None,
+                "async_client": None,
+                "root_client": None,
+                "root_async_client": None,
+            }
+        )
+        return beta_model.validate_environment()  # type: ignore[operator]
+
     def _get_request_payload(
         self,
         input_: LanguageModelInput,
@@ -314,6 +389,11 @@ class ChatDeepSeek(BaseChatOpenAI):
     ) -> ChatResult:
         rtn = super()._create_chat_result(response, generation_info)
 
+        cache_hit_tokens = _get_prompt_cache_hit_tokens(response)
+        if cache_hit_tokens is not None:
+            for generation in rtn.generations:
+                _add_cache_read_tokens(generation.message, cache_hit_tokens)
+
         if not isinstance(response, openai.BaseModel):
             return rtn
 
@@ -350,6 +430,13 @@ class ChatDeepSeek(BaseChatOpenAI):
             default_chunk_class,
             base_generation_info,
         )
+        # Usage arrives in a trailing chunk that carries no choices, so this
+        # cannot be folded into the choices branch below.
+        if generation_chunk:
+            cache_hit_tokens = _get_prompt_cache_hit_tokens(chunk)
+            if cache_hit_tokens is not None:
+                _add_cache_read_tokens(generation_chunk.message, cache_hit_tokens)
+
         if (choices := chunk.get("choices")) and generation_chunk:
             top = choices[0]
             if isinstance(generation_chunk.message, AIMessageChunk):
@@ -447,7 +534,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         # If strict mode is enabled and using default API base, switch to beta endpoint
         if strict is True and self.api_base == DEFAULT_API_BASE:
             # Create a new instance with beta endpoint
-            beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+            beta_model = self._with_beta_api_base()
             return beta_model.bind_tools(
                 tools,
                 tool_choice=tool_choice,
@@ -553,7 +640,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         # If strict mode is enabled and using default API base, switch to beta endpoint
         if strict is True and self.api_base == DEFAULT_API_BASE:
             # Create a new instance with beta endpoint
-            beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+            beta_model = self._with_beta_api_base()
             return beta_model.with_structured_output(
                 schema,
                 method=method,

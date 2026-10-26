@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import builtins  # noqa: TC003  # runtime-evaluated; subclass `dict()` shadows the builtin
 import contextlib
-import inspect
 import json
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
@@ -87,6 +86,11 @@ from langchain_core.tracers._streaming import (
     _StreamingCallbackHandler,
     _V2StreamingCallbackHandler,
 )
+from langchain_core.utils._gateway import (
+    GATEWAY_METADATA_RESPONSE_KEY,
+    _parse_gateway_metadata,
+)
+from langchain_core.utils._signature import _signature_parameters
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -109,6 +113,7 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
     if hasattr(error, "response"):
         response = error.response
         metadata: dict[str, Any] = {}
+        generation_info: dict[str, Any] = {}
         if hasattr(response, "json"):
             try:
                 metadata["body"] = response.json()
@@ -119,7 +124,11 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
                     metadata["body"] = None
         if hasattr(response, "headers"):
             try:
-                metadata["headers"] = dict(response.headers)
+                headers = response.headers
+                metadata["headers"] = dict(headers)
+                gateway_metadata = _parse_gateway_metadata(headers)
+                if gateway_metadata is not None:
+                    generation_info[GATEWAY_METADATA_RESPONSE_KEY] = gateway_metadata
             except Exception:
                 metadata["headers"] = None
         if hasattr(response, "status_code"):
@@ -127,7 +136,10 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
         if hasattr(error, "request_id"):
             metadata["request_id"] = error.request_id
         generations = [
-            ChatGeneration(message=AIMessage(content="", response_metadata=metadata))
+            ChatGeneration(
+                message=AIMessage(content="", response_metadata=metadata),
+                generation_info=generation_info or None,
+            )
         ]
     else:
         generations = []
@@ -1888,9 +1900,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         # We should check the cache unless it's explicitly set to False
         # A None cache means we should use the default global cache
         # if it's configured.
-        check_cache = self.cache or self.cache is None
+        check_cache = self.cache is not False
         if check_cache:
-            if llm_cache:
+            if llm_cache is not None:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
                 normalized_messages = [
                     (
@@ -2006,7 +2018,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     run_manager.on_llm_new_token("", chunk=chunk)
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
-        elif inspect.signature(self._generate).parameters.get("run_manager"):
+        elif _signature_parameters(self._generate).get("run_manager"):
             result = self._generate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -2032,7 +2044,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 **result.llm_output,
                 **result.generations[0].message.response_metadata,
             }
-        if check_cache and llm_cache:
+        if check_cache and llm_cache is not None:
             llm_cache.update(prompt, llm_string, result.generations)
         return result
 
@@ -2047,9 +2059,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         # We should check the cache unless it's explicitly set to False
         # A None cache means we should use the default global cache
         # if it's configured.
-        check_cache = self.cache or self.cache is None
+        check_cache = self.cache is not False
         if check_cache:
-            if llm_cache:
+            if llm_cache is not None:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
                 normalized_messages = [
                     (
@@ -2163,7 +2175,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     await run_manager.on_llm_new_token("", chunk=chunk)
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
-        elif inspect.signature(self._agenerate).parameters.get("run_manager"):
+        elif _signature_parameters(self._agenerate).get("run_manager"):
             result = await self._agenerate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
@@ -2189,7 +2201,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 **result.llm_output,
                 **result.generations[0].message.response_metadata,
             }
-        if check_cache and llm_cache:
+        if check_cache and llm_cache is not None:
             await llm_cache.aupdate(prompt, llm_string, result.generations)
         return result
 
@@ -2693,8 +2705,17 @@ class SimpleChatModel(BaseChatModel):
 def _gen_info_and_msg_metadata(
     generation: ChatGeneration | ChatGenerationChunk,
 ) -> dict[str, Any]:
+    """Extract metadata for the response metadata.
+
+    Removes GATEWAY_METADATA from the generation info.
+    """
+    generation_info = generation.generation_info or {}
     return {
-        **(generation.generation_info or {}),
+        **{
+            key: value
+            for key, value in generation_info.items()
+            if key != GATEWAY_METADATA_RESPONSE_KEY
+        },
         **generation.message.response_metadata,
     }
 

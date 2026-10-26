@@ -14,7 +14,7 @@ PYTEST_EXTRA ?=
 integration_test integration_tests: TEST_FILE=$(INTEGRATION_TEST_FILE)
 
 test tests:
-	uv run --group test pytest $(PYTEST_EXTRA) $(TEST_FILE)
+	uv run --group test pytest $(PYTEST_EXTRA) --disable-socket --allow-unix-socket $(TEST_FILE)
 
 test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)

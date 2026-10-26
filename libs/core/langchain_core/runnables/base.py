@@ -96,6 +96,7 @@ from langchain_core.tracers.root_listeners import (
     AsyncRootListenersTracer,
     RootListenersTracer,
 )
+from langchain_core.utils._signature import _signature_parameters
 from langchain_core.utils.aiter import aclosing, atee
 from langchain_core.utils.iter import safetee
 from langchain_core.utils.pydantic import (
@@ -663,6 +664,12 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Returns:
             A new `Runnable`.
+
+        Raises:
+            TypeError: If `other` cannot be coerced to a `Runnable`. This method does
+                not return `NotImplemented`, to avoid delegating LCEL composition to
+                unrelated reflected `|` implementations. To interoperate, implement
+                `Runnable`, make the object callable, or define `__or__` on the left.
         """
         return RunnableSequence(self, coerce_to_runnable(other))
 
@@ -706,6 +713,12 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Returns:
             A new `Runnable`.
+
+        Raises:
+            TypeError: If `other` cannot be coerced to a `Runnable`. This method does
+                not return `NotImplemented`, to avoid delegating LCEL composition to
+                unrelated reflected `|` implementations. To interoperate, implement
+                `Runnable`, make the object callable, or define `__or__` on the left.
         """
         return RunnableSequence(coerce_to_runnable(other), self)
 
@@ -2089,7 +2102,8 @@ class Runnable(ABC, Generic[Input, Output]):
     def with_retry(
         self,
         *,
-        retry_if_exception_type: tuple[type[BaseException], ...] = (Exception,),
+        retry_if_exception_type: tuple[type[BaseException], ...]
+        | Callable[[BaseException], bool] = (Exception,),
         wait_exponential_jitter: bool = True,
         exponential_jitter_params: ExponentialJitterParams | None = None,
         stop_after_attempt: int = 3,
@@ -2097,7 +2111,9 @@ class Runnable(ABC, Generic[Input, Output]):
         """Create a new `Runnable` that retries the original `Runnable` on exceptions.
 
         Args:
-            retry_if_exception_type: A tuple of exception types to retry on.
+            retry_if_exception_type: A tuple of exception types to retry on, or a
+                callable that receives the raised exception and returns whether to
+                retry it.
             wait_exponential_jitter: Whether to add jitter to the wait
                 time between retries.
             stop_after_attempt: The maximum number of attempts to make before
@@ -6538,7 +6554,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):  # type: ignore[no-re
         attr = getattr(self.bound, name)
 
         if callable(attr) and (
-            config_param := inspect.signature(attr).parameters.get("config")
+            config_param := _signature_parameters(attr).get("config")
         ):
             if config_param.kind == inspect.Parameter.KEYWORD_ONLY:
 
@@ -6552,7 +6568,7 @@ class RunnableBinding(RunnableBindingBase[Input, Output]):  # type: ignore[no-re
 
                 return wrapper
             if config_param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
-                idx = list(inspect.signature(attr).parameters).index("config")
+                idx = list(_signature_parameters(attr)).index("config")
 
                 @wraps(attr)
                 def wrapper(*args: Any, **kwargs: Any) -> Any:

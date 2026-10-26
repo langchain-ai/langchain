@@ -28,6 +28,14 @@ from langchain_core.runnables import (
     RunnableWithFallbacks,
 )
 from langchain_core.tools import BaseTool
+from langchain_core.version import VERSION
+
+
+def _normalize_lc_version(value: str) -> str:
+    return value.replace(
+        f"'langchain-core': '{VERSION}'",
+        "'langchain-core': '<version>'",
+    )
 
 
 @pytest.fixture
@@ -87,7 +95,7 @@ def test_fallbacks(
     assert runnable.invoke("hello") == "bar"
     assert runnable.batch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(runnable.stream("hello")) == ["bar"]
-    assert dumps(runnable, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(runnable, pretty=True)) == snapshot
 
 
 @pytest.mark.parametrize(

@@ -219,6 +219,15 @@ class ToolStrategy(Generic[SchemaT]):
         message
     - `Callable[[Exception], str]`: Custom function that returns error message
     - `False`: No retry, let exceptions propagate
+
+    !!! warning "Raw JSON schema dicts are not validated"
+        When `schema` is a raw JSON schema `dict` (as opposed to a Pydantic model,
+        `dataclass`, or `TypedDict`), the model's tool-call arguments are returned
+        **as-is without validation** against the schema.
+
+        As a result, `handle_errors` is effectively inert for dict schemas. To get
+        validation and automatic retries, express the schema as a Pydantic model,
+        `dataclass`, or `TypedDict` instead.
     """
 
     def __init__(

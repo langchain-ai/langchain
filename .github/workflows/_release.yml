@@ -82,6 +82,7 @@ on:
           - openrouter
           - perplexity
           - qdrant
+          - typesafe
           - xai
       working-directory-override:
         required: false
@@ -277,7 +278,7 @@ jobs:
         working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
       - name: Upload build
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
@@ -413,7 +414,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
@@ -497,11 +498,13 @@ jobs:
         # Uses the Makefile's `integration_tests` target for the specified package
         if: ${{ startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/partners/') }}
         env:
+          LANGSMITH_GATEWAY: ${{ secrets.LANGSMITH_GATEWAY }}
+          LANGSMITH_GATEWAY_API_KEY: ${{ secrets.LANGSMITH_GATEWAY_API_KEY }}
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
+          TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
           AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
@@ -558,13 +561,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
       - name: Publish to test PyPI
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
         with:
           packages-dir: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
           verbose: true
@@ -600,7 +603,8 @@ jobs:
         partner: [ anthropic, openai ]
       fail-fast: false # Continue testing other partners if one fails
     env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      LANGSMITH_GATEWAY: ${{ secrets.LANGSMITH_GATEWAY }}
+      LANGSMITH_GATEWAY_API_KEY: ${{ secrets.LANGSMITH_GATEWAY_API_KEY }}
       ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
       ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -632,7 +636,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         if: startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core')
         with:
           name: dist
@@ -735,7 +739,9 @@ jobs:
           # Run tests
           uv sync --group test --group test_integration
           uv pip install $PRERELEASE_FLAG ../../core/dist/*.whl
-          make test
+
+          env -u LANGSMITH_GATEWAY -u LANGSMITH_GATEWAY_API_KEY -u OPENAI_API_KEY make test
+
           make integration_tests
 
   # Test external packages that depend on langchain-core/langchain against the new release
@@ -788,7 +794,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: dist/
@@ -848,13 +854,13 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
         with:
           packages-dir: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
           verbose: true
@@ -893,7 +899,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
