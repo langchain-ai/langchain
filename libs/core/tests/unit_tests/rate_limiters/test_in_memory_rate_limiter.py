@@ -108,3 +108,37 @@ async def test_async_wait_max_bucket_size() -> None:
         # Assert that sync wait can proceed without blocking
         # since we have enough tokens
         await rate_limiter.aacquire(blocking=True)
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"requests_per_second": 0}, "requests_per_second"),
+        ({"requests_per_second": -1}, "requests_per_second"),
+        ({"requests_per_second": float("nan")}, "requests_per_second"),
+        ({"requests_per_second": float("inf")}, "requests_per_second"),
+        ({"max_bucket_size": 0}, "max_bucket_size"),
+        ({"max_bucket_size": 0.5}, "max_bucket_size"),
+        ({"max_bucket_size": -1}, "max_bucket_size"),
+        ({"max_bucket_size": float("nan")}, "max_bucket_size"),
+        ({"max_bucket_size": float("inf")}, "max_bucket_size"),
+        ({"check_every_n_seconds": 0}, "check_every_n_seconds"),
+        ({"check_every_n_seconds": -0.1}, "check_every_n_seconds"),
+        ({"check_every_n_seconds": float("nan")}, "check_every_n_seconds"),
+        ({"check_every_n_seconds": float("inf")}, "check_every_n_seconds"),
+    ],
+)
+def test_invalid_configuration_raises(kwargs: dict[str, float], match: str) -> None:
+    """Reject configurations that would make `acquire` block forever."""
+    with pytest.raises(ValueError, match=match):
+        InMemoryRateLimiter(**kwargs)
+
+
+def test_valid_boundary_configuration() -> None:
+    """Accept the smallest valid bucket and positive finite timing values."""
+    rate_limiter = InMemoryRateLimiter(
+        requests_per_second=0.001,
+        check_every_n_seconds=0.001,
+        max_bucket_size=1,
+    )
+    assert rate_limiter.max_bucket_size == 1
