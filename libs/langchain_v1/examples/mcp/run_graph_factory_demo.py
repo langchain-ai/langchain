@@ -27,6 +27,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from typing import Any, cast
 
 from fastmcp.server.auth.providers.jwt import RSAKeyPair
 from langgraph_sdk import get_client
@@ -70,18 +71,22 @@ async def _run_as(user: str) -> str:
     result = await client.runs.wait(
         thread["thread_id"],
         "fleet",
-        input={
-            "messages": [
-                {
-                    "role": "user",
-                    "content": (
-                        "Call both whoami tools. Reply with exactly: calendar=<value> docs=<value>."
-                    ),
-                }
-            ]
-        },
+        input=cast(
+            "Any",
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            "Call both whoami tools. Reply with exactly: "
+                            "calendar=<value> docs=<value>."
+                        ),
+                    }
+                ]
+            },
+        ),
     )
-    return result["messages"][-1]["content"]
+    return cast("str", cast("dict[str, Any]", result)["messages"][-1]["content"])
 
 
 async def _drive() -> int:

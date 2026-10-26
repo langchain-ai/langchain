@@ -46,6 +46,7 @@ if TYPE_CHECKING:
     from langchain_core.runnables import RunnableConfig
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
+    from typing_extensions import TypeForm
 
 
 _EDITED_TOOL_CALLS_KEY = "hitl_edited_tool_calls"
@@ -221,12 +222,12 @@ def _edit_decision(name: str, tool: BaseTool | None) -> object:
     """`EditDecision` for one tool: `name` pinned to it, `args` from `_edit_args`."""
     edited_action = create_model(
         "EditedAction",
-        name=(Literal[name], ...),
-        args=(_edit_args(tool), ...),
+        name=(cast("TypeForm[Any]", Literal[name]), ...),
+        args=(cast("TypeForm[Any]", _edit_args(tool)), ...),
     )
     decision = create_model(
         "EditDecision",
-        type=(Literal["edit"], ...),
+        type=(cast("TypeForm[Any]", Literal["edit"]), ...),
         edited_action=(edited_action, ...),
     )
     return Annotated[decision, WrapValidator(_as_sent)]
