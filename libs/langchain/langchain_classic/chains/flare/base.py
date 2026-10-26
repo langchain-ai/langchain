@@ -276,6 +276,7 @@ class FlareChain(Chain):
         # Enforce ChatOpenAI requirement (token logprobs needed for FLARE).
         if llm is None:
             llm = ChatOpenAI(
+                model_name="gpt-3.5-turbo",
                 max_completion_tokens=max_generation_len,
                 logprobs=True,
                 temperature=0,

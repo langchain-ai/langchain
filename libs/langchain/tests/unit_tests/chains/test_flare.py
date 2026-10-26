@@ -40,7 +40,12 @@ def test_from_llm_uses_supplied_chatopenai(monkeypatch: pytest.MonkeyPatch) -> N
     # Provide dummy API key to satisfy constructor env validation.
     monkeypatch.setenv("OPENAI_API_KEY", "TEST")
 
-    supplied = ChatOpenAI(temperature=0.51, logprobs=True, max_completion_tokens=21)
+    supplied = ChatOpenAI(
+        model_name="custom-model",
+        temperature=0.51,
+        logprobs=True,
+        max_completion_tokens=21,
+    )
     chain = FlareChain.from_llm(
         supplied,
         max_generation_len=32,

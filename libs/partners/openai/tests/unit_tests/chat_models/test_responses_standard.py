@@ -14,6 +14,7 @@ class TestOpenAIResponses(ChatModelUnitTests):
     @property
     def chat_model_params(self) -> dict:
         return {
+            "model": "gpt-3.5-turbo",
             "use_responses_api": True,
             "base_url": "https://api.openai.com/v1",
             "stream_usage": True,
@@ -28,7 +29,7 @@ class TestOpenAIResponses(ChatModelUnitTests):
                 "OPENAI_API_BASE": "api_base",
                 "OPENAI_PROXY": "https://proxy.com",
             },
-            {},
+            {"model": "gpt-3.5-turbo"},
             {
                 "openai_api_key": "api_key",
                 "openai_organization": "org_id",

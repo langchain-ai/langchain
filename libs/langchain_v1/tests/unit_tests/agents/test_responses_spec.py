@@ -135,7 +135,7 @@ def test_responses_integration_matrix(case: TestCase) -> None:
         )
 
         model = ChatOpenAI(
-            model=OPENAI_TEST_MODEL,
+            model_name=OPENAI_TEST_MODEL,
             temperature=0,
             http_client=http_client,
         )

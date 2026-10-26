@@ -17,7 +17,7 @@ def test_list_rerank() -> None:
     ]
 
     reranker = LLMListwiseRerank.from_llm(
-        llm=ChatOpenAI(model="gpt-4.1-mini"),
+        llm=ChatOpenAI(model_name="gpt-4.1-mini"),
         top_n=3,
     )
     compressed_docs = reranker.compress_documents(documents, "Who is steve")
