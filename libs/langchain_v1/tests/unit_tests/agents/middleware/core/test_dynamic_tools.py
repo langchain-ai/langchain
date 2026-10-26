@@ -38,6 +38,12 @@ def static_tool(value: str) -> str:
     return f"Static result: {value}"
 
 
+@tool(return_direct=True)
+def direct_tool(value: str) -> str:
+    """A static tool that returns its result directly."""
+    return f"Direct result: {value}"
+
+
 @tool
 def dynamic_tool(value: str) -> str:
     """A dynamically registered tool."""
@@ -263,6 +269,45 @@ async def test_dynamic_tool_basic(*, use_async: bool, tools: list[Any] | None) -
     assert len(tool_messages) == 1
     assert tool_messages[0].name == "dynamic_tool"
     assert "Dynamic result: test" in tool_messages[0].content
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_static_direct_tool_still_returns_early(*, use_async: bool) -> None:
+    """A batch containing only static direct tools still returns without another model call."""
+    model = FakeToolCallingModel(
+        tool_calls=[[ToolCall(name="direct_tool", args={"value": "direct"}, id="1")], []]
+    )
+    agent = create_agent(model=model, tools=[direct_tool])
+
+    result = await invoke_agent(agent, "Use the direct tool", use_async=use_async)
+
+    assert get_tool_messages(result)[0].name == "direct_tool"
+    assert model.index == 1
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_mixed_direct_and_dynamic_tools_continue_to_model(*, use_async: bool) -> None:
+    """A runtime non-direct tool prevents a mixed batch from returning early."""
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                ToolCall(name="direct_tool", args={"value": "direct"}, id="1"),
+                ToolCall(name="dynamic_tool", args={"value": "runtime"}, id="2"),
+            ],
+            [],
+        ]
+    )
+    agent = create_agent(
+        model=model,
+        tools=[direct_tool],
+        middleware=[DynamicToolMiddleware()],
+    )
+
+    result = await invoke_agent(agent, "Use both tools", use_async=use_async)
+
+    tool_messages = get_tool_messages(result)
+    assert {message.name for message in tool_messages} == {"direct_tool", "dynamic_tool"}
+    assert model.index == 2
 
 
 @pytest.mark.parametrize("use_async", [False, True])
