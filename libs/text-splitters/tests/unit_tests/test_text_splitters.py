@@ -4062,6 +4062,178 @@ def test_html_splitter_with_allowlist_tags() -> None:
 
 
 @pytest.mark.requires("bs4")
+def test_html_splitter_with_allowlist_full_document() -> None:
+    """Test HTML splitting with allowlist tags on a full HTML document."""
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head><title>Test Document</title></head>
+    <body>
+        <h1>Section 1</h1>
+        <p>This paragraph should be kept.</p>
+        <div>This div should be removed.</div>
+    </body>
+    </html>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            allowlist_tags=["p"],
+            max_chunk_size=1000,
+        )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This paragraph should be kept.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_allowlist_nested_elements() -> None:
+    """Test HTML splitting with allowlist tags in nested structures."""
+    html_content = """
+    <div class="outer">
+        <section>
+            <h1>Section 1</h1>
+            <article>
+                <p>This paragraph is nested and should be kept.</p>
+                <span>This span is nested and should be kept.</span>
+                <aside>This aside should be removed.</aside>
+            </article>
+        </section>
+    </div>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            allowlist_tags=["p", "span"],
+            max_chunk_size=1000,
+        )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This paragraph is nested and should be kept. "
+            "This span is nested and should be kept.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_allowlist_and_media_preservation() -> None:
+    """Test HTML splitting with allowlist tags and media preservation."""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is an image:</p>
+    <img src="http://example.com/image.png" />
+    <p>This is a video:</p>
+    <video src="http://example.com/video.mp4"></video>
+    <p>This is audio:</p>
+    <audio src="http://example.com/audio.mp3"></audio>
+    <div>This div should be removed.</div>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            preserve_images=True,
+            preserve_videos=True,
+            preserve_audio=True,
+            allowlist_tags=["p"],
+            max_chunk_size=1000,
+        )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is an image: ![image:http://example.com/image.png]"
+            "(http://example.com/image.png) "
+            "This is a video: ![video:http://example.com/video.mp4]"
+            "(http://example.com/video.mp4) "
+            "This is audio: ![audio:http://example.com/audio.mp3]"
+            "(http://example.com/audio.mp3)",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_allowlist_and_denylist() -> None:
+    """Test HTML splitting with both allowlist and denylist tags."""
+    html_content = """
+    <html>
+    <body>
+        <h1>Section 1</h1>
+        <div>
+            <p>Paragraph to keep with <span>forbidden span</span> inside.</p>
+            <aside>Forbidden aside element.</aside>
+        </div>
+    </body>
+    </html>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            allowlist_tags=["p"],
+            denylist_tags=["span", "aside"],
+            max_chunk_size=1000,
+        )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="Paragraph to keep with inside.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_with_allowlist_and_elements_to_preserve() -> None:
+    """Test HTML splitting with both allowlist tags and elements to preserve."""
+    html_content = """
+    <html>
+    <body>
+        <h1>Section 1</h1>
+        <p>Paragraph to keep.</p>
+        <table>
+            <tr><td>Table content</td></tr>
+        </table>
+        <div>This div should be removed.</div>
+    </body>
+    </html>
+    """
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            elements_to_preserve=["table"],
+            allowlist_tags=["p", "table"],
+            max_chunk_size=1000,
+        )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="Paragraph to keep. Table content",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
 def test_html_splitter_with_mixed_preserve_and_filter() -> None:
     """Test HTML splitting with both preserved elements and denylist tags."""
     html_content = """

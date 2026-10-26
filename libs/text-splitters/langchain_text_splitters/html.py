@@ -841,14 +841,55 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         Args:
             soup: Parsed HTML content using BeautifulSoup.
         """
-        if self._allowlist_tags:
-            for tag in _find_all_tags(soup, name=True):
-                if tag.name not in self._allowlist_tags:
-                    tag.decompose()
+        _, _, navigable_string = _import_bs4(
+            import_error_message=(
+                "Could not import BeautifulSoup. "
+                "Please install it with 'pip install bs4'."
+            )
+        )
 
         if self._denylist_tags:
             for tag in _find_all_tags(soup, name=self._denylist_tags):
                 tag.decompose()
+
+        if self._allowlist_tags:
+            allowed_tags = set(self._allowlist_tags) | {"media-wrapper"}
+            if self._elements_to_preserve:
+                allowed_tags.update(self._elements_to_preserve)
+
+            preserved_descendants: set[Tag] = set()
+            if self._elements_to_preserve:
+                for elem in _find_all_tags(soup, name=self._elements_to_preserve):
+                    preserved_descendants.update(_find_all_tags(elem, name=True))
+
+            ancestors = set()
+            for tag in _find_all_tags(soup, name=True):
+                if tag.name in allowed_tags or tag in preserved_descendants:
+                    parent = tag.parent
+                    while parent is not None and parent != soup:
+                        ancestors.add(parent)
+                        parent = parent.parent
+
+            tags_to_decompose = [
+                tag
+                for tag in _find_all_tags(soup, name=True)
+                if tag.name not in allowed_tags
+                and tag not in ancestors
+                and tag not in preserved_descendants
+            ]
+            for tag in tags_to_decompose:
+                if not tag.decomposed:
+                    tag.decompose()
+
+            for tag in ancestors:
+                if (
+                    tag.name not in allowed_tags
+                    and tag not in preserved_descendants
+                    and not tag.decomposed
+                ):
+                    for child in list(tag.children):
+                        if isinstance(child, navigable_string):
+                            child.extract()
 
     def _normalize_and_clean_text(self, text: str) -> str:
         """Normalizes the text by removing extra spaces and newlines.
