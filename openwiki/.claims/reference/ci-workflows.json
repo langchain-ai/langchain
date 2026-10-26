@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:565f354faee527c689405b15579ea0c2ffea82f7732473430137bc99a242d8dc",
+  "pageVersion": "sha256:aeb7e02ba8e97c2587a692aa49bf691ad4b2cfbaed70f89af376a01c11e71edc",
   "claims": [
     {
       "id": "claim_582624e6ba514810bdb789729d4765b2",
@@ -12,17 +12,17 @@
         },
         {
           "resource": "repo://.github/workflows/check_diffs.yml",
-          "version": "repo-file-v1:sha256:91c82dd33502d67874d769feb160db09701322692dcf5a03bec121790cc21d14"
+          "version": "repo-file-v1:sha256:bec4d7633b50dba8eff57290186ad869b7b55f1ee08ec102a3cd8a09754b88e7"
         },
         {
           "resource": "repo://.github/workflows/integration_tests.yml",
-          "version": "repo-file-v1:sha256:e7048af29c26132a7253d058d6e95bc71287fd4b4cdb3198afab5ff1da7f0b1e"
+          "version": "repo-file-v1:sha256:859418e2d625a4943f289edae6c9b3a43f1054ae95ef036ab49fbc1e9ae38efa"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-10-26T08:33:32.568Z"
   }
 }

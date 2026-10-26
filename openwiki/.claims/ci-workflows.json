@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7ef771bd59390d2cd987e06ae7479f3577c58d871418407d96317bb4ede3b630",
+  "pageVersion": "sha256:d770f19c43b00dc790e4599471c778298cafe9e66723e5d64666a857529fc6f4",
   "claims": [
     {
       "id": "claim_cb5fe3f72803497eac3f09ebf02d97cd",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://.github/workflows/check_diffs.yml#L43-L72",
-          "version": "repo-lines-v1:sha256:636564faf319625c49f05643d59b46aca8181062cb0c787e25a472edebf9722d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlZTNjNjBkYjI1M2NiY2VhNzI0YWFkZDkxOGViOTQ2NjRmN2M2N2U3ODRmNzk2Zjc4NGNmMTAyMjA3ZDI2YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwM2QyMGIzNzVjNzU1YTk5ODI1MDNjNTI0NmY0MjViNjk5YjIxYTJmYzZjMzE3MjdmMzhjNjAzM2RiODE5NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxNTdmYTE2N2Q5ZmU2YmIyNmRjOWMzNjdlZDkzOWIxNjM1MDMxM2E3YmIxMTUxNmYyMDUyODA4MTA2ODIyYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhZTBmZDMwNDk3Njk1ZDM0NDMyZWI3MTA5NDk4ZDM1N2YzMTUxOWU0MjFkOGUyZGRmYThhYWUyYjA0ODI1MWEifQ"
+          "version": "repo-lines-v1:sha256:5a048033cab34d1aadb742fabaa9660a4aff7ab469b616871d48e65b7ace7055:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlZTNjNjBkYjI1M2NiY2VhNzI0YWFkZDkxOGViOTQ2NjRmN2M2N2U3ODRmNzk2Zjc4NGNmMTAyMjA3ZDI2YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwM2QyMGIzNzVjNzU1YTk5ODI1MDNjNTI0NmY0MjViNjk5YjIxYTJmYzZjMzE3MjdmMzhjNjAzM2RiODE5NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYxNTdmYTE2N2Q5ZmU2YmIyNmRjOWMzNjdlZDkzOWIxNjM1MDMxM2E3YmIxMTUxNmYyMDUyODA4MTA2ODIyYzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhZTBmZDMwNDk3Njk1ZDM0NDMyZWI3MTA5NDk4ZDM1N2YzMTUxOWU0MjFkOGUyZGRmYThhYWUyYjA0ODI1MWEifQ"
         }
       ]
     },
@@ -106,15 +106,15 @@
     },
     {
       "id": "claim_5ef1eed172f74ac6ab61e4128ed815e8",
-      "statement": "Integration tests (integration_tests.yml) run daily (1 PM UTC) with matrix over Python 3.10 and 3.14 against 9 default partner libraries (OpenAI, Anthropic, Fireworks, etc.), receive 30+ API credential environment variables, and serialize per-package tests via concurrency locks to prevent credential conflicts.",
+      "statement": "Integration tests (integration_tests.yml) run daily (1 PM UTC) with matrix over Python 3.10 and 3.14 against 9 default partner libraries (OpenAI, Anthropic, Fireworks, etc.), with special handling for OpenAI and Perplexity using Python 3.11 and 3.14 instead due to SDK compatibility; receive 30+ API credential environment variables and serialize per-package tests via concurrency locks to prevent credential conflicts.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/integration_tests.yml#L152-L250",
-          "version": "repo-lines-v1:sha256:2115831105b28a0999a48b7c68667e25326bf2e71cebc50ba69c394fdbbfda06:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjZTUzNjI0Nzk1ZDA0YmIxMjI2ZjI1NTgxOGUxNmRlZWZhMGU1ZTVlODYxN2I3MDZkMjAyNzA5MWYxMGE3ZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkNGQwMzc4MWVmYzEwM2VkMTMzNTk1YWFlMjlmYzI4NDdmMTBkYmQ1MjAzMWFhMTZiNmYzYTI0ODdjNDA5OTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3ODljMzlkMGFiNzhkOWFjNzRjNDBiODEzZGRiNGNkYmRlMTc5Mjk0OTY4M2VhYzVmZTZiYjkyMDgwZTc2OGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiNjU0ZGI5YTFhZjZiYTQ1MDQ2NDViODQxNWM5ODZjOTlmMmMzYTU1YTUyMzgwN2IwMmRhZDllMjM1Y2Q5OGQifQ"
+          "resource": "repo://.github/workflows/integration_tests.yml#L148-L158",
+          "version": "repo-lines-v1:sha256:ba6ffdbdc6e788b5640b778e7696a13efd76fbff43355c6ef78636fdcdffa184:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4ODE2NjY2YWQwYmVkYTE2ZWU4MDc5MGQwMzM3MjU0YTE0ZTRhNWI2OWQ4ZWIyNWNmNDMxZThhNWNjMGY1ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2NjcyZjczNmQ1ZGQwYWFmOGRiNDUxMGFlZDgzYjdmYmQ3NjhkYTM3NDAzYzA1MTZkOTA5NTEwOWMwNDU4NjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjZTMzYTc3ZDQzYmI4OWZiMTY1NDU5M2FhYWQ0OTNiMjRmN2UxYzE3NDcyZGU1YzhmNjRlOTQzODdiMzZmZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhOWM3OGU5OWExMDAwODNjNWY0ZjFjZTgwYjZkOTczYmY3ZWU2MWQzYWRjYjllZWViOTZkMTlhMzllOTk5OGEifQ"
         },
         {
           "resource": "repo://.github/workflows/integration_tests.yml#L56-L173",
-          "version": "repo-lines-v1:sha256:1a8edf16cffab1fed529e43b9a7cbacb77d936c43c70e0101b5774bbd60da086:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5Mjg4NDBhNmI3ZTYwMzAzZDg3YmU0ZDRkODJhNTBiMzMyODQyOTBkZWM0ZTM0MjhkNDdkOTNmYmVmZDFjNTkwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhM2M4NzQwMDg5NmU4Mzg5Njk2M2RjM2M3ZjBlZDU1ZDVjOTJlNGUyNzI0M2QyMDk0NWQ5NjhkMzdmZWExZDk5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjNjhjNjBmMmRiMTY1NGJlMDI3NzQ2MDJmMGFlNDU1N2FlNjM2ZTNiYzU3NTI0ZGJlMDMyYTNmYjlkMjVmMjFkIn0"
+          "version": "repo-lines-v1:sha256:508d742bafa1ead4cd13d2717f78c9295a7ded7f87a05f4ce9e0b56734602510:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyYzU4MTBhMDM5ODMyNDExZDJjMDA1YWQwZjdmOTFhNjExMGIyNDQ3MWMyYWI2NDZhNDI2YzVlNjUyNzU3MjAxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3NDI1MzU0ZTFhMzQwNTUxMzU3ZDkxMDRkM2YzNTZhNzAxZWJiMjlmYWIzY2U4MWNjM2IyZTBlMWZiNTk3YzJlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3NDYzOGFkOTE5ZmJlM2NjYzAwZjBlYjc0ZGMwZmZhMWI1YTRiYjk4NDllYzcxZjI2NDdlMDQzMGZhZWRlZWQ4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0YjY0ZThmYTRjZjFkZDZhNDliMjE3ZGNlMTJlOTNhNGFkODI4NmNlMWNiY2M5N2VmMzg3MmY3ODYxMTI2ZTFmIn0"
         }
       ]
     },
@@ -260,11 +260,11 @@
       "evidence": [
         {
           "resource": "repo://.github/scripts/check_diff.py#L1-L150",
-          "version": "repo-lines-v1:sha256:9db69dc22cacc0b8c60d8a73a4c6ae6eb535a5b2b2a8ab99bf1ddd4ba9718ed1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMTVkNmNjYTE5MzIyZTFlMGM4NzhkZjc3NTc4OGVkZDhkNzExZGZiMjgwZWZiNWFmZjJkNjJlNGQyYTAxOGEzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJjMGM4NjFlNTJkMzY5OTUyZTQ0Mzg1OGMwM2YwNjA4MmRlODQwNzYyNWZmMjllNDdiMGQzYTQ0MDU2NGU1MmZmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxMTQ4ZTYyY2NiMGJmZjg5YTQ4ZjQ4MTRmMzM0MDcwZWM3OWVhZDUzOGNkYzZkODM3MGM3ZmJkMzEyNGJjYWI5In0"
+          "version": "repo-lines-v1:sha256:4c16abb92f881893351b4a69ae76d874cac10c4acf16a891afee7fbe916c9855:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMTVkNmNjYTE5MzIyZTFlMGM4NzhkZjc3NTc4OGVkZDhkNzExZGZiMjgwZWZiNWFmZjJkNjJlNGQyYTAxOGEzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJjYzQ1ZmU3YzYwOWQ3NGYwNDRjNDk4YmQ5OWI1MTFmY2FiOGU2OGVlY2JjNzBiMzVkZGM1MWQ3ZjI2ZjZlNjRlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxMTQ4ZTYyY2NiMGJmZjg5YTQ4ZjQ4MTRmMzM0MDcwZWM3OWVhZDUzOGNkYzZkODM3MGM3ZmJkMzEyNGJjYWI5In0"
         },
         {
           "resource": "repo://.github/workflows/check_diffs.yml#L40-L75",
-          "version": "repo-lines-v1:sha256:0ea563aa1cb3839d17f5488c288f7d61fa657612422f6f622d0faa716714083f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZDgwMTU0ZWQ0MmZjNWM3NzliMTMzMTU3OGI1OGI4OWM4MDFlYWNlNzRmMjRjZDQ4ZWI0YTIzNTc5NDBhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4ZmI3Mjc3ZmRkMjBkMmY4NDY2ZmM3M2I1ZTQyNzA0Nzg5YjA5OTkxNjYyODlkY2IxOTM1YzAwNDg1MTZlZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NGI2MDU1ODgxNTNmZGQ4NmQ2NWViNDUzNDJlMDRhYmUyODFkYjBjZDY4NGFmMGY4MTRlOGRhNTZkM2QwODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1OGZjYjUzYjUxOWNjNjk4NjFkYmY4NDE3NmE3NGM1MGE3NTFlYmZkY2ZiODM1ZmY3MzNlOGU0ODE0NjgzOGYifQ"
+          "version": "repo-lines-v1:sha256:0ff61105abafbd36ef1c4c4067320ae45a00f0dbec43602d5d6a0877deee3740:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5ZDgwMTU0ZWQ0MmZjNWM3NzliMTMzMTU3OGI1OGI4OWM4MDFlYWNlNzRmMjRjZDQ4ZWI0YTIzNTc5NDBhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4ZmI3Mjc3ZmRkMjBkMmY4NDY2ZmM3M2I1ZTQyNzA0Nzg5YjA5OTkxNjYyODlkY2IxOTM1YzAwNDg1MTZlZGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5NGI2MDU1ODgxNTNmZGQ4NmQ2NWViNDUzNDJlMDRhYmUyODFkYjBjZDY4NGFmMGY4MTRlOGRhNTZkM2QwODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1OGZjYjUzYjUxOWNjNjk4NjFkYmY4NDE3NmE3NGM1MGE3NTFlYmZkY2ZiODM1ZmY3MzNlOGU0ODE0NjgzOGYifQ"
         }
       ]
     },
@@ -303,10 +303,38 @@
           "version": "repo-lines-v1:sha256:ff03a7d9d2684779b52ae774b382473b09885ff9361ab0b4fe1f13dadacc6a53:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmYTY4MWNlZGM0YzJlMTVlOTQzMjI4NmE4NTMzMTVjNGZmMTgyNTllZTU0NGI2MDI0MDM4YTYzYzBiNzg2MmZkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2ZTk0MGY2NjliNzFlZWVlZWY3NjVmMmMxMjJiYTc3ZjRlNzhkMTJlMDAzZWZlYzg3NzQ0M2U4MjEwZjc4MTc5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhMDhlNjlmZTk5ODQ0YjA5OGY2YTg2ZGIxZjc0YWQ2NGM3ZmIxMzY1ODY2NDA2MjRmZTRlZGJhYjM5NWYyZDIwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwOTRkN2IwZGVhNDdiZmVhNjYzZWJiMjI2ZDYyYmQxZmNjOTAxNjkxYmViYzE5ZDFkNGMzMmRiNmRhNDYzMGQwIn0"
         }
       ]
+    },
+    {
+      "id": "claim_ce35df47f4ab4e01981ce14c2b5c10fc",
+      "statement": "The lint job (_lint.yml) in check_diffs.yml applies special Python version matrices: openai and perplexity packages use Python 3.11 and 3.14, other packages use 3.10 and 3.14, and libs/core uses 3.10-3.14, based on SDK compatibility requirements tracked in check_diff.py.",
+      "evidence": [
+        {
+          "resource": "repo://.github/scripts/check_diff.py#L150-L160",
+          "version": "repo-lines-v1:sha256:1b6fd2f396d7eb89681f15a10d5e280bb714bcc18b1aab0dc1edb222c931012a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1NGIyZDU4MzVhZjM2NzRmOGRkMTFkNDc4MDAzZjhhZjQ0NjY5OTM0NzM2NzE5MjQxMDJhOGRlNDQyOTkzZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1NGU4ZTYwNjU1OGMyNGUwNDYwNWQwNzA5MjQ1MTI2NjZhNGQwMGMyMjUxYzNkZWIxMjYwNzA2Y2RmMmEwY2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyYjc4ZDEzMjA2NjA3N2Q3ZjIwYTQzMTBiOTQ4ZmQzMGM0OWM2NzhmNDQ1YjVhZmZmNmRjYmE0OThmOWFiM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkMTdiYTVjMzM5MDI4OTkxYjI5MDI2MDBjNmRhYWU1NWI0YzdmNTFmYmUzYjkyNzIzNWNjOGQyZDI2ZTViZjMifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/check_diffs.yml#L76-L87",
+          "version": "repo-lines-v1:sha256:ec0cdd992ab10ca61f338303ae4d445fce5c1268eb2688922718cd3213034cf4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4ZmI3Mjc3ZmRkMjBkMmY4NDY2ZmM3M2I1ZTQyNzA0Nzg5YjA5OTkxNjYyODlkY2IxOTM1YzAwNDg1MTZlZGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5ZDVkZDNlOGEyNGQ1Y2VlMjhlYTIzZjdiNTRlYWY1MjQ2OGZmMWVkY2FhNWVmNTg5NzBmMWQ5NWYxMjRmNWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmMjFlNmQxM2VlODVlMTA2MTllMzliNTA2NTM3NTU5MGZkYTM4OTk4ZDBkOTMyYmY4YzI5OWI2OGQ1ZmU1M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwMThhNDZmZTU5NTQ2NDdlZDY5MmQwOGE4MzMzYjkyNGI3MzVjYTgzMjJhYTc3N2NjM2JkYmFmZDA4NTkyZWQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1cc612a25a8e4b1ba05744435a577414",
+      "statement": "The compile-integration-tests job (_compile_integration_test.yml) in check_diffs.yml applies special Python version matrices matching lint: openai and perplexity use Python 3.11 and 3.14, other packages use 3.10 and 3.14, and libs/core uses 3.10-3.14, reflecting SDK compatibility requirements.",
+      "evidence": [
+        {
+          "resource": "repo://.github/scripts/check_diff.py#L150-L160",
+          "version": "repo-lines-v1:sha256:1b6fd2f396d7eb89681f15a10d5e280bb714bcc18b1aab0dc1edb222c931012a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1NGIyZDU4MzVhZjM2NzRmOGRkMTFkNDc4MDAzZjhhZjQ0NjY5OTM0NzM2NzE5MjQxMDJhOGRlNDQyOTkzZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1NGU4ZTYwNjU1OGMyNGUwNDYwNWQwNzA5MjQ1MTI2NjZhNGQwMGMyMjUxYzNkZWIxMjYwNzA2Y2RmMmEwY2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyYjc4ZDEzMjA2NjA3N2Q3ZjIwYTQzMTBiOTQ4ZmQzMGM0OWM2NzhmNDQ1YjVhZmZmNmRjYmE0OThmOWFiM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkMTdiYTVjMzM5MDI4OTkxYjI5MDI2MDBjNmRhYWU1NWI0YzdmNTFmYmUzYjkyNzIzNWNjOGQyZDI2ZTViZjMifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/check_diffs.yml#L100-L111",
+          "version": "repo-lines-v1:sha256:d19a50f0b01d898f03c9ad48c00801065470dfb7e730b487434d706930400b1b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4MDhmOTRjZDg1NjZjYjg2YmJjMDZiNjAxOWEyYmQ0MDFhMmEzZDU2YTJhMDc0N2Y4YmM0MTAxZmI0MWRkZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3MmQzOTMwMDBmYWM4YWE4ODhjM2IzZmMzMTg5ODNjNTEwZTk2MTU2OGYyZGNiMDA0Nzg1MDQ3NDI5NTczYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0OTVlYWZjMTMwZWY4MjI4OTkzZDNjODdhZTdlOTJmMTkxOGQ0N2IzYmM3OWRlNjJlNjM0ODIwM2Q5MmJlZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjN2NmNzY3MGJhNTdkY2Q4MGUwNzRiNjYyNmFjNDNiZmY2OTI2YjUwZmY4ZDhlY2ZiNDM2NDU3MTZhY2IyY2QifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-10-26T08:33:32.568Z"
   }
 }

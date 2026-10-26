@@ -3,9 +3,6 @@ type: "Reference"
 title: "CI Workflows (Deprecated)"
 description: "Deprecated page: Actual CI workflows documentation has been moved to /openwiki/operations/ci-workflows.md."
 tags: [redirect, deprecated, ci, workflows]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
 sources:
   - id: openwiki-source-c92cc62695c6def991956428
     resource: repo://.github/workflows/_release.yml
@@ -14,6 +11,9 @@ sources:
   - id: openwiki-source-9069a5dd5fbb579fbd5470ce
     resource: repo://.github/workflows/integration_tests.yml
 generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-26T08:33:32.568Z
 ---
 
 ## Deprecated

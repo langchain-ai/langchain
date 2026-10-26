@@ -7,7 +7,7 @@
 - [CI Workflows (Deprecated)](ci-workflows.md) - Deprecated page: Actual CI workflows documentation has been moved to /openwiki/operations/ci-workflows.md.
 - [Composability (Deprecated Reference)](composability.md) - This page has been moved. For the authoritative documentation on agent composability, middleware composition, and subagent delegation patterns, see the Agent Composability documentation.
 - [Dev Commands (Old Page Reference)](dev-commands.md) - Deprecated: See /openwiki/operations/dev-commands.md instead.
-- [Integration Tests (Deprecated Reference)](integration-tests.md) - This page has been moved. For the authoritative documentation on integration testing, VCR cassettes, and standard test suites, see the Integration Testing documentation.
+- [Integration Tests](integration-tests.md) - LangChain's integration testing framework for partner libraries and chat models, including VCR cassette recording, pytest markers for test classification, and scheduled CI/CD execution against live APIs.
 - [MCP Integration (Old Page Reference)](mcp-integration.md) - Deprecated reference page. See /openwiki/integrations/mcp-integration.md for the current MCP integration documentation.
 - [Messages (Old Page Reference)](messages.md) - Deprecated: See /openwiki/concepts/messages.md instead. This page has been moved to the concepts section.
 - [Middleware (Deprecated Reference)](middleware.md) - Deprecated reference page. See /openwiki/middleware.md for comprehensive documentation on agent middleware, lifecycle hooks, and composition patterns.

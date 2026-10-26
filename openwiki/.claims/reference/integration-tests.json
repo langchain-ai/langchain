@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:977d95647b0331c6c08fe67ae23601f2a01c3d27e8954b4667f4486c93798010",
+  "pageVersion": "sha256:a0adeb0d435d29c9f2ad0995998f5494916225ac1417aab65499932f7e8e97dd",
   "claims": [
     {
       "id": "claim_c1d6f70cda0643ccb05317c0f9f2d663",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://.github/workflows/integration_tests.yml",
-          "version": "repo-file-v1:sha256:e7048af29c26132a7253d058d6e95bc71287fd4b4cdb3198afab5ff1da7f0b1e"
+          "version": "repo-file-v1:sha256:859418e2d625a4943f289edae6c9b3a43f1054ae95ef036ab49fbc1e9ae38efa"
         },
         {
           "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_base_standard.py",
@@ -19,6 +19,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-10-26T08:33:32.568Z"
   }
 }

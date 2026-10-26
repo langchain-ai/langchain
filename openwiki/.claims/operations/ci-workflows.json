@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:53fb8a472a59ec7511a2935e39750c323d497ae69fbd9283fbd72ece2276b6d5",
+  "pageVersion": "sha256:21867444e5e2a5db5a80d0f5f129d76eecee1b0222aceab84ea017635978dd00",
   "claims": [
     {
       "id": "claim_bfd9abbe9d6f4a7b84caf7cb98fb5029",
@@ -22,11 +22,11 @@
     },
     {
       "id": "claim_47c01442600e4b798865da77f486bcd8",
-      "statement": "check_diff.py generates different Python version test matrices per package: libs/core tests on 3.10, 3.11, 3.12, 3.13, 3.14, while other packages test on 3.10 and 3.14 only to reduce CI runtime.",
+      "statement": "check_diff.py generates different Python version test matrices per package: libs/core tests on 3.10, 3.11, 3.12, 3.13, 3.14; openai and perplexity test on 3.11, 3.14 for lint and compile-integration-tests jobs; other packages test on 3.10 and 3.14 only to reduce CI runtime.",
       "evidence": [
         {
-          "resource": "repo://.github/scripts/check_diff.py#L150-L155",
-          "version": "repo-lines-v1:sha256:91feec928bd981df1d0e3a2dd8d862d7108a001ad9a2793544b62324c2841928:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzBjODYxZTUyZDM2OTk1MmU0NDM4NThjMDNmMDYwODJkZTg0MDc2MjVmZjI5ZTQ3YjBkM2E0NDA1NjRlNTJmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODU0ZThlNjA2NTU4YzI0ZTA0NjA1ZDA3MDkyNDUxMjY2NmE0ZDAwYzIyNTFjM2RlYjEyNjA3MDZjZGYyYTBjYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTJiNzhkMTMyMDY2MDc3ZDdmMjBhNDMxMGI5NDhmZDMwYzQ5YzY3OGY0NDViNWFmZmY2ZGNiYTQ5OGY5YWIzZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWQxN2JhNWMzMzkwMjg5OTFiMjkwMjYwMGM2ZGFhZTU1YjRjN2Y1MWZiZTNiOTI3MjM1Y2M4ZDJkMjZlNWJmMyJ9"
+          "resource": "repo://.github/scripts/check_diff.py#L150-L160",
+          "version": "repo-lines-v1:sha256:1b6fd2f396d7eb89681f15a10d5e280bb714bcc18b1aab0dc1edb222c931012a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1NGIyZDU4MzVhZjM2NzRmOGRkMTFkNDc4MDAzZjhhZjQ0NjY5OTM0NzM2NzE5MjQxMDJhOGRlNDQyOTkzZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg1NGU4ZTYwNjU1OGMyNGUwNDYwNWQwNzA5MjQ1MTI2NjZhNGQwMGMyMjUxYzNkZWIxMjYwNzA2Y2RmMmEwY2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyYjc4ZDEzMjA2NjA3N2Q3ZjIwYTQzMTBiOTQ4ZmQzMGM0OWM2NzhmNDQ1YjVhZmZmNmRjYmE0OThmOWFiM2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVkMTdiYTVjMzM5MDI4OTkxYjI5MDI2MDBjNmRhYWU1NWI0YzdmNTFmYmUzYjkyNzIzNWNjOGQyZDI2ZTViZjMifQ"
         }
       ]
     },
@@ -46,7 +46,7 @@
       "evidence": [
         {
           "resource": "repo://.github/workflows/check_diffs.yml#L40-L144",
-          "version": "repo-lines-v1:sha256:13c4b07b0b1b6bf059f8f5ffb0592e0b478b608b31ec65bcf7a928a6118defe9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlOWQ4MDE1NGVkNDJmYzVjNzc5YjEzMzE1NzhiNThiODljODAxZWFjZTc0ZjI0Y2Q0OGViNGEyMzU3OTQwYTk1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1OWQ1ZGQzZThhMjRkNWNlZTI4ZWEyM2Y3YjU0ZWFmNTI0NjhmZjFlZGNhYTVlZjU4OTcwZjFkOTVmMTI0ZjVjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzOTRiNjA1NTg4MTUzZmRkODZkNjVlYjQ1MzQyZTA0YWJlMjgxZGIwY2Q2ODRhZjBmODE0ZThkYTU2ZDNkMDg5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkY2ViMmU3MDdmNTZmYzUwMDMxYzNjNTI4YzRhOGY5NTVlNGM1NzIzY2RjYThhOTViNTdlMTA1NzI0NGM4NTYzIn0"
+          "version": "repo-lines-v1:sha256:c4dce9734aec5597bf5cd2d95904169d563c267d9cae97de55014822491f1a00:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlOWQ4MDE1NGVkNDJmYzVjNzc5YjEzMzE1NzhiNThiODljODAxZWFjZTc0ZjI0Y2Q0OGViNGEyMzU3OTQwYTk1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1OWQ1ZGQzZThhMjRkNWNlZTI4ZWEyM2Y3YjU0ZWFmNTI0NjhmZjFlZGNhYTVlZjU4OTcwZjFkOTVmMTI0ZjVjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzOTRiNjA1NTg4MTUzZmRkODZkNjVlYjQ1MzQyZTA0YWJlMjgxZGIwY2Q2ODRhZjBmODE0ZThkYTU2ZDNkMDg5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkY2ViMmU3MDdmNTZmYzUwMDMxYzNjNTI4YzRhOGY5NTVlNGM1NzIzY2RjYThhOTViNTdlMTA1NzI0NGM4NTYzIn0"
         }
       ]
     },
@@ -181,6 +181,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-10-26T08:33:32.568Z"
   }
 }
