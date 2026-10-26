@@ -41,3 +41,5 @@ def _allow_fastmcp_dependency_probe(blockbuster: BlockBuster) -> None:
     """
     for function in blockbuster.functions.values():
         function.can_block_in(*_FASTMCP_DEPENDENCY_PROBE)
+        function.can_block_in("mcp/os/win32/utilities.py", "get_windows_executable_command")
+        function.can_block_in("shutil.py", "which")

@@ -187,9 +187,28 @@ class MCPAdapter:
             _arm_for_interrupts(clone)
             return clone
 
-        if isinstance(target, ClientGroup):
-            members = {name: armed(client) for name, client in target.clients.items()}
+        config: MCPConfig | None = None
+        if isinstance(target, MCPConfig):
+            config = target
+        elif isinstance(target, dict):
+            try:
+                config = MCPConfig.from_dict(target)
+            except Exception:
+                config = None
+
+        if config is not None and len(config.mcpServers) > 1:
+            members: dict[str, FastMCPClient[Any]] = {}
+            for name, srv in config.mcpServers.items():
+                member_client = FastMCPClient(
+                    srv.to_transport(),
+                    timeout=srv.timeout / 1000 if srv.timeout is not None else None,
+                )
+                _arm_for_interrupts(member_client)
+                members[name] = member_client
             self._client: FastMCPClient[Any] | ClientGroup = ClientGroup(members)
+        elif isinstance(target, ClientGroup):
+            members = {name: armed(client) for name, client in target.clients.items()}
+            self._client = ClientGroup(members)
         elif isinstance(target, FastMCPClient):
             self._client = armed(target)
         else:

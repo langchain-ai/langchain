@@ -17,6 +17,7 @@ from fastmcp.client.transports import (
     StreamableHttpTransport,
 )
 from fastmcp.client.transports.config import MCPConfigTransport
+from fastmcp.mcp_config import MCPConfig
 from langchain_core.messages import ToolMessage
 
 from langchain.agents import create_agent
@@ -242,7 +243,7 @@ def test_a_string_naming_a_local_script_is_refused(tmp_path: Path) -> None:
     script = tmp_path / "server.py"
     script.touch()
 
-    with pytest.raises(ValueError, match="not a valid URL"):
+    with pytest.raises(ValueError, match=r"(?:not a valid URL|has scheme)"):
         MCPAdapter(str(script))
 
     # The same server, asked for explicitly, is still reachable.
@@ -305,7 +306,7 @@ def test_a_colon_in_a_filename_does_not_smuggle_a_path_past_url_parsing(
 
 
 def test_one_adapter_can_serve_several_servers() -> None:
-    """An MCP config mounts every named server behind a single client."""
+    """A multi-server MCP config mounts every named server into a client group."""
     adapter = MCPAdapter(
         {
             "mcpServers": {
@@ -315,13 +316,24 @@ def test_one_adapter_can_serve_several_servers() -> None:
         }
     )
 
-    transport = cast("Client[Any]", adapter.client).transport
+    assert isinstance(adapter.client, ClientGroup)
+    assert sorted(adapter.client.clients) == ["notes", "web"]
+
+
+def test_one_adapter_single_server_config() -> None:
+    """A single-server MCP config uses a single client without grouping."""
+    adapter = MCPAdapter(
+        {
+            "mcpServers": {
+                "notes": {"command": "python", "args": ["notes_server.py"]},
+            }
+        }
+    )
+
+    assert isinstance(adapter.client, Client)
+    transport = adapter.client.transport
     assert isinstance(transport, MCPConfigTransport)
-    assert sorted(transport.config.mcpServers) == ["notes", "web"]
-    # FastMCP prefixes each backend's tools with its config key, so two servers
-    # exposing the same tool name stay distinguishable through one adapter
-    # rather than colliding in the tool list handed to a model.
-    assert transport.name_as_prefix is True
+    assert sorted(transport.config.mcpServers) == ["notes"]
 
 
 _STDIO_SERVER = """
@@ -371,9 +383,108 @@ async def test_several_servers_connect_and_keep_their_prefixes(
     assert sorted(tool.name for tool in tools) == ["alpha_whoami", "beta_whoami"]
 
     by_name = {tool.name: tool for tool in tools}
+    assert by_name["alpha_whoami"].metadata == {"mcp": {"server": {"name": "alpha", "version": ""}}}
+    assert by_name["beta_whoami"].metadata == {"mcp": {"server": {"name": "beta", "version": ""}}}
     assert await by_name["alpha_whoami"].ainvoke({}) == [
         {"type": "text", "text": "alpha", "id": ANY}
     ]
+
+
+@pytest.fixture
+def weather_and_calc_servers(tmp_path: Path) -> dict[str, Any]:
+    """Write weather and calc stdio servers and return an MCP config naming both."""
+    weather_script = tmp_path / "weather.py"
+    weather_script.write_text(
+        """
+import sys
+from mcp.server.mcpserver import MCPServer
+
+mcp = MCPServer("weather", version="1.0.0")
+
+@mcp.tool()
+def get_temperature(city: str) -> str:
+    return f"20C in {city}"
+
+mcp.run()
+"""
+    )
+    calc_script = tmp_path / "calc.py"
+    calc_script.write_text(
+        """
+import sys
+from mcp.server.mcpserver import MCPServer
+
+mcp = MCPServer("calc", version="2.0.0")
+
+@mcp.tool()
+def calculate(expr: str) -> str:
+    return "42"
+
+mcp.run()
+"""
+    )
+
+    return {
+        "mcpServers": {
+            "weather": {"command": sys.executable, "args": [str(weather_script)]},
+            "calc": {"command": sys.executable, "args": [str(calc_script)]},
+        }
+    }
+
+
+@pytest.mark.asyncio
+async def test_multiserver_mcp_config_tools_report_backend_servers(
+    weather_and_calc_servers: dict[str, Any],
+) -> None:
+    """Tools from multiple configured servers report their own backend server identity.
+
+    Regression test for #41507: tools previously reported MCPRouter rather than
+    their actual serving backend server.
+    """
+    config = weather_and_calc_servers
+
+    async with MCPAdapter(config) as adapter:
+        assert isinstance(adapter.client, ClientGroup)
+        tools = await adapter.list_tools()
+
+    by_name = {tool.name: tool for tool in tools}
+    assert "weather_get_temperature" in by_name
+    assert "calc_calculate" in by_name
+
+    assert by_name["weather_get_temperature"].metadata == {
+        "mcp": {"server": {"name": "weather", "version": "1.0.0"}}
+    }
+    assert by_name["calc_calculate"].metadata == {
+        "mcp": {"server": {"name": "calc", "version": "2.0.0"}}
+    }
+
+    assert await by_name["weather_get_temperature"].ainvoke({"city": "London"}) == [
+        {"type": "text", "text": "20C in London", "id": ANY}
+    ]
+    assert await by_name["calc_calculate"].ainvoke({"expr": "2+2"}) == [
+        {"type": "text", "text": "42", "id": ANY}
+    ]
+
+
+@pytest.mark.asyncio
+async def test_multiserver_explicit_mcp_config_object(
+    weather_and_calc_servers: dict[str, Any],
+) -> None:
+    """An explicit MCPConfig instance with multiple servers is adapted into a ClientGroup."""
+    config = MCPConfig.from_dict(weather_and_calc_servers)
+    assert len(config.mcpServers) == 2
+
+    async with MCPAdapter(config) as adapter:
+        assert isinstance(adapter.client, ClientGroup)
+        tools = await adapter.list_tools()
+
+    by_name = {tool.name: tool for tool in tools}
+    assert by_name["weather_get_temperature"].metadata == {
+        "mcp": {"server": {"name": "weather", "version": "1.0.0"}}
+    }
+    assert by_name["calc_calculate"].metadata == {
+        "mcp": {"server": {"name": "calc", "version": "2.0.0"}}
+    }
 
 
 def test_prebuilt_client_without_a_handler_is_armed_on_a_clone() -> None:
