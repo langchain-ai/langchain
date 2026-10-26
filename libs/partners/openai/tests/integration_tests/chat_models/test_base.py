@@ -228,7 +228,7 @@ def test_chat_openai_streaming_generation_info() -> None:
     chat = ChatOpenAI(
         model="gpt-6-luna",
         reasoning_effort="none",
-        max_tokens=2,
+        max_tokens=MAX_TOKEN_COUNT,
         temperature=0,
         callbacks=callback_manager,
     )  # type: ignore[call-arg]
