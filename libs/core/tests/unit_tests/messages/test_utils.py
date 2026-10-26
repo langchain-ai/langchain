@@ -269,6 +269,60 @@ def test_filter_message_exclude_tool_calls_content_blocks() -> None:
     assert messages == messages_model_copy
 
 
+def test_filter_message_exclude_invalid_tool_calls() -> None:
+    valid_call = {"name": "ok", "args": {}, "id": "good", "type": "tool_call"}
+    invalid_call = {
+        "name": "bad",
+        "args": "{",
+        "id": "badid",
+        "error": "parse",
+        "type": "invalid_tool_call",
+    }
+    messages = [
+        AIMessage(
+            "response",
+            tool_calls=[valid_call],
+            invalid_tool_calls=[invalid_call],
+            id="1",
+        )
+    ]
+    messages_model_copy = [m.model_copy(deep=True) for m in messages]
+
+    actual = filter_messages(messages, exclude_tool_calls=["badid"])
+
+    assert actual == [
+        AIMessage("response", tool_calls=[valid_call], id="1"),
+    ]
+    assert messages == messages_model_copy
+
+
+def test_filter_message_exclude_only_invalid_tool_call_drops_message() -> None:
+    invalid_call = {
+        "name": "bad",
+        "args": "{",
+        "id": "badid",
+        "error": "parse",
+        "type": "invalid_tool_call",
+    }
+    message = AIMessage("response", invalid_tool_calls=[invalid_call], id="1")
+
+    assert filter_messages([message], exclude_tool_calls=["badid"]) == []
+    assert filter_messages([message], exclude_tool_calls=["other"]) == [message]
+
+
+def test_filter_message_exclude_all_tool_calls_includes_invalid_calls() -> None:
+    invalid_call = {
+        "name": "bad",
+        "args": "{",
+        "id": "badid",
+        "error": "parse",
+        "type": "invalid_tool_call",
+    }
+    message = AIMessage("response", invalid_tool_calls=[invalid_call], id="1")
+
+    assert filter_messages([message], exclude_tool_calls=True) == []
+
+
 _MESSAGES_TO_TRIM = [
     SystemMessage("This is a 4 token text."),
     HumanMessage("This is a 4 token text.", id="first"),
