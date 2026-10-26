@@ -203,6 +203,13 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                         current_doc = current_doc[1:]
             current_doc.append(d)
             total += len_ + (separator_len if len(current_doc) > 1 else 0)
+        if total > self._chunk_size:
+            logger.warning(
+                "Created a chunk of size %d, which is longer than the "
+                "specified %d",
+                total,
+                self._chunk_size,
+            )
         doc = self._join_docs(current_doc, separator)
         if doc is not None:
             docs.append(doc)
