@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1be30d833c732d00acbcfab6fd7f39ef050985ef73799852adb7e8a2c9de0ad7",
+  "pageVersion": "sha256:0a03c42b4c0438261d2b38d9d4b3ad925f557dba4ba94007088b26cb6bce944f",
   "claims": [
     {
       "id": "claim_2b394255185b4645a1dcf0e8c628a197",
@@ -306,11 +306,11 @@
     },
     {
       "id": "claim_4d402e0507a74fd78fba4f99cfa62d03",
-      "statement": "Scheduled integration tests (integration_tests.yml) run daily or on-demand with live API credentials from GitHub secrets. Only tests marked @pytest.mark.scheduled run in these workflows; VCR-marked tests are skipped. The workflow computes a dynamic test matrix for affected partner packages and runs make integration_tests, which smoke-tests each supported SDK major version.",
+      "statement": "Scheduled integration tests (integration_tests.yml) run daily or on-demand with live API credentials from GitHub secrets. Only tests marked @pytest.mark.scheduled run in these workflows; VCR-marked tests are skipped. The workflow computes a dynamic test matrix for affected partner packages: OpenAI and Perplexity receive Python 3.11, 3.14, while other packages receive 3.10, 3.14. The `make integration_tests` command smoke-tests each supported SDK major version.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/integration_tests.yml#L1-L150",
-          "version": "repo-lines-v1:sha256:7a7511cd84bba69ac8de61f1adaac6a67f23c8baf7c0bdb4533183a142a6254f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2Nzc2ZDc3MjE0ZWE5NGJiZDcyY2VkMDZjNDljZWJkOTUxY2M5MjI2NzNiZmE0NWEyY2UyZTQwNmM0MmJlMmMyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhNTM4ZGY2ZTdhZGQ0YjMwZDQwZjc0N2VkYWYxMGVjZGIyODM1MGFhYTEyNTk2ZTJkZjNjZWRkMjAyODE0ODE1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2N2IzMDRlYTA2N2FjYjZkZTVhYzUyNThlZGQxYjU1YzRhMmMzOWE3ODNjOTI3MDYxNjEzZWIxODlkMDRhOTM3In0"
+          "resource": "repo://.github/workflows/integration_tests.yml#L148-L159",
+          "version": "repo-lines-v1:sha256:49fb649da06060de3d6f5c3adb77c6e57341b724e0a1d272930a8be7e6ebed79:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4ODE2NjY2YWQwYmVkYTE2ZWU4MDc5MGQwMzM3MjU0YTE0ZTRhNWI2OWQ4ZWIyNWNmNDMxZThhNWNjMGY1ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjZTMzYTc3ZDQzYmI4OWZiMTY1NDU5M2FhYWQ0OTNiMjRmN2UxYzE3NDcyZGU1YzhmNjRlOTQzODdiMzZmZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmNjliZjAyYWZlNDJlOGMyZjBjYzIxYjFhYjhjNjZiZmFmMDc0YTc2Y2UyNzk0YjI2MTk5MGFmMWMwNGIxZWYifQ"
         },
         {
           "resource": "repo://libs/partners/openai/Makefile#L31-L43",
@@ -369,6 +369,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-20T08:25:57.412Z"
+    "at": "2026-10-26T08:33:32.568Z"
   }
 }

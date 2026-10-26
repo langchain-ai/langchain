@@ -3,6 +3,9 @@ type: "Getting Started"
 title: "LangChain Repository Quick Start"
 description: "Entry point for engineers: orient to the monorepo structure, run first tests, understand what to edit for common tasks, and route to major development areas."
 tags: [quickstart, getting-started, monorepo, setup, development, first-steps, cli-reference]
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-25T08:23:03.589Z
 sources:
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
@@ -40,10 +43,7 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
   - id: openwiki-source-48ce5ee900993294d349b4e8
     resource: repo://libs/standard-tests/langchain_tests/__init__.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-22T08:26:56.662Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-22T08:26:56.662Z
+generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
 ---
 
 ## Welcome to LangChain Development
@@ -52,7 +52,7 @@ LangChain is the agent engineering platform—a framework for building LLM-power
 
 **New to the repo?** Start with [Installation & Setup](#installation--setup), then jump to [Quick Navigation](#quick-navigation-to-major-areas) to find what you need to work on.
 
-**Want a complete tour?** See [Architecture Overview](/openwiki/architecture.md) for system design, [Dev Commands](/openwiki/dev-commands.md) for detailed CLI reference, and [Source Map](/openwiki/source-map.md) to locate code by topic.
+**Want a complete tour?** See [Architecture Overview](/openwiki/architecture.md) for system design, [Dev Commands](/openwiki/operations/dev-commands.md) for detailed CLI reference, and [Source Map](/openwiki/source-map.md) to locate code by topic.
 
 ## Monorepo Overview
 
@@ -60,7 +60,8 @@ LangChain is organized as a **three-layer architecture** in `/libs/`:
 
 ```
 /libs/
-├── core/              # langchain-core (v1.6.13): Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
+├── core/              # langchain-core (v1.7.0): Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
+├── langchain/         # langchain-classic (v1.0.8): Legacy orchestration layer (no new features)
 ├── langchain_v1/      # langchain (v1.4.7): Agent orchestration, factory, middleware
 ├── partners/          # Provider-specific integrations (OpenAI, Anthropic, Ollama, etc.)
 ├── standard-tests/    # Shared test suites for component conformance
@@ -74,6 +75,7 @@ LangChain is organized as a **three-layer architecture** in `/libs/`:
 | Layer | Edit when you are… | Key files |
 |-------|-----|-----------|
 | **core** | Adding or modifying base abstractions and core interfaces: `Runnable`, `BaseChatModel`, messages, tools, prompts, callbacks, output parsers. | `libs/core/langchain_core/` |
+| **langchain** | Working on legacy features in langchain-classic (mostly read-only; new features go to langchain_v1). | `libs/langchain/langchain_classic/` |
 | **langchain_v1** | Building agent factory features (`create_agent`), middleware composition, model initialization (`init_chat_model`), or high-level orchestration. | `libs/langchain_v1/langchain/agents/factory.py`, `libs/langchain_v1/langchain/chat_models/base.py` |
 | **partners/{name}** | Adding a new LLM provider (OpenAI, Anthropic, etc.), implementing `ChatModel`, handling message conversion, or adding provider-specific features (streaming, tool calling, structured output). | `libs/partners/{provider}/langchain_{provider}/chat_models/base.py` |
 | **standard-tests** | Defining reusable test suites and test fixtures for evaluating chat models, embeddings, and tools across all providers. | `libs/standard-tests/langchain_tests/` |
@@ -197,7 +199,7 @@ make integration_tests TEST_FILE=tests/integration_tests/test_specific.py
 make integration_tests RECORD=true
 ```
 
-See [Integration Testing](/openwiki/integration-tests.md) for detailed cassette management.
+See [Integration Testing](/openwiki/testing/integration-tests.md) for detailed cassette management.
 
 ### Full Local Validation
 
@@ -226,26 +228,27 @@ Use the table below to route to detailed documentation:
 
 | Task | Start Here | Key Concepts |
 |------|-----------|--------------|
-| **Build an agent** | [Agent Factory](/openwiki/agent-factory.md) | create_agent, AgentState, middleware composition, graph execution |
-| **Add a new LLM provider** | [Adding a Chat Model Provider](/openwiki/partner-pattern.md) | ChatModel impl, message conversion, provider registration, standard tests |
-| **Integrate OpenAI (ChatGPT, o1, etc.)** | [OpenAI Integration](/openwiki/openai-provider.md) | ChatOpenAI, Responses API, vision, streaming, tool calling, Azure |
+| **Build an agent** | [Agent Execution](/openwiki/workflows/agent-execution.md) | create_agent, AgentState, middleware composition, graph execution |
+| **Add a new LLM provider** | [Partner Pattern](/openwiki/integrations/partner-pattern.md) | ChatModel impl, message conversion, provider registration, standard tests |
+| **Integrate OpenAI (ChatGPT, o1, etc.)** | [OpenAI Integration](/openwiki/integrations/openai-provider.md) | ChatOpenAI, Responses API, vision, streaming, tool calling, Azure |
 | **Understand the architecture** | [Architecture Overview](/openwiki/architecture.md) | Three-layer design, dependency flow, core vs. orchestration vs. partners |
-| **Work with chat models** | [Chat Model Interface](/openwiki/chat-models.md) | BaseChatModel protocol, streaming, tool binding, structured output |
-| **Initialize models dynamically** | [Model Initialization](/openwiki/model-initialization.md) | init_chat_model factory, provider:model syntax, fallback chains |
-| **Compose components (chains, pipelines)** | [Runnables & Composability](/openwiki/runnables.md), [Composability](/openwiki/composability.md) | Runnable protocol, \| operator, branching, retry, fallback |
-| **Work with tools** | [Tools](/openwiki/tools.md) | BaseTool, schema generation, tool calling, result handling |
-| **Stream responses** | [Streaming](/openwiki/streaming.md) | Token-by-token output, streaming across components |
-| **Enforce response formats** | [Structured Output](/openwiki/structured-output.md) | JSON schemas, response validation, typed outputs |
-| **Write middleware** | [Agent Middleware](/openwiki/middleware.md) | Middleware types, composition, custom hooks |
-| **Trace agent execution** | [Agent Execution Flow](/openwiki/agent-execution.md) | Runtime lifecycle, loop control, state transitions |
-| **Add observability** | [Callbacks & Tracing](/openwiki/callbacks.md) | Callback manager, LangSmith integration, logging |
-| **Write unit/integration tests** | [Unit Testing](/openwiki/unit-tests.md), [Integration Testing](/openwiki/integration-tests.md) | Test structure, fixtures, mocking, VCR cassettes |
-| **Work with prompts** | [Prompts](/openwiki/prompts.md) | Templates, few-shot, variables, image handling |
-| **Understand message types** | [Messages](/openwiki/messages.md) | AIMessage, ToolMessage, content blocks, provider conversion |
-| **Use Model Context Protocol** | [MCP Integration](/openwiki/mcp-integration.md) | MCP servers, tool adapters, elicitation |
+| **Work with chat models** | [Chat Models](/openwiki/concepts/chat-models.md) | BaseChatModel protocol, streaming, tool binding, structured output |
+| **Initialize models dynamically** | [Model Initialization](/openwiki/workflows/model-initialization.md) | init_chat_model factory, provider:model syntax, fallback chains |
+| **Compose components (chains, pipelines)** | [Runnables](/openwiki/concepts/runnables.md), [Composability](/openwiki/workflows/composability.md) | Runnable protocol, \| operator, branching, retry, fallback |
+| **Work with tools** | [Tools](/openwiki/concepts/tools.md) | BaseTool, schema generation, tool calling, result handling |
+<!-- openwiki: broken internal link [/openwiki/workflows/streaming.md] file "/openwiki/workflows/streaming.md" does not exist. Fix the href or restore the target, then delete this comment. -->
+| **Stream responses** | [Streaming](/openwiki/workflows/streaming.md) | Token-by-token output, streaming across components |
+| **Enforce response formats** | [Structured Output](/openwiki/workflows/structured-output.md) | JSON schemas, response validation, typed outputs |
+| **Write middleware** | [Middleware](/openwiki/workflows/middleware.md) | Middleware types, composition, custom hooks |
+| **Trace agent execution** | [Agent Execution](/openwiki/workflows/agent-execution.md) | Runtime lifecycle, loop control, state transitions |
+| **Add observability** | [Callbacks](/openwiki/concepts/callbacks.md) | Callback manager, LangSmith integration, logging |
+| **Write unit/integration tests** | [Unit Testing](/openwiki/testing/unit-tests.md), [Integration Testing](/openwiki/testing/integration-tests.md) | Test structure, fixtures, mocking, VCR cassettes |
+| **Work with prompts** | [Prompts](/openwiki/concepts/prompts.md) | Templates, few-shot, variables, image handling |
+| **Understand message types** | [Messages](/openwiki/concepts/messages.md) | AIMessage, ToolMessage, content blocks, provider conversion |
+| **Use Model Context Protocol** | [MCP Integration](/openwiki/integrations/mcp-integration.md) | MCP servers, tool adapters, elicitation |
 | **Reference all file paths** | [Source Map](/openwiki/source-map.md) | Concept-to-path lookup table, directory structure |
-| **Check CI/CD workflows** | [CI/CD Workflows](/openwiki/ci-workflows.md) | GitHub Actions, testing, linting, release process |
-| **Development command reference** | [Dev Commands](/openwiki/dev-commands.md) | Detailed make targets, uv syntax, env setup |
+| **Check CI/CD workflows** | [CI/CD Workflows](/openwiki/operations/ci-workflows.md) | GitHub Actions, testing, linting, release process |
+| **Development command reference** | [Dev Commands](/openwiki/operations/dev-commands.md) | Detailed make targets, uv syntax, env setup |
 
 ## Repository Structure at a Glance
 
@@ -280,7 +283,16 @@ core/
 └── pyproject.toml        # Package deps and metadata
 ```
 
-**langchain_v1/** — Agent orchestration (langchain package)
+**langchain/** — Legacy orchestration layer (langchain-classic v1.0.8, read-only)
+```
+langchain/
+├── langchain_classic/    # Legacy package (no new features)
+├── tests/
+├── Makefile
+└── pyproject.toml
+```
+
+**langchain_v1/** — Modern agent orchestration (langchain package v1.4.7)
 ```
 langchain_v1/
 ├── langchain/
@@ -328,7 +340,7 @@ provider/
 └── uv.lock
 ```
 
-Some providers (like OpenAI) support advanced API modes—see [OpenAI Integration](/openwiki/openai-provider.md) for details on the Responses API and streaming with structured output.
+Some providers (like OpenAI) support advanced API modes—see [OpenAI Integration](/openwiki/integrations/openai-provider.md) for details on the Responses API and streaming with structured output.
 
 ## Your First PR: A Workflow
 
@@ -337,7 +349,7 @@ Some providers (like OpenAI) support advanced API modes—see [OpenAI Integratio
 Decide what you want to work on using the [Quick Navigation](#quick-navigation-to-major-areas) table above. For first-time contributors:
 - **Easy**: Add a test, fix a type error, improve documentation
 - **Medium**: Add a new middleware hook, extend a tool interface
-- **Hard**: Add a new provider integration (follow [Adding a Chat Model Provider](/openwiki/partner-pattern.md))
+- **Hard**: Add a new provider integration (follow [Partner Pattern](/openwiki/integrations/partner-pattern.md))
 
 ### 2. Read the Contributing Guide
 
@@ -400,7 +412,7 @@ Link the PR to any relevant issue and reference the wiki pages you read in the d
 
 ### Tests Fail with Socket Errors
 Tests run with socket restrictions by default. If you need network access:
-- Write an integration test in `tests/integration_tests/` (see [Integration Testing](/openwiki/integration-tests.md))
+- Write an integration test in `tests/integration_tests/` (see [Integration Testing](/openwiki/testing/integration-tests.md))
 - Or disable socket restrictions locally: `uv run --group test pytest --disable-socket=false ...`
 
 ### Import Errors or Version Mismatches
@@ -422,7 +434,7 @@ Run mypy to see detailed errors:
 make type
 ```
 
-Check the [Chat Models](/openwiki/chat-models.md) or [Runnables](/openwiki/runnables.md) pages for type signature patterns.
+Check the [Chat Models](/openwiki/concepts/chat-models.md) or [Runnables](/openwiki/concepts/runnables.md) pages for type signature patterns.
 
 ### Pre-Commit Hooks Block Commit
 Pre-commit will auto-fix formatting and some issues. Re-stage and commit:

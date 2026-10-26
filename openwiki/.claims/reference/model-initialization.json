@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:6f05b56648eb4b01a6918e4e07940e3fec0fd1c24d76afd0425e86bbd4743970",
+  "claims": [
+    {
+      "id": "claim_b85084bee91348b586c4dc2140796ec8",
+      "statement": "Model initialization via the init_chat_model factory function centralizes chat model instantiation across all supported provider integrations (OpenAI, Anthropic, Bedrock, Google Vertex AI, etc.), handles parameter routing to provider-specific constructors, and supports runtime model configuration via LangChain's Runnable configuration system.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/__init__.py#L5-L5",
+          "version": "repo-lines-v1:sha256:2a514465e0f29c7b2329a772a6a7ab490fa498b7f8ff7782cec239af30443c23:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmE1MTQ0NjVlMGYyOWM3YjIzMjlhNzcyYTZhN2FiNDkwZmE0OThiN2Y4ZmY3NzgyY2VjMjM5YWYzMDQ0M2MyMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmE1MTQ0NjVlMGYyOWM3YjIzMjlhNzcyYTZhN2FiNDkwZmE0OThiN2Y4ZmY3NzgyY2VjMjM5YWYzMDQ0M2MyMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODJjNDA2Y2QwMjExMTIwOGYyZGE1NDhjMzliNWFmYmFhNzBhYTlhMDg4NGVhMTZjYjY1NDM4ZThlZWMyNjc2OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGRhMjgzNTc1OGM3MmM1MzNlNjNmNzNmYmIyY2RiYWFkZDA0Mjg3N2YyZmNiNDcxNmQ2YzJmOTM2ZjhkN2U4NSJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py",
+          "version": "repo-file-v1:sha256:757316423a5b1f95b14b1ebaac56e612af026bb50f06c1748e688e65a8a17b67"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d61b19d780320072a46907d154b08bb7598118473b027b1aa7cbc9e4d1f1421d",
+  "pageVersion": "sha256:85cd52196fdde51cd3e2c7f953a43c78218bcf01641d45fd65e4f9ec5ee96050",
   "claims": [
     {
       "id": "claim_d872799ce6874d76b63667fe912b7616",
@@ -26,7 +26,7 @@
     },
     {
       "id": "claim_bf4afec1395b4acbbf413fe2928daab6",
-      "statement": "langchain-core (v1.6.13) provides the stable base abstractions including Runnable protocol, BaseChatModel, message types, tools, prompts, and callbacks.",
+      "statement": "langchain-core (v1.7.0) provides the stable base abstractions including Runnable protocol, BaseChatModel, message types, tools, prompts, and callbacks.",
       "evidence": [
         {
           "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1-L80",
@@ -38,7 +38,7 @@
         },
         {
           "resource": "repo://libs/core/pyproject.toml#L24-L24",
-          "version": "repo-lines-v1:sha256:8928ccb9c60bd909775f025ef6b26e7b7f6371f068b00c1a85abe710d57cb396:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODkyOGNjYjljNjBiZDkwOTc3NWYwMjVlZjZiMjZlN2I3ZjYzNzFmMDY4YjAwYzFhODVhYmU3MTBkNTdjYjM5NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODkyOGNjYjljNjBiZDkwOTc3NWYwMjVlZjZiMjZlN2I3ZjYzNzFmMDY4YjAwYzFhODVhYmU3MTBkNTdjYjM5NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc0MzY5NGEzZTBkOGRiMDQ5ZDQ1ZGFlOGM4YTdiYmM2YTk0NjAwYjNjN2MxZjFhNTJkMzQ4YzlkMjIzMTFkOSJ9"
+          "version": "repo-lines-v1:sha256:f54b102d9630dcb5fb34ed0fb026bc9c62274a0d0b0b8b10ebb10952ce749635:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjU0YjEwMmQ5NjMwZGNiNWZiMzRlZDBmYjAyNmJjOWM2MjI3NGEwZDBiMGI4YjEwZWJiMTA5NTJjZTc0OTYzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjU0YjEwMmQ5NjMwZGNiNWZiMzRlZDBmYjAyNmJjOWM2MjI3NGEwZDBiMGI4YjEwZWJiMTA5NTJjZTc0OTYzNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc0MzY5NGEzZTBkOGRiMDQ5ZDQ1ZGFlOGM4YTdiYmM2YTk0NjAwYjNjN2MxZjFhNTJkMzQ4YzlkMjIzMTFkOSJ9"
         }
       ]
     },
@@ -123,12 +123,12 @@
       "statement": "langchain-classic (v1.0.8) is legacy and depends on langchain-core; new projects should use langchain instead.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain/README.md#L1-L30",
-          "version": "repo-lines-v1:sha256:44cb1bfcadf8fed46c15e030140879628d970b883ceaa268a8ed2a0eb91f0848:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkNDNjNTE1NzI0MDZkMTFiMWMxNjVlMzcyYTM3MjdmMjE3Y2ZlMjg5OWZiZTJiM2QyNzRiZjY5NDRmM2NhYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5MDZjNjU1OTZhOGYwMjMzZDZlNzZkZmQ2ZDc0MWY1ZGE4ZjJiNDk0MTg0NmMwZDk0ZDlmMzFmNTk3ZDk5ODkifQ"
+          "resource": "repo://libs/langchain/README.md#L19-L23",
+          "version": "repo-lines-v1:sha256:a5e368e50a8cfcd43c241c6d67465e9e52d3801bdb082c82926a7b014e279734:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDU5ZTZiMzlmZDVjMDViOTNiODI1NTI2MTEzYWQ0NTM4ZTg1NTUxOGU5NzRhNWNjOTY4OGM5MDQ5ZDgyZmQ2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg1Njk5MDdhNGI1NmZjYmM4NThhMTZkNjhiOGE4NjUzNjcyZWRhNjU1YzkzOWY5MzBlNzU0NjdlYjUzN2QxOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmU3ZTdkNGU1OTM0Mjc5YzI0MTlmZjY2ZWRhMDZiMTEzYzQ3ZjcyZmJmODgzOWJhNmUwZTkxZDJlYjhhN2NiYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWFhNDM1ODFiZjg1MTc4NDRiN2ZiYTkwYmE1ZTE2NjU5MWJlZjJiMGRkOTU4MWMxZjY3NjAwODA5NDBlYWQ4MyJ9"
         },
         {
-          "resource": "repo://libs/langchain/pyproject.toml#L1-L30",
-          "version": "repo-lines-v1:sha256:b5ce41087a8dffec0079da15944fc19703b473283f4b117b3810fcb203693aef:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NTY5OTQ2YWM5YmJlN2NiMmNkZWMzZjhiZWNmMzQzNzUwYzU4YjliMzIxZWMyMTk1YmZiYWFiMmFhOGM0YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2ZDEwODE0MWExNDcyNzA1OGEzMDJmMDhlYzA1YzM3MzVkNGYzNjA4NjJjOGIzZmIyZWQ5YjdmMGFhMGVlZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiZTY5MjM0ZGI0YjFmMmQ1NTgyMDZiMjBiOTQ2MGRjMjE5N2IyNmYyOWE0ZDVjNDlmMTQ1YzcwN2VlMGMxYWQifQ"
+          "resource": "repo://libs/langchain/pyproject.toml#L23-L23",
+          "version": "repo-lines-v1:sha256:a95aee6274dfdc3489653229ae20e21a82ba0ebcee4bae10cf627c9ef1ad50e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTk1YWVlNjI3NGRmZGMzNDg5NjUzMjI5YWUyMGUyMWE4MmJhMGViY2VlNGJhZTEwY2Y2MjdjOWVmMWFkNTBlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTk1YWVlNjI3NGRmZGMzNDg5NjUzMjI5YWUyMGUyMWE4MmJhMGViY2VlNGJhZTEwY2Y2MjdjOWVmMWFkNTBlMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmU4NTk5ODVmYjNjYjZjNjdiOWI3ODlmMGE2YTJiOGQ0NGNmYmE4MzlhMDlmMWNlNGEwMzNmMWFlMmQ3Y2Y4MyJ9"
         }
       ]
     },
@@ -149,6 +149,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-22T08:26:56.662Z"
+    "at": "2026-10-25T08:23:03.589Z"
   }
 }

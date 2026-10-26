@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:a0adeb0d435d29c9f2ad0995998f5494916225ac1417aab65499932f7e8e97dd",
+  "claims": [
+    {
+      "id": "claim_c1d6f70cda0643ccb05317c0f9f2d663",
+      "statement": "LangChain uses pytest markers to classify integration tests into three categories: @pytest.mark.vcr for cassette-backed tests using recorded HTTP interactions, @pytest.mark.scheduled for live API tests run in scheduled daily workflows, and unmarked tests for offline unit-like tests without API calls.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml",
+          "version": "repo-file-v1:sha256:859418e2d625a4943f289edae6c9b3a43f1054ae95ef036ab49fbc1e9ae38efa"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_base_standard.py",
+          "version": "repo-file-v1:sha256:f6f971c5c6be3c9c40e635b5af66a08bd58aac8b6fcf353caf300441864bcace"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-26T08:33:32.568Z"
+  }
+}

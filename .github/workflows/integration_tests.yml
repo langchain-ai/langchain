@@ -145,7 +145,14 @@ jobs:
             done
             working_directory="$(jq -nc --argjson libs "$working_directory" --argjson excl "$exclude_paths" '$libs - $excl')"
           fi
-          matrix="{\"python-version\": $python_version, \"working-directory\": $working_directory}"
+          matrix="$(jq -nc \
+            --argjson versions "$python_version" \
+            --argjson integration_versions "$python_version_min_3_11" \
+            --argjson directories "$working_directory" \
+            '{include: [$directories[] as $dir |
+              (if ($dir == "libs/partners/openai" or $dir == "libs/partners/perplexity")
+               then $integration_versions else $versions end)[] |
+              {"working-directory": $dir, "python-version": .}]}')"
           echo "$matrix"
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
           echo "python-version-min-3-11=$python_version_min_3_11" >> $GITHUB_OUTPUT
@@ -169,8 +176,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ${{ fromJSON(needs.compute-matrix.outputs.matrix).python-version }}
-        working-directory: ${{ fromJSON(needs.compute-matrix.outputs.matrix).working-directory }}
+        include: ${{ fromJSON(needs.compute-matrix.outputs.matrix).include }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6

@@ -12,7 +12,7 @@ okf_version: "0.2"
 - [CI/CD Workflows: GitHub Actions and Release Process](ci-workflows.md) - LangChain's GitHub Actions-based CI/CD system automating testing, linting, and release management across a monorepo with intelligent change detection, parallel matrix testing, and strict release gates.
 - [Agent Composability: Building Complex Agents](composability.md) - Patterns for composing agents through middleware layers, subagent delegation, tool selection strategies, and context management across hierarchical agent workflows.
 - [Development Commands and Local Setup](dev-commands.md) - Quick reference for uv, make, lint, test, and type-checking commands in the LangChain monorepo, including environment setup, pre-commit hooks, and testing workflows.
-- [Integration Testing: Standard Test Suites & Providers](integration-tests.md) - How LangChain integration tests work: VCR cassettes for API recording/playback, standard test suite inheritance for providers, CI/CD integration, and test markers for live vs. recorded testing.
+- [Integration Testing: Standard Test Suites & Providers](integration-tests.md) - How LangChain integration tests work: VCR cassettes for API recording/playback, standard test suite inheritance for providers, CI/CD integration, and test markers for live vs. recorded testing. OpenAI and Perplexity receive special Python version handling in integration tests.
 - [MCP (Model Context Protocol) Integration](mcp-integration.md) - MCPAdapter bridges MCP servers to LangChain agents, discovering tools, handling protocol negotiation via FastMCP, managing multiple transports, and supporting mid-call user input via LangGraph interrupts.
 - [Message Types and Content Representation](messages.md) - Document the message abstraction, standardized content blocks for multimodal LLM I/O, message hierarchy, and provider-specific block translators.
 - [Agent Middleware: Composable Request/Response Processing](middleware.md) - Comprehensive guide to the middleware composition system: lifecycle hooks, handler interception, state transformation, payload types, error handling, and implementation patterns for common middleware.
@@ -27,3 +27,12 @@ okf_version: "0.2"
 - [Structured Output and Response Formatting](structured-output.md) - Document the structured output system: response format specification, strategy selection (auto, provider, tool-based), parsing, validation, and middleware integration.
 - [Tools and Tool Binding](tools.md) - LangChain's tool system enables agents and language models to execute structured actions through schema-aware components with automatic validation, error handling, and callback integration.
 - [Unit Testing and Mocking](unit-tests.md) - Guide to writing unit tests: test structure, mocking chat models, fixtures, assertions, and test coverage for agents and components.
+
+# Directories
+
+- [concepts](concepts/)
+- [integrations](integrations/)
+- [operations](operations/)
+- [reference](reference/)
+- [testing](testing/)
+- [workflows](workflows/)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 import httpx2
 from _servers import token_for
@@ -19,6 +19,9 @@ from mcp.client.caching import CacheConfig, InMemoryResponseCacheStore
 
 from langchain.agents import create_agent
 from langchain.mcp import MCPAdapter
+
+if TYPE_CHECKING:
+    from mcp.shared._httpx_utils import McpHttpClientFactory
 
 SYSTEM_PROMPT = "You answer questions using the tools available to you."
 SERVERS = {
@@ -41,14 +44,20 @@ def _client_factory(**kwargs: Any) -> httpx2.AsyncClient:
     return httpx2.AsyncClient(transport=_SharedPool(), **kwargs)
 
 
-async def make_graph(runtime: ServerRuntime) -> CompiledStateGraph:
+async def make_graph(
+    runtime: ServerRuntime[Any],
+) -> CompiledStateGraph[Any, Any, Any, Any]:
     """Build an agent over the calling user's MCP fleet (called per run)."""
     user = runtime.user.identity if runtime.user is not None else "anonymous"
     auth = BearerAuth(token_for(user))
     group = ClientGroup(
         {
             name: Client(
-                StreamableHttpTransport(url, auth=auth, httpx_client_factory=_client_factory),
+                StreamableHttpTransport(
+                    url,
+                    auth=auth,
+                    httpx_client_factory=cast("McpHttpClientFactory", _client_factory),
+                ),
                 cache=CacheConfig(store=_CACHE, target_id=user, partition=user),
             )
             for name, url in SERVERS.items()

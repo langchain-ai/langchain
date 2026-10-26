@@ -24,10 +24,10 @@ version = "1.7.1"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=1.6.5,<2.0.0",
-    "fireworks-ai>=1.2.0a71,<2.0.0",
-    "openai>=2.0.0,<4.0.0",
-    "requests>=2.0.0,<3.0.0",
-    "aiohttp>=3.14.1,<4.0.0",
+    "fireworks-ai>=1.2.0a71",
+    "openai>=2.0.0",
+    "requests>=2.0.0",
+    "aiohttp>=3.14.1",
 ]
 
 [project.urls]

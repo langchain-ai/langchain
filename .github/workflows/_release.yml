@@ -151,9 +151,12 @@ jobs:
     outputs:
       pkg-name: ${{ steps.check-version.outputs.pkg-name }}
       version: ${{ steps.check-version.outputs.version }}
+      dist-sha256sums: ${{ steps.dist-checksums.outputs.sha256sums }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+        with:
+          persist-credentials: false
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
@@ -277,8 +280,19 @@ jobs:
         run: uv build
         working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
+      - name: Compute dist checksums
+        id: dist-checksums
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}/dist
+        run: |
+          delim="EOF_$(openssl rand -hex 8)"
+          {
+            echo "sha256sums<<$delim"
+            sha256sum -- *
+            echo "$delim"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Upload build
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
@@ -302,6 +316,7 @@ jobs:
             ${{ env.EFFECTIVE_WORKING_DIR }}
           ref: ${{ github.ref }} # this scopes to just ref'd branch
           fetch-depth: 0 # this fetches entire commit history
+          persist-credentials: false
       - name: Check tags
         id: check-tags
         shell: bash
@@ -373,12 +388,13 @@ jobs:
             PREAMBLE="Initial release"
             PREV_TAG=$(git rev-list --max-parents=0 HEAD)
           fi
+          delim="EOF_$(openssl rand -hex 8)"
           {
-            echo 'release-body<<EOF'
+            echo "release-body<<$delim"
             echo $PREAMBLE
             echo
             git log --format="%s" "$PREV_TAG"..HEAD -- $WORKING_DIR
-            echo EOF
+            echo "$delim"
           } >> "$GITHUB_OUTPUT"
 
   pre-release-checks:
@@ -393,6 +409,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+        with:
+          persist-credentials: false
 
       # We explicitly *don't* set up caching here. This ensures our tests are
       # maximally sensitive to catching breakage.
@@ -414,7 +432,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
@@ -560,14 +578,29 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+        with:
+          persist-credentials: false
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
+      - name: Verify dist checksums
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}/dist
+        env:
+          EXPECTED_SHA256SUMS: ${{ needs.build.outputs.dist-sha256sums }}
+        run: |
+          expected="$(printf '%s' "$EXPECTED_SHA256SUMS")"
+          actual="$(sha256sum -- *)"
+          if [ -z "$expected" ] || [ "$actual" != "$expected" ]; then
+            echo "::error::Downloaded dist does not match checksums from the build job."
+            printf 'Expected:\n%s\nActual:\n%s\n' "$expected" "$actual"
+            exit 1
+          fi
+
       - name: Publish to test PyPI
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
         with:
           packages-dir: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
           verbose: true
@@ -602,29 +635,19 @@ jobs:
         # description) so the per-partner skip remains selectable.
         partner: [ anthropic, openai ]
       fail-fast: false # Continue testing other partners if one fails
-    env:
-      LANGSMITH_GATEWAY: ${{ secrets.LANGSMITH_GATEWAY }}
-      LANGSMITH_GATEWAY_API_KEY: ${{ secrets.LANGSMITH_GATEWAY_API_KEY }}
-      ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
-      ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
-      AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
-      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
-      AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
-      AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
-      AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
-      AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
-      LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+        with:
+          persist-credentials: false
 
       # We implement this conditional as Github Actions does not have good support
       # for conditionally needing steps. https://github.com/actions/runner/issues/491
       # TODO: this seems to be resolved upstream, so we can probably remove this workaround
       - name: Check if libs/core
+        env:
+          IS_CORE: ${{ startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core') }}
         run: |
-          if [ "${{ startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core') }}" != "true" ]; then
+          if [ "$IS_CORE" != "true" ]; then
             echo "Not in libs/core. Exiting successfully."
             exit 0
           fi
@@ -636,7 +659,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         if: startsWith(env.EFFECTIVE_WORKING_DIR, 'libs/core')
         with:
           name: dist
@@ -658,6 +681,19 @@ jobs:
         env:
           PARTNER: ${{ matrix.partner }}
           PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
+          LANGSMITH_GATEWAY: ${{ secrets.LANGSMITH_GATEWAY }}
+          LANGSMITH_GATEWAY_API_KEY: ${{ secrets.LANGSMITH_GATEWAY_API_KEY }}
+          ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
+          ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+          AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
+          LANGCHAIN_TESTS_USER_AGENT: ${{ secrets.LANGCHAIN_TESTS_USER_AGENT }}
         run: |
           PACKAGE_NAME="langchain-$PARTNER"
 
@@ -782,11 +818,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
           path: langchain
+          persist-credentials: false
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
           repository: ${{ matrix.package.repo }}
           path: ${{ matrix.package.name }}
+          persist-credentials: false
 
       - name: Set up Python + uv
         uses: "./langchain/.github/actions/uv_setup"
@@ -794,7 +832,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: dist/
@@ -847,6 +885,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+        with:
+          persist-credentials: false
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
@@ -854,13 +894,26 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
 
+      - name: Verify dist checksums
+        working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}/dist
+        env:
+          EXPECTED_SHA256SUMS: ${{ needs.build.outputs.dist-sha256sums }}
+        run: |
+          expected="$(printf '%s' "$EXPECTED_SHA256SUMS")"
+          actual="$(sha256sum -- *)"
+          if [ -z "$expected" ] || [ "$actual" != "$expected" ]; then
+            echo "::error::Downloaded dist does not match checksums from the build job."
+            printf 'Expected:\n%s\nActual:\n%s\n' "$expected" "$actual"
+            exit 1
+          fi
+
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # release/v1
         with:
           packages-dir: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
           verbose: true
@@ -892,6 +945,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+        with:
+          persist-credentials: false
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
@@ -899,7 +954,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: "false"
 
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: dist
           path: ${{ env.EFFECTIVE_WORKING_DIR }}/dist/
