@@ -686,6 +686,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             event_iter = chunks_to_events(
                 self._stream(messages, stop=stop, run_manager=run_manager, **kwargs),
                 message_id=stream.message_id,
+                generation_info=stream._generation_info,  # noqa: SLF001
             )
         for event in event_iter:
             stream.dispatch(event)
@@ -717,6 +718,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             event_iter = achunks_to_events(
                 self._astream(messages, stop=stop, run_manager=run_manager, **kwargs),
                 message_id=stream.message_id,
+                generation_info=stream._generation_info,  # noqa: SLF001
             )
         async for event in event_iter:
             stream.dispatch(event)
@@ -1106,7 +1108,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     run_manager.on_llm_end(
                         LLMResult(
                             generations=[
-                                [ChatGeneration(message=stream.output_message)],
+                                [
+                                    ChatGeneration(
+                                        message=stream.output_message,
+                                        generation_info=stream._generation_info or None,  # noqa: SLF001
+                                    )
+                                ],
                             ],
                         ),
                     )
@@ -1122,7 +1129,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 run_manager.on_llm_end(
                     LLMResult(
                         generations=[
-                            [ChatGeneration(message=stream.output_message)],
+                            [
+                                ChatGeneration(
+                                    message=stream.output_message,
+                                    generation_info=stream._generation_info or None,  # noqa: SLF001
+                                )
+                            ],
                         ],
                     ),
                 )
@@ -1220,7 +1232,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     await run_manager.on_llm_end(
                         LLMResult(
                             generations=[
-                                [ChatGeneration(message=stream.output_message)],
+                                [
+                                    ChatGeneration(
+                                        message=stream.output_message,
+                                        generation_info=stream._generation_info or None,  # noqa: SLF001
+                                    )
+                                ],
                             ],
                         ),
                     )
@@ -1962,7 +1979,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 msg = "v2 stream finished without producing a message"
                 raise RuntimeError(msg)
             result = ChatResult(
-                generations=[ChatGeneration(message=stream_accum.output_message)]
+                generations=[
+                    ChatGeneration(
+                        message=stream_accum.output_message,
+                        generation_info=stream_accum._generation_info or None,  # noqa: SLF001
+                    )
+                ]
             )
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _stream not implemented
@@ -2117,7 +2139,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 msg = "v2 stream finished without producing a message"
                 raise RuntimeError(msg)
             result = ChatResult(
-                generations=[ChatGeneration(message=stream_accum.output_message)]
+                generations=[
+                    ChatGeneration(
+                        message=stream_accum.output_message,
+                        generation_info=stream_accum._generation_info or None,  # noqa: SLF001
+                    )
+                ]
             )
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented

@@ -605,6 +605,7 @@ class _ChatModelStreamBase:
         self._usage_value: UsageInfo | None = None
         self._start_metadata: MessageMetadata | None = None
         self._finish_metadata: dict[str, Any] | None = None
+        self._generation_info: dict[str, Any] = {}
         self._additional_kwargs: dict[str, Any] | None = None
         self._done: bool = False
         self._error: BaseException | None = None
