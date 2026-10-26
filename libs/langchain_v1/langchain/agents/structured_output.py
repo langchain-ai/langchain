@@ -13,6 +13,7 @@ from typing import (
     Literal,
     TypeVar,
     Union,
+    cast,
     get_args,
     get_origin,
 )
@@ -95,7 +96,7 @@ def _parse_with_schema(
         # Raw JSON schema has no corresponding Python type to instantiate.
         return data
     try:
-        adapter = TypeAdapter[SchemaT](schema)
+        adapter = TypeAdapter[SchemaT](cast("type[SchemaT]", schema))
         return adapter.validate_python(data)
     except Exception as e:
         schema_name = getattr(schema, "__name__", str(schema))
