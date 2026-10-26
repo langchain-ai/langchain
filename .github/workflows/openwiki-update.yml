@@ -20,6 +20,7 @@ jobs:
           # commit it last documented; a shallow clone hides that commit and the
           # update runs against an empty change summary.
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
