@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d8ffcb95ac07c02051aaea805dbb60bc3fce615f54afa803c6e10ef204f7eca7",
+  "pageVersion": "sha256:50559c9e5f273e7484d9587fa74902ee3651c897d19e5ba7076d86d97e9a27fb",
   "claims": [
     {
       "id": "claim_1d60970c94894e56b803c4a5dd29b5e1",
@@ -89,12 +89,12 @@
       "statement": "Integration tests require test_integration dependency group (installed with --group test_integration) which includes provider-specific extra dependencies like httpx, pillow, and VCR beyond base test dependencies.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/integration_tests.yml#L227-L227",
+          "resource": "repo://.github/workflows/integration_tests.yml#L233-L233",
           "version": "repo-lines-v1:sha256:2fb07d1a02acae0fd67639315ad3468db9b5c07e839124cb6b2c5933a4af9653:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmZiMDdkMWEwMmFjYWUwZmQ2NzYzOTMxNWFkMzQ2OGRiOWI1YzA3ZTgzOTEyNGNiNmIyYzU5MzNhNGFmOTY1MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmZiMDdkMWEwMmFjYWUwZmQ2NzYzOTMxNWFkMzQ2OGRiOWI1YzA3ZTgzOTEyNGNiNmIyYzU5MzNhNGFmOTY1MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDMxODc4MTdhYTg0NTJhYWM1MDA2ODg0NDY3ODQ0MmRhMTkyY2IwN2M1ODhhYTM3ZmNhYjVkODM5YzI0MDc4MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzZkYjJkMzAxZTJjMWMxZDUxNzFiNjg2MTU1ZWY5Mjk0NmEwZjU4YzJkY2QzYzMyMGNmOWNkZjBjNTI2MjdhMiJ9"
         },
         {
           "resource": "repo://libs/partners/openai/pyproject.toml#L68-L73",
-          "version": "repo-lines-v1:sha256:15b654e33df3766ffe128da7a7980e23cb0c045f8efddd8b5718a361c21b751d:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjgzYTk4MzZkZjIyMjhiNWQ5MzhmMTE1Mjg2YTkxOWExZDkzNTFmOGUwMzc0M2M3YTdjYmI5ZTlkOTE4NjBhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZkNGI3M2YwOWE0NTBlYmY2NDEyNDBiOTM4ZmNjMjMwZWFkYzhjOTBlNjhlNTFkYTA4YmY5N2ViZTFhZTQ1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODkwOTFiN2JiOTgxMDBiNTI4OGZkMjk2MTI1NzAxODU5OTQ3ZjljMzFhNzFmMDEwYTZkNDQyYjlmYmE1MzBhNiJ9"
+          "version": "repo-lines-v1:sha256:a988f17b62c344d8aae4cce3ee31dd14e2fa57ed4385644846c391b8de501626:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjgzYTk4MzZkZjIyMjhiNWQ5MzhmMTE1Mjg2YTkxOWExZDkzNTFmOGUwMzc0M2M3YTdjYmI5ZTlkOTE4NjBhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZkNGI3M2YwOWE0NTBlYmY2NDEyNDBiOTM4ZmNjMjMwZWFkYzhjOTBlNjhlNTFkYTA4YmY5N2ViZTFhZTQ1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODkwOTFiN2JiOTgxMDBiNTI4OGZkMjk2MTI1NzAxODU5OTQ3ZjljMzFhNzFmMDEwYTZkNDQyYjlmYmE1MzBhNiJ9"
         }
       ]
     },
@@ -165,10 +165,20 @@
           "version": "repo-lines-v1:sha256:888c4565f00f6c9098ac9f85ec6117c17dc73dcdbc3f8870729ebe66ee5f74a5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZDQxYTRiYmRmMGM1MTVjOGVjMzI0MWJlNTc4ODBmMDYzNjE5MWFhYjFmNThhOWI3NDYxMTVlZWY5OGFiMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2ZkMjNkZTlmZWFmNjJmYzcwNGZmMWQyZGNiOTUwYzhmYWI2ZTExOTA0MzkzYTAzNGZjNDc5ZDE1NWIxMGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyYjY1OWFkYTUxOGM2ODY1ZjI5ZTFmZWI1YWIxMDQ5NzQyNjRhOTIyOGU0ZGEyMmM3ZDdlNWE5M2M1MDg1ZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_3846ee712b644ffdb491d6f400261cf1",
+      "statement": "Perplexity package receives special Python version handling in integration tests, using Python 3.11 and 3.14 like OpenAI rather than the default 3.10 and 3.14, due to SDK compatibility constraints enforced in matrix generation.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L148-L159",
+          "version": "repo-lines-v1:sha256:49fb649da06060de3d6f5c3adb77c6e57341b724e0a1d272930a8be7e6ebed79:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4ODE2NjY2YWQwYmVkYTE2ZWU4MDc5MGQwMzM3MjU0YTE0ZTRhNWI2OWQ4ZWIyNWNmNDMxZThhNWNjMGY1ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjZTMzYTc3ZDQzYmI4OWZiMTY1NDU5M2FhYWQ0OTNiMjRmN2UxYzE3NDcyZGU1YzhmNjRlOTQzODdiMzZmZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmNjliZjAyYWZlNDJlOGMyZjBjYzIxYjFhYjhjNjZiZmFmMDc0YTc2Y2UyNzk0YjI2MTk5MGFmMWMwNGIxZWYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-10-26T08:33:32.568Z"
   }
 }

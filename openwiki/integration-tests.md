@@ -1,11 +1,8 @@
 ---
 type: "Testing & QA"
 title: "Integration Testing: Standard Test Suites & Providers"
-description: "How LangChain integration tests work: VCR cassettes for API recording/playback, standard test suite inheritance for providers, CI/CD integration, and test markers for live vs. recorded testing."
+description: "How LangChain integration tests work: VCR cassettes for API recording/playback, standard test suite inheritance for providers, CI/CD integration, and test markers for live vs. recorded testing. OpenAI and Perplexity receive special Python version handling in integration tests."
 tags: [integration-tests, vcr, cassettes, api-testing, pytest, ci-cd, model-testing, standard-tests, test-markers]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
 sources:
   - id: openwiki-source-a12f520c2572fe032a111e3b
     resource: repo://.github/workflows/_compile_integration_test.yml
@@ -41,7 +38,10 @@ sources:
     resource: repo://libs/standard-tests/langchain_tests/integration_tests/__init__.py
   - id: openwiki-source-f7c26a6473517c7b426ef023
     resource: repo://libs/standard-tests/langchain_tests/integration_tests/chat_models.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-20T08:25:57.412Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-26T08:33:32.568Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-26T08:33:32.568Z
 ---
 
 ## Overview
@@ -547,7 +547,11 @@ cd libs/partners/openai
 make integration_tests
 ```
 
-Only tests marked `@pytest.mark.scheduled` run in these workflows. See [CI/CD Workflows](repo:///openwiki/ci-workflows.md) for details.
+Only tests marked `@pytest.mark.scheduled` run in these workflows (VCR-marked tests are skipped). This validates that live API calls work and catches issues not covered by cassettes.
+
+**Python version matrix**: The `integration_tests.yml` workflow generates a dynamic test matrix. OpenAI and Perplexity packages receive Python 3.11 and 3.14; all other packages receive Python 3.10 and 3.14.
+
+See [CI/CD Workflows](repo:///openwiki/ci-workflows.md) for details.
 
 ## Standard Test Suite Inheritance
 
@@ -744,6 +748,7 @@ uv run --group test --group test_integration pytest -v --tb=short tests/integrat
 - Runs only tests marked `@pytest.mark.scheduled`
 - Tests marked `@pytest.mark.vcr` are skipped (use cassettes in PR checks instead)
 - Smoke-tests each supported SDK major version
+- **Special Python version handling**: OpenAI and Perplexity packages receive Python 3.11 and 3.14 in the integration test matrix, whereas other packages use Python 3.10 and 3.14. This ensures compatibility across a wider range of Python versions for these critical integrations.
 
 ### Cassette Validation in CI
 
