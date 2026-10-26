@@ -14,7 +14,7 @@ from collections.abc import (
 )
 from functools import partial
 from operator import itemgetter
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 import pytest
@@ -115,6 +115,9 @@ from tests.unit_tests.pydantic_utils import (
     skip_if_no_pydantic_v1,
 )
 from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
+
+if TYPE_CHECKING:
+    from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
 
 # Several tests assert the legacy `RunLog` / `RunLogPatch` output produced by
 # `astream_log`, which cannot be replaced by `astream` without losing coverage.
@@ -6284,6 +6287,58 @@ def test_chunk_accumulator_sums_like_adding_one_at_a_time(
     assert accumulated.value == _add_one_at_a_time(
         chunks, stop_after_unaddable=stop_after_unaddable
     )
+
+
+class _RootRunError(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.error: BaseException | None = None
+
+    @override
+    def on_chain_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        if parent_run_id is None:
+            self.error = error
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_a_merge_that_raises_after_the_stream_still_ends_the_run(
+    *, use_async: bool
+) -> None:
+    usage: UsageMetadata = {
+        "input_tokens": 1,
+        "output_tokens": 1,
+        "total_tokens": 2,
+        "input_token_details": cast("InputTokenDetails", {"unknown": 0.5}),
+    }
+    chunks = [AIMessageChunk(content="x", usage_metadata=usage) for _ in range(2)]
+
+    def model(_: Iterator[Any]) -> Iterator[AIMessageChunk]:
+        yield from chunks
+
+    async def amodel(_: AsyncIterator[Any]) -> AsyncIterator[AIMessageChunk]:
+        for chunk in chunks:
+            yield chunk
+
+    root_error = _RootRunError()
+    generator = RunnableGenerator(model, amodel)
+    config: RunnableConfig = {"callbacks": [root_error]}
+
+    async def consume() -> None:
+        if use_async:
+            _ = [chunk async for chunk in generator.astream("hi", config)]
+        else:
+            _ = list(generator.stream("hi", config))
+
+    with pytest.raises(ValueError, match="Unknown value types"):
+        await consume()
+
+    assert isinstance(root_error.error, ValueError)
 
 
 @pytest.mark.parametrize("use_async", [False, True])

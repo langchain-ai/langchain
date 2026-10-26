@@ -2614,11 +2614,15 @@ class Runnable(ABC, Generic[Input, Output]):
                     pass
                 for ichunk in input_for_tracing:
                     final_input.add(ichunk)
+                # Reading a value merges its chunks, which can raise; read them here
+                # so the run still ends, inputs first so the error path has them.
+                merged_input = final_input.value
+                merged_output = final_output.value
         except BaseException as e:
             run_manager.on_chain_error(e, inputs=final_input.value)
             raise
         else:
-            run_manager.on_chain_end(final_output.value, inputs=final_input.value)
+            run_manager.on_chain_end(merged_output, inputs=merged_input)
 
     async def _atransform_stream_with_config(
         self,
@@ -2697,11 +2701,13 @@ class Runnable(ABC, Generic[Input, Output]):
                     pass
                 async for ichunk in input_for_tracing:
                     final_input.add(ichunk)
+                merged_input = final_input.value
+                merged_output = final_output.value
         except BaseException as e:
             await run_manager.on_chain_error(e, inputs=final_input.value)
             raise
         else:
-            await run_manager.on_chain_end(final_output.value, inputs=final_input.value)
+            await run_manager.on_chain_end(merged_output, inputs=merged_input)
         finally:
             if iterator_ is not None and hasattr(iterator_, "aclose"):
                 await iterator_.aclose()
