@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:7ece926a6fffea5f51f5309bc065f649a90349850671bf03a6c1b7537d52a2bd",
+  "claims": [
+    {
+      "id": "claim_587ec616bbbe4c609766f9785fb9fa74",
+      "statement": "MCPAdapter is the main user-facing class for integrating MCP servers with LangChain agents, bridging protocol negotiation, tool discovery, execution, and bidirectional communication via FastMCP client lifecycle management.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/adapter.py#L125-L170",
+          "version": "repo-lines-v1:sha256:14e5c8b3c5d064b554878b5d63af25708ecc87bf637b12aaa2a77479b9f35097:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlMzNjYzBkZDhkMDU2NjRjYTQ5NDc4YWU3OTNjZjdmYTE0NThlZmE5YjM4ZTA1ZGRiNDk5YWIyOWIzZTFmM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxZTI1OGJiZDMwOWRjMzVmMjQwZTQ3YTY1ZTY2YWJjMjFjZDZmMGY2M2E3NjI1NzUzZWI4NWU3NDQ5NTU2NTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiOGYwNThmNzdlYjg1NDA5MDYxZDg2YjIzMDg5MzQ2MzBhZTExNzlkMDkwNDdlMTRkMzRkOGNmYTU4ZjU3MWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3MmE4NTA2MzFiMjI5MGVlMmYzN2YwZGEyZDM0YjAyNjEwNWE0NGYzMDU4NmFkMGU1MTc4NWMyZjg0NTVmMGQifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

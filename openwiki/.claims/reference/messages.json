@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:f0e61c2044ffc088ad389f6ce9238593752c1b8377c6c72a9a911d9e1922bf51",
+  "claims": [
+    {
+      "id": "claim_440d269da9d7405796eb025f9a99de80",
+      "statement": "The LangChain message system provides a type hierarchy of message classes including BaseMessage, HumanMessage, AIMessage, SystemMessage, ToolMessage, and related variants defined in langchain_core.messages, implementing the fundamental data contract for communication between applications and language models.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain/langchain_classic/schema/messages.py#L1-L23",
+          "version": "repo-lines-v1:sha256:227492d308a6db553ef16d5ee52d126ee27773185b44c9136a232964b6a2c218:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1Y2Y3N2RkZDVhMzllYzk3NGU1ZWQxYmU4YTE4MTNlMzZhNzY5N2ZlNTE0MWU2MTFkZThmMDc3OTY3NzU1NTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhMTg4ZjQ0MWYzN2I5M2IzYzNmOTA2MTc2OTEwZTgzNTAyMWM5ZGJmODU5YTZmODcyOWQ3OGMyYTI0NGFjZDgifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

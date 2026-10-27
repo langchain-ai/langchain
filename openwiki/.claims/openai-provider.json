@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:05e90b9de166a5a7213cee462a99c10236b8c8eba605f2b5a856779baad552a6",
+  "pageVersion": "sha256:3b62c72f2c6094be774a0fadd4114b6a4dd8aeb8e9ca7056d8cef7983e876a40",
   "claims": [
     {
       "id": "claim_347664eb68464142b558791c7a95093f",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://libs/partners/openai/langchain_openai/__init__.py",
-          "version": "repo-file-v1:sha256:d08e06dea1f954a477fa8951e2a8387a10396d07b92a3a60fdced307c136a84f"
+          "version": "repo-file-v1:sha256:5673ccbe8f53267c2027dd390051424928a6e1e744c2f8c8a418960a29dccf4d"
         },
         {
           "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2904-L4266",
@@ -255,10 +255,58 @@
           "version": "repo-lines-v1:sha256:4796c14704f049c8340f8cb74976a7f9e7af36bb8fbf9250e8c163d7a4124e0d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIwYWIyNjQwNjA4YTZlZGJhZGE4MDJlYTdlYzA1NjYxM2JhOTFhY2Q5ZTdhOGIwZjcxOGRmODQ1Yjg4YzBlMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliY2FkYzRlMjljMmM0NWUyOTI5NjcwZmZiNGJiNDZiY2JjNDRlYWIzNTAyNzAzNWJmNDVmYjFiMTdiYzU1ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhhODNkNzQxZTM3NWRlNGMzMWI3Yzc4Mzg3YzdjN2UyNzUxZWY4NTU5MWE3ZWE3ZjkwYzNmN2E3NTQ5NTQ0ZmUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_f1ac90417aa146fea3cbebd551f8e29d",
+      "statement": "OpenAIDecisions is a @beta-decorated runnable for asking typed questions about text and images using OpenAI's Decisions API, combining predicates (yes/no), choices (multiple-select), and scores (rating scales) in a single request with shared input.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/__init__.py#L6-L6",
+          "version": "repo-lines-v1:sha256:e1d6e5f459c942fe22469c23bbe5f206e7999a4ff1ca8072e2d57c509cb48140:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFkNmU1ZjQ1OWM5NDJmZTIyNDY5YzIzYmJlNWYyMDZlNzk5OWE0ZmYxY2E4MDcyZTJkNTdjNTA5Y2I0ODE0MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTFkNmU1ZjQ1OWM5NDJmZTIyNDY5YzIzYmJlNWYyMDZlNzk5OWE0ZmYxY2E4MDcyZTJkNTdjNTA5Y2I0ODE0MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTVhZmJkODI2NzZkY2Q3YTQxOWFkMjVkZTNhZGZmMGI4ZmFhNzc3MzE3ZTdlOTIyODBjOTFjODFhYjczNmU2MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjFkMDQ0NmYwZjQ0ODM0Yjc1MzhmNmFiMzhlYzllOGU1ZDVmZTNlMTAyNDA3YTM3M2ZiOGE4NGFlZWVlMDE1MyJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/decisions/base.py#L37-L101",
+          "version": "repo-lines-v1:sha256:a6bf2c815db13ab72ff35424e25cb3b9a14e911101fe7ef8d6171c737170e5d6:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5NDA2YWZiY2ZlNjYyMTgxOGU1M2E3OWU2NzU5MzYxNTAxNmE0Y2IyZWUzYTI2M2U5MGYwNDlmZDU4ZGNiOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyMDA5N2U0YWE1MDA2OGJhMTU3ZjlhMjczOWZhZDg2OTk1ZTFlMGNkY2NkYWRjNTg5N2MyMDM0Yzc0ZDNlZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3NTNiMzhkNDU5NzEzZDllNDI0NTJlZmQzMzQ0NWM4NzZlNTc1YWJlNzFjYjdjMmRjNzE5ZTg0NGY0MDRiYTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_19506aad2cbb43ac8181b33fedfc0c47",
+      "statement": "OpenAIDecisions supports four answer types: Predicate (probability 0-1), Choice (selected option from dict), Score (numeric rating on scale), and RefusalAnswer (model refusal); each returns confidence scores for decision routing.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/decisions/base.py#L38-L44",
+          "version": "repo-lines-v1:sha256:fc5d3e93386ace4353f5a9c4fb80c96860ffbe748f799470b0d4904c5969afb1:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWEyMGVmNmUzOTI0MDFkM2E3MTU1NGZlODA1Y2NiNjFlMWE5OTA3NzNhN2Q0Njk3YmUyYWUyZTMzNzM4MzUyNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjhhZmZlMjQ4MTBjMGU4YTJkMmZjMGYwYTA5ZmQxZTkzYTQwNTEwODNiMTJkNjdjZDZkNjVmMDM0N2I4OThiYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmU1MjVlODE1ODJjM2EwNWNmMmVmMmFiODczYzlhZDFjZWRiZDJjYzgwNDc5NzMyNTZhYmRhMThjNmI3MGE3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjA1ZDMyMGE0YWRkZDgzYzBiMjg5MjdiMDg2ZmYxZDRhYzIxODIyNmZhZDA0MjM1MzliZGIxOWMzMmU0NTZiMiJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/decisions/types.py",
+          "version": "repo-file-v1:sha256:f7f9be7956993aa282e865b042ac860c7ea1ca0a9295e24f32d8159aaf2b55cc"
+        }
+      ]
+    },
+    {
+      "id": "claim_846c46e3b4bc477397318fb62371d5f4",
+      "statement": "OpenAIDecisions lazily creates sync and async OpenAI clients on first invocation of invoke() or ainvoke() respectively; separate client instances are maintained for sync and async paths allowing mixed usage on a single instance.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/decisions/base.py#L46-L47",
+          "version": "repo-lines-v1:sha256:710ccf806f947f6badb1e7b3fadcf229d0a4ccc11fd5d8796e22b9d18d2d66b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODMxM2EwZTdhNGJmZGQ0MTBmNzhlZTU2YzExMWVkZjY4Y2RmYTNhNzkwMTdiYzQ5YTY3MWYxOTM2NmFiM2FkMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2IyNjAyOGY3MTY3MjA2YzYyOTMwOTU3ODFiODM4ODhlODQ0OTMwOGU3NTQ3YTkxOWVmOWEwMDI5OGNhOWMwZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjZmOTljZGE5NDgzNGQzNGU0ZjI4ZTI5NzVjNGY3OTM5NzUyNWIzNjRmZDkzOThlMjMwNGM5YzM1NmIwYTA1NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmI1NzcxMWM0OTE2OGI0NWYyZDJhNWU4ZWY2YmE3N2ZhZmEwZWMzYTM0NmY0MmE0MDFlYmU5NDk5OWY5MWIxNSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6a66beb495834c598f184311c1815b9a",
+      "statement": "OpenAIDecisions resolves API configuration (base_url, api_key) from explicit parameters, environment variables (OPENAI_API_BASE, OPENAI_API_KEY, OPENAI_ORG_ID), LangSmith gateway when LANGSMITH_GATEWAY is set, and underlying OpenAI SDK defaults.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/decisions/base.py#L49-L124",
+          "version": "repo-lines-v1:sha256:ee792a3504662be904b0be937505f2a1ee515f2eb8432695760a22788682bc61:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkODBlMjQ5NGI5OGFlY2UyNjlkYjE5M2NlYjRjYTdjNzhkZTA3NTM5ZjM3MWZiNTY5MzMxY2MwMTk1MWQ3ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyZTkyMzQ5MTk0NGUwYzNjY2U4ZTMwZWU5ZDIyNzE5MzAzYjUyMTViMmE5ZTFjZWY0OWVkNWJkYWVkZDFmZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkNTYzNTRkOThlODM3N2NmZTg0NDNhNTY5Y2MwOTkxNzBjYzNmZGIyMDJhOTM1ZWYyNmJmOTUxYWQ5NDVlMDkifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-09-28T08:35:20.640Z"
+    "at": "2026-10-20T08:25:57.412Z"
   }
 }

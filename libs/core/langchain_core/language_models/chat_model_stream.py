@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from langchain_protocol.protocol import (
         ContentBlockDeltaData,
         ContentBlockFinishData,
+        ContentBlockStartData,
         FinalizedContentBlock,
         InvalidToolCall,
         MessageFinishData,
@@ -591,6 +592,8 @@ class _ChatModelStreamBase:
         self._text_per_block: dict[int, str] = {}
         self._reasoning_per_block: dict[int, str] = {}
         self._tool_call_chunks: dict[int, dict[str, Any]] = {}
+        # Calls whose args stopped extending previous deltas; they yield no more deltas.
+        self._quiet_tool_calls: set[int] = set()
         self._tool_calls_acc: list[ToolCall] = []
         self._invalid_tool_calls_acc: list[InvalidToolCall] = []
         self._server_tool_call_chunks: dict[int, dict[str, Any]] = {}
@@ -672,6 +675,8 @@ class _ChatModelStreamBase:
         event_type = event.get("event")
         if event_type == "message-start":
             self._push_message_start(cast("MessageStartData", event))
+        elif event_type == "content-block-start":
+            self._push_content_block_start(cast("ContentBlockStartData", event))
         elif event_type == "content-block-delta":
             self._push_content_block_delta(cast("ContentBlockDeltaData", event))
         elif event_type == "content-block-finish":
@@ -680,7 +685,6 @@ class _ChatModelStreamBase:
             self._finish(cast("MessageFinishData", event))
         elif event_type == "error":
             self.fail(RuntimeError(event.get("message", "Unknown error")))
-        # content-block-start is informational — no accumulation needed
 
     # -- Internal push API (called by dispatch) ----------------------------
 
@@ -694,6 +698,53 @@ class _ChatModelStreamBase:
         message_id = data.get("id")
         if message_id:
             self._message_id = message_id
+
+    def _push_content_block_start(self, data: ContentBlockStartData) -> None:
+        """Process a `content-block-start` event.
+
+        Seeds the chunk stores for tool-call blocks. `tool-call-delta`
+        events don't repeat the call's `id` / `name`, or whether it is a
+        client or server call, so the start is the only place to learn
+        them. Other blocks need nothing from their start.
+        """
+        block = _event_content_block(data)
+        idx = data.get("index")
+        if block is None or idx is None:
+            return
+        btype = block.get("type")
+        if btype == "tool_call_chunk":
+            _merge_block_delta_into_store(self._tool_call_chunks, idx, dict(block))
+            args = block.get("args")
+            if isinstance(args, str) and args:
+                self._push_tool_call_chunk(idx, args)
+        elif btype == "server_tool_call_chunk":
+            _merge_block_delta_into_store(
+                self._server_tool_call_chunks, idx, dict(block)
+            )
+
+    def _push_tool_call_chunk(
+        self, idx: int, args: str, *, provider_index: int | str | None = None
+    ) -> None:
+        """Push a `ToolCallChunk` delta for the client tool call at `idx`.
+
+        Deltas don't always repeat `id` / `name`, so each item takes them
+        from the call's store, letting consumers tell parallel calls apart.
+        `provider_index` is the delta's own provider `index`, for deltas
+        that carry one without it being kept in the store.
+        """
+        if idx in self._quiet_tool_calls:
+            return
+        chunk = self._tool_call_chunks[idx]
+        item: ToolCallChunk = {
+            "type": "tool_call_chunk",
+            "id": chunk.get("id"),
+            "name": chunk.get("name"),
+            "args": args,
+        }
+        index = chunk.get("index", provider_index)
+        if index is not None:
+            item["index"] = index
+        self._tool_calls_proj.push(item)
 
     def _push_content_block_delta(self, data: ContentBlockDeltaData) -> None:
         """Process a `content-block-delta` event."""
@@ -731,16 +782,16 @@ class _ChatModelStreamBase:
                 idx = data.get("index")
                 if idx is None:
                     idx = tcc.get("index", len(self._tool_call_chunks))  # type: ignore[unreachable]
+                held = self._tool_call_chunks.get(idx, {}).get("args") or ""
                 _merge_block_delta_into_store(self._tool_call_chunks, idx, dict(tcc))
-                chunk_block: ToolCallChunk = {
-                    "type": "tool_call_chunk",
-                    "id": tcc.get("id"),
-                    "name": tcc.get("name"),
-                    "args": tcc.get("args"),
-                }
-                if "index" in tcc:
-                    chunk_block["index"] = tcc["index"]
-                self._tool_calls_proj.push(chunk_block)
+                # `block-delta` replaces `args` with a snapshot (older
+                # cores); `.tool_calls` yields only the part it adds.
+                args = tcc.get("args")
+                if isinstance(args, str):
+                    if not args.startswith(held):
+                        self._quiet_tool_calls.add(idx)
+                    elif len(args) > len(held):
+                        self._push_tool_call_chunk(idx, args[len(held) :])
             elif btype == "server_tool_call_chunk":
                 stcc = cast("ServerToolCallChunk", fields)
                 idx = data.get("index")
@@ -750,6 +801,23 @@ class _ChatModelStreamBase:
                     self._server_tool_call_chunks,
                     idx,
                     dict(stcc),
+                )
+        elif dtype == "tool-call-delta":
+            # Appends to the call's args. The call's start says
+            # whether it is a client or server call; a delta whose start
+            # this stream never saw (say, trimmed from a replay window)
+            # is left to `content-block-finish`, which carries the call.
+            delta_args = delta.get("args")
+            if event_idx is None or not isinstance(delta_args, str) or not delta_args:
+                return
+            if event_idx in self._tool_call_chunks:
+                _merge_chunk_into_store(
+                    self._tool_call_chunks, event_idx, {"args": delta_args}
+                )
+                self._push_tool_call_chunk(event_idx, delta_args)
+            elif event_idx in self._server_tool_call_chunks:
+                _merge_chunk_into_store(
+                    self._server_tool_call_chunks, event_idx, {"args": delta_args}
                 )
         elif dtype == "legacy-block-delta":
             fields = delta.get("fields")
@@ -762,15 +830,11 @@ class _ChatModelStreamBase:
                 if idx is None:
                     idx = tcc.get("index", len(self._tool_call_chunks))  # type: ignore[unreachable]
                 _merge_chunk_into_store(self._tool_call_chunks, idx, dict(tcc))
-                legacy_chunk_block: ToolCallChunk = {
-                    "type": "tool_call_chunk",
-                    "id": tcc.get("id"),
-                    "name": tcc.get("name"),
-                    "args": tcc.get("args"),
-                }
-                if "index" in tcc:
-                    legacy_chunk_block["index"] = tcc["index"]
-                self._tool_calls_proj.push(legacy_chunk_block)
+                legacy_args = tcc.get("args")
+                if legacy_args:
+                    self._push_tool_call_chunk(
+                        idx, legacy_args, provider_index=tcc.get("index")
+                    )
             elif btype == "server_tool_call_chunk":
                 stcc = cast("ServerToolCallChunk", fields)
                 idx = data.get("index")
@@ -786,9 +850,13 @@ class _ChatModelStreamBase:
             # content-block finish event; there is no dedicated projection.
             return
         else:
-            # Transitional legacy path for old `content_block` deltas that
-            # should not be reachable after `_event_delta` conversion, kept
-            # here for custom in-tree test fixtures or third-party emitters.
+            # Unknown delta variants land here and are ignored, as the
+            # protocol requires; `content-block-finish` still carries the
+            # complete block. The one exception is an event that also
+            # carries a legacy `content_block`: a transitional path for
+            # old deltas that should not be reachable after `_event_delta`
+            # conversion, kept for custom test fixtures or third-party
+            # emitters.
             block = data.get("content_block")
             if not isinstance(block, dict):
                 return
@@ -800,15 +868,11 @@ class _ChatModelStreamBase:
             if idx is None:
                 idx = tcc.get("index", len(self._tool_call_chunks))  # type: ignore[unreachable]
             _merge_chunk_into_store(self._tool_call_chunks, idx, dict(tcc))
-            fallback_chunk_block: ToolCallChunk = {
-                "type": "tool_call_chunk",
-                "id": tcc.get("id"),
-                "name": tcc.get("name"),
-                "args": tcc.get("args"),
-            }
-            if "index" in tcc:
-                fallback_chunk_block["index"] = tcc["index"]
-            self._tool_calls_proj.push(fallback_chunk_block)
+            fallback_args = tcc.get("args")
+            if fallback_args:
+                self._push_tool_call_chunk(
+                    idx, fallback_args, provider_index=tcc.get("index")
+                )
 
     def _resolve_block_text(self, idx: int | None, full_text: str) -> str:
         """Return authoritative text for a single text block at `idx`.

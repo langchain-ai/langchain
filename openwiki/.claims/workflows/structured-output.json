@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:178636640bc405323f46b967fe490a5dac307c2afb06e124221a123ce16d6451",
+  "claims": [
+    {
+      "id": "claim_45a8435fd4d34f05bd759e8dc55f0454",
+      "statement": "Structured output enables obtaining data from language models in a well-defined, type-safe format through three complementary patterns: native structured output via with_structured_output() on chat models, explicit output parsing via BaseOutputParser subclasses, and streaming structured output that progressively yields partial objects.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2385-L2430",
+          "version": "repo-lines-v1:sha256:e58c9eb50f8f9076045683f509edbbc578084e997f9dd90a3e4cd0bc28c1c51c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5OTc5OTM3ZDdkZTE5OTI3NmMzYjdjNWQxMmRlYzY4MmFlMGY5NWM1OWJmMDY5OWE0YjY5NGFkODVlZDExNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyY2U3ODA0OTU2MDcwZjY5ODYwYmNlMjczODQxMDQ4OWNjMjM4ZTQ3Mzc0ZWExZmMyMWRlYWZhYzhmZmJkMTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4NjNhNzc0MWQwODE4ZmJlYzE4YjM4MmU3ZjI3NmNlNDE0ZWU4ZjU0ZjJjNmM1ZTQ4YTNhN2Q0MjM0MDE3ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmM2M3MGQzMDNmZDk2MzRmMTY3YzZiOTkyZjNiODBkNmVlOWZiYjUzYjhkNzk0YjY5MDc0ODhkYmZhZDhiN2EifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/__init__.py",
+          "version": "repo-file-v1:sha256:83930fac3f2c24af23799442202bd6469f9db40ab58eacbe7c5fb04b97a0af94"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/transform.py#L99-L110",
+          "version": "repo-lines-v1:sha256:af1e1f113e14af0f45f87f78cfddbc9f550c545df7c0f362c3cd5c940d909ecc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZWFlOTU3ODQ1ZGQyYWMwYTlhZTk4ODI2ODU1MTExNzRhNzRiMDBiY2U5NzU4NDAzYjc4OWMzZjkyNzk2MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzZjRhYTI1NzY5YzFlNzA2YjAzM2VjOGExMDljZTFlM2RjYzM1YWEwZGY5YTc5NWYwYzgyNjJiZGI4NjRiMGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMzg5NzhjZGMxYThkNzYxMjBhMzFmZjg2MDU0NWNhNDNiMWE0ZWFjOWU2YWJiMmIwNWQ2MjE5ZTE4NDExODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmN2FiYTMyYjg0ZjIwN2U1ODNmNjMwYjBjOGEzMDJlZTY2ODgwZTA0ZjA5MjhlNDk4OGU0YWY3OWRjZTVlN2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_97c287d243e74111afde72c93e9983a1",
+      "statement": "BaseOutputParser is the abstract base class for all output parsers, inheriting from RunnableSerializable to provide sync (invoke), async (ainvoke), batch, and streaming execution. Every parser must implement parse_result() to transform Generation objects into validated structured output of type T, raising OutputParserException on invalid input.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/base.py#L140-L170",
+          "version": "repo-lines-v1:sha256:59bb6901f0c851d877f9ca909a1be14d8d92e00d62b9c960664a74b537816e0f:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0MjkwOWRlMDQxYjllMDQzNGE0ZTg5NzU2NzI3MTgwZjYwNGMzOGFhYTNmYTI2OWZjNTczMWNhNjA4ZTM5Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YjUxYmE3M2Y3OGM2Y2IxODIxNTNhMzZkY2QzZmQzOTk5ODU1NzFkYjA3YjQ3NmQ2OGI0YTYzOTg5YmJmNWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzZGYyYWNmMDZlOGMzZjAzYzcxMzVjNmU4YWM1YTljYTU0MzJhYmUwNmE3NGFjYTBmZGQ5YTUzYTAwOGY5ODciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlNzEzMjRmZWMyNzI0YjEyYmFjOGEyNjY0YmNlNDY2NjUxMTY2YWNjYmZmNDE4NTk3NDQ5MDRjZWEwZGY0YTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_39d5737c45f84c4b952c8bb19b78f828",
+      "statement": "with_structured_output() is a method on BaseChatModel that wraps a model to enforce structured output by leveraging the model provider's native capabilities. It accepts Pydantic models, TypedDict classes, JSON schema dicts, or OpenAI function schemas, and returns a Runnable that outputs instances of the schema type (validated) or dicts (unvalidated). The include_raw parameter controls whether to return only parsed output or also raw response and parsing errors.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2385-L2565",
+          "version": "repo-lines-v1:sha256:673bc22e396265b7dbabfa67b802837132337352be622cd69c071cfc5dfd1c84:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOTk3OTkzN2Q3ZGUxOTkyNzZjM2I3YzVkMTJkZWM2ODJhZTBmOTVjNTliZjA2OTlhNGI2OTRhZDg1ZWQxMTVhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5OTUyMjA5NzQ4ZWJiMjJhOWM3Nzc5ZWEwMTBkODNiNzUzYmVlY2Q3ZDFmY2M2ODRiYTBmNDQyZjU4MDE4YzMwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ODYzYTc3NDFkMDgxOGZiZWMxOGIzODJlN2YyNzZjZTQxNGVlOGY1NGYyYzZjNWU0OGEzYTdkNDIzNDAxNzgxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NTBjNDUzZDgxMjdmZGVmYWVkNTg3YWQxNGJlZDM0NWJiMGYzMTg3Njk3MTIwMWQzN2FjYmVkOGQ2NzgyZTFhIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_9750d6fac44340908735d0cb9d28d771",
+      "statement": "PydanticOutputParser parses JSON-formatted text output from a model into a Pydantic model instance by extracting JSON from markdown, validating against the schema, and returning a validated instance or raising OutputParserException. It provides get_format_instructions() to generate prompts that guide models to produce JSON conforming to a schema.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/pydantic.py#L19-L124",
+          "version": "repo-lines-v1:sha256:a588180fc4e69f457c9e46cdda957c771911d19c74dfaee25ae02b86313e9421:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzM2RjMWQ2Mzc0YjU1NDA5OTg2NzRjOTg1YjRmNDBjOWY1MmQ4MmE1YjkxODgxM2Y3OTczNDRlMTlkNDVmMGVjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhOThiMDYzZDliNDdlNjUzNzk2MjU1NzJjY2UxOTc2NjlkNTc2N2UxMmMxOGJlMDc1NjUyYjhjZDk4MWNlOGQ1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjMmQxMzE3ZmY5ZjRiYjMxZDliMjRlYzJlZWYzODU2MjE3M2M5NjQ4MTAzZWY1ZTkxNDM4NDNjYjJhMjhmMmM4In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_9aff4bf66f1341c7a95b787b83649bf9",
+      "statement": "JsonOutputParser parses JSON output without strict schema validation and extends BaseCumulativeTransformOutputParser to support streaming. In streaming mode, it accumulates text chunks and yields partial JSON objects containing all keys returned so far, or optionally JSONPatch diffs if diff=True.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/json.py#L31-L139",
+          "version": "repo-lines-v1:sha256:33a896ab63c392d81a7f99abf937060dc64ac4f656697fe3b4cc7be750698f80:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0MTU5ZDc5ZWNmNzRmOWRhYzdlZDcyZmZhYzAwNTg5YzBlNDA3OGNjOWI2ODIwZDIwZGEzNTJkODkzMGY3OTE1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmOTQxNmUwOWY3OGJhMzE2YzAzMjU2ODIxM2I4NTVlZTc1NmU0MTU2NWQ5MThmMDk1MTljODFmZDYyMGY0MDYwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjNDdjMWQyZDJiNjYwMzcxOGE5MWQ4ZjE0YjE3NzM0OWE2YWUzM2QxZjdlZTk2ZmZmYzI5ZWRkZDA2YTk4MzAwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/transform.py#L99-L150",
+          "version": "repo-lines-v1:sha256:108d77f7b44420ccf47c0484035466fd72e0be74696a698d7d210d89ea562b9c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZWFlOTU3ODQ1ZGQyYWMwYTlhZTk4ODI2ODU1MTExNzRhNzRiMDBiY2U5NzU4NDAzYjc4OWMzZjkyNzk2MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZGE5MzUwMDE5ZGMxZTY2NzQ1MjY0Mzg3MzE2MTk5NzIyNWU5Y2U2MDEwN2FmN2I2NGY4NDBkZGVjZmRhNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMzg5NzhjZGMxYThkNzYxMjBhMzFmZjg2MDU0NWNhNDNiMWE0ZWFjOWU2YWJiMmIwNWQ2MjE5ZTE4NDExODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNGRmYzFhNzEzNGVlNTc4MWFiYTM5NDZjMzZiN2EyODhjZWJmZWRjMTBhMjY2NjcwOTE4YjEzZmM0OTNmMDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_111ae2d5bc4f4d3f9f0429cdb07df65e",
+      "statement": "Streaming structured output is implemented via BaseCumulativeTransformOutputParser, which accumulates streamed tokens and yields partial parsed objects after each chunk if the object changed. The parser calls parse_result(..., partial=True), which uses parse_json_markdown() and parse_partial_json() to extract incomplete JSON structures, enabling responsive UIs and early feedback.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/json.py#L31-L92",
+          "version": "repo-lines-v1:sha256:280c6317bccb7f8c880a14528d72fce66ede6597c8d76a9e49b3c68ae07a5824:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxNTlkNzllY2Y3NGY5ZGFjN2VkNzJmZmFjMDA1ODljMGU0MDc4Y2M5YjY4MjBkMjBkYTM1MmQ4OTMwZjc5MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0N2MxZDJkMmI2NjAzNzE4YTkxZDhmMTRiMTc3MzQ5YTZhZTMzZDFmN2VlOTZmZmZjMjllZGRkMDZhOTgzMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMjk2OTZiNTVkMDIxNjJmZTkxZTZhNzc0MmQyMDE2ZmZiMjk3ODFhNmJmYzdjMzgzNzIwYzAyNTRmY2EzYzQifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/transform.py#L99-L150",
+          "version": "repo-lines-v1:sha256:108d77f7b44420ccf47c0484035466fd72e0be74696a698d7d210d89ea562b9c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZWFlOTU3ODQ1ZGQyYWMwYTlhZTk4ODI2ODU1MTExNzRhNzRiMDBiY2U5NzU4NDAzYjc4OWMzZjkyNzk2MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZGE5MzUwMDE5ZGMxZTY2NzQ1MjY0Mzg3MzE2MTk5NzIyNWU5Y2U2MDEwN2FmN2I2NGY4NDBkZGVjZmRhNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMzg5NzhjZGMxYThkNzYxMjBhMzFmZjg2MDU0NWNhNDNiMWE0ZWFjOWU2YWJiMmIwNWQ2MjE5ZTE4NDExODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNGRmYzFhNzEzNGVlNTc4MWFiYTM5NDZjMzZiN2EyODhjZWJmZWRjMTBhMjY2NjcwOTE4YjEzZmM0OTNmMDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_56b270a4a14246ec9263b76a788dfc5e",
+      "statement": "When using function calling (tool calls) instead of raw text output, JsonOutputToolsParser and PydanticToolsParser extract and validate the structured data from tool call arguments. PydanticToolsParser validates parsed tool arguments against Pydantic schemas and raises ValidationError if validation fails, supporting first_tool_only mode to extract a single structured output.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/openai_tools.py#L139-L350",
+          "version": "repo-lines-v1:sha256:5669c169d4d9dd26ccaadbea957eac3a492777611f47c450f992dac26317f291:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3YTRlYWQyMWE2MmQ1ZDgwYmI4NmI5OWRhNjk0NjdhOGE0ZWIxZjEyYmQyZWRkMDJmMzg1ODcwYjZlZjAzYTk1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyMTUyYmM3MGE5M2Y2OGRmNTZlMmI2Y2U2Y2NhZjkwNTUxZmY5MTgxOGIyOWYxN2JiMmE2OGQ0ZmI1MjM1Mzc1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3ZTBlNWJiMjg3MmM4ZjBhNmY0MmFiYzUzOWY2NTdjOTVmNjMxZDJlMGYwMmIyOWIwZDVjNzE4ZGZmYmI4YWMzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiZWI0YTcwYTEzZjU3OTEyNjg2MDUxNjUzOWJlOTYzY2M1OGE4MzcxNzU1ZWI1NzNjYTdmYzVmOWEwZTU2NmU2In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_b536363906a14d3fb260de6b698f2bc2",
+      "statement": "The agent framework provides specialized error types for structured output via tool strategies: StructuredOutputValidationError is raised when tool arguments fail schema validation, and MultipleStructuredOutputsError when the model returns multiple tool calls when only one is expected. These errors carry the ai_message and can trigger retries with error context sent back to the model.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L35-L74",
+          "version": "repo-lines-v1:sha256:8a131eadf9d5ee730ba0931b207fbc4b94a030a9d1751356e9549880dbceb0f2:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMDMxYTdmMWVlMzQwZjU3N2FmMGJiOGU5NjBmNmFiODFhNGQyYmI0ZWViZmM1Mzg3MmNmNDNmYjFhNzliNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBiNDRlNTUzMzY1OWZmYzQxNTAwMzc4YWY0NWE5YTJhMzBkZDk3NTk1MTQ1NjMyN2Y3MWMyZDc4NWRiYmI0ZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhYWJhYzAxYTBiNDQwZDU2NzA4Y2RkOTBiOTljYzg4OGNmZTgyNWQ1ZTQ4M2Q2ZDQ2OWUyZDU2MmFkOWViZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzYWMzOWZkYmEyM2FkMDg0ODRmZWVjZmNiMmY0NmI3ZWRjZmQ2MWIwOGYyMGIwMDA0Yjg0Y2U1ZTgwNTI3Y2YifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_047babb4f82b4299baa42a7dc281101f",
+      "statement": "_SchemaSpec is a dataclass that encapsulates a structured output schema (Pydantic model, dataclass, TypedDict, or JSON schema dict) along with its name, description, strictness, and derived JSON schema. It provides schema_kind classification and json_schema extraction, supporting heterogeneous schema types across structured output patterns.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L106-L193",
+          "version": "repo-lines-v1:sha256:97b580993fe9832e499db71338047965638ba04d553de9b102698fabb6d87952:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YTRmMGQ5MjI5ZGZjYTRhYzUwOWU0NzQ5ZDI0YWJkYjEzODY0YjBhZWYyYjE1ZWJiZDk4OWQ1ODI2OGNkNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5OWJhM2QxMmYxMDk5NTEzYzhjNGE2MTY1N2E3MjUxNDFjNDViMTEzYWJlMWQwNjIyMzkwMjVmYTRmMDM2YjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyZTZlN2MxYzk4ODIyZmM2NzhkMzMyM2E3OGFiNjgwMDNkZDQ0MmZkYjViMjQxMjEzZDBmMGYxNDYyMDJmYWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_392ec5e12c7f480fb55eeb23b1177078",
+      "statement": "ToolStrategy uses artificial tool calls to enforce structured output by binding a model with a tool and parsing the tool call arguments. ProviderStrategy uses the model provider's native structured output method (e.g., OpenAI's response_format with JSON Schema). ToolStrategy supports handle_errors for automatic retry on validation failure; ProviderStrategy delegates validation to the provider.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L195-L315",
+          "version": "repo-lines-v1:sha256:c2922763acafc00059e4c058c777edce4eb8bb7afa2ad446e53409432f42073e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOWE0ZjBkOTIyOWRmY2E0YWM1MDllNDc0OWQyNGFiZGIxMzg2NGIwYWVmMmIxNWViYmQ5ODlkNTgyNjhjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3Y2RlMTgwYmFmZTA1MWY1MjBjMTBiYWQ3Zjg4NWMyMWYwODFiOThlNzYzMmFlNDgxMjVjOTkwODczZjkzYTEzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiOGY2NWI5OGQ5YWIwOTdjMDcxMWRiMTM2MDdkYTQyZWZkYmYyOWE4YjZlZGI3ZTAwMmMzODU4OWQ2ZTY1Mzg3In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_9c1961c376c54b62b7591017c5f3dd7e",
+      "statement": "When with_structured_output() is called with a Pydantic BaseModel subclass, the returned Runnable outputs instances of that model class with full validation applied, ensuring type safety. Dictionary and JSON schema inputs return dicts without validation, trading validation for lower overhead.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2402-L2436",
+          "version": "repo-lines-v1:sha256:485aeea7ce01b8ecd29e33516bc8e8bf4ed7cae199d406cc811fd38cc51e00df:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ZGY1YmUyNTU1MjBmMmRiMzBlZTE1NTk3ZTcxNmVkMGZjYTczM2E3ZWYzYTk4MTYxZDFiMzcyOGQ2NDg2NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjMjRhMTg3OTU1MTA1ODhkMmI2ZTI1MmQ3MWJmZDE4ZjZkZTM2Y2VlMDEwMDA5ZDgzMDczODE3ZDg2NTEyNjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0MTM1ODAzODA1MTE2MWU5NTg1NjkzNmIyNGNhZDkwMDE2NzgwMTJiY2I5OTgzNTIzZjg4NjZkMzE4MDU3NzcifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

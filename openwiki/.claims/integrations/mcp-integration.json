@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:5748b22b69f2d393838729a1bcb6d502fad6fce02c9e366f05643c24a2d33364",
+  "claims": [
+    {
+      "id": "claim_7a8fafb1ebef428bb7a8123d6e1e4499",
+      "statement": "MCPAdapter bridges MCP servers to LangChain agents by discovering tools from remote MCP servers, handling protocol negotiation via FastMCP, managing multiple transports (in-process, stdio, HTTP), routing calls to correct servers in multi-server setups, and answering mid-call user input via LangGraph interrupts.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/__init__.py",
+          "version": "repo-file-v1:sha256:6f4fc76a2d1f0b2129e7598a5f4fd1bc05e389c9b98ad063d757baae27132e83"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/adapter.py#L125-L172",
+          "version": "repo-lines-v1:sha256:522fc669e156571f02b6a3683cd982f55d4ad22f3468f7b48e991a148877320e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlMzNjYzBkZDhkMDU2NjRjYTQ5NDc4YWU3OTNjZjdmYTE0NThlZmE5YjM4ZTA1ZGRiNDk5YWIyOWIzZTFmM2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFiOGYwNThmNzdlYjg1NDA5MDYxZDg2YjIzMDg5MzQ2MzBhZTExNzlkMDkwNDdlMTRkMzRkOGNmYTU4ZjU3MWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzNjY0MDU1M2U5ZGEyZDllMTYxY2RmYWVhYzMwYjM4NTY1MmQ4ZjE3MjE4OTEwOTllOTRiYzM5Y2JiNmJhNGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_78d25bbe5e224e1c9db0eccc0c84e207",
+      "statement": "MCP server lifecycle consists of five phases: (1) adapter initialization validates targets and arms the client for elicitation, (2) context entry connects the FastMCP client(s), (3) list_tools() fetches and converts remote tool definitions, (4) tools are executed asynchronously through the client, (5) context exit disconnects cleanly.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/adapter.py#L174-L220",
+          "version": "repo-lines-v1:sha256:13e59008e8c98131db014de7914f45245f03e65afdaf0c55289259d436c6d53c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkN2QzYjgwZTRmNWE5ZTEwYmE3MTJmZGQ3MDQ2MzAyMzUzZDlmZGIwNWVhMDMxM2MyY2M3NjdiMjhjMTMyZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MmE4NTA2MzFiMjI5MGVlMmYzN2YwZGEyZDM0YjAyNjEwNWE0NGYzMDU4NmFkMGU1MTc4NWMyZjg0NTVmMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRkMDNkNjA0ZTE2MmViNDVhMWNjYzkzNmU1MWUwNzIyYmRhZjM4ZWNiNzUwNmFiYzczMzQ2NDhiNWYyMzg0OWEifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/adapter.py#L221-L242",
+          "version": "repo-lines-v1:sha256:8c8f286728fc9aa7955ce4e7a05920a6a04a6800acbb6d7e328ba2f703cef134:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkM2M5ZGRjYWQ1MjNiMDZjOWQwY2RhYjRhYzUxODA3MWYzNjMzMzViNDk0NzFmNmNmNWQ2YTE2ZjNhNzE0ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwMWMwYThiZDk4NzRhNDBkMzFkYmYxMDdiMGEzNTQ5MTQ5ODIzNTJkMDY5ZWVmNDcyNDNiZDExZWY3ZjYzNjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3Mjk5ZGUzODI4MDM3NjcxYWE1YjJlZjhiYjAxNWY3YmM4MWQ0MTU1NWE4ZjNmNDY0ZGI0M2YxZThlNGM0NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjYTZiZmFkYzc2OWJmYmM0ZDI2NmExMTI2MmIxMzhkMzdmZDEzZDg2MDk1MDE3YThmNjdmYzE2MDNlZWJlYjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_30941d1be9f64060b3fce6ee2da38ba5",
+      "statement": "MCPAdapter accepts multiple target types delegating transport inference to FastMCP: HTTP/HTTPS URL strings (with validation), Path objects (stdio subprocess), FastMCP instances (in-process), pre-built Client or ClientGroup (custom configuration), MCPConfig dict (multi-server), and ClientTransport (custom transport), with string targets validated to reject local file paths for security.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/adapter.py#L174-L200",
+          "version": "repo-lines-v1:sha256:a7c3a06c163bcf4e20d6e44446d36e8bb14135f5a0009971c6bd2341897814c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkN2QzYjgwZTRmNWE5ZTEwYmE3MTJmZGQ3MDQ2MzAyMzUzZDlmZGIwNWVhMDMxM2MyY2M3NjdiMjhjMTMyZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2MmMwNTM4ZmVhMDkzMDE5ZmMwMDRjYjdiNjkxYzY0MTE1ZWYxZDYxZWUwM2M4NDZmMmMzODRiZmQ0MjA0NTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MmE4NTA2MzFiMjI5MGVlMmYzN2YwZGEyZDM0YjAyNjEwNWE0NGYzMDU4NmFkMGU1MTc4NWMyZjg0NTVmMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0Y2Q2MGM5NDcyYmRmNmJlZTNkYjk1MjBjMTRjNTZlZTEwZmU3YTRkMDA5YTMwNjZhODMzZjI1MmE5ZGQ2OGMifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/adapter.py#L47-L123",
+          "version": "repo-lines-v1:sha256:ab1dc3462b418e9e717da86fbeb91a2a598c3bce4f1e0fa9386c3ab631b6a84a:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlYThlZjZjNjIxMzlhY2Q3MWU2MmVjYWQ4ZGNjNjRhZWY3ODY3ZWM1ZTdmNDdhYjUzMWQ2ZGJkM2Y5MWRkN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmZmEzYWFjNjkyMGE4MGMzZDYxZmQwOWJkNTUzZGQzYzY1NWFlN2QyNzg5MzFhNjc4YWM1ZjZlZjhjY2ZiZTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0MWY2OWZkZDhhOTU0ZTY3NTg4ZWZhNjY5ZTA5OTNlM2FhZDY2OGRjMjlmNmUyODI3MzJmYWNjYjYxNzA1YjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_33009287ab8a477dad0deba1e0999a17",
+      "statement": "MCP tools are converted to LangChain StructuredTool by as_langchain_tool(), which extracts name, description, and JSON schema from the MCP tool definition, creates an async coroutine that calls the tool through the client, sets response_format='content_and_artifact', attaches MCP metadata (tool annotations and server identity), and installs a custom error handler to surface tool-reported errors to the model.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/tools.py#L234-L304",
+          "version": "repo-lines-v1:sha256:fce2dd0bf57a5f61654308ff25d42ba9d12733f5fe1b2ce344394adb108bdeab:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc5YmFiYmE2Yzc5NzMwZWZlNTY1ZTM0OTFjMGNkOWMzNWM0NGQ1YzJjMTg1MjEyYmVkMmYwMTdiMDg1NWNiNzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZkYjI4Yzk1ZTQ0ODE2MmYyN2IzYWM1NjY5ZThmMjU0NTllMjkyMzViZTIyOTFhZGMyNzEzMzkzYzQ3YzAxNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExYTVkMGU3ZWNjMzc0YTIxNmM5ZTAzNzZhZGZjNGE1YWUxOWQzZTRhYTMwNTBmNDA4NDkzNjRiNDJkN2Y1OWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f44b7400ef8b4c18a0f909ec0961e6ed",
+      "statement": "MCP result content blocks (TextContent, ImageContent, ResourceLink, EmbeddedResource) are converted to LangChain content blocks (text, image, file), with AudioContent not yet supported (raises NotImplementedError), and structured_content wrapped in MCPToolArtifact.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/tools.py#L120-L181",
+          "version": "repo-lines-v1:sha256:0e3f074612917c8d40758869d2f765edae41b8e1bcc04573b80a3e98bf795dba:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5MTMxZmM0ZGQ4YzA5MTUyNzFiMzdjYWI4MDgwNGQ2YmUxZWViZDYyNDE4M2M1NGY2OWNiMjY0YzkyZDA5YzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg3YzIwNWYwZWM5ZTgzNDU0MWViZmEyMThhOTE1OGQxNTNmNThjZTFiM2E0ZjdiMDQ5MWY1YjdiMmVkMjkxYTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjZWU1YWFhYWY2MWU1MTc5ZWNlM2JlYTJhZTM1MTY4ZTMwNzBmM2QzNjM2YzNmM2ViYWQ1YmZjMjMyZmNjZGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c40ab952419347729692bd9062fd59e6",
+      "statement": "Tool-reported errors (is_error=true) are converted to ToolMessage with status='error' carrying the server's error content, allowing the model to see and retry; transport and schema conversion errors propagate as exceptions since models cannot act on them.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/tools.py#L283-L304",
+          "version": "repo-lines-v1:sha256:131551a1a182eb465b7cd449c0da80d1b2ff90b5379ad3313f23249a69d99221:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMDA1NjNlNmExYjExMjExOTY4NzI1NGEyMWUwYmVjMWQ5NWVjN2MyYzYxZDE2MWY5NDFiMDRlNzAyNDNjMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlN2NlNWY0ODk0OTU2ZTM4MzI4ZmE1MDU1ZWM3MWU2ODA0MjE1OTc4Zjk4NjAzZGIyY2Y3MTVhMDVlMzYxMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExYTVkMGU3ZWNjMzc0YTIxNmM5ZTAzNzZhZGZjNGE1YWUxOWQzZTRhYTMwNTBmNDA4NDkzNjRiNDJkN2Y1OWEifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/tools.py#L89-L118",
+          "version": "repo-lines-v1:sha256:3f1b77dd4524abd528ba6b43a5dfe93990b041abc85ce0d8b2d72d687bbb40aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkNjVkYmI2NmVhM2IyMmEyNzNlMTlhOGNlNWE4YzRlMzAyNmZmYWE1MDg3YTRlMmM2MzIzNjI0ZTkwNjg3ZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0YzYyMGNmZDdkMTc5MjBmYzY3ZTljMmRjN2M3MzU1NTFkYmM4NThiMzdjMTBlNzYzMjNiNzk3OTI4Y2ZmMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUxMTljNDM3YTZiNDNhYzExOTdlNDA4OTkzZTJlNDA3NDAyNjQxY2MxNWM1YzY1YmM3ZjUzMTcxNDBjOWY2ZjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cfcd9af8396e46828fc8edfec7b31334",
+      "statement": "MCP tool invocation follows request-response pattern: model generates tool call with arguments, agent executes async tool coroutine, tool calls server via FastMCP client, server returns CallToolResult with content blocks and optional structured content, adapter converts result to ToolMessage with content and artifact, model receives and processes response.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/tools.py#L283-L304",
+          "version": "repo-lines-v1:sha256:131551a1a182eb465b7cd449c0da80d1b2ff90b5379ad3313f23249a69d99221:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBkMDA1NjNlNmExYjExMjExOTY4NzI1NGEyMWUwYmVjMWQ5NWVjN2MyYzYxZDE2MWY5NDFiMDRlNzAyNDNjMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlN2NlNWY0ODk0OTU2ZTM4MzI4ZmE1MDU1ZWM3MWU2ODA0MjE1OTc4Zjk4NjAzZGIyY2Y3MTVhMDVlMzYxMjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExYTVkMGU3ZWNjMzc0YTIxNmM5ZTAzNzZhZGZjNGE1YWUxOWQzZTRhYTMwNTBmNDA4NDkzNjRiNDJkN2Y1OWEifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/tools.py#L42-L87",
+          "version": "repo-lines-v1:sha256:00595a74e7900f6282ec89125680c9f9451b6b85ce06c98654354276624d37c7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYTc2NjhjODFmYjE0M2Q5YWE3MDA4MTViMzdlMDExOGUwY2YzMGY0NjVlOTM5ZDk3MjQ2YzVhYzJiZjJmYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyM2ExZTFmMzI5Y2ZhYmFhNThiZTg5MWU4Njg2NGFjODc3ZTFlZTY5NzQ3NzVjMzEyMTQzYjRjZGMzZjY1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY5ZmM0MjI2OGE2YzczMzgyZTJiMTU3MmFjMDgzYWM5ZDIzZDBjOThlN2ZiMjdjMWNiODk2MjhjZTZmOThkZTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d5941164a11b425bb890f35ca11fff7e",
+      "statement": "MCP elicitation requests support two types: form requests asking for data matching a JSON schema, and URL requests asking user to visit a link (e.g., OAuth). Non-elicitation requests (sampling, roots) and continuation rounds (progress updates) are not supported by interrupt-driven elicitation.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/elicitation.py#L175-L192",
+          "version": "repo-lines-v1:sha256:7db24099f60624a5bc45fccfbcc8b19b513b7173a4a54143fb5c340ed13fe6b3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNkMTFkZDc3ZDIwY2E1M2VmZjM0YjcxMTdhMWFhYTQyMmEyYjhiY2MzYzk4NjdiMGM3MmRiZmEwZTNkNjY3ODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1YTc3NTAwZjkwOTI4ZDgyMDA3NDU1MmZlZTU1OTU1YjQzZDMyNWFkN2JkMzkyZjJjN2QzODllMjEzZmY1YzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFmMjYzMjQyOTE0NWUzN2JlOTIxYWE2NTRkYzNjNWNjNjY0ZjExNWY4NGQ4OThlMDc3MDZlZTAyY2VlMTcwMjAifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/elicitation.py#L56-L144",
+          "version": "repo-lines-v1:sha256:8b05236fbf5f0e1a9b7e9911780e63531c427b4b1a769e1e29cd5e1482f0966b:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxODZiOTBiYWNhOGVhNDVkOTg0NWI1YWY4YzMxOTdjZjBjZTczYjRiNGMyNzAyYzIzNDUxOTIwZmYzZGZlN2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2NTViMmUzMDYxZjFkNGY2NDkzYjJlZmM2OTYwZDUwNWM2MThlZTMyMWM1YzA4Y2FiYjJhODBhZDg0MjZiZGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxMWRkNmVkZjBjYThlNDYyOTY0Y2E1OTE5Y2FlYWRkZDIyMjdkNTNjYjVjN2QzNjY3MDM1YzcxYTZiMmFiZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhNTY0YTk5ODQyODJhMTU0ZDNhMmI5NTgwZWZlODVjOWQ1ZmY4NGI4N2IzNzgwODkxNDM3OWI5M2UzMjhhZjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e2048013a6154c72814e667782e7dd82",
+      "statement": "Mid-call elicitation flow: server returns InputRequiredResult pausing execution, tool raises MCPElicitationInterrupt via langgraph.interrupt(), graph pauses and returns to human, reviewer submits MCPElicitationResume with answers, graph resumes and re-enters tool at interrupt point, tool forwards answers to server, server either returns terminal result or another InputRequiredResult (loop continues).",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/elicitation.py#L312-L379",
+          "version": "repo-lines-v1:sha256:05e3918e07f837ff89e0b8a1a2358fa3d060f8df483e23ddd3a37ca755128042:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkxNWNjYTU0NjEwNWFhZTY4ZjM0M2VjNGUyYzY3YWFmM2JlOGRiNzZlOGM2MGY2OWUwZDNmNTAyNzNkNDNkNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMTFjMDU2N2QwYTVmOWU5YjEzNWY2NWNkMjUzNzJkZmQ2Mjg3NzVmN2MxZWQyNTNmOGJhZDQyZGQyZDY2NjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxNjU0ODgzNGMxYmMzODk2Y2JmNzQxNWQwZDJiMWViNWYyMTM5MzI1NGMxZmQ3Yzk1MTYxYzczOTVmY2M2MmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiMjM2N2JkMGRmMGE2MmRmYzNkMTIxOTkxYjI5OGZlNGU5YzNkMzI2NzUyZTY5ODU1OTQzYjZjZjRiMjQ4M2QifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_930f64964215499bbf939f949644ce51",
+      "statement": "MCPAdapter initialization arms each client for interrupt-driven elicitation by setting _elicitation_callback and stamping _langchain_mcp_interrupt_armed, honoring pre-built clients with custom handlers (not overriding), cloning clients before arming to avoid mutating caller's object, and cloning each member of a ClientGroup independently.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/adapter.py#L174-L200",
+          "version": "repo-lines-v1:sha256:a7c3a06c163bcf4e20d6e44446d36e8bb14135f5a0009971c6bd2341897814c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkN2QzYjgwZTRmNWE5ZTEwYmE3MTJmZGQ3MDQ2MzAyMzUzZDlmZGIwNWVhMDMxM2MyY2M3NjdiMjhjMTMyZTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk2MmMwNTM4ZmVhMDkzMDE5ZmMwMDRjYjdiNjkxYzY0MTE1ZWYxZDYxZWUwM2M4NDZmMmMzODRiZmQ0MjA0NTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MmE4NTA2MzFiMjI5MGVlMmYzN2YwZGEyZDM0YjAyNjEwNWE0NGYzMDU4NmFkMGU1MTc4NWMyZjg0NTVmMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM0Y2Q2MGM5NDcyYmRmNmJlZTNkYjk1MjBjMTRjNTZlZTEwZmU3YTRkMDA5YTMwNjZhODMzZjI1MmE5ZGQ2OGMifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/elicitation.py#L246-L263",
+          "version": "repo-lines-v1:sha256:1e6f894892694451f556d175d5f77456677f9f8b90fc592be9727849696f0baa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5OGI5NWJiYTAxZGJhMGY5ZGUyOGQ0ZDY2ZTNjMmQzMjc5YjFiNjBkY2IyZjBiNDVjYmZkY2IyNTIyMzhmOTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiZDQ4OWRkYjU0NGYyMTAwZGVhOTU2ZDQxMGFkNGQ5NTU3Njc0ZDg5MmE0YTczNDNhOWUxZDdiZDk5NTQ4MTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmZjBkNzhiZTRiYzE5ZWNmODc5OTc3MWIxZmU2ZDhiMTUxMzM4NjU2ZWZmZGMzM2JjZGQzZjc1OTBlYzE1NDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2YzRhN2E1NmJkZTE2ZmQyNWU4NWI0NTRmNzY2Y2IwODAwYWQ0MmJlY2FmYTAyYzJlYjdjOTRhODQ4ZDNmNDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bf5f64d072d54e31a990d99d34f52b33",
+      "statement": "When using ClientGroup or MCPConfig, tool names are prefixed by server key (e.g., 'weather_forecast' = 'weather' + 'forecast') to prevent collisions. Tool calls are routed to the correct server member via resolve_tool() which maps the namespaced tool name back to its member client and original upstream name.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/elicitation.py#L288-L309",
+          "version": "repo-lines-v1:sha256:fffd6a8aa0633425602f5c6e40c636111444e8f6ceb6030dfc00814bddf5ff50:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkZDkwYzAyMGY2OWVhNDI5MDkzNjg2Y2YwZmZiZDAzOWEyYTVhYjU3Y2Q4MmZhOGIxNWI2MTUyZDcxNWQyOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyYjZlNjUwOTQxMzZmZDBmMzAyMzgxN2Q4NjZkMWJjOTYyNjUwNWRmNTllYjE1NWI1ZjQxNDc3ZTAzOTE4YmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MjIzMTA2ZmQ4NzQyYjcwZWEyMzNmOWRjMzU5ZjRiMDJiYmIwNjliNzI4M2VlZjc2MjQ5OTUxNmJkN2I5YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwMzRlNzgwMTVlZDY3MzQwODZhNTI0MWE2NGFkNzEzYmEzYWQ1YWJlNDViNDIwNzE1NGJkMThjZDllOTU3NDgifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/tools.py#L276-L281",
+          "version": "repo-lines-v1:sha256:393dbbcf54a839da3b285f3a1eda0de58ace7f4d8760acefd06c948f148217b2:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWJkZTNiZWU0ZmE4NmIxYTE1NWViMzA2OTI1MjI2MDBhZTI0N2Y0ZjhiZTkxZGUxOGUzZTYzODdmMzY1ZDJlNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2FhYWI0ZGI2NjYxZTBkM2Q5YmJjODAzNWVlNWM1NTY2ZDNlZmRiMGJhMzk3ZWUzYzJjOTIxNjFiOTNlYmEzMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODYyY2UyMzY4MDQ1NmMwZmM5MzQxYWRkYjk0OTM4ZmZjYWJjZDMyYzliNTcwY2U5OWY3ZDAzOGY5OTlhYjk3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDczOGIwZmM4MDk4OGExYjYxZjViZDYxYTIwZTQxNmJmYmUzZTFmZWNhMzJhYjI1MjEyMTcxNzljNzg2MzA2YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bcc61d46bd8645d7b5af6bd6dd4933ae",
+      "statement": "MCP tool input schemas are normalized by _normalize_mcp_schema() to keep open object properties open during provider schema conversion: properties typed as 'object' with no properties, additionalProperties, or unevaluatedProperties constraints are marked with additionalProperties=true.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/tools.py#L212-L231",
+          "version": "repo-lines-v1:sha256:05151863142ae4f933359fcacea7243f413e321fdca8422644050a50887d631b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3OGRiNTEyYzdjMDZmZGJlNDczYmE0NDJiM2YyYTEzOTM3YzQ4OTZhODg5OTcxNzcwNmI3Y2UxOTM3NTY3NmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyMTI3MTViZWM1OWE0NDFmMTY4MmZmYjUyZTg5YmZhZDk5NzdmNTBmZmY3YWQzZjhhMWQxOTFkZGMzMDhkNDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiYmRmMTVlYzYwZTVlOTkzZTBiODA0NDBlOGY0ZmUzYTE5YTAxYmUxYjk5ZmI5YTQwMjVhMGE2YTMwMzkxYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjMDE1YWI5YzY2YzA2YmIzYTBlMGNlNGQwYWZlMDQyN2I0OWY1YmI1MTRlZTc1NzE0MGUwMzBkZTFkOWYzYzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ad7e86ddf5854463a1a7a683ec5330bd",
+      "statement": "Converted MCP tools carry metadata under namespace 'mcp' containing tool-level annotations and _meta fields under mcp.tool and server identity/capabilities under mcp.server, enabling consumers to distinguish tool provenance and read tool-specific hints.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/tools.py#L183-L209",
+          "version": "repo-lines-v1:sha256:e1314169115084c97d944fa49a783b06187552b721f4c792ce6cd842eb2e7bcc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYzYWJkNDcxYzM1MmVmZWI3YTE3ODI0ZWZhYmNlOWZhNGZhYWUxZTkyNGYzNTQ3YmY0Y2ZmNTA5ZDRkODU4YjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmYTc5ZGVlOTNlMzdiZmU2MTVjOGI2Mjk4NWJlNDEyMTIyNmUwOTUzNDU3MDdhZGU5ZmViNmE4ZTc1MTY1YWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjZmJlZmUyYTE4YzRjMzVlYjc5OTMwNTI0MzFiODVkMjgxZmQ3MjdhNzBkNTI3NTdlZDYxYzhmMTYzNzlhMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmMDc4MjA4Mzc1MzNiY2YyNWM3YzM4MTYwNjI4YzI2NDExMmY0YzgzMGU5ODZlZmJhMjNlODhjMDMyZmM5M2UifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_66405835693b4dbfba60672659b6bce4",
+      "statement": "MCP has evolved across multiple protocol eras (e.g., 2025-11-25 vs 2026-07-28); modern versions support InputRequiredResult for mid-call elicitation via interrupt, legacy versions use older handshakes. MCPAdapter detects server version and selects appropriate interaction pattern; servers from different eras can coexist when separate adapters are used.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/elicitation.py#L252-L263",
+          "version": "repo-lines-v1:sha256:5321dcb55536811f4f0975b59e026d1cf83f3d2a5adf5acdecd6d9aa415b889e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0ZTNkNTM5ZTdjNGQ4ZWJjYzgxMzNkOGFlN2I1NjIwOWE1OWZlZWI0YTFlMTQyYTc5NGI0MTliYjY2Njk3NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiZDQ4OWRkYjU0NGYyMTAwZGVhOTU2ZDQxMGFkNGQ5NTU3Njc0ZDg5MmE0YTczNDNhOWUxZDdiZDk5NTQ4MTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5NGQ0MWRlMzhjNTRjZjFmOTYzMWI1MGZjY2M1MTQyNTU0MjY1YTUyNmI0MjEwNTZjZDM1MDY4MGRjOWI4Y2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2YzRhN2E1NmJkZTE2ZmQyNWU4NWI0NTRmNzY2Y2IwODAwYWQ0MmJlY2FmYTAyYzJlYjdjOTRhODQ4ZDNmNDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_50e9611bbe5b43b682c0f4c456c7677c",
+      "statement": "list_tools() accepts cache_mode parameter controlling interaction with client-side response cache: 'use' (default, serves cached results within TTL), 'refresh' (forces server fetch and cache repopulation), 'bypass' (skips cache entirely). Cache is configured on the client itself; this parameter only selects how discovery reads it.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/adapter.py#L221-L242",
+          "version": "repo-lines-v1:sha256:8c8f286728fc9aa7955ce4e7a05920a6a04a6800acbb6d7e328ba2f703cef134:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkM2M5ZGRjYWQ1MjNiMDZjOWQwY2RhYjRhYzUxODA3MWYzNjMzMzViNDk0NzFmNmNmNWQ2YTE2ZjNhNzE0ZmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkwMWMwYThiZDk4NzRhNDBkMzFkYmYxMDdiMGEzNTQ5MTQ5ODIzNTJkMDY5ZWVmNDcyNDNiZDExZWY3ZjYzNjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM3Mjk5ZGUzODI4MDM3NjcxYWE1YjJlZjhiYjAxNWY3YmM4MWQ0MTU1NWE4ZjNmNDY0ZGI0M2YxZThlNGM0NDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjYTZiZmFkYzc2OWJmYmM0ZDI2NmExMTI2MmIxMzhkMzdmZDEzZDg2MDk1MDE3YThmNjdmYzE2MDNlZWJlYjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4ceeff94908d4749b7488925cae796fa",
+      "statement": "FastMCP clients are reentrant: tool coroutines can open the underlying client themselves whether or not a connection is already held elsewhere, enabling concurrent tool calls and simplifying connection lifecycle management.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/tools.py#L240-L250",
+          "version": "repo-lines-v1:sha256:1668792c5e603c8d30ffbf32208b4774716ddd7782cc61a7f805e2c415a5a4c5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwOTMxNmJkNzAxY2YyNjE0ZmM2MWQxZjIzMzNiYmY1MTI4YjgyYTBlMjk0NzgzZTFlZTkyYzQ3MWM4Y2U4YjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhM2Q3NDEyYTNhZDQyNzBiMzM4MmRjNTgxYzM0ZGVmODEwMTJjNDdlMWFiYWFhYWQxODRiZjA2YTFjOWM1MTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJhNmNkMDRhM2Q3N2M2MDI3NmQyOGQwMmZhNDZkMjA0ZWE0YTc2ODNjNmI1ZmEwOTE0ODlhM2RmYzZjNDI2YmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFiN2E2OGNlZDk2MzVlZmFkYjg3Yzk3Mjg2NDRiMTg2YmExMjVmZGU0MGRiZDcyMDFiY2U5N2VjYTdmNTg3MzkifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

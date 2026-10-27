@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+from collections.abc import AsyncIterator
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from langchain_core.messages import AIMessage, AIMessageChunk
+from perplexity.types.shared.search_result import SearchResult
 
 from langchain_perplexity import ChatPerplexity
 from langchain_perplexity.chat_models import (
@@ -33,6 +35,73 @@ def _make_event(event_type: str, **attrs: Any) -> MagicMock:
     for key, value in attrs.items():
         setattr(obj, key, value)
     return obj
+
+
+@pytest.fixture
+def agent_search_results() -> list[dict[str, Any]]:
+    return [
+        {
+            "id": 1,
+            "url": "https://example.com/menu",
+            "title": "Menu",
+            "snippet": "Set menu costs £45.",
+            "date": None,
+            "last_updated": None,
+            "source": None,
+        },
+        {
+            "id": 2,
+            "url": "https://example.com/faq",
+            "title": "FAQ",
+            "snippet": "Minimum two people.",
+            "date": None,
+            "last_updated": None,
+            "source": None,
+        },
+    ]
+
+
+@pytest.fixture(params=["dict", "sdk"])
+def agent_search_response(
+    agent_search_results: list[dict[str, Any]], request: pytest.FixtureRequest
+) -> dict[str, Any]:
+    results = (
+        [SearchResult(**result) for result in agent_search_results]
+        if request.param == "sdk"
+        else agent_search_results
+    )
+    return {
+        "id": "resp_search",
+        "status": "completed",
+        "output": [
+            {"type": "search_results", "results": []},
+            {"type": "search_results", "results": results[:1]},
+            {"type": "search_results", "results": results[1:]},
+            {
+                "type": "message",
+                "content": [{"type": "output_text", "text": "Set menu [1][2]."}],
+            },
+        ],
+    }
+
+
+@pytest.fixture
+def agent_search_events(
+    agent_search_response: dict[str, Any],
+) -> list[dict[str, Any]]:
+    return [
+        {"type": "response.reasoning.search_results", "results": []},
+        {
+            "type": "response.reasoning.search_results",
+            "results": agent_search_response["output"][1]["results"],
+        },
+        {"type": "response.output_text.delta", "delta": "Set menu [1][2]."},
+        {
+            "type": "response.reasoning.search_results",
+            "results": agent_search_response["output"][2]["results"],
+        },
+        {"type": "response.completed", "response": agent_search_response},
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -113,6 +182,43 @@ def _stub_responses_response(text: str = "ok") -> MagicMock:
         related_questions=None,
         search_results=None,
     )
+
+
+@pytest.mark.parametrize("top_level_results", [False, True])
+def test_invoke_serializes_agent_search_results(
+    agent_search_response: dict[str, Any],
+    agent_search_results: list[dict[str, Any]],
+    top_level_results: bool,
+) -> None:
+    if top_level_results:
+        agent_search_response["search_results"] = agent_search_results[:1]
+    llm = ChatPerplexity(api_key="test", use_responses_api=True)
+    llm.client = MagicMock()
+    llm.client.responses.create.return_value = _make_response_obj(
+        **agent_search_response
+    )
+
+    message = llm.invoke("What is on the set menu?")
+
+    assert message.content == "Set menu [1][2]."
+    assert message.additional_kwargs["search_results"] == agent_search_results
+
+
+@pytest.mark.asyncio
+async def test_ainvoke_serializes_agent_search_results(
+    agent_search_response: dict[str, Any],
+    agent_search_results: list[dict[str, Any]],
+) -> None:
+    llm = ChatPerplexity(api_key="test", use_responses_api=True)
+    llm.async_client = MagicMock()
+    llm.async_client.responses.create = AsyncMock(
+        return_value=_make_response_obj(**agent_search_response)
+    )
+
+    message = await llm.ainvoke("What is on the set menu?")
+
+    assert message.content == "Set menu [1][2]."
+    assert message.additional_kwargs["search_results"] == agent_search_results
 
 
 def test_invoke_routes_to_responses_when_builtin_tool_in_payload() -> None:
@@ -545,6 +651,45 @@ async def test_astream_yields_text_chunks_and_final_usage() -> None:
     assert final_usage is not None
     assert final_usage["input_tokens"] == 3
     assert final_usage["output_tokens"] == 9
+
+
+def test_stream_preserves_agent_search_results_without_duplicates(
+    agent_search_events: list[dict[str, Any]],
+    agent_search_results: list[dict[str, Any]],
+) -> None:
+    llm = ChatPerplexity(api_key="test", use_responses_api=True)
+    llm.client = MagicMock()
+    llm.client.responses.create.return_value = iter(agent_search_events)
+
+    chunks = list(llm.stream("What is on the set menu?"))
+    message = chunks[0]
+    for chunk in chunks[1:]:
+        message += chunk
+
+    assert message.content == "Set menu [1][2]."
+    assert message.additional_kwargs["search_results"] == agent_search_results
+
+
+@pytest.mark.asyncio
+async def test_astream_preserves_agent_search_results_without_duplicates(
+    agent_search_events: list[dict[str, Any]],
+    agent_search_results: list[dict[str, Any]],
+) -> None:
+    async def events() -> AsyncIterator[dict[str, Any]]:
+        for event in agent_search_events:
+            yield event
+
+    llm = ChatPerplexity(api_key="test", use_responses_api=True)
+    llm.async_client = MagicMock()
+    llm.async_client.responses.create = AsyncMock(return_value=events())
+
+    chunks = [chunk async for chunk in llm.astream("What is on the set menu?")]
+    message = chunks[0]
+    for chunk in chunks[1:]:
+        message += chunk
+
+    assert message.content == "Set menu [1][2]."
+    assert message.additional_kwargs["search_results"] == agent_search_results
 
 
 # ---------------------------------------------------------------------------

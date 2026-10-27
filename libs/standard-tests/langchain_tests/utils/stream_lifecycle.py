@@ -13,7 +13,11 @@ conforms to the protocol lifecycle rules:
   starting at 0.
 - For deltaable block types (`text`, `reasoning`, `tool_call_chunk`,
   `server_tool_call_chunk`), accumulated delta content matches the
-  final payload delivered on `content-block-finish`.
+  final payload delivered on `content-block-finish`. Tool-call args may
+  arrive as `tool-call-delta` slices, which append, or as `block-delta`
+  snapshots, which replace; `tool-call-delta` only targets tool-call
+  chunk blocks.
+- Unknown delta variants are accepted and ignored.
 
 The validator accepts any iterable of protocol event dicts. It raises
 `AssertionError` on the first violation with a descriptive message.
@@ -36,6 +40,8 @@ _DELTAABLE_TYPES = frozenset(
         "server_tool_call_chunk",
     }
 )
+
+_TOOL_CALL_CHUNK_TYPES = frozenset({"tool_call_chunk", "server_tool_call_chunk"})
 
 
 def assert_valid_event_stream(events: Iterable[Any]) -> None:
@@ -125,7 +131,13 @@ def assert_valid_event_stream(events: Iterable[Any]) -> None:
             delta = event.get("delta")
             if delta is None and "content_block" in event:
                 delta = _legacy_block_to_delta(event["content_block"])
-            _accumulate_delta(delta_accum[idx], delta)
+            if delta is not None and delta.get("type") == "tool-call-delta":
+                start_type = start_events[idx].get("type")
+                assert start_type in _TOOL_CALL_CHUNK_TYPES, (
+                    f"tool-call-delta at idx={idx} targets a {start_type!r} "
+                    f"block, not a tool-call chunk (event {i})"
+                )
+            _accumulate_delta(delta_accum[idx], delta, start_events[idx])
         elif ev == "content-block-finish":
             idx = event["index"]
             assert idx in open_indices, (
@@ -170,7 +182,11 @@ def _legacy_block_to_delta(block: dict[str, Any]) -> dict[str, Any]:
     return {"type": "block-delta", "fields": block}
 
 
-def _accumulate_delta(accum: dict[str, Any], delta: dict[str, Any] | None) -> None:
+def _accumulate_delta(
+    accum: dict[str, Any],
+    delta: dict[str, Any] | None,
+    start: dict[str, Any],
+) -> None:
     """Fold a delta block into the running accumulator for its index."""
     if delta is None:
         return
@@ -181,6 +197,11 @@ def _accumulate_delta(accum: dict[str, Any], delta: dict[str, Any] | None) -> No
         accum["reasoning"] = accum.get("reasoning", "") + delta.get("reasoning", "")
     elif dtype == "data-delta":
         accum["data"] = accum.get("data", "") + delta.get("data", "")
+    elif dtype == "tool-call-delta":
+        # Appends a slice to the args so far: the last `block-delta`
+        # snapshot's (older cores) or, before any, the start's.
+        args = accum["args"] if "args" in accum else start.get("args")
+        accum["args"] = (args or "") + (delta.get("args") or "")
     elif dtype == "block-delta":
         fields = delta.get("fields")
         if not isinstance(fields, dict):

@@ -3,9 +3,6 @@ type: "Architecture"
 title: "Chat Model Interface and Lifecycle"
 description: "Document BaseChatModel protocol, input/output handling, streaming, and integration points with callbacks and model profiling. Covers the init_chat_model() factory, provider registry, and model instantiation."
 tags: [chat-models, llm-integration, streaming, structured-output, model-capabilities, model-initialization]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
 sources:
   - id: openwiki-source-132f3183693cd9cf79d029a5
     resource: repo://libs/core/langchain_core/language_models/base.py
@@ -17,7 +14,10 @@ sources:
     resource: repo://libs/core/langchain_core/language_models/model_profile.py
   - id: openwiki-source-c479d4fffee5cf62576699e4
     resource: repo://libs/langchain_v1/langchain/chat_models/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-22T08:26:56.662Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-22T08:26:56.662Z
 ---
 
 ## Overview
@@ -190,17 +190,29 @@ async def _astream(
 
 ### ChatModelStream and AsyncChatModelStream
 
-**Location**: `repo://libs/core/langchain_core/language_models/chat_model_stream.py`
+**Location**: `repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1189-L1338` (ChatModelStream), `#L1345-L1580` (AsyncChatModelStream)
 
-For the v3 event protocol (`stream_events(version="v3")`), models return a `ChatModelStream` (sync) or `AsyncChatModelStream` (async) that expose **typed projections** for incremental content:
+For the v3 event protocol (`stream_events(version="v3")`), models return a `ChatModelStream` (sync) or `AsyncChatModelStream` (async) that expose **typed projections** for incremental content accumulation:
 
-- **`.text`**: Accumulates text content blocks
-- **`.reasoning`**: Accumulates reasoning/chain-of-thought content
-- **`.tool_calls`**: Accumulates parsed tool call blocks
-- **`.usage`**: Accumulates token usage info
-- **`.output`**: Final assembled `AIMessage`
+**Sync Projections** (ChatModelStream):
+- **`.text`**: `SyncTextProjection` — iterable of `str` text deltas; `str()` for full text
+- **`.reasoning`**: `SyncTextProjection` — iterable of reasoning deltas; `str()` for full reasoning
+- **`.tool_calls`**: `SyncProjection` — iterable of `ToolCallChunk` deltas; `.get()` returns finalized `list[ToolCall]`
+- **`.output`**: Property (blocking) — returns fully assembled `AIMessage`; triggers complete drain of underlying events
 
-Each projection can be iterated for deltas or awaited for the final value. Internally, these accumulators track incoming protocol events and merge them into structured output.
+**Async Projections** (AsyncChatModelStream):
+- **`.text`**: `AsyncTextProjection` — async iterable of `str` deltas; awaitable for full text
+- **`.reasoning`**: `AsyncTextProjection` — async iterable of reasoning deltas; awaitable for full text
+- **`.tool_calls`**: `AsyncProjection` — async iterable of `ToolCallChunk` deltas; awaitable for finalized `list[ToolCall]`
+- **`.output`**: `AsyncProjection` (property) — awaitable for assembled `AIMessage`
+
+Token usage is not available as a separate projection; instead it is accessible via `stream.output.usage_metadata` once the stream finishes. The `.output` property/awaitable automatically drains all events to finalization.
+
+**Raw event iteration** is also available:
+- `ChatModelStream` implements `__iter__()` to replay raw protocol events (replay-buffer semantics)
+- `AsyncChatModelStream` implements `__aiter__()` to async iterate protocol events
+
+Each projection can be iterated for deltas or awaited/drained for the final value. Internally, these accumulators track incoming protocol events (content-block deltas, finish, metadata) and merge them into structured output. The stream tracks per-block text/reasoning state, tool call chunks (both client and server side), and finalized blocks.
 
 ## Generation and Caching
 

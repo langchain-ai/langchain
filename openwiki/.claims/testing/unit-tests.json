@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:0ce436dd656e6a4672f4d152c710b93a24398a6a0107796578f031a728501306",
+  "claims": [
+    {
+      "id": "claim_31a05d6469ea495ebed1cdff1e3c3f8a",
+      "statement": "LangChain unit tests are organized in tests/unit_tests/ by module (runnables/, callbacks/, language_models/, etc.), with each module optionally defining a conftest.py for module-specific fixtures and configuration, following pytest's fixture discovery hierarchy from root conftest to module conftest to test file.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/conftest.py",
+          "version": "repo-file-v1:sha256:db4edbdb240f9a7e3c35fc6eab5dd5024c15e3a4efa8155295fdb30489a34b75"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/conftest.py",
+          "version": "repo-file-v1:sha256:1f9c4139e890e6c962d28d9f149844704c684d6598aa99c03d678fabc797e1d1"
+        }
+      ]
+    },
+    {
+      "id": "claim_b13e3bacd34744ad967279f987cbe351",
+      "statement": "pytest is configured with asyncio_mode='auto' to automatically mark async test functions and fixtures, asyncio_default_fixture_loop_scope='function' to provide fresh event loops per test, and --snapshot-warn-unused to warn about unused snapshots.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/pyproject.toml#L143-L150",
+          "version": "repo-lines-v1:sha256:361895a34359ef52ab92453b0c2f1ed900dd7a96f7dcc5faa839020b05f6cccf:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODY3NmU2NDE0NjVhNjU1MWU5ZTljZmZkN2ZhYTFlNmE0MmY5YjcyNDgwOTgxM2M5MDNkN2VkY2I1MmYzMDA2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjY5MTk4YTJhZDVlZDk4MDU2OTE2MTQ5YTdiZGM4Yjg1ODUwNWU3ZTIzYzA3ZDhkOTA0ZTg4Y2IwZjE1NTJiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWE4MmQwODJkMjQzOTk3ZGNhNDRkM2ExNzViNjU0MjU5ZjBmNDkyMTMzM2NhMzFiYjJiMDczNzM3MmRhYjc0OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTZiYjQyMGZiZDA4YzM1YTY5ODJiNTRlMWFhZDJmNTNhNDBhNTQ3MTFhZjdjNjVhMjA0YmY0MTA3OTFhZTM1ZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_711df83559a04f83807c7ad12f819a05",
+      "statement": "Unit tests run with --disable-socket --allow-unix-socket flags to block all network calls except Unix sockets, enforced via pytest-socket to prevent accidental external dependencies and catch unintended network calls.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L20-L20",
+          "version": "repo-lines-v1:sha256:a7fbd80411acecdd918b88984171870f95e8f17a6b404be8064ba76ba6764977:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDhhN2M2ZTg2ZDY0MzYxMjdjODdmOWYxNzhjMDllMTE3YmE5NmEwMzVlMmEzNTRkZGJkN2ViMDkzM2RkOTg3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzgzNzQ1ZTU1YTIzYmI0MzZjYTUxMGFiMTgwNGQyODMwMjhhNTJlNzc5MjE5YmNlNzAyODRkOWY3YjEwMDcxMCJ9"
+        },
+        {
+          "resource": "repo://libs/core/pyproject.toml#L71-L71",
+          "version": "repo-lines-v1:sha256:aa6362a66ded41aecd8b2408bd09c55c61ed003a1855f796ea221c43b5e4c2a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWE2MzYyYTY2ZGVkNDFhZWNkOGIyNDA4YmQwOWM1NWM2MWVkMDAzYTE4NTVmNzk2ZWEyMjFjNDNiNWU0YzJhMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWE2MzYyYTY2ZGVkNDFhZWNkOGIyNDA4YmQwOWM1NWM2MWVkMDAzYTE4NTVmNzk2ZWEyMjFjNDNiNWU0YzJhMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzdmYTcwYWI1NjdmNTc2MjJkNGQ5ODE2MzE4ZWZmOWMxOWMwYmZkZDI0NTliNDI4ZDQxZGM4MTRkM2VjZWY3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjY5Njk3MGIzZDgxMTUxMTMyMTVhMTA0MzE0OGM4Y2M2OTFlNDlkNTM2YjlhNzM1NjhjNGFiMzM2NDdkNmQzNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3d72874a758d46ce91f4b9cb2eb9aad6",
+      "statement": "The blockbuster fixture is autouse-scoped and detects async blocking violations by monitoring os.stat, os.path.abspath, and io.TextIOWrapper.read calls, allowing blocking only in specific safe callsites like langsmith client configuration and freezegun internal APIs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/conftest.py#L12-L32",
+          "version": "repo-lines-v1:sha256:aeb3791f6f39690343a2afea35c9e4e3af46496f963132474d552d66b44088d7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMDg2NmY0MDExZTU4NWZmYzA5MDkyZWRmMDgzMmUxN2I1MmY0YzkwYzRjYTBiNDJkY2ZhMDUwZmEzNzViNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0YTIxOTliM2NlOTNkNThiMzk2NmUzMzFjMWFhOTQ4M2U1OGYwODQ4NDJjNzFmNTVkNDNmZTk0ZDAzNTVjMDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE4MDI2ZjhmYzBhNmUzYzQ1NDk0ZDhmZGI5ODgwNmUwNzNiODI3NjgxYzViMzk4ZjE1ZjI0NWQ2ZmU1MDEyZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzZjUyMTNiYWM0NDkxODk2ZmJhZmQ0OTI4ZjM5MWZlMWViMWRiOGNlMWU1NjU4NDdhZDNkOTc1NmQ1ODY5ZGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e15874fb5029402e8265fba88a7ebd79",
+      "statement": "The deterministic_uuids fixture replaces uuid.uuid4 with a deterministic side_effect generator yielding sequential UUIDs in the form UUID('00000000-0000-4000-8000-{i:012}') for reproducible snapshot testing and trace comparison.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/conftest.py#L115-L120",
+          "version": "repo-lines-v1:sha256:170766da8ca0c06791c54c297209de43b5b78f554afa3a942c9960fa1c20cd77:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjNmMzY2YjliZDlhOGQwZjM0MGEyYmMwYmUxZTIyZWVhMjA1NjhkZDc4YTQ1MjgxYjcyMWIzMGYyMmQwODdmMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjE1ZDM5NjBjNmY1NDc2MmJkZjI1ZWZkYzY0ZmJhOTUzNTA1MTAwMTQ5MWIyMTNmZDc3OWMyZmFmNTM2MzRhMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmU5ZDFlNWRiMjczOTlkM2NkOGMzN2NiMzhiZWFhYmViZDllMjQ0Njg0M2ZlM2Y2NDhlOTZlMjMwYzk2ZmM1YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_b1fbe25e2b0349dcaa5f7000dff7dc4d",
+      "statement": "The custom 'requires' marker allows tests to declare optional package dependencies; pytest_collection_modifyitems checks installed packages using util.find_spec and skips tests if packages are missing (unless --only-extended forces failure), or skips them entirely if not using --only-extended.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/conftest.py#L49-L113",
+          "version": "repo-lines-v1:sha256:b35ea7a06d5783de03277a83a87cc96c91a509a21fd3aa14c25c86c47bb81750:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmYzYwZGExMTM1NTc1OTRhYTlhZmUyNjJmYjUxZjNhM2RlMWNhYTdjNDdhNTg4NTExYjdlYjA0MjY3OTY0ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlOTQzYTExOGI4NDk1ODUxNGNkNTE4NzY4NmE5YTg4ODY4OGZhOGU3MDNhNTk3Yzk4ODY5NGNkZmFhMWYzZjYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0817a96668774dd881aa7f0721d84b69",
+      "statement": "The runnables module conftest defines a session-scoped autouse fixture _disable_local_langsmith_tracing that disables LANGSMITH_TRACING, clears LANGSMITH_API_KEY, LANGSMITH_PROJECT, and related environment variables, and clears langsmith's get_env_var cache to isolate tests from developer configuration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/conftest.py#L10-L37",
+          "version": "repo-lines-v1:sha256:fed3cc99412a88ab0c021986da4fe9a311939e8d66b9023fb7552c25d0937869:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2ODgyNDQ3MDY4YzMzYjJmMzJlNDVmYWM0Y2UxYWZhYzQ5ODNkYzA3MzBlNmZhOWEwMzdlYWM5Y2ZhMjM3NzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhYzMxNGZmOWYwZTBhOTU0NzNiNjlmYzcyMzA3MWI0MzU4ZGI1ZDQ4MmQ5YWM2NmI1MGQ5Y2IwZmJkZDRmMzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk5ZTQwMTYzYTRkMzhjNmFmNzg1OThmNzdkZTQ4ZWUzMzFlYzdhNTI0YzU4NmViY2QwYTA5YTkwZWY1Njg1MjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_452ede42d511440d826738141344dc7a",
+      "statement": "Async test fixtures use pytest-asyncio with function-level loop scope (asyncio_default_fixture_loop_scope='function') to provide isolated event loops per test, enabling safe async fixture setup and teardown without state leakage.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/pyproject.toml#L150-L150",
+          "version": "repo-lines-v1:sha256:269198a2ad5ed98056916149a7bdc8b858505e7e23c07d8d904e88cb0f1552be:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjY5MTk4YTJhZDVlZDk4MDU2OTE2MTQ5YTdiZGM4Yjg1ODUwNWU3ZTIzYzA3ZDhkOTA0ZTg4Y2IwZjE1NTJiZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjY5MTk4YTJhZDVlZDk4MDU2OTE2MTQ5YTdiZGM4Yjg1ODUwNWU3ZTIzYzA3ZDhkOTA0ZTg4Y2IwZjE1NTJiZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjQ3YWQ2OTQ5MzI3ZDQ3MzU0Nzc0YWY3YWQyYzM5NGU4YmZkYmNkYTI2YzQyZThmM2RiNjIyZmY4MmM3YTdlNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTZiYjQyMGZiZDA4YzM1YTY5ODJiNTRlMWFhZDJmNTNhNDBhNTQ3MTFhZjdjNjVhMjA0YmY0MTA3OTFhZTM1ZCJ9"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/callbacks/test_async_callback_manager.py#L22-L76",
+          "version": "repo-lines-v1:sha256:cd6c7af5b069fa1927e895bd8382f3cb857bda7591a95ed0f00477c8aac154ca:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiYjQzZjQwMmVhN2UxYjA3NTU3YjdhYTRjZDFjYjlhZDIxMjMxNmRhYWMwZDBlN2U0MTg0Mzg0NmJlM2MwZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0NGYyYWNiNGMyYzgwYjE0OWZlYmY1NDIxZmE5MTVhYmI0OWQxN2YwMjI0NGUzMzUxZDIyYTEzZmJlMjg3NTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0971ef9c962749a88c26596eb4b689fd",
+      "statement": "Tests use mocker.spy() from pytest-mock to wrap real methods and track calls without replacing implementation, typically calling mocker.stop() to restore the original method after assertion.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/test_runnable.py#L1169-L1227",
+          "version": "repo-lines-v1:sha256:37b7ce9527786c65ae0833135913660242fd08d45efc093dfe7435a827c59207:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExMzM0OTNkMTdjYjlhNDI5NGZmMzUyMGEwYjIzZGExNmNjZjhlOTc0ZmNiNmJhYzBjNjAzNjQ3ZWE5ZTZkYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3MmNkYTJmYmVhNzYzMjE2NzcyOGEwYWYyNjhjZjRiODAxNTRmMGFkMjYyYWE5YTA4MTg4YzYxOWM2MjQ5MTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhODJlYmU5ZWQ0MDdjM2E2YmE0YjAwMzQyOTJiYWE1MmMxMWNlNWFlMjg2MTA3NDAyZGU0NzkyZWVlY2FjZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzNWEzNzBkZWNhZjcxY2QxZjc2NDU1ZTI1MDhjZTQ0NjNjZGYwNWI4NDZmYTc3NjY3YmU0ZWFmZTc3MzVlZTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_546b5ac4cacd492ea57eee42b48acf0f",
+      "statement": "LangChain provides FakeListLLM, FakeListChatModel, and FakeStreamingListLLM with configurable response lists to test chains without API calls; responses can include configurable fields for parametrized testing.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/test_runnable.py#L38-L42",
+          "version": "repo-lines-v1:sha256:1ff5fa9847b5e7bfabdf2945ebde1d28f3c1ed92f754845f1901178148ab71f4:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQxNGQ5ODk5MDNmMTc4MTI4NDk2YzcwZGNjYmFhYjJhNTgzOTUyMjg3MzAyNTgyN2QwNWViY2JkZjk4NmNiMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFmYmEwNTI3YzM5NTNjNGI2ZTBlNWI1NzM5YmE4MzYxMmY4MDUzYmNkYzk0NjY3MzAxOTNjZDFkNTkwYjQwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjU3YmJhNWJiYWMxNzA5OTI1M2NkYTBmZGM3ODFmMmVkYTNhYjU0Zjg4MGNiMGNhZjE0ZWViMzAwYjE2NGQ2NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGUxY2NhNWQ5Zjg5NWEzNWRjNmQ4MzkzNDBlM2VkZDg1OWJkOWMyYWM1ZTYxOWQwZjg3OTkwYWRlMGNiZGE1YiJ9"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/test_runnable.py#L388-L396",
+          "version": "repo-lines-v1:sha256:2fe85b3a55c3a8894d5930bec9aac66d77359acbad0584915f74d7b63e04599a:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYmJkYzdiOWQ5MTkyOWE3NDcxMjA1ZmI0NTgwYzdmODg0NDJmM2I5MWQxMGY5ZGRjOTViN2ZiNDlmOTQ5OTlkNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTRhOTA3MzRlYzEyNjY5ZDkzNjNlNDA0ZTE3OWQ1ODVlOTFkMzJhMGI4N2VkMDAwYzY1MDI5YzQ5NGM2YjIxNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWU3NDI0OWZkODRiZDA3ZDRjNjljNjU4NTdmMTg3ZjVlYjkyN2Y0YWNlNGQ1ZTcwNjJlY2JlZDkxM2Y2YzIzNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjEzM2UwMjU2OTA2MzViOTM1YmVkMTdiMjI0ZjAwYWM0MGEwMmM4ZTYwYjQ3MDMwNjAxZTdlYmZlYmFlZDQzNyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_373f8f482fd8455194c274161dc91770",
+      "statement": "Tests use syrupy SnapshotAssertion fixture to capture and verify complex outputs like JSON schemas, serialized structures, and graph visualizations; snapshots are stored in __snapshots__/ directories and updated with --snapshot-update flag.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/pyproject.toml#L66-L66",
+          "version": "repo-lines-v1:sha256:b5a8dd6447882a99fa911c6de1aaad5de6b60713be1f9f5e44cd7d5f4e18419b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjVhOGRkNjQ0Nzg4MmE5OWZhOTExYzZkZTFhYWFkNWRlNmI2MDcxM2JlMWY5ZjVlNDRjZDdkNWY0ZTE4NDE5YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjVhOGRkNjQ0Nzg4MmE5OWZhOTExYzZkZTFhYWFkNWRlNmI2MDcxM2JlMWY5ZjVlNDRjZDdkNWY0ZTE4NDE5YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjk1YjEyMmEzNmM0MmFlYjhjMDZkZGJmZGExZjFhNGExZDNkMDExOWI0ZTE3NzA4YmY0NjExMDdmZjhmOWZkYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWJjOWU4NjJlNjlmOTY1ZTQ5YjFkZDJhN2EyYzBhNDM1MTVmMGFhNjQ3ZmNkN2Y1MDQxOGM0M2M2Njk4NWEzYyJ9"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/test_runnable.py#L256-L285",
+          "version": "repo-lines-v1:sha256:ab215c520b2963a3a2f735207b8596be6e332b3f18740e383fc56ada5713a014:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlMGUwZGJhMjc2OWEyMTRiOWZhNDYxYmE3NTI2YjFkNGY2YTE2MWVjMTcxODM2MmE4NWZiOTAzYzJkMWFhMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhOGU5ZTBkMDk1YjQxMWYwMzg0NzY4ZTU3OWY5MjE3M2E0NmExMWFlOWU3N2ZiNmJjZWM3YmNhMzdmZDQyMTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1ODYwNmZkNDVhYmRhNWM1YzU2OWRhMDFjYWY0ZjExNjg5YTQ1ZTgzYjkzZDM3Zjc1NjA4YWQ4MDU3MWYwYjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9da6caaed4174254a8398bae37675e62",
+      "statement": "FakeTracer captures execution traces and replaces random run IDs with deterministic UUIDs using a generator, enabling trace snapshots to be reproducible and deterministic across test runs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/test_runnable.py#L127-L202",
+          "version": "repo-lines-v1:sha256:11b3fdc4e0c1ab358bf88ebe6e1128042767d0eb27c599aa7df6d5ccf1961234:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhN2ExMzcxYThhNmRmNDEwOTVjMjBkZDY4NDkxYzRkYmRmMmQ3ZjY4YmZkNjY2NzFjY2U2YTAwMTQ0ZGVmZjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc3MmY5Njk1Yzc0NjdjNzQ3NzNjOWNlN2ZjNDI5YzVkMGQwZTQ4N2YzYzUxZDE1ZDY2NjhhM2QyNDA3MmJiOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM4YWI1NjllMjBjZDExODNkZmZjYWE5NWRlYmQzZmRlMDA4N2U4ZWJhNjY3ZWJlMTE0N2Y3YmNhYzBmZDc2MzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2f65f7bc5a1749328389026973bfdc47",
+      "statement": "Async callback tests verify context variable propagation using contextvars.ContextVar; tests check that handlers configured with run_inline=True propagate parent context correctly while run_inline=False handlers run in separate context.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/callbacks/test_async_callback_manager.py#L22-L75",
+          "version": "repo-lines-v1:sha256:c7ee525cbf75243640d9986b7a26d73489005f5142d7bd74af88598b9d563daa:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiYjQzZjQwMmVhN2UxYjA3NTU3YjdhYTRjZDFjYjlhZDIxMjMxNmRhYWMwZDBlN2U0MTg0Mzg0NmJlM2MwZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiMjg0YzA1OTJjMDQzZGE1N2EyYmM0ODNmYWFhZDU1OTE4ZmUwZmU5YmY5NDFmMzQ2NzdlOGY3OTk1MjE1OWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVjOGJjNjA3OTc4ZWEzMWU3Y2M2ODVlNzhhZWM3MDc3OTVhZWFkNDc3N2M4OWIzYmUzYWYyZTVlNjMwZWI0YTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4688cd9a6215466a8f88d15d724929c2",
+      "statement": "Performance tests use pytest-benchmark BenchmarkFixture to measure execution time and detect regressions; benchmarks are disabled in standard test runs (--benchmark-disable) and run separately in tests/benchmarks/ directory with pytest-codspeed integration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L20-L20",
+          "version": "repo-lines-v1:sha256:a7fbd80411acecdd918b88984171870f95e8f17a6b404be8064ba76ba6764977:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDhhN2M2ZTg2ZDY0MzYxMjdjODdmOWYxNzhjMDllMTE3YmE5NmEwMzVlMmEzNTRkZGJkN2ViMDkzM2RkOTg3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzgzNzQ1ZTU1YTIzYmI0MzZjYTUxMGFiMTgwNGQyODMwMjhhNTJlNzc5MjE5YmNlNzAyODRkOWY3YjEwMDcxMCJ9"
+        },
+        {
+          "resource": "repo://libs/core/pyproject.toml#L77-L78",
+          "version": "repo-lines-v1:sha256:7cedd22b1aa38630dd6565fb4ba9e1af53f019d60e0d478e50356e4e9ec52095:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmYxMzZkODNlMTU2NTgzZGUzODNlNzlmN2JkYjUyY2JhM2RlM2U2MWE5ZWI2Y2I5MGMzYjc0YzEyYjczZjQxYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDExMzljYzY4M2Y2NDAyNzc4N2RkNDk5MjgxYzE5MmVjMTdlMTljZDRhNDViZTAxNmRiY2VkMGEyMmI2MDVmNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTMzMDg3Y2I0NTU1OWZjMTFiMGMxYTcxODc4YWVjNmM5YTcwZDM0MWVmMWU5NjMwMWJlNzFhMjcxYmYxNTRhOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzY2MjdiNjFmZjc3NDg1YjFhNTRkNzQ4OGZiMzVmNjczYzU0OGIxY2M3OTdmOWJhZmQ5ZWQ0OTg3ZjM5OWFjZSJ9"
+        },
+        {
+          "resource": "repo://libs/core/tests/benchmarks/test_async_callbacks.py#L47-L56",
+          "version": "repo-lines-v1:sha256:4634b1efeebf5ee9f1ea6360e18764a9f78bc9d41dab1677939064b6a5c1e012:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyNTc5ZTQ3NWM4YjhkYjQ1ZWYzYjQ3MjFmMzhiYjEyMDkyYmRmMjljZmZmODllNTU2MGIxNzBiYzBmNzNkZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlZWM1MGM5NjU0NDFlMGUxNWQ3ZjI3ZDc5M2QxZTg0NjhjY2M5MzczMWI5OGJiNDFhOWEwYzY2MDUxMDhjNWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc2NDYyMDM4ZWM4YmY3MjY0ODQ1ZWQ5MDU4YzE0ZTAzMTM4ODEzMGMxZTNiY2ZjZTMyYTcwYjA0Y2UyNzU0NDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e892f17fe3694e92a7f7acb125534a72",
+      "statement": "SSRF protection tests use SSRFPolicy with validate_resolved_ip and validate_url_sync to verify private IPs, localhost, and cloud metadata endpoints are blocked by default, and allowed when block_private_ips=False or block_localhost=False flags are set.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/test_ssrf_protection.py#L16-L80",
+          "version": "repo-lines-v1:sha256:ed12a291dcdbce50f788aedca7bcbcf35366054b95dcb9b6cde00298c3fb501b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExN2M5N2Q1NWY5ZDBiZTc1N2EzNzI3ZjQ2YzcwMDJiZjk0MjI3M2Y1Yzg0MzZhMWU4NTBkYTU2YjEzNDhhNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzMzA4OTJmNDgyOTIzMWNiY2JkMTg0ZGU5YzkwMzhjYzEwNDk0ZTE5M2ZlMWZlOGJjZmI5MTBmYzcyMjJlOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1ODcyZTIzMjE3N2MzYThkY2Q3N2IzMmE1OWUyMDFhYjYxN2NkYzQzMTEzOTE5MDNhYmM5ZmYxNTVlMWE2ZGIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_546a09d99e194de29e5702f1a5bdf347",
+      "statement": "Tests use freezegun to freeze time at specific moments, enabling deterministic timestamps in recorded traces and reproducible snapshot comparisons without time-dependent flakiness.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/test_runnable.py#L20-L20",
+          "version": "repo-lines-v1:sha256:6c5fe7d1f9ef2a7634b34d7ab0413509ccb60779cdb3511b9a266c5306f5380b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmM1ZmU3ZDFmOWVmMmE3NjM0YjM0ZDdhYjA0MTM1MDljY2I2MDc3OWNkYjM1MTFiOWEyNjZjNTMwNmY1MzgwYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmM1ZmU3ZDFmOWVmMmE3NjM0YjM0ZDdhYjA0MTM1MDljY2I2MDc3OWNkYjM1MTFiOWEyNjZjNTMwNmY1MzgwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYmJiZWFjYjRmMmM3NzE4MzY2OGU2MmUzMDk5Y2UzZTU0YjM1NDE2MTYxMzAzYWM5MDczZDVmMTM5ZjY0MDY0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTUzZjU2YzEzZDhjYmIzOGVhODRkMmEwN2RiYzNjNjIzZjU3MjBjYzYzYTkzY2U3NGQ1NzQxMTNmMWIyZjMwYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2791739997524c29af5e1e543f8ee1d2",
+      "statement": "pytest, pytest-asyncio, pytest-mock, syrupy, pytest-socket, pytest-xdist, freezegun, responses, blockbuster, pytest-benchmark, and pytest-codspeed are declared in pyproject.toml [dependency-groups] test section with version constraints.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/pyproject.toml#L62-L79",
+          "version": "repo-lines-v1:sha256:9a8b914d6c65b2a025762da865f078918fc42e6690877a89a5982641c3b2fe57:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYTI4NzYxMWUwMGFkMjQ1YzRiZDQ0NjIyOWQ3OGYzMDJlYmEwYWNlOTVlN2M2NmM1NGE0MzIxY2U4NjM2YWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4YzY1M2ZjY2MzYzc0ZTQ4ZTA0NzQxN2M5Yzc4YzE3OTBlNDUwMGY1ZTNhNDM5NGM1MGJjNjU0YTc5YjVjNzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZmN2IxNmE3ZGUxZGNmNDU2ZDE3YThhYjFlOTZiZDMzMWVkOWEyZjEyNGUyYTIzMWVkNTdhMWU1NjI5NjVlNjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ad64939acb1548d5943b5c9cd5d96a69",
+      "statement": "Tests run in parallel using pytest-xdist (-n auto flag), distributing tests across CPU cores for faster feedback; tests must not share mutable state to avoid race conditions.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L20-L20",
+          "version": "repo-lines-v1:sha256:a7fbd80411acecdd918b88984171870f95e8f17a6b404be8064ba76ba6764977:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDhhN2M2ZTg2ZDY0MzYxMjdjODdmOWYxNzhjMDllMTE3YmE5NmEwMzVlMmEzNTRkZGJkN2ViMDkzM2RkOTg3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzgzNzQ1ZTU1YTIzYmI0MzZjYTUxMGFiMTgwNGQyODMwMjhhNTJlNzc5MjE5YmNlNzAyODRkOWY3YjEwMDcxMCJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

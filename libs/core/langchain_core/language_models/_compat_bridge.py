@@ -47,10 +47,8 @@ from langchain_protocol.protocol import (
     MessageMetadata,
     MessagesData,
     MessageStartData,
-    ReasoningContentBlock,
     ServerToolCall,
     ServerToolCallChunk,
-    TextContentBlock,
     ToolCall,
     ToolCallChunk,
     UsageInfo,
@@ -63,12 +61,11 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator
 
     from langchain_protocol.protocol import (
-        BlockDelta,
-        BlockDeltaFields,
         ContentBlockDelta,
         DataDelta,
         ReasoningDelta,
         TextDelta,
+        ToolCallDelta,
     )
 
     from langchain_core.messages.ai import UsageMetadata
@@ -110,38 +107,6 @@ def _to_protocol_block(block: CompatBlock) -> ContentBlock:
 def _to_finalized_block(block: CompatBlock) -> FinalizedContentBlock:
     """Counterpart of `_to_protocol_block` for finalized blocks."""
     return cast("FinalizedContentBlock", block)
-
-
-def _to_block_delta_fields(block: CompatBlock) -> BlockDeltaFields:
-    """Narrow an internal working dict to protocol block-delta fields."""
-    return cast("BlockDeltaFields", block)
-
-
-def _to_content_delta(block: CompatBlock) -> ContentBlockDelta:
-    """Convert a content-block slice/snapshot to an explicit protocol delta."""
-    btype = block.get("type")
-    if btype == "text":
-        return cast("TextDelta", {"type": "text-delta", "text": block.get("text", "")})
-    if btype == "reasoning":
-        return cast(
-            "ReasoningDelta",
-            {
-                "type": "reasoning-delta",
-                "reasoning": block.get("reasoning", ""),
-            },
-        )
-    if "data" in block:
-        delta = cast("DataDelta", {"type": "data-delta", "data": block.get("data", "")})
-        if block.get("encoding") == "base64":
-            delta["encoding"] = "base64"
-        return delta
-    return cast(
-        "BlockDelta",
-        {
-            "type": "block-delta",
-            "fields": _to_block_delta_fields(block),
-        },
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -232,30 +197,45 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
 # of being serialized twice on the wire.
 _HEAVY_FIELDS = frozenset({"args", "data", "output", "transcript", "value"})
 
+_TOOL_CALL_CHUNK_TYPES = frozenset({"tool_call_chunk", "server_tool_call_chunk"})
+
 
 def _start_skeleton(block: CompatBlock) -> ContentBlock:
     """Empty-content placeholder for the `content-block-start` event.
 
     Deltaable block types (text, reasoning, the `_chunk` tool variants)
     get an empty payload so the lifecycle's "start" signal is distinct
-    from the first incremental delta.  Self-contained types (image,
+    from the first incremental delta.  The `_chunk` tool variants also
+    carry the call's `id`, `name` and provider `index`, because
+    `tool-call-delta` carries only args.  Self-contained types (image,
     audio, video, file, non_standard, finalized tool calls) drop their
     heavy payload fields; those are carried by `content-block-finish`.
     Correlation fields (id, name, toolCallId) and small metadata
-    (mime_type, url, status, …) are preserved on the start event.
+    (mime_type, url, status, phase, …) are preserved on the start event.
     """
     btype = block.get("type", "text")
     if btype == "text":
-        return TextContentBlock(type="text", text="")
+        # extras and id
+        text_skel = {
+            k: v for k, v in block.items() if k not in {"text", "index", "annotations"}
+        }
+        text_skel["text"] = ""
+        return _to_protocol_block(text_skel)
     if btype == "reasoning":
-        return ReasoningContentBlock(type="reasoning", reasoning="")
+        # extras and id
+        r_skel = {k: v for k, v in block.items() if k not in {"reasoning", "index"}}
+        r_skel["reasoning"] = ""
+        return _to_protocol_block(r_skel)
     if btype == "tool_call_chunk":
-        return ToolCallChunk(
+        skel = ToolCallChunk(
             type="tool_call_chunk",
             id=block.get("id"),
             name=block.get("name"),
             args="",
         )
+        if block.get("index") is not None:
+            skel["index"] = block["index"]
+        return skel
     if btype == "server_tool_call_chunk":
         s_skel = ServerToolCallChunk(
             type="server_tool_call_chunk",
@@ -265,6 +245,8 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
             s_skel["id"] = block["id"]
         if block.get("name") is not None:
             s_skel["name"] = block["name"]
+        if block.get("index") is not None:
+            s_skel["index"] = block["index"]
         return s_skel
 
     stripped: CompatBlock = {k: v for k, v in block.items() if k not in _HEAVY_FIELDS}
@@ -277,8 +259,8 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
     return _to_protocol_block(stripped)
 
 
-def _should_emit_delta(block: CompatBlock) -> bool:
-    """Whether a per-chunk block carries content worth a delta event.
+def _to_content_delta(block: CompatBlock) -> ContentBlockDelta | None:
+    """Convert a content-block slice to a protocol delta, or `None` if it has none.
 
     Deltaable types emit only when they have fresh content.  Self-contained
     / already-finalized types skip the delta entirely — the `finish`
@@ -286,16 +268,29 @@ def _should_emit_delta(block: CompatBlock) -> bool:
     """
     btype = block.get("type")
     if btype == "text":
-        return bool(block.get("text"))
+        if not block.get("text"):
+            return None
+        return cast("TextDelta", {"type": "text-delta", "text": block["text"]})
     if btype == "reasoning":
-        return bool(block.get("reasoning"))
-    if btype in {"tool_call_chunk", "server_tool_call_chunk"}:
-        return bool(
-            block.get("args") or block.get("id") or block.get("name"),
+        if not block.get("reasoning"):
+            return None
+        return cast(
+            "ReasoningDelta",
+            {"type": "reasoning-delta", "reasoning": block["reasoning"]},
         )
-    if "data" in block:
-        return bool(block.get("data"))
-    return False
+    if btype in _TOOL_CALL_CHUNK_TYPES:
+        # Only the args: the call's `id`, `name` and `index` went on its
+        # start. `extras`, and an `id` or `name` arriving after the
+        # start, reach consumers on `content-block-finish`.
+        if not block.get("args"):
+            return None
+        return cast("ToolCallDelta", {"type": "tool-call-delta", "args": block["args"]})
+    if block.get("data"):
+        delta = cast("DataDelta", {"type": "data-delta", "data": block["data"]})
+        if block.get("encoding") == "base64":
+            delta["encoding"] = "base64"
+        return delta
+    return None
 
 
 def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
@@ -334,7 +329,7 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
                 state["extras"] = {**(state.get("extras") or {}), **value}
             else:
                 state[key] = value
-    elif btype in {"tool_call_chunk", "server_tool_call_chunk"} and dtype == btype:
+    elif btype in _TOOL_CALL_CHUNK_TYPES and dtype == btype:
         state["args"] = (state.get("args", "") or "") + (delta.get("args") or "")
         if delta.get("id") is not None:
             state["id"] = delta["id"]
@@ -432,7 +427,7 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
     their terminal shape.
     """
     btype = block.get("type")
-    if btype in {"tool_call_chunk", "server_tool_call_chunk"}:
+    if btype in _TOOL_CALL_CHUNK_TYPES:
         # Carry provider-specific fields from the accumulated chunk onto
         # the finalized block. Drop the chunk-only keys we rewrite
         # explicitly. `index` is stripped on client-side
@@ -664,17 +659,12 @@ def chunks_to_events(
             else:
                 wire_idx, existing = blocks[key]
                 blocks[key] = (wire_idx, _accumulate(existing, block))
-            if _should_emit_delta(block):
-                wire_idx, current = blocks[key]
-                is_block_delta = block.get("type") in {
-                    "tool_call_chunk",
-                    "server_tool_call_chunk",
-                }
-                delta_source = current if is_block_delta else block
+            delta = _to_content_delta(block)
+            if delta is not None:
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
                     index=wire_idx,
-                    delta=_to_content_delta(delta_source or block),
+                    delta=delta,
                 )
 
         if msg.usage_metadata:
@@ -744,17 +734,12 @@ async def achunks_to_events(
             else:
                 wire_idx, existing = blocks[key]
                 blocks[key] = (wire_idx, _accumulate(existing, block))
-            if _should_emit_delta(block):
-                wire_idx, current = blocks[key]
-                is_block_delta = block.get("type") in {
-                    "tool_call_chunk",
-                    "server_tool_call_chunk",
-                }
-                delta_source = current if is_block_delta else block
+            delta = _to_content_delta(block)
+            if delta is not None:
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
                     index=wire_idx,
-                    delta=_to_content_delta(delta_source or block),
+                    delta=delta,
                 )
 
         if msg.usage_metadata:
@@ -786,9 +771,10 @@ def message_to_events(
     downstream see a uniform event shape regardless of source.
 
     Text and reasoning blocks emit a single `content-block-delta` with
-    the full accumulated content.  Already-finalized blocks (tool_call,
-    server_tool_call, image, etc.) skip the delta and rely on the
-    `content-block-finish` event alone.
+    the full accumulated content, and tool-call chunk blocks a single
+    `tool-call-delta` with their full args.  Already-finalized blocks
+    (tool_call, server_tool_call, image, etc.) skip the delta and rely
+    on the `content-block-finish` event alone.
 
     Args:
         msg: The finalized message — typically an `AIMessage`.
@@ -806,11 +792,12 @@ def message_to_events(
             index=wire_idx,
             content=_start_skeleton(block),
         )
-        if _should_emit_delta(block):
+        delta = _to_content_delta(block)
+        if delta is not None:
             yield ContentBlockDeltaData(
                 event="content-block-delta",
                 index=wire_idx,
-                delta=_to_content_delta(block),
+                delta=delta,
             )
         yield ContentBlockFinishData(
             event="content-block-finish",

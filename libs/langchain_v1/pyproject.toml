@@ -21,12 +21,12 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.4.6"
+version = "1.4.7"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.6.10,<2.0.0",
+    "langchain-core>=1.6.13,<2.0.0",
     "langgraph>=1.2.12,<1.3.0",
-    "pydantic>=2.7.4,<3.0.0",
+    "pydantic>=2.7.4",
 ]
 
 [project.optional-dependencies]
@@ -48,7 +48,7 @@ deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
 meta = ["langchain-meta"]
-mcp = ["fastmcp>=4.0.11,<5.0.0"]
+mcp = ["fastmcp>=4.0.11"]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"
@@ -78,10 +78,10 @@ test = [
     "fastmcp>=4.0.11,<5.0.0",
 ]
 lint = [
-    "ruff>=0.15.0,<0.17.0",
+    "ruff>=0.15.0,<0.18.0",
 ]
 typing = [
-    "mypy>=2.1.0,<2.2.0",
+    "mypy>=2.1.0,<2.5.0",
     "types-toml>=0.10.8.20240310,<1.0.0.0",
     "fastmcp>=4.0.11,<5.0.0",
 ]
@@ -108,6 +108,7 @@ langchain-anthropic = { path = "../partners/anthropic", editable = true }
 line-length = 100
 
 [tool.mypy]
+exclude = ['^examples/mcp/run_graph_factory_demo\.py$']
 plugins = ["pydantic.mypy"]
 strict = true
 enable_error_code = "deprecated"

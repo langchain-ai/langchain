@@ -1,6 +1,9 @@
 """Tests for SSRF protection utilities."""
 
+import socket
+from collections.abc import Iterator
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 from pydantic import BaseModel, ValidationError
@@ -11,6 +14,32 @@ from langchain_core._security._ssrf_protection import (
     is_safe_url,
     validate_safe_url,
 )
+
+
+@pytest.fixture(autouse=True)
+def mock_dns_resolution() -> Iterator[None]:
+    """Resolve test hostnames without network access."""
+    addresses = {
+        "example.com": "93.184.216.34",
+        "hooks.slack.com": "93.184.216.34",
+        "discord.com": "93.184.216.34",
+        "webhook.site": "93.184.216.34",
+        "abc123.ngrok.io": "93.184.216.34",
+        "localhost": "127.0.0.1",
+        "127.0.0.1": "127.0.0.1",
+    }
+
+    def resolve(
+        host: str, port: int, _family: int, type_: int
+    ) -> list[tuple[int, int, int, str, tuple[str, int]]]:
+        if host not in addresses:
+            raise socket.gaierror(socket.EAI_NONAME, "Name or service not known")
+        return [
+            (socket.AF_INET, type_, socket.IPPROTO_TCP, "", (addresses[host], port))
+        ]
+
+    with patch("socket.getaddrinfo", side_effect=resolve):
+        yield
 
 
 class TestValidateSafeUrl:

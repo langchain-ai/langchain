@@ -3,9 +3,6 @@ type: "Testing & QA"
 title: "Unit Testing and Mocking"
 description: "Guide to writing unit tests: test structure, mocking chat models, fixtures, assertions, and test coverage for agents and components."
 tags: [unit-tests, pytest, testing, fixtures, mocking, chat-models, tools, agents, integration, assertions]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
 sources:
   - id: openwiki-source-8f1875229ad4a704c8e20a06
     resource: repo://libs/core/Makefile
@@ -46,6 +43,9 @@ sources:
   - id: openwiki-source-a6b31954b6df57580d0f3ed0
     resource: repo://libs/standard-tests/langchain_tests/unit_tests/tools.py
 generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-20T08:25:57.412Z
 ---
 
 ## Overview

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:f334dfc1771f49b2d18f3d9d83024853c1863b9c1369e9c27f599de1b4302b40",
+  "claims": [
+    {
+      "id": "claim_836b5443716843a1a8e6bead3f2a7782",
+      "statement": "The /openwiki/reference/prompts.md page is a deprecated redirect marker that consolidates prompt documentation into /openwiki/concepts/prompts.md, which covers BasePromptTemplate architecture, PromptTemplate string formatting, ChatPromptTemplate message sequences, and FewShotPromptTemplate for dynamic example selection.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/prompt.py#L24-L58",
+          "version": "repo-lines-v1:sha256:166d3c87f68b7964051a569716ec55d0609c0ac56ec38088568c847dff78e764:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlZThlMjU0MzM0OGNlNzQwMWI4MjlkMGM1ZTg1ZjVlNjQyZWJjZDJkNTk1MGJjYzA2YjY2Zjc1NzI2NDg3ODciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyYjE4YzEzYzI3MTU5MmQ0MTIzZGIyNjE2Zjc4ZDk0OWU3YzBiZDA1YWQyYjlkZTM1NTlkNTZiM2UyZDUxMzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxMjQ0Y2JiMjc4MTMyZWNlZTRiZWNmY2JhNDI4NmYzMDUzMzMxYWQzY2Q2NjE5ZjBhY2RmNjliMjRlZmMyN2UifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

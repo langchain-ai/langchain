@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:ae838958eb496a2d218a4e62058b653048e781eae74b03bd498bc67b3a16cc56",
+  "claims": [
+    {
+      "id": "claim_ac3810b16ab44ef1a4c0a6204ad6b3fa",
+      "statement": "The create_agent function constructs a compiled LangGraph state machine that serves as the foundational entry point for building LangChain agents, orchestrating conversation flow between a language model, tool execution, and pluggable middleware layers while handling tool binding, structured output, state schema resolution, and middleware composition automatically.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
+          "version": "repo-file-v1:sha256:cc4a7d9a620224558c4eddd4e13edc988a9ac9e328b7a67deeb71ed2c5ec5174"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

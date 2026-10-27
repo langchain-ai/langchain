@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:82f2563a26d1777ee86c5be54e686476f046482b6bd9c288d550776b42a96d70",
+  "claims": [
+    {
+      "id": "claim_ccc4a13ca9a04d69a38517d217d3b314",
+      "statement": "The reference page /openwiki/reference/streaming.md directs readers to the primary streaming documentation at /openwiki/streaming.md, which documents token-by-token output delivery through BaseChatModel.stream() and astream() methods, message chunks, callback integration, and integration with runnables and chains.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py",
+          "version": "repo-file-v1:sha256:7377a3e0d534d6fe9835cb35e39fc2bf7614ae2be26eb5664a0767dfb002cb03"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

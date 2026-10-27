@@ -12,7 +12,9 @@ import random
 import string
 import sys
 import traceback
-from importlib.machinery import SourceFileLoader
+from importlib.machinery import ModuleSpec, SourceFileLoader
+from importlib.util import module_from_spec, spec_from_loader
+from typing import cast
 
 if __name__ == "__main__":
     files = sys.argv[1:]
@@ -23,7 +25,11 @@ if __name__ == "__main__":
                 random.choice(string.ascii_letters)  # noqa: S311
                 for _ in range(20)
             )
-            SourceFileLoader(module_name, file).load_module()
+            loader = SourceFileLoader(module_name, file)
+            spec = cast("ModuleSpec", spec_from_loader(module_name, loader))
+            module = module_from_spec(spec)
+            sys.modules[module_name] = module
+            loader.exec_module(module)
         except Exception:  # noqa: BLE001
             has_failure = True
             print(file)  # noqa: T201
