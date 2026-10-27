@@ -3395,6 +3395,24 @@ def test_usage_metadata_cache_creation_ttl() -> None:
     assert details["cache_read"] == 5
     assert details["cache_creation"] == 10
 
+    # Case 7: cache_creation containing explicit None values (e.g. Bedrock)
+    class UsageWithCacheCreationNulls(BaseModel):
+        input_tokens: int = 200
+        output_tokens: int = 30
+        cache_read_input_tokens: int = 10
+        cache_creation_input_tokens: int = 150
+        cache_creation: dict = {
+            "ephemeral_5m_input_tokens": 100,
+            "ephemeral_1h_input_tokens": None,
+        }
+
+    result = _create_usage_metadata(UsageWithCacheCreationNulls())
+    assert result["input_tokens"] == 200 + 10 + 100
+    details = dict(result.get("input_token_details") or {})
+    assert details["cache_creation"] == 0
+    assert details["ephemeral_5m_input_tokens"] == 100
+    assert details["ephemeral_1h_input_tokens"] is None
+
 
 class FakeTracer(BaseTracer):
     """Fake tracer to capture inputs to `chat_model_start`."""
