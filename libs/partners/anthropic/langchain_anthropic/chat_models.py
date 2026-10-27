@@ -3333,7 +3333,7 @@ def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
         if isinstance(cache_creation, BaseModel):
             cache_creation = cache_creation.model_dump()
         for k in cache_creation_keys:
-            specific_cache_creation_tokens += cache_creation.get(k, 0)
+            specific_cache_creation_tokens += cache_creation.get(k) or 0
             input_token_details[k] = cache_creation.get(k)
         if not isinstance(specific_cache_creation_tokens, int):
             specific_cache_creation_tokens = 0
