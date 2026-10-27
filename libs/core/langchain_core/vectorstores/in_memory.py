@@ -194,7 +194,7 @@ class InMemoryVectorStore(VectorStore):
         texts = [doc.page_content for doc in documents]
         vectors = self.embedding.embed_documents(texts)
 
-        if ids and len(ids) != len(texts):
+        if ids is not None and len(ids) != len(texts):
             msg = (
                 f"ids must be the same length as texts. "
                 f"Got {len(ids)} ids and {len(texts)} texts."
@@ -202,7 +202,7 @@ class InMemoryVectorStore(VectorStore):
             raise ValueError(msg)
 
         id_iterator: Iterator[str | None] = (
-            iter(ids) if ids else iter(doc.id for doc in documents)
+            iter(ids) if ids is not None else iter(doc.id for doc in documents)
         )
 
         ids_ = []
@@ -227,7 +227,7 @@ class InMemoryVectorStore(VectorStore):
         texts = [doc.page_content for doc in documents]
         vectors = await self.embedding.aembed_documents(texts)
 
-        if ids and len(ids) != len(texts):
+        if ids is not None and len(ids) != len(texts):
             msg = (
                 f"ids must be the same length as texts. "
                 f"Got {len(ids)} ids and {len(texts)} texts."
@@ -235,7 +235,7 @@ class InMemoryVectorStore(VectorStore):
             raise ValueError(msg)
 
         id_iterator: Iterator[str | None] = (
-            iter(ids) if ids else iter(doc.id for doc in documents)
+            iter(ids) if ids is not None else iter(doc.id for doc in documents)
         )
         ids_: list[str] = []
 

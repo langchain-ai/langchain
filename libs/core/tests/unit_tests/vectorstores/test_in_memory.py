@@ -62,6 +62,17 @@ async def test_add_by_ids() -> None:
     assert sorted(vectorstore.store.keys()) == ["1", "2", "3", "4", "5", "6"]
 
 
+async def test_empty_ids_must_match_texts() -> None:
+    """Test that explicitly empty IDs are validated for nonempty input."""
+    vectorstore = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=6))
+
+    with pytest.raises(ValueError, match="Got 0 ids and 1 texts"):
+        vectorstore.add_texts(["foo"], ids=[])
+
+    with pytest.raises(ValueError, match="Got 0 ids and 1 texts"):
+        await vectorstore.aadd_texts(["foo"], ids=[])
+
+
 async def test_inmemory_mmr() -> None:
     """Test MMR search."""
     texts = ["foo", "foo", "fou", "foy"]
