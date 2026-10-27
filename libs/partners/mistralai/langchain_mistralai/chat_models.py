@@ -294,6 +294,29 @@ def _raise_on_error(response: httpx.Response) -> None:
         )
 
 
+def _raise_on_stream_error(event: dict[str, Any]) -> None:
+    """Raise when Mistral reports an error inside a successful SSE response."""
+    raw_error = event.get("error")
+    if event.get("object") != "error" and raw_error is None:
+        return
+
+    error = raw_error if isinstance(raw_error, dict) else event
+    error_message = raw_error if isinstance(raw_error, str) else error.get("message")
+    error_message = error_message or "Unknown stream error"
+    details = ", ".join(
+        f"{key}={value}"
+        for key in ("type", "code")
+        if (value := error.get(key)) is not None
+    )
+    msg = f"Mistral AI stream error: {error_message}"
+    if details:
+        msg = f"{msg} ({details})"
+
+    request = httpx.Request("POST", "https://api.mistral.ai/v1/chat/completions")
+    response = httpx.Response(500, request=request, json=event)
+    raise MistralAIAPIError(msg, request=request, response=response)
+
+
 async def _araise_on_error(response: httpx.Response) -> None:
     """Raise an error if the response is an error."""
     if httpx.codes.is_error(response.status_code):
@@ -888,6 +911,7 @@ class ChatMistralAI(BaseChatModel):
         for chunk in self.completion_with_retry(
             messages=message_dicts, run_manager=run_manager, **params
         ):
+            _raise_on_stream_error(chunk)
             if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk, index, index_type = _convert_chunk_to_message_chunk(
@@ -918,6 +942,7 @@ class ChatMistralAI(BaseChatModel):
         async for chunk in await acompletion_with_retry(
             self, messages=message_dicts, run_manager=run_manager, **params
         ):
+            _raise_on_stream_error(chunk)
             if len(chunk.get("choices", [])) == 0:
                 continue
             new_chunk, index, index_type = _convert_chunk_to_message_chunk(

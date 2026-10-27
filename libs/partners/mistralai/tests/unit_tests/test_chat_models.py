@@ -395,6 +395,24 @@ async def mock_chat_astream(*args: Any, **kwargs: Any) -> AsyncGenerator:
     return it()
 
 
+def mock_chat_error_stream(*args: Any, **kwargs: Any) -> Generator:
+    yield _make_completion_response_from_token("partial")
+    yield {
+        "object": "error",
+        "message": "Service unavailable.",
+        "type": "internal_server_error",
+        "code": "1000",
+    }
+
+
+async def mock_chat_error_astream(*args: Any, **kwargs: Any) -> AsyncGenerator:
+    async def it() -> AsyncGenerator:
+        yield _make_completion_response_from_token("partial")
+        yield {"error": {"message": "Overloaded", "type": "server_error"}}
+
+    return it()
+
+
 class MyCustomHandler(BaseCallbackHandler):
     last_token: str = ""
 
@@ -422,6 +440,41 @@ async def test_astream_with_callback() -> None:
     chat = ChatMistralAI(callbacks=[callback])
     async for token in chat.astream("Hello"):
         assert callback.last_token == token.content
+
+
+@patch(
+    "langchain_mistralai.chat_models.ChatMistralAI.completion_with_retry",
+    new=mock_chat_error_stream,
+)
+def test_stream_raises_on_error_event() -> None:
+    chat = ChatMistralAI()
+    stream = chat._stream([HumanMessage(content="Hello")])
+
+    assert next(stream).text == "partial"
+    with pytest.raises(
+        ModelAPIError,
+        match=(
+            r"Mistral AI stream error: Service unavailable\. "
+            r"\(type=internal_server_error, code=1000\)"
+        ),
+    ):
+        next(stream)
+
+
+@patch(
+    "langchain_mistralai.chat_models.acompletion_with_retry",
+    new=mock_chat_error_astream,
+)
+async def test_astream_raises_on_nested_error_event() -> None:
+    chat = ChatMistralAI()
+    stream = chat._astream([HumanMessage(content="Hello")])
+
+    assert (await anext(stream)).text == "partial"
+    with pytest.raises(
+        ModelAPIError,
+        match=r"Mistral AI stream error: Overloaded \(type=server_error\)",
+    ):
+        await anext(stream)
 
 
 def test__convert_dict_to_message_tool_call() -> None:
