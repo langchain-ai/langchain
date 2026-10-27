@@ -51,6 +51,7 @@ _MERMAID_LABEL_ESCAPES = {
     '"': "#quot;",
     "<": "#60;",
     ">": "#62;",
+    "|": "#124;",
 }
 
 
@@ -68,7 +69,8 @@ def _format_metadata_value(value: Any) -> str | None:
     if isinstance(value, (list, tuple, set)) and all(
         isinstance(item, scalar_types) for item in value
     ):
-        return ", ".join(str(item) for item in value)
+        items = [str(item) for item in value]
+        return ", ".join(sorted(items) if isinstance(value, set) else items)
     return None
 
 

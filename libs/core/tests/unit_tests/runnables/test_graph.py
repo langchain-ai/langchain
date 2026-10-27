@@ -730,13 +730,17 @@ def test_graph_mermaid_metadata_labels() -> None:
             id="tools",
             name="tools",
             data=BaseModel,
-            metadata={"__tools": ["search", "lookup"], "__subagents": {"a": "b"}},
+            metadata={
+                "__tools": ["search", "lookup"],
+                "tags": {"b", "c", "a"},
+                "__subagents": {"a": "b"},
+            },
         ),
         "agent": Node(
             id="agent",
             name="agent",
             data=BaseModel,
-            metadata={"note": 'say "hi" [x] (y) {z} <b> #1'},
+            metadata={"note": 'say "hi" [x] (y) {z} <b> #1 str | None'},
         ),
         "sub": Node(
             id="sub",
@@ -755,12 +759,13 @@ def test_graph_mermaid_metadata_labels() -> None:
     mermaid = Graph(nodes, edges).draw_mermaid()
 
     assert (
-        "\ttools(tools<hr/><small><em>__tools = search, lookup</em></small>)\n"
-        in mermaid
+        "\ttools(tools<hr/><small><em>__tools = search, lookup\n"
+        "tags = a, b, c</em></small>)\n" in mermaid
     )
     assert (
         "\tagent(agent<hr/><small><em>note = say #quot;hi#quot; #91;x#93; "
-        "#40;y#41; #123;z#125; #60;b#62; #35;1</em></small>)\n" in mermaid
+        "#40;y#41; #123;z#125; #60;b#62; #35;1 str #124; None</em></small>)\n"
+        in mermaid
     )
     assert "\tsub(sub)\n" in mermaid
     assert "__subagents" not in mermaid
