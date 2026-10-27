@@ -41,6 +41,47 @@ except ImportError:
 
 MARKDOWN_SPECIAL_CHARS = "*_`"
 
+_MERMAID_LABEL_ESCAPES = {
+    "[": "#91;",
+    "]": "#93;",
+    "(": "#40;",
+    ")": "#41;",
+    "{": "#123;",
+    "}": "#125;",
+    '"': "#quot;",
+    "<": "#60;",
+    ">": "#62;",
+    "|": "#124;",
+}
+
+
+def _escape_mermaid_label(text: str) -> str:
+    text = text.replace("#", "#35;")
+    for char, entity in _MERMAID_LABEL_ESCAPES.items():
+        text = text.replace(char, entity)
+    return text
+
+
+def _format_metadata_value(value: Any) -> str | None:
+    scalar_types = (str, int, float, bool)
+    if isinstance(value, scalar_types):
+        return str(value)
+    if isinstance(value, (list, tuple, set)) and all(
+        isinstance(item, scalar_types) for item in value
+    ):
+        items = [str(item) for item in value]
+        return ", ".join(sorted(items) if isinstance(value, set) else items)
+    return None
+
+
+def _format_metadata_lines(metadata: dict[str, Any]) -> list[str]:
+    lines = []
+    for key, value in metadata.items():
+        formatted = _format_metadata_value(value)
+        if formatted is not None:
+            lines.append(_escape_mermaid_label(f"{key} = {formatted}"))
+    return lines
+
 
 def draw_mermaid(
     nodes: dict[str, Node],
@@ -138,11 +179,10 @@ def draw_mermaid(
             and node_name.endswith(tuple(MARKDOWN_SPECIAL_CHARS))
             else node_name
         )
-        if node.metadata:
+        metadata_lines = _format_metadata_lines(node.metadata or {})
+        if metadata_lines:
             label = (
-                f"{label}<hr/><small><em>"
-                + "\n".join(f"{k} = {value}" for k, value in node.metadata.items())
-                + "</em></small>"
+                f"{label}<hr/><small><em>" + "\n".join(metadata_lines) + "</em></small>"
             )
         node_label = format_dict.get(key, format_dict[default_class_label]).format(
             _to_safe_id(key), label
