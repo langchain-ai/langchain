@@ -35,6 +35,20 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": False,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+                "image/png",
+                "image/jpeg",
+                "image/webp",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -63,6 +77,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": False,
         "pdf_inputs": False,
         "pdf_tool_message": False,
@@ -91,6 +113,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": False,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -119,6 +149,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -147,6 +189,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -176,6 +231,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -205,6 +273,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -235,6 +315,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -262,6 +355,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -289,6 +394,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -316,6 +433,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -344,6 +473,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -370,6 +512,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -441,6 +595,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -476,6 +642,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -511,6 +689,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -547,6 +737,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -654,6 +856,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -725,6 +939,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -772,6 +998,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -808,6 +1047,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -844,6 +1096,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -879,6 +1144,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -915,6 +1192,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": True,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -951,6 +1240,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -988,6 +1289,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -1025,6 +1339,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -1062,6 +1389,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -1100,6 +1440,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -1138,6 +1491,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -1176,6 +1542,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -1214,6 +1593,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -1250,6 +1642,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -1288,6 +1693,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -1326,6 +1744,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -1382,6 +1813,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -1408,6 +1852,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -1435,6 +1891,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": False,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/webp",
+            ],
+            "output": [
+                "image/png",
+                "image/jpeg",
+                "image/webp",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -1461,6 +1930,20 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": False,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+                "image/png",
+                "image/jpeg",
+                "image/webp",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -1487,6 +1970,20 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": False,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+                "image/png",
+                "image/jpeg",
+                "image/webp",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -1513,6 +2010,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": False,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/webp",
+            ],
+            "output": [
+                "image/png",
+                "image/jpeg",
+                "image/webp",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -1540,6 +2050,24 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": False,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "audio/pcm",
+                "audio/pcmu",
+                "audio/pcma",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+                "audio/pcm",
+                "audio/pcmu",
+                "audio/pcma",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -1569,6 +2097,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -1596,6 +2137,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -1624,6 +2177,19 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+                "application/pdf",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_tool_message": True,
         "image_tool_message": True,
@@ -1653,6 +2219,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": False,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -1682,6 +2256,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -1712,6 +2298,18 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "structured_output": True,
         "attachment": True,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+                "image/jpeg",
+                "image/png",
+                "image/gif",
+                "image/webp",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -1738,6 +2336,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": False,
         "attachment": False,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -1764,6 +2370,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": False,
         "attachment": False,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
@@ -1790,6 +2404,14 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "tool_calling": False,
         "attachment": False,
         "temperature": False,
+        "modalities": {
+            "input": [
+                "text",
+            ],
+            "output": [
+                "text",
+            ],
+        },
         "image_url_inputs": True,
         "pdf_inputs": True,
         "pdf_tool_message": True,
