@@ -841,7 +841,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 )
                 if revised_tool_call is not None:
                     revised_tool_calls.append(revised_tool_call)
-                    if decision["type"] == "edit" and (edited_id := revised_tool_call.get("id")):
+                    if decision["type"] == "edit" and (
+                        (edited_id := revised_tool_call.get("id")) is not None
+                    ):
                         edited_tool_calls[edited_id] = decision["edited_action"]
                 if tool_message:
                     artificial_tool_messages.append(tool_message)
@@ -876,7 +878,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     def _reviewer_edit(self, request: ToolCallRequest) -> Action | None:
         """The reviewer's replacement for this call, if an `edit` decision replaced it."""
         tool_call_id = request.tool_call.get("id")
-        if not tool_call_id:
+        if tool_call_id is None:
             return None
         edited = request.state.get(_EDITED_TOOL_CALLS_KEY) or {}
         if tool_call_id in edited:

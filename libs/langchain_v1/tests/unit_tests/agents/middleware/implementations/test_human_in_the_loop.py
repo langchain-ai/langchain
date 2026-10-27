@@ -1467,6 +1467,63 @@ def test_human_in_the_loop_middleware_edit_executes_reviewers_call() -> None:
     _assert_tool_messages_are_paired(final["messages"])
 
 
+def test_human_in_the_loop_middleware_edit_executes_reviewers_call_with_empty_tool_call_id() -> None:
+    """The reviewer's edit runs even when the tool call has an empty string id."""
+    executed: list[dict[str, Any]] = []
+
+    @tool
+    def write_file_tool(path: str, content: str) -> str:
+        """Write content to a file."""
+        executed.append({"path": path, "content": content})
+        return f"File written to {path}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                ToolCall(
+                    name="write_file_tool", args={"path": "notes.txt", "content": "mine"}, id=""
+                )
+            ],
+            [],
+        ]
+    )
+    agent = create_agent(
+        model=model,
+        tools=[write_file_tool],
+        middleware=[
+            HumanInTheLoopMiddleware(
+                interrupt_on={"write_file_tool": {"allowed_decisions": ["approve", "edit"]}}
+            )
+        ],
+        checkpointer=InMemorySaver(),
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "executes-reviewer-call-empty-id"}}
+    agent.invoke({"messages": [HumanMessage("write it")]}, config)
+    final = agent.invoke(
+        Command(
+            resume={
+                "decisions": [
+                    {
+                        "type": "edit",
+                        "edited_action": {
+                            "name": "write_file_tool",
+                            "args": {"path": "notes.txt", "content": "reviewers"},
+                        },
+                    }
+                ]
+            }
+        ),
+        config,
+    )
+
+    assert executed == [{"path": "notes.txt", "content": "reviewers"}]
+    ai_message = next(m for m in final["messages"] if isinstance(m, AIMessage) and m.tool_calls)
+    assert ai_message.tool_calls[0]["args"] == {"path": "notes.txt", "content": "mine"}
+    tool_message = next(m for m in final["messages"] if isinstance(m, ToolMessage))
+    assert "reviewers" in tool_message.content
+    _assert_tool_messages_are_paired(final["messages"])
+
+
 def test_human_in_the_loop_middleware_edit_can_redirect_to_another_tool() -> None:
     """A reviewer may redirect the call to a different tool."""
     executed: list[str] = []
