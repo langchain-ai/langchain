@@ -4853,6 +4853,38 @@ def test_effort_parameter_validation() -> None:
         ChatAnthropic(model="claude-opus-4-5-20251101", effort="invalid")  # type: ignore[arg-type]
 
 
+@pytest.mark.parametrize(
+    "model_kwargs",
+    [
+        {},
+        {"output_config": {}},
+        {"effort": "medium"},
+        {"reasoning_effort": "low"},
+        {"output_config": {"effort": "low"}},
+        {"output_config": {"effort": "low"}, "effort": "high"},
+        {
+            "output_config": {"task_budget": {"type": "tokens", "total": 50000}},
+            "reasoning_effort": "high",
+        },
+    ],
+)
+def test_effort_in_identifying_params(model_kwargs: dict[str, Any]) -> None:
+    """Resolved instance defaults flow into tracing without mutating configuration."""
+    model = ChatAnthropic(model=MODEL_NAME, **copy.deepcopy(model_kwargs))
+    original_output_config = copy.deepcopy(model.output_config)
+    expected = model._get_request_payload("Test query").get("output_config")
+
+    assert (model._identifying_params["output_config"] or None) == expected
+    assert (model._get_invocation_params()["output_config"] or None) == expected
+    assert model.output_config == original_output_config
+
+    override = {"effort": "low"}
+    params = model._get_invocation_params(stop=["stop"], output_config=override)
+    assert params["output_config"] == override
+    assert params["stop"] == ["stop"]
+    assert model.output_config == original_output_config
+
+
 def test_effort_in_output_config_payload() -> None:
     """Test that effort parameter is properly added to output_config in payload."""
     model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="medium")

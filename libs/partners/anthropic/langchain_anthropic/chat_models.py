@@ -1647,6 +1647,9 @@ class ChatAnthropic(BaseChatModel):
     @property
     def _identifying_params(self) -> dict[str, Any]:
         """Get the identifying parameters."""
+        output_config = dict(self.output_config or {})
+        if self.reasoning_effort:
+            output_config["effort"] = self.reasoning_effort
         return {
             "model": self.model,
             "max_tokens": self.max_tokens,
@@ -1658,7 +1661,7 @@ class ChatAnthropic(BaseChatModel):
             "max_retries": self.max_retries,
             "default_request_timeout": self.default_request_timeout,
             "thinking": self.thinking,
-            "output_config": self.output_config,
+            "output_config": output_config or self.output_config,
         }
 
     def _get_ls_params(
