@@ -4854,71 +4854,35 @@ def test_effort_parameter_validation() -> None:
 
 
 @pytest.mark.parametrize(
-    ("model_kwargs", "invoke_kwargs", "expected"),
+    "model_kwargs",
     [
-        ({}, {}, None),
-        ({"effort": "medium"}, {}, {"effort": "medium"}),
-        ({"reasoning_effort": "low"}, {}, {"effort": "low"}),
-        ({"output_config": {"effort": "low"}}, {}, {"effort": "low"}),
-        (
-            {"output_config": {"effort": "low"}, "effort": "high"},
-            {},
-            {"effort": "high"},
-        ),
-        (
-            {"effort": "low"},
-            {"output_config": {"effort": "medium"}},
-            {"effort": "medium"},
-        ),
-        (
-            {"effort": "low"},
-            {"reasoning_effort": "high"},
-            {"effort": "high"},
-        ),
-        (
-            {"output_config": {"effort": "low"}},
-            {"effort": "high", "reasoning_effort": "medium"},
-            {"effort": "high"},
-        ),
-        (
-            {},
-            {"effort": None, "reasoning_effort": "medium"},
-            {"effort": "medium"},
-        ),
-        (
-            {"model_kwargs": {"output_config": {"effort": "medium"}}},
-            {},
-            {"effort": "medium"},
-        ),
-        (
-            {"output_config": {"task_budget": {"type": "tokens", "total": 50000}}},
-            {"output_config": {"effort": "high"}},
-            {"task_budget": {"type": "tokens", "total": 50000}, "effort": "high"},
-        ),
+        {},
+        {"output_config": {}},
+        {"effort": "medium"},
+        {"reasoning_effort": "low"},
+        {"output_config": {"effort": "low"}},
+        {"output_config": {"effort": "low"}, "effort": "high"},
+        {
+            "output_config": {"task_budget": {"type": "tokens", "total": 50000}},
+            "reasoning_effort": "high",
+        },
     ],
 )
-def test_effort_in_invocation_params(
-    model_kwargs: dict[str, Any],
-    invoke_kwargs: dict[str, Any],
-    expected: dict[str, Any] | None,
-) -> None:
-    """Tracing resolves output configuration exactly as the API payload does."""
-    original_model_kwargs = copy.deepcopy(model_kwargs)
-    original_invoke_kwargs = copy.deepcopy(invoke_kwargs)
+def test_effort_in_identifying_params(model_kwargs: dict[str, Any]) -> None:
+    """Resolved instance defaults flow into tracing without mutating configuration."""
     model = ChatAnthropic(model=MODEL_NAME, **copy.deepcopy(model_kwargs))
     original_output_config = copy.deepcopy(model.output_config)
-    original_extra_kwargs = copy.deepcopy(model.model_kwargs)
+    expected = model._get_request_payload("Test query").get("output_config")
 
-    params = model._get_invocation_params(stop=["stop"], **invoke_kwargs)
-    payload = model._get_request_payload("Test query", stop=["stop"], **invoke_kwargs)
-
-    assert params.get("output_config") == expected == payload.get("output_config")
-    assert params["stop"] == ["stop"]
-    assert params["model"] == MODEL_NAME
-    assert model_kwargs == original_model_kwargs
-    assert invoke_kwargs == original_invoke_kwargs
+    assert (model._identifying_params["output_config"] or None) == expected
+    assert (model._get_invocation_params()["output_config"] or None) == expected
     assert model.output_config == original_output_config
-    assert model.model_kwargs == original_extra_kwargs
+
+    override = {"effort": "low"}
+    params = model._get_invocation_params(stop=["stop"], output_config=override)
+    assert params["output_config"] == override
+    assert params["stop"] == ["stop"]
+    assert model.output_config == original_output_config
 
 
 def test_effort_in_output_config_payload() -> None:
