@@ -4830,6 +4830,89 @@ async def test_model_profile_not_blocking() -> None:
         _ = model.profile
 
 
+@pytest.mark.parametrize("model_name", ["claude-opus-4-7", "claude-opus-4-5-20251101"])
+@pytest.mark.parametrize(
+    ("init_kwargs", "call_kwargs", "expected_config", "adaptive"),
+    [
+        ({}, {}, None, False),
+        ({"effort": "low"}, {}, {"effort": "low"}, True),
+        ({"reasoning_effort": "low"}, {}, {"effort": "low"}, True),
+        (
+            {"effort": "high", "output_config": {"effort": "low"}},
+            {},
+            {"effort": "high"},
+            True,
+        ),
+        (
+            {"effort": "low", "thinking": {"type": "disabled"}},
+            {"thinking": {"type": "adaptive"}},
+            {"effort": "low"},
+            False,
+        ),
+        ({}, {"effort": "low"}, {"effort": "low"}, True),
+        ({}, {"reasoning_effort": "low"}, {"effort": "low"}, True),
+        (
+            {"effort": "high", "output_config": {"effort": "medium"}},
+            {"effort": "low", "reasoning_effort": "high"},
+            {"effort": "low"},
+            True,
+        ),
+        ({"output_config": {"effort": "low"}}, {}, {"effort": "low"}, False),
+        ({}, {"output_config": {"effort": "low"}}, {"effort": "low"}, False),
+        (
+            {"effort": "high", "output_config": {"other": "value"}},
+            {"output_config": {"effort": "low"}},
+            {"other": "value", "effort": "low"},
+            True,
+        ),
+        (
+            {"effort": "low", "thinking": {"type": "disabled"}},
+            {},
+            {"effort": "low"},
+            False,
+        ),
+        (
+            {"effort": "low"},
+            {"thinking": {"type": "disabled"}},
+            {"effort": "low"},
+            False,
+        ),
+    ],
+)
+def test_effort_tracing_params(
+    model_name: str,
+    init_kwargs: dict[str, Any],
+    call_kwargs: dict[str, Any],
+    expected_config: dict[str, Any] | None,
+    *,
+    adaptive: bool,
+) -> None:
+    original_init = copy.deepcopy(init_kwargs)
+    original_call = copy.deepcopy(call_kwargs)
+    model = ChatAnthropic(model=model_name, **init_kwargs)
+    params = model._get_invocation_params(stop=["stop"], **call_kwargs)
+    expected_thinking = (
+        {"type": "adaptive", "display": "summarized"}
+        if adaptive and model_name == "claude-opus-4-7"
+        else init_kwargs.get("thinking", call_kwargs.get("thinking"))
+    )
+    assert params["output_config"] == expected_config
+    assert params["thinking"] == expected_thinking
+    assert params["stop"] == ["stop"]
+    assert "effort" not in params
+    assert "reasoning_effort" not in params
+    if not call_kwargs:
+        assert model._identifying_params["output_config"] == expected_config
+        assert model._identifying_params["thinking"] == expected_thinking
+    payload = model._get_request_payload("Test query", **call_kwargs)
+    assert params["output_config"] == payload.get("output_config")
+    assert params["thinking"] == payload.get("thinking")
+    assert init_kwargs == original_init
+    assert call_kwargs == original_call
+    assert model.output_config == init_kwargs.get("output_config")
+    assert model.thinking == init_kwargs.get("thinking")
+
+
 def test_effort_parameter_validation() -> None:
     """Test that effort parameter is validated correctly.
 

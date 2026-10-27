@@ -1647,6 +1647,8 @@ class ChatAnthropic(BaseChatModel):
     @property
     def _identifying_params(self) -> dict[str, Any]:
         """Get the identifying parameters."""
+        params = dict(self.model_kwargs)
+        self._resolve_thinking_and_output_config(params)
         return {
             "model": self.model,
             "max_tokens": self.max_tokens,
@@ -1657,9 +1659,72 @@ class ChatAnthropic(BaseChatModel):
             "streaming": self.streaming,
             "max_retries": self.max_retries,
             "default_request_timeout": self.default_request_timeout,
-            "thinking": self.thinking,
-            "output_config": self.output_config,
+            "thinking": params.get("thinking"),
+            "output_config": params.get("output_config"),
         }
+
+    def _resolve_thinking_and_output_config(self, payload: dict[str, Any]) -> None:
+        """Resolve shared request and tracing parameters in place."""
+        # Captured before `self.thinking` is applied below, so a call-time
+        # `thinking` kwarg counts as "explicitly set" too.
+        thinking_explicitly_set = "thinking" in payload or self.thinking is not None
+        if self.thinking is not None:
+            payload["thinking"] = self.thinking
+        # Handle output_config and effort parameter
+        # Priority: kwarg `effort`/`reasoning_effort` > kwarg `output_config`
+        # > self.reasoning_effort > self.output_config
+        output_config: dict[str, Any] = {}
+        if self.output_config:
+            output_config.update(self.output_config)
+        reasoning_effort_applied = False
+        if self.reasoning_effort:
+            output_config["effort"] = self.reasoning_effort
+            reasoning_effort_applied = True
+        payload_oc = payload.get("output_config")
+        if isinstance(payload_oc, dict):
+            output_config.update(payload_oc)
+
+        # Neither `reasoning_effort` nor its `effort` alias are Anthropic API
+        # fields. Pop them so they never leak through as top-level keys.
+        effort_kwarg = payload.pop("effort", None)
+        reasoning_effort_kwarg = payload.pop("reasoning_effort", None)
+        # `effort` wins if both are set at call time, matching the
+        # construction-time alias-resolution precedence (`Field(alias="effort")`).
+        reasoning_effort_override = (
+            effort_kwarg if effort_kwarg is not None else reasoning_effort_kwarg
+        )
+        if reasoning_effort_override:
+            output_config["effort"] = reasoning_effort_override
+            reasoning_effort_applied = True
+
+        if output_config:
+            payload["output_config"] = output_config
+
+        # Default adaptive thinking when `reasoning_effort` is set, unless the
+        # caller explicitly provided `thinking`. Gated on `xhigh` support: only
+        # Opus 4.7+/Sonnet 5 accept the adaptive+summarized `thinking` shape —
+        # sending it to an older model (e.g. Opus 4.5, 4.6) is rejected by the
+        # API with "adaptive thinking is not supported on this model".
+        if (
+            reasoning_effort_applied
+            and not thinking_explicitly_set
+            and "xhigh" in _reasoning_effort_levels(self.profile)
+        ):
+            payload["thinking"] = {"type": "adaptive", "display": "summarized"}
+
+    def _get_invocation_params(
+        self,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        params = super()._get_invocation_params(stop=stop, **kwargs)
+        resolved = {**self.model_kwargs, **kwargs}
+        self._resolve_thinking_and_output_config(resolved)
+        params["thinking"] = resolved.get("thinking")
+        params["output_config"] = resolved.get("output_config")
+        params.pop("effort", None)
+        params.pop("reasoning_effort", None)
+        return params
 
     def _get_ls_params(
         self,
@@ -1952,11 +2017,6 @@ class ChatAnthropic(BaseChatModel):
             **self.model_kwargs,
             **kwargs,
         }
-        # Captured before `self.thinking` is applied below, so a call-time
-        # `thinking` kwarg counts as "explicitly set" too.
-        thinking_explicitly_set = "thinking" in payload or self.thinking is not None
-        if self.thinking is not None:
-            payload["thinking"] = self.thinking
         if self.inference_geo is not None:
             payload["inference_geo"] = self.inference_geo
         if self.model.startswith("claude-fable-5"):
@@ -1964,47 +2024,7 @@ class ChatAnthropic(BaseChatModel):
             payload.pop("top_k", None)
             payload.pop("top_p", None)
 
-        # Handle output_config and effort parameter
-        # Priority: kwarg `effort`/`reasoning_effort` > kwarg `output_config`
-        # > self.reasoning_effort > self.output_config
-        output_config: dict[str, Any] = {}
-        if self.output_config:
-            output_config.update(self.output_config)
-        reasoning_effort_applied = False
-        if self.reasoning_effort:
-            output_config["effort"] = self.reasoning_effort
-            reasoning_effort_applied = True
-        payload_oc = payload.get("output_config")
-        if isinstance(payload_oc, dict):
-            output_config.update(payload_oc)
-
-        # Neither `reasoning_effort` nor its `effort` alias are Anthropic API
-        # fields. Pop them so they never leak through as top-level keys.
-        effort_kwarg = payload.pop("effort", None)
-        reasoning_effort_kwarg = payload.pop("reasoning_effort", None)
-        # `effort` wins if both are set at call time, matching the
-        # construction-time alias-resolution precedence (`Field(alias="effort")`).
-        reasoning_effort_override = (
-            effort_kwarg if effort_kwarg is not None else reasoning_effort_kwarg
-        )
-        if reasoning_effort_override:
-            output_config["effort"] = reasoning_effort_override
-            reasoning_effort_applied = True
-
-        if output_config:
-            payload["output_config"] = output_config
-
-        # Default adaptive thinking when `reasoning_effort` is set, unless the
-        # caller explicitly provided `thinking`. Gated on `xhigh` support: only
-        # Opus 4.7+/Sonnet 5 accept the adaptive+summarized `thinking` shape —
-        # sending it to an older model (e.g. Opus 4.5, 4.6) is rejected by the
-        # API with "adaptive thinking is not supported on this model".
-        if (
-            reasoning_effort_applied
-            and not thinking_explicitly_set
-            and "xhigh" in _reasoning_effort_levels(self.profile)
-        ):
-            payload["thinking"] = {"type": "adaptive", "display": "summarized"}
+        self._resolve_thinking_and_output_config(payload)
 
         if "response_format" in payload:
             # response_format present when using agents.create_agent's ProviderStrategy
