@@ -4853,6 +4853,74 @@ def test_effort_parameter_validation() -> None:
         ChatAnthropic(model="claude-opus-4-5-20251101", effort="invalid")  # type: ignore[arg-type]
 
 
+@pytest.mark.parametrize(
+    ("model_kwargs", "invoke_kwargs", "expected"),
+    [
+        ({}, {}, None),
+        ({"effort": "medium"}, {}, {"effort": "medium"}),
+        ({"reasoning_effort": "low"}, {}, {"effort": "low"}),
+        ({"output_config": {"effort": "low"}}, {}, {"effort": "low"}),
+        (
+            {"output_config": {"effort": "low"}, "effort": "high"},
+            {},
+            {"effort": "high"},
+        ),
+        (
+            {"effort": "low"},
+            {"output_config": {"effort": "medium"}},
+            {"effort": "medium"},
+        ),
+        (
+            {"effort": "low"},
+            {"reasoning_effort": "high"},
+            {"effort": "high"},
+        ),
+        (
+            {"output_config": {"effort": "low"}},
+            {"effort": "high", "reasoning_effort": "medium"},
+            {"effort": "high"},
+        ),
+        (
+            {},
+            {"effort": None, "reasoning_effort": "medium"},
+            {"effort": "medium"},
+        ),
+        (
+            {"model_kwargs": {"output_config": {"effort": "medium"}}},
+            {},
+            {"effort": "medium"},
+        ),
+        (
+            {"output_config": {"task_budget": {"type": "tokens", "total": 50000}}},
+            {"output_config": {"effort": "high"}},
+            {"task_budget": {"type": "tokens", "total": 50000}, "effort": "high"},
+        ),
+    ],
+)
+def test_effort_in_invocation_params(
+    model_kwargs: dict[str, Any],
+    invoke_kwargs: dict[str, Any],
+    expected: dict[str, Any] | None,
+) -> None:
+    """Tracing resolves output configuration exactly as the API payload does."""
+    original_model_kwargs = copy.deepcopy(model_kwargs)
+    original_invoke_kwargs = copy.deepcopy(invoke_kwargs)
+    model = ChatAnthropic(model=MODEL_NAME, **copy.deepcopy(model_kwargs))
+    original_output_config = copy.deepcopy(model.output_config)
+    original_extra_kwargs = copy.deepcopy(model.model_kwargs)
+
+    params = model._get_invocation_params(stop=["stop"], **invoke_kwargs)
+    payload = model._get_request_payload("Test query", stop=["stop"], **invoke_kwargs)
+
+    assert params.get("output_config") == expected == payload.get("output_config")
+    assert params["stop"] == ["stop"]
+    assert params["model"] == MODEL_NAME
+    assert model_kwargs == original_model_kwargs
+    assert invoke_kwargs == original_invoke_kwargs
+    assert model.output_config == original_output_config
+    assert model.model_kwargs == original_extra_kwargs
+
+
 def test_effort_in_output_config_payload() -> None:
     """Test that effort parameter is properly added to output_config in payload."""
     model = ChatAnthropic(model="claude-opus-4-5-20251101", effort="medium")

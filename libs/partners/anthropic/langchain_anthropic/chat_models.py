@@ -1661,6 +1661,29 @@ class ChatAnthropic(BaseChatModel):
             "output_config": self.output_config,
         }
 
+    def _get_invocation_params(
+        self,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Record resolved output configuration in tracing parameters."""
+        params = super()._get_invocation_params(stop=stop, **kwargs)
+        request_config = {**self.model_kwargs, **kwargs}
+        output_config = dict(self.output_config or {})
+        if self.reasoning_effort:
+            output_config["effort"] = self.reasoning_effort
+        request_output_config = request_config.get("output_config")
+        if isinstance(request_output_config, dict):
+            output_config.update(request_output_config)
+        effort = request_config.get("effort")
+        if effort is None:
+            effort = request_config.get("reasoning_effort")
+        if effort:
+            output_config["effort"] = effort
+        if output_config:
+            params["output_config"] = output_config
+        return params
+
     def _get_ls_params(
         self,
         stop: list[str] | None = None,
