@@ -49,7 +49,6 @@ from langchain_core.load.serializable import (
     SerializedConstructor,
     SerializedNotImplemented,
 )
-from langchain_core.messages import AIMessageChunk
 from langchain_core.runnables.config import (
     RunnableConfig,
     acall_func_with_variable_args,
@@ -130,57 +129,6 @@ if TYPE_CHECKING:
 Other = TypeVar("Other")
 
 _RUNNABLE_GENERIC_NUM_ARGS = 2  # Input and Output
-
-
-class _ChunkAccumulator:
-    """Adds up streamed chunks with `+`, as if one at a time.
-
-    Leading `AIMessageChunk`s are kept until the value is read, then merged in one
-    addition: every `AIMessageChunk` addition re-parses the tool call arguments
-    received so far, so adding them one at a time is quadratic in a tool call's
-    length. If that addition raises, they are added one at a time after all.
-
-    A chunk that can't be added replaces the value. After that, with
-    `stop_after_unaddable`, every later chunk replaces it too.
-    """
-
-    def __init__(self, *, stop_after_unaddable: bool) -> None:
-        self._value: Any = None
-        self._addable = True
-        self._stop_after_unaddable = stop_after_unaddable
-        self._message_chunks: list[AIMessageChunk] = []
-
-    @property
-    def value(self) -> Any:
-        self._flush()
-        return self._value
-
-    def add(self, chunk: Any) -> None:
-        if self._value is None and self._addable and isinstance(chunk, AIMessageChunk):
-            self._message_chunks.append(chunk)
-        else:
-            self._flush()
-            self._add(chunk)
-
-    def _flush(self) -> None:
-        if not self._message_chunks:
-            return
-        chunks, self._message_chunks = self._message_chunks, []
-        try:
-            self._value = chunks[0] + chunks[1:] if len(chunks) > 1 else chunks[0]
-        except TypeError:
-            for chunk in chunks:
-                self._add(chunk)
-
-    def _add(self, chunk: Any) -> None:
-        if self._value is None or not self._addable:
-            self._value = chunk
-            return
-        try:
-            self._value = self._value + chunk
-        except TypeError:
-            self._value = chunk
-            self._addable = not self._stop_after_unaddable
 
 
 class Runnable(ABC, Generic[Input, Output]):
@@ -1832,7 +1780,7 @@ class Runnable(ABC, Generic[Input, Output]):
             The output of the `Runnable`.
 
         """
-        accumulated = _ChunkAccumulator(stop_after_unaddable=False)
+        final: Input
         got_first_val = False
 
         for ichunk in input:
@@ -1843,11 +1791,17 @@ class Runnable(ABC, Generic[Input, Output]):
             # If the input is not addable, then we'll assume that we can
             # only operate on the last chunk,
             # and we'll iterate until we get to the last chunk.
-            accumulated.add(ichunk)
-            got_first_val = True
+            if not got_first_val:
+                final = ichunk
+                got_first_val = True
+            else:
+                try:
+                    final = final + ichunk  # type: ignore[operator]
+                except TypeError:
+                    final = ichunk
 
         if got_first_val:
-            yield from self.stream(accumulated.value, config, **kwargs)
+            yield from self.stream(final, config, **kwargs)
 
     async def atransform(
         self,
@@ -1871,7 +1825,7 @@ class Runnable(ABC, Generic[Input, Output]):
             The output of the `Runnable`.
 
         """
-        accumulated = _ChunkAccumulator(stop_after_unaddable=False)
+        final: Input
         got_first_val = False
 
         async for ichunk in input:
@@ -1882,11 +1836,17 @@ class Runnable(ABC, Generic[Input, Output]):
             # If the input is not addable, then we'll assume that we can
             # only operate on the last chunk,
             # and we'll iterate until we get to the last chunk.
-            accumulated.add(ichunk)
-            got_first_val = True
+            if not got_first_val:
+                final = ichunk
+                got_first_val = True
+            else:
+                try:
+                    final = final + ichunk  # type: ignore[operator]
+                except TypeError:
+                    final = ichunk
 
         if got_first_val:
-            async for output in self.astream(accumulated.value, config, **kwargs):
+            async for output in self.astream(final, config, **kwargs):
                 yield output
 
     def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
@@ -2570,9 +2530,10 @@ class Runnable(ABC, Generic[Input, Output]):
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = tee(inputs, 2)
         # Start the input iterator to ensure the input Runnable starts before this one
-        final_input = _ChunkAccumulator(stop_after_unaddable=True)
-        final_input.add(next(input_for_tracing, None))
-        final_output = _ChunkAccumulator(stop_after_unaddable=True)
+        final_input: Input | None = next(input_for_tracing, None)
+        final_input_supported = True
+        final_output: Output | None = None
+        final_output_supported = True
 
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
@@ -2609,20 +2570,36 @@ class Runnable(ABC, Generic[Input, Output]):
                     while True:
                         chunk: Output = context.run(next, iterator)
                         yield chunk
-                        final_output.add(chunk)
+                        if final_output_supported:
+                            if final_output is None:
+                                final_output = chunk
+                            else:
+                                try:
+                                    final_output = final_output + chunk  # type: ignore[operator]
+                                except TypeError:
+                                    final_output = chunk
+                                    final_output_supported = False
+                        else:
+                            final_output = chunk
                 except (StopIteration, GeneratorExit):
                     pass
                 for ichunk in input_for_tracing:
-                    final_input.add(ichunk)
-                # Reading a value merges its chunks, which can raise; read them here
-                # so the run still ends, inputs first so the error path has them.
-                merged_input = final_input.value
-                merged_output = final_output.value
+                    if final_input_supported:
+                        if final_input is None:
+                            final_input = ichunk
+                        else:
+                            try:
+                                final_input = final_input + ichunk  # type: ignore[operator]
+                            except TypeError:
+                                final_input = ichunk
+                                final_input_supported = False
+                    else:
+                        final_input = ichunk
         except BaseException as e:
-            run_manager.on_chain_error(e, inputs=final_input.value)
+            run_manager.on_chain_error(e, inputs=final_input)
             raise
         else:
-            run_manager.on_chain_end(merged_output, inputs=merged_input)
+            run_manager.on_chain_end(final_output, inputs=final_input)
 
     async def _atransform_stream_with_config(
         self,
@@ -2654,9 +2631,10 @@ class Runnable(ABC, Generic[Input, Output]):
         # tee the input so we can iterate over it twice
         input_for_tracing, input_for_transform = atee(inputs, 2)
         # Start the input iterator to ensure the input Runnable starts before this one
-        final_input = _ChunkAccumulator(stop_after_unaddable=True)
-        final_input.add(await anext(input_for_tracing, None))
-        final_output = _ChunkAccumulator(stop_after_unaddable=True)
+        final_input: Input | None = await anext(input_for_tracing, None)
+        final_input_supported = True
+        final_output: Output | None = None
+        final_output_supported = True
 
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
@@ -2696,18 +2674,36 @@ class Runnable(ABC, Generic[Input, Output]):
                     while True:
                         chunk = await coro_with_context(anext(iterator), context)
                         yield chunk
-                        final_output.add(chunk)
+                        if final_output_supported:
+                            if final_output is None:
+                                final_output = chunk
+                            else:
+                                try:
+                                    final_output = final_output + chunk
+                                except TypeError:
+                                    final_output = chunk
+                                    final_output_supported = False
+                        else:
+                            final_output = chunk
                 except StopAsyncIteration:
                     pass
                 async for ichunk in input_for_tracing:
-                    final_input.add(ichunk)
-                merged_input = final_input.value
-                merged_output = final_output.value
+                    if final_input_supported:
+                        if final_input is None:
+                            final_input = ichunk
+                        else:
+                            try:
+                                final_input = final_input + ichunk  # type: ignore[operator]
+                            except TypeError:
+                                final_input = ichunk
+                                final_input_supported = False
+                    else:
+                        final_input = ichunk
         except BaseException as e:
-            await run_manager.on_chain_error(e, inputs=final_input.value)
+            await run_manager.on_chain_error(e, inputs=final_input)
             raise
         else:
-            await run_manager.on_chain_end(merged_output, inputs=merged_input)
+            await run_manager.on_chain_end(final_output, inputs=final_input)
         finally:
             if iterator_ is not None and hasattr(iterator_, "aclose"):
                 await iterator_.aclose()
@@ -5169,7 +5165,7 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Any,
     ) -> Output:
         if inspect.isgeneratorfunction(self.func):
-            accumulated = _ChunkAccumulator(stop_after_unaddable=False)
+            output: Output | None = None
             for chunk in call_func_with_variable_args(
                 cast("Callable[[Input], Iterator[Output]]", self.func),
                 input_,
@@ -5177,8 +5173,13 @@ class RunnableLambda(Runnable[Input, Output]):
                 run_manager,
                 **kwargs,
             ):
-                accumulated.add(chunk)
-            output: Output | None = accumulated.value
+                if output is None:
+                    output = chunk
+                else:
+                    try:
+                        output = output + chunk  # type: ignore[operator]
+                    except TypeError:
+                        output = chunk
         else:
             output = call_func_with_variable_args(
                 self.func, input_, config, run_manager, **kwargs
@@ -5219,7 +5220,7 @@ class RunnableLambda(Runnable[Input, Output]):
                     config: RunnableConfig,
                     **kwargs: Any,
                 ) -> Output:
-                    accumulated = _ChunkAccumulator(stop_after_unaddable=False)
+                    output: Output | None = None
                     for chunk in call_func_with_variable_args(
                         cast("Callable[[Input], Iterator[Output]]", self.func),
                         value,
@@ -5227,8 +5228,14 @@ class RunnableLambda(Runnable[Input, Output]):
                         run_manager.get_sync(),
                         **kwargs,
                     ):
-                        accumulated.add(chunk)
-                    return cast("Output", accumulated.value)
+                        if output is None:
+                            output = chunk
+                        else:
+                            try:
+                                output = output + chunk  # type: ignore[operator]
+                            except TypeError:
+                                output = chunk
+                    return cast("Output", output)
 
             else:
 
@@ -5249,7 +5256,7 @@ class RunnableLambda(Runnable[Input, Output]):
             afunc = f
 
         if is_async_generator(afunc):
-            accumulated = _ChunkAccumulator(stop_after_unaddable=False)
+            output: Output | None = None
             async with aclosing(
                 cast(
                     "AsyncGenerator[Any, Any]",
@@ -5266,8 +5273,13 @@ class RunnableLambda(Runnable[Input, Output]):
                     "AsyncIterator[Output]",
                     stream,
                 ):
-                    accumulated.add(chunk)
-            output: Output | None = accumulated.value
+                    if output is None:
+                        output = chunk
+                    else:
+                        try:
+                            output = output + chunk  # type: ignore[operator]
+                        except TypeError:
+                            output = chunk
         else:
             output = await acall_func_with_variable_args(
                 cast("Callable[..., Any]", afunc), value, config, run_manager, **kwargs
@@ -5354,26 +5366,34 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Any,
     ) -> Iterator[Output]:
         final: Input
-        accumulated_input = _ChunkAccumulator(stop_after_unaddable=False)
         got_first_val = False
         for ichunk in chunks:
             # By definitions, RunnableLambdas consume all input before emitting output.
             # If the input is not addable, then we'll assume that we can
             # only operate on the last chunk.
             # So we'll iterate until we get to the last chunk!
-            accumulated_input.add(ichunk)
-            got_first_val = True
-        if got_first_val:
-            final = accumulated_input.value
+            if not got_first_val:
+                final = ichunk
+                got_first_val = True
+            else:
+                try:
+                    final = final + ichunk  # type: ignore[operator]
+                except TypeError:
+                    final = ichunk
 
         if inspect.isgeneratorfunction(self.func):
-            accumulated_output = _ChunkAccumulator(stop_after_unaddable=False)
+            output: Output | None = None
             for chunk in call_func_with_variable_args(
                 self.func, final, config, run_manager, **kwargs
             ):
                 yield chunk
-                accumulated_output.add(chunk)
-            output: Output | None = accumulated_output.value
+                if output is None:
+                    output = chunk
+                else:
+                    try:
+                        output = output + chunk
+                    except TypeError:
+                        output = chunk
         else:
             output = call_func_with_variable_args(
                 self.func, final, config, run_manager, **kwargs
@@ -5438,17 +5458,20 @@ class RunnableLambda(Runnable[Input, Output]):
         **kwargs: Any,
     ) -> AsyncIterator[Output]:
         final: Input
-        accumulated_input = _ChunkAccumulator(stop_after_unaddable=False)
         got_first_val = False
         async for ichunk in chunks:
             # By definitions, RunnableLambdas consume all input before emitting output.
             # If the input is not addable, then we'll assume that we can
             # only operate on the last chunk.
             # So we'll iterate until we get to the last chunk!
-            accumulated_input.add(ichunk)
-            got_first_val = True
-        if got_first_val:
-            final = accumulated_input.value
+            if not got_first_val:
+                final = ichunk
+                got_first_val = True
+            else:
+                try:
+                    final = final + ichunk  # type: ignore[operator]
+                except TypeError:
+                    final = ichunk
 
         if hasattr(self, "afunc"):
             afunc = self.afunc
@@ -5477,7 +5500,7 @@ class RunnableLambda(Runnable[Input, Output]):
             afunc = f
 
         if is_async_generator(afunc):
-            accumulated_output = _ChunkAccumulator(stop_after_unaddable=False)
+            output: Output | None = None
             async for chunk in cast(
                 "AsyncIterator[Output]",
                 acall_func_with_variable_args(
@@ -5489,8 +5512,13 @@ class RunnableLambda(Runnable[Input, Output]):
                 ),
             ):
                 yield chunk
-                accumulated_output.add(chunk)
-            output: Output | None = accumulated_output.value
+                if output is None:
+                    output = chunk
+                else:
+                    try:
+                        output = output + chunk  # type: ignore[operator]
+                    except TypeError:
+                        output = chunk
         else:
             output = await acall_func_with_variable_args(
                 cast("Callable[..., Any]", afunc),
