@@ -815,7 +815,12 @@ class ChildTool(BaseTool):
 
         if input_args is not None:
             if isinstance(input_args, dict):
-                return tool_input
+                # A JSON-schema args_schema only describes the arguments the model
+                # may supply; injected args still have to be filled in by the
+                # runtime, exactly as they are for a Pydantic args_schema.
+                return self._inject_injected_args(
+                    dict(tool_input), tool_input, tool_call_id
+                )
             result: BaseModel | BaseModelV1
             if issubclass(input_args, BaseModel):
                 # Check args_schema for InjectedToolCallId
@@ -886,24 +891,34 @@ class ChildTool(BaseTool):
                     if has_default:
                         validated_input[k] = getattr(result, k)
 
-            for k in self._injected_args_keys:
-                if k in tool_input:
-                    validated_input[k] = tool_input[k]
-                elif k == "tool_call_id":
-                    if tool_call_id is None:
-                        msg = (
-                            "When tool includes an InjectedToolCallId "
-                            "argument, tool must always be invoked with a full "
-                            "model ToolCall of the form: {'args': {...}, "
-                            "'name': '...', 'type': 'tool_call', "
-                            "'tool_call_id': '...'}"
-                        )
-                        raise ValueError(msg)
-                    validated_input[k] = tool_call_id
-
-            return validated_input
+            return self._inject_injected_args(
+                validated_input, tool_input, tool_call_id
+            )
 
         return tool_input
+
+    def _inject_injected_args(
+        self,
+        parsed_input: dict[str, Any],
+        tool_input: dict[str, Any],
+        tool_call_id: str | None,
+    ) -> dict[str, Any]:
+        """Add the arguments the runtime supplies instead of the model."""
+        for k in self._injected_args_keys:
+            if k in tool_input:
+                parsed_input[k] = tool_input[k]
+            elif k == "tool_call_id":
+                if tool_call_id is None:
+                    msg = (
+                        "When tool includes an InjectedToolCallId "
+                        "argument, tool must always be invoked with a full "
+                        "model ToolCall of the form: {'args': {...}, "
+                        "'name': '...', 'type': 'tool_call', "
+                        "'tool_call_id': '...'}"
+                    )
+                    raise ValueError(msg)
+                parsed_input[k] = tool_call_id
+        return parsed_input
 
     @abstractmethod
     def _run(self, *args: Any, **kwargs: Any) -> Any:

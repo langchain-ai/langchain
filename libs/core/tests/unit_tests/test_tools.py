@@ -2861,6 +2861,52 @@ def test_tool_injected_tool_call_id_with_custom_schema() -> None:
     ):
         injected_tool.invoke({"x": 42})
 
+
+def test_tool_injected_tool_call_id_with_dict_args_schema() -> None:
+    """Ensure InjectedToolCallId works when args_schema is a JSON schema dict."""
+    json_schema = {
+        "type": "object",
+        "properties": {"x": {"type": "integer"}},
+        "required": ["x"],
+    }
+
+    @tool(args_schema=json_schema)
+    def injected_tool(
+        x: int, tool_call_id: Annotated[str, InjectedToolCallId]
+    ) -> ToolMessage:
+        """Tool with injected tool_call_id and a JSON schema args_schema."""
+        return ToolMessage(str(x), tool_call_id=tool_call_id)
+
+    # The tool_call_id is not part of the JSON schema, but must still be injected.
+    result = injected_tool.invoke(
+        {
+            "type": "tool_call",
+            "args": {"x": 42},
+            "name": "injected_tool",
+            "id": "test_call_id",
+        }
+    )
+    assert result == ToolMessage("42", tool_call_id="test_call_id")
+
+    # Injection must not write into the caller's args dict.
+    payload = {"x": 42}
+    injected_tool.invoke(
+        {
+            "type": "tool_call",
+            "args": payload,
+            "name": "injected_tool",
+            "id": "another_call_id",
+        }
+    )
+    assert payload == {"x": 42}
+
+    with pytest.raises(
+        ValueError,
+        match="When tool includes an InjectedToolCallId argument, "
+        "tool must always be invoked with a full model ToolCall",
+    ):
+        injected_tool.invoke({"x": 42})
+
     # Test that tool_call_id can be passed directly in input dict
     result = injected_tool.invoke({"x": 42, "tool_call_id": "direct_id"})
     assert result == ToolMessage("42", tool_call_id="direct_id")
