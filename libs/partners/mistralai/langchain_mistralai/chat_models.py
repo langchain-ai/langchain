@@ -117,7 +117,7 @@ def _create_retry_decorator(
     run_manager: AsyncCallbackManagerForLLMRun | CallbackManagerForLLMRun | None = None,
 ) -> Callable[[Any], Any]:
     """Return a tenacity retry decorator, preconfigured to handle exceptions."""
-    errors = [httpx.RequestError, httpx.StreamError]
+    errors: list[type[BaseException]] = [httpx.RequestError, httpx.StreamError]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
     )
@@ -460,7 +460,7 @@ def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) ->
     return result
 
 
-def _clean_block(block: dict) -> dict:
+def _clean_block(block: dict[str, Any]) -> dict[str, Any]:
     # Remove internal keys added by LangChain or by provider response normalization.
     if block.get("type") == "text" and "text" in block:
         return {"type": "text", "text": block["text"]}
@@ -577,10 +577,18 @@ def _convert_message_to_mistral_chat_message(
             content = message.content
 
         if tool_calls and content:
-            # Assistant message must have either content or tool_calls, but not both.
-            # Some providers may not support tool_calls in the same message as content.
-            # This is done to ensure compatibility with messages from other providers.
-            content = ""
+            # Assistant messages that carry tool calls must omit text content
+            # for provider compatibility, but reasoning models require
+            # replaying thinking blocks.
+            if isinstance(content, list):
+                thinking: list[str | dict[str, Any]] = [
+                    _clean_block(block)
+                    for block in content
+                    if isinstance(block, dict) and block.get("type") == "thinking"
+                ]
+                content = thinking or ""
+            else:
+                content = ""
 
         elif isinstance(content, list):
             content = [
@@ -1375,6 +1383,7 @@ def _convert_to_openai_response_format(
 
     if (
         strict is not None
+        and isinstance(response_format.get("json_schema"), dict)
         and strict is not response_format["json_schema"].get("strict")
         and isinstance(schema, dict)
     ):

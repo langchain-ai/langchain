@@ -1099,6 +1099,178 @@ def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
     assert len(set(ids)) == 2, f"Duplicate tool call IDs found: {ids}"
 
 
+def test_aimessage_with_thinking_and_tool_calls_preserves_thinking() -> None:
+    """Thinking blocks should be preserved when assistant message carries tool calls."""
+    msg = AIMessage(
+        content=[
+            {
+                "type": "thinking",
+                "thinking": [{"type": "text", "text": "I should call get_weather."}],
+            }
+        ],
+        tool_calls=[
+            {"name": "get_weather", "args": {"city": "Paris"}, "id": "abc123xyz"}
+        ],
+    )
+    result = _convert_message_to_mistral_chat_message(msg)
+    assert result == {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "thinking",
+                "thinking": [{"type": "text", "text": "I should call get_weather."}],
+            }
+        ],
+        "tool_calls": [
+            {
+                "id": "abc123xyz",
+                "function": {
+                    "name": "get_weather",
+                    "arguments": '{"city": "Paris"}',
+                },
+            }
+        ],
+    }
+
+
+def test_aimessage_with_streamed_thinking_and_tool_calls_strips_index() -> None:
+    """Streamed messages with internal index keys must have index stripped."""
+    msg = AIMessage(
+        content=[
+            {
+                "type": "thinking",
+                "thinking": [
+                    {"type": "text", "text": "I should call get_weather.", "index": 0}
+                ],
+                "index": 1,
+            }
+        ],
+        tool_calls=[
+            {"name": "get_weather", "args": {"city": "Paris"}, "id": "abc123xyz"}
+        ],
+    )
+    result = _convert_message_to_mistral_chat_message(msg)
+    assert result == {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "thinking",
+                "thinking": [{"type": "text", "text": "I should call get_weather."}],
+            }
+        ],
+        "tool_calls": [
+            {
+                "id": "abc123xyz",
+                "function": {
+                    "name": "get_weather",
+                    "arguments": '{"city": "Paris"}',
+                },
+            }
+        ],
+    }
+
+
+def test_aimessage_with_mixed_content_and_tool_calls_drops_text_keeps_thinking() -> (
+    None
+):
+    """Mixed content with text and thinking blocks should drop text
+    but keep thinking.
+    """
+    msg = AIMessage(
+        content=[
+            {
+                "type": "thinking",
+                "thinking": [{"type": "text", "text": "I should call get_weather."}],
+            },
+            {"type": "text", "text": "I will check the weather for Paris."},
+        ],
+        tool_calls=[
+            {"name": "get_weather", "args": {"city": "Paris"}, "id": "abc123xyz"}
+        ],
+    )
+    result = _convert_message_to_mistral_chat_message(msg)
+    assert result == {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "thinking",
+                "thinking": [{"type": "text", "text": "I should call get_weather."}],
+            }
+        ],
+        "tool_calls": [
+            {
+                "id": "abc123xyz",
+                "function": {
+                    "name": "get_weather",
+                    "arguments": '{"city": "Paris"}',
+                },
+            }
+        ],
+    }
+
+
+def test_aimessage_with_text_only_and_tool_calls_drops_content() -> None:
+    """Assistant message with only text content and tool calls keeps empty content."""
+    msg_str = AIMessage(
+        content="I will check the weather for Paris.",
+        tool_calls=[
+            {"name": "get_weather", "args": {"city": "Paris"}, "id": "abc123xyz"}
+        ],
+    )
+    result_str = _convert_message_to_mistral_chat_message(msg_str)
+    assert result_str["content"] == ""
+    assert "tool_calls" in result_str
+
+    msg_list = AIMessage(
+        content=[{"type": "text", "text": "I will check the weather for Paris."}],
+        tool_calls=[
+            {"name": "get_weather", "args": {"city": "Paris"}, "id": "abc123xyz"}
+        ],
+    )
+    result_list = _convert_message_to_mistral_chat_message(msg_list)
+    assert result_list["content"] == ""
+    assert "tool_calls" in result_list
+
+
+def test_v1_aimessage_with_reasoning_and_tool_calls_preserves_thinking() -> None:
+    """v1 assistant message with reasoning blocks and tool calls preserves thinking."""
+    msg = AIMessage(
+        content="",
+        content_blocks=[
+            {"type": "reasoning", "reasoning": "I should call get_weather."},
+            {
+                "type": "tool_call",
+                "name": "get_weather",
+                "args": {"city": "Paris"},
+                "id": "abc123xyz",
+            },
+        ],
+        tool_calls=[
+            {"name": "get_weather", "args": {"city": "Paris"}, "id": "abc123xyz"}
+        ],
+        response_metadata={"model_provider": "mistralai", "output_version": "v1"},
+    )
+    result = _convert_message_to_mistral_chat_message(msg)
+    assert result == {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "thinking",
+                "thinking": [{"type": "text", "text": "I should call get_weather."}],
+            }
+        ],
+        "tool_calls": [
+            {
+                "id": "abc123xyz",
+                "function": {
+                    "name": "get_weather",
+                    "arguments": '{"city": "Paris"}',
+                },
+            }
+        ],
+    }
+
+
 def test_profile() -> None:
     model = ChatMistralAI(model="mistral-large-latest")  # type: ignore[call-arg]
     assert model.profile
