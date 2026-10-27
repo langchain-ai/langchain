@@ -54,7 +54,8 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
     """Keyword arguments to pass to the model."""
 
     huggingfacehub_api_token: str | None = Field(
-        default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None)
+        default_factory=from_env("HUGGINGFACEHUB_API_TOKEN", default=None),
+        repr=False,
     )
 
     model_config = ConfigDict(
