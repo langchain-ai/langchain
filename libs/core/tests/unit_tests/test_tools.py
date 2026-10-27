@@ -2866,6 +2866,59 @@ def test_tool_injected_tool_call_id_with_custom_schema() -> None:
     assert result == ToolMessage("42", tool_call_id="direct_id")
 
 
+async def test_tool_injected_tool_call_id_with_json_schema_dict() -> None:
+    """Ensure InjectedToolCallId works when args_schema is a JSON schema dict.
+
+    See issue #41517.
+    """
+    json_schema = {
+        "type": "object",
+        "properties": {"x": {"type": "integer"}},
+        "required": ["x"],
+    }
+
+    @tool(args_schema=json_schema)
+    def injected_tool(
+        x: int, tool_call_id: Annotated[str, InjectedToolCallId]
+    ) -> ToolMessage:
+        """Tool with injected tool_call_id and JSON schema dict."""
+        return ToolMessage(str(x), tool_call_id=tool_call_id)
+
+    # 1. Test sync invoke with ToolCall
+    result = injected_tool.invoke(
+        {
+            "type": "tool_call",
+            "args": {"x": 42},
+            "name": "injected_tool",
+            "id": "test_call_id",
+        }
+    )
+    assert result == ToolMessage("42", tool_call_id="test_call_id")
+
+    # 2. Test async ainvoke with ToolCall
+    async_result = await injected_tool.ainvoke(
+        {
+            "type": "tool_call",
+            "args": {"x": 42},
+            "name": "injected_tool",
+            "id": "test_call_id",
+        }
+    )
+    assert async_result == ToolMessage("42", tool_call_id="test_call_id")
+
+    # 3. Test that error is raised when invoked without tool_call_id
+    with pytest.raises(
+        ValueError,
+        match="When tool includes an InjectedToolCallId argument, "
+        "tool must always be invoked with a full model ToolCall",
+    ):
+        injected_tool.invoke({"x": 42})
+
+    # 4. Test that tool_call_id can be passed directly
+    direct_res = injected_tool.invoke({"x": 42, "tool_call_id": "direct_id"})
+    assert direct_res == ToolMessage("42", tool_call_id="direct_id")
+
+
 def test_tool_injected_arg_with_custom_schema() -> None:
     """Ensure InjectedToolArg works with custom args schema."""
 
