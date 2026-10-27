@@ -1668,6 +1668,13 @@ class ChatAnthropic(BaseChatModel):
     ) -> dict[str, Any]:
         """Record resolved output configuration in tracing parameters."""
         params = super()._get_invocation_params(stop=stop, **kwargs)
+        output_config = self._get_output_config(**kwargs)
+        if output_config:
+            params["output_config"] = output_config
+        return params
+
+    def _get_output_config(self, **kwargs: Any) -> dict[str, Any]:
+        """Resolve output configuration shared by requests and tracing."""
         request_config = {**self.model_kwargs, **kwargs}
         output_config = dict(self.output_config or {})
         if self.reasoning_effort:
@@ -1680,9 +1687,7 @@ class ChatAnthropic(BaseChatModel):
             effort = request_config.get("reasoning_effort")
         if effort:
             output_config["effort"] = effort
-        if output_config:
-            params["output_config"] = output_config
-        return params
+        return output_config
 
     def _get_ls_params(
         self,
@@ -1817,17 +1822,7 @@ class ChatAnthropic(BaseChatModel):
         if self.thinking is not None:
             thinking = self.thinking
 
-        output_config = dict(self.output_config or {})
-        if self.reasoning_effort:
-            output_config["effort"] = self.reasoning_effort
-        request_output_config = request_config.get("output_config")
-        if isinstance(request_output_config, dict):
-            output_config.update(request_output_config)
-        effort = request_config.get("effort")
-        if effort is None:
-            effort = request_config.get("reasoning_effort")
-        if effort:
-            output_config["effort"] = effort
+        output_config = self._get_output_config(**kwargs)
 
         is_fable_model = self.model.startswith("claude-fable-5")
         is_sonnet_55 = self.model.startswith("claude-sonnet-5-5")
@@ -1987,19 +1982,8 @@ class ChatAnthropic(BaseChatModel):
             payload.pop("top_k", None)
             payload.pop("top_p", None)
 
-        # Handle output_config and effort parameter
-        # Priority: kwarg `effort`/`reasoning_effort` > kwarg `output_config`
-        # > self.reasoning_effort > self.output_config
-        output_config: dict[str, Any] = {}
-        if self.output_config:
-            output_config.update(self.output_config)
-        reasoning_effort_applied = False
-        if self.reasoning_effort:
-            output_config["effort"] = self.reasoning_effort
-            reasoning_effort_applied = True
-        payload_oc = payload.get("output_config")
-        if isinstance(payload_oc, dict):
-            output_config.update(payload_oc)
+        output_config = self._get_output_config(**kwargs)
+        reasoning_effort_applied = bool(self.reasoning_effort)
 
         # Neither `reasoning_effort` nor its `effort` alias are Anthropic API
         # fields. Pop them so they never leak through as top-level keys.
@@ -2011,7 +1995,6 @@ class ChatAnthropic(BaseChatModel):
             effort_kwarg if effort_kwarg is not None else reasoning_effort_kwarg
         )
         if reasoning_effort_override:
-            output_config["effort"] = reasoning_effort_override
             reasoning_effort_applied = True
 
         if output_config:
