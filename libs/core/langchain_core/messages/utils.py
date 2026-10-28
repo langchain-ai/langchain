@@ -1589,6 +1589,7 @@ def convert_to_openai_messages(
             content block is encountered.
 
     Raises:
+        TypeError: if a tool call content block appears on a non-AI message.
         ValueError: if an unrecognized `text_format` is specified, or if a message
             content block is missing expected keys.
 
@@ -1825,9 +1826,17 @@ def convert_to_openai_messages(
                             f"{missing}. Full content block:\n\n{block}"
                         )
                         raise ValueError(err)
+                    if not isinstance(message, AIMessage):
+                        err = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': "
+                            f"'tool_use', but tool call content blocks are only "
+                            f"valid on AI messages. Full content block:\n\n{block}"
+                        )
+                        raise TypeError(err)
                     if not any(
                         tool_call["id"] == block["id"]
-                        for tool_call in cast("AIMessage", message).tool_calls
+                        for tool_call in message.tool_calls
                     ):
                         oai_msg["tool_calls"] = oai_msg.get("tool_calls", [])
                         oai_msg["tool_calls"].append(
@@ -1843,22 +1852,28 @@ def convert_to_openai_messages(
                             }
                         )
                 elif block.get("type") == "function_call":  # OpenAI Responses
+                    if missing := [
+                        k for k in ("call_id", "name", "arguments") if k not in block
+                    ]:
+                        err = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': "
+                            f"'function_call', but is missing expected key(s) "
+                            f"{missing}. Full content block:\n\n{block}"
+                        )
+                        raise ValueError(err)
+                    if not isinstance(message, AIMessage):
+                        err = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': "
+                            f"'function_call', but tool call content blocks are only "
+                            f"valid on AI messages. Full content block:\n\n{block}"
+                        )
+                        raise TypeError(err)
                     if not any(
                         tool_call["id"] == block.get("call_id")
-                        for tool_call in cast("AIMessage", message).tool_calls
+                        for tool_call in message.tool_calls
                     ):
-                        if missing := [
-                            k
-                            for k in ("call_id", "name", "arguments")
-                            if k not in block
-                        ]:
-                            err = (
-                                f"Unrecognized content block at "
-                                f"messages[{i}].content[{j}] has 'type': "
-                                f"'tool_use', but is missing expected key(s) "
-                                f"{missing}. Full content block:\n\n{block}"
-                            )
-                            raise ValueError(err)
                         oai_msg["tool_calls"] = oai_msg.get("tool_calls", [])
                         oai_msg["tool_calls"].append(
                             {

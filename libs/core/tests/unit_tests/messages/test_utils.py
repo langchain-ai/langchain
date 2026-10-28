@@ -1251,6 +1251,32 @@ def test_convert_to_openai_messages_tool_use_unicode() -> None:
     assert "\\u4f60" not in arguments_str  # Should not contain escaped Unicode
 
 
+@pytest.mark.parametrize("role", ["user", "system", "developer"])
+@pytest.mark.parametrize(
+    "block",
+    [
+        {"type": "tool_use", "id": "123", "name": "calculator", "input": {}},
+        {
+            "type": "function_call",
+            "call_id": "123",
+            "name": "calculator",
+            "arguments": "{}",
+        },
+    ],
+)
+def test_convert_to_openai_messages_rejects_tool_calls_on_non_ai_messages(
+    role: str, block: dict[str, Any]
+) -> None:
+    with pytest.raises(
+        TypeError,
+        match=(
+            rf"'{block['type']}'.*tool call content blocks are only valid on AI "
+            "messages"
+        ),
+    ):
+        convert_to_openai_messages([{"role": role, "content": [block]}])
+
+
 def test_convert_to_openai_messages_json() -> None:
     json_data = {"key": "value"}
     messages = [HumanMessage(content=[{"type": "json", "json": json_data}])]
