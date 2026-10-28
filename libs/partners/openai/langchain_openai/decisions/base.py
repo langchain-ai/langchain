@@ -8,7 +8,6 @@ from functools import cached_property
 from typing import Any, cast
 
 import openai
-from langchain_core._api import beta
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config
 from langchain_core.utils import from_env
@@ -34,7 +33,6 @@ _ANSWER_TYPES = frozenset({"predicate", "choice", "score", "refusal"})
 logger = logging.getLogger(__name__)
 
 
-@beta()
 class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
     """Ask typed questions about text or images with the OpenAI Decisions API.
 

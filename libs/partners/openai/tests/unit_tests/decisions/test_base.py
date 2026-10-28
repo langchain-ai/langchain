@@ -140,9 +140,8 @@ def _async_decisions(handler: Any, **kwargs: Any) -> OpenAIDecisions:
     )
 
 
-def test_is_beta() -> None:
-    # The beta warning fires once per process, so check the decorator's marker.
-    assert (OpenAIDecisions.__doc__ or "").startswith(".. beta::")
+def test_is_not_beta() -> None:
+    assert not (OpenAIDecisions.__doc__ or "").startswith(".. beta::")
 
 
 def test_model_is_required() -> None:
