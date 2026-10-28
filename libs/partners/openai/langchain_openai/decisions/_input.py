@@ -106,7 +106,7 @@ def _to_assistant_items(message: AIMessage) -> list[dict[str, Any]]:
                 msg = "OpenAI Decisions tool calls require a call ID."
                 raise ValueError(msg)
             argument_key = "arguments" if item["type"] == "function_call" else "input"
-            supported_keys = {"type", "name", "call_id", argument_key}
+            supported_keys = {"type", "name", "call_id", "namespace", argument_key}
             for key in set(item) - supported_keys:
                 item.pop(key)
         elif item.get("type") == "message":

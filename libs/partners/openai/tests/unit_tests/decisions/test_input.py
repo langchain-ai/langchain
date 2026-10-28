@@ -366,10 +366,19 @@ def test_function_call_blocks_are_not_duplicated() -> None:
         "call_id": "c1",
         "id": "fc_1",
         "status": "completed",
+        "namespace": "filesystem",
     }
     assert to_decision_input(
         AIMessage(content=[call], tool_calls=[{"name": "read", "args": {}, "id": "c1"}])
-    ) == [{"type": "function_call", "name": "read", "arguments": "{}", "call_id": "c1"}]
+    ) == [
+        {
+            "type": "function_call",
+            "name": "read",
+            "arguments": "{}",
+            "call_id": "c1",
+            "namespace": "filesystem",
+        }
+    ]
 
 
 @pytest.mark.parametrize(
