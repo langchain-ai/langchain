@@ -205,6 +205,11 @@ Question = Annotated[Predicate | Choice | Score, Field(discriminator="type")]
 """A discriminated union of question types accepted by `OpenAIDecisions`."""
 
 
+class _PromptCacheOptions(TypedDict, total=False):
+    mode: Literal["implicit", "explicit"]
+    ttl: Literal["30m"]
+
+
 class DecisionRequest(TypedDict):
     """Complete input for one `OpenAIDecisions` invocation.
 
@@ -217,6 +222,12 @@ class DecisionRequest(TypedDict):
 
     questions: dict[str, Question]
     """Mapping of question names to questions. Names key the returned answers."""
+
+    prompt_cache_key: NotRequired[str | None]
+    """Caller-provided key partitioning cache reuse."""
+
+    prompt_cache_options: NotRequired[_PromptCacheOptions | None]
+    """Cache mode and lifetime for shared input prefixes."""
 
 
 class PredicateAnswer(BaseModel):
@@ -284,6 +295,11 @@ Answer = Annotated[
 """A discriminated union of answers returned by `OpenAIDecisions`."""
 
 
+class _InputTokenDetails(BaseModel):
+    cached_tokens: int | None = None
+    cache_write_tokens: int | None = None
+
+
 class Usage(BaseModel):
     """Token usage reported for a Decisions request."""
 
@@ -292,6 +308,9 @@ class Usage(BaseModel):
 
     output_tokens: int | None = None
     """Number of output tokens produced, or `None` when not reported."""
+
+    input_tokens_details: _InputTokenDetails | None = None
+    """Cache reads and writes, already included in `input_tokens`."""
 
 
 class DecisionResponse(BaseModel):

@@ -481,6 +481,44 @@ def test_invoke_sends_request_and_parses_response() -> None:
     assert result.request_id == REQUEST_ID
 
 
+@pytest.mark.parametrize("asynchronous", [False, True])
+async def test_cache_controls_and_usage(
+    monkeypatch: pytest.MonkeyPatch, asynchronous: bool
+) -> None:
+    stub = _RunTreeStub()
+    monkeypatch.setattr(base_module, "get_current_run_tree", lambda: stub)
+    request = _request()
+    request["prompt_cache_key"] = "reference-v1"
+    request["prompt_cache_options"] = {"mode": "explicit", "ttl": "30m"}
+
+    def handler(wire_request: httpx.Request) -> httpx.Response:
+        body = json.loads(wire_request.content)
+        assert body["prompt_cache_key"] == request["prompt_cache_key"]
+        assert body["prompt_cache_options"] == request["prompt_cache_options"]
+        payload = _response_payload()
+        payload["usage"]["input_tokens_details"] = {
+            "cached_tokens": 20,
+            "cache_write_tokens": 10,
+        }
+        return httpx.Response(200, json=payload)
+
+    result = (
+        await _async_decisions(handler).ainvoke(request)
+        if asynchronous
+        else _decisions(handler).invoke(request)
+    )
+
+    assert result.usage.input_tokens_details is not None
+    assert result.usage.input_tokens_details.cached_tokens == 20
+    assert result.usage.input_tokens_details.cache_write_tokens == 10
+    assert stub.extra["metadata"]["usage_metadata"] == {
+        "input_tokens": 42,
+        "output_tokens": 0,
+        "total_tokens": 42,
+        "input_token_details": {"cache_read": 20, "cache_creation": 10},
+    }
+
+
 def test_boolean_choice_values_round_trip() -> None:
     captured: dict[str, Any] = {}
 

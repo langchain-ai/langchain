@@ -315,7 +315,7 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
         return self._record_usage(_parse_response(response))
 
     def _payload(self, request: DecisionRequest) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "model": self.model,
             "input": to_decision_input(request["input"]),
             "questions": [
@@ -323,6 +323,11 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
                 for name, question in request["questions"].items()
             ],
         }
+        if "prompt_cache_key" in request:
+            payload["prompt_cache_key"] = request["prompt_cache_key"]
+        if "prompt_cache_options" in request:
+            payload["prompt_cache_options"] = request["prompt_cache_options"]
+        return payload
 
     def _traced_config(self, config: RunnableConfig | None) -> RunnableConfig:
         """Set `ls_provider` and `ls_model_name` when run is created."""
@@ -351,6 +356,18 @@ class OpenAIDecisions(RunnableSerializable[DecisionRequest, DecisionResponse]):
                     "output_tokens": output_tokens,
                     "total_tokens": input_tokens + output_tokens,
                 }
+                details = response.usage.input_tokens_details
+                if details is not None:
+                    run_tree.extra["metadata"]["usage_metadata"][
+                        "input_token_details"
+                    ] = {
+                        key: value
+                        for key, value in (
+                            ("cache_read", details.cached_tokens),
+                            ("cache_creation", details.cache_write_tokens),
+                        )
+                        if value is not None
+                    }
         except Exception:  # tracing must not break decisions
             logger.debug("Could not attach OpenAI Decisions usage.", exc_info=True)
         return response
