@@ -10,22 +10,21 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import (
+    AIMessage,
     BaseMessage,
     HumanMessage,
+    ToolMessage,
     convert_to_openai_messages,
 )
+
+from langchain_openai.chat_models.base import _construct_responses_api_input
 
 if TYPE_CHECKING:
     from langchain_openai.decisions.types import State
 
 
 def to_decision_input(state: State) -> str | list[dict[str, Any]]:
-    """Convert state to a string or a list of user messages.
-
-    Strings are sent as is, and sequences of `HumanMessage` objects as user messages.
-    Anything else, such as conversations with system, AI, or tool messages, is
-    serialized to JSON text in a single user message, with base64 images from any
-    message kept in place as image parts.
+    """Convert state to native input or JSON text with image evidence.
 
     Args:
         state: Text, messages, or structured state to evaluate.
@@ -43,12 +42,110 @@ def to_decision_input(state: State) -> str | list[dict[str, Any]]:
     if (
         isinstance(messages, Sequence)
         and messages
-        and all(isinstance(message, HumanMessage) for message in messages)
+        and all(isinstance(message, BaseMessage) for message in messages)
     ):
-        return [_to_user_message(message) for message in messages]  # type: ignore[arg-type]
+        return [
+            item
+            for message in messages
+            if isinstance(message, BaseMessage)
+            for item in _to_conversation_items(message)
+        ]
     if _supports_native_json(state):
         return [{"role": "user", "content": [{"type": "input_json", "data": state}]}]
     return [_to_json_user_message(state)]
+
+
+def _to_conversation_items(message: BaseMessage) -> list[dict[str, Any]]:
+    if message.additional_kwargs.get("audio"):
+        msg = "Unsupported content block type for the OpenAI Decisions API: 'audio'."
+        raise ValueError(msg)
+    if isinstance(message, AIMessage):
+        return _to_assistant_items(message)
+    if isinstance(message, ToolMessage):
+        return [_to_tool_output(message)]
+    role = convert_to_openai_messages(message)["role"]
+    if role not in {"user", "system", "developer"}:
+        msg = f"Unsupported message role for the OpenAI Decisions API: {role!r}."
+        raise ValueError(msg)
+    item = _to_user_message(message)
+    item["role"] = role
+    if (
+        role != "user"
+        and isinstance(item["content"], list)
+        and any(block["type"] != "input_text" for block in item["content"])
+    ):
+        msg = "OpenAI Decisions system and developer messages only accept text."
+        raise ValueError(msg)
+    return [item]
+
+
+def _to_assistant_items(message: AIMessage) -> list[dict[str, Any]]:
+    allowed_blocks = {
+        "text",
+        "output_text",
+        "refusal",
+        "function_call",
+        "custom_tool_call",
+        "tool_call",
+    }
+    for block in message.content:
+        if isinstance(block, dict):
+            value = (
+                block.get("value", {}) if block.get("type") == "non_standard" else block
+            )
+            if value.get("type") not in allowed_blocks:
+                msg = (
+                    "Unsupported content block type for the OpenAI Decisions API: "
+                    f"{value.get('type')!r}."
+                )
+                raise ValueError(msg)
+    items = _construct_responses_api_input([message], store=False)
+    for item in items:
+        if item.get("type") in {"function_call", "custom_tool_call"}:
+            if not item.get("call_id"):
+                msg = "OpenAI Decisions tool calls require a call ID."
+                raise ValueError(msg)
+            for key in ("id", "status"):
+                item.pop(key, None)
+        elif item.get("type") != "message":
+            msg = f"Unsupported OpenAI Decisions input item: {item.get('type')!r}."
+            raise ValueError(msg)
+    if refusal := message.additional_kwargs.get("refusal"):
+        items.append(
+            {
+                "type": "message",
+                "role": "assistant",
+                "content": [{"type": "refusal", "refusal": refusal}],
+            }
+        )
+    return items
+
+
+def _to_tool_output(message: ToolMessage) -> dict[str, Any]:
+    if not message.tool_call_id:
+        msg = "OpenAI Decisions tool outputs require a call ID."
+        raise ValueError(msg)
+    if isinstance(message.content, list):
+        for block in message.content:
+            if not isinstance(block, dict):
+                continue
+            value = (
+                block.get("value", {}) if block.get("type") == "non_standard" else block
+            )
+            if value.get("type") == "custom_tool_call_output":
+                if len(message.content) != 1:
+                    msg = "Custom tool output must be the only tool content block."
+                    raise ValueError(msg)
+                return {
+                    "type": "custom_tool_call_output",
+                    "call_id": message.tool_call_id,
+                    "output": value.get("output", ""),
+                }
+    return {
+        "type": "function_call_output",
+        "call_id": message.tool_call_id,
+        "output": _to_user_message(message)["content"],
+    }
 
 
 def _supports_native_json(state: object) -> bool:
@@ -88,21 +185,34 @@ def _to_user_message(message: BaseMessage) -> dict[str, Any]:
         return {"role": "user", "content": message.content}
     return {
         "role": "user",
-        "content": [_to_message_part(block) for block in message.content],
+        "content": [
+            part
+            for block in message.content
+            for part in (
+                _to_json_user_message(block["data"])["content"]
+                if isinstance(block, dict)
+                and block.get("type") == "input_json"
+                and not _supports_native_json(block["data"])
+                else [_to_message_part(block)]
+            )
+        ],
     }
 
 
 def _to_message_part(block: str | dict[str, Any]) -> dict[str, Any]:
     if isinstance(block, str):
         return {"type": "input_text", "text": block}
+    if block.get("type") == "input_json":
+        if "prompt_cache_breakpoint" in block:
+            msg = "OpenAI Decisions cache breakpoints require text or image blocks."
+            raise ValueError(msg)
+        return {"type": "input_json", "data": block["data"]}
     if block.get("type") == "image":
         converted = convert_to_openai_messages(HumanMessage(content=[block]))[
             "content"
         ][0]
         part = _to_input_part(converted)
-        if "prompt_cache_breakpoint" in block:
-            part["prompt_cache_breakpoint"] = block["prompt_cache_breakpoint"]
-        return part
+        return _with_cache_breakpoint(block, part)
     return _to_input_part(block)
 
 
@@ -125,19 +235,24 @@ def _to_input_part(block: dict[str, Any]) -> dict[str, Any]:
             f"{block.get('type')!r}."
         )
         raise ValueError(msg)
+    return _with_cache_breakpoint(block, part)
+
+
+def _with_cache_breakpoint(
+    block: dict[str, Any], part: dict[str, Any]
+) -> dict[str, Any]:
     if "prompt_cache_breakpoint" in block:
+        if block["prompt_cache_breakpoint"] != {"mode": "explicit"}:
+            msg = (
+                "OpenAI Decisions prompt_cache_breakpoint must be {'mode': 'explicit'}."
+            )
+            raise ValueError(msg)
         part["prompt_cache_breakpoint"] = block["prompt_cache_breakpoint"]
     return part
 
 
 def _to_json_user_message(state: State) -> dict[str, Any]:
-    """Serialize state the API cannot accept natively to a single user message.
-
-    Covers conversations with non-user messages and JSON objects or arrays. Messages
-    at any depth are converted to role/content objects. Base64 images in any message
-    are sent as `input_image` parts at the position where they appear in the text, so
-    the format stays the same whether or not a conversation contains images.
-    """
+    """Serialize arbitrary state as JSON text with images kept in place."""
     images: list[dict[str, Any]] = []
     token = f"lc-image-{uuid.uuid4().hex}"
     text = json.dumps(_to_json_value(state, images, token), ensure_ascii=False)
@@ -170,7 +285,7 @@ def _to_json_value(value: object, images: list[dict[str, Any]], token: str) -> A
 def _with_image_tokens(
     message: BaseMessage, images: list[dict[str, Any]], token: str
 ) -> BaseMessage:
-    """Replace base64 image blocks with tokens marking where each image belongs."""
+    """Replace image blocks with tokens marking where each image belongs."""
     if isinstance(message.content, str):
         return message
     content: list[str | dict[str, Any]] = []

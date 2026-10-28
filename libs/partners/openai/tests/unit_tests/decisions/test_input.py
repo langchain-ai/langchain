@@ -6,7 +6,13 @@ import json
 from typing import Any
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    ChatMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
 
 from langchain_openai.decisions._input import to_decision_input
 
@@ -122,15 +128,17 @@ def test_unsupported_content_block_is_rejected() -> None:
         to_decision_input(message)
 
 
-def test_mixed_roles_are_serialized_as_json_text() -> None:
-    result = to_decision_input(
+def test_mixed_roles_are_native() -> None:
+    assert to_decision_input(
         [SystemMessage("Support chat."), HumanMessage("Prod down"), AIMessage("On it")]
-    )
-
-    assert json.loads(_json_text(result)) == [
+    ) == [
         {"role": "system", "content": "Support chat."},
         {"role": "user", "content": "Prod down"},
-        {"role": "assistant", "content": "On it"},
+        {
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "output_text", "text": "On it", "annotations": []}],
+        },
     ]
 
 
@@ -171,22 +179,23 @@ def test_images_in_mixed_conversations_are_kept_in_place() -> None:
     )
 
     assert isinstance(result, list)
-    [message] = result
-    assert message["role"] == "user"
-    parts = message["content"]
-    assert [part["type"] for part in parts] == [
-        "input_text",
-        "input_image",
-        "input_text",
-        "input_image",
-        "input_text",
-    ]
-    assert parts[1]["image_url"] == f"data:image/png;base64,{IMAGE_DATA}"
-    assert parts[3]["image_url"] == "data:image/png;base64,BBBB"
-    assert parts[0]["text"].endswith('"tool_call_id": "c1", "content": "')
-    assert parts[2]["text"].endswith("Mine looks like this:\\n")
-    text = "".join(part.get("text", "[IMAGE]") for part in parts)
-    assert json.loads(text.replace("[IMAGE]", ""))[-1]["role"] == "user"
+    assert result[1] == {
+        "type": "function_call",
+        "name": "read_file",
+        "arguments": "{}",
+        "call_id": "c1",
+    }
+    assert result[2] == {
+        "type": "function_call_output",
+        "call_id": "c1",
+        "output": [
+            {"type": "input_image", "image_url": f"data:image/png;base64,{IMAGE_DATA}"}
+        ],
+    }
+    assert result[3]["content"][1] == {
+        "type": "input_image",
+        "image_url": "data:image/png;base64,BBBB",
+    }
 
 
 def test_images_nested_in_json_are_kept_in_place() -> None:
@@ -215,22 +224,25 @@ def test_images_nested_in_json_are_kept_in_place() -> None:
     ]
 
 
-def test_hosted_image_urls_in_mixed_conversations_are_images() -> None:
+def test_hosted_images_nested_in_json_are_images() -> None:
     result = to_decision_input(
-        [
-            AIMessage("Hi"),
-            HumanMessage(
-                content=[{"type": "image", "url": "https://example.com/a.png"}]
-            ),
-        ]
+        {
+            "messages": [
+                AIMessage("Hi"),
+                HumanMessage(
+                    content=[{"type": "image", "url": "https://example.com/a.png"}]
+                ),
+            ]
+        }
     )
-
     assert isinstance(result, list)
     assert result[0]["content"][1]["image_url"] == "https://example.com/a.png"
 
 
 def test_content_resembling_an_image_token_is_left_alone() -> None:
-    result = to_decision_input([AIMessage("lc-image-0123-0"), HumanMessage("Hi")])
+    result = to_decision_input(
+        {"messages": [AIMessage("lc-image-0123-0"), HumanMessage("Hi")]}
+    )
 
     assert "lc-image-0123-0" in _json_text(result)
 
@@ -289,3 +301,166 @@ def test_non_string_json_keys_are_rejected() -> None:
     state: Any = {1: "value"}
     with pytest.raises(TypeError, match="keys must be strings"):
         to_decision_input(state)
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        SystemMessage("Rules", additional_kwargs={"__openai_role__": "developer"}),
+        ChatMessage(content="Rules", role="developer"),
+    ],
+)
+def test_developer_messages_are_native(message: Any) -> None:
+    assert to_decision_input(message) == [{"role": "developer", "content": "Rules"}]
+
+
+def test_assistant_refusal_and_phase_are_native() -> None:
+    message = AIMessage(
+        content=[
+            {"type": "output_text", "text": "Checking", "phase": "commentary"},
+            {"type": "refusal", "refusal": "Cannot help"},
+        ]
+    )
+    result = to_decision_input(message)
+    assert isinstance(result, list)
+    assert result[0]["content"][0]["type"] == "output_text"
+    assert result[0]["phase"] == "commentary"
+    assert result[1]["content"] == [{"type": "refusal", "refusal": "Cannot help"}]
+
+
+def test_assistant_additional_refusal_is_preserved() -> None:
+    result = to_decision_input(
+        AIMessage("", additional_kwargs={"refusal": "Cannot help"})
+    )
+    assert isinstance(result, list)
+    assert result[-1]["content"] == [{"type": "refusal", "refusal": "Cannot help"}]
+
+
+def test_custom_tool_calls_and_outputs_preserve_call_ids() -> None:
+    call = {
+        "type": "custom_tool_call",
+        "name": "shell",
+        "input": "ls",
+        "call_id": "call_1",
+    }
+    result = to_decision_input(
+        [
+            AIMessage(content=[call]),
+            ToolMessage(
+                content=[{"type": "custom_tool_call_output", "output": "files"}],
+                tool_call_id="call_1",
+            ),
+        ]
+    )
+    assert result == [
+        call,
+        {"type": "custom_tool_call_output", "output": "files", "call_id": "call_1"},
+    ]
+
+
+def test_function_call_blocks_are_not_duplicated() -> None:
+    call = {
+        "type": "function_call",
+        "name": "read",
+        "arguments": "{}",
+        "call_id": "c1",
+        "id": "fc_1",
+        "status": "completed",
+    }
+    assert to_decision_input(
+        AIMessage(content=[call], tool_calls=[{"name": "read", "args": {}, "id": "c1"}])
+    ) == [{"type": "function_call", "name": "read", "arguments": "{}", "call_id": "c1"}]
+
+
+@pytest.mark.parametrize(
+    "block",
+    [
+        {"type": "input_audio", "input_audio": {"data": "AAAA", "format": "wav"}},
+        {"type": "input_file", "file_id": "file_1"},
+        {"type": "item_reference", "id": "msg_1"},
+    ],
+)
+@pytest.mark.parametrize("role", ["user", "assistant", "tool"])
+def test_unsupported_native_blocks_are_rejected(
+    block: dict[str, Any], role: str
+) -> None:
+    message = (
+        HumanMessage(content=[block])
+        if role == "user"
+        else AIMessage(content=[block])
+        if role == "assistant"
+        else ToolMessage(content=[block], tool_call_id="c1")
+    )
+    with pytest.raises(ValueError, match="Unsupported content block"):
+        to_decision_input(message)
+
+
+def test_system_images_are_rejected() -> None:
+    message = SystemMessage(
+        content=[
+            {"type": "image_url", "image_url": {"url": "https://example.com/a.png"}}
+        ]
+    )
+    with pytest.raises(ValueError, match="only accept text"):
+        to_decision_input(message)
+
+
+def test_function_calls_require_call_ids() -> None:
+    message = AIMessage("", tool_calls=[{"name": "read", "args": {}, "id": None}])
+    with pytest.raises(ValueError, match="call ID"):
+        to_decision_input(message)
+
+
+def test_native_user_json_content_block() -> None:
+    assert to_decision_input(
+        HumanMessage(
+            content=[
+                {
+                    "type": "input_json",
+                    "data": {"value": 1},
+                }
+            ]
+        )
+    ) == [{"role": "user", "content": [{"type": "input_json", "data": {"value": 1}}]}]
+
+
+def test_oversized_user_json_content_falls_back_to_text() -> None:
+    state = {"value": "x" * (256 * 1024)}
+    result = to_decision_input(
+        HumanMessage(content=[{"type": "input_json", "data": state}])
+    )
+    assert json.loads(_json_text(result)) == state
+
+
+@pytest.mark.parametrize("role", ["user", "developer", "tool"])
+def test_native_text_cache_breakpoints(role: str) -> None:
+    block = {
+        "type": "input_text",
+        "text": "Cached",
+        "prompt_cache_breakpoint": {"mode": "explicit"},
+    }
+    message = (
+        HumanMessage(content=[block])
+        if role == "user"
+        else ChatMessage(content=[block], role="developer")
+        if role == "developer"
+        else ToolMessage(content=[block], tool_call_id="c1")
+    )
+    result = to_decision_input(message)
+    assert isinstance(result, list)
+    assert result[0]["output" if role == "tool" else "content"] == [block]
+
+
+@pytest.mark.parametrize("cache_breakpoint", [None, True, {}, {"mode": "automatic"}])
+def test_invalid_cache_breakpoints_are_rejected(cache_breakpoint: Any) -> None:
+    message = HumanMessage(
+        content=[
+            {
+                "type": "text",
+                "text": "Cached",
+                "prompt_cache_breakpoint": cache_breakpoint,
+            }
+        ]
+    )
+    with pytest.raises(ValueError, match="prompt_cache_breakpoint"):
+        to_decision_input(message)
