@@ -481,8 +481,12 @@ def test_invoke_sends_request_and_parses_response() -> None:
 
 
 @pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.parametrize(("cache_read", "cache_write"), [(20, 10), (0, 0)])
 async def test_cache_controls_and_usage(
-    monkeypatch: pytest.MonkeyPatch, asynchronous: bool
+    monkeypatch: pytest.MonkeyPatch,
+    asynchronous: bool,
+    cache_read: int,
+    cache_write: int,
 ) -> None:
     stub = _RunTreeStub()
     monkeypatch.setattr(base_module, "get_current_run_tree", lambda: stub)
@@ -496,8 +500,8 @@ async def test_cache_controls_and_usage(
         assert body["prompt_cache_options"] == request["prompt_cache_options"]
         payload = _response_payload()
         payload["usage"]["input_tokens_details"] = {
-            "cached_tokens": 20,
-            "cache_write_tokens": 10,
+            "cached_tokens": cache_read,
+            "cache_write_tokens": cache_write,
         }
         return httpx.Response(200, json=payload)
 
@@ -508,13 +512,16 @@ async def test_cache_controls_and_usage(
     )
 
     assert result.usage.input_tokens_details is not None
-    assert result.usage.input_tokens_details.cached_tokens == 20
-    assert result.usage.input_tokens_details.cache_write_tokens == 10
+    assert result.usage.input_tokens_details.cached_tokens == cache_read
+    assert result.usage.input_tokens_details.cache_write_tokens == cache_write
     assert stub.extra["metadata"]["usage_metadata"] == {
         "input_tokens": 42,
         "output_tokens": 0,
         "total_tokens": 42,
-        "input_token_details": {"cache_read": 20, "cache_creation": 10},
+        "input_token_details": {
+            "cache_read": cache_read,
+            "cache_creation": cache_write,
+        },
     }
 
 
