@@ -233,3 +233,59 @@ def test_content_resembling_an_image_token_is_left_alone() -> None:
     result = to_decision_input([AIMessage("lc-image-0123-0"), HumanMessage("Hi")])
 
     assert "lc-image-0123-0" in _json_text(result)
+
+
+@pytest.mark.parametrize(
+    "state", [{}, [], [{"value": 1}], {"nested": [1, True, None, {"text": "é"}]}]
+)
+def test_structured_json_is_native(state: Any) -> None:
+    assert to_decision_input(state) == [
+        {"role": "user", "content": [{"type": "input_json", "data": state}]}
+    ]
+
+
+@pytest.mark.parametrize(
+    "state", [[1, 2], ["text"], [{"key": 1}, 2], {"tuple": (1, 2)}]
+)
+def test_other_json_keeps_text_fallback(state: Any) -> None:
+    assert json.loads(_json_text(to_decision_input(state))) == json.loads(
+        json.dumps(state)
+    )
+
+
+@pytest.mark.parametrize(("levels", "native"), [(32, True), (33, False)])
+def test_json_container_depth_limit(levels: int, native: bool) -> None:
+    state: Any = "value"
+    for _ in range(levels):
+        state = {"nested": state}
+    result = to_decision_input(state)
+    assert isinstance(result, list)
+    assert (result[0]["content"][0]["type"] == "input_json") is native
+    if not native:
+        assert json.loads(_json_text(result)) == state
+
+
+@pytest.mark.parametrize(("count", "native"), [(9998, True), (9999, False)])
+def test_json_value_count_limit(count: int, native: bool) -> None:
+    state: Any = {"values": [0] * count}
+    result = to_decision_input(state)
+    assert isinstance(result, list)
+    assert (result[0]["content"][0]["type"] == "input_json") is native
+
+
+@pytest.mark.parametrize(("extra", "native"), [(0, True), (1, False)])
+def test_json_compact_utf8_size_limit(extra: int, native: bool) -> None:
+    state: Any = {"x": "é" * ((256 * 1024 - 8) // 2) + "x" * extra}
+    assert (
+        len(json.dumps(state, ensure_ascii=False, separators=(",", ":")).encode())
+        == 256 * 1024 + extra
+    )
+    result = to_decision_input(state)
+    assert isinstance(result, list)
+    assert (result[0]["content"][0]["type"] == "input_json") is native
+
+
+def test_non_string_json_keys_are_rejected() -> None:
+    state: Any = {1: "value"}
+    with pytest.raises(TypeError, match="keys must be strings"):
+        to_decision_input(state)

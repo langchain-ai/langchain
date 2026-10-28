@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import uuid
 from collections.abc import Sequence
@@ -45,7 +46,41 @@ def to_decision_input(state: State) -> str | list[dict[str, Any]]:
         and all(isinstance(message, HumanMessage) for message in messages)
     ):
         return [_to_user_message(message) for message in messages]  # type: ignore[arg-type]
+    if _supports_native_json(state):
+        return [{"role": "user", "content": [{"type": "input_json", "data": state}]}]
     return [_to_json_user_message(state)]
+
+
+def _supports_native_json(state: object) -> bool:
+    if not isinstance(state, dict) and not (
+        isinstance(state, list) and all(isinstance(item, dict) for item in state)
+    ):
+        return False
+    pending = [(state, 0)]
+    count = 0
+    while pending:
+        value, depth = pending.pop()
+        count += 1
+        if count > 10_000:
+            return False
+        if isinstance(value, (dict, list)):
+            if depth >= 32:
+                return False
+            if isinstance(value, dict):
+                if not all(isinstance(key, str) for key in value):
+                    return False
+                children = list(value.values())
+            else:
+                children = value
+            pending.extend((child, depth + 1) for child in children)
+        elif not (
+            value is None
+            or isinstance(value, (str, int, bool))
+            or (isinstance(value, float) and math.isfinite(value))
+        ):
+            return False
+    encoded = json.dumps(state, ensure_ascii=False, separators=(",", ":"))
+    return len(encoded.encode("utf-8")) <= 256 * 1024
 
 
 def _to_user_message(message: BaseMessage) -> dict[str, Any]:
