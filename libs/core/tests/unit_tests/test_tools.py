@@ -77,6 +77,7 @@ from langchain_core.tools.base import (
     create_schema_from_function,
     get_all_basemodel_annotations,
 )
+from langchain_core.tracers.context import collect_runs
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
@@ -1362,6 +1363,42 @@ class FooBaseNonPickleable(FooBase):
     @override
     def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
         return True
+
+
+def test_tool_pass_child_config_for_nested_runnable() -> None:
+    inner = RunnableLambda(lambda x: x * 2, name="inner")
+
+    @tool
+    def double(x: int, config: RunnableConfig) -> int:
+        """Double a number using a nested runnable."""
+        return inner.invoke(x, config=config)
+
+    with collect_runs() as cb:
+        assert double.invoke({"x": 2}, config={"callbacks": [cb]}) == 4
+
+    assert len(cb.traced_runs) == 1
+    tool_run = cb.traced_runs[0]
+    assert tool_run.name == "double"
+    assert len(tool_run.child_runs) == 1
+    assert tool_run.child_runs[0].name == "inner"
+
+
+async def test_async_tool_pass_child_config_for_nested_runnable() -> None:
+    inner = RunnableLambda(lambda x: x * 2, name="inner")
+
+    @tool
+    async def double(x: int, config: RunnableConfig) -> int:
+        """Double a number using a nested runnable."""
+        return await inner.ainvoke(x, config=config)
+
+    with collect_runs() as cb:
+        assert await double.ainvoke({"x": 2}, config={"callbacks": [cb]}) == 4
+
+    assert len(cb.traced_runs) == 1
+    tool_run = cb.traced_runs[0]
+    assert tool_run.name == "double"
+    assert len(tool_run.child_runs) == 1
+    assert tool_run.child_runs[0].name == "inner"
 
 
 def test_tool_pass_config_non_pickleable() -> None:
