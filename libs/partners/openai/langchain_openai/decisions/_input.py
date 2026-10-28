@@ -105,9 +105,20 @@ def _to_assistant_items(message: AIMessage) -> list[dict[str, Any]]:
             if not item.get("call_id"):
                 msg = "OpenAI Decisions tool calls require a call ID."
                 raise ValueError(msg)
-            for key in ("id", "status"):
-                item.pop(key, None)
-        elif item.get("type") != "message":
+            argument_key = "arguments" if item["type"] == "function_call" else "input"
+            supported_keys = {"type", "name", "call_id", argument_key}
+            for key in set(item) - supported_keys:
+                item.pop(key)
+        elif item.get("type") == "message":
+            item["content"] = [
+                {"type": "output_text", "text": block["text"]}
+                if block["type"] == "output_text"
+                else {"type": "refusal", "refusal": block["refusal"]}
+                for block in item["content"]
+            ]
+            for key in set(item) - {"type", "role", "content", "phase"}:
+                item.pop(key)
+        else:
             msg = f"Unsupported OpenAI Decisions input item: {item.get('type')!r}."
             raise ValueError(msg)
     if refusal := message.additional_kwargs.get("refusal"):
@@ -139,13 +150,34 @@ def _to_tool_output(message: ToolMessage) -> dict[str, Any]:
                 return {
                     "type": "custom_tool_call_output",
                     "call_id": message.tool_call_id,
-                    "output": value.get("output", ""),
+                    "output": _to_tool_content(value.get("output", "")),
                 }
     return {
         "type": "function_call_output",
         "call_id": message.tool_call_id,
-        "output": _to_user_message(message)["content"],
+        "output": _to_tool_content(message.content),
     }
+
+
+def _to_tool_content(value: object) -> str | list[dict[str, Any]]:
+    if isinstance(value, str):
+        return value
+    if not isinstance(value, list):
+        msg = (
+            "OpenAI Decisions tool output must be text or a list of text/image blocks."
+        )
+        raise ValueError(msg)
+    parts = []
+    for block in value:
+        if not isinstance(block, (str, dict)) or (
+            isinstance(block, dict)
+            and block.get("type")
+            not in {"text", "input_text", "image", "image_url", "input_image"}
+        ):
+            msg = "Unsupported content block in OpenAI Decisions tool output."
+            raise ValueError(msg)
+        parts.append(_to_message_part(block))
+    return parts
 
 
 def _supports_native_json(state: object) -> bool:
@@ -183,20 +215,17 @@ def _supports_native_json(state: object) -> bool:
 def _to_user_message(message: BaseMessage) -> dict[str, Any]:
     if isinstance(message.content, str):
         return {"role": "user", "content": message.content}
-    return {
-        "role": "user",
-        "content": [
-            part
-            for block in message.content
-            for part in (
-                _to_json_user_message(block["data"])["content"]
-                if isinstance(block, dict)
-                and block.get("type") == "input_json"
-                and not _supports_native_json(block["data"])
-                else [_to_message_part(block)]
-            )
-        ],
-    }
+    content = []
+    for block in message.content:
+        if isinstance(block, dict) and block.get("type") == "input_json":
+            if "prompt_cache_breakpoint" in block:
+                msg = "OpenAI Decisions cache breakpoints require text or image blocks."
+                raise ValueError(msg)
+            if not _supports_native_json(block["data"]):
+                content.extend(_to_json_user_message(block["data"])["content"])
+                continue
+        content.append(_to_message_part(block))
+    return {"role": "user", "content": content}
 
 
 def _to_message_part(block: str | dict[str, Any]) -> dict[str, Any]:

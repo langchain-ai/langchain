@@ -137,7 +137,7 @@ def test_mixed_roles_are_native() -> None:
         {
             "type": "message",
             "role": "assistant",
-            "content": [{"type": "output_text", "text": "On it", "annotations": []}],
+            "content": [{"type": "output_text", "text": "On it"}],
         },
     ]
 
@@ -463,4 +463,106 @@ def test_invalid_cache_breakpoints_are_rejected(cache_breakpoint: Any) -> None:
         ]
     )
     with pytest.raises(ValueError, match="prompt_cache_breakpoint"):
+        to_decision_input(message)
+
+
+def test_assistant_output_omits_response_only_fields() -> None:
+    message = AIMessage(
+        content=[
+            {
+                "type": "output_text",
+                "text": "Hello",
+                "annotations": [],
+                "id": "msg_1",
+                "phase": "final_answer",
+            }
+        ]
+    )
+    assert to_decision_input(message) == [
+        {
+            "type": "message",
+            "role": "assistant",
+            "phase": "final_answer",
+            "content": [{"type": "output_text", "text": "Hello"}],
+        }
+    ]
+
+
+def test_custom_tool_output_normalizes_text_and_images() -> None:
+    cache = {"mode": "explicit"}
+    message = ToolMessage(
+        content=[
+            {
+                "type": "custom_tool_call_output",
+                "output": [
+                    {
+                        "type": "text",
+                        "text": "Result",
+                        "prompt_cache_breakpoint": cache,
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": "https://example.com/a.png",
+                            "detail": "low",
+                        },
+                    },
+                ],
+            }
+        ],
+        tool_call_id="c1",
+    )
+    assert to_decision_input(message) == [
+        {
+            "type": "custom_tool_call_output",
+            "call_id": "c1",
+            "output": [
+                {
+                    "type": "input_text",
+                    "text": "Result",
+                    "prompt_cache_breakpoint": cache,
+                },
+                {
+                    "type": "input_image",
+                    "image_url": "https://example.com/a.png",
+                    "detail": "low",
+                },
+            ],
+        }
+    ]
+
+
+@pytest.mark.parametrize("custom", [False, True])
+@pytest.mark.parametrize(
+    "block",
+    [
+        {"type": "input_json", "data": {"value": 1}},
+        {"type": "input_file", "file_id": "file_1"},
+        {"type": "input_audio", "input_audio": {"data": "AAAA", "format": "wav"}},
+        {"type": "item_reference", "id": "msg_1"},
+    ],
+)
+def test_tool_output_rejects_unsupported_blocks(
+    custom: bool, block: dict[str, Any]
+) -> None:
+    content: Any = (
+        [{"type": "custom_tool_call_output", "output": [block]}] if custom else [block]
+    )
+    message = ToolMessage(content=content, tool_call_id="c1")
+    with pytest.raises(ValueError, match="Unsupported content block"):
+        to_decision_input(message)
+
+
+@pytest.mark.parametrize("size", [1, 256 * 1024])
+def test_json_cache_breakpoints_rejected_before_fallback(size: int) -> None:
+    message = HumanMessage(
+        content=[
+            {
+                "type": "input_json",
+                "data": {"value": "x" * size},
+                "prompt_cache_breakpoint": {"mode": "explicit"},
+            }
+        ]
+    )
+    with pytest.raises(ValueError, match="cache breakpoints"):
         to_decision_input(message)
