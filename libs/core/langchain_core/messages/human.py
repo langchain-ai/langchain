@@ -103,7 +103,7 @@ def create_notification_message(
 
         The keys and header may change.
 
-    !!! version-added "Added in `langchain-core` 1.8.0"
+    !!! version-added "Added in `langchain-core` 1.7.1"
 
     Args:
         content: The text or content blocks the model reads. Escape untrusted
