@@ -42,7 +42,7 @@ def test_notification_prepends_header_block_to_content_blocks() -> None:
     )
 
     assert message.content == [
-        {"type": "text", "text": f"{NOTIFICATION_HEADER}\nFrames from a video."},
+        {"type": "text", "text": f"{NOTIFICATION_HEADER}\nFrames from a video.\n"},
         text,
         image,
     ]

@@ -143,7 +143,7 @@ def create_notification_message(
         if isinstance(content, str):
             content = f"{intro}\n{content}"
         else:
-            content = [types.TextContentBlock(type="text", text=intro), *content]
+            content = [types.TextContentBlock(type="text", text=f"{intro}\n"), *content]
     if isinstance(content, str):
         return HumanMessage(content=content, additional_kwargs=kwargs, id=id)
     return HumanMessage(content_blocks=content, additional_kwargs=kwargs, id=id)
