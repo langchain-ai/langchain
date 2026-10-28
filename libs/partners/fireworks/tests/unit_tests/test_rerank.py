@@ -56,6 +56,7 @@ def test_missing_api_key_with_only_sync_client() -> None:
         )
 
 
+@pytest.mark.filterwarnings("error::langchain_core._api.LangChainBetaWarning")
 def test_rerank_posts_fireworks_payload() -> None:
     reranker, client, _ = _reranker(
         {"data": [{"index": 1, "relevance_score": 0.9}]},
