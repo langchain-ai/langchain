@@ -30,12 +30,14 @@ from typing_extensions import TypedDict, override
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForLLMRun,
     CallbackManagerForRetrieverRun,
     atrace_as_chain_group,
     trace_as_chain_group,
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import (
+    BaseChatModel,
     FakeListChatModel,
     FakeListLLM,
     FakeStreamingListLLM,
@@ -50,7 +52,8 @@ from langchain_core.output_parsers import (
     CommaSeparatedListOutputParser,
     StrOutputParser,
 )
-from langchain_core.outputs.chat_generation import ChatGeneration
+from langchain_core.outputs.chat_generation import ChatGeneration, ChatGenerationChunk
+from langchain_core.outputs.chat_result import ChatResult
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 from langchain_core.prompts import (
@@ -6064,3 +6067,67 @@ def test_runnable_sequence_v1_output_schema_with_pick() -> None:
     schema = sequence.get_output_jsonschema()
     assert set(schema["properties"]) == {"a"}
     assert "a" in schema["required"]
+
+
+class _ReasonsThenAnswers(BaseChatModel):
+    @property
+    def _llm_type(self) -> str:
+        return "reasons-then-answers"
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        raise NotImplementedError
+
+    @override
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(content=[{"type": "thinking", "thinking": "hmm"}])
+        )
+        for text in ["Hel", "lo", " world"]:
+            yield ChatGenerationChunk(message=AIMessageChunk(content=text))
+
+
+class _ModelOutput(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.content: Any = None
+
+    @override
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+        generation = response.generations[0][0]
+        assert isinstance(generation, ChatGeneration)
+        self.content = generation.message.content
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_streaming_a_reasoning_block_then_text_adds_the_text_once(
+    *, use_async: bool
+) -> None:
+    received: list[Any] = []
+
+    def record(message: BaseMessage) -> BaseMessage:
+        received.append(message.content)
+        return message
+
+    chain = _ReasonsThenAnswers() | RunnableLambda(record)
+    model_output = _ModelOutput()
+    config: RunnableConfig = {"callbacks": [model_output]}
+    if use_async:
+        _ = [chunk async for chunk in chain.astream("hi", config)]
+    else:
+        _ = list(chain.stream("hi", config))
+
+    content = [{"type": "thinking", "thinking": "hmm"}, "Hello world"]
+    assert received == [content]
+    assert model_output.content == content
