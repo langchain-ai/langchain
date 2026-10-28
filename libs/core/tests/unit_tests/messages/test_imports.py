@@ -1,6 +1,8 @@
 from langchain_core.messages import __all__
 
 EXPECTED_ALL = [
+    "NOTIFICATION_HEADER",
+    "create_notification_message",
     "MessageLikeRepresentation",
     "_message_from_dict",
     "AIMessage",

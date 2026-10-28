@@ -46,7 +46,12 @@ if TYPE_CHECKING:
         is_data_content_block,
     )
     from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
-    from langchain_core.messages.human import HumanMessage, HumanMessageChunk
+    from langchain_core.messages.human import (
+        NOTIFICATION_HEADER,
+        HumanMessage,
+        HumanMessageChunk,
+        create_notification_message,
+    )
     from langchain_core.messages.modifier import RemoveMessage
     from langchain_core.messages.system import SystemMessage, SystemMessageChunk
     from langchain_core.messages.tool import (
@@ -72,6 +77,7 @@ if TYPE_CHECKING:
 __all__ = (
     "LC_AUTO_PREFIX",
     "LC_ID_PREFIX",
+    "NOTIFICATION_HEADER",
     "AIMessage",
     "AIMessageChunk",
     "Annotation",
@@ -116,6 +122,7 @@ __all__ = (
     "convert_to_openai_data_block",
     "convert_to_openai_image_block",
     "convert_to_openai_messages",
+    "create_notification_message",
     "ensure_id",
     "filter_messages",
     "get_buffer_string",
@@ -149,6 +156,8 @@ _dynamic_imports = {
     "FunctionMessageChunk": "function",
     "HumanMessage": "human",
     "HumanMessageChunk": "human",
+    "NOTIFICATION_HEADER": "human",
+    "create_notification_message": "human",
     "NonStandardAnnotation": "content",
     "NonStandardContentBlock": "content",
     "OutputTokenDetails": "ai",
