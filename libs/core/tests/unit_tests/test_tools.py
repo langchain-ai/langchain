@@ -41,6 +41,7 @@ from typing_extensions import TypedDict, override
 from langchain_core import tools
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
+    BaseCallbackHandler,
     CallbackManagerForToolRun,
 )
 from langchain_core.callbacks.manager import (
@@ -1386,6 +1387,51 @@ async def test_async_tool_pass_config(tool: BaseTool) -> None:
         await tool.ainvoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}})
         == "baz"
     )
+
+
+
+class _NestedToolRunRecorder(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.tool_run_id: Any = None
+        self.inner_parent_run_id: Any = None
+
+    def on_tool_start(
+        self, serialized: dict[str, Any], input_str: str, **kwargs: Any
+    ) -> None:
+        self.tool_run_id = kwargs["run_id"]
+
+    def on_chain_start(
+        self, serialized: dict[str, Any], inputs: Any, **kwargs: Any
+    ) -> None:
+        self.inner_parent_run_id = kwargs["parent_run_id"]
+
+
+def test_tool_pass_config_preserves_nested_run_parent() -> None:
+    inner = RunnableLambda(lambda value: value * 2, name="inner")
+
+    @tool
+    def double(value: int, config: RunnableConfig) -> int:
+        """Double a number using another runnable."""
+        return inner.invoke(value, config=config)
+
+    recorder = _NestedToolRunRecorder()
+    assert double.invoke({"value": 2}, config={"callbacks": [recorder]}) == 4
+    assert recorder.tool_run_id is not None
+    assert recorder.inner_parent_run_id == recorder.tool_run_id
+
+
+async def test_async_tool_pass_config_preserves_nested_run_parent() -> None:
+    inner = RunnableLambda(lambda value: value * 2, name="inner")
+
+    @tool
+    async def double(value: int, config: RunnableConfig) -> int:
+        """Double a number using another runnable."""
+        return await inner.ainvoke(value, config=config)
+
+    recorder = _NestedToolRunRecorder()
+    assert await double.ainvoke({"value": 2}, config={"callbacks": [recorder]}) == 4
+    assert recorder.tool_run_id is not None
+    assert recorder.inner_parent_run_id == recorder.tool_run_id
 
 
 def test_tool_description() -> None:
