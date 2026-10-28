@@ -351,6 +351,55 @@ def test_callable_api_key_is_kept_with_gateway(
     assert decisions.base_url == "https://gateway.smith.langchain.com/openai/v1"
 
 
+@pytest.mark.parametrize("question", list(_questions().values()))
+def test_question_accepts_image_instructions(
+    question: Choice | Predicate | Score,
+) -> None:
+    instructions = [
+        {"type": "input_text", "text": "Compare with this image."},
+        {
+            "type": "input_image",
+            "image_url": "https://example.com/candidate.png",
+            "detail": "high",
+        },
+    ]
+    updated = type(question).model_validate(
+        {**question.model_dump(), "instructions": instructions}
+    )
+
+    assert (
+        _decisions()._payload(
+            {"input": "reference", "questions": {"compare": updated}}
+        )["questions"][0]["instructions"]
+        == instructions
+    )
+
+
+@pytest.mark.parametrize(
+    "instructions",
+    [
+        "",
+        [],
+        [{"type": "input_audio"}],
+        [
+            {
+                "type": "input_image",
+                "image_url": "https://example.com/a.png",
+                "prompt_cache_breakpoint": {"mode": "explicit"},
+            }
+        ],
+    ],
+)
+@pytest.mark.parametrize("question", list(_questions().values()))
+def test_invalid_question_instructions(
+    question: Choice | Predicate | Score, instructions: Any
+) -> None:
+    with pytest.raises(ValidationError):
+        type(question).model_validate(
+            {**question.model_dump(), "instructions": instructions}
+        )
+
+
 def test_score_requires_two_levels() -> None:
     with pytest.raises(ValidationError):
         Score(instructions="How severe?", levels=["only"])

@@ -6,8 +6,24 @@ from collections.abc import Sequence
 from typing import Annotated, Any, Literal, TypeAlias
 
 from langchain_core.messages import BaseMessage
-from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import TypedDict
+from pydantic import BaseModel, ConfigDict, Field, with_config
+from typing_extensions import NotRequired, TypedDict
+
+
+@with_config(ConfigDict(extra="forbid"))
+class _QuestionInputText(TypedDict):
+    type: Literal["input_text"]
+    text: str
+
+
+@with_config(ConfigDict(extra="forbid"))
+class _QuestionInputImage(TypedDict):
+    type: Literal["input_image"]
+    image_url: str
+    detail: NotRequired[Literal["low", "high", "auto", "original"] | None]
+
+
+_QuestionInstructions: TypeAlias = str | list[_QuestionInputText | _QuestionInputImage]
 
 _StateValue: TypeAlias = (
     str
@@ -56,7 +72,7 @@ class Predicate(BaseModel):
     type: Literal["predicate"] = "predicate"
     """Wire discriminator for a predicate question."""
 
-    instructions: str = Field(min_length=1)
+    instructions: _QuestionInstructions = Field(min_length=1)
     """Condition to evaluate against the input."""
 
     def _to_api(self, name: str) -> dict[str, Any]:
@@ -96,7 +112,7 @@ class Choice(BaseModel):
     type: Literal["choice"] = "choice"
     """Wire discriminator for a choice question."""
 
-    instructions: str = Field(min_length=1)
+    instructions: _QuestionInstructions = Field(min_length=1)
     """Judgment to make about the input."""
 
     choices: dict[str | bool, str | None] = Field(min_length=1)
@@ -163,7 +179,7 @@ class Score(BaseModel):
     type: Literal["score"] = "score"
     """Wire discriminator for a score question."""
 
-    instructions: str = Field(min_length=1)
+    instructions: _QuestionInstructions = Field(min_length=1)
     """Judgment to make about the input."""
 
     levels: list[str | Level] = Field(min_length=2)
