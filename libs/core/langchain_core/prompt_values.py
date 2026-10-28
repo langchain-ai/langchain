@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Any, Literal, cast
 
+from pydantic import PrivateAttr
 from typing_extensions import TypedDict
 
 from langchain_core.load.serializable import Serializable
@@ -27,6 +28,17 @@ class PromptValue(Serializable, ABC):
     `PromptValues` can be converted to both LLM (pure text-generation) inputs and
     chat model inputs.
     """
+
+    _template_info: dict[str, Any] | None = PrivateAttr(default=None)
+
+    @property
+    def template_info(self) -> dict[str, Any] | None:
+        """Metadata describing the prompt template for observability and tracing."""
+        return self._template_info
+
+    @template_info.setter
+    def template_info(self, value: dict[str, Any] | None) -> None:
+        self._template_info = value
 
     @classmethod
     def is_lc_serializable(cls) -> bool:

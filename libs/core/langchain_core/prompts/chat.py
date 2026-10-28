@@ -733,7 +733,9 @@ class BaseChatPromptTemplate(BasePromptTemplate[str], ABC):
             **kwargs: Keyword arguments to use for formatting.
         """
         messages = self.format_messages(**kwargs)
-        return ChatPromptValue(messages=messages)
+        prompt_val = ChatPromptValue(messages=messages)
+        prompt_val.template_info = self._template_for_tracing(kwargs)
+        return prompt_val
 
     async def aformat_prompt(self, **kwargs: Any) -> ChatPromptValue:
         """Async format prompt.
@@ -744,7 +746,9 @@ class BaseChatPromptTemplate(BasePromptTemplate[str], ABC):
             **kwargs: Keyword arguments to use for formatting.
         """
         messages = await self.aformat_messages(**kwargs)
-        return ChatPromptValue(messages=messages)
+        prompt_val = ChatPromptValue(messages=messages)
+        prompt_val.template_info = self._template_for_tracing(kwargs)
+        return prompt_val
 
     @abstractmethod
     def format_messages(self, **kwargs: Any) -> list[BaseMessage]:
@@ -1304,6 +1308,29 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     def __len__(self) -> int:
         """Return the length of the chat template."""
         return len(self.messages)
+
+    @override
+    def _template_for_tracing(
+        self, values: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        info = super()._template_for_tracing(values)
+        formatted_messages: list[dict[str, Any]] = []
+        for msg in self.messages:
+            msg_info: dict[str, Any] = {"type": msg.__class__.__name__}
+            if hasattr(msg, "prompt") and hasattr(msg.prompt, "template"):
+                msg_info["template"] = msg.prompt.template
+                msg_info["role"] = (
+                    getattr(msg, "role", None)
+                    or msg.__class__.__name__.replace("PromptTemplate", "").lower()
+                )
+            elif hasattr(msg, "content"):
+                msg_info["content"] = msg.content
+                msg_info["role"] = getattr(msg, "type", msg.__class__.__name__)
+            elif hasattr(msg, "variable_name"):
+                msg_info["variable_name"] = msg.variable_name
+            formatted_messages.append(msg_info)
+        info["messages"] = formatted_messages
+        return info
 
     @property
     def _prompt_type(self) -> str:

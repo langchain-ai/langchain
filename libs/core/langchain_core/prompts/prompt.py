@@ -57,6 +57,14 @@ class PromptTemplate(StringPromptTemplate):
         ```
     """
 
+    @override
+    def _template_for_tracing(
+        self, values: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        info = super()._template_for_tracing(values)
+        info["template"] = self.template
+        return info
+
     @property
     @override
     def lc_attributes(self) -> dict[str, Any]:

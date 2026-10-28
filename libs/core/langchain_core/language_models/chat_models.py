@@ -783,7 +783,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             )
         else:
             config = ensure_config(config)
-            messages = self._convert_input(input).to_messages()
+            converted_input = self._convert_input(input)
+            messages = converted_input.to_messages()
             ls_structured_output_format = kwargs.pop(
                 "ls_structured_output_format", None
             ) or kwargs.pop("structured_output_format", None)
@@ -797,6 +798,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 **{key: params[key] for key in kwargs if key in params},
                 **ls_structured_output_format_dict,
             }
+            if getattr(converted_input, "template_info", None):
+                options["ls_prompt_template"] = converted_input.template_info
             inheritable_metadata = {
                 **(config.get("metadata") or {}),
                 **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -915,7 +918,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             return
 
         config = ensure_config(config)
-        messages = self._convert_input(input).to_messages()
+        converted_input = self._convert_input(input)
+        messages = converted_input.to_messages()
 
         ls_structured_output_format = kwargs.pop(
             "ls_structured_output_format", None
@@ -930,6 +934,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             **{key: params[key] for key in kwargs if key in params},
             **ls_structured_output_format_dict,
         }
+        if getattr(converted_input, "template_info", None):
+            options["ls_prompt_template"] = converted_input.template_info
         inheritable_metadata = {
             **(config.get("metadata") or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -1688,6 +1694,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **ls_structured_output_format_dict}
+        ls_prompt_template = kwargs.pop("ls_prompt_template", None)
+        if ls_prompt_template:
+            options["ls_prompt_template"] = ls_prompt_template
         inheritable_metadata = {
             **(metadata or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -1814,6 +1823,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         params = self._get_invocation_params(stop=stop, **kwargs)
         options = {"stop": stop, **ls_structured_output_format_dict}
+        ls_prompt_template = kwargs.pop("ls_prompt_template", None)
+        if ls_prompt_template:
+            options["ls_prompt_template"] = ls_prompt_template
         inheritable_metadata = {
             **(metadata or {}),
             **self._get_ls_params_with_defaults(stop=stop, **kwargs),
@@ -1917,6 +1929,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         **kwargs: Any,
     ) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]
+        if (
+            prompts
+            and getattr(prompts[0], "template_info", None)
+            and "ls_prompt_template" not in kwargs
+        ):
+            kwargs["ls_prompt_template"] = prompts[0].template_info
         return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
 
     @override
@@ -1928,6 +1946,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         **kwargs: Any,
     ) -> LLMResult:
         prompt_messages = [p.to_messages() for p in prompts]
+        if (
+            prompts
+            and getattr(prompts[0], "template_info", None)
+            and "ls_prompt_template" not in kwargs
+        ):
+            kwargs["ls_prompt_template"] = prompts[0].template_info
         return await self.agenerate(
             prompt_messages, stop=stop, callbacks=callbacks, **kwargs
         )

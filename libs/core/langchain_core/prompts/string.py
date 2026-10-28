@@ -346,7 +346,9 @@ class StringPromptTemplate(BasePromptTemplate[str], ABC):
         Returns:
             A formatted string.
         """
-        return StringPromptValue(text=self.format(**kwargs))
+        prompt_val = StringPromptValue(text=self.format(**kwargs))
+        prompt_val.template_info = self._template_for_tracing(kwargs)
+        return prompt_val
 
     async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
         """Async format the prompt with the inputs.
@@ -357,7 +359,9 @@ class StringPromptTemplate(BasePromptTemplate[str], ABC):
         Returns:
             A formatted string.
         """
-        return StringPromptValue(text=await self.aformat(**kwargs))
+        prompt_val = StringPromptValue(text=await self.aformat(**kwargs))
+        prompt_val.template_info = self._template_for_tracing(kwargs)
+        return prompt_val
 
     @override
     @abstractmethod

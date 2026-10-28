@@ -798,6 +798,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> LLMResult:
         prompt_strings = [p.to_string() for p in prompts]
+        if (
+            prompts
+            and getattr(prompts[0], "template_info", None)
+            and "ls_prompt_template" not in kwargs
+        ):
+            kwargs["ls_prompt_template"] = prompts[0].template_info
         return self.generate(prompt_strings, stop=stop, callbacks=callbacks, **kwargs)
 
     @override
@@ -809,6 +815,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         **kwargs: Any,
     ) -> LLMResult:
         prompt_strings = [p.to_string() for p in prompts]
+        if (
+            prompts
+            and getattr(prompts[0], "template_info", None)
+            and "ls_prompt_template" not in kwargs
+        ):
+            kwargs["ls_prompt_template"] = prompts[0].template_info
         return await self.agenerate(
             prompt_strings, stop=stop, callbacks=callbacks, **kwargs
         )
@@ -1000,6 +1012,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_name_list = [cast("str | None", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
         options = {"stop": stop}
+        ls_prompt_template = kwargs.pop("ls_prompt_template", None)
+        if ls_prompt_template:
+            options["ls_prompt_template"] = ls_prompt_template
         (
             existing_prompts,
             llm_string,
@@ -1270,6 +1285,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_name_list = [cast("str | None", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
         options = {"stop": stop}
+        ls_prompt_template = kwargs.pop("ls_prompt_template", None)
+        if ls_prompt_template:
+            options["ls_prompt_template"] = ls_prompt_template
         (
             existing_prompts,
             llm_string,

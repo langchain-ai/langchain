@@ -206,6 +206,20 @@ class BasePromptTemplate(
         inner_input_ = self._validate_input(inner_input)
         return await self.aformat_prompt(**inner_input_)
 
+    def _template_for_tracing(
+        self, _values: builtins.dict[str, Any] | None = None
+    ) -> builtins.dict[str, Any]:
+        """Construct lightweight template metadata for observability/tracing."""
+        template_name = getattr(self, "name", None)
+        if not template_name and self.metadata:
+            template_name = self.metadata.get("name")
+        return {
+            "template_format": getattr(self, "template_format", "f-string"),
+            "input_variables": list(self.input_variables),
+            "template_name": template_name,
+            "metadata": dict(self.metadata) if self.metadata else {},
+        }
+
     @override
     def invoke(
         self,
@@ -227,13 +241,16 @@ class BasePromptTemplate(
             config["metadata"] = {**config["metadata"], **self.metadata}
         if self.tags:
             config["tags"] += self.tags
-        return self._call_with_config(
+        prompt_val = self._call_with_config(
             self._format_prompt_with_error_handling,
             input,
             config,
             run_type="prompt",
             serialized=self._serialized,
         )
+        if isinstance(prompt_val, PromptValue) and prompt_val.template_info is None:
+            prompt_val.template_info = self._template_for_tracing(input)
+        return prompt_val
 
     @override
     async def ainvoke(
@@ -256,13 +273,16 @@ class BasePromptTemplate(
             config["metadata"].update(self.metadata)
         if self.tags:
             config["tags"].extend(self.tags)
-        return await self._acall_with_config(
+        prompt_val = await self._acall_with_config(
             self._aformat_prompt_with_error_handling,
             input,
             config,
             run_type="prompt",
             serialized=self._serialized,
         )
+        if isinstance(prompt_val, PromptValue) and prompt_val.template_info is None:
+            prompt_val.template_info = self._template_for_tracing(input)
+        return prompt_val
 
     @abstractmethod
     def format_prompt(self, **kwargs: Any) -> PromptValue:
