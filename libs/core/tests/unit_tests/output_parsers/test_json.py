@@ -254,6 +254,11 @@ TEST_CASES_PARTIAL = [
     ('{"foo": "bar", "bar"', '{"foo": "bar"}'),
     ('{"foo": "bar", ', '{"foo": "bar"}'),
     ('{"foo":"bar\\', '{"foo": "bar"}'),
+    # chunk ends inside an incomplete ``\uXXXX`` escape (#41545)
+    ('{"city": "M\\u', '{"city": "M"}'),
+    ('{"city": "M\\u00', '{"city": "M"}'),
+    ('{"city": "M\\u00fc', '{"city": "M\\u00fc"}'),
+    ('{"a": {"b": "\\u', '{"a": {"b": ""}}'),
 ]
 
 
