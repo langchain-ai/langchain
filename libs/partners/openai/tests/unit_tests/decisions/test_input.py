@@ -58,12 +58,51 @@ def test_single_human_message_with_image() -> None:
     ]
 
 
-def test_hosted_image_url_is_rejected() -> None:
-    message = HumanMessage(
-        content=[{"type": "image", "url": "https://example.com/a.png"}]
-    )
+@pytest.mark.parametrize("scheme", ["http", "https"])
+def test_hosted_images_are_supported(scheme: str) -> None:
+    url = f"{scheme}://example.com/a.png"
+    assert to_decision_input(HumanMessage(content=[{"type": "image", "url": url}])) == [
+        {"role": "user", "content": [{"type": "input_image", "image_url": url}]}
+    ]
 
-    with pytest.raises(ValueError, match="base64 data URLs"):
+
+def test_image_detail_and_cache_breakpoints_are_preserved() -> None:
+    cache = {"mode": "explicit"}
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "Inspect", "prompt_cache_breakpoint": cache},
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/a.png", "detail": "original"},
+                "prompt_cache_breakpoint": cache,
+            },
+        ]
+    )
+    assert to_decision_input(message) == [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "input_text",
+                    "text": "Inspect",
+                    "prompt_cache_breakpoint": cache,
+                },
+                {
+                    "type": "input_image",
+                    "image_url": "https://example.com/a.png",
+                    "detail": "original",
+                    "prompt_cache_breakpoint": cache,
+                },
+            ],
+        }
+    ]
+
+
+def test_non_http_image_url_is_rejected() -> None:
+    message = HumanMessage(
+        content=[{"type": "image_url", "image_url": {"url": "file:///tmp/a.png"}}]
+    )
+    with pytest.raises(ValueError, match="HTTP"):
         to_decision_input(message)
 
 
@@ -176,7 +215,7 @@ def test_images_nested_in_json_are_kept_in_place() -> None:
     ]
 
 
-def test_hosted_image_urls_in_mixed_conversations_stay_as_text() -> None:
+def test_hosted_image_urls_in_mixed_conversations_are_images() -> None:
     result = to_decision_input(
         [
             AIMessage("Hi"),
@@ -186,7 +225,8 @@ def test_hosted_image_urls_in_mixed_conversations_stay_as_text() -> None:
         ]
     )
 
-    assert "https://example.com/a.png" in _json_text(result)
+    assert isinstance(result, list)
+    assert result[0]["content"][1]["image_url"] == "https://example.com/a.png"
 
 
 def test_content_resembling_an_image_token_is_left_alone() -> None:
