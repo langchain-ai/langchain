@@ -408,10 +408,12 @@ class ExperimentalMarkdownSyntaxTextSplitter:
                 self._resolve_header_stack(header_depth, header_text)
             elif code_match:
                 self._complete_chunk_doc()
+                # Resolve code block with proper opening fence handling
                 self.current_chunk.page_content = self._resolve_code_chunk(
                     raw_line, raw_lines
                 )
-                self.current_chunk.metadata["Code"] = code_match.group(1)
+                # Store language identifier from the opening fence
+                self.current_chunk.metadata["Code"] = code_match.group('lang')
                 self._complete_chunk_doc()
             elif horz_match:
                 self._complete_chunk_doc()
@@ -440,26 +442,46 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         self.current_header_stack.append((header_depth, header_text))
 
     def _resolve_code_chunk(self, current_line: str, raw_lines: list[str]) -> str:
+        """Resolve a fenced code block, ensuring the closing fence matches the opening fence.
+
+        The opening fence (backticks or tildes) and its length are taken from ``current_line``.
+        A valid closing fence must:
+        * Use the same fence character as the opening fence.
+        * Have a length >= the opening fence length.
+        * Contain only optional whitespace (spaces or tabs) after the fence.
+        """
+        # Determine the opening fence from the current line
+        opening_match = self._match_code(current_line)
+        opening_fence = opening_match.group('fence') if opening_match else ''
+        opening_len = len(opening_fence)
         chunk = current_line
         while raw_lines:
             raw_line = raw_lines.pop(0)
             chunk += raw_line
-            if self._match_code(raw_line):
-                return chunk
-        return ""
+            # Check for a closing fence that matches the opening fence criteria
+            if opening_fence:
+                fence_char = opening_fence[0]
+                if re.match(rf'^{re.escape(fence_char)}{{{opening_len},}}[ \t]*$', raw_line):
+                    return chunk
+            # Fallback: if any generic code fence is encountered (should not happen), break
+            # No fallback return here; treat any non-closing fence as regular content
+        return chunk
 
     def _complete_chunk_doc(self) -> None:
         chunk_content = self.current_chunk.page_content
-        # Discard any empty documents
-        if chunk_content and not chunk_content.isspace():
-            # Apply the header stack as metadata
-            for depth, value in self.current_header_stack:
-                header_key = self.splittable_headers.get("#" * depth)
-                if header_key is not None:
-                    self.current_chunk.metadata[header_key] = value
+        # Apply the header stack as metadata
+        for depth, value in self.current_header_stack:
+            header_key = self.splittable_headers.get("#" * depth)
+            if header_key is not None:
+                self.current_chunk.metadata[header_key] = value
+        # Emit only if there is non‑empty content, or metadata that includes non‑header information (e.g., code block)
+        header_keys = set(self.splittable_headers.values())
+        has_non_header_meta = any(k not in header_keys for k in self.current_chunk.metadata)
+        if (chunk_content and not chunk_content.isspace()) or has_non_header_meta:
             self.chunks.append(self.current_chunk)
-        # Reset the current chunk
+        # Reset the current chunk (header stack is retained for next chunks)
         self.current_chunk = Document(page_content="")
+
 
     # Match methods
     def _match_header(self, line: str) -> re.Match[str] | None:
@@ -471,8 +493,9 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
     @staticmethod
     def _match_code(line: str) -> re.Match[str] | None:
-        matches = [re.match(rule, line) for rule in [r"^```(.*)", r"^~~~(.*)"]]
-        return next((match for match in matches if match), None)
+        # Match opening fence of backticks or tildes (minimum 3 chars) and capture optional language specifier
+        match = re.match(r'^(?P<fence>`{3,}|~{3,})(?P<lang>.*)', line)
+        return match
 
     @staticmethod
     def _match_horz(line: str) -> re.Match[str] | None:

@@ -199,6 +199,29 @@ def test_character_text_splitter_empty_doc() -> None:
     assert output == expected_output
 
 
+def test_code_fence_longer_opening_not_closed_by_shorter():
+    """A longer opening fence should not be closed by a shorter fence of the same type."""
+    markdown = """``````python\nprint('hello')\n```\nTrailing text\n"""
+    splitter = ExperimentalMarkdownSyntaxTextSplitter()
+    chunks = splitter.split_text(markdown)
+    # Expect a single chunk preserving the entire text because closing fence is invalid
+    assert len(chunks) == 1
+    assert chunks[0].metadata.get("Code") == "python"
+    # The content should include the shorter closing fence line as part of the code block
+    assert "```\n" in chunks[0].page_content
+
+
+def test_code_fence_mismatched_closing_fence_char():
+    """A closing fence with a different fence character should not terminate the code block."""
+    markdown = """```python\nprint('world')\n~~~\nTrailing after mismatched fence\n"""
+    splitter = ExperimentalMarkdownSyntaxTextSplitter()
+    chunks = splitter.split_text(markdown)
+    assert len(chunks) == 1
+    assert chunks[0].metadata.get("Code") == "python"
+    # The mismatched fence should be treated as regular text inside the code block
+    assert "~~~" in chunks[0].page_content
+
+
 def test_character_text_splitter_separtor_empty_doc() -> None:
     """Test edge cases are separators."""
     text = "f b"
@@ -206,6 +229,35 @@ def test_character_text_splitter_separtor_empty_doc() -> None:
     output = splitter.split_text(text)
     expected_output = ["f", "b"]
     assert output == expected_output
+def test_experimental_markdown_syntax_text_splitter_fence_validation() -> None:
+    """Test that the splitter correctly handles longer opening fences and does not close on shorter or mismatched fences."""
+    doc = (
+        "# Header\n"
+        "```python\n"
+        "def outer():\n"
+        "    print('Start')\n"
+        "    ```\n"  # shorter fence should be treated as content
+        "    print('Inside code')\n"
+        "    ~~~\n"  # mismatched fence should be treated as content
+        "    print('More')\n"
+        "```\n"  # closing with matching length (3 backticks) will close correctly
+        "# Next Header\n"
+        "Content after code block.\n"
+    )
+    splitter = ExperimentalMarkdownSyntaxTextSplitter()
+    output = splitter.split_text(doc)
+    # Expect two documents: the code block (with header metadata) and the next header content.
+    assert len(output) == 2
+    # First document should be the code block with full content including inner fences
+    code_doc = output[0]
+    assert code_doc.metadata.get("Code") == "python"
+    assert code_doc.metadata.get("Header 1") == "Header"
+    assert "```" in code_doc.page_content
+    assert "    ```" in code_doc.page_content
+    assert "    ~~~" in code_doc.page_content
+    # Second document corresponds to the next header
+    assert output[1].metadata == {"Header 1": "Next Header"}
+    assert output[1].page_content == "Content after code block.\n"
 
 
 def test_character_text_splitter_long() -> None:
@@ -4432,3 +4484,35 @@ def test_character_text_splitter_chunk_size_effect(
         keep_separator=False,
     )
     assert splitter.split_text(text) == expected
+
+
+def test_experimental_markdown_syntax_text_splitter_fence_validation() -> None:
+    """Test that the splitter correctly handles longer opening fences and does not close on shorter or mismatched fences."""
+    doc = (
+        "# Header\n"
+        "```python\n"
+        "def outer():\n"
+        "    print('Start')\n"
+        "    ```\n"  # shorter fence should be treated as content
+        "    print('Inside code')\n"
+        "    ~~~\n"  # mismatched fence should be treated as content
+        "    print('More')\n"
+        "```\n"  # closing with matching length (3 backticks) will close correctly
+        "# Next Header\n"
+        "Content after code block.\n"
+    )
+    splitter = ExperimentalMarkdownSyntaxTextSplitter()
+    output = splitter.split_text(doc)
+    # Expect three documents: header before code, the code block, and the next header content.
+    assert len(output) == 3
+    # First document is the content before the code block (should be empty content if no text before code)
+    assert output[0].metadata == {"Header 1": "Header"}
+    # Second document should be the code block with full content including inner fences
+    code_doc = output[1]
+    assert code_doc.metadata.get("Code") == "python"
+    assert "```" in code_doc.page_content
+    assert "    ```" in code_doc.page_content
+    assert "    ~~~" in code_doc.page_content
+    # Third document corresponds to the next header
+    assert output[2].metadata == {"Header 1": "Next Header"}
+    assert output[2].page_content == "Content after code block.\n"
