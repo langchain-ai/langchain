@@ -3411,7 +3411,7 @@ def test_usage_metadata_cache_creation_ttl() -> None:
     details = dict(result.get("input_token_details") or {})
     assert details["cache_creation"] == 0
     assert details["ephemeral_5m_input_tokens"] == 100
-    assert details["ephemeral_1h_input_tokens"] is None
+    assert "ephemeral_1h_input_tokens" not in details
 
 
 class FakeTracer(BaseTracer):
