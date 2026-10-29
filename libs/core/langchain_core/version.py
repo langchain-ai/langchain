@@ -1,3 +1,3 @@
 """Version information for `langchain-core`."""
 
-VERSION = "1.7.1"
+VERSION = "1.7.2"
