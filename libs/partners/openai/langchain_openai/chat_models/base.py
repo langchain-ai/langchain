@@ -60,6 +60,7 @@ from langchain_core.exceptions import (
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
+    ModelRefusalError,
     ModelTimeoutError,
 )
 from langchain_core.language_models import (
@@ -110,6 +111,7 @@ from langchain_core.output_parsers.openai_tools import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import (
     Runnable,
+    RunnableGenerator,
     RunnableLambda,
     RunnableMap,
     RunnablePassthrough,
@@ -2866,16 +2868,22 @@ class BaseChatOpenAI(BaseChatModel):
             )
             raise ValueError(msg)
 
+        # Surface refusals and content-filter stops as a typed error before the
+        # parser runs. Applied per chunk so streamed structured output still streams.
+        checked_parser = (
+            RunnableGenerator(_check_refusal, _acheck_refusal) | output_parser
+        )
+
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
-                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+                parsed=itemgetter("raw") | checked_parser, parsing_error=lambda _: None
             )
             parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
             parser_with_fallback = parser_assign.with_fallbacks(
                 [parser_none], exception_key="parsing_error"
             )
             return RunnableMap(raw=llm) | parser_with_fallback
-        return llm | output_parser
+        return llm | checked_parser
 
     def _filter_disabled_params(self, **kwargs: Any) -> dict[str, Any]:
         if not self.disabled_params:
@@ -4453,22 +4461,7 @@ def _oai_structured_outputs_parser(
         if isinstance(parsed, dict):
             return schema(**parsed)
         return parsed
-    if ai_msg.additional_kwargs.get("refusal"):
-        raise OpenAIRefusalError(ai_msg.additional_kwargs["refusal"])
-    if any(
-        isinstance(block, dict)
-        and block.get("type") == "non_standard"
-        and "refusal" in block["value"]  # type: ignore[typeddict-item]
-        for block in ai_msg.content_blocks
-    ):
-        refusal = next(
-            block["value"]["refusal"]
-            for block in ai_msg.content_blocks
-            if isinstance(block, dict)
-            and block["type"] == "non_standard"
-            and "refusal" in block["value"]
-        )
-        raise OpenAIRefusalError(refusal)
+    _raise_on_refusal(ai_msg)
     if ai_msg.tool_calls:
         return None
     msg = (
@@ -4478,14 +4471,111 @@ def _oai_structured_outputs_parser(
     raise ValueError(msg)
 
 
-class OpenAIRefusalError(Exception):
-    """Error raised when OpenAI Structured Outputs API returns a refusal.
+def _get_refusal_text(message: BaseMessage) -> str | None:
+    """Return the model's refusal text, if the message contains one.
+
+    Chat Completions puts it in `additional_kwargs["refusal"]`; the Responses API
+    returns a `refusal` content block.
+    """
+    if refusal := message.additional_kwargs.get("refusal"):
+        return str(refusal)
+    if isinstance(message.content, list):
+        for block in message.content:
+            if (
+                isinstance(block, dict)
+                and block.get("type") == "refusal"
+                and block.get("refusal")
+            ):
+                return str(block["refusal"])
+    for content_block in message.content_blocks:
+        if (
+            isinstance(content_block, dict)
+            and content_block.get("type") == "non_standard"
+            and isinstance(value := content_block.get("value"), dict)
+            and value.get("refusal")
+        ):
+            return str(value["refusal"])
+    return None
+
+
+def _raise_on_refusal(message: BaseMessage) -> None:
+    """Raise `OpenAIRefusalError` if the model refused or output was filtered."""
+    response_metadata = message.response_metadata or {}
+    finish_reason = response_metadata.get("finish_reason")
+    if refusal := _get_refusal_text(message):
+        raise OpenAIRefusalError(
+            refusal,
+            stop_reason=finish_reason,
+            explanation=refusal,
+            raw_message=message,
+        )
+    incomplete_details = response_metadata.get("incomplete_details")
+    incomplete_reason = (
+        incomplete_details.get("reason")
+        if isinstance(incomplete_details, dict)
+        else None
+    )
+    if "content_filter" in (finish_reason, incomplete_reason):
+        raise OpenAIRefusalError(
+            stop_reason="content_filter",
+            raw_message=message,
+        )
+
+
+def _check_refusal(messages: Iterator[BaseMessage]) -> Iterator[BaseMessage]:
+    for message in messages:
+        _raise_on_refusal(message)
+        yield message
+
+
+async def _acheck_refusal(
+    messages: AsyncIterator[BaseMessage],
+) -> AsyncIterator[BaseMessage]:
+    async for message in messages:
+        _raise_on_refusal(message)
+        yield message
+
+
+class OpenAIRefusalError(ModelRefusalError):
+    """Error raised when an OpenAI model refuses a structured output request.
 
     When using OpenAI's Structured Outputs API with user-generated input, the model
-    may occasionally refuse to fulfill the request for safety reasons.
+    may occasionally refuse to fulfill the request for safety reasons. The same
+    error is raised when the response stops because of a content filter
+    (`finish_reason="content_filter"`).
+
+    Subclasses `ModelRefusalError`, so provider-agnostic code can catch that
+    instead.
 
     See [more on refusals](https://platform.openai.com/docs/guides/structured-outputs/refusals).
     """
+
+    def __init__(
+        self,
+        message: str | None = None,
+        *,
+        stop_reason: str | None = None,
+        category: str | None = None,
+        explanation: str | None = None,
+        raw_message: BaseMessage | None = None,
+    ) -> None:
+        """Create an `OpenAIRefusalError`.
+
+        Args:
+            message: Error message. For a model refusal this is the refusal text.
+            stop_reason: The response's finish reason, e.g. `'content_filter'`.
+            category: Refusal category, if OpenAI reports one.
+            explanation: The model's refusal text, if any.
+            raw_message: The model response that contained the refusal.
+        """
+        super().__init__(
+            message,
+            provider="openai",
+            stop_reason=stop_reason,
+            category=category,
+            explanation=explanation,
+            raw_message=raw_message,
+        )
 
 
 def _create_usage_metadata(
