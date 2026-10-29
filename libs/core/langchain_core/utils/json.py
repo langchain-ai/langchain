@@ -111,8 +111,20 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     # If we're still inside a string at the end of processing,
     # we need to close the string.
     if is_inside_string:
-        if escaped:  # Remove unterminated escape character
+        # Strip an incomplete unicode escape (\uXXXX with fewer than 4 hex digits)
+        # or a lone trailing backslash so that json.loads can succeed.
+        # An unfinished \u would otherwise cause loads to fail and the retry
+        # loop to drop the whole key.
+        if new_chars and new_chars[-1] == "\\":
             new_chars.pop()
+        else:
+            # Look for trailing incomplete \uXXXX
+            joined = "".join(new_chars)
+            # Match \u followed by 0-3 hex digits at the end
+            m = re.search(r"\\u[0-9a-fA-F]{0,3}$", joined)
+            if m:
+                # Remove the incomplete escape
+                new_chars = list(joined[: m.start()])
         new_chars.append('"')
 
     # Reverse the stack to get the closing characters.

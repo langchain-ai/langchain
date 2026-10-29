@@ -254,6 +254,10 @@ TEST_CASES_PARTIAL = [
     ('{"foo": "bar", "bar"', '{"foo": "bar"}'),
     ('{"foo": "bar", ', '{"foo": "bar"}'),
     ('{"foo":"bar\\', '{"foo": "bar"}'),
+    # Incomplete unicode escapes should keep the partial string, not drop the key
+    ('{"city": "M\\u00', '{"city": "M"}'),
+    ('{"city": "M\\u', '{"city": "M"}'),
+    ('{"a": {"b": "\\u', '{"a": {"b": ""}}'),
 ]
 
 
