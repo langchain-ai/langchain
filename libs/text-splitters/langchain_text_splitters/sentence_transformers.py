@@ -50,7 +50,13 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             raise ImportError(msg) from err
 
         self.model_name = model_name
-        self._model = sentence_transformer_cls(self.model_name, **(model_kwargs or {}))
+        # The splitter only needs the tokenizer and max_seq_length — it never
+        # runs inference.  Default to device="cpu" so that model weights are
+        # not loaded onto an accelerator (which would waste ~420 MiB of VRAM
+        # for the default model).  Users who explicitly need the weights on a
+        # specific device can override this via model_kwargs={"device": "xpu:0"}.
+        _model_kwargs = {"device": "cpu", **(model_kwargs or {})}
+        self._model = sentence_transformer_cls(self.model_name, **_model_kwargs)
         self.tokenizer = self._model.tokenizer
         self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
 

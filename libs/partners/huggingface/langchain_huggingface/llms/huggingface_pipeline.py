@@ -116,7 +116,7 @@ class HuggingFacePipeline(BaseLLM):
         model_id: str,
         task: str,
         backend: str = "default",
-        device: int | None = None,
+        device: int | str | None = None,
         device_map: str | None = None,
         model_kwargs: dict | None = None,
         pipeline_kwargs: dict | None = None,
@@ -239,6 +239,7 @@ class HuggingFacePipeline(BaseLLM):
 
         if (
             device is not None
+            and isinstance(device, int)  # string/torch.device pass straight to pipeline
             and importlib.util.find_spec("torch") is not None
             and backend == "default"
         ):
@@ -249,7 +250,11 @@ class HuggingFacePipeline(BaseLLM):
             if hasattr(torch, "accelerator"):
                 accelerator_device_count = torch.accelerator.device_count()
             else:
+                # PyTorch < 2.6 fallback: check CUDA first, then XPU so that
+                # XPU-only machines on torch 2.5 are not incorrectly rejected.
                 accelerator_device_count = torch.cuda.device_count()
+                if accelerator_device_count == 0 and hasattr(torch, "xpu"):
+                    accelerator_device_count = torch.xpu.device_count()
             if device < -1 or (device >= accelerator_device_count):
                 msg = (
                     f"Got device=={device}, "
@@ -269,6 +274,18 @@ class HuggingFacePipeline(BaseLLM):
                 )
         if device is not None and device_map is not None and backend == "openvino":
             logger.warning("Please set device for OpenVINO through: `model_kwargs`")
+
+        # Bug fix: when a single-device device_map was used (e.g. "cpu", "xpu:1"),
+        # transformers does not set hf_device_map on the model, so the pipeline
+        # would see device=None and silently move the model to accelerator 0.
+        # Read back the model's actual device and pin the pipeline to it so the
+        # model stays where device_map placed it.
+        if device is None and device_map is not None and backend == "default":
+            hf_device_map = getattr(model, "hf_device_map", None)
+            if not hf_device_map:
+                # Single-device map: pin pipeline to the device the model is on.
+                device = getattr(model, "device", None)
+
         if "trust_remote_code" in _model_kwargs:
             _model_kwargs = {
                 k: v for k, v in _model_kwargs.items() if k != "trust_remote_code"
