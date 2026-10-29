@@ -3,6 +3,9 @@ type: "Testing & QA"
 title: "Unit Testing and Mocking"
 description: "Guide to writing unit tests: test structure, mocking chat models, fixtures, assertions, and test coverage for agents and components."
 tags: [unit-tests, pytest, testing, fixtures, mocking, chat-models, tools, agents, integration, assertions]
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-29T08:20:01.046Z
 sources:
   - id: openwiki-source-8f1875229ad4a704c8e20a06
     resource: repo://libs/core/Makefile
@@ -16,6 +19,8 @@ sources:
     resource: repo://libs/core/tests/unit_tests/fake/test_fake_chat_model.py
   - id: openwiki-source-f0e376fe9b6befdcc2505465
     resource: repo://libs/core/tests/unit_tests/pydantic_utils.py
+  - id: openwiki-source-8cd5a473a5215925342d3440
+    resource: repo://libs/core/tests/unit_tests/runnables/__snapshots__/test_runnable.ambr
   - id: openwiki-source-344bd4b667096c3c45c8fa82
     resource: repo://libs/core/tests/unit_tests/runnables/conftest.py
   - id: openwiki-source-4717abc86db20c5c76bbf23a
@@ -42,10 +47,7 @@ sources:
     resource: repo://libs/standard-tests/langchain_tests/unit_tests/embeddings.py
   - id: openwiki-source-a6b31954b6df57580d0f3ed0
     resource: repo://libs/standard-tests/langchain_tests/unit_tests/tools.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
+generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
 ---
 
 ## Overview
@@ -86,7 +88,7 @@ make test TEST_FILE=tests/unit_tests/runnables/test_runnable.py
 # Run using uv directly
 uv run --group test pytest tests/unit_tests/
 
-# Watch mode: auto-rerun on code changes
+# Watch mode: auto-rerun on code changes and update snapshots
 make test_watch
 
 # Extended tests (marked with @pytest.mark.requires)
@@ -318,6 +320,8 @@ The root `conftest.py` in `tests/unit_tests/` provides shared fixtures and pytes
 
 **From `/libs/core/tests/unit_tests/conftest.py`**:
 
+The `blockbuster` fixture (autouse=True) prevents blocking I/O in async tests by allowing specific blocking operations in controlled locations:
+
 ```python
 @pytest.fixture(autouse=True)
 def blockbuster() -> Iterator[BlockBuster]:
@@ -343,6 +347,33 @@ def blockbuster() -> Iterator[BlockBuster]:
             bb_function.can_block_in("freezegun/api.py", "_get_cached_module_attributes")
         yield bb
 ```
+
+The `pytest_collection_modifyitems` hook implements `@pytest.mark.requires(package_name)` to automatically skip tests when optional dependencies are missing:
+
+```python
+def pytest_collection_modifyitems(config: pytest.Config, items) -> None:
+    """Automatically skip tests marked with @pytest.mark.requires if dependencies are missing."""
+    for item in items:
+        requires_marker = item.get_closest_marker("requires")
+        if requires_marker:
+            for pkg in requires_marker.args:
+                if util.find_spec(pkg) is None:
+                    item.add_marker(pytest.mark.skip(reason=f"Requires pkg: {pkg}"))
+```
+
+It also supports `--only-extended` and `--only-core` command-line flags.
+
+**Fixture for Deterministic UUIDs**:
+
+```python
+@pytest.fixture
+def deterministic_uuids(mocker: MockerFixture) -> MockerFixture:
+    """Replace random UUIDs with deterministic values for snapshot testing."""
+    side_effect = (UUID(f"00000000-0000-4000-8000-{i:012}", version=4) for i in range(10000))
+    return mocker.patch("uuid.uuid4", side_effect=side_effect)
+```
+
+Use the `deterministic_uuids` fixture in tests where UUIDs must be stable across runs. This enables snapshot testing of traces and message outputs where IDs would otherwise vary.
 
 ### Agent Test Fixtures
 
@@ -375,7 +406,7 @@ async def async_checkpointer(request: pytest.FixtureRequest) -> AsyncIterator[Ba
     ...
 ```
 
-Set `LANGGRAPH_TEST_FAST=true` environment variable to run against only in-memory backends for fast iteration.
+Set `LANGGRAPH_TEST_FAST=true` environment variable to run against only in-memory backends for fast iteration during development.
 
 **Custom Markers**:
 
@@ -391,33 +422,6 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action="store_true",
         help="Only run core tests (skip extended tests)",
     )
-
-def pytest_collection_modifyitems(config: pytest.Config, items) -> None:
-    """Automatically skip tests marked with @pytest.mark.requires if dependencies are missing."""
-    for item in items:
-        requires_marker = item.get_closest_marker("requires")
-        if requires_marker:
-            for pkg in requires_marker.args:
-                if util.find_spec(pkg) is None:
-                    item.add_marker(pytest.mark.skip(reason=f"Requires pkg: {pkg}"))
-```
-
-**Fixture for Deterministic UUIDs**:
-
-```python
-@pytest.fixture
-def deterministic_uuids(mocker):
-    """Replace random UUIDs with deterministic values for snapshot testing."""
-    side_effect = (UUID(f"00000000-0000-4000-8000-{i:012}", version=4) for i in range(10000))
-    return mocker.patch("uuid.uuid4", side_effect=side_effect)
-```
-
-Use the `deterministic_uuids` fixture in tests where UUIDs must be stable across runs:
-
-```python
-def test_runnable_with_trace(deterministic_uuids):
-    # UUIDs will be predictable now
-    ...
 ```
 
 ### Marker Patterns
@@ -648,6 +652,8 @@ def test_agent_stream_events():
     assert tool_calls[0].completed is True
 ```
 
+The stream_events v3 API exposes built-in transformers: `ToolCallTransformer` projects tool calls into `run.tool_calls`, and `MessagesTransformer` projects message updates into `run.messages`. Custom transformers can be appended via the `transformers` parameter.
+
 ### Message Matching with Any ID
 
 Test message content independently of generated UUIDs:
@@ -696,7 +702,7 @@ Fixtures in `conftest.py` are automatically discovered and available to all test
 
 ### Parametrization
 
-Test multiple input/output combinations:
+Test multiple input/output combinations with `@pytest.mark.parametrize`:
 
 ```python
 import pytest
@@ -793,7 +799,7 @@ def test_callbacks_on_chain():
 
 ### Async Testing
 
-Mark async tests with `async def` and `pytest` handles them:
+Mark async tests with `async def` and pytest handles them:
 
 ```python
 import pytest
@@ -815,7 +821,7 @@ async def test_async_streaming():
 
 ### Snapshot Testing with Syrupy
 
-Snapshot tests capture output and compare against baseline snapshots. Useful for complex structures, traces, and serialized objects.
+Snapshot tests capture output and compare against baseline snapshots. Useful for complex structures, traces, and serialized objects. The Syrupy library stores snapshots in `__snapshots__/` directories with `.ambr` file format.
 
 ```python
 from syrupy.assertion import SnapshotAssertion
@@ -832,12 +838,35 @@ def test_runnable_serialization(snapshot: SnapshotAssertion):
     assert dumped == snapshot
 ```
 
-Snapshots are stored in `__snapshots__/` directories. Update them with:
+Snapshots are stored in `__snapshots__/` directories relative to test files. Update them with:
 
 ```bash
-make test_watch  # Auto-updates snapshots
+make test_watch  # Auto-updates snapshots on file changes
 # or
 pytest --snapshot-update
+```
+
+Syrupy snapshots capture complex output including:
+- **Traces and execution logs**: Serialized run objects with hierarchical structure
+- **Nested objects**: Deeply nested dicts, lists, and Pydantic models
+- **Deterministic comparisons**: Use the `deterministic_uuids` fixture to replace random UUIDs with stable values across test runs
+
+Example snapshot usage with deterministic UUIDs:
+
+```python
+def test_chain_with_trace(mocker, snapshot: SnapshotAssertion):
+    mocker.patch("uuid.uuid4", side_effect=[
+        UUID("00000000-0000-4000-8000-000000000000"),
+        UUID("00000000-0000-4000-8000-000000000001"),
+        # ...
+    ])
+    
+    # Chain execution produces deterministic trace
+    tracer = FakeTracer()
+    result = chain.invoke({"input": "test"}, {"callbacks": [tracer]})
+    
+    # Snapshot captures full execution trace
+    assert tracer.runs == snapshot
 ```
 
 ### Helper Stubs for Message Tests

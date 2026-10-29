@@ -1,11 +1,8 @@
 ---
-type: "Reference"
-title: "Messages: LLM Communication Protocol"
-description: "Message types and structures—the data contract between application code and language models. Covers base message types, role semantics, tool-related message types, and provider-specific conversions."
-tags: ["messages", "chat-models", "tool-calling", "multimodal", "streaming"]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
+type: "Concept"
+title: "Messages: Content Representation"
+description: "Message types, content blocks, and multimodal support. Covers message hierarchy, role semantics, content block structure, streaming concatenation semantics, and provider-specific translation."
+tags: ["messages", "content-blocks", "tool-calling", "multimodal", "streaming", "message-chunks"]
 sources:
   - id: openwiki-source-0f6ea1dd09fb4675ff4112b1
     resource: repo://libs/core/langchain_core/messages/__init__.py
@@ -31,14 +28,19 @@ sources:
     resource: repo://libs/core/langchain_core/messages/system.py
   - id: openwiki-source-9861ba5cf0c42c142cf732f9
     resource: repo://libs/core/langchain_core/messages/tool.py
+  - id: openwiki-source-9543ce826699c4339c2915af
+    resource: repo://libs/core/langchain_core/utils/_merge.py
   - id: openwiki-source-5b54a79fff5b1358acd7d4f3
     resource: repo://libs/core/tests/unit_tests/test_messages.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-29T08:20:01.046Z
 ---
 
-# Messages: LLM Communication Protocol
+# Messages: Content Representation
 
-Messages are the **data contract** between application code and language models. They form the I/O abstraction for every conversation: human input flows in as `HumanMessage`, the model responds with `AIMessage`, tools execute and return results via `ToolMessage`, and system instructions prime model behavior via `SystemMessage`. This reference documents the message hierarchy, role semantics, content representations, tool-related message types, streaming semantics, and provider-specific conversion patterns.
+Messages are the **data contract** between application code and language models. They form the I/O abstraction for every conversation: human input flows in as `HumanMessage`, the model responds with `AIMessage`, tools execute and return results via `ToolMessage`, and system instructions prime model behavior via `SystemMessage`. This document covers the message class hierarchy, message content representations (including multimodal content blocks), tool-related types, streaming and message chunk concatenation semantics, and provider-specific translation patterns.
 
 ## Core Message Hierarchy
 
@@ -556,30 +558,32 @@ register_translator("my_provider", translate_my_provider, translate_my_provider_
 
 ## Streaming and MessageChunk
 
-Streaming operations yield **message chunks** (e.g., `AIMessageChunk`, `HumanMessageChunk`, `ToolMessageChunk`). These are optimized for incremental accumulation via the `+` operator.
+Streaming operations yield **message chunks** (e.g., `AIMessageChunk`, `HumanMessageChunk`, `ToolMessageChunk`). These are optimized for incremental accumulation via the `+` operator. All message chunk classes inherit from `BaseMessageChunk` and support concatenation; `AIMessageChunk` has specialized merging logic for tool calls and usage metadata.
 
-### MessageChunk Concatenation Semantics
+### MessageChunk Concatenation: BaseMessageChunk
+
+The base `BaseMessageChunk.__add__` operator merges:
 
 ```python
-chunk1 = AIMessageChunk(content="Hello", id="msg_1")
-chunk2 = AIMessageChunk(content=" World")
+chunk1 = HumanMessageChunk(content="Hello", id="msg_1")
+chunk2 = HumanMessageChunk(content=" World")
 
 result = chunk1 + chunk2
-# → AIMessageChunk(content="Hello World", id="msg_1")
+# → HumanMessageChunk(content="Hello World", id="msg_1")
 ```
 
-**Rules**:
+**Base merging rules**:
 - **String content**: Concatenated directly.
-- **List content**: Merged intelligently:
-  - If both are dicts with the same `index`, merge text fields.
-  - Otherwise, append to list.
-- **additional_kwargs**: Recursively merged (nested dicts merged, lists concatenated).
-- **response_metadata**: Merged.
-- **usage_metadata**: Token counts summed; details merged.
-- **tool_call_chunks**: Merged by `index`; args strings accumulated.
-- **ID precedence**: Provider ID > user ID > LangChain ID.
+- **List content**: Intelligently merged:
+  - Dicts with matching `index` field merge their fields (via `merge_lists`).
+  - Dicts without `index` or with non-matching `index` are appended.
+- **additional_kwargs** and **response_metadata**: Recursively merged (nested dicts merged, lists concatenated).
+- **ID precedence**: Provider-assigned IDs (non-`lc_*`, non-`lc_run_*`) > LangChain-assigned run IDs (`lc_run_*` prefix) > other IDs.
 
-**Example**:
+### AIMessageChunk Concatenation: Tool Calls and Usage
+
+`AIMessageChunk` extends the base concatenation with specialized merging for streaming tool calls and token usage:
+
 ```python
 chunks = [
     AIMessageChunk(content="", tool_call_chunks=[
@@ -588,13 +592,55 @@ chunks = [
     AIMessageChunk(content="", tool_call_chunks=[
         {"index": 0, "id": None, "name": None, "args": ' "Python"}', ...}
     ]),
-    AIMessageChunk(content="", tool_call_chunks=[
-        {"index": 0, "id": None, "name": None, "args": '}', ...}
-    ]),
+]
+
+final = chunks[0] + chunks[1]
+# final.tool_call_chunks[0]["args"] == '{"query": "Python"}'
+```
+
+**AIMessageChunk-specific merging**:
+- **tool_call_chunks**: Chunks with matching `index` have their `args` strings concatenated, enabling JSON argument accumulation during streaming.
+- **usage_metadata**: Token counts (`input_tokens`, `output_tokens`, `total_tokens`) summed across chunks. Detailed breakdowns (`input_token_details`, `output_token_details`) recursively merged.
+- **chunk_position**: Set to `"last"` if any chunk has `chunk_position="last"`; signals that tool_call_chunks should be parsed into tool_calls upon aggregation.
+
+**ID precedence** (same as base, applied consistently across chunks):
+1. Provider-assigned IDs (highest priority).
+2. LangChain-assigned run IDs.
+3. User-provided IDs.
+4. `None` (lowest priority).
+
+**Complete example with tool calls and usage**:
+```python
+from langchain_core.messages import AIMessageChunk
+
+chunks = [
+    AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {"index": 0, "id": "call_1", "name": "search", "args": '{"query":', ...}
+        ],
+        usage_metadata={"input_tokens": 100, "output_tokens": 0, "total_tokens": 100}
+    ),
+    AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {"index": 0, "id": None, "name": None, "args": ' "Python"}', ...}
+        ],
+        usage_metadata={"input_tokens": 0, "output_tokens": 50, "total_tokens": 50}
+    ),
+    AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {"index": 0, "id": None, "name": None, "args": '}', ...}
+        ],
+        usage_metadata={"input_tokens": 0, "output_tokens": 50, "total_tokens": 50}
+    ),
 ]
 
 final = sum(chunks, AIMessageChunk(content=""))
+# final.tool_call_chunks[0]["args"] == '{"query": "Python"}'
 # final.tool_calls == [{"id": "call_1", "name": "search", "args": {"query": "Python"}}]
+# final.usage_metadata == {"input_tokens": 100, "output_tokens": 100, "total_tokens": 200}
 ```
 
 ## Utility Functions

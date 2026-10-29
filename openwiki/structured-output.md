@@ -3,15 +3,15 @@ type: "Reference"
 title: "Structured Output and Response Formatting"
 description: "Document the structured output system: response format specification, strategy selection (auto, provider, tool-based), parsing, validation, and middleware integration."
 tags: [structured-output, response-format, agent, schema, validation, middleware]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-ec30ab6256dd50cc670919f6
     resource: repo://libs/langchain_v1/langchain/agents/structured_output.py
 generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-29T08:20:01.046Z
 ---
 
 ## Overview

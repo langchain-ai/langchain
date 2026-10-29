@@ -30,10 +30,10 @@ sources:
     resource: repo://.github/workflows/pr_lint.yml
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
-generated: { by: "openwiki/0.5.0", at: "2026-10-26T08:33:32.568Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-26T08:33:32.568Z
+    at: 2026-10-29T08:20:01.046Z
+generated: { by: "openwiki/0.5.0", at: "2026-10-26T08:33:32.568Z" }
 ---
 
 # CI/CD Workflows: GitHub Actions and Release Process
