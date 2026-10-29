@@ -1130,7 +1130,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.7.2"
+version = "1.7.3"
 source = { editable = "." }
 dependencies = [
     { name = "certifi" },
