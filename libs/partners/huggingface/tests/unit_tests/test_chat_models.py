@@ -9,7 +9,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import ChatResult
+from langchain_core.outputs import ChatResult, Generation, LLMResult
 from langchain_core.tools import BaseTool
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
@@ -254,6 +254,44 @@ def test_create_message_dicts_includes_inherited_params(chat_hugging_face: Any) 
     assert len(message_dicts) == 1
     assert message_dicts[0]["role"] == "user"
     assert message_dicts[0]["content"] == "test message"
+
+
+def test_pipeline_json_schema_adds_format_instructions(
+    chat_hugging_face: Any, mock_llm: Any
+) -> None:
+    schema = {
+        "type": "object",
+        "properties": {"answer": {"type": "string"}},
+        "required": ["answer"],
+    }
+    mock_llm._generate.return_value = LLMResult(
+        generations=[[Generation(text='{"answer": "ok"}')]]
+    )
+
+    with (
+        patch(
+            "langchain_huggingface.chat_models.huggingface._is_huggingface_endpoint",
+            return_value=False,
+        ),
+        patch(
+            "langchain_huggingface.chat_models.huggingface._is_huggingface_pipeline",
+            return_value=True,
+        ),
+        patch.object(
+            chat_hugging_face, "_to_chat_prompt", return_value="formatted prompt"
+        ) as mock_to_chat_prompt,
+    ):
+        result = chat_hugging_face._generate(
+            [HumanMessage(content="Please extract the answer.")],
+            response_format={"type": "json_object", "schema": schema},
+        )
+
+    prompted_messages = mock_to_chat_prompt.call_args.args[0]
+    assert isinstance(prompted_messages[0], SystemMessage)
+    assert "Return only a valid JSON object" in prompted_messages[0].content
+    assert str(schema) not in prompted_messages[0].content or "JSON Schema" in prompted_messages[0].content
+    assert "response_format" not in mock_llm._generate.call_args.kwargs
+    assert result.generations[0].message.content == '{"answer": "ok"}'
 
 
 def test_model_kwargs_inheritance(mock_llm: Any) -> None:
