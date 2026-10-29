@@ -754,6 +754,27 @@ class ChatHuggingFace(BaseChatModel):
             }
             answer = self.llm.client.chat_completion(messages=message_dicts, **params)
             return self._create_chat_result(answer)
+        if _is_huggingface_pipeline(self.llm) and (
+            response_format := kwargs.pop("response_format", None)
+        ):
+            format_instructions = (
+                "Return only a valid JSON object. Do not include Markdown fences "
+                "or explanatory text outside the JSON object."
+            )
+            if schema := response_format.get("schema"):
+                format_instructions += (
+                    "\\nThe JSON object must conform to this JSON Schema:\\n"
+                    f"{json.dumps(schema, ensure_ascii=False)}"
+                )
+
+            messages = list(messages)
+            if messages and isinstance(messages[0], SystemMessage):
+                messages[0] = SystemMessage(
+                    content=f"{messages[0].content}\\n\\n{format_instructions}"
+                )
+            else:
+                messages.insert(0, SystemMessage(content=format_instructions))
+
         llm_input = self._to_chat_prompt(messages)
 
         if should_stream:
