@@ -26,6 +26,7 @@ requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langsmith>=0.14.9,<1.0.0",
     "httpx>=0.23.0",
+    "certifi>=2026.10.19",
     "tenacity!=8.4.0,>=8.1.0",
     "jsonpatch>=1.33.0",
     "PyYAML>=5.3.0",
