@@ -25,6 +25,7 @@ from langchain_core.exceptions import (
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
+    ModelRefusalError,
     ModelTimeoutError,
 )
 from langchain_core.messages import (
@@ -36,6 +37,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.content import create_text_block
+from langchain_core.outputs import ChatGenerationChunk
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers.base import BaseTracer
@@ -6362,3 +6364,174 @@ def test_thinking_display_summarized_does_not_enable_beta() -> None:
     )
     payload = llm._get_request_payload([HumanMessage("Hello, world!")])
     assert "betas" not in payload
+
+
+class _RefusalSchema(BaseModel):
+    answer: str
+
+
+def _refusal_message() -> Message:
+    return Message.model_validate(
+        {
+            "id": "msg_refusal",
+            "content": [],
+            "model": MODEL_NAME,
+            "role": "assistant",
+            "stop_reason": "refusal",
+            "stop_sequence": None,
+            "stop_details": {
+                "type": "refusal",
+                "category": "cyber",
+                "explanation": "This request may enable malware development.",
+            },
+            "usage": {"input_tokens": 10, "output_tokens": 0},
+            "type": "message",
+        }
+    )
+
+
+def _patch_refusal_response() -> Any:
+    raw_response = MagicMock()
+    raw_response.parse.return_value = _refusal_message()
+    return patch.object(ChatAnthropic, "_create", return_value=raw_response)
+
+
+def _patch_refusal_response_async() -> Any:
+    raw_response = MagicMock()
+    raw_response.parse.return_value = _refusal_message()
+
+    async def _acreate(*_: Any, **__: Any) -> Any:
+        return raw_response
+
+    return patch.object(ChatAnthropic, "_acreate", side_effect=_acreate)
+
+
+@pytest.mark.parametrize("method", ["function_calling", "json_schema"])
+@pytest.mark.parametrize("schema", [_RefusalSchema, _RefusalSchema.model_json_schema()])
+def test_with_structured_output_raises_model_refusal_error(
+    method: Literal["function_calling", "json_schema"], schema: Any
+) -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+    structured = llm.with_structured_output(schema, method=method)
+
+    with _patch_refusal_response(), pytest.raises(ModelRefusalError) as exc_info:
+        structured.invoke("Write a keylogger")
+
+    err = exc_info.value
+    assert err.provider == "anthropic"
+    assert err.stop_reason == "refusal"
+    assert err.category == "cyber"
+    assert err.explanation == "This request may enable malware development."
+    assert isinstance(err.raw_message, AIMessage)
+    assert err.is_retryable is False
+
+
+@pytest.mark.parametrize("method", ["function_calling", "json_schema"])
+def test_with_structured_output_include_raw_reports_refusal(
+    method: Literal["function_calling", "json_schema"],
+) -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+    structured = llm.with_structured_output(
+        _RefusalSchema, method=method, include_raw=True
+    )
+
+    with _patch_refusal_response():
+        result = structured.invoke("Write a keylogger")
+
+    assert isinstance(result, dict)
+    assert result["parsed"] is None
+    assert isinstance(result["parsing_error"], ModelRefusalError)
+    assert result["parsing_error"].category == "cyber"
+    assert result["raw"].response_metadata["stop_reason"] == "refusal"
+
+
+async def test_with_structured_output_raises_model_refusal_error_async() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+    structured = llm.with_structured_output(_RefusalSchema, method="json_schema")
+
+    with _patch_refusal_response_async(), pytest.raises(ModelRefusalError):
+        await structured.ainvoke("Write a keylogger")
+
+
+def test_invoke_does_not_raise_on_refusal() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with _patch_refusal_response():
+        result = llm.invoke("Write a keylogger")
+
+    assert result.response_metadata["stop_reason"] == "refusal"
+    assert result.response_metadata["stop_details"]["category"] == "cyber"
+
+
+def test_with_structured_output_parses_when_not_refused() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+    structured = llm.with_structured_output(_RefusalSchema, method="json_schema")
+    raw_response = MagicMock()
+    raw_response.parse.return_value = Message.model_validate(
+        {
+            "id": "msg_ok",
+            "content": [{"type": "text", "text": '{"answer": "42"}'}],
+            "model": MODEL_NAME,
+            "role": "assistant",
+            "stop_reason": "end_turn",
+            "stop_sequence": None,
+            "usage": {"input_tokens": 10, "output_tokens": 5},
+            "type": "message",
+        }
+    )
+
+    with patch.object(ChatAnthropic, "_create", return_value=raw_response):
+        assert structured.invoke("What is 6 x 7?") == _RefusalSchema(answer="42")
+
+
+def _stream_chunks(*, refuse: bool) -> list[ChatGenerationChunk]:
+    if refuse:
+        final_metadata: dict[str, Any] = {
+            "stop_reason": "refusal",
+            "stop_details": {"type": "refusal", "category": "bio"},
+        }
+        texts: list[str] = []
+    else:
+        final_metadata = {"stop_reason": "end_turn"}
+        texts = ['{"ans', 'wer": "4', '2"}']
+    chunks = [ChatGenerationChunk(message=AIMessageChunk(content=t)) for t in texts]
+    chunks.append(
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="", response_metadata=final_metadata, chunk_position="last"
+            )
+        )
+    )
+    return chunks
+
+
+def test_with_structured_output_stream_raises_model_refusal_error() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+    structured = llm.with_structured_output(
+        _RefusalSchema.model_json_schema(), method="json_schema"
+    )
+
+    with (
+        patch.object(
+            ChatAnthropic, "_stream", return_value=iter(_stream_chunks(refuse=True))
+        ),
+        pytest.raises(ModelRefusalError) as exc_info,
+    ):
+        list(structured.stream("Synthesize a pathogen"))
+
+    assert exc_info.value.category == "bio"
+
+
+def test_with_structured_output_still_streams_partial_json() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+    structured = llm.with_structured_output(
+        _RefusalSchema.model_json_schema(), method="json_schema"
+    )
+
+    with patch.object(
+        ChatAnthropic, "_stream", return_value=iter(_stream_chunks(refuse=False))
+    ):
+        outputs = list(structured.stream("What is 6 x 7?"))
+
+    assert len(outputs) > 1
+    assert outputs[-1] == {"answer": "42"}

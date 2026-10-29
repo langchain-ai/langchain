@@ -27,6 +27,7 @@ from langchain_core.exceptions import (
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
+    ModelRefusalError,
     ModelTimeoutError,
     OutputParserException,
 )
@@ -61,7 +62,12 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.runnables import (
+    Runnable,
+    RunnableGenerator,
+    RunnableMap,
+    RunnablePassthrough,
+)
 from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, get_pydantic_field_names
 from langchain_core.utils._gateway import (
@@ -1209,6 +1215,42 @@ def _apply_cache_control_to_last_eligible_block(
             ]
             return True
     return False
+
+
+def _raise_on_refusal(message: BaseMessage) -> None:
+    """Raise `ModelRefusalError` if Claude refused to answer.
+
+    Claude reports a refusal as a successful response with
+    `stop_reason="refusal"` and, on recent models, `stop_details` carrying the
+    policy category and an explanation.
+    """
+    response_metadata = message.response_metadata or {}
+    if response_metadata.get("stop_reason") != "refusal":
+        return
+    stop_details = response_metadata.get("stop_details")
+    if not isinstance(stop_details, dict):
+        stop_details = {}
+    raise ModelRefusalError(
+        provider="anthropic",
+        stop_reason="refusal",
+        category=stop_details.get("category"),
+        explanation=stop_details.get("explanation"),
+        raw_message=message,
+    )
+
+
+def _check_refusal(messages: Iterator[BaseMessage]) -> Iterator[BaseMessage]:
+    for message in messages:
+        _raise_on_refusal(message)
+        yield message
+
+
+async def _acheck_refusal(
+    messages: AsyncIterator[BaseMessage],
+) -> AsyncIterator[BaseMessage]:
+    async for message in messages:
+        _raise_on_refusal(message)
+        yield message
 
 
 class AnthropicContextOverflowError(anthropic.BadRequestError, ContextOverflowError):
@@ -3020,9 +3062,17 @@ class ChatAnthropic(BaseChatModel):
             )
             raise ValueError(error_message)
 
+        # Refusals arrive as successful responses with no usable content; surface
+        # them as a typed error before the parser fails on the empty message.
+        # Applied per chunk so streamed structured output still streams; Claude
+        # reports the stop reason on the final chunk.
+        checked_parser = (
+            RunnableGenerator(_check_refusal, _acheck_refusal) | output_parser
+        )
+
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
-                parsed=itemgetter("raw") | output_parser,
+                parsed=itemgetter("raw") | checked_parser,
                 parsing_error=lambda _: None,
             )
             parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
@@ -3031,7 +3081,7 @@ class ChatAnthropic(BaseChatModel):
                 exception_key="parsing_error",
             )
             return RunnableMap(raw=llm) | parser_with_fallback
-        return llm | output_parser
+        return llm | checked_parser
 
     def get_num_tokens_from_messages(
         self,
