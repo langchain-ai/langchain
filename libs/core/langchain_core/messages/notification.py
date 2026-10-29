@@ -1,12 +1,11 @@
 """Metadata for messages the agent harness adds to a conversation."""
 
-from typing import Any, TypeVar
+from typing import Any
 
 from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.messages.base import BaseMessage
-
-_MessageT = TypeVar("_MessageT", bound=BaseMessage)
+from langchain_core.messages.human import HumanMessage
 
 
 class NotificationMetadata(TypedDict):
@@ -23,15 +22,15 @@ class NotificationMetadata(TypedDict):
 
 
 def add_notification_metadata(
-    message: _MessageT, *, source: str, data: dict[str, Any] | None = None
-) -> _MessageT:
+    message: HumanMessage, *, source: str, data: dict[str, Any] | None = None
+) -> HumanMessage:
     """Return a copy of `message` marked as added by the agent harness.
 
-    Use it for any message the user didn't type, such as a background task update
-    or a conversation summary. It sets `additional_kwargs["lc_source"]` and, when
-    `data` is given, `additional_kwargs["lc_data"]`. Any earlier `lc_source` and
-    `lc_data` are removed first. LangChain's chat model integrations don't send
-    these keys to the model.
+    Use it for a human message the user didn't type, such as a background task
+    update or a conversation summary. It sets `additional_kwargs["lc_source"]`
+    and, when `data` is given, `additional_kwargs["lc_data"]`. Any earlier
+    `lc_source` and `lc_data` are removed first. LangChain's chat model
+    integrations don't send these keys to the model.
 
     It doesn't change the content. Write the content the model reads yourself.
 
@@ -39,7 +38,7 @@ def add_notification_metadata(
     decide whether to trust a message.
 
     `merge_message_runs` and chunk addition join a notification with adjacent
-    messages of its type; the merged message keeps the metadata and concatenates
+    human messages; the merged message keeps the metadata and concatenates
     `lc_source`.
 
     !!! version-added "Added in `langchain-core` 1.7.2"

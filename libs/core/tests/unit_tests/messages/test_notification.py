@@ -1,7 +1,5 @@
 from langchain_core.messages import (
-    AIMessage,
     HumanMessage,
-    SystemMessage,
     add_notification_metadata,
     get_notification_metadata,
     messages_from_dict,
@@ -35,23 +33,6 @@ def test_metadata_is_read_back() -> None:
         "source": "async_subagent",
         "data": {"task_id": "t_42"},
     }
-
-
-def test_any_message_type_can_be_marked() -> None:
-    usage = {"input_tokens": 1, "output_tokens": 2, "total_tokens": 3}
-    original = AIMessage(
-        "",
-        tool_calls=[{"id": "c1", "name": "search", "args": {}}],
-        usage_metadata=usage,
-    )
-    system = add_notification_metadata(SystemMessage("skills"), source="skills")
-    ai = add_notification_metadata(original, source="call_limit")
-
-    assert get_notification_metadata(system) == {"source": "skills"}
-    assert isinstance(ai, AIMessage)
-    assert ai.tool_calls == original.tool_calls
-    assert ai.usage_metadata == usage
-    assert get_notification_metadata(ai) == {"source": "call_limit"}
 
 
 def test_marking_again_replaces_source_and_data() -> None:
