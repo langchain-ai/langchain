@@ -1,3 +1,4 @@
+import json
 from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
@@ -289,7 +290,7 @@ def test_pipeline_json_schema_adds_format_instructions(
     prompted_messages = mock_to_chat_prompt.call_args.args[0]
     assert isinstance(prompted_messages[0], SystemMessage)
     assert "Return only a valid JSON object" in prompted_messages[0].content
-    assert str(schema) not in prompted_messages[0].content or "JSON Schema" in prompted_messages[0].content
+    assert json.dumps(schema, ensure_ascii=False) in prompted_messages[0].content
     assert "response_format" not in mock_llm._generate.call_args.kwargs
     assert result.generations[0].message.content == '{"answer": "ok"}'
 
