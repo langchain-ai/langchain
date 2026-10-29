@@ -6,7 +6,7 @@ from collections.abc import AsyncIterator, Iterable
 import pytest
 
 from langchain_core.exceptions import OutputParserException
-from langchain_core.output_parsers.xml import XMLOutputParser
+from langchain_core.output_parsers.xml import XMLOutputParser, _StreamingParser
 
 DATA = """
  <foo>
@@ -156,3 +156,39 @@ async def tests_billion_laughs_attack() -> None:
 
     with pytest.raises(OutputParserException):
         await parser.aparse(MALICIOUS_XML)
+
+
+async def test_streaming_prefix_without_xml_stays_linear_and_small() -> None:
+    # A long non-XML prefix used to be rescanned on every chunk and retained in
+    # the buffer (quadratic time, unbounded memory) until the first start tag.
+    parser = _StreamingParser("xml")
+    for _ in range(500):
+        list(parser.parse("junk text "))
+    assert len(parser.buffer) <= 1
+
+    output = []
+    for chunk in ("<foo>", "ok", "</foo>"):
+        output.extend(parser.parse(chunk))
+    parser.close()
+    assert output == [{"foo": "ok"}]
+
+
+async def test_streaming_start_tag_split_across_chunks() -> None:
+    # A "<" at the end of one chunk must combine with the next chunk into a
+    # start tag.
+    parser = _StreamingParser("xml")
+    output = []
+    for chunk in ("hello world <", "foo>", "bar", "</foo>"):
+        output.extend(parser.parse(chunk))
+    parser.close()
+    assert output == [{"foo": "bar"}]
+
+
+async def test_streaming_prefix_with_lt_then_non_letter() -> None:
+    # "<" followed by a non-letter is junk; only the trailing "<" is kept.
+    parser = _StreamingParser("xml")
+    output = []
+    for chunk in ("a < b < 1 <", "foo>x</foo>"):
+        output.extend(parser.parse(chunk))
+    parser.close()
+    assert output == [{"foo": "x"}]

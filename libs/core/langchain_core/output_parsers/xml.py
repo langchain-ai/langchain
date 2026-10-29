@@ -106,6 +106,10 @@ class _StreamingParser:
                 self.buffer = self.buffer[match.start() :]
                 self.xml_started = True
             else:
+                # No start tag in the buffer: drop the scanned text so the
+                # search stays linear, keeping only a trailing "<" that may
+                # combine with the next chunk into a start tag.
+                self.buffer = self.buffer[-1:] if self.buffer.endswith("<") else ""
                 return
         # feed buffer to parser
         self.pull_parser.feed(self.buffer)
