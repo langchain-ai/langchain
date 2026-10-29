@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2d16850ef7419257850ed204d6cf1703e0d3fddccf8387dbd044039a4d2924f4",
+  "pageVersion": "sha256:c467d6d5d9ab2f04e1917a62f070ecc9825a8c2322080194226cecd31f589627",
   "claims": [
     {
       "id": "claim_e7c4f3b3322d4e87af9595005d380245",
@@ -116,19 +116,23 @@
     },
     {
       "id": "claim_4e9782a754634e4cae0fbc7e2d7abd57",
-      "statement": "MessageChunk instances support concatenation via the + operator, merging content intelligently: string content concatenates, list content items with matching index merge, additional_kwargs and response_metadata are recursively merged, usage tokens sum, and tool_call_chunks with matching index accumulate args strings.",
+      "statement": "AIMessageChunk instances support concatenation via the + operator through the add_ai_message_chunks function, merging content intelligently: string content concatenates, list content items with matching index merge (via merge_lists), additional_kwargs and response_metadata are recursively merged, usage metadata token counts sum with details recursively merged, tool_call_chunks with matching index accumulate args strings, and ID precedence favors provider-assigned IDs over LangChain-assigned run IDs.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/messages/base.py#L366-L406",
-          "version": "repo-lines-v1:sha256:b9f74390d872a35842a23052b9bf4ab61bd03487da201c9b76cce679b2a802ab:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmMTM4YmMyODEyODM4NmQwZDc5MTc3NzFjYjU4ZmU1MWYwOTYzMmQ4MWVhZmE3YzE2ZDZjOTk4M2VhYjdlOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3MjE1ODE2NDg3YTEwNGMyOGM0NTM0ZDY2Nzg4OTU2NDYxMGM0MTQwZTFiMjFkMWUwZDUyMjFkOTdmMjExMDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiN2Q0ZTk3MzZiNTdjNjZlNTQzYzU2ZDMzNjI3YWM3OWRjZTA4NmY0ZTJiYWUxMDZkYWFkYTE2MjAxZjRmMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiNTViMzE0MTczZTMyZjBiNzg0M2IzYjk2NmYzODY2Mjg3YTY1ZDg3N2Q0MjhhZWRlOTdlMzVmOWI0YmM4M2MifQ"
+          "resource": "repo://libs/core/langchain_core/messages/ai.py#L651-L731",
+          "version": "repo-lines-v1:sha256:88e832e1ce4784431b83b7b95aa32fa391f7352fd8887a3bb857f9e897d7ae1c:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyMWI0MzJhMzNkOGMxYTM3ODMyYjUyZmY4OWMwY2M1MmUyZjE0NTRkMjE2OTQ0YjUzYjUyOWU1M2ZjYzQ3OTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgwMDQzNjdjZWJlMDRkMzQxNDNmZGM1OGY0OGU1NWQ3MWM3N2ZiZTU1OWRjNjJiZTE0N2FjODA1MzY5NmRkMGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiYjFkZmRiNDk3ODJkNzAyNWM3NmY0MmM2YTE5MTBjODkwZmFlZWQzOWRlODM3YzQzYzMwNzQxYzJmYzdjMzUifQ"
         },
         {
-          "resource": "repo://libs/core/langchain_core/messages/base.py#L409-L450",
-          "version": "repo-lines-v1:sha256:fb9565d58544afa79e1fd5fea60400c889bb2590bd7ddcf472e4da02fcf26324:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzZGY4MTlmYmUzNzUxYTEyZjFiNTNlNTE3NTExMTZiZmQ5MTc0Y2NkOGI3NzY1YTExOTI1ODQ2ZDJiMGI5NDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmYmJlNWU4NTlhMWVlOTI1MTk2MmY4MWQ5NGU5NTZmZDJlNTVlZDVjYmY0ZGJkOWMwMDY0YzQ0MTI5ZWQ0ZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0YTNiYWNjMWEyMzI1ODFlMGI4YTE2NzJhZjI3NDA0ZGY2NjE3MmVkYjlmMzRiNmU1NzJiMGYyZTBjZmZkZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1YmUyMjgwYmMyOWUwZTZjMjQzYzg4MWJkYjAwNmNkNDk5MGRiYzY0MTMyNTcxZjYzYTJmYjA1NmZkNTIxZWYifQ"
+          "resource": "repo://libs/core/langchain_core/messages/base.py#L366-L409",
+          "version": "repo-lines-v1:sha256:5d71b3099c4f5c59b1fb67eff6cfdbc5e8f0cc40eb0dc962939d6ec797043a45:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmMTM4YmMyODEyODM4NmQwZDc5MTc3NzFjYjU4ZmU1MWYwOTYzMmQ4MWVhZmE3YzE2ZDZjOTk4M2VhYjdlOWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3MjE1ODE2NDg3YTEwNGMyOGM0NTM0ZDY2Nzg4OTU2NDYxMGM0MTQwZTFiMjFkMWUwZDUyMjFkOTdmMjExMDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiN2Q0ZTk3MzZiNTdjNjZlNTQzYzU2ZDMzNjI3YWM3OWRjZTA4NmY0ZTJiYWUxMDZkYWFkYTE2MjAxZjRmMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRiNTViMzE0MTczZTMyZjBiNzg0M2IzYjk2NmYzODY2Mjg3YTY1ZDg3N2Q0MjhhZWRlOTdlMzVmOWI0YmM4M2MifQ"
         },
         {
-          "resource": "repo://libs/core/tests/unit_tests/test_messages.py#L50-L226",
-          "version": "repo-lines-v1:sha256:8fb6c9b5f2b783e8f25a71b38807567fe8a7532ba8d758dcbd2bb15396382302:eyJzZWxlY3RlZExpbmVDb3VudCI6MTc3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5NGE4MmJmZmQ2Yjk4M2U5ZTA2M2I2MjVkYWIzMWY1Mjg0NWRiZGVkZmFiODEzNzVhODk4ODdlNjQzZjI2ZDE3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4MDE5NmM1NjFmYmUzZTkyNmQ2N2U0NGE1ZWRmYzQ5MjQ1MDY1NTJhZDkxZDU1NGZiNGZhY2QxM2VjNDk5ZjhiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4NTczY2MwOWE2ZTM3ZTc4ZTZiMDBlYjM1ZTlmYjhiYWZiODFmNjE1MWJhODU4ZjU3MGE0YjNkNzYxMjg4NGFmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5NGFlNTk3ODI1NjVkOGM4ZmRkOWU2YjFiNjMyZmM5NDU3OWU1N2YyZDc3ZGMyOGQ2MzFmY2IyMmRjODMxMzk4In0"
+          "resource": "repo://libs/core/langchain_core/utils/_merge.py#L98-L177",
+          "version": "repo-lines-v1:sha256:834d75b020e9ddf0fd5f00f1b80a045b1cec4b7e03bd83d680d0dbd8b8fa51b6:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwMDk2NTRmODdiYzc2NGRlNDBhN2NhZjFlN2U5ZGQyZGZmYmM5MTA3NWRiYWE5ODkwM2FhODBmZDhiMjRkNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3MjE1ODE2NDg3YTEwNGMyOGM0NTM0ZDY2Nzg4OTU2NDYxMGM0MTQwZTFiMjFkMWUwZDUyMjFkOTdmMjExMDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0YTNiYWNjMWEyMzI1ODFlMGI4YTE2NzJhZjI3NDA0ZGY2NjE3MmVkYjlmMzRiNmU1NzJiMGYyZTBjZmZkZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0Yjc2YTk1YTk5OTQ1MGY3NmM0MzI4NzZmZDU5NTNlOGJiYjQ0MzFjMDE0MjBiMWJkMzFkYzI4YTI2NmZhNWEifQ"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/test_messages.py#L95-L226",
+          "version": "repo-lines-v1:sha256:7b641bf40248d94846de5184023d83c91d95d0bfa520f72fd104202e64395111:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1ZDZjYzNlMjhhMTZhMjQ4OTlmMDM1MDM2YTEyY2Y1ZjdmYjY4MDcxYzFkOWI0YzIwNDY5NjJiNjFiMzhjYTQyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4MDE5NmM1NjFmYmUzZTkyNmQ2N2U0NGE1ZWRmYzQ5MjQ1MDY1NTJhZDkxZDU1NGZiNGZhY2QxM2VjNDk5ZjhiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhNjNiNWUxYzc0MzM0NDUxZDY4MzIyNDU2NzRjOWZhODFmMWNlYzc0MzU5OWRlZTk0YmQ4NzkxY2ZlMzViYWJkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5NGFlNTk3ODI1NjVkOGM4ZmRkOWU2YjFiNjMyZmM5NDU3OWU1N2YyZDc3ZGMyOGQ2MzFmY2IyMmRjODMxMzk4In0"
         }
       ]
     },
@@ -241,6 +245,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-10-29T08:20:01.046Z"
   }
 }

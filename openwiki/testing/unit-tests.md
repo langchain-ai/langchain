@@ -2,9 +2,6 @@
 type: "Reference"
 title: "Run only core tests (skip all @pytest.mark.requires tests)"
 openwiki_generated: true
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
 sources:
   - id: openwiki-source-8f1875229ad4a704c8e20a06
     resource: repo://libs/core/Makefile
@@ -23,6 +20,9 @@ sources:
   - id: openwiki-source-f1101c726c80bfb588acd467
     resource: repo://libs/core/tests/unit_tests/test_ssrf_protection.py
 generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-29T08:20:01.046Z
 ---
 
 

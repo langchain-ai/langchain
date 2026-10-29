@@ -26,10 +26,10 @@ sources:
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-ff9b926753e6cc6fe87acfe7
     resource: repo://libs/langchain_v1/tests/unit_tests/agents/test_agent_streaming.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-16T08:25:55.096Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-22T08:26:56.662Z
+    at: 2026-10-29T08:20:01.046Z
 ---
 
 ## Overview
@@ -42,7 +42,7 @@ Streaming flows through chains—prompts, models, output parsers, and other runn
 
 ## Synchronous Streaming: stream()
 
-**Location**: `repo://libs/core/langchain_core/language_models/chat_models.py#L727-L856`
+**Location**: `repo://libs/core/langchain_core/language_models/chat_models.py#L770-L898`
 
 `BaseChatModel.stream()` is the primary synchronous streaming entry point. It yields `AIMessageChunk` objects as they are produced by the underlying model, with incremental content—a single token, a fragment of JSON, or a structured block update.
 
@@ -80,7 +80,7 @@ If the model does not implement streaming (checked via `_should_stream(async_api
 
 ## Asynchronous Streaming: astream()
 
-**Location**: `repo://libs/core/langchain_core/language_models/chat_models.py#L858-L991`
+**Location**: `repo://libs/core/langchain_core/language_models/chat_models.py#L901-L1033`
 
 `BaseChatModel.astream()` is the async variant of `stream()`, mirroring the synchronous logic but using async/await and `AsyncCallbackManager`.
 
@@ -398,9 +398,9 @@ This mechanism ensures streaming callbacks fire for each chunk and that parent r
 
 ## Streaming via stream_events: ChatModelStream
 
-**Location**: `repo://libs/core/langchain_core/language_models/chat_model_stream.py`
+**Location**: `repo://libs/core/langchain_core/language_models/chat_models.py#L1350-L1401` and `repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1190-L1299`
 
-For advanced use cases requiring detailed event granularity, `BaseChatModel.stream_events(version="v3")` returns a `ChatModelStream` object that exposes **typed projection properties** (`.text`, `.tool_calls`, `.usage`, `.reasoning`, `.output`) which accumulate protocol events as they arrive.
+For advanced use cases requiring detailed event granularity, `BaseChatModel.stream_events(version="v3")` returns a `ChatModelStream` object that exposes **typed projection properties** (`.text`, `.reasoning`, `.tool_calls`, `.output`) which accumulate protocol events as they arrive.
 
 ### Structured Event Streaming
 

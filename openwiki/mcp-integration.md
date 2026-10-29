@@ -3,26 +3,13 @@ type: "Reference"
 title: "MCP (Model Context Protocol) Integration"
 description: "MCPAdapter bridges MCP servers to LangChain agents, discovering tools, handling protocol negotiation via FastMCP, managing multiple transports, and supporting mid-call user input via LangGraph interrupts."
 tags: [mcp, protocol, tools, adapter, integration, langgraph]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
 sources:
-  - id: openwiki-source-6d1e3478d5b63988ee177552
-    resource: repo://libs/langchain_v1/examples/mcp/auth_bearer.py
-  - id: openwiki-source-4bad19dc422af3ebb00e7f2f
-    resource: repo://libs/langchain_v1/examples/mcp/auth_oauth.py
-  - id: openwiki-source-46fd56b09fa62a41e3c41f08
-    resource: repo://libs/langchain_v1/examples/mcp/destructive_interrupt.py
-  - id: openwiki-source-8b95e4b88972026f6c7678a3
-    resource: repo://libs/langchain_v1/examples/mcp/graph_factory.py
   - id: openwiki-source-cfb2965ed32b54e99ffb6328
     resource: repo://libs/langchain_v1/examples/mcp/multi_server.py
   - id: openwiki-source-71f7ffcbb69cda81c2e3f940
     resource: repo://libs/langchain_v1/examples/mcp/protocol_eras.py
   - id: openwiki-source-37b31519003157eb1b1bdaef
     resource: repo://libs/langchain_v1/examples/mcp/README.md
-  - id: openwiki-source-6df781509d081d60a037331b
-    resource: repo://libs/langchain_v1/examples/mcp/tool_errors.py
   - id: openwiki-source-caa1f747bb1ba9b6514eeaac
     resource: repo://libs/langchain_v1/examples/mcp/transports.py
   - id: openwiki-source-0a3228970b0eadc4bcadbb5d
@@ -32,6 +19,9 @@ sources:
   - id: openwiki-source-4715c337e9b93b9d00846133
     resource: repo://libs/langchain_v1/langchain/mcp/tools.py
 generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-29T08:20:01.046Z
 ---
 
 ## Overview

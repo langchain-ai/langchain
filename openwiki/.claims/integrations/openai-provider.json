@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:19ef3a12475cc5a9d274c296ec104460d8e895a0a37e0e93c668957b55bf0f71",
+  "pageVersion": "sha256:ee6f16c2b0036fb2987a3f20788f1a87f5b7eb663ec70e378bfd9adde00919e9",
   "claims": [
     {
       "id": "claim_f1104a8334664647842619daa7f61e83",
@@ -193,10 +193,24 @@
           "version": "repo-lines-v1:sha256:7665429e5b049b6175a1d87697d86743ca08a66669c13a2e4b060bc0b5c3701e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ1ZDA2ZDkxZjEwZDZlZmMzMjI3ZTlhZWQ2OGY5Yzg3ODkxMTk1NmM2YmM0Nzc0NmUyZmU0N2RhNmU0ZDE2ZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyYWIwOTBiY2QxNjIwZmE2MmVhZWUxNTdhNzRmY2E2MzVhYTI5ZTEyY2JmZmQ2MThiNTc5MmQ4N2JjMDNhM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NGY2MThhMjg0NjkxYzE4NTQyNDgxZDE3MDBjMDUxNGUyNzg3ZTU1OGM4OGMzYjkxYTllYTlkZThhMDkwN2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5YWEzZmM5ZTU3ZGVkYmQyNTZiNjBjYzRiNGFkZTg5YjdiN2NhOThmMmUyYTkyZTE5ZTk5MTE0MTIzN2U1ZTkifQ"
         }
       ]
+    },
+    {
+      "id": "claim_bffcd0f293a04616a9c380c094c9ecc9",
+      "statement": "with_structured_output() supports three methods: (1) 'function_calling' (default, uses tool-calling API, less strict, works with older models including GPT-3.5), (2) 'json_schema' (uses OpenAI's Structured Output API for guaranteed schema conformance, requires models supporting structured output like GPT-4 Turbo+, GPT-4o, gpt-5.x), (3) 'json_mode' (ensures JSON format output, no schema validation guarantee); supports include_raw to return both raw AIMessage and parsed output; strict parameter controls schema validation (True guarantees conformance when supported by method); tools parameter (json_schema only with strict=True and include_raw=True) allows tool invocation alongside structured output.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2616-L2878",
+          "version": "repo-lines-v1:sha256:14c2acc8c738fb447b6995851743559e736d434f21245c843220309621afa05d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOTk3OTkzN2Q3ZGUxOTkyNzZjM2I3YzVkMTJkZWM2ODJhZTBmOTVjNTliZjA2OTlhNGI2OTRhZDg1ZWQxMTVhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5OTUyMjA5NzQ4ZWJiMjJhOWM3Nzc5ZWEwMTBkODNiNzUzYmVlY2Q3ZDFmY2M2ODRiYTBmNDQyZjU4MDE4YzMwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0ZTk3OWE3YzIxZjY0OWE3YWRhZTkyM2I0ZmJmYjQyZDY2N2FkMGU2MGMzOTgyMTU5MWM4MjY2YzFkYzVlNjUxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlYWYzZTViMjlhNzMzZGY1OWNlNGFjYjM0MDdlZDYwZTUzMjllODgyNGU5NDdlZmRmZTI3MWVhMzI2OTlkZDdkIn0"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2753-L2790",
+          "version": "repo-lines-v1:sha256:6a2bc0acf9c7ab8c84f8d42d61f51b58cf5dc7885fc30031d191b03731b43965:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5YWU1NTg2NWMyNjg4Yzk5ZGE3NDE3N2M0M2Q1NTIyNzQ2Mjg3NzRiMjNiN2VhN2ZiNjRhZmE1YmRiYzk1MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlMjMxMTc2NmRmNWU3NjliZWU1MTE0YjI0MzIzYzFhMjhkMWY0ZWQxNDE0Y2FhOGJjMjAwZDllNjM0MTQwMzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBkOWU5OGFkZWMxZGIyMjQxMGRjYTA1NGNmY2UwNmFjOGEwYzA2NDgyMzBjOWU1YmE5MWE2MGU3NzNmZjc3MTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhZjlkMzcwNmEyMzBmOWRjMWQwMjk0Mjc5ODY0ZmQzYTRmMzNmMWVmYmU4Njc2MmI0Njk2MGI2MzFhODBhZWEifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-10-29T08:20:01.046Z"
   }
 }

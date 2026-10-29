@@ -46,17 +46,17 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
   - id: openwiki-source-bd29e79613d5f366a00068f5
     resource: repo://libs/standard-tests/langchain_tests/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
+    at: 2026-10-29T08:20:01.046Z
 ---
 
 ## Overview
 
 This page provides a quick reference for locating code by topic in the LangChain monorepo. The repository is organized as a multi-package workspace with a three-layer architecture:
 
-- **langchain-core** (v1.7.0): Base abstractions for messages, runnables, tools, prompts, language models, and callbacks
+- **langchain-core** (v1.7.1): Base abstractions for messages, runnables, tools, prompts, language models, and callbacks
 - **langchain** (v1.4.7): Orchestration, agent factory, middleware composition, and model initialization
 - **langchain-classic** (v1.0.8): Legacy chains, memory, retrieval abstractions, and backward compatibility
 - **partners** (`langchain-*` packages): Provider-specific implementations (OpenAI, Anthropic, Ollama, etc.)
@@ -114,7 +114,7 @@ Use this map to navigate directly to the code responsible for a given concept, u
 
 ```
 /libs/
-├── core/                           # langchain-core: Base abstractions (v1.7.0)
+├── core/                           # langchain-core: Base abstractions (v1.7.1)
 │   ├── langchain_core/
 │   │   ├── language_models/        # BaseChatModel and language model abstractions
 │   │   │   ├── chat_models.py      # Core chat model interface
@@ -291,7 +291,7 @@ Use this map to navigate directly to the code responsible for a given concept, u
 
 ## Architecture Layers
 
-### Layer 1: langchain-core (Base Abstractions, v1.7.0)
+### Layer 1: langchain-core (Base Abstractions, v1.7.1)
 Core interfaces and implementations used by all other packages:
 - **Message protocol**: AIMessage, HumanMessage, SystemMessage, ToolMessage with rich content blocks
 - **Runnable protocol**: Composable units with `invoke()`, `stream()`, `batch()` and async variants

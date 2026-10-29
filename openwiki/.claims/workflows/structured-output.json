@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:178636640bc405323f46b967fe490a5dac307c2afb06e124221a123ce16d6451",
+  "pageVersion": "sha256:86dee6233f4d83f2f18bd3976eb15ff53c618a9984d754667258168ee7f91ec3",
   "claims": [
     {
       "id": "claim_45a8435fd4d34f05bd759e8dc55f0454",
@@ -100,7 +100,7 @@
     },
     {
       "id": "claim_047babb4f82b4299baa42a7dc281101f",
-      "statement": "_SchemaSpec is a dataclass that encapsulates a structured output schema (Pydantic model, dataclass, TypedDict, or JSON schema dict) along with its name, description, strictness, and derived JSON schema. It provides schema_kind classification and json_schema extraction, supporting heterogeneous schema types across structured output patterns.",
+      "statement": "_SchemaSpec is a dataclass that encapsulates a structured output schema (Pydantic model, dataclass, TypedDict, or JSON schema dict) along with its name, description, strictness, and derived JSON schema. It normalizes all schema types through schema_kind classification and extracts json_schema for both tool binding and provider strategy use.",
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L106-L193",
@@ -110,27 +110,81 @@
     },
     {
       "id": "claim_392ec5e12c7f480fb55eeb23b1177078",
-      "statement": "ToolStrategy uses artificial tool calls to enforce structured output by binding a model with a tool and parsing the tool call arguments. ProviderStrategy uses the model provider's native structured output method (e.g., OpenAI's response_format with JSON Schema). ToolStrategy supports handle_errors for automatic retry on validation failure; ProviderStrategy delegates validation to the provider.",
+      "statement": "ToolStrategy enforces structured output via artificial tool calls by wrapping schemas as StructuredTools and parsing arguments using TypeAdapter validation. It supports Union types and handle_errors for automatic retry on validation failure. ProviderStrategy uses provider-native structured output by converting schemas to JSON Schema and binding model kwargs. Both strategies parse results through _parse_with_schema() and store in structured_response.",
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L195-L315",
-          "version": "repo-lines-v1:sha256:c2922763acafc00059e4c058c777edce4eb8bb7afa2ad446e53409432f42073e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOWE0ZjBkOTIyOWRmY2E0YWM1MDllNDc0OWQyNGFiZGIxMzg2NGIwYWVmMmIxNWViYmQ5ODlkNTgyNjhjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3Y2RlMTgwYmFmZTA1MWY1MjBjMTBiYWQ3Zjg4NWMyMWYwODFiOThlNzYzMmFlNDgxMjVjOTkwODczZjkzYTEzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiOGY2NWI5OGQ5YWIwOTdjMDcxMWRiMTM2MDdkYTQyZWZkYmYyOWE4YjZlZGI3ZTAwMmMzODU4OWQ2ZTY1Mzg3In0"
+          "version": "repo-lines-v1:sha256:cb3d222146832b851f2342bc182199346552b002177c1df3af6e67756cef49d0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3NDlhYzMxOTI1Mjg1N2VmZjIyNDg3NTJkN2M1ZmVkNzhmYmQ0NzBmNWRhZjVlMTc2NGRmYzBkZjQ2ZDMzMTRiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjZGU0NDA0MTJjNjdkN2Y1MzRhOGYyZTViYWM3MGRjYjRkMTAwZjRhYzlhNTZiMWIwZTUzMDM5MzUxZTQxZDk3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YzFmMDJmZDdlYzFkNDYyYzBjYjgxOGI5NDhmZmU0ZjcxNWIyYzJjNDMyNjMwYzIzMmRmZTM0ZDQyNzQzZmE5In0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L318-L431",
+          "version": "repo-lines-v1:sha256:93f2cebce855ae732d61be0fafe80b54514f3b9f74e8c6bc0d3a73afef9e4aef:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiNmZiYWUwYjkxZDQ0ZmMwZDQ5ZjVkZTY5MWRhNmZjNDMxZjI2MDEzNGJmNzMxZTBlMjFmNzY0ODA5NDMzNGNiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlMmYwNjhhYzBjMDc1MGRiZjQyYmVkMWM2YmRjYWJkYzA4YWY2N2MxZmI1NWQwYjhmNTdhZmY5ZTI5OTdiZGU1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhZmU0ZDY3NTA0N2YwZWVmNmQ5ZGZlNmIyZDJhNTljZTQzNDZkMzJiMmE4ZjczOWI3YmFhZmZlNTBjNDJlYjE5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4NTVkN2Y3ZWY4MWNkYTA3NzE5MGM2ZjMyMjcyZTM3OGM1NTk2MDVmMGQ3OWU0NjkzNGJjM2ZmOTQxNWMzNWNkIn0"
         }
       ]
     },
     {
       "id": "claim_9c1961c376c54b62b7591017c5f3dd7e",
-      "statement": "When with_structured_output() is called with a Pydantic BaseModel subclass, the returned Runnable outputs instances of that model class with full validation applied, ensuring type safety. Dictionary and JSON schema inputs return dicts without validation, trading validation for lower overhead.",
+      "statement": "AutoStrategy defers structured output strategy selection to runtime, checking model capabilities via _supports_provider_strategy() at invocation time. If the model supports provider-native structured output (detected via profile metadata or fallback patterns), it uses ProviderStrategy; otherwise, it falls back to ToolStrategy. This enables portable agents that use optimal strategy per model.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2402-L2436",
-          "version": "repo-lines-v1:sha256:485aeea7ce01b8ecd29e33516bc8e8bf4ed7cae199d406cc811fd38cc51e00df:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0ZGY1YmUyNTU1MjBmMmRiMzBlZTE1NTk3ZTcxNmVkMGZjYTczM2E3ZWYzYTk4MTYxZDFiMzcyOGQ2NDg2NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjMjRhMTg3OTU1MTA1ODhkMmI2ZTI1MmQ3MWJmZDE4ZjZkZTM2Y2VlMDEwMDA5ZDgzMDczODE3ZDg2NTEyNjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0MTM1ODAzODA1MTE2MWU5NTg1NjkzNmIyNGNhZDkwMDE2NzgwMTJiY2I5OTgzNTIzZjg4NjZkMzE4MDU3NzcifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1399-L1422",
+          "version": "repo-lines-v1:sha256:8eb3cd2199100151783cc5bf9e74fb0a1bf4f6069b23486988c940c376a16d53:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU5YmU4M2VjMDAwMWJjMWVjYWIyNDQ4YWRkY2Q2OTkxNzE5YzJjN2QzZGJkYzgwNjU5ZDU3MzFhYzEzY2ExMzkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzNTA3YTg4OTliMzk3OGMzMWMxOGZmODliZWJkOTVjMmFhNzUzMGJkODI4ODg3MTk1YTA4MjJjYmUxODNjZmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNmNjYwZDcxNGYwOTczZDFkM2M4M2YzNTM5YTZjNjMyYjllNjU0ZTA5NTIzNGI1ZDQxNzc3OWFjY2QyNTg4ZTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3Nzc3MTZjNGZkZjczY2VlYjAyZmMzYmQ5ZDg4MDNlMjAyYTFkYzMwMmRhMmY4ZDQ4ZDQzZTQwMDI0MDM4MzYifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L578-L623",
+          "version": "repo-lines-v1:sha256:5597a2118ceefb9335a013a037ae3e915f63d766f22ac599754aa4ee792dc3ec:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRmOWU0YjE2Zjc0YTRiNzA0ZWFlN2Y0MjUwZDZhOTU0OTkxYmQ4ZTZjNThmYzdjYThlYTMzNzJmZGQ3ZGNmNzEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhMDdiNjdjZmI3YjEzMWE1ZmNjYzgwNTY3Mzc3YTY5MzJmNzM5MTM3MjgwZDgyODU2ZDgxZGQ3OGMxYzdlZTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyN2U2YmMwMDFhZjczNjE3M2YxMzZjNTkwODg1NGQzM2YxNzQ3NmZlNzJmZDczMDQ3OTJkNGM0YTI4Zjg2OWYifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L458-L469",
+          "version": "repo-lines-v1:sha256:3aa68c0d030184b65636b5817e66bb98c3314247694ee3fa46d91fcf53c6f00c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiZjA5NDJjNTBkOWIzZGExOTk1MDczYzlkOTA4NjZjOGMzMGJmZjc3MzJlYzNlMWNmMGFiNDk4Yzg1OWZjZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhMDVkYWVlNDc0NzE0NmRiMjZjOTNjYzI4YjFlYTM0MTcyNTE5M2VhNDYxYTIyOTgxZGFhOWZjOTAwOTljYjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwMDVmMzRlYmNmY2ZiZTZjYjNjODAxODg3YmJjZGQyYTJkYzRhOWRhN2YzMGUwYjM2YzNlNzJhNjdmZTBiN2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlZDBmZmQzZjUxNDk0ZWJjODkyZTE3OWI2ZWI3ZjNhZDljYWI5OTVhNjE1NWU1Y2FhNWYzN2RlZTY3NTQzY2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_682b07fd59524cba9392d79179a590bf",
+      "statement": "ToolStrategy's handle_errors parameter controls automatic retry on validation failure: True (default) catches all errors with default message, False disables retry, string catches all with custom message, type/tuple catches specific exception types, and Callable allows custom per-exception retry logic. However, raw JSON schema dicts bypass validation, making handle_errors inert for dict schemas.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L646-L670",
+          "version": "repo-lines-v1:sha256:504cfb769682100d9d77cd3bf6189c8c4f9ceecddfa8361d2e19b06616214ded:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmM2JjYWUzMzhlZjQxNGQ2NmFhM2Q4MTUxNjA5MmE2MWMxNGZhNTllZGExMTMxMmVlMzgwM2UwNDNjZDAyMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcyNjhlZDA4OWYyNWYxZDliMzI0NmQwM2I4ZDdiYWU2MzdlYjkzYWExYmI3N2FjNDYzMjIxNzlhMmVhYTY1MTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjViNTk4NTM5MWU3MTAyMWY1ZDZiYjczZTE1YzgzZDYwNmJmNTNhMTVhYzM1NGRhMGI0OWM3YzZjYWZlM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4NzA3ZmUyNmNhNjAzZDJjNjdmMjllZjcwNjRmZDRkOGI3NzdkNWY0MTA0MjY1ZGY0ZWNlYmQ3NjIyNTQyMWYifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L211-L232",
+          "version": "repo-lines-v1:sha256:e252cc76fcf4722f8c58272db6776a145dacaa594e39c861920f3a1ca4681b40:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5MTYzZmIxYWZmYmZjMzdhZTRhYjBhZmI5YmVhNmM3OWJmNTc3NjRmNmRhOTU0NGVlYjljYTAyYTE2MWZhOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4ZDZkNjIxNjkzY2EwNzU0MmQxYmJmZmYyMDlmMjI3Y2ZiNDE0ZDJlMTRjYTBjNGRkNjhmNDJmNDdiYjRhMTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzMzEwOTVkNWZkOTQ5N2Y0M2RkNjkwMWE5M2Y3NDNiYjY1NTUwNmEwNTBlMTVjMjgxNWJmMWM5ZDRmMTMyOTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e4b6c042609c4f07a6f70955179b92be",
+      "statement": "ProviderStrategyBinding wraps provider-native structured output response parsing by extracting text content from AIMessage, parsing JSON via json.loads(), and validating against schema using _parse_with_schema(). It raises ValueError on JSON parsing or schema validation failures, without automatic retry (provider enforces schema).",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L373-L455",
+          "version": "repo-lines-v1:sha256:504d1eaaa88446531fb80917da013674ea4eaa27346606447bd54e1aac5a30fb:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZmJhZTBiOTFkNDRmYzBkNDlmNWRlNjkxZGE2ZmM0MzFmMjYwMTM0YmY3MzFlMGUyMWY3NjQ4MDk0MzM0Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4YjJiMzRhZTA2MGE2YzBmYzZkZmI0YmJmMzc4MjU4ZTQ2Yjg1ZTQxMzMyMjk5ODAzZTc3MGQwZTY3YTFkNjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjNWYyYzhjOGU0NDM0ZTc5ODdiZmJjMmY0MjZmYTI5MmMzMDkzYmU0MGZjZmViMjJhMDFmZmEwZDZiYjZjOWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA3MjY1MTI2N2E1ZjBiYjYyZjhjODcxOTcyMDQ1N2JjY2ViMzk4ZjdiMDg2MThlY2ZmZDRjOTQyOWM2YzNkODQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_be90174cf8e840b69c4e364b9b7d51f6",
+      "statement": "Schema kind classification distinguishes Pydantic, dataclass, TypedDict, and JSON schema variants. Pydantic, dataclass, and TypedDict schemas are validated via TypeAdapter during parsing; JSON schema dicts return parsed data as-is without validation. Union types are decomposed into variants, each normalized to a separate _SchemaSpec.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L176-L193",
+          "version": "repo-lines-v1:sha256:0a2590b9dabf23488c6dc501b7c46900ce15f708a4205d83a2c12550777709f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjZTViZjk4ZGZmNzhhZDI3ZTU3NGI0ZGQwMjcyZmU3ZDdkZTYzZmFhNWVmNThjYWFjOTkwOWU3NWY1MWQyY2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1YWJhNDI4N2NkYjk1NjFkNGUxYjIyNDUzOGUyNTJhYWI0MDc0ZDE0MjI4Yjc2NDQ5MjBmZWQ1NTg5N2M1NDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiNjgwN2QyZGU4OGMxZTQyOThlYmM0MDAxNzdiM2I4M2Y0M2RmODYxN2VkMzZlMDYwZTQ5YTRkZTA5N2JjZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2MTlmYmNkMDIyMzI5NDQ3ODAwMmU4Zjg2ZmNlZWU3ZDgyYjc0OWFhM2M1ZjhhMDZmYjM3Y2JkMjBhOGY5MTQifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L254-L268",
+          "version": "repo-lines-v1:sha256:7a58e247a2846cf3666e8fd79e28f17b1b00991503409c07807605379732b1ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlZjU5MmVhM2Q3ZGU1ZDlhZWMzNDE1ZTY4NDBhMzhjYzE2NTg0NTU3YTA2ZDg5YzM4MjJjMDYwMjY2YmRlZjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ODgxOGY2ZjVmYjJjYmM3NzJlZmFhNGJiNzYxY2E4MDdmNTVlNTc4NWVkOWU3MGMwMzY1ODMzMjNlNDhlOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhkZmU1NmU4NjFlZWRjOTU5ZmZkZWQ3YWFiYjNlN2IxZDc4MTYwNTExYTg5OTdhMDAwZjVjMjEzN2NjMjNlZDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2MTlmYmNkMDIyMzI5NDQ3ODAwMmU4Zjg2ZmNlZWU3ZDgyYjc0OWFhM2M1ZjhhMDZmYjM3Y2JkMjBhOGY5MTQifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L30-L33",
+          "version": "repo-lines-v1:sha256:6a00a8eda00a0de92a66de32852e1bd19d9a76c9d55feffea0dc922a5b501a32:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGIzZDViZWIyMDJjMTU2ZjM5MDk1NzlhNTUzNzdhOTYzZTdhNTM4ZWUyMmFlYmI0YjM0ZTliOWNhNTkyNGM0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTIzMTFhMzdhMjhiMzNhMGZiN2M0MTMwMTk3ZDUwYWQ3MDcwNTBjYTNjYWY5YWFiZDM2MzYxN2FjOWQ3OTFmOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzUwYjM2OTg2MjliZWQ4YjMwYzI4NWIzZWFiZmY2YmQ2MDQ0ODVjMjJkNGE5NTI1NGZiMWZkNWM3MTc5OWViMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTlkYjA1MjJmMGU4YjliNmIwN2UwZGRiOTI3M2E4YTNlYjJjZjY1ZjQ5MWZkMmQzMjFkMDAwNjgzNjM0NjZhYiJ9"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-10-29T08:20:01.046Z"
   }
 }
