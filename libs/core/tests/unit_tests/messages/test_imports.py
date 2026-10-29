@@ -1,7 +1,6 @@
 from langchain_core.messages import __all__
 
 EXPECTED_ALL = [
-    "NOTIFICATION_HEADER",
     "NotificationMetadata",
     "add_notification_metadata",
     "get_notification_metadata",

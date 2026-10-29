@@ -6,9 +6,6 @@ from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.messages.base import BaseMessage
 
-NOTIFICATION_HEADER = "[SYSTEM NOTIFICATION - NOT USER INPUT]"
-"""A first line for a notification's content, marking it as not from the user."""
-
 _MessageT = TypeVar("_MessageT", bound=BaseMessage)
 
 
@@ -28,7 +25,7 @@ class NotificationMetadata(TypedDict):
 def add_notification_metadata(
     message: _MessageT, *, source: str, data: dict[str, Any] | None = None
 ) -> _MessageT:
-    r"""Return a copy of `message` marked as added by the agent harness.
+    """Return a copy of `message` marked as added by the agent harness.
 
     Use it for any message the user didn't type, such as a background task update
     or a conversation summary. It sets `additional_kwargs["lc_source"]` and, when
@@ -36,8 +33,7 @@ def add_notification_metadata(
     `lc_data` are removed first. LangChain's chat model integrations don't send
     these keys to the model.
 
-    It doesn't change the content. Write the content the model reads yourself,
-    e.g. starting with `NOTIFICATION_HEADER`.
+    It doesn't change the content. Write the content the model reads yourself.
 
     Anyone who can send input to a thread can set these keys. Don't use them to
     decide whether to trust a message.
@@ -58,14 +54,10 @@ def add_notification_metadata(
 
     Example:
         ```python
-        from langchain_core.messages import (
-            NOTIFICATION_HEADER,
-            HumanMessage,
-            add_notification_metadata,
-        )
+        from langchain_core.messages import HumanMessage, add_notification_metadata
 
         message = add_notification_metadata(
-            HumanMessage(f"{NOTIFICATION_HEADER}\n<task-id>t_42</task-id>"),
+            HumanMessage("Background task t_42 finished."),
             source="async_subagent",
             data={"task_id": "t_42", "status": "success"},
         )

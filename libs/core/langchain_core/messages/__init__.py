@@ -49,7 +49,6 @@ if TYPE_CHECKING:
     from langchain_core.messages.human import HumanMessage, HumanMessageChunk
     from langchain_core.messages.modifier import RemoveMessage
     from langchain_core.messages.notification import (
-        NOTIFICATION_HEADER,
         NotificationMetadata,
         add_notification_metadata,
         get_notification_metadata,
@@ -78,7 +77,6 @@ if TYPE_CHECKING:
 __all__ = (
     "LC_AUTO_PREFIX",
     "LC_ID_PREFIX",
-    "NOTIFICATION_HEADER",
     "AIMessage",
     "AIMessageChunk",
     "Annotation",
@@ -159,7 +157,6 @@ _dynamic_imports = {
     "FunctionMessageChunk": "function",
     "HumanMessage": "human",
     "HumanMessageChunk": "human",
-    "NOTIFICATION_HEADER": "notification",
     "NotificationMetadata": "notification",
     "add_notification_metadata": "notification",
     "get_notification_metadata": "notification",
