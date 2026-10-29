@@ -763,14 +763,14 @@ class ChatHuggingFace(BaseChatModel):
             )
             if schema := response_format.get("schema"):
                 format_instructions += (
-                    "\\nThe JSON object must conform to this JSON Schema:\\n"
+                    "\nThe JSON object must conform to this JSON Schema:\n"
                     f"{json.dumps(schema, ensure_ascii=False)}"
                 )
 
             messages = list(messages)
             if messages and isinstance(messages[0], SystemMessage):
                 messages[0] = SystemMessage(
-                    content=f"{messages[0].content}\\n\\n{format_instructions}"
+                    content=f"{messages[0].content}\n\n{format_instructions}"
                 )
             else:
                 messages.insert(0, SystemMessage(content=format_instructions))
