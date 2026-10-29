@@ -1130,9 +1130,10 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.7.2"
+version = "1.7.3"
 source = { editable = "." }
 dependencies = [
+    { name = "certifi" },
     { name = "httpx" },
     { name = "jsonpatch" },
     { name = "langchain-protocol" },
@@ -1181,6 +1182,7 @@ typing = [
 
 [package.metadata]
 requires-dist = [
+    { name = "certifi", specifier = ">=2026.10.19" },
     { name = "httpx", specifier = ">=0.23.0" },
     { name = "jsonpatch", specifier = ">=1.33.0" },
     { name = "langchain-protocol", specifier = ">=0.0.20" },
