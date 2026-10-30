@@ -339,9 +339,17 @@ async def _call_tool_with_interrupts(
     # drive it against the member session, whose `call_tool` still returns the
     # `InputRequiredResult` for us to answer.
     member, session, upstream_name = await _resolve_session(client, tool_name)
+    # This session-level loop bypasses FastMCP's progress callback forwarding.
+    progress_callback = member._progress_handler  # noqa: SLF001
 
     result = await _await_monitored(
-        member, session.call_tool(upstream_name, arguments, allow_input_required=True)
+        member,
+        session.call_tool(
+            upstream_name,
+            arguments,
+            allow_input_required=True,
+            progress_callback=progress_callback,
+        ),
     )
 
     while isinstance(result, InputRequiredResult):
@@ -373,6 +381,7 @@ async def _call_tool_with_interrupts(
                 input_responses=responses,
                 request_state=result.request_state,  # opaque; echoed back verbatim
                 allow_input_required=True,
+                progress_callback=progress_callback,
             ),
         )
 

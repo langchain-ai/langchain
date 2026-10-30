@@ -17,6 +17,7 @@ uv run examples/mcp/transports.py
 | `graph_factory.py` | one long-lived adapter shared by every run of a `langgraph dev` graph | | |
 | `protocol_eras.py` | one agent holding tools from both MCP protocol eras | ✅ | |
 | `tool_errors.py` | a failing tool reaching the model so it can retry | ✅ | |
+| `progress.py` | MCP tool progress delivered as LangGraph custom stream events | | |
 | `elicitation.py` | a server asking a human mid-call, via `interrupt()` | ✅ | |
 | `destructive_interrupt.py` | gating destructive tools behind approval, from tool metadata | ✅ | |
 | `auth_bearer.py` | a server behind a static bearer token | | |
@@ -29,3 +30,10 @@ auto-approves, so it redirects straight back.
 `_servers.py` holds the small MCP servers the examples share, and
 `_stdio_server.py` is the entry point launched as a subprocess over stdio.
 Neither is part of the API being demonstrated.
+
+`progress.py` needs only `uv sync --extra mcp`. It passes a pre-built
+`fastmcp.Client(progress_handler=...)` to `MCPAdapter` and captures the graph's
+stream writer inside the node. The handler closes over that run's writer because
+MCP callbacks execute outside the graph node's context. A separate client per
+node invocation keeps concurrent runs' progress separate. The example uses
+Python 3.11 or newer for async LangGraph context propagation.

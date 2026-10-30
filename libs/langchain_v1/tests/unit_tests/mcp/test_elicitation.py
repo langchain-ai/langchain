@@ -13,6 +13,7 @@ from fastmcp import Client, Context, FastMCP
 from fastmcp.client.group import ClientGroup
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
+from mcp.server.mcpserver import Context as SDKContext
 from mcp.server.mcpserver import Elicit, MCPServer, Resolve
 from mcp.types import (
     CallToolResult,
@@ -47,6 +48,45 @@ class PartySize(BaseModel):
     """The data the server wants filled in."""
 
     guests: int
+
+
+@pytest.mark.asyncio
+async def test_progress_handler_receives_updates_after_elicitation_resume() -> None:
+    server = MCPServer("restaurant")
+    events: list[tuple[float, float | None, str | None]] = []
+
+    def ask_party_size() -> Elicit[PartySize]:
+        return Elicit("How many guests are dining?", PartySize)
+
+    @server.tool()
+    async def book_table(
+        party: Annotated[PartySize, Resolve(ask_party_size)], ctx: SDKContext[Any, Any]
+    ) -> str:
+        """Book a table and report its progress."""
+        await ctx.report_progress(1, 1, "booked")
+        return f"Booked a table for {party.guests}."
+
+    async def record(progress: float, total: float | None, message: str | None) -> None:
+        events.append((progress, total, message))
+
+    client = Client(server, progress_handler=record)
+    agent = _agent(await MCPAdapter(client).list_tools())
+    config: Any = {"configurable": {"thread_id": "progress"}}
+
+    paused = await agent.ainvoke({"messages": [{"role": "user", "content": "book"}]}, config)
+    [request] = paused["__interrupt__"][0].value["requests"]
+    assert events == []
+
+    resumed = await agent.ainvoke(
+        Command(
+            resume={"responses": {request["key"]: {"action": "accept", "content": {"guests": 4}}}}
+        ),
+        config,
+    )
+
+    assert events == [(1, 1, "booked")]
+    tool_message = next(message for message in resumed["messages"] if message.type == "tool")
+    assert tool_message.content[0]["text"] == "Booked a table for 4."
 
 
 def _restaurant_server(calls: dict[str, int]) -> MCPServer:
@@ -400,6 +440,7 @@ async def test_a_client_without_the_session_guard_warns() -> None:
 
         def __init__(self, session: _FakeSession) -> None:
             self.session = session
+            self._progress_handler = None
 
     client = _UnguardedClient(_FakeSession([done]))
 
