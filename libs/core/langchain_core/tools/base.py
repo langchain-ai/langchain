@@ -815,7 +815,22 @@ class ChildTool(BaseTool):
 
         if input_args is not None:
             if isinstance(input_args, dict):
-                return tool_input
+                validated_input = dict(tool_input)
+                for k in self._injected_args_keys:
+                    if k in tool_input:
+                        validated_input[k] = tool_input[k]
+        elif k == "tool_call_id":
+            if tool_call_id is None:
+                msg = (
+                    "When tool includes an InjectedToolCallId "
+                    "argument, tool must always be invoked with a full "
+                    "model ToolCall of the form: {'args': {...}, "
+                    "'name': '...', 'type': 'tool_call', "
+                    "'tool_call_id': '...'}"
+                )
+                raise ValueError(msg)
+validated_input[k] = tool_call_id
+                return validated_input
             result: BaseModel | BaseModelV1
             if issubclass(input_args, BaseModel):
                 # Check args_schema for InjectedToolCallId
