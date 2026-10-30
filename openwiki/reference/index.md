@@ -9,7 +9,7 @@
 - [Dev Commands (Old Page Reference)](dev-commands.md) - Deprecated: See /openwiki/operations/dev-commands.md instead.
 - [Integration Tests](integration-tests.md) - LangChain's integration testing framework for partner libraries and chat models, including VCR cassette recording, pytest markers for test classification, and scheduled CI/CD execution against live APIs.
 - [MCP Integration (Old Page Reference)](mcp-integration.md) - Deprecated reference page. See /openwiki/integrations/mcp-integration.md for the current MCP integration documentation.
-- [Messages (Old Page Reference)](messages.md) - Deprecated: See /openwiki/concepts/messages.md instead. This page has been moved to the concepts section.
+- [Messages API Reference](messages.md) - Complete API reference for LangChain message types, serialization utilities, content blocks, and notification metadata functions for marking system-generated messages in conversations.
 - [Middleware (Deprecated Reference)](middleware.md) - Deprecated reference page. See /openwiki/middleware.md for comprehensive documentation on agent middleware, lifecycle hooks, and composition patterns.
 - [Model Initialization (Deprecated Reference)](model-initialization.md) - Deprecated reference page. See /openwiki/model-initialization.md for comprehensive documentation on model initialization, the init_chat_model factory, provider configuration, and runtime model switching.
 - [OpenAI Provider (Old Page Reference)](openai-provider.md) - Deprecated: See /openwiki/integrations/openai-provider.md instead.
