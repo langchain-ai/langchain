@@ -585,6 +585,8 @@ def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
     ignore_keys = ["type"]
     if isinstance(chunk, AIMessageChunk):
         ignore_keys.extend(["tool_call_chunks", "chunk_position"])
+        # Fill tool call fields that are parsed lazily before reading `__dict__`.
+        chunk._ensure_tool_calls()  # noqa: SLF001
     return cast(
         "BaseMessage",
         chunk.__class__.__mro__[1](

@@ -7,7 +7,13 @@ import operator
 from collections.abc import Sequence
 from typing import Any, Literal, cast, overload
 
-from pydantic import Field, model_validator
+from pydantic import (
+    Field,
+    SerializerFunctionWrapHandler,
+    model_serializer,
+    model_validator,
+)
+from pydantic.main import TupleGenerator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
 from langchain_core.messages import content as types
@@ -539,40 +545,22 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 self.tool_call_chunks = tool_call_chunks
 
             return self
-        tool_calls = []
-        invalid_tool_calls = []
 
-        def add_chunk_to_invalid_tool_calls(chunk: ToolCallChunk) -> None:
-            invalid_tool_calls.append(
-                create_invalid_tool_call(
-                    name=chunk["name"],
-                    args=chunk["args"],
-                    id=chunk["id"],
-                    error=None,
-                )
-            )
+        if self.chunk_position != "last":
+            # Accumulating a stream builds a new chunk per merge, and parsing
+            # the full accumulated args each time is quadratic. Most of those
+            # intermediate chunks are never read, so parse on first access.
+            for name in _TOOL_CALL_FIELDS:
+                self.__dict__.pop(name, None)
+            self.__pydantic_fields_set__.update(_TOOL_CALL_FIELDS)
+            return self
 
-        for chunk in self.tool_call_chunks:
-            try:
-                args_ = parse_partial_json(chunk["args"]) if chunk["args"] else {}
-                if isinstance(args_, dict):
-                    tool_calls.append(
-                        create_tool_call(
-                            name=chunk["name"] or "",
-                            args=args_,
-                            id=chunk["id"],
-                        )
-                    )
-                else:
-                    add_chunk_to_invalid_tool_calls(chunk)
-            except Exception:
-                add_chunk_to_invalid_tool_calls(chunk)
-        self.tool_calls = tool_calls
-        self.invalid_tool_calls = invalid_tool_calls
+        self.tool_calls, self.invalid_tool_calls = _parse_tool_call_chunks(
+            self.tool_call_chunks
+        )
 
         if (
-            self.chunk_position == "last"
-            and self.tool_call_chunks
+            self.tool_call_chunks
             and self.response_metadata.get("output_version") == "v1"
             and isinstance(self.content, list)
         ):
@@ -599,6 +587,57 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                         self.content[idx]["extras"] = block["extras"]  # type: ignore[index]
 
         return self
+
+    def _ensure_tool_calls(self) -> None:
+        """Parse deferred `tool_call_chunks` into any unset tool call fields."""
+        if _TOOL_CALL_FIELDS.issubset(self.__dict__):
+            return
+        tool_calls, invalid_tool_calls = _parse_tool_call_chunks(self.tool_call_chunks)
+        parsed = {"tool_calls": tool_calls, "invalid_tool_calls": invalid_tool_calls}
+        # Rebuild in field order so dumps and reprs match an eagerly parsed chunk.
+        values = {**parsed, **self.__dict__}
+        ordered = {k: values.pop(k) for k in type(self).model_fields if k in values}
+        self.__dict__.clear()
+        self.__dict__.update({**ordered, **values})
+
+    def __getattr__(self, name: str) -> Any:
+        """Parse deferred tool call fields on first read.
+
+        Only reached when normal attribute lookup fails.
+        """
+        if name in _TOOL_CALL_FIELDS and "tool_call_chunks" in self.__dict__:
+            self._ensure_tool_calls()
+            return self.__dict__[name]
+        return super().__getattr__(name)  # type: ignore[misc]
+
+    # Left without a return annotation on purpose: pydantic would otherwise use
+    # it as the serialization JSON schema instead of the model's own schema.
+    @model_serializer(mode="wrap")
+    def _serialize_with_tool_calls(self, handler: SerializerFunctionWrapHandler):  # type: ignore[no-untyped-def]  # noqa: ANN202
+        # The serializer reads `__dict__` directly, including when this chunk is
+        # nested in another model, so deferred fields must be filled first.
+        self._ensure_tool_calls()
+        return handler(self)
+
+    @override
+    def __iter__(self) -> TupleGenerator:
+        self._ensure_tool_calls()
+        return super().__iter__()
+
+    # Defining `__eq__` would otherwise reset this; chunks stay unhashable.
+    __hash__ = None  # type: ignore[assignment]
+
+    @override
+    def __eq__(self, other: object) -> bool:
+        self._ensure_tool_calls()
+        if isinstance(other, AIMessageChunk):
+            other._ensure_tool_calls()
+        return super().__eq__(other)
+
+    @override
+    def __repr_args__(self) -> Any:
+        self._ensure_tool_calls()
+        return super().__repr_args__()
 
     @model_validator(mode="after")
     def init_server_tool_calls(self) -> Self:
@@ -646,6 +685,34 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         ):
             return add_ai_message_chunks(self, *other)
         return super().__add__(other)
+
+
+_TOOL_CALL_FIELDS = frozenset({"tool_calls", "invalid_tool_calls"})
+"""`AIMessageChunk` fields derived from `tool_call_chunks`, possibly deferred."""
+
+
+def _parse_tool_call_chunks(
+    chunks: list[ToolCallChunk],
+) -> tuple[list[ToolCall], list[InvalidToolCall]]:
+    """Split tool call chunks into parsed and unparseable tool calls."""
+    tool_calls: list[ToolCall] = []
+    invalid_tool_calls: list[InvalidToolCall] = []
+    for chunk in chunks:
+        try:
+            args_ = parse_partial_json(chunk["args"]) if chunk["args"] else {}
+        except Exception:
+            args_ = None
+        if isinstance(args_, dict):
+            tool_calls.append(
+                create_tool_call(name=chunk["name"] or "", args=args_, id=chunk["id"])
+            )
+        else:
+            invalid_tool_calls.append(
+                create_invalid_tool_call(
+                    name=chunk["name"], args=chunk["args"], id=chunk["id"], error=None
+                )
+            )
+    return tool_calls, invalid_tool_calls
 
 
 def add_ai_message_chunks(

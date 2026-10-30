@@ -211,6 +211,87 @@ def test_init_tool_calls() -> None:
     msg.tool_calls = [{"name": "bar", "args": {"c": "d"}, "id": "def"}]
 
 
+def _stream_tool_call(args: str, step: int) -> list[AIMessageChunk]:
+    first = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(name="write_file", args="", id="call_1", index=0)
+        ],
+    )
+    rest = [
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                create_tool_call_chunk(
+                    name=None, args=args[i : i + step], id=None, index=0
+                )
+            ],
+        )
+        for i in range(0, len(args), step)
+    ]
+    return [first, *rest]
+
+
+def test_streamed_tool_call_args_parsed_once(monkeypatch: Any) -> None:
+    """Accumulating a stream must not re-parse the args on every merge."""
+    import langchain_core.messages.ai as ai_module  # noqa: PLC0415
+    from langchain_core.utils.json import parse_partial_json  # noqa: PLC0415
+
+    calls = 0
+
+    def counting_parse(s: str) -> Any:
+        nonlocal calls
+        calls += 1
+        return parse_partial_json(s)
+
+    monkeypatch.setattr(ai_module, "parse_partial_json", counting_parse)
+    chunks = _stream_tool_call('{"path": "a.py", "content": "' + "x" * 500 + '"}', 5)
+    acc = chunks[0]
+    for chunk in chunks[1:]:
+        acc += chunk
+    assert calls == 0
+    assert acc.tool_calls == [
+        create_tool_call(
+            name="write_file", args={"path": "a.py", "content": "x" * 500}, id="call_1"
+        )
+    ]
+    assert calls == 1
+
+
+def test_streamed_tool_calls_visible_mid_stream() -> None:
+    chunks = _stream_tool_call('{"path": "a.py", "content": "hello"}', 4)
+    partial = add_ai_message_chunks(chunks[0], *chunks[1:5])
+    expected = [create_tool_call(name="write_file", args={"path": "a.py"}, id="call_1")]
+    assert partial.tool_calls == expected
+    assert partial.invalid_tool_calls == []
+    # Serialization paths that read fields directly must see the parsed values.
+    assert partial.model_dump()["tool_calls"] == expected
+    assert dict(partial)["tool_calls"] == expected
+    assert "tool_calls=" in repr(partial)
+    assert load(dumpd(partial)) == partial
+    assert list(partial.model_dump()) == list(type(partial).model_fields)
+
+
+def test_streamed_unparseable_args_are_invalid_tool_calls() -> None:
+    chunks = _stream_tool_call("[1, 2", 2)
+    acc = add_ai_message_chunks(chunks[0], *chunks[1:])
+    assert acc.tool_calls == []
+    assert acc.invalid_tool_calls == [
+        create_invalid_tool_call(
+            name="write_file", args="[1, 2", id="call_1", error=None
+        )
+    ]
+
+
+def test_streamed_tool_calls_assignment_wins() -> None:
+    chunks = _stream_tool_call('{"a": 1}', 3)
+    acc = add_ai_message_chunks(chunks[0], *chunks[1:])
+    replacement = [create_tool_call(name="other", args={}, id="call_2")]
+    acc.tool_calls = replacement
+    assert acc.tool_calls == replacement
+    assert acc.invalid_tool_calls == []
+
+
 def test_content_blocks() -> None:
     message = AIMessage(
         "",
