@@ -15,17 +15,19 @@ from uuid import UUID
 from langsmith import run_helpers as ls_rh
 from langsmith import utils as ls_utils
 
+from langchain_core.tracers.core import _tracing_error_handlers
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Callable, Generator
 
     from langsmith import Client as LangSmithClient
     from langsmith.address import AgentAddress
 
     from langchain_core.callbacks.base import BaseCallbackHandler, Callbacks
     from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
+    from langchain_core.tracers.schemas import Run
 
 # for backwards partial compatibility if this is imported by users but unused
 tracing_callback_var: Any = None
@@ -35,6 +37,39 @@ tracing_v2_callback_var: ContextVar[LangChainTracer | None] = ContextVar(
 run_collector_var: ContextVar[RunCollectorCallbackHandler | None] = ContextVar(
     "run_collector", default=None
 )
+
+
+@contextmanager
+def tracing_error_handler(
+    handler: Callable[[BaseException, Run], None],
+) -> Generator[None, None, None]:
+    """Customize errored tracer runs before they are persisted.
+
+    The synchronous handler receives the original exception and the live `Run`
+    after its error, end time, events, and any partial outputs have been assigned.
+    It may mutate the run, for example to add exception-specific metadata.
+    This applies to existing and newly configured sync and async tracers that use
+    the base tracer error lifecycle; it does not enable tracing itself.
+
+    Nested handlers run from outermost to innermost. Ordinary handler exceptions
+    are logged and suppressed so remaining handlers and persistence can proceed.
+    The previous handlers are restored on exit, including exceptional exit.
+    Handlers are local to the current context and inherited by child tasks and
+    LangChain's context-propagating executors, not arbitrary threads. Child tasks
+    retain their inherited context even if they outlive this context manager.
+
+    Args:
+        handler: Synchronous callback accepting the original exception and run.
+            It must not change run identity or parentage and should not block.
+
+    Yields:
+        `None`.
+    """
+    token = _tracing_error_handlers.set((*_tracing_error_handlers.get(), handler))
+    try:
+        yield
+    finally:
+        _tracing_error_handlers.reset(token)
 
 
 @contextmanager
