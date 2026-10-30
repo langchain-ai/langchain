@@ -1901,9 +1901,6 @@ def create_agent(
     if name:
         config["metadata"]["lc_agent_name"] = name
 
-    # Middleware that makes internal model calls (e.g. `SummarizationMiddleware`)
-    # each declare `InternalCallTransformer` on their own `transformers` tuple so
-    # it's only registered when one of them is actually in use.
     middleware_transformers = [t for m in middleware for t in getattr(m, "transformers", ())]
 
     return graph.compile(

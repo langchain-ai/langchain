@@ -23,6 +23,7 @@ from langchain_core.messages.utils import (
 )
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.runnables.base import coerce_to_runnable
+from langgraph.constants import TAG_NOSTREAM
 from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
 )
@@ -30,10 +31,7 @@ from langgraph.runtime import Runtime
 from typing_extensions import override
 
 from langchain.agents.middleware._retry import default_retry_on
-from langchain.agents.middleware.internal_call_transformer import (
-    InternalCallTransformer,
-    internal_call_metadata,
-)
+from langchain.agents.middleware.internal_call_transformer import internal_call_metadata
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
 from langchain.chat_models import BaseChatModel, init_chat_model
 
@@ -132,7 +130,10 @@ _LS_PROVIDER_ALIASES: dict[str, frozenset[str]] = {
 
 def _summary_config() -> RunnableConfig:
     """Config for summary model calls."""
-    return {"metadata": {"lc_source": "summarization", **internal_call_metadata()}}
+    return {
+        "metadata": {"lc_source": "summarization", **internal_call_metadata()},
+        "tags": [TAG_NOSTREAM],
+    }
 
 
 def _check_summary(summary: object) -> str:
@@ -276,13 +277,6 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
     To generate summaries with something other than a chat model, pass a
     `summarizer`. The middleware still decides when to summarize and which
     messages to summarize; only the summary text comes from the summarizer.
-    """
-
-    transformers = (InternalCallTransformer,)
-    """Keeps the summarization model call's tokens out of `run.messages`.
-
-    Registered only when this middleware is used — see
-    `InternalCallTransformer` for why the call needs tagging and filtering.
     """
 
     def __init__(

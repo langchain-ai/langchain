@@ -10,6 +10,7 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.tools import BaseTool, tool
+from langgraph.constants import TAG_NOSTREAM
 from pydantic import BaseModel, Field
 from typing_extensions import override
 
@@ -937,6 +938,7 @@ class TestLLMToolSelectorInternalCallMetadata:
             config["metadata"][INTERNAL_CALL_METADATA_KEY]
             == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
         )
+        assert TAG_NOSTREAM in config["tags"]
 
     async def test_awrap_model_call_marks_internal_call(self) -> None:
         """`awrap_model_call` should tag its model call as internal to middleware."""
@@ -974,3 +976,31 @@ class TestLLMToolSelectorInternalCallMetadata:
             config["metadata"][INTERNAL_CALL_METADATA_KEY]
             == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
         )
+        assert TAG_NOSTREAM in config["tags"]
+
+
+def test_selection_call_stays_off_the_messages_stream() -> None:
+    selection_call = {
+        "id": "sel1",
+        "type": "function",
+        "function": {"name": "ToolSelectionResponse", "arguments": '{"tools": ["get_weather"]}'},
+    }
+    selection = AIMessage(
+        content="SELECTION-NOTE", additional_kwargs={"tool_calls": [selection_call]}
+    )
+    tool_selection_model = ConfigCapturingSelectionModel(messages=iter([selection]))
+    agent = create_agent(
+        model=FakeModel(messages=iter([AIMessage(content="Done")])),
+        tools=[get_weather, search_web],
+        middleware=[LLMToolSelectorMiddleware(model=tool_selection_model)],
+    )
+
+    parts = [
+        part
+        for part, _ in agent.stream(
+            {"messages": [HumanMessage("What's the weather?")]}, stream_mode="messages"
+        )
+    ]
+
+    assert len(tool_selection_model.captured_configs) == 1
+    assert "".join(part.text for part in parts if isinstance(part, AIMessage)) == "Done"
