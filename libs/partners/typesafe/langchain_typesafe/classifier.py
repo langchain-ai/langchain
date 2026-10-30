@@ -308,6 +308,7 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
             Structured TypeSafe answers and request metadata.
 
         Raises:
+            ValueError: If the request does not contain any questions.
             TypeSafeAPIError: If TypeSafe returns an unsuccessful HTTP response.
             TypeSafeAPIConnectionError: If no HTTP response is received.
             TypeSafeAPITimeoutError: If the request exceeds its client timeout.
@@ -340,6 +341,7 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
             Structured TypeSafe answers and request metadata.
 
         Raises:
+            ValueError: If the request does not contain any questions.
             TypeSafeAPIError: If TypeSafe returns an unsuccessful HTTP response.
             TypeSafeAPIConnectionError: If no HTTP response is received.
             TypeSafeAPITimeoutError: If the request exceeds its client timeout.
@@ -440,6 +442,9 @@ class TypeSafeClassifier(RunnableSerializable[ClassifierRequest, ClassifierRespo
         }
 
     def _payload(self, request: ClassifierRequest) -> dict[str, JsonValue]:
+        if not request["questions"]:
+            message = "TypeSafe classifier requests must contain at least one question."
+            raise ValueError(message)
         return {
             "state": serialize_state(request["state"]),
             "model": self.model,
