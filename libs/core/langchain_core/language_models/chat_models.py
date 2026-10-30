@@ -61,6 +61,7 @@ from langchain_core.messages import (
     message_chunk_to_message,
 )
 from langchain_core.messages import content as types
+from langchain_core.messages._refusal import _is_model_refusal
 from langchain_core.messages.block_translators.openai import (
     convert_to_openai_image_block,
 )
@@ -2083,10 +2084,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 generation
             )
         if len(result.generations) == 1 and result.llm_output is not None:
-            result.generations[0].message.response_metadata = {
-                **result.llm_output,
-                **result.generations[0].message.response_metadata,
-            }
+            result.generations[0].message.response_metadata = _refusal_metadata(
+                result.generations[0].message,
+                {
+                    **result.llm_output,
+                    **result.generations[0].message.response_metadata,
+                },
+            )
         if check_cache and llm_cache is not None:
             llm_cache.update(prompt, llm_string, result.generations)
         return result
@@ -2240,10 +2244,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 generation
             )
         if len(result.generations) == 1 and result.llm_output is not None:
-            result.generations[0].message.response_metadata = {
-                **result.llm_output,
-                **result.generations[0].message.response_metadata,
-            }
+            result.generations[0].message.response_metadata = _refusal_metadata(
+                result.generations[0].message,
+                {
+                    **result.llm_output,
+                    **result.generations[0].message.response_metadata,
+                },
+            )
         if check_cache and llm_cache is not None:
             await llm_cache.aupdate(prompt, llm_string, result.generations)
         return result
@@ -2753,14 +2760,25 @@ def _gen_info_and_msg_metadata(
     Removes GATEWAY_METADATA from the generation info.
     """
     generation_info = generation.generation_info or {}
-    return {
-        **{
-            key: value
-            for key, value in generation_info.items()
-            if key != GATEWAY_METADATA_RESPONSE_KEY
+    return _refusal_metadata(
+        generation.message,
+        {
+            **{
+                key: value
+                for key, value in generation_info.items()
+                if key != GATEWAY_METADATA_RESPONSE_KEY
+            },
+            **generation.message.response_metadata,
         },
-        **generation.message.response_metadata,
-    }
+    )
+
+
+def _refusal_metadata(message: BaseMessage, metadata: dict[str, Any]) -> dict[str, Any]:
+    if isinstance(message, AIMessage) and _is_model_refusal(
+        message.content, message.additional_kwargs, metadata
+    ):
+        metadata["refusal"] = True
+    return metadata
 
 
 _MAX_CLEANUP_DEPTH = 100

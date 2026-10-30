@@ -11,6 +11,7 @@ from langchain.agents.middleware.human_in_the_loop import (
 )
 from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
+from langchain.agents.middleware.model_refusal import ModelRefusalMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from langchain.agents.middleware.pii import PIIDetectionError, PIIMatch, PIIMiddleware
 from langchain.agents.middleware.provider_tool_search import ProviderToolSearchMiddleware
@@ -68,6 +69,7 @@ __all__ = [
     "ModelCallLimitMiddleware",
     "ModelCallResult",
     "ModelFallbackMiddleware",
+    "ModelRefusalMiddleware",
     "ModelRequest",
     "ModelResponse",
     "ModelRetryMiddleware",
