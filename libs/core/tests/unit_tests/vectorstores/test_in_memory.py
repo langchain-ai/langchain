@@ -220,3 +220,18 @@ async def test_inmemory_call_embeddings_async() -> None:
     # Ensure the async embedding function is called
     assert embeddings_mock.aembed_documents.await_count == 1
     assert embeddings_mock.aembed_query.await_count == 1
+
+
+async def test_inmemory_negative_k() -> None:
+    "Test that negative k and fetch_k are rejected."
+    store = await InMemoryVectorStore.afrom_texts(
+    ["foo", "bar", "baz"], DeterministicFakeEmbedding(size=3)
+    )
+with pytest.raises(ValueError):
+    store.similarity_search("foo", k=-1)
+    assert store.similarity_search("foo", k=0) == []    
+    with pytest.raises(ValueError):
+        store.max_marginal_relevance_search("foo", k=-1)
+    with pytest.raises(ValueError):
+        store.max_marginal_relevance_search("foo", fetch_k=-1)
+        
