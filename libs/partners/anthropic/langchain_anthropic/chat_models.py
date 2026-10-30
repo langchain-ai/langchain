@@ -786,7 +786,9 @@ def _format_messages(
                         != "anthropic"
                     ):
                         continue
-                    if block["type"] == "image_url":
+                    if block["type"] == "refusal":
+                        content.append({"type": "text", "text": block["refusal"]})
+                    elif block["type"] == "image_url":
                         # convert format
                         source = _format_image(block["image_url"]["url"])
                         content.append({"type": "image", "source": source})
@@ -2561,6 +2563,8 @@ class ChatAnthropic(BaseChatModel):
             # TODO: dump all `data` with `mode="json"`
             llm_output["container"]["expires_at"] = expires_at.isoformat()
         response_metadata = {"model_provider": "anthropic"}
+        if "stop_reason" in llm_output:
+            response_metadata["stop_reason"] = llm_output["stop_reason"]
         if "model" in llm_output and "model_name" not in llm_output:
             llm_output["model_name"] = llm_output["model"]
         if (

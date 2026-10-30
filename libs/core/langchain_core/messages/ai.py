@@ -11,7 +11,6 @@ from pydantic import Field, model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
 from langchain_core.messages import content as types
-from langchain_core.messages._refusal import _is_model_refusal
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,
@@ -166,9 +165,6 @@ class AIMessage(BaseMessage):
     This message represents the output of the model and consists of both
     the raw output as returned by the model and standardized fields
     (e.g., tool calls, usage metadata) added by the LangChain framework.
-
-    Explicit provider refusals and safety blocks set `response_metadata["refusal"]`
-    to `True`; ordinary responses do not add this key.
     """
 
     tool_calls: list[ToolCall] = Field(default_factory=list)
@@ -306,14 +302,6 @@ class AIMessage(BaseMessage):
             blocks.insert(0, reasoning_block)
 
         return blocks
-
-    @model_validator(mode="after")
-    def _normalize_refusal(self) -> Self:
-        if _is_model_refusal(
-            self.content, self.additional_kwargs, self.response_metadata
-        ):
-            self.response_metadata["refusal"] = True
-        return self
 
     # TODO: remove this logic if possible, reducing breaking nature of changes
     @model_validator(mode="before")

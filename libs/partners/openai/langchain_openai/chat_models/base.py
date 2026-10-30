@@ -4453,6 +4453,10 @@ def _oai_structured_outputs_parser(
         if isinstance(parsed, dict):
             return schema(**parsed)
         return parsed
+    if refusal := next(
+        (block for block in ai_msg.content_blocks if block["type"] == "refusal"), None
+    ):
+        raise OpenAIRefusalError(refusal["refusal"])
     if ai_msg.additional_kwargs.get("refusal"):
         raise OpenAIRefusalError(ai_msg.additional_kwargs["refusal"])
     if any(

@@ -787,6 +787,16 @@ class FileContentBlock(TypedDict):
 # - Tabular data
 
 
+class RefusalContentBlock(TypedDict):
+    """An explicit model refusal, including refusals without explanatory text."""
+
+    type: Literal["refusal"]
+    refusal: str
+    id: NotRequired[str]
+    index: NotRequired[int | str]
+    extras: NotRequired[dict[str, Any]]
+
+
 class NonStandardContentBlock(TypedDict):
     """Provider-specific content data.
 
@@ -846,6 +856,7 @@ ContentBlock = (
     TextContentBlock
     | InvalidToolCall
     | ReasoningContentBlock
+    | RefusalContentBlock
     | NonStandardContentBlock
     | DataContentBlock
     | ToolContentBlock
@@ -857,6 +868,7 @@ KNOWN_BLOCK_TYPES = {
     # Text output
     "text",
     "reasoning",
+    "refusal",
     # Tools
     "tool_call",
     "invalid_tool_call",

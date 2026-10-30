@@ -122,6 +122,9 @@ def _convert_from_v1_to_anthropic(
                 new_block = {"text": block.get("text", ""), "type": "text"}
             new_content.append(new_block)
 
+        elif block["type"] == "refusal":
+            new_content.append({"type": "text", "text": block["refusal"]})
+
         elif block["type"] == "tool_call":
             tool_use_block = {
                 "type": "tool_use",

@@ -22,13 +22,15 @@ if TYPE_CHECKING:
 
 def _check_refusal(response: ModelResponse[ResponseT]) -> ModelResponse[ResponseT]:
     for message in response.result:
-        if isinstance(message, AIMessage) and message.response_metadata.get("refusal") is True:
+        if isinstance(message, AIMessage) and any(
+            block["type"] == "refusal" for block in message.content_blocks
+        ):
             raise exceptions.ModelRefusalError(message)
     return response
 
 
 class ModelRefusalMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
-    """Raise `ModelRefusalError` for responses with explicit refusal metadata.
+    """Raise `ModelRefusalError` for responses containing a standard refusal block.
 
     Add this middleware to `create_agent` (or `create_deep_agent`) to treat a
     refusal as an error instead of a successful final answer. Model calls without

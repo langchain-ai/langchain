@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from langchain_core.exceptions import ModelRefusalError
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
+from typing_extensions import override
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import (
@@ -17,6 +18,19 @@ from langchain.agents.middleware import (
     ModelRefusalMiddleware,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from langchain_core.outputs import ChatGenerationChunk
+
+
+class RefusalStreamingModel(GenericFakeChatModel):
+    @override
+    def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
+        for chunk in super()._stream(*args, **kwargs):
+            chunk.message.response_metadata["model_provider"] = "openai"
+            yield chunk
+
 
 def _model(message: AIMessage) -> GenericFakeChatModel:
     return GenericFakeChatModel(messages=iter([message]))
@@ -24,7 +38,10 @@ def _model(message: AIMessage) -> GenericFakeChatModel:
 
 @pytest.mark.parametrize("asynchronous", [False, True])
 async def test_refusal_is_opt_in(*, asynchronous: bool) -> None:
-    message = AIMessage("I cannot help.", response_metadata={"stop_reason": "refusal"})
+    message = AIMessage(
+        "I cannot help.",
+        response_metadata={"stop_reason": "refusal", "model_provider": "anthropic"},
+    )
     agent = create_agent(_model(message))
     inputs: InputAgentState = {"messages": [HumanMessage("request")]}
     result = await agent.ainvoke(inputs) if asynchronous else agent.invoke(inputs)
@@ -56,7 +73,7 @@ async def test_non_refusals_pass_through(message: AIMessage, *, asynchronous: bo
 
 @pytest.mark.parametrize("asynchronous", [False, True])
 async def test_fallback_can_handle_refusal(*, asynchronous: bool) -> None:
-    primary = _model(AIMessage("blocked", response_metadata={"refusal": True}))
+    primary = _model(AIMessage(content_blocks=[{"type": "refusal", "refusal": "blocked"}]))
     fallback = _model(AIMessage("fallback answer"))
     agent = create_agent(
         primary,
@@ -70,7 +87,9 @@ async def test_fallback_can_handle_refusal(*, asynchronous: bool) -> None:
 @pytest.mark.parametrize("asynchronous", [False, True])
 async def test_stream_surfaces_refusal(*, asynchronous: bool) -> None:
     agent = create_agent(
-        _model(AIMessage("blocked", additional_kwargs={"refusal": "blocked"})),
+        RefusalStreamingModel(
+            messages=iter([AIMessage("blocked", additional_kwargs={"refusal": "blocked"})])
+        ),
         middleware=[ModelRefusalMiddleware()],
     )
     inputs: InputAgentState = {"messages": [HumanMessage("request")]}
