@@ -294,6 +294,8 @@ class InMemoryVectorStore(VectorStore):
         k: int = 4,
         filter: Callable[[Document], bool] | None = None,  # noqa: A002
     ) -> list[tuple[Document, float, list[float]]]:
+        if k < 0:
+            raise ValueError("k must be a non-negative integer.")
         # Get all docs with fixed order in list
         docs = list(self.store.values())
 
@@ -424,9 +426,13 @@ class InMemoryVectorStore(VectorStore):
         lambda_mult: float = 0.5,
         *,
         filter: Callable[[Document], bool] | None = None,
-        **kwargs: Any,
-    ) -> list[Document]:
-        prefetch_hits = self._similarity_search_with_score_by_vector(
+        **kwargs: Any
+) -> list[Document]:
+if k < 0:
+    raise ValueError("k must be a non-negative integer.")
+if fetch_k is not None and fetch_k < 0:
+    raise ValueError("fetch_k must be a non-negative integer.")
+prefetch_hits = self._similarity_search_with_score_by_vector(
             embedding=embedding,
             k=fetch_k,
             filter=filter,
