@@ -1,19 +1,24 @@
 """Module tests interaction of chat model with caching abstraction.."""
 
+from collections.abc import Sequence
 from typing import Any
 
 import pytest
+from pydantic import BaseModel, ValidationError
 from typing_extensions import override
 
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.globals import set_llm_cache
-from langchain_core.language_models.chat_models import _cleanup_llm_representation
+from langchain_core.language_models.chat_models import (
+    BaseChatModel,
+    _cleanup_llm_representation,
+)
 from langchain_core.language_models.fake_chat_models import (
     FakeListChatModel,
     GenericFakeChatModel,
 )
 from langchain_core.load import dumps
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.outputs.chat_result import ChatResult
 
@@ -508,6 +513,74 @@ def test_cache_key_ignores_message_id_sync() -> None:
 
     # Verify only one cache entry exists
     assert len(local_cache._cache) == 1
+
+
+def test_with_structured_output_bypasses_cache() -> None:
+    """Structured output must not cache a generation that fails parsing.
+
+    Regression test for #41431: without the bypass, the first (invalid)
+    generation is cached and replayed on the next call, so the retry
+    fails with the same error instead of getting a fresh generation.
+    """
+
+    class Answer(BaseModel):
+        value: int
+
+    class Scripted(BaseChatModel):
+        responses: list[AIMessage]
+
+        @property
+        def _llm_type(self) -> str:
+            return "scripted"
+
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: Any = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            _ = (messages, stop, run_manager, kwargs)
+            return ChatResult(
+                generations=[ChatGeneration(message=self.responses.pop(0))]
+            )
+
+        def bind_tools(
+            self,
+            tools: Sequence[Any],
+            *,
+            tool_choice: str | None = None,
+            **kwargs: Any,
+        ) -> Any:
+            _ = (tools, tool_choice, kwargs)
+            return self.model_copy()
+
+    def message(value: Any, call_id: str) -> AIMessage:
+        return AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "Answer",
+                    "args": {"value": value},
+                    "id": call_id,
+                    "type": "tool_call",
+                }
+            ],
+        )
+
+    cache = InMemoryCache()
+    model = Scripted(
+        responses=[message("nope", "call-1"), message(1, "call-2")],
+        cache=cache,
+    )
+    structured = model.with_structured_output(Answer)
+
+    with pytest.raises(ValidationError):
+        structured.invoke("score this")
+    assert cache._cache == {}
+
+    result = structured.invoke("score this")
+    assert result == Answer(value=1)
 
 
 async def test_cache_key_ignores_message_id_async() -> None:

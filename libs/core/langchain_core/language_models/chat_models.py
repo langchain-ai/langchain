@@ -2580,7 +2580,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             msg = "with_structured_output is not implemented for this model."
             raise NotImplementedError(msg)
 
-        llm = self.bind_tools(
+        # Bypass the model cache for structured output. A generation that
+        # fails structured-output parsing must not be cached and replayed
+        # on the next call, or every retry would fail with the same
+        # invalid generation. Successful structured outputs are not cached
+        # either, which is the trade-off for that correctness guarantee.
+        # See https://github.com/langchain-ai/langchain/issues/41431
+        uncached = self.model_copy(update={"cache": False})
+        llm = uncached.bind_tools(
             [schema],
             tool_choice="any",
             ls_structured_output_format={
