@@ -106,6 +106,7 @@ class _StreamingParser:
                 self.buffer = self.buffer[match.start() :]
                 self.xml_started = True
             else:
+                self.buffer = "<" if self.buffer.endswith("<") else ""
                 return
         # feed buffer to parser
         self.pull_parser.feed(self.buffer)

@@ -6,7 +6,7 @@ from collections.abc import AsyncIterator, Iterable
 import pytest
 
 from langchain_core.exceptions import OutputParserException
-from langchain_core.output_parsers.xml import XMLOutputParser
+from langchain_core.output_parsers.xml import XMLOutputParser, _StreamingParser
 
 DATA = """
  <foo>
@@ -156,3 +156,42 @@ async def tests_billion_laughs_attack() -> None:
 
     with pytest.raises(OutputParserException):
         await parser.aparse(MALICIOUS_XML)
+
+
+def test_streaming_parser_bounded_buffer_on_non_xml_prefix() -> None:
+    """Test that non-XML streaming prefix does not cause unbounded buffer retention."""
+    parser = _StreamingParser(parser="xml")
+    for _ in range(1000):
+        list(parser.parse("preamble text without xml "))
+    # Buffer should not accumulate non-XML text
+    assert len(parser.buffer) <= 1
+    parser.close()
+
+
+def test_streaming_parser_split_opening_tag() -> None:
+    """Test that an opening tag split across chunks (e.g. '<' and 'foo>') is parsed."""
+    parser = _StreamingParser(parser="xml")
+    list(parser.parse("preamble without tag <"))
+    assert parser.buffer == "<"
+    events = list(parser.parse("foo><bar>val</bar></foo>"))
+    assert parser.buffer == ""
+    assert any("bar" in str(event) for event in events)
+    parser.close()
+
+
+@pytest.mark.parametrize(
+    "chunks",
+    [
+        ["preamble <", "foo><bar>val</bar></foo>"],
+        ["a" * 1000, "<foo><bar>val</bar></foo>"],
+        list("preamble <foo><bar>val</bar></foo>"),
+    ],
+)
+async def test_xml_output_parser_transform_streaming_prefixes(
+    chunks: list[str],
+) -> None:
+    """Test XMLOutputParser.transform with various streaming non-XML prefixes."""
+    parser = XMLOutputParser(parser="xml")
+    result = list(parser.transform(iter(chunks)))
+    assert result == [{"foo": [{"bar": "val"}]}]
+
