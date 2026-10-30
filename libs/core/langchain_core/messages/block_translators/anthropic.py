@@ -256,6 +256,9 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     text_block["index"] = block["index"]
                 yield text_block
 
+            elif block_type == "refusal":
+                yield cast("types.RefusalContentBlock", block)
+
             elif block_type == "thinking":
                 reasoning_block: types.ReasoningContentBlock = {
                     "type": "reasoning",
@@ -492,7 +495,30 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     new_block["index"] = new_block["value"].pop("index")
                 yield new_block
 
-    return list(_iter_blocks())
+    blocks = list(_iter_blocks())
+    if message.response_metadata.get("stop_reason") == "refusal":
+        refusal_blocks: list[types.ContentBlock] = []
+        for item in blocks:
+            if item["type"] == "text":
+                refusal: types.RefusalContentBlock = {
+                    "type": "refusal",
+                    "refusal": item["text"],
+                }
+                if "index" in item:
+                    refusal["index"] = item["index"]
+                if extras := {
+                    k: v for k, v in item.items() if k not in {"type", "text", "index"}
+                }:
+                    refusal["extras"] = extras
+                refusal_blocks.append(refusal)
+            else:
+                refusal_blocks.append(item)
+        if not any(item["type"] == "refusal" for item in refusal_blocks):
+            refusal_blocks.append(
+                {"type": "refusal", "refusal": "", "index": "lc_refusal"}
+            )
+        return refusal_blocks
+    return blocks
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:

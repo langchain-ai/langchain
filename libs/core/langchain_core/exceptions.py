@@ -1,7 +1,10 @@
 """Custom **exceptions** for LangChain."""
 
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from langchain_core.messages import AIMessage
 
 
 class LangChainException(Exception):  # noqa: N818
@@ -78,6 +81,15 @@ class ModelError(LangChainException):
 
     is_retryable = False
     """Whether retrying the same model request may succeed."""
+
+
+class ModelRefusalError(ModelError):
+    """Exception raised when a model explicitly refuses or blocks a response."""
+
+    def __init__(self, message: "AIMessage") -> None:
+        """Retain the refused response without including its content in the error."""
+        self.message = message
+        super().__init__("The model refused to generate a response.")
 
 
 class ModelAuthenticationError(ModelError):
