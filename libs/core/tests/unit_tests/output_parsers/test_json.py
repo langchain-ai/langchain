@@ -254,6 +254,9 @@ TEST_CASES_PARTIAL = [
     ('{"foo": "bar", "bar"', '{"foo": "bar"}'),
     ('{"foo": "bar", ', '{"foo": "bar"}'),
     ('{"foo":"bar\\', '{"foo": "bar"}'),
+    ('{"foo": "bar"} Here is why.', '{"foo": "bar"}'),
+    ('{"foo": [1, 2, oops', '{"foo": [1, 2]}'),
+    ('{"foo": 1.', '{"foo": 1}'),
 ]
 
 
@@ -262,6 +265,30 @@ def test_parse_partial_json(json_strings: tuple[str, str]) -> None:
     case, expected = json_strings
     parsed = parse_partial_json(case)
     assert parsed == json.loads(expected)
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        '{"foo": "bar"} ' + "Here is why. " * 2_000,
+        '{"foo": [1, 2, ' + "x" * 20_000,
+    ],
+)
+def test_parse_partial_json_long_invalid_tail(
+    case: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A long unparseable tail must not cost one decode attempt per character."""
+    real_loads = json.loads
+    calls = 0
+
+    def counting_loads(*args: Any, **kwargs: Any) -> Any:
+        nonlocal calls
+        calls += 1
+        return real_loads(*args, **kwargs)
+
+    monkeypatch.setattr("langchain_core.utils.json.json.loads", counting_loads)
+    assert parse_partial_json(case) is not None
+    assert calls < 10
 
 
 STREAMED_TOKENS = """
