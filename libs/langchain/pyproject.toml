@@ -124,6 +124,10 @@ langchain-openai = { path = "../partners/openai", editable = true }
 constraint-dependencies = [
     "urllib3>=2.6.3",
     "pygments>=2.20.0",
+    # Patched releases require Python 3.11; Python 3.10 retains affected fallbacks.
+    "filelock==3.20.3; python_version < '3.11'",
+    "filelock>=4.2.1; python_version >= '3.11'",
+    "tornado>=6.6; python_version >= '3.11'",
 ]
 
 [tool.ruff]
