@@ -1119,6 +1119,9 @@ class ChatHuggingFace(BaseChatModel):
                 - `'json_schema'`: uses dedicated structured output features.
                 - `'json_mode'`: uses JSON mode.
 
+                `'json_schema'` and `'json_mode'` are not supported with
+                `HuggingFacePipeline`. Use `HuggingFaceEndpoint` instead.
+
             include_raw:
                 If `False` then only the parsed structured output is returned.
 
@@ -1155,6 +1158,15 @@ class ChatHuggingFace(BaseChatModel):
         _ = kwargs.pop("strict", None)
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"
+            raise ValueError(msg)
+        if method in ("json_schema", "json_mode") and _is_huggingface_pipeline(
+            self.llm
+        ):
+            msg = (
+                "HuggingFacePipeline does not support response_format, which is "
+                f"required for method='{method}'. Use HuggingFaceEndpoint for "
+                "structured output with this method."
+            )
             raise ValueError(msg)
         is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
         if method == "function_calling":
