@@ -532,7 +532,7 @@ def test_tree_is_constructed(parent_type: Literal["ls", "lc"]) -> None:
             def parent(_: Any) -> str:
                 return child.invoke("foo")
 
-            tracer = LangChainTracer()
+            tracer = LangChainTracer(retain_child_runs=True)
             with patch.object(LangChainTracer, "_persist_run", new=collect_tracer_run):
                 assert (
                     parent.invoke(..., {"run_id": rid, "callbacks": [tracer]}) == "foo"  # type: ignore[attr-defined]
