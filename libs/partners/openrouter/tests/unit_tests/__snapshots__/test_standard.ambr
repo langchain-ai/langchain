@@ -20,7 +20,7 @@
         'lc': 1,
         'type': 'secret',
       }),
-      'request_timeout': 60,
+      'request_timeout': 60.0,
       'stop': list([
       ]),
       'stream_usage': True,
