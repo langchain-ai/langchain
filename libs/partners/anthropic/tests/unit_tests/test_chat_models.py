@@ -27,6 +27,7 @@ from langchain_core.exceptions import (
     ModelRateLimitError,
     ModelTimeoutError,
 )
+from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -288,6 +289,118 @@ def test_user_agent_header_in_client_params() -> None:
     assert "default_headers" in params
     assert "User-Agent" in params["default_headers"]
     assert params["default_headers"]["User-Agent"].startswith("langchain-anthropic/")
+
+
+def test_unset_api_key_is_omitted_from_client_params(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unset key defers to the anthropic SDK's own credential resolution.
+
+    Passing ``api_key=""`` counts as an explicit credential to the SDK, which
+    disables its resolution chain (environment variables, profiles, workload
+    identity federation) and shadows a ``credentials`` provider.
+    """
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    llm = ChatAnthropic(model=MODEL_NAME)
+    params = llm._client_params
+    assert "api_key" not in params
+    assert "auth_token" not in params
+    assert "credentials" not in params
+
+
+def test_explicit_and_env_api_keys_are_forwarded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="explicit-key")  # type: ignore[arg-type]
+    assert llm._client_params["api_key"] == "explicit-key"
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "env-key")
+    llm = ChatAnthropic(model=MODEL_NAME)
+    assert llm._client_params["api_key"] == "env-key"
+
+
+def test_auth_token_is_forwarded(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    llm = ChatAnthropic(model=MODEL_NAME, auth_token="bearer-token")  # type: ignore[call-arg]  # noqa: S106
+    params = llm._client_params
+    assert params["auth_token"] == "bearer-token"  # noqa: S105
+    assert "api_key" not in params
+    assert isinstance(llm.anthropic_auth_token, SecretStr)
+
+
+def test_credentials_provider_reaches_the_client(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    captured: dict[str, Any] = {}
+
+    class FakeClient:
+        def __init__(self, **kwargs: Any) -> None:
+            captured.update(kwargs)
+
+    provider = object()
+    llm = ChatAnthropic(model=MODEL_NAME, credentials=provider)
+    monkeypatch.setattr(anthropic, "Client", FakeClient)
+    _ = llm._client
+    assert captured["credentials"] is provider
+    assert "api_key" not in captured
+    assert "auth_token" not in captured
+
+
+def test_explicit_empty_api_key_is_omitted(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="")  # type: ignore[arg-type]
+    assert "api_key" not in llm._client_params
+
+
+def test_gateway_key_is_forwarded_without_a_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The gateway validator still hands its own key through to the client."""
+    for name in ("ANTHROPIC_API_KEY", "ANTHROPIC_API_URL", "ANTHROPIC_BASE_URL"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "lsv2_gateway-key")
+    llm = ChatAnthropic(model=MODEL_NAME)
+    assert llm.anthropic_api_url == "https://gateway.smith.langchain.com/anthropic"
+    assert llm._client_params["api_key"] == "lsv2_gateway-key"
+
+
+def test_auth_token_round_trips_through_serialization(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """auth_token serializes as a secret reference; credentials are dropped."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        auth_token="bearer-token",  # type: ignore[call-arg]  # noqa: S106
+        credentials=object(),
+    )
+
+    serialized = dumpd(llm)
+    assert serialized["kwargs"]["anthropic_auth_token"] == {
+        "lc": 1,
+        "type": "secret",
+        "id": ["ANTHROPIC_AUTH_TOKEN"],
+    }
+    assert "credentials" not in serialized["kwargs"]
+    assert "bearer-token" not in json.dumps(serialized)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        loaded = load(
+            serialized,
+            allowed_objects=[ChatAnthropic],
+            secrets_map={"ANTHROPIC_AUTH_TOKEN": "bearer-token"},
+        )
+    assert isinstance(loaded, ChatAnthropic)
+    assert loaded.credentials is None
+    assert loaded._client_params["auth_token"] == "bearer-token"  # noqa: S105
 
 
 @pytest.mark.parametrize("async_api", [True, False])
