@@ -220,3 +220,10 @@ async def test_inmemory_call_embeddings_async() -> None:
     # Ensure the async embedding function is called
     assert embeddings_mock.aembed_documents.await_count == 1
     assert embeddings_mock.aembed_query.await_count == 1
+
+
+async def test_add_texts_empty_ids_raises() -> None:
+    """Test that an empty ids list raises ValueError."""
+    vectorstore = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=6))
+    with pytest.raises(ValueError):
+        vectorstore.add_texts(["example"], ids=[])
