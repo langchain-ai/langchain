@@ -39,6 +39,18 @@ body:
           required: true
         - label: I posted a self-contained, minimal, reproducible example. A maintainer can copy it and run it AS IS.
           required: true
+  - type: dropdown
+    id: discovery
+    attributes:
+      label: How did you discover this issue?
+      description: Select one. If you select "Other", please explain in the Description field below.
+      multiple: false
+      options:
+        - While building or running a project that uses LangChain
+        - Through source-code inspection or automated scanning, rather than use in a project
+        - Other — please explain
+    validations:
+      required: true
   - type: checkboxes
     id: package
     attributes:

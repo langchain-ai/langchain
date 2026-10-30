@@ -10,8 +10,12 @@ sources:
     resource: repo://libs/core/langchain_core/callbacks/manager.py
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
+  - id: openwiki-source-0f6ea1dd09fb4675ff4112b1
+    resource: repo://libs/core/langchain_core/messages/__init__.py
   - id: openwiki-source-b32b84365d17276620c41ebc
     resource: repo://libs/core/langchain_core/messages/base.py
+  - id: openwiki-source-56c6ea6a11f04b5c0e01aa7b
+    resource: repo://libs/core/langchain_core/messages/notification.py
   - id: openwiki-source-03d7415879ed05a392edd62d
     resource: repo://libs/core/langchain_core/prompts/base.py
   - id: openwiki-source-a1981e868973f6fd7f71e12e
@@ -46,17 +50,17 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
   - id: openwiki-source-bd29e79613d5f366a00068f5
     resource: repo://libs/standard-tests/langchain_tests/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-30T08:19:17.669Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
+    at: 2026-10-30T08:19:17.669Z
 ---
 
 ## Overview
 
 This page provides a quick reference for locating code by topic in the LangChain monorepo. The repository is organized as a multi-package workspace with a three-layer architecture:
 
-- **langchain-core** (v1.7.0): Base abstractions for messages, runnables, tools, prompts, language models, and callbacks
+- **langchain-core** (v1.7.3): Base abstractions for messages, runnables, tools, prompts, language models, and callbacks
 - **langchain** (v1.4.7): Orchestration, agent factory, middleware composition, and model initialization
 - **langchain-classic** (v1.0.8): Legacy chains, memory, retrieval abstractions, and backward compatibility
 - **partners** (`langchain-*` packages): Provider-specific implementations (OpenAI, Anthropic, Ollama, etc.)
@@ -83,6 +87,7 @@ Use this map to navigate directly to the code responsible for a given concept, u
 | **Embeddings** | `repo://libs/core/langchain_core/embeddings/embeddings.py` | Base embedding interface and fake embeddings for testing |
 | **Example Selectors** | `repo://libs/core/langchain_core/example_selectors/` | Selection strategies for few-shot examples (LLM, max marginal relevance, etc.) |
 | **Messages** | `repo://libs/core/langchain_core/messages/` | Message types (AIMessage, HumanMessage, SystemMessage, ToolMessage) and content blocks (text, images, tool use, etc.) |
+| **Notification Metadata** | `repo://libs/core/langchain_core/messages/notification.py` | TypedDict and utilities for marking agent-generated messages with source attribution and metadata (add_notification_metadata, get_notification_metadata) |
 | **Model Profiles** | `repo://libs/model-profiles/langchain_model_profiles/` | Metadata registry and CLI tools for LLM behavior, capabilities, and configuration |
 | **MCP (Model Context Protocol)** | `repo://libs/langchain_v1/langchain/mcp/` | Adapter and tools for MCP-based model integrations and protocol compatibility |
 | **Output Parsers** | `repo://libs/core/langchain_core/output_parsers/` | Structured output parsing (JSON, XML, Pydantic, OpenAI tools), format instructions, and validation |
@@ -114,7 +119,7 @@ Use this map to navigate directly to the code responsible for a given concept, u
 
 ```
 /libs/
-├── core/                           # langchain-core: Base abstractions (v1.7.0)
+├── core/                           # langchain-core: Base abstractions (v1.7.1)
 │   ├── langchain_core/
 │   │   ├── language_models/        # BaseChatModel and language model abstractions
 │   │   │   ├── chat_models.py      # Core chat model interface
@@ -291,7 +296,7 @@ Use this map to navigate directly to the code responsible for a given concept, u
 
 ## Architecture Layers
 
-### Layer 1: langchain-core (Base Abstractions, v1.7.0)
+### Layer 1: langchain-core (Base Abstractions, v1.7.3)
 Core interfaces and implementations used by all other packages:
 - **Message protocol**: AIMessage, HumanMessage, SystemMessage, ToolMessage with rich content blocks
 - **Runnable protocol**: Composable units with `invoke()`, `stream()`, `batch()` and async variants

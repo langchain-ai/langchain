@@ -5,13 +5,13 @@ description: "Reference implementation of the partner pattern using OpenAI. Cove
 tags: ["chat-model", "openai", "tool-calling", "structured-output", "vision", "streaming", "partner-pattern"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
+    at: 2026-10-29T08:20:01.046Z
 sources:
   - id: openwiki-source-738512768ef81ae009b097ac
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
   - id: openwiki-source-b65307f1d05bd74532af2eee
     resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
 ---
 
 # OpenAI Provider Implementation
@@ -521,7 +521,7 @@ The `with_structured_output()` method returns a wrapped model that parses respon
 def with_structured_output(
     self,
     schema: dict | type | None = None,
-    method: Literal["function_calling", "json_mode", "json_schema"] = "json_schema",
+    method: Literal["function_calling", "json_mode", "json_schema"] = "function_calling",
     include_raw: bool = False,
     strict: bool | None = None,
     tools: list | None = None,
@@ -531,9 +531,9 @@ def with_structured_output(
 
 ### Method Comparison
 
-**1. JSON Schema (Default, Recommended)**
+**1. Function Calling (Default)**
 
-Uses OpenAI's Structured Output API for guaranteed schema conformance:
+Uses tool-calling API; schema is treated as a function to "call":
 
 ```python
 from pydantic import BaseModel, Field
@@ -545,7 +545,26 @@ class Joke(BaseModel):
     rating: int = Field(ge=1, le=10, description="Rating 1-10")
 
 model = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
-structured_model = model.with_structured_output(Joke, method="json_schema")
+structured_model = model.with_structured_output(Joke)
+
+joke = structured_model.invoke("Tell me a joke about cats")
+```
+
+**Characteristics:**
+- Works with older models (GPT-3.5+).
+- Less strict; schema is guidance, not a guarantee.
+- Uses `bind_tools()` internally, then parses the tool call.
+- Supports Pydantic V1 and V2.
+
+**2. JSON Schema (Recommended for Structured Output)**
+
+Uses OpenAI's Structured Output API for guaranteed schema conformance:
+
+```python
+structured_model = model.with_structured_output(
+    Joke,
+    method="json_schema"
+)
 
 joke = structured_model.invoke("Tell me a joke about cats")
 print(joke.setup)  # Returns Pydantic instance
@@ -558,28 +577,9 @@ print(joke.setup)  # Returns Pydantic instance
 - Can include `strict=True` for additional validation.
 - Supports `tools` parameter to allow tool invocation alongside structured output.
 
-**2. Function Calling**
-
-Uses tool-calling API; schema is treated as a function to "call":
-
-```python
-structured_model = model.with_structured_output(
-    Joke,
-    method="function_calling"
-)
-
-joke = structured_model.invoke("Tell me a joke")
-```
-
-**Characteristics:**
-- Works with older models (GPT-3.5+).
-- Less strict; schema is guidance, not a guarantee.
-- Uses `bind_tools()` internally, then parses the tool call.
-- Supports Pydantic V1 and V2.
-
 **3. JSON Mode**
 
-Tells the model to output valid JSON:
+Tells the model to output valid JSON without schema validation:
 
 ```python
 structured_model = model.with_structured_output(

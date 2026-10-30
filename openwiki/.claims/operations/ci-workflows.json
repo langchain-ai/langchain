@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:21867444e5e2a5db5a80d0f5f129d76eecee1b0222aceab84ea017635978dd00",
+  "pageVersion": "sha256:5f3e42ff88d1453f11657eb30bd9e47aa07b43ec4be4486c4159f1a9e275af7f",
   "claims": [
     {
       "id": "claim_bfd9abbe9d6f4a7b84caf7cb98fb5029",
@@ -86,41 +86,41 @@
     },
     {
       "id": "claim_c27356972b99420aaa0bea140645d5e2",
-      "statement": "The _release.yml build job runs in isolated Release environment with read-only permissions, validates version against pyproject.toml, checks PyPI for duplicate versions, builds distribution with uv, and uploads artifacts for downstream jobs. Fails closed if PyPI is unreachable.",
+      "statement": "The _release.yml build job runs in isolated Release environment with read-only permissions, validates version against pyproject.toml, checks PyPI for duplicate versions, builds distribution with uv, computes SHA256 checksums, and uploads artifacts for downstream jobs. Fails closed if PyPI is unreachable.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/_release.yml#L140-L284",
-          "version": "repo-lines-v1:sha256:a72112abeb3594fb24379b3da2be319dbd89163282b06b63f2df3335e6ccbbd9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlOWQ4MDE1NGVkNDJmYzVjNzc5YjEzMzE1NzhiNThiODljODAxZWFjZTc0ZjI0Y2Q0OGViNGEyMzU3OTQwYTk1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0NzBjOTQ1NmJjMWM4YzA0ZTE1YWEzNzJjNjQwMDlkMDQyOGJjZjNiOTJjMmI3NjJlMTRiMDZlNmE5NzlhYTRlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmZTI2M2M2ZjcxYjczMDJiNmQ5MjhmODc2MjdlMjU3MmIxNDA2YmM3M2U3MzAzZmE1Mzc3YTI1MDMzNWFmOWJlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3MzFhZTI5MjZjMmVkNjc4MDVhMzc1ZjMzZWJhYTI2Mjk1YTY2Mjg2NDgzN2ExYzQyZmRlOGIxY2UwZmU4Y2E3In0"
+          "resource": "repo://.github/workflows/_release.yml#L143-L298",
+          "version": "repo-lines-v1:sha256:9e9e4e7ab794c9d029580d4467b9191b8cfc0414b0a5623c92ce4030562bb28a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3ZWUzYzYwZGIyNTNjYmNlYTcyNGFhZGQ5MThlYjk0NjY0ZjdjNjdlNzg0Zjc5NmY3ODRjZjEwMjIwN2QyNmJlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0NzBjOTQ1NmJjMWM4YzA0ZTE1YWEzNzJjNjQwMDlkMDQyOGJjZjNiOTJjMmI3NjJlMTRiMDZlNmE5NzlhYTRlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhNGM2YmEyNTVjZTRiMDE4NjAyMzYzMjlhNTFiOWM5YjBhN2MxMGY0YmRhMzc4NzFkYzZkZDNlNWNkYzVlODgyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3MzFhZTI5MjZjMmVkNjc4MDVhMzc1ZjMzZWJhYTI2Mjk1YTY2Mjg2NDgzN2ExYzQyZmRlOGIxY2UwZmU4Y2E3In0"
         }
       ]
     },
     {
       "id": "claim_aefe820aacdf48c18184e0b6513132f9",
-      "statement": "The pre-release-checks job validates packages before publishing: installs wheel from built artifact, runs unit tests, checks for prerelease dependencies, tests against minimum supported versions, and runs integration tests for partner packages with live API keys.",
+      "statement": "The pre-release-checks job validates packages before publishing: installs wheel from built artifact, runs unit tests, checks for prerelease dependencies, tests against minimum supported versions, and runs integration tests for partner packages with live API keys. Intentionally disables caching to catch missing dependencies.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/_release.yml#L384-L541",
-          "version": "repo-lines-v1:sha256:7bdcd184792c1d0fdef2071d5af396569728edec016e82e2f2d639fdb48e145a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNmI2OTNjOWRmMzU1MThmNzEyODQwN2UyNDhiODM3ZTAxZjBlZmJmNTQ4ZTg4MGUyMDA4NTgyZDdmMTI3MDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxYTU5ZmRkM2Q4MWZkMTUyZDU5ZTJiNzliYTIxOGNmMGJhMDgyYWQ2NzM3ZmE3ZTFiYTEwYjRlY2FlMjlkY2I3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzMzIxNWFlOWJkMDZkZTVkNGE1YjYyZDYxMjhkOTZlYWI1MGVjNWZjMjQ3ZGI2YjAzOWFlMzcyYTYyNTFlZTRmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNzBkZDYxNTE3ZTAxOGI4NWVmYzNjOWM3YWM0ZWM5ZjUxYTU2NzMyMWU1Mjk4MjEwYjZmZjZlN2FkNTkzYjFmIn0"
+          "resource": "repo://.github/workflows/_release.yml#L400-L559",
+          "version": "repo-lines-v1:sha256:943782b033ba883dab456d6cb9268256b62e9582dc950d694d3ecb841dbe7ccd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNmI2OTNjOWRmMzU1MThmNzEyODQwN2UyNDhiODM3ZTAxZjBlZmJmNTQ4ZTg4MGUyMDA4NTgyZDdmMTI3MDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxYTU5ZmRkM2Q4MWZkMTUyZDU5ZTJiNzliYTIxOGNmMGJhMDgyYWQ2NzM3ZmE3ZTFiYTEwYjRlY2FlMjlkY2I3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MTZhZDk2YzhlNWQyNGQ4OWU2MWQyZTkwMzEyOGY2YWE0YWYzYmQ2Y2I2MjhmNWMzYzY5NTI5YWUxNDJjZWY4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNzBkZDYxNTE3ZTAxOGI4NWVmYzNjOWM3YWM0ZWM5ZjUxYTU2NzMyMWU1Mjk4MjEwYjZmZjZlN2FkNTkzYjFmIn0"
         }
       ]
     },
     {
       "id": "claim_d2c3be4cf41d466f9ba4209759c7d0d5",
-      "statement": "For libs/core releases, test-prior-published-packages-against-new-core job fetches latest published versions of anthropic and openai partners from PyPI, checks out published partner code at that tag, installs new unreleased core wheel, and runs unit and integration tests to validate backward compatibility.",
+      "statement": "For libs/core releases, test-prior-published-packages-against-new-core job fetches latest published versions of anthropic and openai partners from PyPI, verifies git tags exist, checks out published partner code, installs new unreleased core wheel, and runs unit and integration tests to validate backward compatibility.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/_release.yml#L583-L745",
-          "version": "repo-lines-v1:sha256:29ca773827bc0b96ea14b5807a0c33c7cf5129ce1ef5680cc9d13f080e02badb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiZTE0NDc5OGY0ZWI3OWMwOWU2YTlkODRiODNmN2FjOWFhN2M2ZjMzNzNjNGM2ODU1ZTBmZTU0NGQ1NjJlYTliIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiMzBmZWQ1ZWJjYzc1ZDJjMWQzYTA5MWRmOWE0NTlmNzY1ZTkxMGY2OGMzODllODE5YmU1ODFiNWNkYzQ1Yzg1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxNTkyOTYzNThkYzlmZGU5OWNhMmEwMWYxZDdiNzg1NDdmMjgxMzVjZWM0Yjk5OWI3M2IwNGM2ZjVlZDU1NzY5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwYmMzNDA1YWRkYmFkNmFiYzExNmFiOTg2ODY2Mzg3NGMyYWRlNTI0ODM1NTE2MGVhMTBlZjQxZDdlZGU3NjkxIn0"
+          "resource": "repo://.github/workflows/_release.yml#L618-L781",
+          "version": "repo-lines-v1:sha256:ac10173c5f67e0132d5e2ed61a3f8c221da51e5b4dc175d1bc699034be0a9de4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTY0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhY2FjODZjOTljM2Q1MTE4NDk5ZTEyMGYxNzEzNDY5NzMwOTk5MjVlZjlkZGVkODQ3NjUxMWEyNWEyNGNkYTdiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiMzBmZWQ1ZWJjYzc1ZDJjMWQzYTA5MWRmOWE0NTlmNzY1ZTkxMGY2OGMzODllODE5YmU1ODFiNWNkYzQ1Yzg1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxZmY4M2UwYWZlZjljYTAxM2RiMmNkMzk5ZjFjYzkxNTg1Yzg2M2IxZjY1N2U3MGU0NzEyOGFkMWQxZDA2OTU2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwYmMzNDA1YWRkYmFkNmFiYzExNmFiOTg2ODY2Mzg3NGMyYWRlNTI0ODM1NTE2MGVhMTBlZjQxZDdlZGU3NjkxIn0"
         }
       ]
     },
     {
       "id": "claim_4d84b3db7d5c4dbb9685596559cdf78e",
-      "statement": "test-pypi-publish job publishes to test.pypi.org with --skip-existing flag to allow re-runs without failure, uses trusted publishing via OIDC token, and disables attestations as a workaround for gh-action-pypi-publish v1.11.0+.",
+      "statement": "test-pypi-publish job publishes to test.pypi.org with --skip-existing flag to allow re-runs without failure, verifies artifact checksums, uses trusted publishing via OIDC token, and disables attestations as a workaround for gh-action-pypi-publish v1.11.0+.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/_release.yml#L543-L581",
-          "version": "repo-lines-v1:sha256:4b54795765c07dc1867f611a6f6d7b13259f032347b53ca6022637f3a0cae472:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyZGJiM2FkNWFmNDYyZTMzMjA0MTA5OGRlNDNkZWIyOGZjNzk4MmU4NzdkNmI1M2JiM2VkOTZiNjNlNjUxZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5NTljMzRiYzEyOGU4YTBjZTc3N2U0MGJmODIxMDM4ZWFkYTNlOTM3MTQxMzM2ZGFlZTBmOTk1ZDFlZmYxN2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzMzM3YjQzYjE3ODdmMWQ1NmFiYzRlMWE5NzIwYzRjYjM2MWIzOTJmYmIxMjM4ZGJiN2U5Mjg0OGVmM2JhNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmZjgzZTBhZmVmOWNhMDEzZGIyY2QzOTlmMWNjOTE1ODVjODYzYjFmNjU3ZTcwZTQ3MTI4YWQxZDFkMDY5NTYifQ"
+          "resource": "repo://.github/workflows/_release.yml#L561-L614",
+          "version": "repo-lines-v1:sha256:688a6eb25bb18c40f420eba4d70231f8d2c9f54205104ba1af6a0889c560dcf2:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyZGJiM2FkNWFmNDYyZTMzMjA0MTA5OGRlNDNkZWIyOGZjNzk4MmU4NzdkNmI1M2JiM2VkOTZiNjNlNjUxZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5NTljMzRiYzEyOGU4YTBjZTc3N2U0MGJmODIxMDM4ZWFkYTNlOTM3MTQxMzM2ZGFlZTBmOTk1ZDFlZmYxN2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzMzM3YjQzYjE3ODdmMWQ1NmFiYzRlMWE5NzIwYzRjYjM2MWIzOTJmYmIxMjM4ZGJiN2U5Mjg0OGVmM2JhNTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmZjgzZTBhZmVmOWNhMDEzZGIyY2QzOTlmMWNjOTE1ODVjODYzYjFmNjU3ZTcwZTQ3MTI4YWQxZDFkMDY5NTYifQ"
         }
       ]
     },
@@ -129,18 +129,18 @@
       "statement": "For libs/core and libs/langchain_v1 releases, test-dependents job checks out external projects (deepagents), installs new unreleased core/langchain_v1 wheel, and runs their tests across Python 3.11 and 3.13 to catch breaking API changes.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/_release.yml#L747-L800",
-          "version": "repo-lines-v1:sha256:30a810f8defac3493efd772d7a450b42bc295268ca51ab5fc7760ef73b467acf:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzNjZjNzE4YmMzMzk3MTUyNWQ3YjdkNTY2ODhmZTcwOTdiMmQwZTgwYzJhMzc5NjE5ODEzNDQ4OTM5ZDVmMWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIzY2Y0OTA4MzUzY2VhMzhlNTk5ODFmNDlmMGIzNTQyMWZlMjNkYzYwMjhmNDJiZGVhMjU4MjIwNjIxMTg1ZDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjMmY4OGYyNGY0ODFjZGNkN2ZkNTA2NzY2ZDcxMDhmYWVlNDEzODQ5NjUwZjg3ZTcyMmMxYmE5Y2Y4YjYzMmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhYzI3MmM5MmJjOWZiNDc4Mzc4N2RjZDkyMDM5ZTcyM2VmMDUxZThjNWNhMjQ3MDA2MGNhMmIyNzljZDAzNDcifQ"
+          "resource": "repo://.github/workflows/_release.yml#L785-L857",
+          "version": "repo-lines-v1:sha256:190c5f304656f820385ccf14292b591e24ff93af91d51c81af4d34fd6230b52b:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0N2IyY2U4MjMxZjEyYzFjYzFhYjEyYjRkM2VhNTcyNTkzZDgzYTU3OTBlMTk0NDBkNmQ0NTAzZTYwM2NlZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2ZkMjNkZTlmZWFmNjJmYzcwNGZmMWQyZGNiOTUwYzhmYWI2ZTExOTA0MzkzYTAzNGZjNDc5ZDE1NWIxMGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBiYzM0MDVhZGRiYWQ2YWJjMTE2YWI5ODY4NjYzODc0YzJhZGU1MjQ4MzU1MTYwZWExMGVmNDFkN2VkZTc2OTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxMWMwZTJjOTc0YzMzNDMxMDIwMWM3YzRlNzVjYWM4NGE2ZDMwY2Y3MGE0ZmZlMTYyYTVmYmIwY2JkMGExYjkifQ"
         }
       ]
     },
     {
       "id": "claim_db0e99d76b65441e82bf4e1f01e3d664",
-      "statement": "openwiki-update.yml runs daily at 8 AM UTC or on manual trigger. It checks out repository with full history, installs OpenWiki 0.5.0, runs openwiki code --update with Anthropic API, removes transient state, and creates a pull request with documentation changes.",
+      "statement": "openwiki-update.yml runs daily at 8 AM UTC or on manual trigger. It checks out repository with full history, installs OpenWiki 0.5.0, runs openwiki code --update with Anthropic Claude Haiku 4.5, removes transient state, and creates a pull request with documentation changes. Preserves partial progress if the run fails.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/openwiki-update.yml#L1-L76",
-          "version": "repo-lines-v1:sha256:5dd98d987059da60fa1c6a048c67e9601aa55928f0bcd3d7b1e39085f6137ffa:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2MDI3ODdhZjZkY2MwODM0ZGUxMjFjYmIxY2I5NWY5NDU5YjcyMWVhYjAzNDlmMTA1MDFiOTk2YzFjNzdmZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzE4ZjA2N2I1ZTVjMWYwOTkxYTZlNzQ3MjZmZTJhMjNkMjY0MzQ1ZTA4ZTRlYWQwNGZhZjczYzI3ZWQ0NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://.github/workflows/openwiki-update.yml#L1-L77",
+          "version": "repo-lines-v1:sha256:e621c08879c41bee266ce66d22705c05f79c584e99d20d44542a99510bafede1:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2MDI3ODdhZjZkY2MwODM0ZGUxMjFjYmIxY2I5NWY5NDU5YjcyMWVhYjAzNDlmMTA1MDFiOTk2YzFjNzdmZmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2NzE4ZjA2N2I1ZTVjMWYwOTkxYTZlNzQ3MjZmZTJhMjNkMjY0MzQ1ZTA4ZTRlYWQwNGZhZjczYzI3ZWQ0NDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -181,6 +181,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-26T08:33:32.568Z"
+    "at": "2026-10-29T08:20:01.046Z"
   }
 }

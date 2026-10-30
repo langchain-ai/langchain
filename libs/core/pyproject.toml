@@ -21,11 +21,13 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.7.0"
+version = "1.7.3"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langsmith>=0.14.9,<1.0.0",
     "httpx>=0.23.0",
+    # Remove once our minimum httpx version requires certifi>=2026.10.19.
+    "certifi>=2026.10.19",
     "tenacity!=8.4.0,>=8.1.0",
     "jsonpatch>=1.33.0",
     "PyYAML>=5.3.0",

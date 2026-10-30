@@ -379,6 +379,9 @@ def merge_content(
     """
     merged: str | list[str | dict[Any, Any]]
     merged = "" if first_content is None else first_content
+    if isinstance(merged, list):
+        # The branches below append to it, which would change the first message.
+        merged = merged.copy()
 
     for content in contents:
         # If current is a string

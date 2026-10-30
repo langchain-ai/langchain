@@ -3,9 +3,6 @@ type: "Getting Started"
 title: "LangChain Repository Quick Start"
 description: "Entry point for engineers: orient to the monorepo structure, run first tests, understand what to edit for common tasks, and route to major development areas."
 tags: [quickstart, getting-started, monorepo, setup, development, first-steps, cli-reference]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
 sources:
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
@@ -43,7 +40,10 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
   - id: openwiki-source-48ce5ee900993294d349b4e8
     resource: repo://libs/standard-tests/langchain_tests/__init__.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-30T08:19:17.669Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-10-30T08:19:17.669Z
 ---
 
 ## Welcome to LangChain Development
@@ -60,7 +60,7 @@ LangChain is organized as a **three-layer architecture** in `/libs/`:
 
 ```
 /libs/
-├── core/              # langchain-core (v1.7.0): Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
+├── core/              # langchain-core (v1.7.3): Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
 ├── langchain/         # langchain-classic (v1.0.8): Legacy orchestration layer (no new features)
 ├── langchain_v1/      # langchain (v1.4.7): Agent orchestration, factory, middleware
 ├── partners/          # Provider-specific integrations (OpenAI, Anthropic, Ollama, etc.)
@@ -236,8 +236,7 @@ Use the table below to route to detailed documentation:
 | **Initialize models dynamically** | [Model Initialization](/openwiki/workflows/model-initialization.md) | init_chat_model factory, provider:model syntax, fallback chains |
 | **Compose components (chains, pipelines)** | [Runnables](/openwiki/concepts/runnables.md), [Composability](/openwiki/workflows/composability.md) | Runnable protocol, \| operator, branching, retry, fallback |
 | **Work with tools** | [Tools](/openwiki/concepts/tools.md) | BaseTool, schema generation, tool calling, result handling |
-<!-- openwiki: broken internal link [/openwiki/workflows/streaming.md] file "/openwiki/workflows/streaming.md" does not exist. Fix the href or restore the target, then delete this comment. -->
-| **Stream responses** | [Streaming](/openwiki/workflows/streaming.md) | Token-by-token output, streaming across components |
+| **Stream responses** | [Streaming](/openwiki/streaming.md) | Token-by-token output, streaming across components |
 | **Enforce response formats** | [Structured Output](/openwiki/workflows/structured-output.md) | JSON schemas, response validation, typed outputs |
 | **Write middleware** | [Middleware](/openwiki/workflows/middleware.md) | Middleware types, composition, custom hooks |
 | **Trace agent execution** | [Agent Execution](/openwiki/workflows/agent-execution.md) | Runtime lifecycle, loop control, state transitions |

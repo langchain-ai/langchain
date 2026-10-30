@@ -3508,6 +3508,24 @@ def test_usage_metadata_cache_creation_ttl() -> None:
     assert details["cache_read"] == 5
     assert details["cache_creation"] == 10
 
+    # Case 7: cache_creation containing explicit None values (e.g. Bedrock)
+    class UsageWithCacheCreationNulls(BaseModel):
+        input_tokens: int = 200
+        output_tokens: int = 30
+        cache_read_input_tokens: int = 10
+        cache_creation_input_tokens: int = 150
+        cache_creation: dict = {
+            "ephemeral_5m_input_tokens": 100,
+            "ephemeral_1h_input_tokens": None,
+        }
+
+    result = _create_usage_metadata(UsageWithCacheCreationNulls())
+    assert result["input_tokens"] == 200 + 10 + 100
+    details = dict(result.get("input_token_details") or {})
+    assert details["cache_creation"] == 0
+    assert details["ephemeral_5m_input_tokens"] == 100
+    assert "ephemeral_1h_input_tokens" not in details
+
 
 class FakeTracer(BaseTracer):
     """Fake tracer to capture inputs to `chat_model_start`."""
@@ -4964,6 +4982,38 @@ def test_effort_parameter_validation() -> None:
     # Invalid effort values should raise ValidationError
     with pytest.raises(ValidationError, match="Input should be"):
         ChatAnthropic(model="claude-opus-4-5-20251101", effort="invalid")  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize(
+    "model_kwargs",
+    [
+        {},
+        {"output_config": {}},
+        {"effort": "medium"},
+        {"reasoning_effort": "low"},
+        {"output_config": {"effort": "low"}},
+        {"output_config": {"effort": "low"}, "effort": "high"},
+        {
+            "output_config": {"task_budget": {"type": "tokens", "total": 50000}},
+            "reasoning_effort": "high",
+        },
+    ],
+)
+def test_effort_in_identifying_params(model_kwargs: dict[str, Any]) -> None:
+    """Resolved instance defaults flow into tracing without mutating configuration."""
+    model = ChatAnthropic(model=MODEL_NAME, **copy.deepcopy(model_kwargs))
+    original_output_config = copy.deepcopy(model.output_config)
+    expected = model._get_request_payload("Test query").get("output_config")
+
+    assert (model._identifying_params["output_config"] or None) == expected
+    assert (model._get_invocation_params()["output_config"] or None) == expected
+    assert model.output_config == original_output_config
+
+    override = {"effort": "low"}
+    params = model._get_invocation_params(stop=["stop"], output_config=override)
+    assert params["output_config"] == override
+    assert params["stop"] == ["stop"]
+    assert model.output_config == original_output_config
 
 
 def test_effort_in_output_config_payload() -> None:

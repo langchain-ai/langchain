@@ -5,7 +5,7 @@ description: "MCPAdapter bridges MCP (Model Context Protocol) servers with LangC
 tags: [mcp, protocol, tools, adapter, integration, langgraph, fastmcp]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
+    at: 2026-10-29T08:20:01.046Z
 sources:
   - id: openwiki-source-3f94459a7a8a90bc4757cbfa
     resource: repo://libs/langchain_v1/langchain/mcp/__init__.py
@@ -15,7 +15,7 @@ sources:
     resource: repo://libs/langchain_v1/langchain/mcp/elicitation.py
   - id: openwiki-source-4715c337e9b93b9d00846133
     resource: repo://libs/langchain_v1/langchain/mcp/tools.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
 ---
 
 ## Overview
@@ -31,7 +31,9 @@ The adapter handles:
 - **Mid-call input handling**: Answers MCP elicitation requests via LangGraph interrupts
 - **Error recovery**: Surfaces tool-reported errors to the model for correction and retry
 
-## MCP Concept and Protocol Roles
+## MCP Protocol Foundations
+
+### Concept and Protocol Roles
 
 MCP defines a request–response protocol with three primary roles:
 
@@ -184,6 +186,47 @@ All MCP tools are async (`StructuredTool` with `coroutine`), allowing concurrent
 3. Calls either `_call_tool_with_interrupts()` (if the client is armed for elicitation and server supports `InputRequiredResult`) or `client.call_tool()` with `raise_on_error=False` (plain mode)
 4. Converts the result into LangChain content blocks and artifact
 
+### Tool Invocation Flow
+
+The following diagram shows how tool calls flow through the adapter and client:
+
+```mermaid
+sequenceDiagram
+    participant Agent as LangChain Agent
+    participant Tool as MCPAdapter Tool
+    participant Client as FastMCP Client
+    participant Server as MCP Server
+
+    Agent->>Tool: ainvoke(arguments)
+    activate Tool
+    Tool->>Client: async with client
+    activate Client
+    alt Is armed and modern server
+        Tool->>Client: _call_tool_with_interrupts()
+    else Plain execution
+        Tool->>Client: call_tool(raise_on_error=False)
+    end
+    Client->>Server: tools/call request
+    activate Server
+    alt Server needs input
+        Server-->>Client: InputRequiredResult
+        Client-->>Tool: InputRequiredResult
+        Tool->>Tool: interrupt(MCPElicitationInterrupt)
+        Note over Tool: Call paused, waiting for resume
+    else Normal result
+        Server-->>Client: CallToolResult
+        deactivate Server
+    end
+    Client-->>Tool: CallToolResult or resumed
+    deactivate Client
+    Tool->>Tool: Convert to content blocks
+    Tool->>Tool: Extract structured_content
+    Tool-->>Agent: ToolMessage
+    deactivate Tool
+```
+
+Tool execution pauses at the adapter boundary to create the content blocks and artifact, so all conversion happens before the coroutine returns.
+
 ### Bidirectional Communication: Tool Requests and Results
 
 Tool invocation follows a request–response pattern:
@@ -299,13 +342,47 @@ MCP supports two elicitation patterns:
 
 When a server returns `InputRequiredResult`:
 
-1. The tool call is paused at the point where `_call_tool_with_interrupts()` detects the request
-2. `MCPElicitationInterrupt` is raised via `langgraph.types.interrupt()`, unwinding the call stack
-3. The LangGraph graph receives the interrupt, pausing the run and returning control to the human reviewer
-4. The reviewer inspects the requests and submits answers via `MCPElicitationResume`
-5. The graph resumes from the interrupt, which re-enters the tool from the same point
-6. The tool forwards the answers to the server via `session.call_tool(..., input_responses=...)`
-7. The server either returns a terminal result or another `InputRequiredResult` (looping)
+```mermaid
+sequenceDiagram
+    participant Tool as MCP Tool Coroutine
+    participant Server as MCP Server
+    participant LG as LangGraph
+    participant Human as Human Reviewer
+    
+    Tool->>Server: call_tool(allow_input_required=True)
+    activate Server
+    Server-->>Tool: InputRequiredResult
+    deactivate Server
+    
+    Tool->>LG: interrupt(MCPElicitationInterrupt)
+    activate LG
+    LG-->>Human: pause, show requests
+    
+    Human->>LG: submit MCPElicitationResume
+    LG-->>Tool: resume with responses
+    deactivate LG
+    
+    Tool->>Server: call_tool(input_responses=..., request_state=...)
+    activate Server
+    alt More input needed
+        Server-->>Tool: InputRequiredResult
+        Tool->>LG: interrupt(MCPElicitationInterrupt)
+    else Terminal result
+        Server-->>Tool: CallToolResult
+        deactivate Server
+        Tool->>Tool: convert to ToolMessage
+    end
+```
+
+The loop iterates until the server returns a terminal `CallToolResult` rather than another `InputRequiredResult`.
+
+### Elicitation Validation and Constraints
+
+The interrupt-driven elicitation loop only answers `ElicitRequest` objects (form and URL requests):
+
+- **Sampling requests** (`InputRequest.method == "sample"`) and **roots requests** raise `NotImplementedError` because the model cannot provide samples or root candidates
+- **Continuation rounds** (rounds with `request_state` but no `input_requests`) raise `NotImplementedError` because they represent long-running work, not a place to interrupt and ask for input
+- **Legacy elicitation** (server-initiated via callback) is not supported; it raises an error guiding the user to a modern server or custom handler
 
 ### Adapter Initialization and Elicitation Capability
 
@@ -316,205 +393,165 @@ The adapter automatically arms each client it builds for interrupt-driven elicit
 
 A pre-built client that already carries a custom `_elicitation_callback` is honored: the adapter leaves it unchanged and the client's own handler answers requests instead. Only clients with no handler are armed, and pre-built clients are cloned before arming to avoid mutating the caller's object.
 
-### Elicitation Validation and Constraints
+## Caching and Performance
 
-The interrupt-driven elicitation loop only answers `ElicitRequest` objects (form and URL requests):
+### Cache Mode and Client Configuration
 
-- **Sampling requests** (`InputRequest.method == "sample"`) and **roots requests** raise `NotImplementedError` because the model cannot provide samples or root candidates
-- **Continuation rounds** (rounds with `request_state` but no `input_requests`) raise `NotImplementedError` because they represent long-running work, not a place to interrupt and ask for input
-- **Legacy elicitation** (server-initiated via callback) is not supported; it raises an error guiding the user to a modern server or custom handler
-
-## Practical Integration Patterns
-
-### Single Server (Any Transport)
-
-Connect to one server and use its tools directly:
+FastMCP maintains a client-side response cache for tool lists (SEP-2549). The cache reduces latency and server load when the same tools are discovered repeatedly. Configuration happens on the client itself; `MCPAdapter.list_tools()` only selects how discovery reads it:
 
 ```python
-from langchain.agents import create_agent
-from langchain.mcp import MCPAdapter
+# Use cached results if available and fresh (default)
+tools = await adapter.list_tools(cache_mode="use")
 
-async def main():
-    # HTTP server
-    async with MCPAdapter("https://api.example.com/mcp") as adapter:
-        tools = await adapter.list_tools()
-        agent = create_agent("anthropic:claude-sonnet-5", tools)
-        result = await agent.ainvoke({
-            "messages": [{"role": "user", "content": "What's the weather in Oslo?"}]
-        })
-        print(result["messages"][-1].text)
+# Force refresh from server
+tools = await adapter.list_tools(cache_mode="refresh")
+
+# Skip cache entirely
+tools = await adapter.list_tools(cache_mode="bypass")
 ```
 
-### Local Subprocess Server
+### Cache Partitioning for Multi-User Scenarios
 
-Launch a local script over stdio:
+In multi-user deployments, cache should be partitioned per user to prevent information leakage. FastMCP supports per-principal isolation via `CacheConfig`:
 
 ```python
-from pathlib import Path
-from langchain.agents import create_agent
-from langchain.mcp import MCPAdapter
+import httpx2
+from fastmcp import Client
+from fastmcp.client.group import ClientGroup
+from mcp.client.caching import InMemoryResponseCacheStore, CacheConfig
 
-async def main():
-    async with MCPAdapter(Path("weather_server.py")) as adapter:
-        tools = await adapter.list_tools()
-        agent = create_agent("anthropic:claude-sonnet-5", tools)
-        result = await agent.ainvoke({
-            "messages": [{"role": "user", "content": "Weather in Oslo?"}]
-        })
-        print(result["messages"][-1].text)
+# Shared cache store (cross-run persistence)
+_cache_store = InMemoryResponseCacheStore()
+
+# Shared HTTP transport pool (reuse connections)
+_http_pool = httpx2.AsyncHTTPTransport()
+
+async def make_graph(runtime):
+    user = runtime.user.identity
+    group = ClientGroup({
+        name: Client(
+            url,
+            # Share transport pool across users and runs
+            httpx_client_factory=lambda: httpx2.AsyncClient(transport=_http_pool),
+            # Partition cache by user; server TTL respects per-user freshness
+            cache=CacheConfig(
+                store=_cache_store,
+                partition=user,
+                target_id=user  # For cache invalidation
+            ),
+        )
+        for name, url in SERVERS.items()
+    })
+    # cache_mode="use" reads the per-user partition
+    tools = await MCPAdapter(group).list_tools(cache_mode="use")
 ```
 
-### In-Process Server (Testing)
+This pattern allows:
+- **Shared transport**: One HTTP connection pool for all users, reducing connection overhead
+- **Shared cache**: One cache store with per-user partitions, reducing memory
+- **Per-user isolation**: Each user sees only their own cached results
+- **Server TTL respect**: Cache freshness is tracked independently per user
 
-Embed a server in the same process for testing:
+### ClientGroup Cache Behavior
+
+Bare `ClientGroup.list_tools()` defaults to `cache_mode="refresh"` to ensure multi-server setups discover fresh tool lists on each call. `MCPAdapter.list_tools()` overrides this to `cache_mode="use"` (if configured on the client), so a configured cache is honored. This prevents redundant server queries in per-request deployment patterns:
 
 ```python
-from fastmcp import FastMCP
-from langchain.agents import create_agent
-from langchain.mcp import MCPAdapter
+# Fast path: returns from cache within TTL
+tools = await adapter.list_tools(cache_mode="use")
 
-async def main():
-    # Define an in-process server
-    server = FastMCP("test_weather")
-    
-    @server.tool
-    def get_weather(city: str) -> str:
-        """Get weather for a city."""
-        return f"{city}: sunny"
-    
-    # Use it directly
-    async with MCPAdapter(server) as adapter:
-        tools = await adapter.list_tools()
-        agent = create_agent("anthropic:claude-sonnet-5", tools)
-        result = await agent.ainvoke({
-            "messages": [{"role": "user", "content": "Weather in Oslo?"}]
-        })
-        print(result["messages"][-1].text)
+# Slow path: queries all servers
+tools = await adapter.list_tools(cache_mode="refresh")
 ```
 
-### Multiple Servers with MCPConfig
+## Authentication Patterns
 
-Connect to multiple servers, each with independent transport:
+MCP servers can require credentials for access. FastMCP and MCPAdapter support multiple authentication strategies:
 
-```python
-from langchain.agents import create_agent
-from langchain.mcp import MCPAdapter
+### Static Bearer Token
 
-config = {
-    "mcpServers": {
-        "weather": {"url": "https://weather-api.example.com/mcp"},
-        "calculator": {"command": "python", "args": ["calc_server.py"]},
-        "files": {"command": "node", "args": ["file_server.js"]}
-    }
-}
-
-async def main():
-    async with MCPAdapter(config) as adapter:
-        tools = await adapter.list_tools()
-        # Tool names are prefixed: weather_forecast, calculator_divide, files_read, etc.
-        
-        agent = create_agent("anthropic:claude-sonnet-5", tools)
-        result = await agent.ainvoke({
-            "messages": [{
-                "role": "user",
-                "content": "What's the weather in Oslo? Also calculate 100 / 5."
-            }]
-        })
-        print(result["messages"][-1].text)
-```
-
-### Custom Client with Auth
-
-Pre-build a client with custom authentication or caching:
+Static token authentication is simplest for servers with long-lived credentials or public access:
 
 ```python
 from fastmcp.client import Client
-from langchain.agents import create_agent
 from langchain.mcp import MCPAdapter
 
-async def main():
-    # Create client with bearer token
-    client = Client(
-        "https://api.example.com/mcp",
-        auth="bearer-token-abc123"
-    )
+# Single server with bearer token
+client = Client("https://api.example.com/mcp", auth="bearer-token-abc123")
+async with MCPAdapter(client) as adapter:
+    tools = await adapter.list_tools()
+
+# Multiple servers with per-server tokens
+config = {
+    "mcpServers": {
+        "api1": {
+            "url": "https://api1.example.com/mcp",
+            "auth": {"type": "bearer", "token": "token-1"},
+        },
+        "api2": {
+            "url": "https://api2.example.com/mcp",
+            "auth": {"type": "bearer", "token": "token-2"},
+        },
+    }
+}
+async with MCPAdapter(config) as adapter:
+    tools = await adapter.list_tools()
+```
+
+### OAuth 2.1 Flow
+
+OAuth 2.1 with dynamic client registration enables browser-based authentication:
+
+```python
+from fastmcp.client import Client
+from langchain.mcp import MCPAdapter
+
+# Triggers browser-based OAuth flow; client auto-registers if needed
+client = Client("https://api.example.com/mcp", auth="oauth")
+async with MCPAdapter(client) as adapter:
+    tools = await adapter.list_tools()  # Opens browser, waits for approval
+```
+
+### Per-Request User Credentials
+
+Graph factories enable per-request credential injection for multi-tenant deployments:
+
+```python
+from fastmcp.client import Client
+from fastmcp.client.auth import BearerAuth
+from fastmcp.client.group import ClientGroup
+from langchain.mcp import MCPAdapter
+from langchain_sdk.runtime import ServerRuntime
+
+async def make_graph(runtime: ServerRuntime):
+    user = runtime.user.identity
+    auth = BearerAuth(token_for(user))  # User-specific token lookup
     
-    async with MCPAdapter(client) as adapter:
-        tools = await adapter.list_tools()
-        agent = create_agent("anthropic:claude-sonnet-5", tools)
-        result = await agent.ainvoke({
-            "messages": [{"role": "user", "content": "Use authenticated tools"}]
-        })
-        print(result["messages"][-1].text)
+    group = ClientGroup({
+        name: Client(url, auth=auth)
+        for name, url in SERVERS.items()
+    })
+    
+    tools = await MCPAdapter(group).list_tools()
+    # Now all tools are authenticated as the specific user
 ```
 
-## Example: File System Tools via MCP
+### Custom Auth Implementation
 
-A common use case is exposing file system operations as MCP tools:
-
-```python
-from fastmcp import FastMCP
-
-server = FastMCP("filesystem")
-
-@server.tool
-def read_file(path: str) -> str:
-    """Read contents of a file."""
-    with open(path, "r") as f:
-        return f.read()
-
-@server.tool
-def write_file(path: str, content: str) -> str:
-    """Write content to a file."""
-    with open(path, "w") as f:
-        f.write(content)
-    return f"Wrote {len(content)} bytes to {path}"
-
-@server.tool
-def list_directory(path: str) -> str:
-    """List files in a directory."""
-    import os
-    files = os.listdir(path)
-    return "\n".join(files)
-```
-
-An agent using these tools can read, write, and manage files:
+For specialized auth schemes, implement `httpx2.Auth`:
 
 ```python
-from langchain.agents import create_agent
-from langchain.mcp import MCPAdapter
+from httpx2 import Auth, Request
 
-async def main():
-    async with MCPAdapter(server) as adapter:
-        tools = await adapter.list_tools()
-        agent = create_agent("anthropic:claude-sonnet-5", tools)
-        
-        result = await agent.ainvoke({
-            "messages": [{
-                "role": "user",
-                "content": "Read the config.json file, update the value of 'timeout' to 30, and write it back."
-            }]
-        })
-        print(result["messages"][-1].text)
+class CustomAuth(Auth):
+    def __call__(self, request: Request) -> Request:
+        request.headers["X-Custom-Auth"] = self.get_token()
+        return request
+
+client = Client(transport=CustomTransport(..., auth=CustomAuth(...)))
 ```
 
 ## Configuration and Advanced Options
-
-### Cache Mode Control
-
-The `list_tools()` method accepts a `cache_mode` parameter to control interaction with client-side response caching:
-
-```python
-async with MCPAdapter(target) as adapter:
-    # Use cached results if available and within TTL (default)
-    tools = await adapter.list_tools(cache_mode="use")
-    
-    # Always fetch fresh results from server
-    tools = await adapter.list_tools(cache_mode="refresh")
-    
-    # Skip cache entirely
-    tools = await adapter.list_tools(cache_mode="bypass")
-```
 
 ### Accessing the Underlying Client
 
@@ -527,6 +564,27 @@ async with MCPAdapter(target) as adapter:
     
     # Call a tool directly without converting to LangChain
     result = await client.call_tool("tool_name", {"arg": "value"})
+```
+
+### Handling Connection Reuse
+
+FastMCP clients are reentrant: a tool coroutine can open the client itself whether or not a connection is already held elsewhere. This enables:
+
+- Concurrent tool calls through the same client
+- Simplified connection lifecycle management
+- Nested client opens without deadlock
+
+```python
+async with MCPAdapter(target) as adapter:
+    tools = await adapter.list_tools()
+    
+    # Each tool opens the client independently
+    # FastMCP's session multiplexing handles this efficiently
+    results = await asyncio.gather(
+        tools[0].ainvoke({"arg": "value1"}),
+        tools[1].ainvoke({"arg": "value2"}),
+        tools[2].ainvoke({"arg": "value3"}),
+    )
 ```
 
 ## Security Considerations
@@ -653,3 +711,177 @@ async def test_agent_with_mcp_tool(test_server):
 - **Non-elicitation requests**: MCP servers that return sampling or roots requests (not yet standardized) are not supported; use elicitation form/URL requests instead
 - **Continuation rounds**: Long-running tools that return multiple `InputRequiredResult` rounds with no questions (pure progress updates) are not supported by interrupt-based elicitation
 - **Legacy elicitation**: MCP servers using the older callback-based elicitation pattern require a custom handler; adapter's default handler only works with modern `InputRequiredResult`-based elicitation
+
+## Integration Patterns
+
+### File System Tools via MCP
+
+A common use case is exposing file system operations as MCP tools:
+
+```python
+from fastmcp import FastMCP
+
+server = FastMCP("filesystem")
+
+@server.tool
+def read_file(path: str) -> str:
+    """Read contents of a file."""
+    with open(path, "r") as f:
+        return f.read()
+
+@server.tool
+def write_file(path: str, content: str) -> str:
+    """Write content to a file."""
+    with open(path, "w") as f:
+        f.write(content)
+    return f"Wrote {len(content)} bytes to {path}"
+
+@server.tool
+def list_directory(path: str) -> str:
+    """List files in a directory."""
+    import os
+    files = os.listdir(path)
+    return "\n".join(files)
+```
+
+An agent using these tools can read, write, and manage files:
+
+```python
+from langchain.agents import create_agent
+from langchain.mcp import MCPAdapter
+
+async def main():
+    async with MCPAdapter(server) as adapter:
+        tools = await adapter.list_tools()
+        agent = create_agent("anthropic:claude-sonnet-5", tools)
+        
+        result = await agent.ainvoke({
+            "messages": [{
+                "role": "user",
+                "content": "Read the config.json file, update the value of 'timeout' to 30, and write it back."
+            }]
+        })
+        print(result["messages"][-1].text)
+```
+
+### Single Server (Any Transport)
+
+Connect to one server and use its tools directly:
+
+```python
+from langchain.agents import create_agent
+from langchain.mcp import MCPAdapter
+
+async def main():
+    # HTTP server
+    async with MCPAdapter("https://api.example.com/mcp") as adapter:
+        tools = await adapter.list_tools()
+        agent = create_agent("anthropic:claude-sonnet-5", tools)
+        result = await agent.ainvoke({
+            "messages": [{"role": "user", "content": "What's the weather in Oslo?"}]
+        })
+        print(result["messages"][-1].text)
+```
+
+### Local Subprocess Server
+
+Launch a local script over stdio:
+
+```python
+from pathlib import Path
+from langchain.agents import create_agent
+from langchain.mcp import MCPAdapter
+
+async def main():
+    async with MCPAdapter(Path("weather_server.py")) as adapter:
+        tools = await adapter.list_tools()
+        agent = create_agent("anthropic:claude-sonnet-5", tools)
+        result = await agent.ainvoke({
+            "messages": [{"role": "user", "content": "Weather in Oslo?"}]
+        })
+        print(result["messages"][-1].text)
+```
+
+### In-Process Server (Testing)
+
+Embed a server in the same process for testing:
+
+```python
+from fastmcp import FastMCP
+from langchain.agents import create_agent
+from langchain.mcp import MCPAdapter
+
+async def main():
+    # Define an in-process server
+    server = FastMCP("test_weather")
+    
+    @server.tool
+    def get_weather(city: str) -> str:
+        """Get weather for a city."""
+        return f"{city}: sunny"
+    
+    # Use it directly
+    async with MCPAdapter(server) as adapter:
+        tools = await adapter.list_tools()
+        agent = create_agent("anthropic:claude-sonnet-5", tools)
+        result = await agent.ainvoke({
+            "messages": [{"role": "user", "content": "Weather in Oslo?"}]
+        })
+        print(result["messages"][-1].text)
+```
+
+### Multiple Servers with MCPConfig
+
+Connect to multiple servers, each with independent transport:
+
+```python
+from langchain.agents import create_agent
+from langchain.mcp import MCPAdapter
+
+config = {
+    "mcpServers": {
+        "weather": {"url": "https://weather-api.example.com/mcp"},
+        "calculator": {"command": "python", "args": ["calc_server.py"]},
+        "files": {"command": "node", "args": ["file_server.js"]}
+    }
+}
+
+async def main():
+    async with MCPAdapter(config) as adapter:
+        tools = await adapter.list_tools()
+        # Tool names are prefixed: weather_forecast, calculator_divide, files_read, etc.
+        
+        agent = create_agent("anthropic:claude-sonnet-5", tools)
+        result = await agent.ainvoke({
+            "messages": [{
+                "role": "user",
+                "content": "What's the weather in Oslo? Also calculate 100 / 5."
+            }]
+        })
+        print(result["messages"][-1].text)
+```
+
+### Custom Client with Auth
+
+Pre-build a client with custom authentication or caching:
+
+```python
+from fastmcp.client import Client
+from langchain.agents import create_agent
+from langchain.mcp import MCPAdapter
+
+async def main():
+    # Create client with bearer token
+    client = Client(
+        "https://api.example.com/mcp",
+        auth="bearer-token-abc123"
+    )
+    
+    async with MCPAdapter(client) as adapter:
+        tools = await adapter.list_tools()
+        agent = create_agent("anthropic:claude-sonnet-5", tools)
+        result = await agent.ainvoke({
+            "messages": [{"role": "user", "content": "Use authenticated tools"}]
+        })
+        print(result["messages"][-1].text)
+```

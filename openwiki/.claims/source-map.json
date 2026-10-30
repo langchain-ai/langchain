@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:43670f29ed4c59fa69515a48478cd950a5e4bc5cff81334cf0be0f380c3782fb",
+  "pageVersion": "sha256:800c79a64c466b27a383ea4baaa1e9cb0bdabfc38bf21edaa4f56a1053a37400",
   "claims": [
     {
       "id": "claim_c71edae5b0f64c8fa79c17ef1aca0f6b",
@@ -28,7 +28,7 @@
       "evidence": [
         {
           "resource": "repo://libs/core/langchain_core/language_models/chat_models.py",
-          "version": "repo-file-v1:sha256:7377a3e0d534d6fe9835cb35e39fc2bf7614ae2be26eb5664a0767dfb002cb03"
+          "version": "repo-file-v1:sha256:a9c85a53e979f592420cfa094599dccd6a71184e83daf86d8bc0f3ba444314cc"
         }
       ]
     },
@@ -38,7 +38,7 @@
       "evidence": [
         {
           "resource": "repo://libs/core/langchain_core/messages/base.py",
-          "version": "repo-file-v1:sha256:7398bb4db990af959df71dd81243e04b1a5f665602155a6f808271d910c4a62d"
+          "version": "repo-file-v1:sha256:b3c6a3e83cd3dcbf312461b2653a6e9a5db145962f6824ce49a3e63ca62f4045"
         }
       ]
     },
@@ -128,7 +128,7 @@
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py",
-          "version": "repo-file-v1:sha256:e3d5032f156d07531da71620710f0bb0231b3ba8ab241a5417759ebb810b71cf"
+          "version": "repo-file-v1:sha256:74590175ef1042dd8bd97f5c88a988b3818ef1e450eefd8f0ec67d7c6324fd2f"
         }
       ]
     },
@@ -164,21 +164,21 @@
         },
         {
           "resource": "repo://libs/core/pyproject.toml",
-          "version": "repo-file-v1:sha256:3a40437409768f6b2a3f4d7d367c188d4bb6ce572c91cc8ff40b662392aa10f5"
+          "version": "repo-file-v1:sha256:038f48c9e8e60b9550ece51af99426ca308aeb78aa86227bc129c30fbcc1312d"
         },
         {
           "resource": "repo://libs/langchain_v1/pyproject.toml",
-          "version": "repo-file-v1:sha256:6946212e573d61271ed95635eec69dd27e0e8a0a7e0761e2033e3cb741ec7848"
+          "version": "repo-file-v1:sha256:a18a4824f8d23acdc2ba54aa367366c9848ece04a004a3404e4aa7d9f016e1a8"
         }
       ]
     },
     {
       "id": "claim_458d709b604149fa8fb9639025882358",
-      "statement": "LangChain uses a three-layer architecture: langchain-core (v1.7.0) for base abstractions, langchain (v1.4.7) for orchestration and agents, and partners for provider-specific implementations, enabling model interoperability and independent release cycles.",
+      "statement": "LangChain uses a three-layer architecture: langchain-core (v1.7.3) for base abstractions, langchain (v1.4.7) for orchestration and agents, and partners for provider-specific implementations, enabling model interoperability and independent release cycles.",
       "evidence": [
         {
           "resource": "repo://libs/core/pyproject.toml#L24-L24",
-          "version": "repo-lines-v1:sha256:f54b102d9630dcb5fb34ed0fb026bc9c62274a0d0b0b8b10ebb10952ce749635:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjU0YjEwMmQ5NjMwZGNiNWZiMzRlZDBmYjAyNmJjOWM2MjI3NGEwZDBiMGI4YjEwZWJiMTA5NTJjZTc0OTYzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjU0YjEwMmQ5NjMwZGNiNWZiMzRlZDBmYjAyNmJjOWM2MjI3NGEwZDBiMGI4YjEwZWJiMTA5NTJjZTc0OTYzNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc0MzY5NGEzZTBkOGRiMDQ5ZDQ1ZGFlOGM4YTdiYmM2YTk0NjAwYjNjN2MxZjFhNTJkMzQ4YzlkMjIzMTFkOSJ9"
+          "version": "repo-lines-v1:sha256:d47ae72f198ecaf1d26d4775db263e19c442e0b776334194a8b7ae6794ee6564:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDQ3YWU3MmYxOThlY2FmMWQyNmQ0Nzc1ZGIyNjNlMTljNDQyZTBiNzc2MzM0MTk0YThiN2FlNjc5NGVlNjU2NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDQ3YWU3MmYxOThlY2FmMWQyNmQ0Nzc1ZGIyNjNlMTljNDQyZTBiNzc2MzM0MTk0YThiN2FlNjc5NGVlNjU2NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc0MzY5NGEzZTBkOGRiMDQ5ZDQ1ZGFlOGM4YTdiYmM2YTk0NjAwYjNjN2MxZjFhNTJkMzQ4YzlkMjIzMTFkOSJ9"
         },
         {
           "resource": "repo://libs/langchain_v1/pyproject.toml#L24-L24",
@@ -195,10 +195,24 @@
           "version": "repo-file-v1:sha256:430531c926f369c474d95856b96e19e137dca1f01a9228c2f4e54be3ecd7bfed"
         }
       ]
+    },
+    {
+      "id": "claim_290a677dd7284dfb973a23cdbe7c1aa6",
+      "statement": "Notification metadata abstraction for marking agent-generated messages is exported from langchain_core/messages/notification.py as a public API, providing NotificationMetadata TypedDict and utilities (add_notification_metadata, get_notification_metadata) for source attribution.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/messages/__init__.py#L51-L55",
+          "version": "repo-lines-v1:sha256:d500b2da591da575558a56bcc7bab5b249e911968c4392aa203ebfeb15e4e731:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhmZDFlODVhYTU4ODMzYjljMmFhZGNkZGFmNjY2NzljMjM5NWUxZDQ2OTM5NzM2NjQ3NTk1MWVmNTU0MDRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBjMWYxODhmMTQyZWQ3YTgyNDY4MGIyMDcxNzJjNTUxOWJjNjE0YTQ4ZmRhN2NmMTY3ZWRiOGRkZjc5OTU2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGNiYmRhNTVmODZmNDkyOTlhNWU0NDA1NDRjMGVjYTFkNDYyMzkyMThmNzlhNjY1ZDc0MzY5NzEyYTA3NmM3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2Q5YzBmNGQyN2I4M2U2ZDQ1YmE2MDU4Njc1YTZkMWU2OTA2MzY1OTM4MzMyZTg1YzY1ODJmZmIxYWY5ZmIzMCJ9"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/notification.py",
+          "version": "repo-file-v1:sha256:502cfa33691610c715cab8b244576aec0a17b47faad75f97eb57c6567d50b5d1"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-10-30T08:19:17.669Z"
   }
 }

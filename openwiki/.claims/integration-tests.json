@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0a03c42b4c0438261d2b38d9d4b3ad925f557dba4ba94007088b26cb6bce944f",
+  "pageVersion": "sha256:3fcb354c76903e3c36e3b7e1451368d508e30c7e4e9d3b1a3f7135e94971c505",
   "claims": [
     {
       "id": "claim_2b394255185b4645a1dcf0e8c628a197",
@@ -71,16 +71,16 @@
       "statement": "Integration tests use pytest markers to classify test types: @pytest.mark.vcr marks cassette-backed tests that replay recorded interactions (run in CI with --record-mode=none); @pytest.mark.scheduled marks live-API-only tests that are skipped in CI unless running in a scheduled workflow; unmarked tests are offline and don't require credentials.",
       "evidence": [
         {
-          "resource": "repo://libs/partners/openai/pyproject.toml#L141-L147",
+          "resource": "repo://libs/partners/openai/pyproject.toml#L150-L156",
           "version": "repo-lines-v1:sha256:f4860849b111f1c575475888e3d06804a8c2627ad1672362e56cb1f155ee634c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODY3NmU2NDE0NjVhNjU1MWU5ZTljZmZkN2ZhYTFlNmE0MmY5YjcyNDgwOTgxM2M5MDNkN2VkY2I1MmYzMDA2ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYThlY2FhYTA1ZTE0YWZkNGJlNTJkOWEyNDhhYTc4NzEwNjUyY2YxZjMxZTZiNmE3ODZmMDVmNjliZmFhMDlhYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzk3NGYzMmE2OTI3ZWNkN2U0MGI2ZTk3ZDQyNDhhNjczNTM5OGVlYTY4MWE2M2FkZTMxMDUxMGFlYTY0ZjJmZiJ9"
         },
         {
-          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_base.py#L58-L78",
-          "version": "repo-lines-v1:sha256:26638124d864750acfe43d1ed037e3ab197666170c26078a25a9055fce2c9342:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhYTVmMDdkNWFiZjU5NDNiM2ZiMzA1ZjI1MjAwY2IyNTBjOTQ2ZTUzYmNlODczOTAwNzFiMWU1MDllYWQxNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1N2E4OGI0ODlkNjgxMjhkM2IyNTY0OTNkMTJhN2E1ODc5NTczNmQ1ODI3ZGJmZjA3ZWZiMmFiZmE1MWVhNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczZDE1OGFhYWM0ZTAzNDRjOThiOGRkZDIwNzZkMjI4NTQ5OTE4YzBjYTJlODUwZDM1NGY4OTgyYTk4NzM1NTEifQ"
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_base.py#L1363-L1372",
+          "version": "repo-lines-v1:sha256:2814725072ea829868537f2179b52cde242b72dfe831ea866f3fd55b890185cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NTMyNDc0MGJmZmMzYjk1Zjk0ZGIyZDdiM2Q1MGU1ZDkxMDEyNmUzNTllOTYzOGU3Y2I1NTIzZjFjMjQwM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlZWViNDdlZDQyNTVjOTIzYmY0OTdmYmI2YjcyODI0M2FmZjBhZGZmZTU0MDQzYTY5MzY5Mzg4NTA2YTAzMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzN2QxNTZiMTY5Mjc4OWQ1YjhiZDk3NDZhODgxM2Y3ZGI0MDBkZmI0MGFhODQ5OTI0MDkwYjdlZmFmMWNmNTEifQ"
         },
         {
-          "resource": "repo://libs/partners/openai/tests/integration_tests/embeddings/test_base.py#L38-L51",
-          "version": "repo-lines-v1:sha256:e75969cbc6a78340e6243cd951ea433be14001e37af5f9fb9505071896fea8c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NTMyNDc0MGJmZmMzYjk1Zjk0ZGIyZDdiM2Q1MGU1ZDkxMDEyNmUzNTllOTYzOGU3Y2I1NTIzZjFjMjQwM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmY2Y2ZDYxNzNhNTA3NTQwMjNjYjFjOTVjZDBhYTU0YjQxNGYwY2M0ZGY1NGExNDQ4MGI3NjI3MWZiNzE5ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI1MDVkOGM1NGY2NWZhNWNlMTc1NjA2YWIzNDNhNWU0NjVlYjE5ZDY2MWJjYTkzMDE1NDlmODlmZTYyMzBjNDgifQ"
+          "resource": "repo://libs/partners/openai/tests/integration_tests/embeddings/test_base.py#L38-L50",
+          "version": "repo-lines-v1:sha256:159fd46052a2438d6f6036ad4b8e8270d090abc59a5093c6030ddb2fc7a033c1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NTMyNDc0MGJmZmMzYjk1Zjk0ZGIyZDdiM2Q1MGU1ZDkxMDEyNmUzNTllOTYzOGU3Y2I1NTIzZjFjMjQwM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ODFjYjgwMGJhOTI5YzcwYmY5OWY5YjRiZTYyMmZjYThhNDY1NTkyNTkwMzVmNDJkMGMyZjA4ZjBhY2RhOTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmY2Y2ZDYxNzNhNTA3NTQwMjNjYjFjOTVjZDBhYTU0YjQxNGYwY2M0ZGY1NGExNDQ4MGI3NjI3MWZiNzE5ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEwMTk4ZDJjZGQ2OThkMTk5MTczOWNjZTkyNmJkMGQ5NGUxMGI4OGU3ZjQyNTI0Nzk4NDM4MjA0MWE3ZWQxY2EifQ"
         }
       ]
     },
@@ -121,8 +121,8 @@
       "statement": "VCR integration tests support both sync and async code; async tests use @pytest.mark.vcr and work identically to sync tests because VCR intercepts the underlying httpx/requests library. Streaming tests (via stream() or stream_events()) are fully supported; VCR records the stream sequence and replays it identically.",
       "evidence": [
         {
-          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_base.py#L182-L200",
-          "version": "repo-lines-v1:sha256:fafef0a13e0016604f3c165e8084f8715614912c9c36a21559ecaf8514dc10a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhYTVmMDdkNWFiZjU5NDNiM2ZiMzA1ZjI1MjAwY2IyNTBjOTQ2ZTUzYmNlODczOTAwNzFiMWU1MDllYWQxNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM0ZjhmMTJjZjhkODE1MzI2ZjhmMjc5MTc4ZjViYWVhNmU0YmFjNmY5OTk0MmEzNmMxNmVmY2NiNjA5Y2E1ZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzMzkxMDBjZmYyYzAxMDEwY2I1YTI1ZjI1ZThiNzVmNTAxNzc2Nzg4MWUyMGIwMzYwMDE1ZTVhYjQ2MjU5OWQifQ"
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_base.py#L1363-L1384",
+          "version": "repo-lines-v1:sha256:769e469eb2bdc744ad71ad2e5443a69000cafd1ffe3df695a746553a7ac4b194:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NTMyNDc0MGJmZmMzYjk1Zjk0ZGIyZDdiM2Q1MGU1ZDkxMDEyNmUzNTllOTYzOGU3Y2I1NTIzZjFjMjQwM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlZWViNDdlZDQyNTVjOTIzYmY0OTdmYmI2YjcyODI0M2FmZjBhZGZmZTU0MDQzYTY5MzY5Mzg4NTA2YTAzMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVlYWI1YWEzNDk5NzFkMjlkY2JkMTkyZTRiZmY0MDRmNjhkNmFmZDFmODM3ZDM5NjQ5MGNlN2QxNzdiYmI3MTcifQ"
         },
         {
           "resource": "repo://libs/partners/openai/tests/integration_tests/embeddings/test_base.py#L53-L65",
@@ -199,12 +199,12 @@
       "statement": "LangChain integration tests use three pytest markers to classify test types: @pytest.mark.vcr marks cassette-backed tests that replay recorded interactions (run in PR checks with --record-mode=none); @pytest.mark.scheduled marks live-API-only tests that are skipped in regular CI but run in scheduled daily workflows with real credentials; unmarked tests are offline and don't require credentials.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/integration_tests.yml#L1-L100",
-          "version": "repo-lines-v1:sha256:ad34890d280cfbf4d14636f6d707f6de1cb2ed421e1f23459e77eab57a3cc5f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2Nzc2ZDc3MjE0ZWE5NGJiZDcyY2VkMDZjNDljZWJkOTUxY2M5MjI2NzNiZmE0NWEyY2UyZTQwNmM0MmJlMmMyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzMjgwYjQ1ZWRlZGRhMTVmNTVjMWFjM2E3MzMzNjg2NjEwOWU0NWNiMjA3ZWU5YjU1OGU3ODhlM2ZiNWY0NWJmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwNmNhNDM5YTA2YmZiMzE1MjgyOTc1YTI5YzkwMGEyYmU5YzFmY2FkMjg1YTExM2NlMzAyNjM1NmNjYTdhZWRjIn0"
+          "resource": "repo://.github/workflows/integration_tests.yml#L148-L159",
+          "version": "repo-lines-v1:sha256:49fb649da06060de3d6f5c3adb77c6e57341b724e0a1d272930a8be7e6ebed79:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4ODE2NjY2YWQwYmVkYTE2ZWU4MDc5MGQwMzM3MjU0YTE0ZTRhNWI2OWQ4ZWIyNWNmNDMxZThhNWNjMGY1ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjZTMzYTc3ZDQzYmI4OWZiMTY1NDU5M2FhYWQ0OTNiMjRmN2UxYzE3NDcyZGU1YzhmNjRlOTQzODdiMzZmZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmNjliZjAyYWZlNDJlOGMyZjBjYzIxYjFhYjhjNjZiZmFmMDc0YTc2Y2UyNzk0YjI2MTk5MGFmMWMwNGIxZWYifQ"
         },
         {
-          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_base.py#L58-L78",
-          "version": "repo-lines-v1:sha256:26638124d864750acfe43d1ed037e3ab197666170c26078a25a9055fce2c9342:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhYTVmMDdkNWFiZjU5NDNiM2ZiMzA1ZjI1MjAwY2IyNTBjOTQ2ZTUzYmNlODczOTAwNzFiMWU1MDllYWQxNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1N2E4OGI0ODlkNjgxMjhkM2IyNTY0OTNkMTJhN2E1ODc5NTczNmQ1ODI3ZGJmZjA3ZWZiMmFiZmE1MWVhNTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjczZDE1OGFhYWM0ZTAzNDRjOThiOGRkZDIwNzZkMjI4NTQ5OTE4YzBjYTJlODUwZDM1NGY4OTgyYTk4NzM1NTEifQ"
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_base.py#L1339-L1372",
+          "version": "repo-lines-v1:sha256:51a0668bec2e5905d3be245b9517551b033b79b49cea749ea5aa78afa4b9e7c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NTMyNDc0MGJmZmMzYjk1Zjk0ZGIyZDdiM2Q1MGU1ZDkxMDEyNmUzNTllOTYzOGU3Y2I1NTIzZjFjMjQwM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlZWViNDdlZDQyNTVjOTIzYmY0OTdmYmI2YjcyODI0M2FmZjBhZGZmZTU0MDQzYTY5MzY5Mzg4NTA2YTAzMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzN2QxNTZiMTY5Mjc4OWQ1YjhiZDk3NDZhODgxM2Y3ZGI0MDBkZmI0MGFhODQ5OTI0MDkwYjdlZmFmMWNmNTEifQ"
         },
         {
           "resource": "repo://libs/partners/openai/tests/integration_tests/embeddings/test_base.py#L38-L65",
@@ -369,6 +369,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-26T08:33:32.568Z"
+    "at": "2026-10-29T08:20:01.046Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ba6ecdb1e292a2554beb47db554dbc4fa3aa5ef30ee326c525a48777602d4b0b",
+  "pageVersion": "sha256:3e1b53e605f4a610f92d6fc49846d79975565a0af75c3886a0435f35d14ffd03",
   "claims": [
     {
       "id": "claim_87d5d462354440a7bccb6dbe992c60d3",
@@ -81,8 +81,12 @@
       "statement": "invoke() waits for the entire model response before returning, consuming no intermediate memory but blocking responsiveness. stream() yields the first token as soon as available, enabling real-time feedback in interactive applications. The model produces tokens at the same rate in both cases; the difference is when tokens are delivered to the caller.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L474-L856",
-          "version": "repo-lines-v1:sha256:18b246d4f9105712e54309d31157eca8caf0cf172c8c99b1e0a1b8d2d6111527:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0NGRhOTM1MDAxOWRjMWU2Njc0NTI2NDM4NzMxNjE5OTcyMjVlOWNlNjAxMDdhZjdiNjRmODQwZGRlY2ZkYTRmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0NGFjMjA5ZDY3MjgzNmE0YzNkZDBlY2VkMTJkYzBlNmI2Zjc4ZDM4MWZmNTE2OGI3YzA3YTg0NzVkYTE5YTM3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2MWRlNTAwZjdhMmRmNzQ1ZGFjN2NjYzYzZDlmMGFhNzNlNTRjY2EwNTc5ZmE1YjRhNzI1MjI4YzQ4MjBlMjBiIn0"
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L516-L540",
+          "version": "repo-lines-v1:sha256:9f2eeefe44f3269e2c844d9e1ba2d80b6026f68ebd5d7eaedb03f3ace1ee9883:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlNGExMDE2MjNjYjY2YmFjYzAwNDk1N2NhMzI2M2E2YzY5NDU0NTk2OWZlMDZiZDI2MGIzMzAyYjNkYWRhMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM1OTZhNTdkNGQ0MWJiMTFmNDUzM2Y0MzgxNDA2MmRiMDAwNzUzNjZjNTMyZTMwZDNmYjM4ZDQ4OTkwOTU3MGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU3ZGNlNTdlMDdiMTM0MmRhY2YxNmNiZjNjMTllMzUxMzFmNWM0YTg3MGU2M2EyMGY3MGI2Y2ZkYjVkMjFhYzQifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L770-L898",
+          "version": "repo-lines-v1:sha256:e93b9ecb63824e472d651cb184d0e0d46895aace146dec1d9b44a3f195b8ee63:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2ZDAyZmNjYzVhNWFhZDlkMmZkZjc1NmZjN2ZlNjkzNDBmMWQzNzgwMTc0MDE2NjM4MzI0MGMzZWE2YzFmNDRmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkY2QzNjk0NWMxOWUwNDMwZjU4OTFkNWM0NDU3MzEyNTlhOWQ4MjJhMjFmYWFiNWNjMjZmNWNlMmE2YjU0YTkzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxYWFjOTNhNjQzOWE2NDQxYTAyMTUwYzIyNmQ4MzdmYTI1YTQ2YzI1YTY3NzkzYjQyYjQ2YTVhMjk0ZjhkZTM4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiNzE4MGY2YWMyMmI1N2I1ZDI1N2FhMWYwMTljNmU2ODhlNjgxMDYxNGI4MTRhNTc4M2ZlOWViMzcyNDVlMzdmIn0"
         }
       ]
     },
@@ -101,12 +105,12 @@
       "statement": "BaseChatModel.stream_events(version='v3') returns ChatModelStream, which exposes typed projection properties (.text, .reasoning, .tool_calls, .output) that accumulate protocol events. The .output projection provides the final assembled AIMessage; usage information is accessed via .output.usage_metadata. This is distinct from token streaming and fires on_stream_event callbacks for each protocol event, providing detailed event-level visibility into streaming operations.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1189-L1299",
-          "version": "repo-lines-v1:sha256:267cb47c5981fcdc2dd206bb400b19591ed8ae5401862325ea77159c5458cd00:eyJzZWxlY3RlZExpbmVDb3VudCI6MTExLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxZmQwZDA5NTU4YTYwODFlNjE1MzdlMTJlYTE4ZWUzMTI2OTU3MzAxNmVlZTA3OTlmY2ZiODg5Y2QwMzc1ZDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwODI2NzZjODg4YzFhNGQ5ZmE3NzJmY2RjMzAyZjc3M2JjNzI5MGVlYmZmOWRhMzZhMzlmNDRjMzIxMTk4Mzg1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3MmExYThiYWI2OWQzZTczMmFhNTI3MGM1NGU4NWVkODZjYjcwMWI2ZjBkN2UzNDM3NmM5ZDY0MzQ0YzQxNmYxIn0"
+          "resource": "repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1190-L1299",
+          "version": "repo-lines-v1:sha256:9c51c86fadb3d822dd1a61a711bef7d004442e675db9880b7e0617a9847f7e56:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxZmQwZDA5NTU4YTYwODFlNjE1MzdlMTJlYTE4ZWUzMTI2OTU3MzAxNmVlZTA3OTlmY2ZiODg5Y2QwMzc1ZDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2YmE4YmNiNTQ0Y2VjZTk4MmJkYTRmNDJkNjQ2Njk5ZmFmNDNlY2FjYzgyZTYzNzUxMTZmYzlmMzYxZjlkYzJkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwODI2NzZjODg4YzFhNGQ5ZmE3NzJmY2RjMzAyZjc3M2JjNzI5MGVlYmZmOWRhMzZhMzlmNDRjMzIxMTk4Mzg1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0Y2U2OGU4ZmViOTdiNDVkOTg5OWY5YjM2NDAyOTM0N2M0ZjgxZDQ4MWIyZWM1YzhiNDkyOWE1YmVkZjRhZTY1In0"
         },
         {
-          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L994-L1133",
-          "version": "repo-lines-v1:sha256:ce77e9c13ab68c17193b88c83c469b90ada207031c26fb7d00ed822f15010d46:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwNTY0MGNlY2IxYjc3YWNjYTM2MTU0MjZlMDdkNTQzNWZiMDllOTMzMmU1ZjRiNjFlZTg5MDU2YzQzNjNiYzJmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyMmU3M2VlMDNmNzM5OWVhYjExMWEwMjE5MWZmYTc5MzJhOGFiYmU5MWFkM2NiYTM1Mzc0M2I2MDI4MjI4MGU2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ZGYxYTdhNTVlNzBlNDQ2YzhjY2RkYzkxZjRjOWY2ZDg5YTc4ZmVjMDNlZTQyN2U1MTA5MWVkOGRhMmJiYzM5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiYmJlNTNhODc3ZDc2ZGI4ODA1MTI0YzYzNjcxMDM2OWI3YWE3YTliZjFjYWVmMTEzOGQ4MzEyMzY4YzA1MTdhIn0"
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1350-L1401",
+          "version": "repo-lines-v1:sha256:3001ae14be9113c098d2fdd7f505c473fe70939875ec13f14a99b79d52b6c452:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdkYmI2ZDFmYzMxYjdhMTg3YTczYzQ4NmI5MTNlMjMzYjEyMWIzZmQ0ZTI3MGI5M2JiOGVjZWY4YTYzNzBjMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU4NDZlMGVkNGU4M2E1MWNjZDBkYmZlMzdjMmU0NjQxZTBhMjA2NDdhOWM3MDkzMWY5YzhmYTc1YmRiNzMxNmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU2MWI5OTdlNDViN2Y5Nzk3MjY3ZGNjNDY1ODdhOGI4OTFhZThiM2ZkZmY0NWU4OGEzY2YyZmFjOWJhNzZiYmYifQ"
         }
       ]
     },
@@ -213,6 +217,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-22T08:26:56.662Z"
+    "at": "2026-10-29T08:20:01.046Z"
   }
 }
