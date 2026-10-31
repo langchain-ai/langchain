@@ -76,13 +76,26 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     stack = []
     is_inside_string = False
     escaped = False
+    unicode_escape_start: int | None = None
 
     # Process each character in the string one at a time.
     for char in s:
         new_char = char
         if is_inside_string:
+            if char == "u" and escaped and unicode_escape_start is None:
+                # Start of a \u escape; the backslash is the last char added.
+                unicode_escape_start = len(new_chars) - 1
+            elif unicode_escape_start is not None:
+                hex_digits = len(new_chars) - unicode_escape_start - 2
+                if char in "0123456789abcdefABCDEF" and hex_digits < 4:
+                    if hex_digits == 3:
+                        # Fourth hex digit completes the escape.
+                        unicode_escape_start = None
+                else:
+                    unicode_escape_start = None
             if char == '"' and not escaped:
                 is_inside_string = False
+                unicode_escape_start = None
             elif char == "\n" and not escaped:
                 new_char = (
                     "\\n"  # Replace the newline character with the escape sequence.
@@ -113,6 +126,9 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     if is_inside_string:
         if escaped:  # Remove unterminated escape character
             new_chars.pop()
+        elif unicode_escape_start is not None:
+            # Remove an unfinished \u escape with fewer than 4 hex digits.
+            del new_chars[unicode_escape_start:]
         new_chars.append('"')
 
     # Reverse the stack to get the closing characters.
