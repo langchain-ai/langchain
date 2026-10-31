@@ -628,3 +628,8 @@ def test_unicode_handling() -> None:
     assert "科学文章的标题" in format_instructions, (
         "Unicode characters should not be escaped"
     )
+
+def test_parse_partial_json_incomplete_unicode_escape() -> None:
+    assert parse_partial_json('{"city": "M\\u00') == {"city": "M"}
+    assert parse_partial_json('{"city": "M\\u00fc') == {"city": "Mü"}
+    assert parse_partial_json('{"outer": {"city": "M\\u00') == {"outer": {"city": "M"}}
