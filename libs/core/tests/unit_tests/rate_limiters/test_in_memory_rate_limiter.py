@@ -108,3 +108,13 @@ async def test_async_wait_max_bucket_size() -> None:
         # Assert that sync wait can proceed without blocking
         # since we have enough tokens
         await rate_limiter.aacquire(blocking=True)
+
+
+def test_invalid_configuration_raises() -> None:
+    """Non-positive configuration must fail at construction, not hang."""
+    with pytest.raises(ValueError):
+        InMemoryRateLimiter(requests_per_second=0)
+    with pytest.raises(ValueError):
+        InMemoryRateLimiter(check_every_n_seconds=0)
+    with pytest.raises(ValueError):
+        InMemoryRateLimiter(max_bucket_size=0)
