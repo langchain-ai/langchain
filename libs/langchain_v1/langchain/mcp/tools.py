@@ -9,9 +9,11 @@ serving server's identity under `mcp.server`.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Protocol, TypedDict
+from contextvars import ContextVar
+from typing import TYPE_CHECKING, Any, Protocol, TypedDict, cast
 
 from fastmcp.client.group import ClientGroup
+from langchain_core.messages import ToolMessage
 from langchain_core.messages.content import (
     FileContentBlock,
     ImageContentBlock,
@@ -90,31 +92,73 @@ class _MCPToolExecutionError(ToolException):
     """An MCP tool that ran and reported failure, as `isError=True`.
 
     Carries the converted content blocks so `_handle_mcp_tool_error` can hand the
-    server's own error detail to the model instead of ending the run.
+    server's own error detail to the model instead of ending the run, and the
+    artifact built from the result's `structuredContent`, so a machine-readable
+    error payload (an error code, `retry_after`, field-level validation output)
+    survives the error path the way it does on success.
 
     Deliberately narrow: only `isError=True` results raise this. Transport and
     conversion failures are not `ToolException`s, so they bypass error handling.
     """
 
-    def __init__(self, tool_content: list[ToolMessageContentBlock]) -> None:
+    def __init__(
+        self,
+        tool_content: list[ToolMessageContentBlock],
+        artifact: MCPToolArtifact | None = None,
+    ) -> None:
         super().__init__(_summarize_tool_error(tool_content))
         self.tool_content = tool_content
+        self.artifact = artifact
 
 
-def _handle_mcp_tool_error(error: ToolException) -> list[ToolMessageContentBlock]:
+class _ToolCallIdentity(TypedDict):
+    """The tool call an MCP tool is currently answering."""
+
+    tool_call_id: str
+    name: str
+
+
+_current_tool_call: ContextVar[_ToolCallIdentity | None] = ContextVar(
+    "_current_mcp_tool_call", default=None
+)
+"""The tool call being run by `_MCPTool.arun`, if it was invoked with one.
+
+`BaseTool.arun` builds the error `ToolMessage` itself and always leaves its
+`artifact` empty, so the only way to attach one is for `_handle_mcp_tool_error`
+to return a finished `ToolMessage`. That message needs the model's tool-call id,
+which the error handler is never given; `_MCPTool.arun` publishes it here. A
+`ContextVar` keeps concurrent tool calls from seeing each other's id.
+"""
+
+
+def _handle_mcp_tool_error(
+    error: ToolException,
+) -> list[ToolMessageContentBlock] | ToolMessage:
     """Surface an MCP execution error to the model as failed tool output.
 
     Wired as `handle_tool_error`, so what this returns becomes a `ToolMessage`
-    with `status="error"` carrying the server's own detail. Any other
-    `ToolException` is re-raised.
+    with `status="error"` carrying the server's own detail. When the call came
+    from a tool call, the message is built here so it can also carry the
+    result's structured content as its artifact. Any other `ToolException` is
+    re-raised.
     """
-    if isinstance(error, _MCPToolExecutionError):
-        if error.tool_content:
-            return error.tool_content
-        # An empty `ToolMessage` is a fragile shape for some providers, so
-        # substitute a placeholder rather than pass no content at all.
-        return [create_text_block(text=str(error))]
-    raise error
+    if not isinstance(error, _MCPToolExecutionError):
+        raise error
+    # An empty `ToolMessage` is a fragile shape for some providers, so
+    # substitute a placeholder rather than pass no content at all.
+    content = error.tool_content or [create_text_block(text=str(error))]
+    tool_call = _current_tool_call.get()
+    if tool_call is None or error.artifact is None:
+        # Nothing to attach, or no tool call to attach it to: let the framework
+        # build the message (or return the content directly) as it always has.
+        return content
+    return ToolMessage(
+        content=cast("list[str | dict[Any, Any]]", content),
+        artifact=error.artifact,
+        tool_call_id=tool_call["tool_call_id"],
+        name=tool_call["name"],
+        status="error",
+    )
 
 
 def _convert_content_block(content: ContentBlock) -> ToolMessageContentBlock:
@@ -171,13 +215,48 @@ def _convert_call_tool_result(
     """Split an MCP tool result into model-visible content and an artifact."""
     tool_content = [_convert_content_block(block) for block in result.content]
 
-    if result.is_error:
-        raise _MCPToolExecutionError(tool_content)
-
+    # Built before the `is_error` branch: `structuredContent` is not gated on
+    # `isError` in the MCP spec, and a structured error payload is as useful to
+    # an agent as a structured success.
     artifact: MCPToolArtifact | None = None
     if result.structured_content is not None:
         artifact = MCPToolArtifact(structured_content=result.structured_content)
+
+    if result.is_error:
+        raise _MCPToolExecutionError(tool_content, artifact)
     return tool_content, artifact
+
+
+class _MCPTool(StructuredTool):
+    """A `StructuredTool` whose MCP error results keep their structured content.
+
+    Publishes the tool call it is answering in `_current_tool_call`, so
+    `_handle_mcp_tool_error` can return an error `ToolMessage` that carries the
+    artifact and the model's tool-call id. MCP tools are async-only, so only
+    `arun` needs overriding.
+    """
+
+    async def arun(self, *args: Any, **kwargs: Any) -> Any:
+        """Run the tool with its tool call visible to the error handler.
+
+        Args:
+            *args: Positional arguments forwarded to `StructuredTool.arun`.
+            **kwargs: Keyword arguments forwarded to `StructuredTool.arun`.
+
+        Returns:
+            The tool's output, as `StructuredTool.arun` returns it.
+        """
+        tool_call_id = kwargs.get("tool_call_id")
+        identity = (
+            _ToolCallIdentity(tool_call_id=tool_call_id, name=self.name)
+            if tool_call_id is not None
+            else None
+        )
+        token = _current_tool_call.set(identity)
+        try:
+            return await super().arun(*args, **kwargs)
+        finally:
+            _current_tool_call.reset(token)
 
 
 def _tool_metadata(tool: Tool, client: Client[Any] | None) -> dict[str, Any] | None:
@@ -251,8 +330,10 @@ async def as_langchain_tool(
 
     An MCP tool that runs and reports failure reaches the model as a
     `ToolMessage` with `status="error"`, carrying the server's own error
-    content, so an agent can correct itself and retry. Transport failures and
-    unconvertible content propagate instead, since a model cannot act on them.
+    content, so an agent can correct itself and retry. Any `structuredContent`
+    on the failed result is kept as the message's artifact, as on success.
+    Transport failures and unconvertible content propagate instead, since a
+    model cannot act on them.
 
     Args:
         tool: An MCP tool, as returned by `fastmcp.Client.list_tools`.
@@ -293,7 +374,7 @@ async def as_langchain_tool(
                 result = await client.call_tool(tool.name, arguments, raise_on_error=False)
         return _convert_call_tool_result(result)
 
-    return StructuredTool(
+    return _MCPTool(
         name=tool.name,
         description=tool.description or "",
         args_schema=_normalize_mcp_schema(tool.input_schema),

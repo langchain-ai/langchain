@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Literal, cast
 from unittest.mock import AsyncMock
 
@@ -9,6 +10,7 @@ import pytest
 from fastmcp import Client, FastMCP
 from fastmcp.client.client import CallToolResult
 from fastmcp.exceptions import ToolError
+from langchain_core.messages import ToolMessage
 from mcp.types import (
     AudioContent,
     BlobResourceContents,
@@ -20,10 +22,17 @@ from mcp.types import (
     Tool,
     ToolAnnotations,
 )
+from mcp.types import (
+    CallToolResult as MCPCallToolResult,
+)
 
 from langchain.mcp import as_langchain_tool
 from langchain.mcp.elicitation import _arm_for_interrupts
-from langchain.mcp.tools import _convert_call_tool_result, _convert_content_block
+from langchain.mcp.tools import (
+    _convert_call_tool_result,
+    _convert_content_block,
+    _MCPToolExecutionError,
+)
 
 
 class _VideoContent:
@@ -108,6 +117,8 @@ async def test_tool_error_reaches_the_model_as_failed_output(
     [block] = _blocks_without_ids(message.content)
     assert block["type"] == "text"
     assert "the widget is jammed" in block["text"]
+    # No `structuredContent` on the result, so no placeholder artifact either.
+    assert message.artifact is None
 
 
 @pytest.mark.asyncio
@@ -141,6 +152,165 @@ def test_result_without_structured_content_has_no_artifact() -> None:
 
     assert [block["text"] for block in content if block["type"] == "text"] == ["hello"]
     assert artifact is None
+
+
+_RATE_LIMITED = {"code": "RATE_LIMITED", "retry_after": 30}
+"""A machine-readable error payload, as a server might send in `structuredContent`."""
+
+
+def _structured_error_server(*, text: str | None) -> FastMCP[None]:
+    """A server whose one tool fails with `_RATE_LIMITED` as structured content."""
+    server: FastMCP[None] = FastMCP("limited")
+
+    @server.tool
+    def lookup() -> MCPCallToolResult:
+        """Fail with a structured error."""
+        content = [TextContent(type="text", text=text)] if text is not None else []
+        return MCPCallToolResult(content=content, structuredContent=_RATE_LIMITED, isError=True)
+
+    return server
+
+
+def test_error_result_carries_its_structured_content_on_the_exception() -> None:
+    with pytest.raises(_MCPToolExecutionError, match="rate limited") as exc_info:
+        _convert_call_tool_result(
+            CallToolResult(
+                content=[TextContent(type="text", text="rate limited")],
+                structured_content=_RATE_LIMITED,
+                meta=None,
+                is_error=True,
+            )
+        )
+
+    assert exc_info.value.artifact == {"structured_content": _RATE_LIMITED}
+
+
+def test_error_result_without_structured_content_carries_no_artifact() -> None:
+    with pytest.raises(_MCPToolExecutionError) as exc_info:
+        _convert_call_tool_result(
+            CallToolResult(
+                content=[TextContent(type="text", text="not found")],
+                structured_content=None,
+                meta=None,
+                is_error=True,
+            )
+        )
+
+    assert exc_info.value.artifact is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("elicitation", [None, "interrupt"], ids=["fastmcp", "interrupt"])
+@pytest.mark.parametrize(
+    ("text", "expected_text"),
+    [
+        ("rate limited", "rate limited"),
+        # With no text the model sees a placeholder, but the payload survives.
+        (None, "The MCP tool reported an error with empty content."),
+    ],
+    ids=["text-and-structured", "structured-only"],
+)
+async def test_tool_error_keeps_its_structured_content_as_the_artifact(
+    elicitation: Literal["interrupt"] | None,
+    text: str | None,
+    expected_text: str,
+) -> None:
+    """A structured error payload reaches the agent rather than being dropped."""
+    tool, _ = await _one_tool(_structured_error_server(text=text), elicitation=elicitation)
+
+    message = await tool.ainvoke(
+        {"name": "lookup", "args": {}, "id": "call-7", "type": "tool_call"}
+    )
+
+    assert isinstance(message, ToolMessage)
+    assert message.status == "error"
+    assert message.tool_call_id == "call-7"
+    assert message.name == "lookup"
+    assert message.artifact == {"structured_content": _RATE_LIMITED}
+    assert _blocks_without_ids(message.content) == [{"type": "text", "text": expected_text}]
+
+
+@pytest.mark.asyncio
+async def test_structured_content_survives_success_and_error_alike() -> None:
+    server: FastMCP[None] = FastMCP("parity")
+
+    @server.tool
+    def lookup(fail: bool) -> MCPCallToolResult:  # noqa: FBT001
+        """Succeed or fail with the same structured content."""
+        return MCPCallToolResult(
+            content=[TextContent(type="text", text="text")],
+            structuredContent=_RATE_LIMITED,
+            isError=fail,
+        )
+
+    tool, _ = await _one_tool(server)
+
+    succeeded, failed = [
+        await tool.ainvoke(
+            {"name": "lookup", "args": {"fail": fail}, "id": "call-1", "type": "tool_call"}
+        )
+        for fail in (False, True)
+    ]
+
+    assert (succeeded.status, failed.status) == ("success", "error")
+    assert succeeded.artifact == failed.artifact == {"structured_content": _RATE_LIMITED}
+
+
+@pytest.mark.asyncio
+async def test_concurrent_tool_errors_keep_their_own_call_ids_and_payloads() -> None:
+    """Each failing call answers its own tool call, even when they interleave."""
+    server: FastMCP[None] = FastMCP("concurrent")
+
+    @server.tool
+    async def lookup(code: str, delay: float) -> MCPCallToolResult:
+        """Fail with `code` after `delay` seconds."""
+        await asyncio.sleep(delay)
+        return MCPCallToolResult(
+            content=[TextContent(type="text", text=code)],
+            structuredContent={"code": code},
+            isError=True,
+        )
+
+    tool, _ = await _one_tool(server)
+
+    slow, fast = await asyncio.gather(
+        tool.ainvoke(
+            {
+                "name": "lookup",
+                "args": {"code": "SLOW", "delay": 0.05},
+                "id": "call-slow",
+                "type": "tool_call",
+            }
+        ),
+        tool.ainvoke(
+            {
+                "name": "lookup",
+                "args": {"code": "FAST", "delay": 0},
+                "id": "call-fast",
+                "type": "tool_call",
+            }
+        ),
+    )
+
+    assert (slow.tool_call_id, slow.artifact) == (
+        "call-slow",
+        {"structured_content": {"code": "SLOW"}},
+    )
+    assert (fast.tool_call_id, fast.artifact) == (
+        "call-fast",
+        {"structured_content": {"code": "FAST"}},
+    )
+
+
+@pytest.mark.asyncio
+async def test_direct_call_error_still_returns_content_without_a_message() -> None:
+    """Without a tool call there is no `ToolMessage` to attach an artifact to."""
+    tool, _ = await _one_tool(_structured_error_server(text="rate limited"))
+
+    content = await tool.ainvoke({})
+
+    assert not isinstance(content, ToolMessage)
+    assert _blocks_without_ids(content) == [{"type": "text", "text": "rate limited"}]
 
 
 @pytest.mark.asyncio
