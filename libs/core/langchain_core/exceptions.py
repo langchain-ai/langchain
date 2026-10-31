@@ -1,7 +1,12 @@
 """Custom **exceptions** for LangChain."""
 
+from __future__ import annotations
+
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from langchain_core.messages import BaseMessage
 
 
 class LangChainException(Exception):  # noqa: N818
@@ -126,6 +131,65 @@ class ContextOverflowError(ModelError):
     This exception is raised by chat models when the input tokens exceed
     the maximum context window supported by the model.
     """
+
+
+class ModelRefusalError(ModelError):
+    """Exception raised when a model declines to produce the requested output.
+
+    Providers report a refusal as a successful response rather than an HTTP error
+    (for example Anthropic's `stop_reason="refusal"`, or the `refusal` field in
+    OpenAI Structured Outputs), so a plain model call returns the message as-is.
+    Integrations raise this exception from paths that need the content the model
+    withheld, such as `with_structured_output`, so callers can handle refusals the
+    same way across providers instead of receiving a parsing error.
+
+    Retrying the same request is unlikely to succeed.
+    """
+
+    def __init__(
+        self,
+        message: str | None = None,
+        *,
+        provider: str | None = None,
+        stop_reason: str | None = None,
+        category: str | None = None,
+        explanation: str | None = None,
+        raw_message: BaseMessage | None = None,
+    ) -> None:
+        """Create a `ModelRefusalError`.
+
+        Args:
+            message: Error message. If omitted, one is built from the other fields.
+            provider: Name of the model provider that reported the refusal, e.g.
+                `'anthropic'` or `'openai'`.
+            stop_reason: The provider's stop or finish reason for the response,
+                e.g. `'refusal'` or `'content_filter'`.
+            category: Provider-reported category of the refusal, if any.
+            explanation: Provider- or model-supplied explanation of the refusal,
+                if any.
+            raw_message: The model response that contained the refusal.
+        """
+        self.provider = provider
+        self.stop_reason = stop_reason
+        self.category = category
+        self.explanation = explanation
+        self.raw_message = raw_message
+        if message is None:
+            message = "Model refused to produce the requested output"
+            details = [
+                f"{name}={value!r}"
+                for name, value in (
+                    ("provider", provider),
+                    ("stop_reason", stop_reason),
+                    ("category", category),
+                )
+                if value is not None
+            ]
+            if details:
+                message += f" ({', '.join(details)})"
+            if explanation:
+                message += f": {explanation}"
+        super().__init__(message)
 
 
 class ErrorCode(Enum):
