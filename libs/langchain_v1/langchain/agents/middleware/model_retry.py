@@ -134,8 +134,8 @@ class ModelRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Resp
                 that takes an exception and returns `True` if it should be retried.
 
                 By default, retryable model errors and all unclassified exceptions are
-                retried. Exceptions that do not match propagate immediately and are not
-                handled by `on_failure`.
+                retried, except a `PIIDetectionError`. Exceptions that do not match
+                propagate immediately and are not handled by `on_failure`.
             on_failure: Behavior when all retries are exhausted.
 
                 Options:

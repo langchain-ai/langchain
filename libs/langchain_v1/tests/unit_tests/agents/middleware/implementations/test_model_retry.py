@@ -20,6 +20,7 @@ from typing_extensions import override
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware._retry import calculate_delay
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
+from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
 from langchain.agents.middleware.types import (
     ModelCallResult,
     ModelRequest,
@@ -828,3 +829,20 @@ def test_model_retry_multiple_middleware_composition() -> None:
     ai_messages = [m for m in result["messages"] if isinstance(m, AIMessage)]
     assert len(ai_messages) >= 1
     assert "Hello" in ai_messages[-1].content
+
+
+def test_model_retry_does_not_retry_a_pii_block() -> None:
+    model = FakeToolCallingModel()
+    agent = create_agent(
+        model,
+        [],
+        middleware=[
+            ModelRetryMiddleware(initial_delay=0.01, jitter=False),
+            PIIMiddleware("email", strategy="block", apply_to_input=False, apply_to_output=True),
+        ],
+    )
+
+    with pytest.raises(PIIDetectionError):
+        agent.invoke({"messages": [HumanMessage("Reach me at alice@example.com")]})
+
+    assert model.index == 1
