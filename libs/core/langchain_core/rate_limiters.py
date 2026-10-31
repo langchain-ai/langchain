@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import abc
 import asyncio
+import math
 import threading
 import time
 
@@ -143,7 +144,13 @@ class InMemoryRateLimiter(BaseRateLimiter):
             max_bucket_size: The maximum number of tokens that can be in the bucket.
                 Must be at least `1`. Used to prevent bursts of requests.
         """
-        # Number of requests that we can make per second.
+        if not math.isfinite(requests_per_second) or requests_per_second <= 0:
+                raise ValueError("requests_per_second must be positive and finite.")
+            if not math.isfinite(check_every_n_seconds) or check_every_n_seconds <= 0:
+                    raise ValueError("check_every_n_seconds must be positive and finite.")
+                if not math.isfinite(max_bucket_size) or max_bucket_size < 1:
+                        raise ValueError("max_bucket_size must be finite and at least 1.")
+                    # Number of requests that we can make per second.
         self.requests_per_second = requests_per_second
 
         # Number of tokens in the bucket.
