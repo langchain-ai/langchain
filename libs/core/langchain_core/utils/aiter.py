@@ -216,12 +216,13 @@ class Tee(Generic[T]):
         """
         self._iterator = aiter(iterable)
         self._buffers: list[deque[T]] = [deque() for _ in range(n)]
+        self._lock = lock if lock is not None else NoLock()
         self._children = tuple(
             tee_peer(
                 iterator=self._iterator,
                 buffer=buffer,
                 peers=self._buffers,
-                lock=lock if lock is not None else NoLock(),
+                lock=self._lock,
             )
             for buffer in self._buffers
         )
@@ -272,6 +273,13 @@ class Tee(Generic[T]):
         """Async close all child iterators."""
         for child in self._children:
             await child.aclose()
+        async with self._lock:
+            if self._buffers:
+                for buffer in self._buffers:
+                    buffer.clear()
+                self._buffers.clear()
+                if hasattr(self._iterator, "aclose"):
+                    await self._iterator.aclose()
 
 
 atee = Tee
