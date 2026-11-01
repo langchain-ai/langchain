@@ -1,6 +1,7 @@
 """Test XMLOutputParser."""
 
 import importlib
+import time
 from collections.abc import AsyncIterator, Iterable
 
 import pytest
@@ -156,3 +157,44 @@ async def tests_billion_laughs_attack() -> None:
 
     with pytest.raises(OutputParserException):
         await parser.aparse(MALICIOUS_XML)
+
+
+async def test_xml_streaming_long_non_xml_prefix() -> None:
+    """Regression test for #41560.
+
+    A long non-XML prefix before the first opening tag used to be rescanned and
+    retained on every streamed chunk, giving ~O(n^2) time and O(n) memory. The
+    parser must now discard the irrelevant text and stay approximately linear.
+    """
+    xml_parser = XMLOutputParser(parser="xml")
+    prefix = "a" * 20000
+    doc = "<foo><bar>baz</bar></foo>"
+    chunks = [prefix[i : i + 32] for i in range(0, len(prefix), 32)] + [doc]
+
+    start = time.perf_counter()
+    result = list(xml_parser.transform(iter(chunks)))
+    elapsed = time.perf_counter() - start
+
+    assert result == [{"foo": [{"bar": "baz"}]}]
+    # Guard against the quadratic regression: processing 20k non-XML chars plus a
+    # small document must stay well under a few seconds on CI.
+    assert elapsed < 5.0
+
+
+@pytest.mark.skipif(
+    importlib.util.find_spec("defusedxml") is None,
+    reason="defusedxml is not installed",
+)
+async def test_xml_streaming_long_non_xml_prefix_defused() -> None:
+    """Same regression test as above, using the defusedxml parser."""
+    xml_parser = XMLOutputParser(parser="defusedxml")
+    prefix = "a" * 20000
+    doc = "<foo><bar>baz</bar></foo>"
+    chunks = [prefix[i : i + 32] for i in range(0, len(prefix), 32)] + [doc]
+
+    start = time.perf_counter()
+    result = list(xml_parser.transform(iter(chunks)))
+    elapsed = time.perf_counter() - start
+
+    assert result == [{"foo": [{"bar": "baz"}]}]
+    assert elapsed < 5.0
