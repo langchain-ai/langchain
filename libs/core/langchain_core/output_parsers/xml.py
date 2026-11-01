@@ -101,11 +101,20 @@ class _StreamingParser:
         self.buffer += chunk
         # if xml string hasn't started yet, continue to next chunk
         if not self.xml_started:
-            if match := self.xml_start_re.search(self.buffer):
+            match = self.xml_start_re.search(self.buffer)
+            if match:
                 # if xml string has started, remove all text before it
                 self.buffer = self.buffer[match.start() :]
                 self.xml_started = True
             else:
+                # No XML opening tag has started yet. Discard everything except the
+                # minimal tail needed to detect an opening tag split across a chunk
+                # boundary. Without this, the entire non-XML prefix is rescanned and
+                # retained on every chunk, giving O(n^2) time and O(n) memory while
+                # waiting for the first opening tag. See
+                # https://github.com/langchain-ai/langchain/issues/41560
+                idx = self.buffer.rfind("<")
+                self.buffer = self.buffer[idx:] if idx != -1 else ""
                 return
         # feed buffer to parser
         self.pull_parser.feed(self.buffer)
