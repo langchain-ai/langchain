@@ -57,6 +57,8 @@ def parse_tool_call(
     # Handle None or empty string arguments for parameter-less tools
     elif not arguments:
         function_args = {}
+    elif isinstance(arguments, dict):
+        function_args = arguments
     else:
         try:
             function_args = json.loads(arguments, strict=strict)
