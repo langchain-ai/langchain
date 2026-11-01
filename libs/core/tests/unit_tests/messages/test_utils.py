@@ -84,6 +84,20 @@ def test_merge_message_runs_response_metadata() -> None:
     assert messages[1].response_metadata == {"input_tokens": 2}
 
 
+def test_merge_message_runs_developer_role() -> None:
+    messages = [
+        {"role": "developer", "content": "Be terse."},
+        {"role": "developer", "content": "Answer in English."},
+        {"role": "user", "content": "hi"},
+    ]
+    merged = merge_message_runs(convert_to_messages(messages))
+    assert merged[0].additional_kwargs["__openai_role__"] == "developer"
+    assert convert_to_openai_messages(merged)[0] == {
+        "role": "developer",
+        "content": "Be terse.\nAnswer in English.",
+    }
+
+
 def test_merge_message_runs_content() -> None:
     messages = [
         AIMessage("foo", id="1"),
