@@ -996,7 +996,8 @@ class VectorStoreRetriever(BaseRetriever):
 
         Raises:
             ValueError: If `search_type` is not one of the allowed search types.
-            ValueError: If `score_threshold` is not specified with a float value(`0~1`)
+            ValueError: If `score_threshold` is not specified with a number between
+                `0` and `1`.
         """
         search_type = values.get("search_type", "similarity")
         if search_type not in cls.allowed_search_types:
@@ -1007,14 +1008,15 @@ class VectorStoreRetriever(BaseRetriever):
             raise ValueError(msg)
         if search_type == "similarity_score_threshold":
             score_threshold = values.get("search_kwargs", {}).get("score_threshold")
+            # `bool` is a subclass of `int`, so reject it explicitly.
             if (
-                score_threshold is None
-                or (not isinstance(score_threshold, float))
-                or (not (0.0 <= float(score_threshold) <= 1.0))
+                not isinstance(score_threshold, (int, float))
+                or isinstance(score_threshold, bool)
+                or not 0.0 <= score_threshold <= 1.0
             ):
                 msg = (
-                    "`score_threshold` is not specified with a float value(0~1) "
-                    "in `search_kwargs`."
+                    "`score_threshold` is not specified with a number between 0 "
+                    "and 1 in `search_kwargs`."
                 )
                 raise ValueError(msg)
         return values
