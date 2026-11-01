@@ -357,7 +357,20 @@ class ChatDeepSeek(BaseChatOpenAI):
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
         for message in payload["messages"]:
             if message["role"] == "tool" and isinstance(message["content"], list):
-                message["content"] = json.dumps(message["content"])
+                blocks = message["content"]
+
+                if blocks and all(
+                    isinstance(block, dict) and block.get("type") == "text"
+                    for block in blocks
+                ):
+                    message["content"] = "".join(
+                        block.get("text", "") for block in blocks
+                    )
+                else:
+                    message["content"] = json.dumps(
+                        blocks,
+                        ensure_ascii=False,
+                    )
             elif message["role"] == "assistant" and isinstance(
                 message["content"], list
             ):

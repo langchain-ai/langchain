@@ -255,6 +255,41 @@ class TestChatDeepSeekCustomUnit:
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == '["item1", "item2"]'
 
+        # Text-only blocks should be converted to plain text.
+        tool_message = ToolMessage(
+            content=[{"type": "text", "text": "Hello from DeepSeek"}],
+            tool_call_id="test_id",
+        )
+        payload = chat_model._get_request_payload([tool_message])
+        assert payload["messages"][0]["content"] == "Hello from DeepSeek"
+
+        # Multiple text blocks should be joined.
+        tool_message = ToolMessage(
+            content=[
+                {"type": "text", "text": "Hello "},
+                {"type": "text", "text": "World"},
+            ],
+            tool_call_id="test_id",
+        )
+        payload = chat_model._get_request_payload([tool_message])
+        assert payload["messages"][0]["content"] == "Hello World"
+
+        # Non-ASCII text should not be escaped in mixed content.
+        tool_message = ToolMessage(
+            content=[
+                {"type": "text", "text": "你好世界"},
+                {"type": "image", "url": "https://example.com/image.png"},
+            ],
+            tool_call_id="test_id",
+        )
+        payload = chat_model._get_request_payload([tool_message])
+        assert (
+            payload["messages"][0]["content"]
+            == '[{"type": "text", "text": "你好世界"}, '
+            '{"type": "image_url", "image_url": '
+            '{"url": "https://example.com/image.png"}}]'
+        )
+
         tool_message = ToolMessage(content="test string", tool_call_id="test_id")
         payload = chat_model._get_request_payload([tool_message])
         assert payload["messages"][0]["content"] == "test string"
