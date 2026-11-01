@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Any, Literal
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest  # type: ignore[import-not-found]
+from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -9,8 +10,9 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import ChatResult
+from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
@@ -402,3 +404,170 @@ def test_init_chat_model_huggingface() -> None:
         # The important part is that the code path doesn't raise ValidationError
         # about missing 'llm' field, which was the original bug
         pytest.skip(f"Skipping test due to model download/initialization error: {e}")
+
+
+class Answer(BaseModel):
+    answer: str
+    justification: str
+
+
+_ANSWER_JSON = '{"answer": "same", "justification": "both one pound"}'
+_ANSWER_TOOL = {
+    "name": "Answer",
+    "args": {"answer": "same", "justification": "both one pound"},
+    "id": "call_1",
+    "type": "tool_call",
+}
+_JSON_SCHEMA = {
+    "title": "Answer",
+    "type": "object",
+    "properties": {
+        "answer": {"type": "string"},
+        "justification": {"type": "string"},
+    },
+    "required": ["answer", "justification"],
+}
+
+
+def _invoke_structured(
+    chat: ChatHuggingFace,
+    schema: Any,
+    message: AIMessage,
+    *,
+    method: Literal["function_calling", "json_mode", "json_schema"] = "json_mode",
+    include_raw: bool = False,
+) -> Any:
+    chat.disable_streaming = True
+    with patch.object(
+        chat,
+        "_generate",
+        return_value=ChatResult(generations=[ChatGeneration(message=message)]),
+    ):
+        return chat.with_structured_output(
+            schema, method=method, include_raw=include_raw
+        ).invoke("Which is heavier?")
+
+
+@pytest.mark.parametrize("method", ["json_mode", "json_schema"])
+def test_with_structured_output_pydantic_json(
+    chat_hugging_face: ChatHuggingFace, method: Literal["json_mode", "json_schema"]
+) -> None:
+    result = _invoke_structured(
+        chat_hugging_face,
+        Answer,
+        AIMessage(content=_ANSWER_JSON),
+        method=method,
+    )
+
+    assert isinstance(result, Answer)
+    assert result.answer == "same"
+    assert result.justification == "both one pound"
+
+
+def test_with_structured_output_pydantic_function_calling(
+    chat_hugging_face: ChatHuggingFace,
+) -> None:
+    result = _invoke_structured(
+        chat_hugging_face,
+        Answer,
+        AIMessage(content="", tool_calls=[_ANSWER_TOOL]),
+        method="function_calling",
+    )
+
+    assert isinstance(result, Answer)
+    assert result.answer == "same"
+    assert result.justification == "both one pound"
+
+
+def test_with_structured_output_pydantic_include_raw(
+    chat_hugging_face: ChatHuggingFace,
+) -> None:
+    message = AIMessage(content=_ANSWER_JSON)
+    result = _invoke_structured(
+        chat_hugging_face, Answer, message, method="json_mode", include_raw=True
+    )
+
+    assert result["parsing_error"] is None
+    assert isinstance(result["parsed"], Answer)
+    assert result["parsed"].answer == "same"
+    assert result["raw"] is message
+
+
+def test_with_structured_output_pydantic_invalid_json_raises(
+    chat_hugging_face: ChatHuggingFace,
+) -> None:
+    with pytest.raises(OutputParserException):
+        _invoke_structured(
+            chat_hugging_face,
+            Answer,
+            AIMessage(content='{"answer": "same"}'),
+            method="json_schema",
+        )
+
+
+def test_with_structured_output_pydantic_include_raw_parsing_error(
+    chat_hugging_face: ChatHuggingFace,
+) -> None:
+    result = _invoke_structured(
+        chat_hugging_face,
+        Answer,
+        AIMessage(content='{"answer": "same"}'),
+        method="json_mode",
+        include_raw=True,
+    )
+
+    assert result["parsed"] is None
+    assert isinstance(result["parsing_error"], OutputParserException)
+
+
+def test_with_structured_output_dict_schema_returns_dict(
+    chat_hugging_face: ChatHuggingFace,
+) -> None:
+    result = _invoke_structured(
+        chat_hugging_face,
+        _JSON_SCHEMA,
+        AIMessage(content=_ANSWER_JSON),
+        method="json_mode",
+    )
+
+    assert result == {"answer": "same", "justification": "both one pound"}
+
+
+def test_with_structured_output_json_mode_without_schema_returns_dict(
+    chat_hugging_face: ChatHuggingFace,
+) -> None:
+    result = _invoke_structured(
+        chat_hugging_face,
+        None,
+        AIMessage(content=_ANSWER_JSON),
+        method="json_mode",
+    )
+
+    assert result == {"answer": "same", "justification": "both one pound"}
+
+
+def test_with_structured_output_function_calling_dict_schema_returns_dict(
+    chat_hugging_face: ChatHuggingFace,
+) -> None:
+    tool_schema = {
+        "type": "function",
+        "function": {
+            "name": "Answer",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "answer": {"type": "string"},
+                    "justification": {"type": "string"},
+                },
+                "required": ["answer", "justification"],
+            },
+        },
+    }
+    result = _invoke_structured(
+        chat_hugging_face,
+        tool_schema,
+        AIMessage(content="", tool_calls=[_ANSWER_TOOL]),
+        method="function_calling",
+    )
+
+    assert result == {"answer": "same", "justification": "both one pound"}
