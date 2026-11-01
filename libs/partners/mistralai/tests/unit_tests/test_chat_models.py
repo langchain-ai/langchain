@@ -1099,6 +1099,20 @@ def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
     assert len(set(ids)) == 2, f"Duplicate tool call IDs found: {ids}"
 
 
+def test_assistant_message_preserves_content_with_tool_calls() -> None:
+    msg = AIMessage(
+        content="I am calling a tool to fetch the weather.",
+        tool_calls=[
+            ToolCall(name="get_weather", args={"city": "Paris"}, id="id_a", type="tool_call"),
+        ],
+    )
+    mistral_msg = _convert_message_to_mistral_chat_message(msg)
+    assert mistral_msg["role"] == "assistant"
+    assert mistral_msg["content"] == "I am calling a tool to fetch the weather."
+    assert len(mistral_msg["tool_calls"]) == 1
+    assert mistral_msg["tool_calls"][0]["function"]["name"] == "get_weather"
+
+
 def test_profile() -> None:
     model = ChatMistralAI(model="mistral-large-latest")  # type: ignore[call-arg]
     assert model.profile

@@ -576,13 +576,7 @@ def _convert_message_to_mistral_chat_message(
         else:
             content = message.content
 
-        if tool_calls and content:
-            # Assistant message must have either content or tool_calls, but not both.
-            # Some providers may not support tool_calls in the same message as content.
-            # This is done to ensure compatibility with messages from other providers.
-            content = ""
-
-        elif isinstance(content, list):
+        if isinstance(content, list):
             content = [
                 _clean_block(block) if isinstance(block, dict) else block
                 for block in content
