@@ -4244,6 +4244,22 @@ def test_format_messages_preserves_nonempty_thinking_field() -> None:
     assert block["signature"] == "sig_xyz"
 
 
+def test_format_messages_strips_index_from_compaction_block() -> None:
+    """Streamed compaction blocks carry `index`, which the API rejects on replay."""
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    compaction = {"type": "compaction", "content": "Summary.", "index": 0}
+    msg = AIMessage(content=[compaction, {"type": "text", "text": "Hi", "index": 1}])
+    payload = llm._get_request_payload(
+        [HumanMessage("hi"), msg, HumanMessage("continue")]
+    )
+    assert payload["messages"][1]["content"] == [
+        {"type": "compaction", "content": "Summary."},
+        {"type": "text", "text": "Hi"},
+    ]
+    assert compaction["index"] == 0
+
+
 @pytest.mark.parametrize(
     ("args", "expected_input"),
     [('{"city":', {}), ('{"city":"Paris"}', {"city": "Paris"}), ("[1]", {})],
