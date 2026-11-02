@@ -29,15 +29,22 @@ except ImportError as e:
 
 
 class PauseTurnLimitExceededError(Exception):
-    """Raised when a turn is still paused after the allowed continuations."""
+    """Raised when a turn is still paused after the allowed continuations.
 
-    def __init__(self, max_continuations: int) -> None:
-        """Initialize the exception with the bound that was reached.
+    The error carries the responses of the turn, so a caller keeps what the
+    continuations returned.
+    """
+
+    def __init__(self, max_continuations: int, messages: list[BaseMessage]) -> None:
+        """Initialize the exception with the bound that was reached and the turn.
 
         Args:
             max_continuations: The number of continuations the middleware sent.
+            messages: The responses of the turn in order: the first response,
+                then one per continuation.
         """
         self.max_continuations = max_continuations
+        self.messages = messages
         msg = (
             "The model turn was still paused (stop_reason 'pause_turn') after "
             f"{max_continuations} continuations. Raise `max_continuations` on "
@@ -59,7 +66,7 @@ class AnthropicPauseTurnMiddleware(AgentMiddleware):
     and no added user message, until the turn ends. Every response, paused or
     final, is kept in the conversation in order. Each continuation is a separate
     request, and a turn still paused after `max_continuations` of them raises
-    `PauseTurnLimitExceededError`.
+    `PauseTurnLimitExceededError`, which carries the responses of the turn.
 
     Responses from models other than Anthropic's never pause, so they pass through
     unchanged.
@@ -154,7 +161,7 @@ class AnthropicPauseTurnMiddleware(AgentMiddleware):
         self, messages: list[BaseMessage], response: ModelResponse
     ) -> ModelResponse:
         if _is_paused(messages):
-            raise PauseTurnLimitExceededError(self.max_continuations)
+            raise PauseTurnLimitExceededError(self.max_continuations, messages)
         return ModelResponse(
             result=messages, structured_response=response.structured_response
         )

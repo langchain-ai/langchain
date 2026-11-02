@@ -127,7 +127,8 @@ def test_turn_that_is_not_paused_is_returned_as_is(stop_reason: str | None) -> N
 
 
 def test_raises_once_the_bound_is_spent() -> None:
-    handler = _ScriptedHandler([_paused(1), _paused(2), _paused(3), _final()])
+    turn = [_paused(1), _paused(2), _paused(3)]
+    handler = _ScriptedHandler([*turn, _final()])
 
     with pytest.raises(PauseTurnLimitExceededError, match="2 continuations") as error:
         AnthropicPauseTurnMiddleware(max_continuations=2).wrap_model_call(
@@ -135,6 +136,8 @@ def test_raises_once_the_bound_is_spent() -> None:
         )
 
     assert error.value.max_continuations == 2
+    assert error.value.messages == turn
+    assert all(m is r for m, r in zip(error.value.messages, turn, strict=True))
     assert len(handler.requests) == 3
 
 
@@ -171,13 +174,17 @@ async def test_async_sends_paused_turn_back_unchanged() -> None:
 
 
 async def test_async_raises_once_the_bound_is_spent() -> None:
-    handler = _ScriptedHandler([_paused(1), _paused(2)])
+    turn = [_paused(1), _paused(2)]
+    handler = _ScriptedHandler(turn)
 
-    with pytest.raises(PauseTurnLimitExceededError):
+    with pytest.raises(PauseTurnLimitExceededError) as error:
         await AnthropicPauseTurnMiddleware(max_continuations=1).awrap_model_call(
             _request([HumanMessage("Hi")]), handler.acall
         )
 
+    assert error.value.max_continuations == 1
+    assert error.value.messages == turn
+    assert all(m is r for m, r in zip(error.value.messages, turn, strict=True))
     assert len(handler.requests) == 2
 
 
