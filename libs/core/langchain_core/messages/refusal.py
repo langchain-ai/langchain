@@ -1,7 +1,5 @@
 """Detection of model refusals in messages."""
 
-from typing import cast
-
 from langchain_core.messages.ai import AIMessage
 from langchain_core.messages.base import BaseMessage
 from langchain_core.messages.content import RefusalContentBlock
@@ -39,5 +37,5 @@ def get_refusal(message: BaseMessage) -> RefusalContentBlock | None:
         if block["type"] == "refusal":
             return block
         if block["type"] == "non_standard" and block["value"].get("type") == "refusal":
-            return cast("RefusalContentBlock", block["value"])
+            return {"type": "refusal", "refusal": block["value"].get("refusal") or ""}
     return None

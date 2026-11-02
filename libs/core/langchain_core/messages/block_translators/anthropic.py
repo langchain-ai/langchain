@@ -257,7 +257,15 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                 yield text_block
 
             elif block_type == "refusal":
-                yield cast("types.RefusalContentBlock", dict(block))
+                refusal_block: types.RefusalContentBlock = {
+                    "type": "refusal",
+                    "refusal": block.get("refusal", ""),
+                }
+                if category := block.get("category"):
+                    refusal_block["category"] = category
+                if "index" in block:
+                    refusal_block["index"] = block["index"]
+                yield refusal_block
 
             elif block_type == "thinking":
                 reasoning_block: types.ReasoningContentBlock = {
