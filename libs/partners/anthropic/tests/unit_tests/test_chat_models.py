@@ -38,6 +38,7 @@ from langchain_core.messages import (
 from langchain_core.messages.content import create_text_block
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
+from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
@@ -83,6 +84,20 @@ class _GatewayMetadataTracer(BaseTracer):
         gateway_metadata = metadata.get("ls_gateway_info")
         if isinstance(gateway_metadata, dict):
             self.gateway_metadata = gateway_metadata
+
+
+class _TokenEventTracer(BaseTracer, _V2StreamingCallbackHandler):
+    """Records LLM run events with a v2 handler attached, as LangGraph does."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.event_names: list[str] = []
+
+    def _persist_run(self, run: Run) -> None:
+        """No-op; runs are inspected as they complete."""
+
+    def _on_llm_end(self, run: Run) -> None:
+        self.event_names = [event["name"] for event in run.events]
 
 
 _GATEWAY_METADATA = {"provider": "anthropic"}
@@ -259,6 +274,43 @@ async def test_anthropic_astream_surfaces_gateway_metadata(
         None,
         None,
     ]
+
+
+_LS_TOOL = {
+    "name": "ls",
+    "description": "List files.",
+    "input_schema": {"type": "object", "properties": {}},
+}
+
+
+def test_stream_with_tools_reports_tokens_to_v2_handlers() -> None:
+    """Block-list chunks still fire `on_llm_new_token`, so tracers see TTFT."""
+    llm = ChatAnthropic(model=MODEL_NAME, max_tokens=10)
+    client = _sync_gateway_client(None)
+    tracer = _TokenEventTracer()
+    try:
+        with patch.object(llm, "_client", client):
+            llm.bind_tools([_LS_TOOL]).invoke("bar", config={"callbacks": [tracer]})
+    finally:
+        client.close()
+
+    assert "new_token" in tracer.event_names
+
+
+async def test_astream_with_tools_reports_tokens_to_v2_handlers() -> None:
+    """Async block-list chunks still fire `on_llm_new_token`."""
+    llm = ChatAnthropic(model=MODEL_NAME, max_tokens=10)
+    client = _async_gateway_client(None)
+    tracer = _TokenEventTracer()
+    try:
+        with patch.object(llm, "_async_client", client):
+            await llm.bind_tools([_LS_TOOL]).ainvoke(
+                "bar", config={"callbacks": [tracer]}
+            )
+    finally:
+        await client.close()
+
+    assert "new_token" in tracer.event_names
 
 
 def test_initialization() -> None:
