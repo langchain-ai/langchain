@@ -958,7 +958,7 @@ def _format_messages(
                                 },
                             ),
                         )
-                    elif block["type"] == "advisor_tool_result":
+                    elif block["type"] in ("advisor_tool_result", "compaction"):
                         content.append({k: v for k, v in block.items() if k != "index"})
                     else:
                         content.append(block)
