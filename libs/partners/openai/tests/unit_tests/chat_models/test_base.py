@@ -24,6 +24,7 @@ from langchain_core.exceptions import (
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
+    ModelRefusalError,
     ModelTimeoutError,
 )
 from langchain_core.load import dumps, loads
@@ -44,7 +45,7 @@ from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.block_translators.openai import (
     _convert_from_v03_ai_message,
 )
-from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
@@ -5817,3 +5818,251 @@ def test_configuration_update_block_without_text() -> None:
         "type": "configuration_update",
         "reasoning": {"effort": "low"},
     }
+
+
+class _RefusalSchema(BaseModel):
+    answer: str
+
+
+def _chat_completions_result(
+    *, content: str | None, finish_reason: str, refusal: str | None = None
+) -> ChatResult:
+    from openai.types.chat import ChatCompletion
+
+    completion = ChatCompletion.model_validate(
+        {
+            "id": "chatcmpl-123",
+            "object": "chat.completion",
+            "created": 1234567890,
+            "model": OPENAI_TEST_MODEL,
+            "choices": [
+                {
+                    "index": 0,
+                    "finish_reason": finish_reason,
+                    "message": {
+                        "role": "assistant",
+                        "content": content,
+                        "refusal": refusal,
+                    },
+                }
+            ],
+            "usage": {"prompt_tokens": 5, "completion_tokens": 0, "total_tokens": 5},
+        }
+    )
+    return ChatOpenAI(model=OPENAI_TEST_MODEL)._create_chat_result(completion)
+
+
+def _responses_result(
+    *, output: list, incomplete_reason: str | None = None
+) -> ChatResult:
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=output,
+        status="incomplete" if incomplete_reason else "completed",
+        incomplete_details=(
+            IncompleteDetails(reason=incomplete_reason)  # type: ignore[arg-type]
+            if incomplete_reason
+            else None
+        ),
+    )
+    return _construct_lc_result_from_responses_api(response)
+
+
+def _responses_refusal_output() -> list:
+    return [
+        ResponseOutputMessage(
+            type="message",
+            id="msg_123",
+            status="completed",
+            role="assistant",
+            content=[
+                ResponseOutputRefusal(
+                    type="refusal", refusal="I can't help with that request."
+                )
+            ],
+        )
+    ]
+
+
+def test_openai_refusal_error_is_model_refusal_error() -> None:
+    err = OpenAIRefusalError("I can't help with that.")
+
+    assert isinstance(err, ModelRefusalError)
+    assert str(err) == "I can't help with that."
+    assert err.provider == "openai"
+    assert err.is_retryable is False
+
+
+@pytest.mark.parametrize(
+    ("method", "schema"),
+    [
+        ("json_schema", _RefusalSchema),
+        ("json_schema", _RefusalSchema.model_json_schema()),
+        ("function_calling", _RefusalSchema),
+    ],
+)
+def test_with_structured_output_raises_on_chat_completions_refusal(
+    method: Literal["json_schema", "function_calling"], schema: Any
+) -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    structured = llm.with_structured_output(schema, method=method)
+    result = _chat_completions_result(
+        content=None, finish_reason="stop", refusal="I can't help with that request."
+    )
+
+    with (
+        patch.object(ChatOpenAI, "_generate", return_value=result),
+        pytest.raises(OpenAIRefusalError) as exc_info,
+    ):
+        structured.invoke("Write a keylogger")
+
+    err = exc_info.value
+    assert isinstance(err, ModelRefusalError)
+    assert str(err) == "I can't help with that request."
+    assert err.provider == "openai"
+    assert err.stop_reason == "stop"
+    assert err.explanation == "I can't help with that request."
+    assert isinstance(err.raw_message, AIMessage)
+
+
+@pytest.mark.parametrize("method", ["json_schema", "function_calling", "json_mode"])
+def test_with_structured_output_raises_on_content_filter(
+    method: Literal["json_schema", "function_calling", "json_mode"],
+) -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    structured = llm.with_structured_output(
+        _RefusalSchema.model_json_schema(), method=method
+    )
+    result = _chat_completions_result(content=None, finish_reason="content_filter")
+
+    with (
+        patch.object(ChatOpenAI, "_generate", return_value=result),
+        pytest.raises(ModelRefusalError) as exc_info,
+    ):
+        structured.invoke("Something filtered")
+
+    assert exc_info.value.stop_reason == "content_filter"
+    assert exc_info.value.explanation is None
+
+
+def test_with_structured_output_include_raw_reports_responses_refusal() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    structured = llm.with_structured_output(
+        _RefusalSchema.model_json_schema(), method="json_schema", include_raw=True
+    )
+    result = _responses_result(output=_responses_refusal_output())
+
+    with patch.object(ChatOpenAI, "_generate", return_value=result):
+        response = structured.invoke("Write a keylogger")
+
+    assert isinstance(response, dict)
+    assert response["parsed"] is None
+    assert isinstance(response["parsing_error"], OpenAIRefusalError)
+    assert response["parsing_error"].explanation == "I can't help with that request."
+
+
+def test_with_structured_output_raises_on_responses_content_filter() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    structured = llm.with_structured_output(_RefusalSchema, method="json_schema")
+    result = _responses_result(output=[], incomplete_reason="content_filter")
+
+    with (
+        patch.object(ChatOpenAI, "_generate", return_value=result),
+        pytest.raises(ModelRefusalError) as exc_info,
+    ):
+        structured.invoke("Something filtered")
+
+    assert exc_info.value.stop_reason == "content_filter"
+
+
+async def test_with_structured_output_raises_on_refusal_async() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    structured = llm.with_structured_output(_RefusalSchema, method="json_schema")
+    result = _chat_completions_result(
+        content=None, finish_reason="stop", refusal="I can't help with that request."
+    )
+
+    async def _agenerate(*_: Any, **__: Any) -> ChatResult:
+        return result
+
+    with (
+        patch.object(ChatOpenAI, "_agenerate", _agenerate),
+        pytest.raises(OpenAIRefusalError),
+    ):
+        await structured.ainvoke("Write a keylogger")
+
+
+def test_invoke_does_not_raise_on_refusal_or_content_filter() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    for result in (
+        _chat_completions_result(
+            content=None, finish_reason="stop", refusal="I can't help."
+        ),
+        _chat_completions_result(content=None, finish_reason="content_filter"),
+    ):
+        with patch.object(ChatOpenAI, "_generate", return_value=result):
+            assert isinstance(llm.invoke("hi"), AIMessage)
+
+
+def test_with_structured_output_parses_when_not_refused() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    structured = llm.with_structured_output(
+        _RefusalSchema.model_json_schema(), method="json_schema"
+    )
+    result = _chat_completions_result(content='{"answer": "42"}', finish_reason="stop")
+
+    with patch.object(ChatOpenAI, "_generate", return_value=result):
+        assert structured.invoke("What is 6 x 7?") == {"answer": "42"}
+
+
+def test_with_structured_output_stream_raises_on_content_filter() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    structured = llm.with_structured_output(
+        _RefusalSchema.model_json_schema(), method="json_schema"
+    )
+    chunks = [
+        ChatGenerationChunk(message=AIMessageChunk(content='{"ans')),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="", response_metadata={"finish_reason": "content_filter"}
+            )
+        ),
+    ]
+
+    with (
+        patch.object(ChatOpenAI, "_stream", return_value=iter(chunks)),
+        pytest.raises(ModelRefusalError) as exc_info,
+    ):
+        list(structured.stream("Something filtered"))
+
+    assert exc_info.value.stop_reason == "content_filter"
+
+
+def test_with_structured_output_still_streams_partial_json() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    structured = llm.with_structured_output(
+        _RefusalSchema.model_json_schema(), method="json_schema"
+    )
+    chunks = [
+        ChatGenerationChunk(message=AIMessageChunk(content=text))
+        for text in ['{"ans', 'wer": "4', '2"}']
+    ]
+    chunks.append(
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="", response_metadata={"finish_reason": "stop"}
+            )
+        )
+    )
+
+    with patch.object(ChatOpenAI, "_stream", return_value=iter(chunks)):
+        outputs = list(structured.stream("What is 6 x 7?"))
+
+    assert len(outputs) > 1
+    assert outputs[-1] == {"answer": "42"}

@@ -786,6 +786,9 @@ def _format_messages(
                         != "anthropic"
                     ):
                         continue
+                    # The Messages API has no refusal input block.
+                    if block["type"] == "refusal":
+                        continue
                     if block["type"] == "image_url":
                         # convert format
                         source = _format_image(block["image_url"]["url"])
@@ -2488,8 +2491,10 @@ class ChatAnthropic(BaseChatModel):
                 message_chunk = AIMessageChunk(content=[content_block])
 
         # Process final usage metadata and completion info
-        elif event.type == "message_delta" and stream_usage:
-            usage_metadata = _create_usage_metadata(event.usage)
+        elif event.type == "message_delta":
+            usage_metadata = (
+                _create_usage_metadata(event.usage) if stream_usage else None
+            )
             response_metadata = {
                 "stop_reason": event.delta.stop_reason,
                 "stop_sequence": event.delta.stop_sequence,
@@ -2560,7 +2565,13 @@ class ChatAnthropic(BaseChatModel):
         ):
             # TODO: dump all `data` with `mode="json"`
             llm_output["container"]["expires_at"] = expires_at.isoformat()
-        response_metadata = {"model_provider": "anthropic"}
+        response_metadata: dict[str, Any] = {"model_provider": "anthropic"}
+        if llm_output.get("stop_reason") == "refusal":
+            # Needed on the message itself so `output_version="v1"` content, which
+            # is built before `llm_output` is merged, includes the refusal block.
+            response_metadata["stop_reason"] = "refusal"
+            if stop_details := llm_output.get("stop_details"):
+                response_metadata["stop_details"] = stop_details
         if "model" in llm_output and "model_name" not in llm_output:
             llm_output["model_name"] = llm_output["model"]
         if (
