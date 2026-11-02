@@ -13,6 +13,7 @@ from langchain_core.messages import (
     BaseMessage,
     ToolCallChunk,
 )
+from langchain_core.messages.tool import default_tool_parser
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     JsonOutputToolsParser,
@@ -1424,6 +1425,50 @@ def test_parse_tool_call_partial_mode_with_none_arguments() -> None:
 
     # In partial mode, None arguments returns None (incomplete tool call)
     assert result is None
+
+
+@pytest.mark.parametrize("arguments", ["[]", "[1, 2]", '"{}"', "1", "0", "true"])
+def test_parse_tool_call_non_object_arguments_raises(arguments: str) -> None:
+    """Valid JSON that is not an object must not be used as tool call args."""
+    raw_tool_call = {
+        "function": {"arguments": arguments, "name": "read_file"},
+        "id": "call_1",
+        "type": "function",
+    }
+
+    with pytest.raises(OutputParserException, match="not a JSON object"):
+        parse_tool_call(raw_tool_call, return_id=True)
+
+    assert parse_tool_call(raw_tool_call, partial=True, return_id=True) is None
+
+
+def test_parse_tool_call_null_arguments() -> None:
+    """JSON `null` arguments are treated as empty args."""
+    raw_tool_call = {
+        "function": {"arguments": "null", "name": "getStatus"},
+        "id": "call_1",
+        "type": "function",
+    }
+
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["args"] == {}
+
+
+def test_default_tool_parser_non_object_arguments() -> None:
+    """Non-object JSON arguments become invalid tool calls."""
+    raw_tool_calls = [
+        {"function": {"arguments": "[]", "name": "a"}, "id": "call_1"},
+        {"function": {"arguments": '"{}"', "name": "b"}, "id": "call_2"},
+        {"function": {"arguments": "null", "name": "c"}, "id": "call_3"},
+        {"function": {"arguments": '{"x": 1}', "name": "d"}, "id": "call_4"},
+    ]
+
+    tool_calls, invalid_tool_calls = default_tool_parser(raw_tool_calls)
+
+    assert [tc["args"] for tc in tool_calls] == [{}, {"x": 1}]
+    assert [tc["args"] for tc in invalid_tool_calls] == ["[]", '"{}"']
 
 
 @pytest.mark.parametrize("partial", [False, True])

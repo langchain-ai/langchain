@@ -5250,6 +5250,12 @@ def _construct_lc_result_from_responses_api(
             except JSONDecodeError as e:
                 args = output.arguments
                 error = str(e)
+            else:
+                if args is None:
+                    args = {}
+                elif not isinstance(args, dict):
+                    args = output.arguments
+                    error = "Function arguments are not a JSON object"
             if error is None:
                 tool_call = {
                     "type": "tool_call",

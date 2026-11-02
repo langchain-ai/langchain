@@ -2600,6 +2600,68 @@ def test__construct_lc_result_from_responses_api_function_call_invalid_json() ->
     assert _FUNCTION_CALL_IDS_MAP_KEY in result.generations[0].message.additional_kwargs
 
 
+@pytest.mark.parametrize("arguments", ["[]", '"{}"', "1", "true"])
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
+def test__construct_lc_result_from_responses_api_function_call_non_object_json(
+    arguments: str, output_version: str
+) -> None:
+    """Valid JSON arguments that are not an object become invalid tool calls."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall(
+                type="function_call",
+                id="func_123",
+                call_id="call_123",
+                name="read_file",
+                arguments=arguments,
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(
+        response, output_version=output_version
+    )
+
+    msg = cast(AIMessage, result.generations[0].message)
+    assert msg.tool_calls == []
+    assert len(msg.invalid_tool_calls) == 1
+    assert msg.invalid_tool_calls[0]["name"] == "read_file"
+    assert msg.invalid_tool_calls[0]["id"] == "call_123"
+    assert msg.invalid_tool_calls[0]["args"] == arguments
+    assert msg.invalid_tool_calls[0]["error"] == (
+        "Function arguments are not a JSON object"
+    )
+
+
+@pytest.mark.parametrize("arguments", ["[]", '"{}"'])
+def test__convert_dict_to_message_non_object_tool_args(arguments: str) -> None:
+    """Chat Completions tool args that are not a JSON object are invalid."""
+    message = {
+        "role": "assistant",
+        "content": None,
+        "tool_calls": [
+            {
+                "id": "call_1",
+                "type": "function",
+                "function": {"name": "read_file", "arguments": arguments},
+            }
+        ],
+    }
+
+    result = cast(AIMessage, _convert_dict_to_message(message))
+
+    assert result.tool_calls == []
+    assert len(result.invalid_tool_calls) == 1
+    assert result.invalid_tool_calls[0]["args"] == arguments
+
+
 def test__construct_lc_result_from_responses_api_complex_response() -> None:
     """Test a complex response with multiple output types."""
     response = Response(
