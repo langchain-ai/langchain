@@ -97,14 +97,18 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
                 processing.
         """
 
-        def encode_strip_start_and_stop_token_ids(text: str) -> list[int]:
-            return self._encode(text)[1:-1]
+        def encode_content_tokens(text: str) -> list[int]:
+            # Encode without special tokens instead of stripping `encoded[1:-1]`:
+            # not every tokenizer adds exactly one special token at each end
+            # (e.g. Qwen embedding models encode content tokens at position 0),
+            # and positional slicing silently dropped real content tokens.
+            return self._encode_without_special(text)
 
         tokenizer = Tokenizer(
             chunk_overlap=self._chunk_overlap,
             tokens_per_chunk=self.tokens_per_chunk,
             decode=self.tokenizer.decode,
-            encode=encode_strip_start_and_stop_token_ids,
+            encode=encode_content_tokens,
         )
 
         return split_text_on_tokens(text=text, tokenizer=tokenizer)
@@ -132,3 +136,19 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             truncation="do_not_truncate",
         )
         return cast("list[int]", token_ids_with_start_and_end_token_ids)
+
+    def _encode_without_special(self, text: str) -> list[int]:
+        """Encodes content tokens only — no BOS/EOS, no positional stripping.
+
+        `split_text` uses this instead of `self._encode(text)[1:-1]` so that
+        tokenizers which do not add special tokens keep every content token
+        (see issue #41624). `count_tokens` keeps using `self._encode` — its
+        behaviour is intentionally unchanged.
+        """
+        token_ids = self.tokenizer.encode(
+            text,
+            max_length=self._max_length_equal_32_bit_integer,
+            truncation="do_not_truncate",
+            add_special_tokens=False,
+        )
+        return cast("list[int]", token_ids)
