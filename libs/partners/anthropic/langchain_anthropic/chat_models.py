@@ -2235,7 +2235,7 @@ class ChatAnthropic(BaseChatModel):
                     )
                     is_first_chunk = False
                     if run_manager:
-                        run_manager.on_llm_new_token(msg.content, chunk=chunk)
+                        run_manager.on_llm_new_token(chunk.text, chunk=chunk)
                     yield chunk
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
@@ -2285,7 +2285,7 @@ class ChatAnthropic(BaseChatModel):
                     )
                     is_first_chunk = False
                     if run_manager:
-                        await run_manager.on_llm_new_token(msg.content, chunk=chunk)
+                        await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
                     yield chunk
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)

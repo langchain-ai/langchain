@@ -91,13 +91,15 @@ class _TokenEventTracer(BaseTracer, _V2StreamingCallbackHandler):
 
     def __init__(self) -> None:
         super().__init__()
-        self.event_names: list[str] = []
+        self.token_events: list[dict[str, Any]] = []
 
     def _persist_run(self, run: Run) -> None:
         """No-op; runs are inspected as they complete."""
 
     def _on_llm_end(self, run: Run) -> None:
-        self.event_names = [event["name"] for event in run.events]
+        self.token_events = [
+            event["kwargs"] for event in run.events if event["name"] == "new_token"
+        ]
 
 
 _GATEWAY_METADATA = {"provider": "anthropic"}
@@ -294,7 +296,10 @@ def test_stream_with_tools_reports_tokens_to_v2_handlers() -> None:
     finally:
         client.close()
 
-    assert "new_token" in tracer.event_names
+    assert [event["token"] for event in tracer.token_events] == ["", "Bar Baz", ""]
+    assert tracer.token_events[1]["chunk"].message.content == [
+        {"type": "text", "text": "Bar Baz", "index": 0}
+    ]
 
 
 async def test_astream_with_tools_reports_tokens_to_v2_handlers() -> None:
@@ -310,7 +315,10 @@ async def test_astream_with_tools_reports_tokens_to_v2_handlers() -> None:
     finally:
         await client.close()
 
-    assert "new_token" in tracer.event_names
+    assert [event["token"] for event in tracer.token_events] == ["", "Bar Baz", ""]
+    assert tracer.token_events[1]["chunk"].message.content == [
+        {"type": "text", "text": "Bar Baz", "index": 0}
+    ]
 
 
 def test_initialization() -> None:
