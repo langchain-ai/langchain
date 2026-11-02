@@ -20,7 +20,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-version = "1.7.8"
+version = "1.7.9"
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "anthropic>=0.120.0",
