@@ -95,7 +95,15 @@ async def test_fallback_can_handle_refusal(*, asynchronous: bool) -> None:
 async def test_stream_surfaces_refusal(*, asynchronous: bool) -> None:
     agent = create_agent(
         RefusalStreamingModel(
-            messages=iter([AIMessage("blocked", additional_kwargs={"refusal": "blocked"})])
+            messages=iter(
+                [
+                    AIMessage(
+                        "blocked",
+                        additional_kwargs={"refusal": "blocked"},
+                        response_metadata={"model_provider": "openai"},
+                    )
+                ]
+            )
         ),
         middleware=[ModelRefusalMiddleware()],
     )
