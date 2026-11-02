@@ -8,6 +8,7 @@ from langchain_core.messages import (
     AIMessageChunk,
     HumanMessage,
     RefusalContentBlock,
+    convert_to_openai_messages,
     get_refusal,
 )
 
@@ -208,3 +209,17 @@ def test_error_from_openai_refusal_uses_finish_reason() -> None:
     assert error.provider == "openai"
     assert error.stop_reason == "stop"
     assert error.explanation == "I can't help with that."
+
+
+def test_convert_to_openai_messages_refusal_blocks() -> None:
+    message = AIMessage(
+        content=[
+            {"type": "text", "text": "Here is"},
+            {"type": "refusal", "refusal": "", "index": "lc_refusal"},
+            {"type": "refusal", "refusal": "No.", "category": "cyber", "index": 1},
+        ]
+    )
+    assert convert_to_openai_messages(message)["content"] == [
+        {"type": "text", "text": "Here is"},
+        {"type": "refusal", "refusal": "No."},
+    ]

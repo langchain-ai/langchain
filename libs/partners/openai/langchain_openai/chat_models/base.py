@@ -2869,8 +2869,7 @@ class BaseChatOpenAI(BaseChatModel):
             )
             raise ValueError(msg)
 
-        # Surface refusals and content-filter stops as a typed error before the
-        # parser runs. Applied per chunk so streamed structured output still streams.
+        # Checked per chunk so streamed structured output still streams.
         checked_parser = (
             RunnableGenerator(_check_refusal, _acheck_refusal) | output_parser
         )
@@ -4474,9 +4473,10 @@ def _oai_structured_outputs_parser(
 
 def _raise_on_refusal(message: BaseMessage) -> None:
     """Raise `OpenAIRefusalError` if the model refused or output was filtered."""
-    response_metadata = message.response_metadata or {}
+    response_metadata = message.response_metadata
     finish_reason = response_metadata.get("finish_reason")
-    if (refusal := get_refusal(message)) and (text := refusal.get("refusal")):
+    if refusal := get_refusal(message):
+        text = refusal.get("refusal") or None
         raise OpenAIRefusalError(
             text,
             stop_reason=finish_reason,

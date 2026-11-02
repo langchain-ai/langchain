@@ -1,10 +1,21 @@
 """Replay standardized refusals through OpenAI APIs."""
 
-import pytest
-from langchain_core.messages import AIMessage
+from collections.abc import AsyncIterator
+from typing import Any
+from unittest.mock import patch
 
+import pytest
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
+from langchain_core.outputs import ChatGenerationChunk
+from pydantic import BaseModel
+
+from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models._compat import _convert_from_v1_to_chat_completions
-from langchain_openai.chat_models.base import _construct_responses_api_input
+from langchain_openai.chat_models.base import (
+    OpenAIRefusalError,
+    _construct_responses_api_input,
+    _oai_structured_outputs_parser,
+)
 
 
 @pytest.mark.parametrize("native", [False, True])
@@ -48,3 +59,74 @@ def test_refusal_chat_completions_replay() -> None:
     assert _convert_from_v1_to_chat_completions(message).content == [
         {"type": "refusal", "refusal": "blocked"}
     ]
+
+
+ANTHROPIC_REFUSAL_HISTORY = AIMessage(
+    content=[
+        {"type": "text", "text": "Here is"},
+        {"type": "refusal", "refusal": "", "index": "lc_refusal"},
+    ],
+    response_metadata={"model_provider": "anthropic", "output_version": "v1"},
+)
+
+
+class _Answer(BaseModel):
+    answer: str
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_empty_refusal_from_other_provider_not_sent(*, use_responses_api: bool) -> None:
+    llm = ChatOpenAI(model="gpt-5", use_responses_api=use_responses_api)
+    payload = llm._get_request_payload(
+        [HumanMessage("hi"), ANTHROPIC_REFUSAL_HISTORY, HumanMessage("next")]
+    )
+    sent = payload["input"] if use_responses_api else payload["messages"]
+    assert "refusal" not in str(sent)
+
+
+def test_empty_refusal_raises_openai_refusal_error() -> None:
+    message = AIMessage(
+        content=[{"type": "refusal", "refusal": "", "id": "msg_1"}],
+        response_metadata={"model_provider": "openai"},
+    )
+    with pytest.raises(OpenAIRefusalError) as exc_info:
+        _oai_structured_outputs_parser(message, _Answer)
+    assert exc_info.value.explanation is None
+
+
+def _refusal_chunks() -> list[ChatGenerationChunk]:
+    return [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"type": "refusal", "refusal": "No.", "index": 0}],
+                response_metadata={"model_provider": "openai"},
+            )
+        )
+    ]
+
+
+def test_streamed_responses_refusal_raises() -> None:
+    llm = ChatOpenAI(model="gpt-5", use_responses_api=True)
+    structured = llm.with_structured_output(_Answer, method="json_schema")
+    with (
+        patch.object(ChatOpenAI, "_stream", return_value=iter(_refusal_chunks())),
+        pytest.raises(OpenAIRefusalError) as exc_info,
+    ):
+        list(structured.stream("hi"))
+    assert exc_info.value.explanation == "No."
+
+
+async def test_streamed_responses_refusal_raises_async() -> None:
+    llm = ChatOpenAI(model="gpt-5", use_responses_api=True)
+    structured = llm.with_structured_output(_Answer, method="json_schema")
+
+    async def _astream(*_: Any, **__: Any) -> AsyncIterator[ChatGenerationChunk]:
+        for chunk in _refusal_chunks():
+            yield chunk
+
+    with (
+        patch.object(ChatOpenAI, "_astream", _astream),
+        pytest.raises(OpenAIRefusalError),
+    ):
+        async for _ in structured.astream("hi"):
+            pass

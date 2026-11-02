@@ -15,26 +15,33 @@ from langchain.agents.middleware.types import (
     ModelResponse,
     ResponseT,
 )
+from langchain.agents.structured_output import StructuredOutputValidationError
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
 
+    from langchain_core.messages import BaseMessage
+
+
+def _raise_if_refused(message: BaseMessage) -> None:
+    if refusal := get_refusal(message):
+        raise ModelRefusalError.from_refusal(refusal, raw_message=message)
+
 
 def _check_refusal(response: ModelResponse[ResponseT]) -> ModelResponse[ResponseT]:
     for message in response.result:
-        if refusal := get_refusal(message):
-            raise ModelRefusalError.from_refusal(refusal, raw_message=message)
+        _raise_if_refused(message)
     return response
 
 
 class ModelRefusalMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Raise `ModelRefusalError` for responses containing a standard refusal block.
 
-    Add this middleware to `create_agent` (or `create_deep_agent`) to treat a
-    refusal as an error instead of a successful final answer. Model calls without
-    this middleware continue to return messages, including refusal content.
+    Add this middleware to `create_agent` to treat a refusal as an error instead of
+    a successful final answer. Model calls without this middleware continue to
+    return messages, including refusal content.
 
-    Place this after an outer fallback middleware to let it catch the error.
+    List it after `ModelFallbackMiddleware` so the fallback can catch the error.
     Streaming content may already have been emitted before the refusal is known.
     This middleware does not infer refusals from text or retry blocked requests.
     """
@@ -45,7 +52,12 @@ class ModelRefusalMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Re
         handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
     ) -> ModelResponse[ResponseT]:
         """Check the completed synchronous model response for a refusal."""
-        return _check_refusal(handler(request))
+        try:
+            response = handler(request)
+        except StructuredOutputValidationError as exc:
+            _raise_if_refused(exc.ai_message)
+            raise
+        return _check_refusal(response)
 
     async def awrap_model_call(
         self,
@@ -53,4 +65,9 @@ class ModelRefusalMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Re
         handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
     ) -> ModelResponse[ResponseT]:
         """Check the completed asynchronous model response for a refusal."""
-        return _check_refusal(await handler(request))
+        try:
+            response = await handler(request)
+        except StructuredOutputValidationError as exc:
+            _raise_if_refused(exc.ai_message)
+            raise
+        return _check_refusal(response)

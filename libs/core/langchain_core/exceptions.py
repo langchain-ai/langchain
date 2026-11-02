@@ -74,11 +74,12 @@ class ModelError(LangChainException):
     """Base exception for failures related to model invocation.
 
     Subclasses correspond to conditions that model providers report consistently,
-    keyed to the HTTP status they surface it with, so the same condition maps to
-    the same exception type regardless of provider.
+    so the same condition maps to the same exception type regardless of provider.
+    Most are keyed to the HTTP status they surface it with; `ModelRefusalError`
+    covers successful responses in which the model refused.
 
-    Provider integrations raise subclasses that also inherit from the provider
-    SDK's own exception type, so code catching either continues to work.
+    Provider integrations raise HTTP error subclasses that also inherit from the
+    provider SDK's own exception type, so code catching either continues to work.
     """
 
     is_retryable = False

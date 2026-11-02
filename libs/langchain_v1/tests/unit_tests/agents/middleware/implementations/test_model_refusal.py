@@ -9,6 +9,7 @@ import pytest
 from langchain_core.exceptions import ModelRefusalError
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
+from pydantic import BaseModel
 from typing_extensions import override
 
 from langchain.agents import create_agent
@@ -16,6 +17,11 @@ from langchain.agents.middleware import (
     InputAgentState,
     ModelFallbackMiddleware,
     ModelRefusalMiddleware,
+    ModelRetryMiddleware,
+)
+from langchain.agents.structured_output import (
+    ProviderStrategy,
+    StructuredOutputValidationError,
 )
 
 if TYPE_CHECKING:
@@ -104,3 +110,47 @@ async def _consume_stream(agent: Any, inputs: Any, *, asynchronous: bool) -> Non
             pass
     else:
         await asyncio.to_thread(lambda: list(agent.stream(inputs, stream_mode="messages")))
+
+
+class _Answer(BaseModel):
+    answer: str
+
+
+class _ToolFakeChatModel(GenericFakeChatModel):
+    @override
+    def bind_tools(self, tools: Any, **kwargs: Any) -> Any:
+        return self
+
+
+ANTHROPIC_REFUSAL = AIMessage(
+    content=[],
+    response_metadata={"model_provider": "anthropic", "stop_reason": "refusal"},
+)
+
+
+@pytest.mark.parametrize("asynchronous", [False, True])
+async def test_refusal_with_provider_strategy(*, asynchronous: bool) -> None:
+    inputs: InputAgentState = {"messages": [HumanMessage("request")]}
+    unguarded = create_agent(
+        _ToolFakeChatModel(messages=iter([ANTHROPIC_REFUSAL])),
+        response_format=ProviderStrategy(_Answer),
+    )
+    with pytest.raises(StructuredOutputValidationError):
+        await unguarded.ainvoke(inputs) if asynchronous else unguarded.invoke(inputs)
+    guarded = create_agent(
+        _ToolFakeChatModel(messages=iter([ANTHROPIC_REFUSAL])),
+        response_format=ProviderStrategy(_Answer),
+        middleware=[ModelRefusalMiddleware()],
+    )
+    with pytest.raises(ModelRefusalError):
+        await guarded.ainvoke(inputs) if asynchronous else guarded.invoke(inputs)
+
+
+def test_retry_middleware_does_not_retry_refusal() -> None:
+    model = GenericFakeChatModel(messages=iter([ANTHROPIC_REFUSAL, AIMessage("retried")]))
+    agent = create_agent(
+        model,
+        middleware=[ModelRetryMiddleware(max_retries=2), ModelRefusalMiddleware()],
+    )
+    with pytest.raises(ModelRefusalError):
+        agent.invoke({"messages": [HumanMessage("request")]})
