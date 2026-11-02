@@ -38,6 +38,7 @@ if TYPE_CHECKING:
         NonStandardContentBlock,
         PlainTextContentBlock,
         ReasoningContentBlock,
+        RefusalContentBlock,
         ServerToolCall,
         ServerToolCallChunk,
         ServerToolResult,
@@ -53,6 +54,7 @@ if TYPE_CHECKING:
         add_notification_metadata,
         get_notification_metadata,
     )
+    from langchain_core.messages.refusal import get_refusal
     from langchain_core.messages.system import SystemMessage, SystemMessageChunk
     from langchain_core.messages.tool import (
         ToolCall,
@@ -104,6 +106,7 @@ __all__ = (
     "OutputTokenDetails",
     "PlainTextContentBlock",
     "ReasoningContentBlock",
+    "RefusalContentBlock",
     "RemoveMessage",
     "ServerToolCall",
     "ServerToolCallChunk",
@@ -127,6 +130,7 @@ __all__ = (
     "filter_messages",
     "get_buffer_string",
     "get_notification_metadata",
+    "get_refusal",
     "is_data_content_block",
     "merge_content",
     "merge_message_runs",
@@ -160,11 +164,13 @@ _dynamic_imports = {
     "NotificationMetadata": "notification",
     "add_notification_metadata": "notification",
     "get_notification_metadata": "notification",
+    "get_refusal": "refusal",
     "NonStandardAnnotation": "content",
     "NonStandardContentBlock": "content",
     "OutputTokenDetails": "ai",
     "PlainTextContentBlock": "content",
     "ReasoningContentBlock": "content",
+    "RefusalContentBlock": "content",
     "RemoveMessage": "modifier",
     "ServerToolCall": "content",
     "ServerToolCallChunk": "content",
