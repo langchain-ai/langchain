@@ -278,23 +278,12 @@ async def test_anthropic_astream_surfaces_gateway_metadata(
     ]
 
 
-_LS_TOOL = {
-    "name": "ls",
-    "description": "List files.",
-    "input_schema": {"type": "object", "properties": {}},
-}
-
-
-def test_stream_with_tools_reports_tokens_to_v2_handlers() -> None:
+def test_stream_with_tools_reports_tokens_to_v2_handlers(dummy_tool: BaseTool) -> None:
     """Block-list chunks still fire `on_llm_new_token`, so tracers see TTFT."""
     llm = ChatAnthropic(model=MODEL_NAME, max_tokens=10)
-    client = _sync_gateway_client(None)
     tracer = _TokenEventTracer()
-    try:
-        with patch.object(llm, "_client", client):
-            llm.bind_tools([_LS_TOOL]).invoke("bar", config={"callbacks": [tracer]})
-    finally:
-        client.close()
+    with _sync_gateway_client(None) as client, patch.object(llm, "_client", client):
+        llm.bind_tools([dummy_tool]).invoke("bar", config={"callbacks": [tracer]})
 
     assert [event["token"] for event in tracer.token_events] == ["", "Bar Baz", ""]
     assert tracer.token_events[1]["chunk"].message.content == [
@@ -302,18 +291,17 @@ def test_stream_with_tools_reports_tokens_to_v2_handlers() -> None:
     ]
 
 
-async def test_astream_with_tools_reports_tokens_to_v2_handlers() -> None:
+async def test_astream_with_tools_reports_tokens_to_v2_handlers(
+    dummy_tool: BaseTool,
+) -> None:
     """Async block-list chunks still fire `on_llm_new_token`."""
     llm = ChatAnthropic(model=MODEL_NAME, max_tokens=10)
-    client = _async_gateway_client(None)
     tracer = _TokenEventTracer()
-    try:
+    async with _async_gateway_client(None) as client:
         with patch.object(llm, "_async_client", client):
-            await llm.bind_tools([_LS_TOOL]).ainvoke(
+            await llm.bind_tools([dummy_tool]).ainvoke(
                 "bar", config={"callbacks": [tracer]}
             )
-    finally:
-        await client.close()
 
     assert [event["token"] for event in tracer.token_events] == ["", "Bar Baz", ""]
     assert tracer.token_events[1]["chunk"].message.content == [
