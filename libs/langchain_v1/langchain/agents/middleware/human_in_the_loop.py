@@ -405,7 +405,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
 
     - `"batched"` (default): one interrupt per model turn. Its value is a `HITLRequest`
         listing every gated call, answered with a `HITLResponse` whose decisions match
-        the calls by position.
+        the calls by position. A gated call that reaches the tool node without being in
+        the model's message, such as one another middleware makes from code it runs,
+        gets its own one-item `HITLRequest` as the call starts.
     - `"per_call"`: one interrupt per gated tool call, as the call starts. Its value is
         a `ToolApprovalRequest` and its `response_schema` lists the decisions that tool
         allows. Each is answered with a single `Decision` keyed by interrupt ID, and
@@ -524,7 +526,10 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             interrupt_mode: How the agent pauses for review.
 
                 - `"batched"` (default): one interrupt per model turn for all gated
-                    tool calls, answered with a `HITLResponse`.
+                    tool calls, answered with a `HITLResponse`. A gated call that
+                    isn't in the model's message, such as one another middleware
+                    makes from code it runs, is reviewed as it starts, as a
+                    one-item `HITLRequest`.
                 - `"per_call"`: one `ToolApprovalRequest` interrupt per gated tool
                     call, with a typed `response_schema`, answered with a single
                     `Decision` keyed by interrupt ID.
@@ -552,7 +557,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 !!! warning "Middleware order in `per_call` mode"
 
                     The review happens as the tool call starts, inside the tool-call
-                    middleware chain. List this middleware before tool retry or
+                    middleware chain, as it does in `batched` mode for a call that
+                    isn't in the model's message. List this middleware before tool retry or
                     error-handling middleware so it wraps them, and don't enable it
                     on subclasses that raise their own interrupts in `after_model`.
                     On resume, each paused tool call runs the middleware listed
@@ -755,6 +761,62 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             executed = decision["edited_action"]
             return self._apply_edit(request, executed), executed
         return _answer_message(tool_call, decision)
+
+    def _missed_by_batch(self, request: ToolCallRequest) -> bool:
+        """Whether batched review never saw this gated tool call.
+
+        `after_model` reviews the tool calls in the latest `AIMessage`. A gated call
+        that reaches the tool-call chain without being one of them, such as a call
+        another middleware makes from code it runs, was never reviewed.
+        """
+        tool_call = request.tool_call
+        if self.interrupt_mode != "batched" or tool_call["name"] not in self.interrupt_on:
+            return False
+        state = request.state
+        messages = state.get("messages", []) if isinstance(state, dict) else []
+        last_ai_msg = next((msg for msg in reversed(messages) if isinstance(msg, AIMessage)), None)
+        reviewed = last_ai_msg.tool_calls if last_ai_msg is not None else []
+        return all(call.get("id") != tool_call.get("id") for call in reviewed)
+
+    def _review_missed_call(
+        self, request: ToolCallRequest
+    ) -> tuple[ToolCallRequest, Action | None] | ToolMessage:
+        """Ask the reviewer about one call batched review missed, as a batch of one.
+
+        The interrupt value is a one-item `HITLRequest`, answered with a `HITLResponse`,
+        so a client that handles batched reviews answers it unchanged.
+
+        Returns the request to run, with the reviewer's call if they edited it, or the
+        message to return instead of running the tool.
+
+        Raises:
+            ValueError: If the response doesn't hold exactly one decision, or the
+                decision isn't allowed for the tool.
+        """
+        tool_call = request.tool_call
+        config = self.interrupt_on[tool_call["name"]]
+        when = config.get("when")
+        if when is not None and not when(request):
+            return request, None
+        action_request, review_config = self._create_action_and_config(
+            tool_call, config, request.state, get_runtime()
+        )
+        hitl_request = HITLRequest(action_requests=[action_request], review_configs=[review_config])
+        decisions = interrupt(hitl_request)["decisions"]
+        if len(decisions) != 1:
+            msg = (
+                f"Number of human decisions ({len(decisions)}) does not match "
+                "number of hanging tool calls (1)."
+            )
+            raise ValueError(msg)
+        decision = decisions[0]
+        _, answer = self._process_decision(decision, tool_call, config)
+        if answer is not None:
+            return answer
+        if decision["type"] == "edit":
+            executed = decision["edited_action"]
+            return self._apply_edit(request, executed), executed
+        return request, None
 
     def after_model(
         self, state: AgentState[Any], runtime: Runtime[ContextT]
@@ -984,7 +1046,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     ) -> ToolMessage | Command[Any]:
         """Prepend reviewer-edit guidance to the result of an edited tool call.
 
-        In `per_call` mode this is also where the interrupt is raised.
+        In `per_call` mode this is also where the interrupt is raised, and in
+        `batched` mode for a gated call that wasn't in the model's message.
 
         Args:
             request: The tool call request being executed.
@@ -997,10 +1060,18 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             ValidationError: In `per_call` mode, if the reviewer's answer doesn't match
                 the tool call's `response_schema`. Nothing is saved, so the call can be
                 answered again.
-            ValueError: In `per_call` mode, if a gated tool call has no ID.
+            ValueError: In `per_call` mode, if a gated tool call has no ID. In
+                `batched` mode, if the answer for a call that wasn't in the model's
+                message doesn't hold exactly one allowed decision.
         """
         if self.interrupt_mode == "per_call":
             resolved = self._resolve_per_call(request)
+            if isinstance(resolved, ToolMessage):
+                return resolved
+            to_run, executed = resolved
+            return self._annotate_edited_result(handler(to_run), to_run, executed)
+        if self._missed_by_batch(request):
+            resolved = self._review_missed_call(request)
             if isinstance(resolved, ToolMessage):
                 return resolved
             to_run, executed = resolved
@@ -1017,7 +1088,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     ) -> ToolMessage | Command[Any]:
         """Async variant of `wrap_tool_call`.
 
-        In `per_call` mode this is also where the interrupt is raised.
+        In `per_call` mode this is also where the interrupt is raised, and in
+        `batched` mode for a gated call that wasn't in the model's message.
 
         Args:
             request: The tool call request being executed.
@@ -1030,10 +1102,18 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             ValidationError: In `per_call` mode, if the reviewer's answer doesn't match
                 the tool call's `response_schema`. Nothing is saved, so the call can be
                 answered again.
-            ValueError: In `per_call` mode, if a gated tool call has no ID.
+            ValueError: In `per_call` mode, if a gated tool call has no ID. In
+                `batched` mode, if the answer for a call that wasn't in the model's
+                message doesn't hold exactly one allowed decision.
         """
         if self.interrupt_mode == "per_call":
             resolved = self._resolve_per_call(request)
+            if isinstance(resolved, ToolMessage):
+                return resolved
+            to_run, executed = resolved
+            return self._annotate_edited_result(await handler(to_run), to_run, executed)
+        if self._missed_by_batch(request):
+            resolved = self._review_missed_call(request)
             if isinstance(resolved, ToolMessage):
                 return resolved
             to_run, executed = resolved

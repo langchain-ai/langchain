@@ -1,5 +1,6 @@
 import re
 import sys
+from collections.abc import Awaitable, Callable
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Annotated, Any, cast
 from unittest.mock import patch
@@ -2268,3 +2269,180 @@ def test_per_call_retried_tool_is_not_reviewed_again_when_hitl_wraps_retry() -> 
     assert attempts == ["alice", "alice"]
     [message] = [m for m in final["messages"] if isinstance(m, ToolMessage)]
     assert message.content == "sent to alice"
+
+
+# --- Batched mode: gated calls the model's message didn't contain ---
+
+
+class _RunsCode(AgentMiddleware):
+    """Stand-in for middleware that runs model-written code.
+
+    The `run_code` call makes a `send_email` call through the tool-call chain, the way
+    code that calls tools does. That call never appears in the model's message.
+    """
+
+    @staticmethod
+    def _nested(request: ToolCallRequest) -> ToolCallRequest:
+        email = next(t for t in request.runtime.tools if t.name == "send_email")
+        call = ToolCall(name="send_email", args={"to": "alice"}, id="call_code.0")
+        return request.override(tool_call=call, tool=email)
+
+    @staticmethod
+    def _outer_result(request: ToolCallRequest, nested: ToolMessage | Command[Any]) -> ToolMessage:
+        assert isinstance(nested, ToolMessage)
+        return ToolMessage(
+            content=f"code got: {nested.content}",
+            tool_call_id=request.tool_call["id"],
+            name="run_code",
+            status=nested.status,
+        )
+
+    def wrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
+        if request.tool_call["name"] != "run_code":
+            return handler(request)
+        return self._outer_result(request, handler(self._nested(request)))
+
+    async def awrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+    ) -> ToolMessage | Command[Any]:
+        if request.tool_call["name"] != "run_code":
+            return await handler(request)
+        return self._outer_result(request, await handler(self._nested(request)))
+
+
+def _code_agent(
+    ran: list[str], interrupt_on: dict[str, bool | InterruptOnConfig]
+) -> CompiledStateGraph[AgentState[Any], None, InputAgentState, OutputAgentState[Any]]:
+    """A batched-HITL agent whose model calls `run_code`, which calls `send_email`."""
+
+    @tool
+    def send_email(to: str) -> str:
+        """Send an email."""
+        ran.append(to)
+        return f"sent to {to}"
+
+    @tool
+    def run_code() -> str:
+        """Run code; `_RunsCode` handles the call."""
+        return "unused"
+
+    return create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[[ToolCall(name="run_code", args={}, id="call_code")], []]
+        ),
+        tools=[send_email, run_code],
+        middleware=[_RunsCode(), HumanInTheLoopMiddleware(interrupt_on)],
+        checkpointer=InMemorySaver(),
+    )
+
+
+@pytest.mark.parametrize(
+    ("answer", "ran_with", "status", "content"),
+    [
+        ({"type": "approve"}, ["alice"], "success", "code got: sent to alice"),
+        (
+            {"type": "edit", "edited_action": {"name": "send_email", "args": {"to": "bob"}}},
+            ["bob"],
+            "success",
+            "sent to bob",
+        ),
+        (
+            {"type": "reject", "message": "not now"},
+            [],
+            "error",
+            "code got: User rejected the tool call for `send_email` with reason: not now",
+        ),
+        ({"type": "respond", "message": "already sent"}, [], "success", "code got: already sent"),
+    ],
+    ids=["approve", "edit", "reject", "respond"],
+)
+def test_batched_reviews_a_gated_call_missing_from_the_model_message(
+    answer: Decision, ran_with: list[str], status: str, content: str
+) -> None:
+    ran: list[str] = []
+    agent = _code_agent(ran, {"send_email": True})
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+
+    [intr] = agent.invoke({"messages": [HumanMessage("go")]}, config)["__interrupt__"]
+    assert ran == []
+    [action] = intr.value["action_requests"]
+    assert (action["name"], action["args"]) == ("send_email", {"to": "alice"})
+    assert [c["action_name"] for c in intr.value["review_configs"]] == ["send_email"]
+
+    final = agent.invoke(Command(resume={"decisions": [answer]}), config)
+
+    assert "__interrupt__" not in final
+    assert ran == ran_with
+    [message] = [m for m in final["messages"] if isinstance(m, ToolMessage)]
+    assert message.status == status
+    assert content in str(message.content)
+
+
+async def test_batched_reviews_a_missed_call_with_ainvoke() -> None:
+    ran: list[str] = []
+    agent = _code_agent(ran, {"send_email": True})
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+
+    paused = await agent.ainvoke({"messages": [HumanMessage("go")]}, config)
+    assert len(paused["__interrupt__"]) == 1
+    final = await agent.ainvoke(Command(resume={"decisions": [{"type": "approve"}]}), config)
+
+    assert "__interrupt__" not in final
+    assert ran == ["alice"]
+
+
+def test_batched_does_not_review_a_model_call_again_when_it_runs() -> None:
+    ran: list[str] = []
+
+    @tool
+    def send_email(to: str) -> str:
+        """Send an email."""
+        ran.append(to)
+        return f"sent to {to}"
+
+    agent = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[[ToolCall(name="send_email", args={"to": "alice"}, id="call_email")], []]
+        ),
+        tools=[send_email],
+        middleware=[HumanInTheLoopMiddleware(interrupt_on={"send_email": True})],
+        checkpointer=InMemorySaver(),
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+    [intr] = agent.invoke({"messages": [HumanMessage("go")]}, config)["__interrupt__"]
+    assert [a["name"] for a in intr.value["action_requests"]] == ["send_email"]
+
+    final = agent.invoke(Command(resume={"decisions": [{"type": "approve"}]}), config)
+
+    assert "__interrupt__" not in final
+    assert ran == ["alice"]
+
+
+def test_batched_missed_call_skips_review_when_predicate_declines() -> None:
+    ran: list[str] = []
+    agent = _code_agent(
+        ran,
+        {"send_email": {"allowed_decisions": ["approve"], "when": lambda _: False}},
+    )
+
+    final = agent.invoke({"messages": [HumanMessage("go")]}, {"configurable": {"thread_id": "t"}})
+
+    assert "__interrupt__" not in final
+    assert ran == ["alice"]
+
+
+def test_batched_missed_call_needs_exactly_one_decision() -> None:
+    agent = _code_agent([], {"send_email": True})
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+    agent.invoke({"messages": [HumanMessage("go")]}, config)
+
+    with pytest.raises(ValueError, match=r"decisions \(2\) does not match"):
+        agent.invoke(
+            Command(resume={"decisions": [{"type": "approve"}, {"type": "approve"}]}), config
+        )
