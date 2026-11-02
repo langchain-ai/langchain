@@ -2384,6 +2384,7 @@ def test_batched_reviews_a_gated_call_missing_from_the_model_message(
     assert content in str(message.content)
 
 
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="Asyncio context vars require Python 3.11+")
 async def test_batched_reviews_a_missed_call_with_ainvoke() -> None:
     ran: list[str] = []
     agent = _code_agent(ran, {"send_email": True})
