@@ -273,24 +273,28 @@ async def as_langchain_tool(
         tools = [await as_langchain_tool(t, client) for t in mcp_tools]
         ```
     """
+    # A group tool is called through the member that serves it, so a call
+    # connects only that server rather than every client in the group.
     if isinstance(client, ClientGroup):
-        tool_route = await client.resolve_tool(tool.name)
-        requesting_client = tool_route.client
+        route = await client.resolve_tool(tool.name)
+        member, upstream_name = route.client, route.upstream_name
     else:
-        requesting_client = client
-    drives_interrupts = _drives_interrupts(requesting_client)
+        member, upstream_name = client, tool.name
+    drives_interrupts = _drives_interrupts(member)
 
     async def call_tool(
         **arguments: Any,
     ) -> tuple[list[ToolMessageContentBlock], MCPToolArtifact | None]:
         """Call the captured MCP tool and convert its result."""
         result: _ToolCallResult
-        async with client:
+        async with member:
             if drives_interrupts:
-                result = await _call_tool_with_interrupts(client, tool.name, arguments)
+                result = await _call_tool_with_interrupts(
+                    member, tool.name, arguments, upstream_name=upstream_name
+                )
             else:
                 # Preserve MCP error results for conversion into failed tool messages.
-                result = await client.call_tool(tool.name, arguments, raise_on_error=False)
+                result = await member.call_tool(upstream_name, arguments, raise_on_error=False)
         return _convert_call_tool_result(result)
 
     return StructuredTool(
@@ -299,7 +303,7 @@ async def as_langchain_tool(
         args_schema=_normalize_mcp_schema(tool.input_schema),
         coroutine=call_tool,
         response_format="content_and_artifact",
-        metadata=_tool_metadata(tool, requesting_client),
+        metadata=_tool_metadata(tool, member),
         handle_tool_error=_handle_mcp_tool_error,
     )
 
