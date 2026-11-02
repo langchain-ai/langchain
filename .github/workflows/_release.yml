@@ -50,6 +50,11 @@ on:
         default: "none"
         description: "Prior published partner check to skip for core releases:
           none, anthropic, openai, or all."
+      release-notes:
+        required: false
+        type: string
+        default: ""
+        description: "Optional text prepended to the auto-generated release notes."
   workflow_dispatch:
     inputs:
       working-directory:
@@ -117,6 +122,11 @@ on:
           - anthropic
           - openai
           - all
+      release-notes:
+        required: false
+        type: string
+        default: ""
+        description: "Optional text prepended to the auto-generated release notes."
 
 env:
   PYTHON_VERSION: "3.11"
@@ -381,6 +391,7 @@ jobs:
           PKG_NAME: ${{ needs.build.outputs.pkg-name }}
           TAG: ${{ steps.check-tags.outputs.tag }}
           PREV_TAG: ${{ steps.check-tags.outputs.prev-tag }}
+          RELEASE_NOTES: ${{ inputs.release-notes }}
         run: |
           PREAMBLE="Changes since $PREV_TAG"
           # if PREV_TAG is empty or 0.0.0, then we are releasing the first version
@@ -391,6 +402,9 @@ jobs:
           delim="EOF_$(openssl rand -hex 8)"
           {
             echo "release-body<<$delim"
+            if [ -n "$RELEASE_NOTES" ]; then
+              printf '%s\n\n' "$RELEASE_NOTES"
+            fi
             echo $PREAMBLE
             echo
             git log --format="%s" "$PREV_TAG"..HEAD -- $WORKING_DIR
