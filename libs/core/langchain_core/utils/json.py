@@ -136,7 +136,10 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     return json.loads(s, strict=strict)
 
 
-_json_markdown_re = re.compile(r"```(json)?(.*)", re.DOTALL)
+_json_markdown_re = re.compile(
+    r"```[^\S\r\n]*(?:[a-zA-Z][a-zA-Z0-9_-]*[^\S\r\n]*\r?\n|[^\S\r\n]*\r?\n|[a-zA-Z][a-zA-Z0-9_-]*[^\S\r\n]*$|[^\S\r\n]*$|[a-zA-Z][a-zA-Z0-9_-]*[^\S\r\n]+|(?:json|JSON)[^\S\r\n]*)?(.*)",
+    re.DOTALL,
+)
 
 
 def parse_json_markdown(
@@ -159,7 +162,7 @@ def parse_json_markdown(
 
         # If no match found, assume the entire string is a JSON string
         # Else, use the content within the backticks
-        json_str = json_string if match is None else match.group(2)
+        json_str = json_string if match is None else match.group(1)
     return _parse_json(json_str, parser=parser)
 
 

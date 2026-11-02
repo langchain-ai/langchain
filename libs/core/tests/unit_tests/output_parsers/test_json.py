@@ -628,3 +628,60 @@ def test_unicode_handling() -> None:
     assert "科学文章的标题" in format_instructions, (
         "Unicode characters should not be escaped"
     )
+
+
+@pytest.mark.parametrize(
+    "fence_tag",
+    [
+        "json",
+        "json5",
+        "jsonc",
+        "JSON",
+        "js",
+        "javascript",
+        "ts",
+        "typescript",
+        "text",
+        "",
+        "json ",
+        "json5 ",
+    ],
+)
+def test_parse_json_markdown_various_fence_tags(fence_tag: str) -> None:
+    """Test parse_json_markdown correctly strips various language fence tags."""
+    content = '{"name": "Ada", "age": 36}'
+    text = f"```{fence_tag}\n{content}\n```"
+    assert parse_json_markdown(text) == {"name": "Ada", "age": 36}
+
+    # Also verify Windows CRLF newlines
+    text_crlf = f"```{fence_tag}\r\n{content}\r\n```"
+    assert parse_json_markdown(text_crlf) == {"name": "Ada", "age": 36}
+
+
+def test_partial_text_json_output_parser_with_json5_code_block() -> None:
+    """Test streaming partial json works when fence is json5 rather than json."""
+    tokens = [
+        "```",
+        "json5\n",
+        "{\n",
+        '  "country_name": "',
+        'France"',
+        ",\n",
+        '  "population_size": 67',
+        "391582",
+        "\n}",
+        "\n```",
+    ]
+
+    def input_iter(_: Any) -> Iterator[str]:
+        yield from tokens
+
+    chain = input_iter | SimpleJsonOutputParser()
+
+    assert list(chain.stream(None)) == [
+        {},
+        {"country_name": ""},
+        {"country_name": "France"},
+        {"country_name": "France", "population_size": 67},
+        {"country_name": "France", "population_size": 67391582},
+    ]
