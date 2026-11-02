@@ -30,7 +30,7 @@ dependencies = [
     "httpx>=0.28.1",
     "syrupy>=5.0.0",
     "pytest-socket>=0.7.0",
-    "pytest-benchmark",
+    "pytest-benchmark>=5.3.1",
     "pytest-codspeed",
     "pytest-recording",
     "vcrpy>=8.2.1",
