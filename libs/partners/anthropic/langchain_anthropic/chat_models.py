@@ -548,6 +548,9 @@ _MID_CONVERSATION_TOOL_CHANGES_BETA = "mid-conversation-tool-changes-2026-07-01"
 _INLINE_TOOLS_BETA = "inline-tools-2026-09-15"
 """Beta header required to define a tool in a `tool_addition` block."""
 
+_MID_CONVERSATION_OUTPUT_CONFIG_BETA = "mid-conversation-output-config-2026-07-01"
+"""Beta header required to send `output_config` on a mid-conversation `system` turn."""
+
 
 def _is_tool_change_block(block: object) -> bool:
     """Return whether a content block changes the tool set, in either spelling."""
@@ -762,6 +765,7 @@ def _format_messages(
 
         role = _message_type_lookups[message.type]
         content: str | list
+        effort_update: str | None = None
 
         if not isinstance(message.content, str):
             # parse as dict
@@ -774,6 +778,21 @@ def _format_messages(
             # populate content
             content = []
             for block in message.content:
+                if (
+                    isinstance(block, dict)
+                    and block.get("type") == "configuration_update"
+                    and message.type == "human"
+                ):
+                    effort = (block.get("reasoning") or {}).get("effort")
+                    if not effort or not mid_conversation_system_messages:
+                        msg = (
+                            "`configuration_update` needs `reasoning.effort` and a "
+                            "model whose profile sets "
+                            f"`mid_conversation_system_messages` (model: {model!r})."
+                        )
+                        raise ValueError(msg)
+                    effort_update = effort
+                    continue
                 if isinstance(block, str):
                     content.append({"type": "text", "text": block})
                 elif isinstance(block, dict):
@@ -1063,6 +1082,16 @@ def _format_messages(
                 ):
                     block.setdefault("toolset_name", toolset_name)
         formatted_messages.append({"role": role, "content": content})
+        if effort_update:
+            # Per-message effort: an empty `system` turn right after the user turn
+            # sets the effort for the reply and keeps the cached prefix intact.
+            formatted_messages.append(
+                {
+                    "role": "system",
+                    "content": [],
+                    "output_config": {"effort": effort_update},
+                }
+            )
 
     formatted_messages.extend(
         _format_in_place_system_messages(pending_system, model=model)
@@ -1542,6 +1571,27 @@ class ChatAnthropic(BaseChatModel):
         On most models, setting `reasoning_effort` to `'high'` produces exactly
         the same behavior as omitting the parameter altogether. On Opus 5.5 the
         default is `'medium'`.
+
+    !!! note "Changing reasoning effort mid-conversation"
+
+        Changing this value part-way through a conversation changes a request-level
+        parameter, which starts the prompt cache over.
+
+        Models that support per-message effort can instead carry the new effort
+        in a `configuration_update` block on the message that should start
+        using it:
+
+        ```python
+        HumanMessage(
+            [
+                {"type": "configuration_update", "reasoning": {"effort": "high"}},
+                {"type": "text", "text": "Analyze the failure modes."},
+            ]
+        )
+        ```
+
+        The new effort applies from that message onward, until another update
+        overrides it.
 
     Example: `reasoning_effort="medium"`
     """
@@ -2158,6 +2208,14 @@ class ChatAnthropic(BaseChatModel):
         )
         if tool_change_beta and tool_change_beta not in explicit_betas:
             payload["betas"] = [*explicit_betas, tool_change_beta]
+
+        has_effort_update = any(
+            message.get("role") == "system" and "output_config" in message
+            for message in (payload.get("messages") or [])
+        )
+        betas = payload.get("betas") or []
+        if has_effort_update and _MID_CONVERSATION_OUTPUT_CONFIG_BETA not in betas:
+            payload["betas"] = [*betas, _MID_CONVERSATION_OUTPUT_CONFIG_BETA]
 
         # Auto-append required beta for user_profile_id
         if payload.get("user_profile_id"):

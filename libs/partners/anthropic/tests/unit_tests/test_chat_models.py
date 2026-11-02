@@ -6426,3 +6426,45 @@ def test_thinking_display_summarized_does_not_enable_beta() -> None:
     )
     payload = llm._get_request_payload([HumanMessage("Hello, world!")])
     assert "betas" not in payload
+
+
+def test_configuration_update_sends_per_message_effort() -> None:
+    """A `configuration_update` block becomes an effort-only `system` turn."""
+    model = ChatAnthropic(model=MID_CONVERSATION_SYSTEM_MODEL, reasoning_effort="low")
+    payload = model._get_request_payload(
+        [
+            HumanMessage("Hi"),
+            AIMessage("Hello!"),
+            HumanMessage(
+                [
+                    {"type": "configuration_update", "reasoning": {"effort": "high"}},
+                    {"type": "text", "text": "Prove it."},
+                ]
+            ),
+        ]
+    )
+    assert payload["messages"][2:] == [
+        {"role": "user", "content": [{"type": "text", "text": "Prove it."}]},
+        {"role": "system", "content": [], "output_config": {"effort": "high"}},
+    ]
+    assert payload["output_config"] == {"effort": "low"}
+    assert payload["betas"] == ["mid-conversation-output-config-2026-07-01"]
+
+
+def test_configuration_update_requires_mid_conversation_system_messages() -> None:
+    """Models without in-place system turns can't take per-message effort."""
+    model = ChatAnthropic(model=MODEL_NAME)
+    with pytest.raises(ValueError, match="configuration_update"):
+        model._get_request_payload(
+            [
+                HumanMessage(
+                    [
+                        {
+                            "type": "configuration_update",
+                            "reasoning": {"effort": "high"},
+                        },
+                        {"type": "text", "text": "Hi"},
+                    ]
+                )
+            ]
+        )
