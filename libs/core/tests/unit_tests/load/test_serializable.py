@@ -16,7 +16,7 @@ from langchain_core.load.load import (
     _get_default_allowed_class_paths,
 )
 from langchain_core.load.serializable import _is_field_useful, _try_neq_default
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, RemoveMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.prompts import (
     ChatPromptTemplate,
@@ -1020,6 +1020,16 @@ class TestInitValidatorInLoad:
         )
         assert loaded == msg
         assert len(init_validator_called) == 1
+
+
+def test_load_js_remove_message() -> None:
+    serialized = {
+        "lc": 1,
+        "type": "constructor",
+        "id": ["langchain_core", "messages", "RemoveMessage"],
+        "kwargs": {"id": "msg-1"},
+    }
+    assert load(serialized, allowed_objects="messages") == RemoveMessage(id="msg-1")
 
 
 class TestMessagesAllowlistTier:
