@@ -30,12 +30,14 @@ from typing_extensions import TypedDict, override
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForLLMRun,
     CallbackManagerForRetrieverRun,
     atrace_as_chain_group,
     trace_as_chain_group,
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import (
+    BaseChatModel,
     FakeListChatModel,
     FakeListLLM,
     FakeStreamingListLLM,
@@ -50,7 +52,8 @@ from langchain_core.output_parsers import (
     CommaSeparatedListOutputParser,
     StrOutputParser,
 )
-from langchain_core.outputs.chat_generation import ChatGeneration
+from langchain_core.outputs.chat_generation import ChatGeneration, ChatGenerationChunk
+from langchain_core.outputs.chat_result import ChatResult
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 from langchain_core.prompts import (
@@ -4126,6 +4129,60 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     lambda_mock.reset_mock()
 
 
+def _retry_value_errors(exc: BaseException) -> bool:
+    return isinstance(exc, ValueError)
+
+
+def test_retrying_with_predicate(mocker: MockerFixture) -> None:
+    def _lambda(x: int) -> int:
+        if x == 1:
+            msg = "x is 1"
+            raise ValueError(msg)
+        msg = "x is 2"
+        raise RuntimeError(msg)
+
+    lambda_mock = mocker.Mock(side_effect=_lambda)
+    runnable = RunnableLambda(lambda_mock).with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=_retry_value_errors,
+    )
+
+    with pytest.raises(ValueError, match="x is 1"):
+        runnable.invoke(1)
+    assert lambda_mock.call_count == 2  # retried
+    lambda_mock.reset_mock()
+
+    with pytest.raises(RuntimeError, match="x is 2"):
+        runnable.invoke(2)
+    assert lambda_mock.call_count == 1  # did not retry
+
+
+async def test_async_retrying_with_predicate(mocker: MockerFixture) -> None:
+    def _lambda(x: int) -> int:
+        if x == 1:
+            msg = "x is 1"
+            raise ValueError(msg)
+        msg = "x is 2"
+        raise RuntimeError(msg)
+
+    lambda_mock = mocker.Mock(side_effect=_lambda)
+    runnable = RunnableLambda(lambda_mock).with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=_retry_value_errors,
+    )
+
+    with pytest.raises(ValueError, match="x is 1"):
+        await runnable.ainvoke(1)
+    assert lambda_mock.call_count == 2  # retried
+    lambda_mock.reset_mock()
+
+    with pytest.raises(RuntimeError, match="x is 2"):
+        await runnable.ainvoke(2)
+    assert lambda_mock.call_count == 1  # did not retry
+
+
 def test_runnable_lambda_stream() -> None:
     """Test that stream works for both normal functions & those returning Runnable."""
     # Normal output should work
@@ -6010,3 +6067,67 @@ def test_runnable_sequence_v1_output_schema_with_pick() -> None:
     schema = sequence.get_output_jsonschema()
     assert set(schema["properties"]) == {"a"}
     assert "a" in schema["required"]
+
+
+class _ReasonsThenAnswers(BaseChatModel):
+    @property
+    def _llm_type(self) -> str:
+        return "reasons-then-answers"
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        raise NotImplementedError
+
+    @override
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(content=[{"type": "thinking", "thinking": "hmm"}])
+        )
+        for text in ["Hel", "lo", " world"]:
+            yield ChatGenerationChunk(message=AIMessageChunk(content=text))
+
+
+class _ModelOutput(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.content: Any = None
+
+    @override
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+        generation = response.generations[0][0]
+        assert isinstance(generation, ChatGeneration)
+        self.content = generation.message.content
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_streaming_a_reasoning_block_then_text_adds_the_text_once(
+    *, use_async: bool
+) -> None:
+    received: list[Any] = []
+
+    def record(message: BaseMessage) -> BaseMessage:
+        received.append(message.content)
+        return message
+
+    chain = _ReasonsThenAnswers() | RunnableLambda(record)
+    model_output = _ModelOutput()
+    config: RunnableConfig = {"callbacks": [model_output]}
+    if use_async:
+        _ = [chunk async for chunk in chain.astream("hi", config)]
+    else:
+        _ = list(chain.stream("hi", config))
+
+    content = [{"type": "thinking", "thinking": "hmm"}, "Hello world"]
+    assert received == [content]
+    assert model_output.content == content

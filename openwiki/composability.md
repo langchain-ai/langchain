@@ -1,604 +1,685 @@
 ---
 type: "Concept"
-title: "Composability and LCEL Chains"
-description: "How Runnable components compose through LCEL operators, creating reusable workflows with automatic async, batch, and streaming support."
-tags: ["composability", "LCEL", "runnables", "chaining", "operators"]
-sources:
-  - id: openwiki-source-a1981e868973f6fd7f71e12e
-    resource: repo://libs/core/langchain_core/runnables/base.py
-  - id: openwiki-source-48e94bbe49ab4f33ba87e9cb
-    resource: repo://libs/core/langchain_core/runnables/branch.py
-  - id: openwiki-source-f9f4c1dc4f9cdf80d824ce15
-    resource: repo://libs/core/langchain_core/runnables/fallbacks.py
-  - id: openwiki-source-de6c904bd0171642bd50f6d9
-    resource: repo://libs/core/langchain_core/runnables/router.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+title: "Agent Composability: Building Complex Agents"
+description: "Patterns for composing agents through middleware layers, subagent delegation, tool selection strategies, and context management across hierarchical agent workflows."
+tags: ["composability", "agents", "middleware", "subagents", "tool-delegation", "context-management"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-10-20T08:25:57.412Z
+sources:
+  - id: openwiki-source-2bb5c49861e72a9099b51970
+    resource: repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py
+  - id: openwiki-source-71e882e1ac9757ea8e959a7c
+    resource: repo://libs/langchain_v1/langchain/agents/factory.py
+  - id: openwiki-source-737abffff349404aff61cdc1
+    resource: repo://libs/langchain_v1/langchain/agents/middleware/provider_tool_search.py
+  - id: openwiki-source-a5eb2874945fdc55df0c578f
+    resource: repo://libs/langchain_v1/langchain/agents/middleware/tool_selection.py
+  - id: openwiki-source-03e8ca0eebe37feda8566793
+    resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
+generated: { by: "openwiki/0.5.0", at: "2026-10-20T08:25:57.412Z" }
 ---
-
 
 ## Overview
 
-Composability is the core feature of LangChain's Runnable protocol: the ability to declaratively chain, parallelize, and conditionally route components. Every composed chain automatically inherits sync (`invoke`), async (`ainvoke`), batch (`batch`/`abatch`), and streaming (`stream`/`astream`) capabilities—with optimizations for efficiency.
+Agent composability in LangChain enables building complex, hierarchical agent systems through three primary mechanisms: **middleware composition** (layered request/response interception), **subagent delegation** (tool-based agent dispatch), and **tool selection strategies** (filtering and routing). These patterns allow multiple agents to coordinate, share context, and delegate specialized tasks while maintaining observability and fault isolation.
 
-The two main composition primitives are **`RunnableSequence`** (sequential chaining via the `|` operator) and **`RunnableParallel`** (parallel execution via dict syntax). Conditional routing is achieved with **`RunnableBranch`** and **`RouterRunnable`**.
+The composability model is fundamentally built on **middleware layers** that wrap and transform agent execution at multiple hooks (before/after agent, before/after model, around tool execution), combined with **parallel/sequential tool execution** via LangGraph's `Send` command and **state schema composition** that merges input from multiple agents into unified workflows.
 
-## Sequential Composition: The `|` Operator
+## Middleware Composition: Layering Request/Response Handlers
 
-The **pipe operator** (`|`) chains Runnables in sequence, with each step's output becoming the next step's input. This is the most common composition pattern.
+Middleware forms the backbone of agent composability. Each middleware instance registers hooks that intercept execution at well-defined points, enabling cross-cutting concerns without modifying core agent logic.
 
-```python
-from langchain_core.runnables import RunnableLambda
+### Middleware Stack Architecture
 
-add_one = RunnableLambda(lambda x: x + 1)
-mul_two = RunnableLambda(lambda x: x * 2)
-
-sequence = add_one | mul_two
-sequence.invoke(1)  # (1 + 1) * 2 = 4
-```
-
-The `|` operator creates a **`RunnableSequence`**, which:
-- Invokes each step in order, passing output to the next input
-- Flattens nested sequences for efficiency
-- Automatically preserves streaming properties if all steps support the `transform` method
-- Supports both sync and async execution
-
-### Data Flow
-
-```
-Input → Step 1 → Step 2 → Step 3 → Output
-```
-
-When a dict is piped into a sequence, it becomes a **`RunnableParallel`**:
+When multiple middleware are registered, they compose into a stack where **first in the list becomes the outermost layer**:
 
 ```python
-sequence = add_one | {
-    "mul_2": RunnableLambda(lambda x: x * 2),
-    "mul_5": RunnableLambda(lambda x: x * 5),
-}
-sequence.invoke(1)  # {'mul_2': 4, 'mul_5': 10}
-```
-
-## Parallel Composition: Branching with `+` and Dict Syntax
-
-Parallel execution invokes multiple Runnables concurrently on the **same input**. This is achieved via dict literals within a sequence or directly with **`RunnableParallel`**.
-
-### Dict Literal Syntax
-
-```python
-from langchain_core.runnables import RunnableLambda, RunnableParallel
-
-add_one = RunnableLambda(lambda x: x + 1)
-mul_two = RunnableLambda(lambda x: x * 2)
-mul_three = RunnableLambda(lambda x: x * 3)
-
-# Dict syntax creates a RunnableParallel
-sequence = add_one | {
-    "mul_2": mul_two,
-    "mul_3": mul_three,
-}
-sequence.invoke(1)
-# Output: {'mul_2': 4, 'mul_3': 6}
-```
-
-### Explicit RunnableParallel
-
-```python
-parallel = RunnableParallel(
-    mul_2=mul_two,
-    mul_3=mul_three,
+from langchain.agents import create_agent
+from langchain.agents.middleware import (
+    AgentMiddleware,
+    ModelRequest,
+    ModelResponse,
 )
-parallel.invoke(2)
-# Output: {'mul_2': 4, 'mul_3': 6}
+
+class LoggingMiddleware(AgentMiddleware):
+    def wrap_model_call(self, request, handler):
+        print(f"Calling model with {len(request.tools)} tools")
+        response = handler(request)
+        print(f"Model returned {len(response.result)} messages")
+        return response
+
+class RetryMiddleware(AgentMiddleware):
+    def wrap_model_call(self, request, handler):
+        for attempt in range(3):
+            try:
+                return handler(request)
+            except Exception as e:
+                if attempt == 2:
+                    raise
+                print(f"Retry attempt {attempt + 1}")
+
+# Middleware order: LoggingMiddleware wraps RetryMiddleware wraps the model
+agent = create_agent(
+    model="openai:gpt-4o",
+    tools=[...],
+    middleware=[
+        LoggingMiddleware(),
+        RetryMiddleware(),
+    ]
+)
 ```
 
-### Concurrent Execution
+**Control flow:** LoggingMiddleware.wrap_model_call → RetryMiddleware.wrap_model_call → actual model execution
 
-- **`RunnableParallel`** creates independent input copies for each branch using `atee` (async) or `safetee` (sync)
-- Each branch executes concurrently, with chunks yielded in the order they complete
-- For async streaming, tasks are managed with `asyncio.wait(return_when=FIRST_COMPLETED)` to emit output as soon as any branch produces a chunk
-- The final result is a dict combining outputs from all branches
+Middleware receive a `handler` callback (the next layer) and must invoke it to continue execution. Each middleware can:
+- **Inspect** the request or response without modification
+- **Rewrite** the request (e.g., modify tools, system message, state) before calling handler
+- **Short-circuit** execution (skip handler entirely to return early)
+- **Retry** by calling handler multiple times
+- **Return commands** from `wrap_model_call` or `wrap_tool_call` to control graph flow
 
-## Batching: Parallel Invocation over Multiple Inputs
+### Lifecycle Hooks
 
-Batching processes multiple inputs efficiently through a pipeline. Unlike parallel branching, batching applies the **same sequence** to each input in parallel.
+Each agent execution triggers multiple hooks in sequence:
 
-### Sync Batch
+1. **`before_agent(state, runtime)`** – Runs once at start, before the first model call
+2. **`before_model(state, runtime)`** – Runs before each model invocation; can update state or jump to different nodes
+3. **`wrap_model_call(request, handler)`** – Intercepts the actual model call; middleware chains are composed here
+4. **`after_model(state, runtime)`** – Runs after model response; can filter tool calls or update state
+5. **`wrap_tool_call(request, handler)`** – Intercepts each tool execution
+6. **`after_agent(state, runtime)`** – Runs once at end, after loop terminates
+
+### State Flow Through Middleware
+
+All hooks receive `state: AgentState[ResponseT]` and `runtime: Runtime[ContextT]`. The `AgentState` is a TypedDict containing:
 
 ```python
-sequence = add_one | mul_two
-results = sequence.batch([1, 2, 3])
-# [4, 6, 8]  # Each input processed in parallel via thread pool
+class AgentState(TypedDict):
+    messages: Required[list[AnyMessage]]      # Conversation history
+    jump_to: NotRequired[JumpTo | None]       # "model" | "tools" | "end" (ephemeral)
+    structured_response: NotRequired[Any]     # Parsed structured output (if configured)
 ```
 
-### Async Batch
+Hooks return `dict[str, Any] | None` for state updates. Updates are merged into the state using LangGraph reducers (e.g., `add_messages` for the `messages` field). The `jump_to` field allows middleware to override default routing—set to `"tools"` to skip the model, `"model"` to loop back, or `"end"` to exit early.
+
+### Model Call Interception
+
+The `wrap_model_call` hook provides deepest control over model behavior. The middleware receives a `ModelRequest` containing:
+
+- **`model`**: The LLM instance
+- **`messages`**: List of conversation messages (excluding system prompt)
+- **`system_message`**: SystemMessage instance (or None)
+- **`tools`**: List of available tools
+- **`tool_choice`**: Tool selection preference (e.g., `required`, `any`, specific tool name)
+- **`response_format`**: Structured output specification (if enabled)
+- **`state`**: Current agent state dictionary
+- **`runtime`**: Runtime context with access to checkpointer, store, etc.
+
+Middleware can call `request.override(**updates)` to create a modified request:
 
 ```python
-results = await sequence.abatch([1, 2, 3])
-# [4, 6, 8]
+class ToolFilteringMiddleware(AgentMiddleware):
+    def wrap_model_call(self, request, handler):
+        # Keep only tools whose names start with 'safe_'
+        filtered_tools = [
+            t for t in request.tools
+            if t.name.startswith('safe_')
+        ]
+        modified_request = request.override(tools=filtered_tools)
+        return handler(modified_request)
 ```
 
-### Implementation
+The handler returns a `ModelResponse` (or `AIMessage` or `ExtendedModelResponse` for command support), which middleware can inspect, modify, or replace before returning to the next layer.
 
-- Default `batch` uses a thread pool executor via `get_executor_for_config`
-- `abatch` uses `asyncio.gather` with concurrency control via `max_concurrency`
-- Each step in the sequence batches its inputs independently
-- **`RunnableSequence`** calls `batch` on each step in order, feeding outputs to the next
+## Parallel and Sequential Tool Execution: Using `Send`
 
-## Streaming: Token-by-Token Output
+The agent's tool dispatch layer supports both parallel and sequential execution patterns through LangGraph's `Send` command. When a model requests multiple tools, the graph can dispatch them in parallel, each receiving its own isolated tool call.
 
-Streaming emits output chunks as they are produced, enabling real-time responses from LLMs and other sequential generators.
+### Parallel Tool Dispatch via `Send`
 
-### Stream Method
+The default tool routing dispatches each tool call independently:
 
 ```python
-for chunk in sequence.stream(1):
-    print(chunk)  # Intermediate outputs as they become available
+# In the model → tools edge decision logic:
+if pending_tool_calls:
+    # Each tool call gets a separate Send to the tools node
+    return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 ```
 
-### Astream Method (Async)
+Each `Send` targets the tools node with a single `[tool_call]` in a list. The tools node executes it concurrently with other Sends. This enables true parallel execution:
+
+- Tool 1 and Tool 2 run concurrently if the model called both
+- Results arrive and are added to state in any order
+- The graph reconvenes after all Send tasks complete
+- The model is invoked again to process all results together
+
+### Implementation Details
+
+The tools node receives each tool call via `Send` and:
+1. Looks up the tool by name
+2. Invokes `wrap_tool_call` middleware for interception
+3. Executes the tool with arguments
+4. Returns a `ToolMessage` with the result
+
+Middleware can override tool execution via `wrap_tool_call`:
 
 ```python
-async for chunk in sequence.astream(1):
-    print(chunk)  # Non-blocking iteration
+class ToolValidationMiddleware(AgentMiddleware):
+    def wrap_tool_call(self, request, execute):
+        # Validate arguments before execution
+        if not self.is_valid(request.tool_call):
+            return ToolMessage(
+                content="Invalid arguments",
+                tool_call_id=request.tool_call["id"],
+                status="error",
+            )
+        return execute(request)
 ```
 
-### Streaming Pipeline
+### Sequential Tool Handling
 
-A **`RunnableSequence`** preserves streaming properties:
-- If all steps implement `transform` (which processes `Iterator[Input] → Iterator[Output]`), streaming passes through the entire pipeline
-- If any step doesn't support `transform`, streaming blocks until that step completes, then resumes
-- **`RunnableLambda`** does not implement `transform` by default; use **`RunnableGenerator`** for custom streaming logic
-
-### Example: Prompt → Model → Parser
+For tools that must run in a specific order, use middleware to redirect:
 
 ```python
-from langchain_core.prompts import ChatPromptTemplate
+class SequentialToolMiddleware(AgentMiddleware):
+    def after_model(self, state, runtime):
+        # Inspect tool calls and reorder them
+        last_message = state["messages"][-1]
+        if isinstance(last_message, AIMessage):
+            # Reorder tool calls as needed
+            reordered = self.reorder_tool_calls(last_message.tool_calls)
+            # Update the message to reflect new order
+            last_message.tool_calls[:] = reordered
+        return None
+```
+
+## Subagent Composition: Tool-Based Agent Delegation
+
+Subagents enable hierarchical task delegation. A parent agent invokes a tool that internally creates and runs a child agent, receiving the result back as a tool message.
+
+### SubagentTransformer: Detecting Subagent Boundaries
+
+The `SubagentTransformer` automatically detects when a nested agent run boundary occurs and surfaces it via `run.subagents`. A nested run is considered a subagent when:
+
+1. It is created via `create_agent(name=...)` with an explicit name
+2. Its `lc_agent_name` differs from its parent's name
+3. It was triggered by a tool call (joined via `cause` metadata)
+
+```python
+from langchain.agents import SubagentTransformer
+
+# The transformer is automatically added by create_agent's default transformer list
+transformer = SubagentTransformer(scope=())
+
+# When consuming a run stream with this transformer:
+# run.subagents yields SubagentRunStream or AsyncSubagentRunStream handles
+```
+
+Each subagent handle provides:
+- **`name`**: The subagent's configured name
+- **`cause`**: Metadata about the triggering tool call (LifecycleCause dict with `type: "toolCall"` and `tool_call_id`)
+- **`status`**: Final status ("success", "failed", or running)
+- **`error`**: Optional error message if failed
+
+### Creating Delegating Tools
+
+A tool can create and invoke a subagent:
+
+```python
+from langchain.agents import create_agent
+
+def weather_lookup_tool(location: str, *, runtime) -> str:
+    """Look up weather by delegating to a weather specialist agent."""
+    # Create a child agent with specialized tools
+    weather_agent = create_agent(
+        model="openai:gpt-4o",
+        name="weather_specialist",  # Important: sets lc_agent_name
+        tools=[get_forecast, get_historical_data],
+        system_prompt="You are a weather expert.",
+    )
+    
+    # Invoke the subagent
+    result = weather_agent.invoke({
+        "messages": [{"role": "user", "content": f"Weather for {location}?"}]
+    })
+    
+    # Extract the final response
+    last_message = result["messages"][-1]
+    return last_message.content if hasattr(last_message, 'content') else str(result)
+```
+
+The `runtime` parameter is injected by the middleware framework and provides access to:
+- **`state`**: Current agent state (via CONFIG_KEY_READ at execution time)
+- **`checkpointer`**: Checkpoint store for resuming interrupted runs
+- **`store`**: LangGraph persistent memory store
+- **`context`**: User-provided runtime context (type `ContextT`)
+
+### State Merging Across Subagents
+
+When a subagent completes, its state is not automatically merged with the parent. The delegating tool must extract relevant outputs:
+
+```python
+def research_agent_tool(topic: str, *, runtime) -> str:
+    """Delegate research to a specialized agent, return its findings."""
+    research_agent = create_agent(
+        model="openai:gpt-4o",
+        name="researcher",
+        tools=[search_web, read_article],
+    )
+    
+    result = research_agent.invoke({
+        "messages": [{"role": "user", "content": f"Research {topic}"}]
+    })
+    
+    # Return structured findings for the parent agent to use
+    findings = {
+        "topic": topic,
+        "summary": result["messages"][-1].content,
+        "sources": extract_sources(result["messages"]),
+    }
+    return json.dumps(findings)
+```
+
+The parent agent receives this result as a `ToolMessage` and can use it for further reasoning.
+
+## Tool Selection Strategies
+
+When an agent has many tools, filtering to only relevant ones improves efficiency and focus. LangChain provides multiple strategies:
+
+### 1. LLM-Based Tool Selection
+
+The `LLMToolSelectorMiddleware` uses a small language model to select the most relevant tools before calling the main model:
+
+```python
+from langchain.agents.middleware import LLMToolSelectorMiddleware
+
+selector = LLMToolSelectorMiddleware(
+    model="openai:gpt-5.5-mini",  # Fast, cheaper model for selection
+    max_tools=5,                    # Limit to 5 most relevant tools
+)
+
+agent = create_agent(
+    model="openai:gpt-4o",
+    tools=[tool1, tool2, tool3, ...tool50],  # Many tools
+    middleware=[selector],
+)
+```
+
+How it works:
+1. Before the main model call, the selector model receives the user's query and full tool list
+2. The selector model returns a structured list of tool names ranked by relevance
+3. Only the selected tools are passed to the main model
+4. The main model works with a reduced set and focuses better
+
+Configuration options:
+- **`max_tools`**: Maximum number of tools to select (default: 10)
+- **`model`**: Which model to use for selection (default: inferred from main model)
+- **`on_parsing_failure`**: Fallback if the selector fails (`"error"`, `"none"`, `"all"`, or a list of tool names)
+
+### 2. Provider-Native Tool Search
+
+The `ProviderToolSearchMiddleware` defers tool schema loading to the provider (Anthropic, OpenAI). The provider includes a special "tool search" tool that lets the model retrieve full tool schemas only when needed:
+
+```python
+from langchain.agents.middleware import ProviderToolSearchMiddleware
+
+agent = create_agent(
+    model="anthropic:claude-opus-4-8",
+    tools=[tool1, tool2, ...tool100],  # Many tools
+    middleware=[
+        ProviderToolSearchMiddleware(searchable_tools=[
+            "lookup_order",
+            "check_inventory",
+            "get_shipping_info",
+        ])
+    ],
+)
+```
+
+Benefits:
+- Initial request payload is small (only tool names, not schemas)
+- Model can use the `tool_search_tool` to search for relevant tools dynamically
+- Provider retrieves matching tool schemas on-demand
+- Scales well with hundreds of tools
+
+Only Anthropic and OpenAI support provider-native tool search. The middleware validates this at runtime.
+
+### 3. Exact Tool Matching
+
+For deterministic tool selection, middleware can implement exact matching on known conditions:
+
+```python
+class ContextualToolMiddleware(AgentMiddleware):
+    """Route to different tools based on context."""
+    
+    def wrap_model_call(self, request, handler):
+        # Check if this is a file operation
+        if any("file" in msg.content.lower() for msg in request.messages):
+            # Keep only file tools
+            file_tools = [t for t in request.tools if "file" in t.name.lower()]
+            request = request.override(tools=file_tools)
+        
+        return handler(request)
+```
+
+This approach is fast, deterministic, and suitable for small tool sets.
+
+## Context Passing: Parent to Subagent
+
+When invoking subagents, the parent can pass context that shapes the subagent's behavior:
+
+### Context Via System Prompt
+
+```python
+def delegating_tool(query: str, *, runtime) -> str:
+    # Parent context: user's stated preferences
+    user_preferences = runtime.state.get("user_preferences", {})
+    
+    subagent = create_agent(
+        model="openai:gpt-4o",
+        name="child_agent",
+        tools=[...],
+        system_prompt=(
+            f"You are helping a user with preferences: {user_preferences}. "
+            f"Original request: {query}"
+        ),
+    )
+    
+    result = subagent.invoke({"messages": [{"role": "user", "content": query}]})
+    return result["messages"][-1].content
+```
+
+### Context Via State
+
+For more structured context, pass data in the initial messages:
+
+```python
+def delegating_tool(task: str, *, runtime) -> str:
+    # Extract context from parent state
+    conversation_history = runtime.state.get("messages", [])
+    
+    subagent = create_agent(
+        model="openai:gpt-4o",
+        name="specialized_agent",
+        tools=[...],
+    )
+    
+    # Seed the subagent with parent's conversation context
+    result = subagent.invoke({
+        "messages": [
+            *conversation_history[-3:],  # Last 3 parent messages for context
+            {"role": "user", "content": task},
+        ]
+    })
+    
+    return extract_result(result)
+```
+
+### Context Via Runtime Store
+
+For stateful coordination across many subagents, use the LangGraph store:
+
+```python
+def delegating_tool(operation: str, *, runtime) -> str:
+    # Read shared state from the store
+    session_id = runtime.context.get("session_id")
+    user_data = runtime.store.get(f"session:{session_id}", ["user_profile"])[0]
+    
+    subagent = create_agent(
+        model="openai:gpt-4o",
+        name="worker_agent",
+        tools=[...],
+    )
+    
+    # Subagent can also write to the store
+    result = subagent.invoke({
+        "messages": [{"role": "user", "content": operation}]
+    })
+    
+    # Store the result for other subagents or parent to read
+    runtime.store.put(f"session:{session_id}", [f"result:{operation}"], json.dumps(result))
+    
+    return "Operation completed"
+```
+
+## State Schema Composition
+
+When middleware adds custom state fields or subagents return structured state, those schemas must be merged into the agent's overall state.
+
+### Declaring Custom State in Middleware
+
+Middleware can extend `AgentState` with additional fields:
+
+```python
+from typing_extensions import TypedDict
+from langchain.agents.middleware import (
+    AgentMiddleware,
+    AgentState,
+    OmitFromInput,
+)
+
+class CustomState(AgentState):
+    """Extended state with middleware-specific fields."""
+    
+    analysis: dict  # Added by analysis middleware, omitted from input
+    retry_count: int  # Counts retries, omitted from both input and output
+
+
+class AnalysisMiddleware(AgentMiddleware):
+    state_schema = CustomState
+    
+    def after_model(self, state: CustomState, runtime):
+        # Populate analysis field
+        return {
+            "analysis": {
+                "tool_count": len(state.get("messages", [])),
+                "complexity": self.rate_complexity(state),
+            }
+        }
+```
+
+When `create_agent` is called with this middleware, it automatically merges `CustomState` into the final state schema.
+
+### Schema Merging Rules
+
+When multiple middleware declare state extensions:
+1. Schemas are merged left-to-right (first middleware's fields override later ones for conflicts)
+2. Fields marked with `OmitFromSchema`, `OmitFromInput`, `OmitFromOutput` are excluded from the respective schemas
+3. Reducer annotations (e.g., `add_messages`) are preserved
+4. The final schema is published as the agent's `input_schema` and `output_schema`
+
+## Failure Handling in Subagent Scenarios
+
+Subagent failures need careful handling to avoid cascading errors.
+
+### Tool-Level Failure Handling
+
+The delegating tool can catch and report subagent failures:
+
+```python
+def resilient_delegation_tool(query: str, *, runtime) -> str:
+    """Delegate work with graceful fallback."""
+    try:
+        subagent = create_agent(
+            model="openai:gpt-4o",
+            name="worker",
+            tools=[...],
+        )
+        result = subagent.invoke({"messages": [{"role": "user", "content": query}]})
+        return result["messages"][-1].content
+    except Exception as e:
+        # Return a fallback message instead of raising
+        logger.error(f"Subagent failed: {e}")
+        return f"I couldn't complete that task. Please try again or rephrase your request."
+```
+
+### Middleware-Level Failure Handling
+
+Use `wrap_tool_call` to intercept and handle failures:
+
+```python
+class ToolErrorRecoveryMiddleware(AgentMiddleware):
+    def wrap_tool_call(self, request, execute):
+        try:
+            return execute(request)
+        except ValueError as e:
+            # Return an error message instead of propagating
+            return ToolMessage(
+                content=f"Tool execution failed: {str(e)}. Please try with different parameters.",
+                tool_call_id=request.tool_call["id"],
+                name=request.tool_call["name"],
+                status="error",
+            )
+```
+
+### Timeout and Resource Limits
+
+For long-running subagents, use timeouts:
+
+```python
+import signal
+import contextlib
+
+def delegating_tool_with_timeout(query: str, *, runtime, timeout_seconds=30) -> str:
+    """Delegate with timeout."""
+    subagent = create_agent(
+        model="openai:gpt-4o",
+        name="worker",
+        tools=[...],
+    )
+    
+    def timeout_handler(signum, frame):
+        raise TimeoutError("Subagent exceeded time limit")
+    
+    old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(timeout_seconds)
+    
+    try:
+        result = subagent.invoke({"messages": [{"role": "user", "content": query}]})
+        return result["messages"][-1].content
+    except TimeoutError:
+        return "The operation took too long. Try a simpler request."
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
+```
+
+## End-to-End Example: Multi-Tier Agent Hierarchy
+
+Here's a complete example showing a 3-tier agent system:
+
+```python
+from langchain.agents import create_agent
+from langchain.agents.middleware import LLMToolSelectorMiddleware
 from langchain_openai import ChatOpenAI
-from langchain_core.output_parsers import StrOutputParser
+from langchain_core.tools import tool
 
-prompt = ChatPromptTemplate.from_template("What is {topic}?")
-model = ChatOpenAI()
-parser = StrOutputParser()
+# Tier 3: Specialist agents for specific domains
 
-chain = prompt | model | parser
+@tool
+def get_weather(location: str) -> str:
+    """Get current weather."""
+    return f"Weather in {location}: Sunny, 72°F"
 
-# Stream tokens as the model generates them
-for chunk in chain.stream({"topic": "composability"}):
-    print(chunk, end="", flush=True)
-```
-
-In this chain:
-1. `ChatPromptTemplate` formats the input dict into a string prompt
-2. `ChatOpenAI` streams tokens as they arrive from the API
-3. `StrOutputParser` passes tokens through unchanged
-
-Tokens flow end-to-end without waiting for the full response.
-
-## Conditional Routing: RunnableBranch and RouterRunnable
-
-Conditional logic routes inputs to different branches based on predicates.
-
-### RunnableBranch: Predicate-Based Routing
-
-A **`RunnableBranch`** evaluates conditions in order and executes the first matching branch:
-
-```python
-from langchain_core.runnables import RunnableBranch, RunnableLambda
-
-branch = RunnableBranch(
-    (lambda x: isinstance(x, int), RunnableLambda(lambda x: x * 2)),
-    (lambda x: isinstance(x, str), RunnableLambda(lambda x: x.upper())),
-    RunnableLambda(lambda x: "unknown"),
+weather_agent = create_agent(
+    model="openai:gpt-4o-mini",
+    name="weather_specialist",
+    tools=[get_weather],
+    system_prompt="You are a weather expert.",
 )
 
-branch.invoke(5)        # 10
-branch.invoke("hello")  # "HELLO"
-branch.invoke(None)     # "unknown"
-```
+@tool
+def search_flights(destination: str) -> str:
+    """Search available flights."""
+    return f"Flights to {destination}: AA100, UA201, DL303"
 
-Conditions are evaluated sequentially; the first truthy result selects its corresponding Runnable. If no condition matches, the default branch executes.
-
-### RouterRunnable: Key-Based Routing
-
-A **`RouterRunnable`** routes based on a string key in the input:
-
-```python
-from langchain_core.runnables.router import RouterRunnable
-
-add = RunnableLambda(lambda x: x + 1)
-square = RunnableLambda(lambda x: x ** 2)
-
-router = RouterRunnable(runnables={"add": add, "square": square})
-router.invoke({"key": "square", "input": 3})  # 9
-router.invoke({"key": "add", "input": 3})     # 4
-```
-
-The input is a dict with `"key"` (which Runnable to route to) and `"input"` (the data).
-
-## Composition with RunnablePassthrough
-
-**`RunnablePassthrough`** forwards inputs unchanged or with additional keys, useful for preserving context in parallel branches:
-
-```python
-from langchain_core.runnables import RunnablePassthrough
-
-chain = (
-    RunnableLambda(lambda x: x + 1)
-    | {
-        "original": RunnablePassthrough(),
-        "modified": RunnableLambda(lambda x: x * 2),
-    }
+travel_agent = create_agent(
+    model="openai:gpt-4o-mini",
+    name="travel_specialist",
+    tools=[search_flights],
+    system_prompt="You are a travel booking specialist.",
 )
 
-chain.invoke(5)
-# {'original': 6, 'modified': 12}
-```
+# Tier 2: Coordinator delegates to specialists
 
-Here, the passthrough preserves the intermediate result for reuse by another branch.
+def weather_tool(location: str, *, runtime) -> str:
+    """Get weather by delegating to weather specialist."""
+    result = weather_agent.invoke({
+        "messages": [{"role": "user", "content": f"Weather for {location}"}]
+    })
+    return result["messages"][-1].content
 
-## Async Equivalents
+def travel_tool(destination: str, *, runtime) -> str:
+    """Find flights by delegating to travel specialist."""
+    result = travel_agent.invoke({
+        "messages": [{"role": "user", "content": f"Find flights to {destination}"}]
+    })
+    return result["messages"][-1].content
 
-Every method has an async counterpart:
-
-| Sync | Async |
-|------|-------|
-| `invoke(input)` | `ainvoke(input)` |
-| `batch(inputs)` | `abatch(inputs)` |
-| `stream(input)` | `astream(input)` |
-| `transform(Iterator[Input])` | `atransform(AsyncIterator[Input])` |
-
-Async methods integrate with the callback system and execute concurrency-aware batching via `asyncio.gather`.
-
-## Variable Binding and Context Flow
-
-In composed chains, data flows through steps along with execution context. Each step receives the output of the previous step as its input.
-
-### Context Propagation
-
-When a chain invokes, **`RunnableSequence`** creates a callback hierarchy for tracing:
-- Each step is marked as a child run using `run_manager.get_child(f"seq:step:{i + 1}")`
-- Callbacks, tags, and metadata flow through the chain via `RunnableConfig`
-- `patch_config` updates the config for each step while preserving parent context
-
-```python
-from langchain_core.runnables import RunnableLambda
-
-# Context flows through each step
-step1 = RunnableLambda(lambda x: x + 1)
-step2 = RunnableLambda(lambda x: x * 2)
-chain = step1 | step2
-
-# Invoke with tracing config
-result = chain.invoke(
-    5, 
-    config={
-        "run_name": "my_chain",
-        "callbacks": [my_tracer],
-        "tags": ["prod"],
-    }
-)
-# Each step runs with inherited config while reporting to callbacks
-```
-
-### Dict Composition and Key Selection
-
-When using dict syntax in a sequence, each dict key becomes a separate branch context:
-
-```python
-chain = step1 | {
-    "result_a": step2,
-    "result_b": step3,
-}
-
-# Output combines results from both branches
-output = chain.invoke(input)  # {'result_a': ..., 'result_b': ...}
-```
-
-Each branch (`result_a`, `result_b`) appears as a separate child run in the callback trace.
-
-## Fallback Patterns
-
-Fallbacks provide resilience by switching to alternative Runnables when one fails, without retrying the same component.
-
-### RunnableWithFallbacks Mechanics
-
-**`RunnableWithFallbacks`** wraps a primary Runnable and a list of fallbacks:
-
-1. Tries the primary Runnable first
-2. On an exception matching `exceptions_to_handle`, attempts each fallback in order
-3. Stops on the first successful execution
-4. If all fail, raises the first exception encountered
-
-Key attributes:
-- **`runnable`**: The primary Runnable to execute
-- **`fallbacks`**: A sequence of fallback Runnables (ordered)
-- **`exceptions_to_handle`**: Tuple of exception types to trigger fallback (default: all exceptions)
-- **`exception_key`**: Optional string key to pass the caught exception to fallbacks in the input dict
-
-### Fallback at Component Level
-
-```python
-from langchain_core.runnables import RunnableLambda
-
-primary_llm = ChatOpenAI(model="gpt-4")
-fallback_llm = ChatAnthropic(model="claude-3-sonnet")
-
-resilient_llm = primary_llm.with_fallbacks(
-    [fallback_llm],
-    exceptions_to_handle=(APIConnectionError,),
+coordinator_agent = create_agent(
+    model="openai:gpt-4o",
+    name="trip_coordinator",
+    tools=[weather_tool, travel_tool],
+    system_prompt="You help users plan trips by checking weather and finding flights.",
+    middleware=[LLMToolSelectorMiddleware(max_tools=2)],
 )
 
-output = resilient_llm.invoke("What is composability?")
-# Uses primary_llm; falls back to fallback_llm if APIConnectionError occurs
-```
+# Tier 1: Main entry point
 
-### Multiple Fallbacks with Provider Failover
+def orchestrator_tool(planning_request: str, *, runtime) -> str:
+    """Plan a trip by delegating to coordinator."""
+    result = coordinator_agent.invoke({
+        "messages": [{"role": "user", "content": planning_request}]
+    })
+    return result["messages"][-1].content
 
-Fallbacks are tried in order until one succeeds:
-
-```python
-model = ChatOpenAI().with_fallbacks([
-    ChatAnthropic(),        # Try second
-    ChatClaude(),          # Try third
-    ChatCohere(),          # Try fourth
-    RunnableLambda(default_response),  # Final fallback
-])
-```
-
-The chain tries each fallback sequentially until one returns successfully or all are exhausted.
-
-### Fallback at Chain Level
-
-```python
-# Construct a chain with fallback
-chain_with_fallback = (
-    prompt 
-    | resilient_llm 
-    | parser
-).with_fallbacks([
-    RunnableLambda(lambda x: "Service unavailable")
-])
-
-output = chain_with_fallback.invoke({"topic": "composability"})
-# If the entire chain fails, returns fallback response
-```
-
-### Exception Passing to Fallbacks
-
-Use `exception_key` to pass the caught exception to fallbacks as part of the input:
-
-```python
-def fallback_with_context(input_dict):
-    error = input_dict.get("error")
-    if isinstance(error, APIConnectionError):
-        return "API is currently unavailable. Please try again later."
-    return "An unexpected error occurred."
-
-chain = (
-    prompt | llm | parser
-).with_fallbacks(
-    [RunnableLambda(fallback_with_context)],
-    exception_key="error",  # Pass exception under "error" key
+main_agent = create_agent(
+    model="openai:gpt-4o",
+    name="travel_assistant",
+    tools=[orchestrator_tool],
+    system_prompt="You are a helpful travel assistant.",
 )
 
-# Input becomes {"topic": "...", "error": <caught exception>}
+# Use the system
+output = main_agent.invoke({
+    "messages": [{
+        "role": "user",
+        "content": "Plan a trip to Paris next week"
+    }]
+})
+
+print(output["messages"][-1].content)
 ```
 
-This requires all Runnables (primary and fallbacks) to accept a dictionary as input.
+**Execution flow:**
+1. `main_agent` receives the trip planning request
+2. It invokes `orchestrator_tool`, which delegates to `coordinator_agent`
+3. `coordinator_agent` with `LLMToolSelectorMiddleware` filters to relevant tools
+4. Based on the query, it calls `weather_tool` and `travel_tool` (possibly in parallel via Send)
+5. `weather_tool` invokes `weather_agent` (tier 3)
+6. `travel_tool` invokes `travel_agent` (tier 3)
+7. Results flow back up through the hierarchy
+8. `main_agent` receives the final coordinated response
 
-## Retry Patterns
+This hierarchy demonstrates:
+- **Middleware composition** (selector filters tools at tier 2)
+- **Subagent delegation** (tools create and invoke nested agents)
+- **Parallel execution** (weather and travel agents run concurrently if both are needed)
+- **State isolation** (each agent has its own state; results are manually extracted)
+- **Observability** (each tier is traced independently via `SubagentTransformer`)
 
-Retry logic automatically re-invokes a Runnable on failure, with configurable backoff and exception filtering.
+## Summary
 
-### Retry at Component Level
+Agent composability provides powerful patterns for building sophisticated multi-agent systems:
 
-```python
-from langchain_core.runnables import RunnableLambda
-from langchain_core.runnables.retry import ExponentialJitterParams
+| Pattern | Use Case | Example |
+|---------|----------|---------|
+| **Middleware layers** | Cross-cutting concerns (retry, logging, validation) | Add `RetryMiddleware` to auto-retry failed model calls |
+| **Subagent delegation** | Specialize work to child agents with focused tools | Weather expert agent invoked by travel coordinator |
+| **Tool selection** | Filter tools in large sets for efficiency | `LLMToolSelectorMiddleware` for 100+ tools |
+| **Parallel tool execution** | Run independent tools concurrently | Model calls 3 tools → 3 Sends dispatched in parallel |
+| **Context passing** | Share parent state with subagents | System prompt includes user preferences from parent |
+| **State composition** | Extend state with middleware-specific fields | Custom state schema with analysis results |
 
-llm = ChatOpenAI(model="gpt-4")
-
-resilient_llm = llm.with_retry(
-    retry_if_exception_type=(APIConnectionError, TimeoutError),
-    max_attempt_number=3,
-    wait_exponential_jitter=True,
-    exponential_jitter_params={"initial": 1, "max": 10},
-)
-
-output = resilient_llm.invoke("What is composability?")
-# Retries up to 3 times on transient errors with exponential backoff
-```
-
-### RunnableRetry Implementation
-
-**`RunnableRetry`** wraps any Runnable and applies retry logic using `tenacity`:
-
-- **`retry_exception_types`**: Tuple of exception types to retry on (default: all exceptions)
-- **`max_attempt_number`**: Maximum retry attempts (default: 3)
-- **`wait_exponential_jitter`**: Enable exponential backoff with jitter (default: True)
-- **`exponential_jitter_params`**: Customize backoff parameters (`initial`, `max`, `exp_base`, `jitter`)
-
-Retries are tracked in callbacks with tags like `retry:attempt:2` for visibility in traces.
-
-### Retry Strategy: Transient vs. Fatal Errors
-
-Best practice: retry only on transient errors, not fatal ones:
-
-```python
-model = ChatOpenAI().with_retry(
-    retry_if_exception_type=(
-        APIConnectionError,    # Transient: network issues
-        TimeoutError,          # Transient: slow API
-        RateLimitError,        # Transient: quota exceeded
-    ),
-    max_attempt_number=5,
-    exponential_jitter_params={"initial": 0.5, "max": 30},
-)
-
-# Do NOT retry on invalid input or authentication errors—these are fatal
-```
-
-### Retry at Chain Level
-
-```python
-chain = (
-    prompt 
-    | llm.with_retry(max_attempt_number=3)  # Retry at LLM level
-    | parser
-)
-
-# Better than retrying the whole chain, which wastes time on non-failing steps
-```
-
-## Chaining Patterns
-
-### Common Pattern: Prompt → Model → Parser
-
-```python
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
-from langchain_core.output_parsers import StrOutputParser
-
-chain = (
-    ChatPromptTemplate.from_template("What is {topic}?")
-    | ChatOpenAI()
-    | StrOutputParser()
-)
-
-# Single invoke
-output = chain.invoke({"topic": "LLMs"})
-
-# Batch process
-outputs = chain.batch([{"topic": "LLMs"}, {"topic": "Vectors"}])
-
-# Stream tokens
-for chunk in chain.stream({"topic": "LLMs"}):
-    print(chunk, end="", flush=True)
-```
-
-### Fan-Out / Fan-In: Parallel Processing
-
-```python
-from langchain_core.runnables import RunnableLambda, RunnablePassthrough
-
-chain = (
-    RunnablePassthrough()
-    | {
-        "summary": RunnableLambda(summarize),
-        "entities": RunnableLambda(extract_entities),
-        "sentiment": RunnableLambda(analyze_sentiment),
-    }
-)
-
-result = chain.invoke(text)
-# {'summary': '...', 'entities': [...], 'sentiment': 'positive'}
-```
-
-### Conditional Execution
-
-```python
-from langchain_core.runnables import RunnableBranch
-
-route_logic = RunnableBranch(
-    (lambda x: "math" in x.lower(), math_chain),
-    (lambda x: "code" in x.lower(), code_chain),
-    general_chain,
-)
-
-output = route_logic.invoke("How do I calculate factorial?")
-```
-
-## Type Safety and Schema Inference
-
-Chains infer input and output types from their components:
-
-```python
-sequence = add_one | mul_two
-
-# Access inferred schemas
-print(sequence.input_schema)   # Pydantic model for input
-print(sequence.output_schema)  # Pydantic model for output
-print(sequence.input_schema.model_json_schema())
-```
-
-This enables validation and documentation without explicit type annotations.
-
-## Optimization and Flattening
-
-**`RunnableSequence`** automatically flattens nested sequences:
-
-```python
-# These are equivalent:
-chain1 = step1 | step2 | step3
-chain2 = step1 | (step2 | step3)
-chain3 = (step1 | step2) | step3
-```
-
-All produce a single flat sequence with steps `[step1, step2, step3]`, avoiding unnecessary nesting overhead.
-
-## Serialization and Debugging
-
-Composed chains support serialization via the LangChain serialization system, enabling:
-- **Persistence**: Save and load chains
-- **Tracing**: Automatic callback integration for debugging via LangSmith
-- **Inspection**: Use `get_graph()` to visualize chain structure
-
-Enable debug output:
-
-```python
-from langchain_core.globals import set_debug
-
-set_debug(True)  # Print intermediate results
-chain.invoke(input)
-
-# Or use callbacks:
-from langchain_core.tracers import ConsoleCallbackHandler
-
-chain.invoke(input, config={"callbacks": [ConsoleCallbackHandler()]})
-```
-
-## Extension: Custom Runnables
-
-Implement **`Runnable`** to create custom components:
-
-```python
-from langchain_core.runnables import Runnable, RunnableConfig
-from typing import Iterator
-
-class CustomRunnable(Runnable[str, int]):
-    def invoke(self, input: str, config: RunnableConfig | None = None) -> int:
-        return len(input)
-    
-    async def ainvoke(self, input: str, config: RunnableConfig | None = None) -> int:
-        return len(input)
-    
-    def stream(self, input: str, config: RunnableConfig | None = None) -> Iterator[int]:
-        # For streaming support, implement transform
-        for char in input:
-            yield 1
-    
-    async def astream(self, input: str, config: RunnableConfig | None = None):
-        for char in input:
-            yield 1
-
-# Immediately composable
-chain = CustomRunnable() | another_step
-```
-
-Custom Runnables are automatically compatible with all composition operators.
-
-## Summary Table
-
-| Operator | Effect | Example |
-|----------|--------|---------|
-| `\|` | Sequential chaining | `step1 \| step2` |
-| Dict in sequence | Parallel branching | `step1 \| {key1: step2, key2: step3}` |
-| `RunnableBranch` | Conditional routing | `RunnableBranch((cond, runnable), default)` |
-| `RouterRunnable` | Key-based routing | `RouterRunnable({"key": runnable})` |
-| `.batch()` / `.abatch()` | Parallel input processing | `chain.batch([in1, in2])` |
-| `.stream()` / `.astream()` | Token-by-token output | `for chunk in chain.stream(input):` |
-
-See the [Runnables](runnables.md) page for protocol details and method signatures.
+By combining these patterns, you can build agents that coordinate across multiple specialized domains, recover gracefully from failures, optimize token usage, and remain fully observable.

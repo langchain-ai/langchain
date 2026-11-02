@@ -132,6 +132,49 @@ def test_convert_to_v1_from_bedrock_converse() -> None:
     assert message.content == original_content
 
 
+def test_convert_to_v1_from_converse_redacted_reasoning() -> None:
+    message = AIMessage(
+        [
+            {
+                "type": "reasoning_content",
+                "reasoning_content": {"redacted_content": b"rsn_opaque"},
+            },
+            {"type": "text", "text": "391"},
+        ],
+        response_metadata={"model_provider": "bedrock_converse"},
+    )
+    expected_content: list[types.ContentBlock] = [
+        {"type": "reasoning", "extras": {"redacted_content": b"rsn_opaque"}},
+        {"type": "text", "text": "391"},
+    ]
+    original_content = deepcopy(message.content)
+
+    assert message.content_blocks == expected_content
+    assert message.content == original_content
+
+
+def test_convert_to_v1_from_converse_redacted_reasoning_chunk() -> None:
+    chunk = AIMessageChunk(
+        content=[
+            {
+                "type": "reasoning_content",
+                "reasoning_content": {"redacted_content": b"rsn_opaque"},
+                "index": 0,
+            }
+        ],
+        response_metadata={"model_provider": "bedrock_converse"},
+    )
+    expected_content: list[types.ContentBlock] = [
+        {
+            "type": "reasoning",
+            "extras": {"redacted_content": b"rsn_opaque"},
+            "index": 0,
+        }
+    ]
+
+    assert chunk.content_blocks == expected_content
+
+
 def test_convert_to_v1_from_converse_chunk() -> None:
     chunks = [
         AIMessageChunk(

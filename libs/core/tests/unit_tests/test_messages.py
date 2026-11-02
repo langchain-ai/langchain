@@ -1110,6 +1110,21 @@ def test_merge_content(
     assert actual == expected
 
 
+@pytest.mark.parametrize(
+    "first",
+    [
+        [{"type": "text", "text": "a"}],
+        ["x"],
+    ],
+)
+def test_merge_content_leaves_the_first_list_unchanged(
+    first: list[str | dict[str, Any]],
+) -> None:
+    original = list(first)
+    merge_content(first, "b")
+    assert first == original
+
+
 def test_tool_message_content() -> None:
     ToolMessage("foo", tool_call_id="1")
     ToolMessage(["foo"], tool_call_id="1")

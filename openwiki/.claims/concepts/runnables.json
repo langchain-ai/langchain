@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:02037840318b46956ceeb132f145cef2f96daf457434c80939aa8cb83e678259",
+  "claims": [
+    {
+      "id": "claim_a6e2f6dc51a74a52a2a9c237a0424c26",
+      "statement": "Runnable is the foundational execution abstraction in LangChain's core layer, defining a generic interface (Runnable[Input, Output]) that requires only the abstract invoke() method implementation; all other execution methods (ainvoke, batch, abatch, stream, astream) have default implementations that subclasses can override for optimization.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L134-L350",
+          "version": "repo-lines-v1:sha256:c726e66dec3c2d0789041d63f17d399bc3d85356101fb5337df60327e64009e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjE3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMDY2NDAxOWM5MDdkZjg1MGVhOWUwNThmMTJiMTkyMzc0YmViM2ZjY2FiMDYxOTAzMGM2OGU2NTQ4YWQ4MTQ5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2YzE3Y2MxYzMxZWIzZmE5MjFkNGY1YzEyMDdlNTUwZjYwNzg5MWE3ODkyMzE2ZDJhNTVhMmQ5YWUwZjI2MmViIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3MTgwODU1ZDUzMGZkYjU4MzIyNDIzYTZmZGRkZTlhM2IyYTRhMDk2MjVhNWRiMzc0M2U4OTdjMDUyYmJiZGQzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiYzA2NWUwNTI5MTdjZjU4ODUzNjJlY2QyNDcwMTRmOWQ0OTFlMDdmM2Y1MzVjNzEzMjQ5NGU0ZTdkZjdlZWMxIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L886-L930",
+          "version": "repo-lines-v1:sha256:ce0b20bc6ea921495b50791454771782581489cca18dfaa49f5e96f9688b48a8:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjNzA2NTVhMDI0OTg1MzI0MWVjMjRhMTQzZDNkMWY1ZTY2NTZiODE4YzE0Yzk0Y2E3NDFhNTU1ODkzOGNjOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3OThkYmMxMzk2MDZkNTA1MGI3ZDI1YWRiY2NlY2Q5YzQyOGM3ZWE2ZTQ2ZmVjZGYwYjI3ZmE1NjMyYWI3NTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlNWYyYWYyZTU5NmU0ODk1MDBkYTJkMjdkM2IzZGRhOTFhNzQzMmEwMWNlNDQ3YWQ4NGQwM2FkZDliYjA2YjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwYTU5NTE2MjU1ZDg3ZWViNGM4NDhjNWY3ZDY4MjQyODZlY2MyMWUwYzAyMzRjOGI3ZWM3ZjE1YjY5YzRhZmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1d4c47c26ed54403bc20048bd3a40c43",
+      "statement": "All Runnables must implement invoke(input, config=None) to transform a single input into an output synchronously, while ainvoke() delegates to sync via run_in_executor by default. Similarly, stream() yields a single output from invoke() by default, while specialized implementations (chat models, streaming parsers) override to yield partial outputs incrementally.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1195-L1213",
+          "version": "repo-lines-v1:sha256:774cd69bf11c4688c21025b1d8d77046731c331a05032f7c5eb3c27ea4de1566:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkMDJmY2NjNWE1YWFkOWQyZmRmNzU2ZmM3ZmU2OTM0MGYxZDM3ODAxNzQwMTY2MzgzMjQwYzNlYTZjMWY0NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZGUyNTg3MTk2MTQ5MjYwNzFjOGZiMTlmZDg2NjE1MDU1NWYxYjAxMzU0ZjhjZDE2MDNhMTA5YTdkZGFlNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYjIzYTg5OGMzMjkxNWQ3OWNiYzVkOTAxYWYyOGY0YzI3MjUxZDM3Y2RiZDA5OTlkMWZlMmMxZjkzZDFlZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1Y2I3OGFjM2Y4ZGM5OWU0NWNjNWExZTMyM2UxNDNjMzk2MTMyMDM0YWQwMGI0NzU3MzExMmYzODM4MGQxMDYifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L886-L907",
+          "version": "repo-lines-v1:sha256:1eff67928434ddfbed49df8733ced09fcdcaed9685752f6d6c2a1cc572f78aae:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjNzA2NTVhMDI0OTg1MzI0MWVjMjRhMTQzZDNkMWY1ZTY2NTZiODE4YzE0Yzk0Y2E3NDFhNTU1ODkzOGNjOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZGUyNTg3MTk2MTQ5MjYwNzFjOGZiMTlmZDg2NjE1MDU1NWYxYjAxMzU0ZjhjZDE2MDNhMTA5YTdkZGFlNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlNWYyYWYyZTU5NmU0ODk1MDBkYTJkMjdkM2IzZGRhOTFhNzQzMmEwMWNlNDQ3YWQ4NGQwM2FkZDliYjA2YjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxOTA3ZTkyZDRmMDQ5NTU1NzQ1ZjY4ZTU3MDY5Zjg4YzA4ZTIzYTQ2YThiNTcxNGU3ZjUxZTU4ZGU1MDFhNjQifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L909-L930",
+          "version": "repo-lines-v1:sha256:b913e2c72cc2dc393ea9a9a5d0e771107d317467deae11c5429aef7f2919f50f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhMTRjNmYzN2M0MTFmMWRkOTg2MzIyZWZkNDk3Njg4NDRmZjg1N2ZhNDE3Y2ExZWIzMmM2YmJkM2VjYjdkMjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3OThkYmMxMzk2MDZkNTA1MGI3ZDI1YWRiY2NlY2Q5YzQyOGM3ZWE2ZTQ2ZmVjZGYwYjI3ZmE1NjMyYWI3NTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxNTMzNTI4MTFkZjkzMjhhMWY3YmIzMmNhYTI2OGZhYWVhNzY3ZGVkNjQ4MWVkYzZlZWNlOGRmZTMzOWMzNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwYTU5NTE2MjU1ZDg3ZWViNGM4NDhjNWY3ZDY4MjQyODZlY2MyMWUwYzAyMzRjOGI3ZWM3ZjE1YjY5YzRhZmYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6e97522466a345999f0845b1ee976c5c",
+      "statement": "The batch(inputs, config, return_exceptions) method processes multiple inputs in parallel using ThreadPoolExecutor by default, and accepts either a single config applied to all inputs or a list of configs (one per input). Subclasses override for batching-aware backends like LLM batch APIs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L932-L1010",
+          "version": "repo-lines-v1:sha256:23dd16b6cfa1c91e450ae236977de36508bac1b7027dc0205ca65ab57c7fcacd:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwNGJlZWJhNWU0ZDYzMWUxN2IwNTVhNjhhMGEzYTkyNzFjOTcxYjJkMzZkZDA3NDBmYjJmYjY4YzU1MGJhZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkYzBjY2U5N2QyODc4MmUyMmJhZWFlYTNiZjZhNjQyMzUyMWI2NmQ0MWFhMTc4MjUzZDg2OGJiNGQ4ZTZmMDkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0NDc4YTFlMTI0YTY1MmEzNDI4YTE3YWRmM2Y3YjUwOTU5ODY3NmYxZDhkNGViNGIyYmJmNTYyOWViYjRlYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1OTk1MDlmMzgxYWY1ZjBhNTZiOGU3ODgxNDJhNjYyMjU5NDJiYjVlOGU3ZWRhOTlmYjFjZjU3NGUwMGNmZDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2dd735b9b7a5432da1b4c220d631325f",
+      "statement": "The abatch() method calls ainvoke() for each input concurrently via asyncio.gather and respects max_concurrency from config to limit parallelism via gather_with_concurrency.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1066-L1112",
+          "version": "repo-lines-v1:sha256:c75e111a6ff9efa68bb805cf09b0b91f5c781c013b72c0603de9dc4273787dbb:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzODUzYzA2OTdiYzk5Njg2Y2U5YWNiODMyMDJhODk4Yzg3M2I3ZmM3NDQwNGIxMmQzOTMyNTU3NGM0NGE1OTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRjMTk3MmM3NmQ0ZWFkNzY2MGNmZDZiMDU1NmZhNTAwOGVmYzhjNTlhMWYwMTJiYzUzMzYwNDdlZDU5MjU4YmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyNWRmZTFjZDE5MDZmZGNiMzgwNjg0YWNmYjE1YTI4OWNiM2YwY2U5ZDVkMDg2OTdiNGNhZDQyMjY0NzQ1NGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_132c9ec3445842cb9e6f057114f57cca",
+      "statement": "Runnables expose input_schema and output_schema properties as Pydantic models inferred from generic type parameters or implementer-provided type hints. config_schema(include=None) returns a Pydantic model for fields marked as configurable via configurable_fields() or configurable_alternatives(), enabling runtime behavior configuration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L374-L527",
+          "version": "repo-lines-v1:sha256:5d4bd62ab54422fba251b17506891ac57c18684938cd1d0d71a27cda790770a3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1MGRlMjU4NzE5NjE0OTI2MDcxYzhmYjE5ZmQ4NjYxNTA1NTVmMWIwMTM1NGY4Y2QxNjAzYTEwOWE3ZGRhZTQwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1YWVlZjliZjkyM2U2OGIyZThhNDYwZDA3NTI3OGVhYjcxNTkzYTY5ZGMwNjgyYTFjYWQ1OGQyZTI3NTI2ZjFkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhYTIyZjIwZTFiMTA3NTk2OTViZjcwNDQyYjk4NDZjMDQ2MzVlMTY4ODcyNWFmNGRjY2IzNjU3MzMyYzU4MzBjIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_80c6032920904a8bbc8de625f95945f7",
+      "statement": "The __or__() operator creates a RunnableSequence by composing runnables sequentially; `other` can be a Runnable, callable, dict (coerced to RunnableParallel), or RunnableLike. The operator automatically flattens nested RunnableSequences for efficiency.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L648-L722",
+          "version": "repo-lines-v1:sha256:60c8a9355f19918ea595f3722b42293719d828ee6b3dc539d94abb2bdf863b90:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZGUyNTg3MTk2MTQ5MjYwNzFjOGZiMTlmZDg2NjE1MDU1NWYxYjAxMzU0ZjhjZDE2MDNhMTA5YTdkZGFlNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzN2IxMWQwNDAxMDhhNzhmMDVmNWQxZGZmZGQ2ZGY3MTU3MjdlNzNiMDJmMmJlZGZmOTg3MmZhZjhhM2QwNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjNThkMzk1NjQwZGEzOGYyZDZlZGYxNjhmMzI2YTMyNzI1NDE0NDYyYzFhMjgyMWVlNWE4NTZjYTYzZThmODEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_78824918d29a4856b9884c70aae3cf0d",
+      "statement": "RunnableSequence chains multiple Runnables sequentially where each output feeds into the next input. It optimizes batch and stream operations by calling each step's batch/stream method in order. If all steps implement transform(), the sequence chains them for end-to-end streaming; otherwise, streaming begins after the last blocking step.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L3079-L3235",
+          "version": "repo-lines-v1:sha256:9e17c9b4d22b465eb4fe938622668409ee9d6c526c045b1b81b976345954edad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiZWUyODI4YWI5ODNjODVkZTdkOWUxOGNlZjVhYTQzZGY0MTJiYmRiY2FiMDc3ZjdmMDEzYjUzZWQ3ZTRlNzM3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiYmE4N2JmMGViZjZiMTlkMmYyNTU5MGE0MzI4OTgxYTcyOWY4YTc0NDc2YjM3YTBjNmMwZjk4ODk4ZGZmZDFiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjYmVjNzljZDAzZDA2YmE2ZmU3MDBlMDhiZDA0ZjFmMDA0ZDFkZTg0ODMzMzMwN2U2ZGE5YTJlZjcyZTZmODZmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjN2YzZjY0OGIxYjQxYTAyYWJkYWZjMDZiYWIwODIxZmExNjZmMDJmNGZmZDBlMWFkMWFjZGY0ZDY3ZjJlY2I4In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_100ba4a52e44449282a69c29150b9bcd",
+      "statement": "RunnableParallel invokes multiple Runnables concurrently with the same input and collects results into a dict. It can be instantiated directly or via a dict literal in a sequence. Sync invoke uses thread pool executor; async ainvoke uses asyncio.gather with concurrency control from max_concurrency.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L3868-L3950",
+          "version": "repo-lines-v1:sha256:51a7d6b77803d9585e4f749ba8bcd2a3b2e403611c448b758555156df662e148:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjN2E2YTkzNGU1YjIzOTgzOTBmNmRhYWUyYmJkYTQzYjgzZjUwODE2Nzk3NDRhMDgxYjkxYjlhMTFjZWE2YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMzg5NzhjZGMxYThkNzYxMjBhMzFmZjg2MDU0NWNhNDNiMWE0ZWFjOWU2YWJiMmIwNWQ2MjE5ZTE4NDExODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzMGM4MWNlMmVjZWFlMjJkMjIyMDJmZmFkZGYxNjljNjU4OWM4YjFiYzc3ZmQ4MDU2ZmVhZDVmMzc0YjI0MmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_d460f4a5dc7e40bcad6300f3e275265b",
+      "statement": "RunnableBranch selects and runs one of several branches based on condition evaluation. It accepts (condition, runnable) tuples plus a final default runnable. Conditions are themselves Runnables that return bool; they are evaluated sequentially, and the first True condition selects its runnable. It supports both sync and async conditions natively.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/branch.py#L43-L290",
+          "version": "repo-lines-v1:sha256:77b53fbabf2bdae2e052b15b90650cf13e0e2d73221231eb5f782f4a5b5445ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQ4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhMWIxNzY1NTk3Nzk0MDIzYzI1ZGNhOTMzMGQ2MDQ5NTQ3MjkyNzMwY2Q2MGVmZWE4YjVhZDljZTM4ZmY0NDliIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlOWMwNDUwMTVhMDNhZjc2Mjk2MzRlMDZlOWJlM2Y4OGIyNDI2YWI1YTM3ZmU5MGIyODJiZThmN2YxY2Y3N2RmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwYzExNTkyYTEzMjczNWJlODI0OTA4OWQ3MWFhMGJlN2VmNmQ2MDQ5MjczNDQ4NDM0YTI4MmJkNGQ1NTBlMDM5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_69404fc2cef3419f9986f5580da9a18e",
+      "statement": "RunnableConfig is a TypedDict carrying execution context (tags, metadata, callbacks, run_name, max_concurrency, recursion_limit, configurable, run_id) through chains. Config is threaded via context variables and explicit parameter passing; merge_configs() combines parent and child configs with child values taking precedence and lists being concatenated.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/config.py#L57-L129",
+          "version": "repo-lines-v1:sha256:def5c5af24438aa68655c3dd7c5616745bc16d1e92d9f85b281622790264a60d:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0NDE1ZGIxNWIwNDQyZjJiMWY1ZjNmZDNlMGVhMzIwOGVhYTQxNjRlOTJkMTU5Mjg1ZTNjOWQyZGM2OTEyZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0NmVhN2E5YWU3NmIzNTI0YTM4NWUzMmEwN2E1NmQwYTUyNjI1NTU0ZDAzNmI0ZjFiM2JkOTJlYzc3ODcxMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0ODY1YWQ4MzExYTZlNGE5ODNmZjNhMjk0Mzk4NTIzNDNjYTkzNjhjNmExNTU1ODIzMThmMWI3NTBmMDJhOWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4d3d983232674c78983aadc573e45a6c",
+      "statement": "RunnableLambda wraps a Python callable into a Runnable. If a lambda returns a Runnable, that runnable is automatically invoked. It does not support streaming by default (use RunnableGenerator for streaming). It automatically detects async callables and provides native async support, and infers input/output types from function signatures.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L4707-L4850",
+          "version": "repo-lines-v1:sha256:9100ea3bf5bc26904b939a78df077cdbc078284bed5d55ebe9d73ed737579b8f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwNDFjOGNlMjUyZGUwNzJlNzE4MDBiNWNlMmY3NTk0NmQ3YjA1M2VmOGVmNzRkZDdkNDg1ZGZkODlkN2NjNGNmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5YjU2Yzc3NzRmZjAzMjIxMzFiMGQyZjZmNjM0YTQ3NDZiNGUwYzYyN2IzNWYzNWE0NDNlZTNhZGIxNmU0NWVkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4MmNlMTE3ZWE1OTNlZjA4ODBjMDY2OTQxZGY4NDg3ZmU1N2Q5NWEwYTY3NjUyZTMyN2YwN2U0ZTNiOWJkZjQ1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiODUzNjc2NjdkNDdhM2Y0OWQzMTUwZDg4OWQ4N2YxNzNmNGNlY2U0OTZiM2U5YjdjMGE2ZTc0NTYzNTlhNTRlIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_69516317616242d48733a2eb8ce08288",
+      "statement": "RunnableGenerator wraps generator functions (sync or async) to create streaming runnables. It automatically implements transform() for end-to-end streaming through chains.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py",
+          "version": "repo-file-v1:sha256:4cdcf9f699860ef49c02fe75339cdd8f302f050fa108b625f9a18d84cf3367ba"
+        }
+      ]
+    },
+    {
+      "id": "claim_5c129dd294a84fafa705ee9da6461ccb",
+      "statement": "RunnableWithFallbacks invokes a primary runnable, then each fallback in order until one succeeds. It catches exceptions matching exceptions_to_handle and proceeds to the next fallback. If exception_key is set, handled exceptions are injected into the input dict before invoking the next fallback. Both ainvoke() and abatch() are natively async; batch handling tracks per-input success/failure.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/fallbacks.py#L37-L590",
+          "version": "repo-lines-v1:sha256:5a9f0c0e55d40ef5e37229535b9d3b42ed1860dee6a6511d13934e69d3f272c2:eyJzZWxlY3RlZExpbmVDb3VudCI6NTU0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmY2U5OTZhMzU2NWJjY2E4MDcwNzYwNDYzMWU2OTc4ZTYzOWZkMTkyYjE4NzRmMTliNWJjYzQxYWZmNTQwMGJlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMzI0ZDkwNTM1YThiN2IwMzBmMzQyMDZmYjY5ODQzODMyY2UyOWY5NGY5Yjg0MDE1NDRlYmZhZWIxMGViODE0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiZWI5MWQ5NDFlNTA0MjVlYzdhOGUwYTIxZDJhNTJmYzVkOTkzOTFmNzliYjdjZjhlNTdjMjZlZjY5MjRlNzRmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1MGE3ODA3YzdjNjVkMDhkOGU3NmE0Y2Y3MTg4MDAyOGQ0NTUyMTM5YTU1NjY3OTRkMmI0ZjdhOGIzZWFmNWNmIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_9a186698a4044dff9e8d764c39874ac7",
+      "statement": "The with_retry() method wraps a Runnable to add retry logic powered by tenacity. It accepts retry_if_exception_type (tuple or callable), stop_after_attempt (default 3), and wait_exponential_jitter (default True). For batches, it retries only failed inputs. Stream and transform are not retried due to ambiguous semantics.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L2102-L2150",
+          "version": "repo-lines-v1:sha256:c551d215ed0d8ac72ac894af9e62d71641adf47ba109e820efeb8517c47c4ec4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNjdhYzRkODE0M2VjY2Q3YjM4YWNmMTdkYzllN2Y2MjY4YTM1YmFkNDgzMzBiYWI5MTY3M2M2ODliMmJmZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlMDBlZTQwNmZiYTdhYmVhNDc2MGUyZjM0YWQ1Nzc0MGU0NzczZmRmY2NlNjgwYzYzMzRjMTkyNWJhYzNiM2YiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmNDZhMjkwYmRiYTZmNzY3ZWJiMGNjOWQ1NTAxZGNhNzdhNmFlZmU3OWZjM2QwNmZkYTJhYmE4NzY3YTUyYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwMjhmZGU2ODVmYzE5ZjQxNGNlZDNjM2Q4YjE3NTRlNmQ5NGM1ZjIxYmFiODc0ZDNjYzc5ZjcyODczMzRmOTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bfee11b702c946c0886b361e63206670",
+      "statement": "RunnablePassthrough passes input through unchanged. It is useful in parallel branches to preserve the original input for later composition steps.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/passthrough.py",
+          "version": "repo-file-v1:sha256:260de5bbbc388123f43ef30b9c4625e3e4748fd4c378db5f2f646347dc8bf556"
+        }
+      ]
+    },
+    {
+      "id": "claim_e713c8229f724a5a9167daf93f279e92",
+      "statement": "coerce_to_runnable() converts any RunnableLike into a Runnable: already-Runnable objects pass through, generators are wrapped in RunnableGenerator, callables are wrapped in RunnableLambda, and dicts are coerced to RunnableParallel. This enables intuitive composition syntax like prompt | my_function | {\"field\": another_function}.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L6612-L6668",
+          "version": "repo-lines-v1:sha256:452099e79d2e99b7e3e5b1113414c8f6b2885cd10cba2bb6f4d27b51e02be17e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4NGI4ZmY3MDhlZDU4NTY5NmM2YWZiMDk5ZWZmYmYxN2Y3YmRjZGRhZDQ4ZTAzMzA4N2I4YjU3MWI5NzQ5YWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmNGZkNGE0MzRmNDE4ZWUwN2IyMmMzODE3YWYyOGJmNWZhNTVlY2NiMjNhZTI1NjU2NzZmOWZhYjRkOTY3MmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2MTQyOTVmNjVhM2VmZjU5MDkyOGI3YTFiZmQzODAwNTU2MjA0NWJlMDEyZTBhZDExNDZhNjhhYTZkZGU4YWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5MTMwOWQ3MjI5ZmEyZTMzMDc2N2FhOTk4ZWUxNTBjZTkyMmM5NDNhMDRmZmJjYWYxNGFjYWYxZGE4ZWJkMjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6e28b4a721464876a602f7c5ffb2a225",
+      "statement": "Streaming is a first-class execution mode in Runnables. The default stream() yields a single output from invoke(), but specialized implementations override to yield partial outputs. The transform(input_iterator) method maps streams of inputs to streams of outputs without blocking, enabling progressive end-to-end streaming through entire chains.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1195-L1213",
+          "version": "repo-lines-v1:sha256:774cd69bf11c4688c21025b1d8d77046731c331a05032f7c5eb3c27ea4de1566:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkMDJmY2NjNWE1YWFkOWQyZmRmNzU2ZmM3ZmU2OTM0MGYxZDM3ODAxNzQwMTY2MzgzMjQwYzNlYTZjMWY0NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZGUyNTg3MTk2MTQ5MjYwNzFjOGZiMTlmZDg2NjE1MDU1NWYxYjAxMzU0ZjhjZDE2MDNhMTA5YTdkZGFlNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYjIzYTg5OGMzMjkxNWQ3OWNiYzVkOTAxYWYyOGY0YzI3MjUxZDM3Y2RiZDA5OTlkMWZlMmMxZjkzZDFlZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA1Y2I3OGFjM2Y4ZGM5OWU0NWNjNWExZTMyM2UxNDNjMzk2MTMyMDM0YWQwMGI0NzU3MzExMmYzODM4MGQxMDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_acbe40c18b984ab696b8a024aca90ffd",
+      "statement": "Composition methods (with_fallbacks, with_retry, pick, assign, pipe) return new Runnable instances without mutating the original. This enables safe chaining and component reuse without side effects.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L648-L900",
+          "version": "repo-lines-v1:sha256:bb982c07340c2a71e5737794680e5b81cebf595e76f91dc3cd83fa0fb6957f07:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkYmNlYzlmOGE0NTNiYzMyMGIyZTkwYTg0NjVkNTg1NzIwOTFhNDYzZDJiN2VjZGFkOTg5YzgxY2ZlNTc3MGY2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyMzdiMTFkMDQwMTA4YTc4ZjA1ZjVkMWRmZmRkNmRmNzE1NzI3ZTczYjAyZjJiZWRmZjk4NzJmYWY4YTNkMDc5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiZjU1MzZjOThmMjY0NDZhYmQxNzRkYTUyODJlNDgyM2M5MmE5M2U5NDJiMDA4ODhjOTAxNzRkY2MxMzg2NDY3In0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

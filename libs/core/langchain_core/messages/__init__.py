@@ -48,6 +48,11 @@ if TYPE_CHECKING:
     from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
     from langchain_core.messages.human import HumanMessage, HumanMessageChunk
     from langchain_core.messages.modifier import RemoveMessage
+    from langchain_core.messages.notification import (
+        NotificationMetadata,
+        add_notification_metadata,
+        get_notification_metadata,
+    )
     from langchain_core.messages.system import SystemMessage, SystemMessageChunk
     from langchain_core.messages.tool import (
         ToolCall,
@@ -95,6 +100,7 @@ __all__ = (
     "MessageLikeRepresentation",
     "NonStandardAnnotation",
     "NonStandardContentBlock",
+    "NotificationMetadata",
     "OutputTokenDetails",
     "PlainTextContentBlock",
     "ReasoningContentBlock",
@@ -112,6 +118,7 @@ __all__ = (
     "UsageMetadata",
     "VideoContentBlock",
     "_message_from_dict",
+    "add_notification_metadata",
     "convert_to_messages",
     "convert_to_openai_data_block",
     "convert_to_openai_image_block",
@@ -119,6 +126,7 @@ __all__ = (
     "ensure_id",
     "filter_messages",
     "get_buffer_string",
+    "get_notification_metadata",
     "is_data_content_block",
     "merge_content",
     "merge_message_runs",
@@ -149,6 +157,9 @@ _dynamic_imports = {
     "FunctionMessageChunk": "function",
     "HumanMessage": "human",
     "HumanMessageChunk": "human",
+    "NotificationMetadata": "notification",
+    "add_notification_metadata": "notification",
+    "get_notification_metadata": "notification",
     "NonStandardAnnotation": "content",
     "NonStandardContentBlock": "content",
     "OutputTokenDetails": "ai",

@@ -1,5 +1,6 @@
 """`Runnable` that retries a `Runnable` if it fails."""
 
+from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,6 +13,7 @@ from tenacity import (
     RetryCallState,
     RetryError,
     Retrying,
+    retry_if_exception,
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential_jitter,
@@ -111,8 +113,11 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         ```
     """
 
-    retry_exception_types: tuple[type[BaseException], ...] = (Exception,)
-    """The exception types to retry on. By default all exceptions are retried.
+    retry_exception_types: (
+        tuple[type[BaseException], ...] | Callable[[BaseException], bool]
+    ) = (Exception,)
+    """The exception types to retry on, or a callable that receives the raised
+    exception and returns whether to retry it. By default all exceptions are retried.
 
     In general you should only retry on exceptions that are likely to be
     transient, such as network errors.
@@ -144,7 +149,9 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
                 **(self.exponential_jitter_params or {})
             )
 
-        if self.retry_exception_types:
+        if callable(self.retry_exception_types):
+            kwargs["retry"] = retry_if_exception(self.retry_exception_types)
+        elif self.retry_exception_types:
             kwargs["retry"] = retry_if_exception_type(self.retry_exception_types)
 
         return kwargs

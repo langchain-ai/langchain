@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:1a4fdf9d4a0763396ba3036350b72efbd18b055e4820082848b5a9df2eeeb1fa",
+  "claims": [
+    {
+      "id": "claim_fc612ca95e764c84b4bd1c6e12a8536a",
+      "statement": "AgentMiddleware is a generic base class that provides hookable methods for customizing agent behavior at state transitions and during LLM/tool invocations, with type parameters for agent state (StateT), runtime context (ContextT), and structured response (ResponseT).",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L385-L430",
+          "version": "repo-lines-v1:sha256:3b897bb85057b8c8b56769afa8471d9ff0f0df0769ec4d9d4e14d601038eca57:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhNmJiNmZkMzc3ZWYwYTBkOWYwNmRmZjI0Y2NiM2EyYjU3NjVlMDkwNjk1MTE2ZTgzMGM5MDNhN2MyZDcyYzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2YmFhOGFkY2RiYjQzYmIxN2I3NTVlMTgwODE0ZjkzMzY2MTJhOGQxMTAxN2YyZjUxNmUxZTJjMjM1MTFjNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMzg2ODA2ZDU1YjRhZTVhZWUxN2QzZjBiNWNiZGQ3NDQ3N2Y3NDA3ZTg0NWQzOGQzYTVhMGMxZDcxYmI4MmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_be4bcd83214f44709e2b7e09b2205858",
+      "statement": "Lifecycle hooks (before_agent, after_agent, before_model, after_model and their async variants) execute at agent loop boundaries, receiving state and runtime context, and return optional state updates or control flow commands via Command objects.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L431-L672",
+          "version": "repo-lines-v1:sha256:94d5622515351a1dd79814874a4a195e3d3b2a2dd78efae9ffd743138f461ede:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1MWI2OTVmNDZkZjYzNWMwOTc2NTg0OTRjMzQ5MDNjOGI0NjQ5OGIwZTNhYzIwMzY5ODNiYmQ3NzFkM2QwZjhhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1MGRlMjU4NzE5NjE0OTI2MDcxYzhmYjE5ZmQ4NjYxNTA1NTVmMWIwMTM1NGY4Y2QxNjAzYTEwOWE3ZGRhZTQwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5M2U2N2M2ZWMwZTYwZGNlYmFkMzYyYmM3MmNlOGZiNGI3ZTJkMzM1Yjg4ZTk1NjkwMTI4MjRkOTUwMmRmOGQ0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0NWY3ZWIzNzdjNDkxYjFhZGQ5NDYzY2U4MzExNmY0OTJkN2QzYzIxNGZjOWQxNjE0MmE2ODMzZjI0MzI4NTUxIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_26651026d9814696aeb33559b4079f11",
+      "statement": "Wrapper handlers (wrap_model_call, awrap_model_call, wrap_tool_call, awrap_tool_call and their async variants) intercept LLM and tool invocations with handler callbacks, allowing middleware to implement retries, caching, request modification, and conditional execution by calling, not calling, or repeatedly calling the handler.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L503-L823",
+          "version": "repo-lines-v1:sha256:02772dc8138a46a47cc3b6991a902dacba75ef19cad2f7f5bf2a99e0781b2083:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5MjcxYTBhMTMzOGI2ZTg2Y2RhYjY1YzY5Yjg1NDc4MTcyMTViZGIwNDNjMTA2N2RjNDE1ODJlMDIxNWVlZmU1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4MzNiMzY3OTY3ZTg3N2ViYTJkYTE2ZjQwZmI5YzA4MGMwMGYzNzJjZjgxNmZlNjdjMTY3MzFjZjMyZTdhYTRmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0ZjE2MjExYjhmZjk4NzQ2Y2I3Y2I1ZDZkNDVlNDUxMzgyY2ZmMTQ1NjcwNmM2YmRjMzBhYzM4ZDU2NmIwOWVjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3MDRlOTBlZWYzNGUwMTRmYjkzODdkYTAwNzg4ZjdlNjZlZjBjOTM0MTg0NjMwNzZhODc5YzBlMTVkNjRiMTZlIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_9efc654fc5594dcba2ee13d1b41bc054",
+      "statement": "ModelRequest is an immutable dataclass containing model, messages, system_message, tools, tool_choice, response_format, state, runtime, and model_settings; it provides an override() method that returns a new instance with specified fields replaced, following immutable patterns.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L87-L269",
+          "version": "repo-lines-v1:sha256:2e092d648db88d84598f61d1f81e0d629676c59f2cd9d2892492f2a466327fb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOWE0ZjBkOTIyOWRmY2E0YWM1MDllNDc0OWQyNGFiZGIxMzg2NGIwYWVmMmIxNWViYmQ5ODlkNTgyNjhjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NzZhMTRjYWViNDY3MTJkNzBjNmJmOWEyYzhkNWNiZTY4NzdjOTJmMWM3YmFkNGQ2MjA3ZTNiZmUwYzNkN2FiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjE2MTg3MTIxNzdiOGJkY2RmZTZmMWFkNTEzNzM1ZmQzMjBiZDAzZWQ2MGJkZTQzZmNiY2FkMjYzYmViZTVmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YzFmMDJmZDdlYzFkNDYyYzBjYjgxOGI5NDhmZmU0ZjcxNWIyYzJjNDMyNjMwYzIzMmRmZTM0ZDQyNzQzZmE5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_ba0ef1a664c6447eb2fde59ea8eda65b",
+      "statement": "Model call handlers return ModelResponse (messages + optional structured_response), AIMessage (simplified), or ExtendedModelResponse (response + optional Command for state updates); AIMessage is auto-converted to ModelResponse by the agent framework.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L272-L325",
+          "version": "repo-lines-v1:sha256:c96042469fd0aa5d729a55088e83d397356f784c464237c8cbd7749d0dddc62e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZmJhZTBiOTFkNDRmYzBkNDlmNWRlNjkxZGE2ZmM0MzFmMjYwMTM0YmY3MzFlMGUyMWY3NjQ4MDk0MzM0Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllM2U3YTMyMjI2YmE0MjQ3MmYwMzZkYTU4ZDAzMjFjOTk2MTZmNDRjNGM3OTRmZDQ1YWMwMzQxMzk2OTlkYjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMWYwMmZkN2VjMWQ0NjJjMGNiODE4Yjk0OGZmZTRmNzE1YjJjMmM0MzI2MzBjMjMyZGZlMzRkNDI3NDNmYTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bdc37d717f2b4a7593008aff58abe9e5",
+      "statement": "ToolCallRequest provides tool name, call arguments dict, state, and runtime; it has an override() method to create modified copies for argument transformation and request validation before tool execution.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L674-L823",
+          "version": "repo-lines-v1:sha256:5bda70691bda8be2faf01651fdde539361d616198d0a372a92ef988328cbabe1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjNDUyZGNkZTg4MTI2YzRjNTY4NTkzMDhhYzc2NzllNTgwZGJiYjFjYTgzZGI1ZGIwMWUyZDEyZjM1YTQ3Y2ZjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4MzNiMzY3OTY3ZTg3N2ViYTJkYTE2ZjQwZmI5YzA4MGMwMGYzNzJjZjgxNmZlNjdjMTY3MzFjZjMyZTdhYTRmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlYmQwMmI3MTUzMWI4MTMzYmE1NjRiNGM0ZjM3YzNkNzU0ODdlNzFjZjhkNjAwMGM5ODQxZWE4YmU4NmE5YjQyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3MDRlOTBlZWYzNGUwMTRmYjkzODdkYTAwNzg4ZjdlNjZlZjBjOTM0MTg0NjMwNzZhODc5YzBlMTVkNjRiMTZlIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_e464eeb9580147ddb014539fbe999cd8",
+      "statement": "Decorator factories (@before_model, @after_model, @before_agent, @after_agent, @wrap_model_call, @wrap_tool_call, @dynamic_prompt) create AgentMiddleware instances from single-hook functions, supporting both sync and async implementations automatically with optional state_schema, tools, can_jump_to, and name parameters.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L879-L2200",
+          "version": "repo-lines-v1:sha256:1edd46ef82f545bc7945d0e92ae6441ad03925cbbbec10eb55adc558ab14db63:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMyMiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmU2MzE0YWEyNDIzMjI5MTY2NTc2YTcxYjk3YWJhNDc1NzhmMjgwMGMzNjJkYjAwNmQ1YThmYTgxODA4ZTMyNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWU2Y2M1ODAwODkyMzg3OWM1YzljOTE5NmRkMmY5MDQxMjA0MTQ3MGFjNzM0YWEyN2Y2NWJhMzk4OTRjYmRhNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjM1YzEzMGYyN2U5MTkwYWM5NTEzMjk0NTEwMTg1YzBiOTM1YWJhNDQ3MjRjOGFhZTdmYjcxOGRhMzQwM2FkYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjEsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzUwMWJjODhmY2QyODM1NTg2MGJlYjc4NjMzYjdmMGM3NDJlMTU0NTgwNmMyYjMzZjgxODYwZmJlYmViNjRiOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_813bbe2375b24cc59aa99a983f843cfd",
+      "statement": "Every middleware method has sync (method) and async (amethod) variants; sync is called on invoke/stream paths, async on ainvoke/astream paths; implementing only one variant on the wrong execution path raises NotImplementedError; decorators auto-bridge both paths.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L503-L597",
+          "version": "repo-lines-v1:sha256:b4096b631cb7e5cc1f84308854075c32cfa0a013d05971ddb8ac3eef5b777521:eyJzZWxlY3RlZExpbmVDb3VudCI6OTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNzFhMGExMzM4YjZlODZjZGFiNjVjNjliODU0NzgxNzIxNWJkYjA0M2MxMDY3ZGM0MTU4MmUwMjE1ZWVmZTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmMTYyMTFiOGZmOTg3NDZjYjdjYjVkNmQ0NWU0NTEzODJjZmYxNDU2NzA2YzZiZGMzMGFjMzhkNTY2YjA5ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdiNDE3YmIwOWJkYWIwZTgyYmQzYWU5YmM0MDJiMWE0NGM3Nzg2MzJjOWZmZWFjYmE0NDgxMGI0NjZmYTZkYWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f00d54a33ac4c9db0f4b54122172d5a",
+      "statement": "Middleware can define custom state schemas via state_schema class attribute; custom schemas must include the required messages field with add_messages reducer; when multiple middleware have different schemas, they must be compatible (share common fields).",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L397-L398",
+          "version": "repo-lines-v1:sha256:5655dffd996d4916f94cfbae0495160c645a3b364fe79e3c4bd723bf98ee8478:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjAwYjdiMzVjZDRhYzEzZGIxNWRhMWFmZWVmMWE2OTNiZjMyYjZmZGIzOTFjZDJmMDA2OWNhNzU3YzJlMjUyZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2M5ZmViZmFiY2NjODg5MzU4N2E2YWIwMTVlMGUwNGY4ZDQwZjlmMWZmYWE1MjJhNjc4MDBiNjk0MmMyMzAzNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTVjM2EyZGRhNDgwOWNhMGE1MjQ2NTllOTFkNjQ2MDZmYjVlNGQzYjI4ODU0NzA3MzE1MjdhOTE1ZTkzMWIwOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTY1NjIzNTE0MmY4OTdhYmFlNmRkMTc2NTFiMDc1YjU1MWQxMzg4MzgzYThkNGU5YWUyMDE2MmM3OTMxOTdjOCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_50639bb303474d1a95c17702249843c1",
+      "statement": "Multiple middleware compose as nested layers where the first in the list acts as the outermost layer, wrapping inner middleware; wrapper handlers execute in nesting order allowing each to intercept, modify, cache, or retry handler calls; state updates from outer middleware overwrite inner ones (except messages which merge).",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L503-L575",
+          "version": "repo-lines-v1:sha256:c309939ad7ddecbb1331a1498c6098bd5dd1f2d5f3c988e9f38092757d9ad8ef:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNzFhMGExMzM4YjZlODZjZGFiNjVjNjliODU0NzgxNzIxNWJkYjA0M2MxMDY3ZGM0MTU4MmUwMjE1ZWVmZTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MDBlNThmZmVhOTVlZjllNzZiYWMxNTY4MmVlODBhOThmYjc4OGQ5ZGI5ODQ0Yzg4YWQ1OGFkYmQ0MGU0MmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmMTYyMTFiOGZmOTg3NDZjYjdjYjVkNmQ0NWU0NTEzODJjZmYxNDU2NzA2YzZiZGMzMGFjMzhkNTY2YjA5ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjViMGIwZDJjZWY1MmJlN2JmMDI2OTUzNjhjYzJiNjM5MWU2ZTc4NmQwNWFiZWQ2OGU3MTQwNTU2Y2Q2ZDIyODAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_512212713cf943b092ca5b8d081534b6",
+      "statement": "LangChain provides production middleware including ModelRetryMiddleware, ToolRetryMiddleware, ToolErrorMiddleware, ModelCallLimitMiddleware, ToolCallLimitMiddleware, HumanInTheLoopMiddleware, LLMToolSelectorMiddleware, ModelFallbackMiddleware, PIIMiddleware, ShellToolMiddleware, and SummarizationMiddleware for common agent customization needs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py#L1-L100",
+          "version": "repo-lines-v1:sha256:51b55618fb209bce1e69f2911b367963da549d930f5eef1b1125cd19a26586ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNDA5OTU2YzRjNTg2NDc3MzNhYTU3Mjc0OTdhYmU0ZWFlZDY2NDdiMjkyNDk0MmI2NWUxYjJmOWM3OWQ1Y2Y1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmOTQxNmUwOWY3OGJhMzE2YzAzMjU2ODIxM2I4NTVlZTc1NmU0MTU2NWQ5MThmMDk1MTljODFmZDYyMGY0MDYwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_6436106099da4d8da36c66619ea6361c",
+      "statement": "Middleware can set trace_policy to a TracePolicy instance to control what hook spans record; TracePolicy(process_inputs=omit_payload) drops message/state payloads while keeping span structure and timing, useful for excluding sensitive data from observability systems.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L403-L411",
+          "version": "repo-lines-v1:sha256:c1763344c9294fe2d4b01d56225f97942d1faa5fd1d004fc088d1fc357aec39b:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjU3OTBlZjUyNjU2ZWVmYmE1ZGJhOGNjNzM4MWRmNzVjNDY0OGU3NWMyNDMwNGE5ZmExZDM4MTM2MGU5ZThjOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZhNzE1MjU3MmVlODRmMTA5MDZjNzRiOWYyYTkyNDM0ZGRhYjBlM2M0MjgxM2IwNGU1OTdlZmNlYzk1MWIyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWY0NWFhNThlYmM3MmZjNDlkNDFkOTA5ZmM0NjAwNDY4MmMwN2Q4MzRhNWU1YjUxYjY5NmU2Y2M2ODc1N2I3NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGFlN2EwY2FiYzQ1MGNhNDk5ZTE4OWI3NjIzZjBjNGRkZGQ5OGQ0ODgzNmJmNzQ2N2FlY2ZkZmMwNWUzNWE4ZiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_6985dd083a764c15ba050856f522402b",
+      "statement": "The @hook_config decorator and can_jump_to parameter on lifecycle hook decorators enable middleware to conditionally route to different nodes (tools, model, end) by returning {\"jump_to\": destination} from before_model or after_model hooks.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L879-L930",
+          "version": "repo-lines-v1:sha256:d72ab9e9837a845d6a47128eb308726b24cf6de7a6db06f8dfbdc66a543c10ce:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNjMxNGFhMjQyMzIyOTE2NjU3NmE3MWI5N2FiYTQ3NTc4ZjI4MDBjMzYyZGIwMDZkNWE4ZmE4MTgwOGUzMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1MDFiYzg4ZmNkMjgzNTU4NjBiZWI3ODYzM2I3ZjBjNzQyZTE1NDU4MDZjMmIzM2Y4MTg2MGZiZWJlYjY0YjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzNWMxMzBmMjdlOTE5MGFjOTUxMzI5NDUxMDE4NWMwYjkzNWFiYTQ0NzI0YzhhYWU3ZmI3MThkYTM0MDNhZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5MTMwOWQ3MjI5ZmEyZTMzMDc2N2FhOTk4ZWUxNTBjZTkyMmM5NDNhMDRmZmJjYWYxNGFjYWYxZGE4ZWJkMjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_916522c627ac47ae8ce3d3cb578e24d9",
+      "statement": "ToolErrorMiddleware wraps tool execution and converts exceptions to error ToolMessage for opt-in exceptions via on_error handler; unhandled exceptions propagate; Langgraph control-flow exceptions always propagate and never reach the error handler.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/tool_error.py#L37-L150",
+          "version": "repo-lines-v1:sha256:49bc247fea38e84ed933e1c1b641e30f66bf1406c31c542fcf8c9044492c0d1b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjZTcxOGNhYmZmZjU5OTU0MGMyODhmNTdhZmVjYzM0ZTc1ODZhYjZlNjY4ZDlhMzFhYWM1MzY0YjI3ZDEzNzYxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhOGQ1YWUwNTU1MDY4OWExYTVjMzE4NDBjMmNmMjUwNWZkNjBhY2Q0ZmEwN2YxZGY5YTllMTNkYmZkODc2ZmM5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5NGM1MGNjNjFkNGY5YmE5ZTQ4MmMyOTQxMTA5YjA5MmZjNzBmZDBkYTUwMzQ1ZGM4YTcwNzFjY2Q5YjNhM2UwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlMWZhZTFiODRmNDEyODFhNGVmYzQyYTVlZGJhNjE3N2MxYzg1NWNlZGJkYjZmZTA0ZDNlMzQwM2U0MjQ1ZjA0In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_b6ada632db594e3b99bf00312921e12d",
+      "statement": "AgentState is a TypedDict with required messages field (list of messages, merged via add_messages reducer), optional ephemeral jump_to field for routing, and optional structured_response field for parsed output when response_format is configured.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L349-L368",
+          "version": "repo-lines-v1:sha256:6341ae8ca446ca57aee55bd0032315147777efbe4703f1942fb216a34a7534dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhY2VkMmY4NGViMmFmMmUxMDNkMjBjYjAwY2NmZmM5ZjcyNzZiZTFlN2U3N2Q3ZTc0NjNlOGY1YzdkYTYzMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1NTA5ZTcyNDIwZjVjNzRkZGNjMmJhNmJmOTcyNmNmODI3ODA2MzliMzE3ZTUyMzA2ODgzYjdmMjQ5MjYyZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5YTEyNTZkMDkxOGM3ZWJkYWYzNjhjNTczN2NjMjY4MTVhYmVhNWUwNmVmYTRlMzllNmM3NTc2N2Q4ZDQ4ZDYifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

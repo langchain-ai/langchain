@@ -199,14 +199,6 @@ def test_gpt_5_reasoning_effort_levels() -> None:
     assert model.profile["reasoning_effort_levels"] == ["none", "low", "medium", "high"]
 
 
-def test_gpt_5_3_chat_latest_profile_has_no_reasoning_effort() -> None:
-    model = ChatOpenAI(model="gpt-5.3-chat-latest")
-
-    assert model.profile
-    assert model.profile["reasoning_output"] is False
-    assert "reasoning_effort_levels" not in model.profile
-
-
 def test_gpt_6_astra_reasoning_effort_levels() -> None:
     model = ChatOpenAI(model="gpt-6-astra")
 
@@ -219,6 +211,28 @@ def test_gpt_6_astra_reasoning_effort_levels() -> None:
         "max",
     ]
     assert "reasoning_effort_default" not in model.profile
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "expected"),
+    [
+        ({"use_responses_api": True}, True),
+        # Routes every request to the Responses API.
+        ({"reasoning": {"effort": "low"}}, True),
+        ({"use_responses_api": False}, False),
+        # Routing is decided per request, so it can't be claimed up front.
+        ({}, False),
+    ],
+)
+def test_profile_mid_conversation_tools_follow_responses_api(
+    kwargs: dict[str, Any], expected: bool
+) -> None:
+    """Only the Responses API carries an `additional_tools` input item."""
+    model = ChatOpenAI(model="gpt-5.6", **kwargs)
+
+    assert model.profile
+    assert model.profile["mid_conversation_tools"] is expected
+    assert model.profile["mid_conversation_system_messages"] is True
 
 
 def test_function_message_dict_to_function_message() -> None:

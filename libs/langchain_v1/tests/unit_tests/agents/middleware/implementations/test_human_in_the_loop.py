@@ -1,26 +1,40 @@
 import re
+import sys
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Annotated, Any, cast
 from unittest.mock import patch
 
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, StructuredTool, tool
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt.tool_node import ToolNode, ToolRuntime
 from langgraph.runtime import Runtime
 from langgraph.types import Command
+from pydantic import AfterValidator, TypeAdapter, ValidationError
 
 from langchain.agents.factory import _make_tools_to_model_edge, create_agent
-from langchain.agents.middleware import InterruptOnConfig
+from langchain.agents.middleware import InterruptOnConfig, ToolErrorMiddleware, ToolRetryMiddleware
 from langchain.agents.middleware.human_in_the_loop import (
     _EDIT_NOTICE,
     _EDITED_TOOL_CALLS_KEY,
     Action,
+    Decision,
+    DecisionType,
     HumanInTheLoopMiddleware,
+    InterruptMode,
+    _decision_schema,
     _HumanInTheLoopState,
 )
-from langchain.agents.middleware.types import AgentState, ToolCallRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ContextT,
+    InputAgentState,
+    OutputAgentState,
+    ToolCallRequest,
+)
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
@@ -1067,10 +1081,8 @@ def test_when_predicate_batch_skips_interrupt_when_false() -> None:
     )
     state = AgentState[Any](messages=[HumanMessage(content="Hi"), ai_message])
 
-    with (
-        patch("langchain.agents.middleware.human_in_the_loop.get_config", return_value={}),
-        patch("langchain.agents.middleware.human_in_the_loop.interrupt") as mock_interrupt,
-    ):
+    # Called directly, outside a graph: there's no run config, and `when` still runs.
+    with patch("langchain.agents.middleware.human_in_the_loop.interrupt") as mock_interrupt:
         result = middleware.after_model(state, Runtime())
         mock_interrupt.assert_not_called()
 
@@ -1791,3 +1803,468 @@ def test_return_direct_routing_keeps_calls_with_unnamed_results() -> None:
     ]
 
     assert edge({"messages": messages}) == "MODEL"
+
+
+# --- Per-call mode (interrupt_mode="per_call") ---
+
+
+@pytest.mark.parametrize("allowed", [["respond"], ["respond", "respond"]])
+def test_decision_schema_with_one_decision_is_a_plain_object(allowed: list[DecisionType]) -> None:
+    schema = TypeAdapter(_decision_schema(allowed, "send_email")).json_schema()
+    assert schema["properties"]["type"]["const"] == "respond"
+    assert schema["required"] == ["type", "message"]
+
+
+@pytest.mark.parametrize(
+    ("answer", "loc", "error_type"),
+    [
+        ({"type": "edit"}, ("edit", "edited_action"), "missing"),
+        ({"type": "nope"}, (), "union_tag_invalid"),
+        (
+            {"type": "edit", "edited_action": {"name": "send_email", "args": {}}},
+            ("edit", "edited_action", "args", "to"),
+            "missing",
+        ),
+        (
+            {"type": "edit", "edited_action": {"name": "delete_file", "args": {"to": "b"}}},
+            ("edit", "edited_action", "name"),
+            "literal_error",
+        ),
+    ],
+)
+def test_decision_schema_rejects_a_bad_answer_with_one_error_at_the_problem(
+    answer: object, loc: tuple[str, ...], error_type: str
+) -> None:
+    @tool
+    def send_email(to: str, cc: str | None = None) -> str:
+        """Send an email."""
+        return f"sent to {to}, cc {cc}"
+
+    schema = _decision_schema(["approve", "edit", "reject", "respond"], "send_email", send_email)
+    with pytest.raises(ValidationError) as exc_info:
+        TypeAdapter(schema).validate_python(answer)
+    assert [(e["loc"], e["type"]) for e in exc_info.value.errors()] == [(loc, error_type)]
+
+
+@pytest.mark.parametrize(
+    "tool",
+    [
+        None,
+        StructuredTool(
+            name="send_email",
+            description="d",
+            func=lambda **_: "sent",
+            args_schema={"type": "object", "properties": {"to": {"type": "string"}}},
+        ),
+    ],
+    ids=["no_tool", "json_schema_tool"],
+)
+def test_edit_args_without_a_pydantic_schema_are_shown_but_not_enforced(
+    tool: BaseTool | None,
+) -> None:
+    adapter = TypeAdapter(_decision_schema(["edit"], "send_email", tool))
+    assert adapter.json_schema()["$defs"]["EditedAction"]["properties"]["args"]["type"] == "object"
+    answer = {"type": "edit", "edited_action": {"name": "send_email", "args": {"to": 5}}}
+    assert adapter.validate_python(answer) == answer
+
+
+def test_middleware_checks_interrupt_mode() -> None:
+    assert HumanInTheLoopMiddleware(interrupt_on={"t": True}).interrupt_mode == "batched"
+    with pytest.raises(ValueError, match="must be 'batched' or 'per_call', got 'sometimes'"):
+        HumanInTheLoopMiddleware(
+            interrupt_on={"t": True}, interrupt_mode=cast("InterruptMode", "sometimes")
+        )
+
+
+def _agent(
+    tools: list[BaseTool],
+    tool_calls: list[ToolCall],
+    interrupt_on: dict[str, bool | InterruptOnConfig],
+    *after: AgentMiddleware,
+) -> CompiledStateGraph[AgentState[Any], None, InputAgentState, OutputAgentState[Any]]:
+    """An agent with per-call HITL whose model makes `tool_calls`, then finishes."""
+    return create_agent(
+        model=FakeToolCallingModel(tool_calls=[tool_calls, []]),
+        tools=tools,
+        middleware=[HumanInTheLoopMiddleware(interrupt_on, interrupt_mode="per_call"), *after],
+        checkpointer=InMemorySaver(),
+    )
+
+
+def test_per_call_interrupt_shows_the_call_and_the_answers_it_accepts() -> None:
+    @tool
+    def send_email(to: str) -> str:
+        """Send an email."""
+        return f"sent to {to}"
+
+    agent = _agent(
+        [send_email],
+        [ToolCall(name="send_email", args={"to": "alice"}, id="call_email")],
+        {
+            "send_email": {
+                "allowed_decisions": ["approve", "edit", "reject", "respond"],
+                "description": "Email",
+                # Not used in per-call mode: the edit's args come from the tool itself.
+                "args_schema": {"type": "object", "properties": {"recipient": {"type": "string"}}},
+            }
+        },
+    )
+    result = agent.invoke({"messages": [HumanMessage("go")]}, {"configurable": {"thread_id": "t"}})
+    [intr] = result["__interrupt__"]
+
+    # `value`: the tool call waiting for review.
+    assert intr.value == {
+        "type": "tool_approval",
+        "tool_call_id": "call_email",
+        "name": "send_email",
+        "args": {"to": "alice"},
+        "description": "Email",
+    }
+    # `response_schema`: one branch per allowed decision, matched on `type`.
+    schema = intr.response_schema
+    defs = schema["$defs"]
+    assert schema["oneOf"] == [
+        {"$ref": "#/$defs/ApproveDecision"},
+        {"$ref": "#/$defs/EditDecision"},
+        {"$ref": "#/$defs/RejectDecision"},
+        {"$ref": "#/$defs/RespondDecision"},
+    ]
+    assert defs["ApproveDecision"]["required"] == ["type"]
+    assert defs["EditDecision"]["required"] == ["type", "edited_action"]
+    assert defs["RejectDecision"]["required"] == ["type"]  # `message` is optional
+    assert defs["RespondDecision"]["required"] == ["type", "message"]
+    # An edit names the same tool, and its args follow the tool's own schema.
+    edit, edited_action, args = defs["EditDecision"], defs["EditedAction"], defs["send_email"]
+    assert edit["properties"]["edited_action"] == {"$ref": "#/$defs/EditedAction"}
+    assert edited_action["properties"]["name"]["const"] == "send_email"
+    assert edited_action["properties"]["args"] == {"$ref": "#/$defs/send_email"}
+    assert (list(args["properties"]), args["required"]) == (["to"], ["to"])
+    assert args["description"] == "Send an email."
+
+
+@pytest.mark.parametrize(
+    ("answer", "ran_with", "status", "content"),
+    [
+        ({"type": "approve"}, ["alice"], "success", "sent to alice"),
+        (
+            {"type": "edit", "edited_action": {"name": "send_email", "args": {"to": "bob"}}},
+            ["bob"],
+            "success",
+            "sent to bob",
+        ),
+        # The tool ignores an arg it doesn't declare, as it would from the model.
+        (
+            {
+                "type": "edit",
+                "edited_action": {"name": "send_email", "args": {"to": "bob", "subject": "hi"}},
+            },
+            ["bob"],
+            "success",
+            "sent to bob",
+        ),
+        (
+            {"type": "reject", "message": "not now"},
+            [],
+            "error",
+            "User rejected the tool call for `send_email` with reason: not now",
+        ),
+        ({"type": "respond", "message": "already sent"}, [], "success", "already sent"),
+    ],
+    ids=["approve", "edit", "edit-with-an-undeclared-arg", "reject", "respond"],
+)
+def test_per_call_resume_with_each_decision(
+    answer: Decision, ran_with: list[str], status: str, content: str
+) -> None:
+    ran: list[str] = []
+
+    @tool
+    def send_email(to: str) -> str:
+        """Send an email."""
+        ran.append(to)
+        return f"sent to {to}"
+
+    agent = _agent(
+        [send_email],
+        [ToolCall(name="send_email", args={"to": "alice"}, id="call_email")],
+        {"send_email": True},
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+    [intr] = agent.invoke({"messages": [HumanMessage("go")]}, config)["__interrupt__"]
+
+    final = agent.invoke(Command(resume={intr.id: answer}), config)
+
+    [message] = [m for m in final["messages"] if isinstance(m, ToolMessage)]
+    assert (ran, message.status) == (ran_with, status)
+    assert str(message.content).endswith(content)
+    # Only an edit tells the model that a reviewer replaced the call.
+    assert ("Executed instead: send_email" in str(message.content)) == (answer["type"] == "edit")
+
+
+def test_per_call_edit_leaves_validation_and_injected_args_to_the_tool() -> None:
+    @tool
+    def send_email(
+        to: Annotated[str, AfterValidator(lambda v: f"<{v}>")], runtime: ToolRuntime
+    ) -> str:
+        """Send an email."""
+        return f"sent to {to} for {runtime.tool_call_id}"
+
+    agent = _agent(
+        [send_email],
+        [ToolCall(name="send_email", args={"to": "alice"}, id="call_email")],
+        {"send_email": True},
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+    [intr] = agent.invoke({"messages": [HumanMessage("go")]}, config)["__interrupt__"]
+    # The reviewer edits only what the model sees; the tool validates the edit once and
+    # gets `runtime` injected.
+    assert list(intr.response_schema["$defs"]["send_email"]["properties"]) == ["to"]
+    edit = {"type": "edit", "edited_action": {"name": "send_email", "args": {"to": "bob"}}}
+    final = agent.invoke(Command(resume={intr.id: edit}), config)
+    [message] = [m for m in final["messages"] if isinstance(m, ToolMessage)]
+    assert str(message.content).endswith("sent to <bob> for call_email")
+
+
+def test_per_call_pauses_once_per_gated_call_and_applies_answers_by_id() -> None:
+    ran: list[str] = []
+
+    @tool
+    def send_email(to: str, cc: str | None = None) -> str:
+        """Send an email."""
+        ran.append(f"send_email(to={to}, cc={cc})")
+        return f"sent to {to}"
+
+    @tool
+    def delete_file(path: str) -> str:
+        """Delete a file."""
+        ran.append(f"delete_file({path})")
+        return f"deleted {path}"
+
+    @tool
+    def read_file(path: str) -> str:
+        """Read a file."""
+        ran.append(f"read_file({path})")
+        return f"contents of {path}"
+
+    calls = [
+        ToolCall(name="send_email", args={"to": "alice", "cc": "carol"}, id="call_email"),
+        ToolCall(name="delete_file", args={"path": "x.txt"}, id="call_delete"),
+        ToolCall(name="delete_file", args={"path": "tmp.txt"}, id="call_delete_tmp"),
+        ToolCall(name="read_file", args={"path": "y.txt"}, id="call_read"),
+    ]
+    agent = _agent(
+        [send_email, delete_file, read_file],
+        calls,
+        {
+            "send_email": True,
+            "delete_file": {
+                "allowed_decisions": ["approve", "reject"],
+                "when": lambda req: req.tool_call["args"]["path"] != "tmp.txt",
+            },
+        },
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+    paused = agent.invoke({"messages": [HumanMessage("go")]}, config)["__interrupt__"]
+    by_tool = {i.value["name"]: i for i in paused}
+    email, delete = by_tool["send_email"], by_tool["delete_file"]
+    assert (len(paused), delete.value["args"]) == (2, {"path": "x.txt"})
+    assert email.id != delete.id
+    # A call that isn't gated, or that `when` lets through, runs without waiting.
+    assert sorted(ran) == ["delete_file(tmp.txt)", "read_file(y.txt)"]
+
+    # Each interrupt accepts only its own tool's decisions.
+    assert delete.response_schema["oneOf"] == [
+        {"$ref": "#/$defs/ApproveDecision"},
+        {"$ref": "#/$defs/RejectDecision"},
+    ]
+    with pytest.raises(ValidationError, match="expected tags: 'approve', 'reject'"):
+        agent.invoke(Command(resume={delete.id: {"type": "respond", "message": "x"}}), config)
+
+    # The edit replaces the args: `cc` isn't carried over from the model's call.
+    edit = {"type": "edit", "edited_action": {"name": "send_email", "args": {"to": "bob"}}}
+    [pending] = agent.invoke(Command(resume={email.id: edit}), config)["__interrupt__"]
+    assert pending.id == delete.id
+
+    final = agent.invoke(
+        Command(resume={delete.id: {"type": "reject", "message": "keep it"}}), config
+    )
+    assert sorted(ran) == [  # nothing ran twice
+        "delete_file(tmp.txt)",
+        "read_file(y.txt)",
+        "send_email(to=bob, cc=None)",
+    ]
+    messages = {m.tool_call_id: m for m in final["messages"] if isinstance(m, ToolMessage)}
+    assert 'Executed instead: send_email with arguments {"to": "bob"}' in str(
+        messages["call_email"].content
+    )
+    assert messages["call_delete"].status == "error"
+    assert "keep it" in str(messages["call_delete"].content)
+    assert "__interrupt__" not in final
+
+
+@pytest.mark.parametrize(
+    ("error", "after"),
+    [
+        (r"1 validation error for .*\nedit\.edited_action\n", []),
+        # Listed before error-handling middleware, HITL's error still reaches the caller.
+        (r"edit\.edited_action", [ToolRetryMiddleware(initial_delay=0)]),
+        (r"edit\.edited_action", [ToolErrorMiddleware(on_error=lambda *_: "x")]),
+    ],
+    ids=["hitl_alone", "hitl_wraps_retry", "hitl_wraps_tool_error"],
+)
+def test_per_call_rejects_a_bad_answer_without_saving_it(
+    error: str, after: list[AgentMiddleware]
+) -> None:
+    ran: list[str] = []
+
+    @tool
+    def send_email(to: str) -> str:
+        """Send an email."""
+        ran.append(to)
+        return f"sent to {to}"
+
+    agent = _agent(
+        [send_email],
+        [ToolCall(name="send_email", args={"to": "alice"}, id="call_email")],
+        {"send_email": True},
+        *after,
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+    [intr] = agent.invoke({"messages": [HumanMessage("go")]}, config)["__interrupt__"]
+
+    with pytest.raises(ValidationError, match=error):
+        agent.invoke(Command(resume={intr.id: {"type": "edit"}}), config)
+    assert ran == []
+
+    edit = {"type": "edit", "edited_action": {"name": "send_email", "args": {"to": "bob"}}}
+    final = agent.invoke(Command(resume={intr.id: edit}), config)
+    assert ran == ["bob"]
+    assert "__interrupt__" not in final
+
+
+def test_per_call_needs_a_tool_call_id() -> None:
+    @tool
+    def send_email(to: str) -> str:
+        """Send an email."""
+        return f"sent to {to}"
+
+    agent = _agent(
+        [send_email],
+        [ToolCall(name="send_email", args={"to": "alice"}, id=None)],
+        {"send_email": True},
+    )
+    with pytest.raises(ValueError, match="`send_email` has no ID"):
+        agent.invoke({"messages": [HumanMessage("go")]}, {"configurable": {"thread_id": "t"}})
+
+
+def test_per_call_description_factory_gets_the_graph_runtime() -> None:
+    seen: list[object] = []
+
+    @tool
+    def send_email(to: str) -> str:
+        """Send an email."""
+        return f"sent to {to}"
+
+    def describe(tool_call: ToolCall, state: AgentState[Any], runtime: Runtime[ContextT]) -> str:
+        seen.append(runtime)
+        return f"Email {tool_call['args']['to']}? ({len(state['messages'])} messages)"
+
+    config: InterruptOnConfig = {"allowed_decisions": ["approve"], "description": describe}
+    agent = _agent(
+        [send_email],
+        [ToolCall(name="send_email", args={"to": "alice"}, id="call_email")],
+        {"send_email": config},
+    )
+    result = agent.invoke({"messages": [HumanMessage("go")]}, {"configurable": {"thread_id": "t"}})
+    [intr] = result["__interrupt__"]
+
+    assert intr.value["description"] == "Email alice? (2 messages)"
+    assert seen
+    assert all(isinstance(runtime, Runtime) for runtime in seen)  # as in batched mode
+
+
+def test_per_call_same_tool_twice_routes_each_answer_to_its_own_call() -> None:
+    ran: list[str] = []
+
+    @tool
+    def send_email(to: str) -> str:
+        """Send an email."""
+        ran.append(to)
+        return f"sent to {to}"
+
+    # An empty ID works too, as in batched mode.
+    calls = [ToolCall(name="send_email", args={"to": "alice"}, id=i) for i in ("e1", "")]
+    agent = _agent([send_email], calls, {"send_email": True})
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+    paused = agent.invoke({"messages": [HumanMessage("go")]}, config)["__interrupt__"]
+    by_call = {i.value["tool_call_id"]: i.id for i in paused}
+    assert set(by_call) == {"e1", ""}
+
+    answers = {by_call["e1"]: {"type": "approve"}, by_call[""]: {"type": "reject"}}
+    final = agent.invoke(Command(resume=answers), config)
+    assert ran == ["alice"]
+    messages = {m.tool_call_id: m for m in final["messages"] if isinstance(m, ToolMessage)}
+    assert messages[""].status == "error"
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason="Asyncio context vars require Python 3.11+")
+@pytest.mark.parametrize(
+    ("answer", "status", "content"),
+    [
+        (
+            {"type": "edit", "edited_action": {"name": "send_email", "args": {"to": "bob"}}},
+            "success",
+            "sent to bob",
+        ),
+        ({"type": "reject"}, "error", "The tool was not executed."),
+    ],
+    ids=["edit", "reject"],
+)
+async def test_per_call_works_with_ainvoke(answer: Decision, status: str, content: str) -> None:
+    @tool
+    def send_email(to: str) -> str:
+        """Send an email."""
+        return f"sent to {to}"
+
+    agent = _agent(
+        [send_email],
+        [ToolCall(name="send_email", args={"to": "alice"}, id="call_email")],
+        {"send_email": True},
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+    [intr] = (await agent.ainvoke({"messages": [HumanMessage("go")]}, config))["__interrupt__"]
+
+    with pytest.raises(ValidationError, match=r"edit\.edited_action"):
+        await agent.ainvoke(Command(resume={intr.id: {"type": "edit"}}), config)
+    final = await agent.ainvoke(Command(resume={intr.id: answer}), config)
+
+    [message] = [m for m in final["messages"] if isinstance(m, ToolMessage)]
+    assert message.status == status
+    assert content in str(message.content)
+
+
+def test_per_call_retried_tool_is_not_reviewed_again_when_hitl_wraps_retry() -> None:
+    attempts: list[str] = []
+
+    @tool
+    def send_email(to: str) -> str:
+        """Send an email."""
+        attempts.append(to)
+        if len(attempts) == 1:
+            msg = "mail server unavailable"
+            raise RuntimeError(msg)
+        return f"sent to {to}"
+
+    agent = _agent(
+        [send_email],
+        [ToolCall(name="send_email", args={"to": "alice"}, id="call_email")],
+        {"send_email": True},
+        ToolRetryMiddleware(initial_delay=0),
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+    [intr] = agent.invoke({"messages": [HumanMessage("go")]}, config)["__interrupt__"]
+    final = agent.invoke(Command(resume={intr.id: {"type": "approve"}}), config)
+
+    assert "__interrupt__" not in final  # the retry didn't ask the reviewer again
+    assert attempts == ["alice", "alice"]
+    [message] = [m for m in final["messages"] if isinstance(m, ToolMessage)]
+    assert message.content == "sent to alice"

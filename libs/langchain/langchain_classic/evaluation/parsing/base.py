@@ -149,7 +149,7 @@ class JsonEqualityEvaluator(StringEvaluator):
     def _parse_json(
         self,
         string: Any,
-    ) -> dict | list | None | float | bool | int | str:
+    ) -> dict | list | float | bool | int | str | None:
         if isinstance(string, str):
             return parse_json_markdown(string)
         return string
