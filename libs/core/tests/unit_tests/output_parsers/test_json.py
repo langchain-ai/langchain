@@ -244,6 +244,26 @@ def test_parse_json_with_python_dict() -> None:
     }
 
 
+@pytest.mark.parametrize(
+    "tag",
+    ["json", "json5", "jsonc", "JSON", "javascript", "js", "text", ""],
+)
+def test_parse_json_markdown_fence_tags(tag: str) -> None:
+    fence = "```"
+    text = f'{fence}{tag}\n{{"name": "Ada", "age": 36}}\n{fence}'
+    assert parse_json_markdown(text) == {"name": "Ada", "age": 36}
+
+
+@pytest.mark.parametrize(
+    "tag",
+    ["json", "JSON", ""],
+)
+def test_parse_json_markdown_fence_tags_without_newline(tag: str) -> None:
+    fence = "```"
+    text = f'{fence}{tag}{{"name": "Ada", "age": 36}}{fence}'
+    assert parse_json_markdown(text) == {"name": "Ada", "age": 36}
+
+
 TEST_CASES_PARTIAL = [
     ('{"foo": "bar", "bar": "foo"}', '{"foo": "bar", "bar": "foo"}'),
     ('{"foo": "bar", "bar": "foo', '{"foo": "bar", "bar": "foo"}'),
