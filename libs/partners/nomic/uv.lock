@@ -15,7 +15,10 @@ resolution-markers = [
 ]
 
 [manifest]
-constraints = [{ name = "pygments", specifier = ">=2.20.0" }]
+constraints = [
+    { name = "pillow", marker = "python_full_version >= '3.11'", specifier = ">=13.0.0" },
+    { name = "pygments", specifier = ">=2.20.0" },
+]
 
 [[package]]
 name = "annotated-types"
@@ -570,8 +573,7 @@ typing = [
 requires-dist = [
     { name = "langchain-core", editable = "../../core" },
     { name = "nomic", specifier = ">=3.5.3" },
-    { name = "pillow", marker = "python_full_version < '3.11'", specifier = ">=12.1.1" },
-    { name = "pillow", marker = "python_full_version >= '3.11'", specifier = ">=13.0.0" },
+    { name = "pillow", specifier = ">=12.1.1" },
 ]
 
 [package.metadata.requires-dev]
