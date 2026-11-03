@@ -5246,7 +5246,11 @@ def _construct_lc_result_from_responses_api(
             content_blocks.append(function_call_block)
             try:
                 args = json.loads(output.arguments, strict=False)
-                error = None
+                if isinstance(args, dict):
+                    error = None
+                else:
+                    args = output.arguments
+                    error = "Tool call arguments must be a JSON object."
             except JSONDecodeError as e:
                 args = output.arguments
                 error = str(e)

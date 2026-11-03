@@ -270,6 +270,39 @@ def test__convert_dict_to_message_ai() -> None:
     assert _convert_message_to_dict(expected_output) == message
 
 
+@pytest.mark.parametrize(
+    "arguments", ["42", '"foo"', "[1, 2]", "true", "false", "null"]
+)
+def test__convert_dict_to_message_ai_rejects_non_object_tool_arguments(
+    arguments: str,
+) -> None:
+    result = _convert_dict_to_message(
+        {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {
+                    "id": "call_123",
+                    "type": "function",
+                    "function": {"name": "read_file", "arguments": arguments},
+                }
+            ],
+        }
+    )
+
+    assert isinstance(result, AIMessage)
+    assert result.tool_calls == []
+    assert len(result.invalid_tool_calls) == 1
+    invalid_call = result.invalid_tool_calls[0]
+    assert invalid_call["type"] == "invalid_tool_call"
+    assert invalid_call["name"] == "read_file"
+    assert invalid_call["args"] == arguments
+    assert invalid_call["id"] == "call_123"
+    assert invalid_call["error"].startswith(
+        "Function read_file arguments must be a JSON object."
+    )
+
+
 def test__convert_dict_to_message_ai_with_name() -> None:
     message = {"role": "assistant", "content": "foo", "name": "test"}
     result = _convert_dict_to_message(message)
@@ -2598,6 +2631,46 @@ def test__construct_lc_result_from_responses_api_function_call_invalid_json() ->
     )
     assert "error" in msg.invalid_tool_calls[0]
     assert _FUNCTION_CALL_IDS_MAP_KEY in result.generations[0].message.additional_kwargs
+
+
+@pytest.mark.parametrize(
+    "arguments", ["42", '"foo"', "[1, 2]", "true", "false", "null"]
+)
+def test__construct_lc_result_from_responses_api_function_call_non_object_json(
+    arguments: str,
+) -> None:
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall(
+                type="function_call",
+                id="func_123",
+                call_id="call_123",
+                name="read_file",
+                arguments=arguments,
+            )
+        ],
+    )
+
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
+    msg = cast(AIMessage, result.generations[0].message)
+
+    assert msg.tool_calls == []
+    assert msg.invalid_tool_calls == [
+        {
+            "type": "invalid_tool_call",
+            "name": "read_file",
+            "args": arguments,
+            "id": "call_123",
+            "error": "Tool call arguments must be a JSON object.",
+        }
+    ]
 
 
 def test__construct_lc_result_from_responses_api_complex_response() -> None:

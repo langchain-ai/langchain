@@ -1411,6 +1411,20 @@ def test_parse_tool_call_with_valid_arguments() -> None:
     assert result["id"] == "call_456"
 
 
+@pytest.mark.parametrize(
+    "arguments", ["42", '"foo"', "[1, 2]", "true", "false", "null"]
+)
+def test_parse_tool_call_rejects_non_object_arguments(arguments: str) -> None:
+    raw_tool_call = {
+        "function": {"arguments": arguments, "name": "myTool"},
+        "id": "call_789",
+        "type": "function",
+    }
+
+    with pytest.raises(OutputParserException, match="must be a JSON object"):
+        parse_tool_call(raw_tool_call, return_id=True)
+
+
 def test_parse_tool_call_partial_mode_with_none_arguments() -> None:
     """Test parse_tool_call in partial mode handles None arguments."""
     raw_tool_call = {
