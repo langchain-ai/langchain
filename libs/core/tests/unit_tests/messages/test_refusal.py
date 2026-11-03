@@ -31,9 +31,13 @@ def test_openai_legacy_refusal(message_cls: type[AIMessage]) -> None:
         additional_kwargs={"refusal": "I can't help with that."},
         response_metadata={"model_provider": "openai"},
     )
-    assert message.content_blocks == [
-        {"type": "refusal", "refusal": "I can't help with that."}
-    ]
+    expected: RefusalContentBlock = {
+        "type": "refusal",
+        "refusal": "I can't help with that.",
+    }
+    if message_cls is AIMessageChunk:
+        expected["index"] = "lc_refusal"
+    assert message.content_blocks == [expected]
 
 
 def test_openai_responses_refusal() -> None:

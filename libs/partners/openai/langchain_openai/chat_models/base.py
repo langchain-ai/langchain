@@ -250,6 +250,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     )
         if audio := _dict.get("audio"):
             additional_kwargs["audio"] = audio
+        if refusal := _dict.get("refusal"):
+            additional_kwargs["refusal"] = refusal
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -566,6 +568,8 @@ def _convert_delta_to_message_chunk(
         if "name" in function_call and function_call["name"] is None:
             function_call["name"] = ""
         additional_kwargs["function_call"] = function_call
+    if refusal := _dict.get("refusal"):
+        additional_kwargs["refusal"] = refusal
     tool_call_chunks = []
     if raw_tool_calls := _dict.get("tool_calls"):
         try:
@@ -4496,18 +4500,47 @@ def _raise_on_refusal(message: BaseMessage) -> None:
         raise OpenAIRefusalError(msg, raw_message=message)
 
 
+class _RefusalTracker:
+    """Accumulate streamed messages so a refusal is raised with its full text."""
+
+    def __init__(self) -> None:
+        self.aggregate: BaseMessage | None = None
+        self.refused = False
+
+    def add(self, message: BaseMessage) -> bool:
+        """Record `message` and return whether it should be passed on."""
+        if isinstance(self.aggregate, BaseMessageChunk) and isinstance(
+            message, BaseMessageChunk
+        ):
+            self.aggregate += message
+        else:
+            self.aggregate = message
+        self.refused = self.refused or any(
+            block["type"] == "refusal" for block in message.content_blocks
+        )
+        return not self.refused
+
+    def check(self) -> None:
+        if self.aggregate is not None:
+            _raise_on_refusal(self.aggregate)
+
+
 def _check_refusal(messages: Iterator[BaseMessage]) -> Iterator[BaseMessage]:
+    tracker = _RefusalTracker()
     for message in messages:
-        _raise_on_refusal(message)
-        yield message
+        if tracker.add(message):
+            yield message
+    tracker.check()
 
 
 async def _acheck_refusal(
     messages: AsyncIterator[BaseMessage],
 ) -> AsyncIterator[BaseMessage]:
+    tracker = _RefusalTracker()
     async for message in messages:
-        _raise_on_refusal(message)
-        yield message
+        if tracker.add(message):
+            yield message
+    tracker.check()
 
 
 class OpenAIRefusalError(ModelRefusalError):

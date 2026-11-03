@@ -1,6 +1,7 @@
 """Replay standardized refusals through OpenAI APIs."""
 
 from collections.abc import AsyncIterator
+from contextlib import nullcontext
 from typing import Any
 from unittest.mock import patch
 
@@ -130,3 +131,50 @@ async def test_streamed_responses_refusal_raises_async() -> None:
     ):
         async for _ in structured.astream("hi"):
             pass
+
+
+def _refusal_delta(refusal: str, *, first: bool = False) -> dict[str, Any]:
+    delta: dict[str, Any] = {"refusal": refusal}
+    if first:
+        delta.update(role="assistant", content="")
+    return {
+        "id": "chatcmpl-1",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": "gpt-5",
+        "choices": [{"index": 0, "delta": delta, "finish_reason": None}],
+    }
+
+
+STREAMED_REFUSAL = [
+    _refusal_delta("I'm sorry, ", first=True),
+    _refusal_delta("I cannot comply."),
+]
+
+
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_streamed_chat_completions_refusal_raises(output_version: str) -> None:
+    llm = ChatOpenAI(model="gpt-5", output_version=output_version)
+    structured = llm.with_structured_output(_Answer, method="json_schema")
+    # Structured output streams through `beta.chat.completions.stream` events.
+    events = [{"type": "chunk", "chunk": chunk} for chunk in STREAMED_REFUSAL]
+    with patch.object(llm, "root_client") as root_client:
+        root_client.beta.chat.completions.stream.return_value = nullcontext(
+            iter(events)
+        )
+        with pytest.raises(OpenAIRefusalError) as exc_info:
+            list(structured.stream("hi"))
+    assert str(exc_info.value) == "I'm sorry, I cannot comply."
+
+
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_streamed_chat_completions_refusal_is_one_block(output_version: str) -> None:
+    llm = ChatOpenAI(model="gpt-5", output_version=output_version)
+    with patch.object(llm, "client") as client:
+        client.create.return_value = nullcontext(iter(STREAMED_REFUSAL))
+        chunks = list(llm.stream("hi"))
+    message = chunks[0]
+    for chunk in chunks[1:]:
+        message += chunk
+    refusals = [b for b in message.content_blocks if b["type"] == "refusal"]
+    assert [b["refusal"] for b in refusals] == ["I'm sorry, I cannot comply."]
