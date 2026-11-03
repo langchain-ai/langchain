@@ -2920,6 +2920,9 @@ class ChatAnthropic(BaseChatModel):
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+
+                If the model refuses, `ModelRefusalError` is raised, or returned as
+                `'parsing_error'` when `include_raw` is `True`.
             method: The structured output method to use. Options are:
 
                 - `'function_calling'` (default): Use forced tool calling to get

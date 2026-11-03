@@ -2671,6 +2671,9 @@ class BaseChatOpenAI(BaseChatModel):
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+
+                If the model refuses, `ModelRefusalError` is raised, or returned as
+                `'parsing_error'` when `include_raw` is `True`.
             strict:
 
                 - `True`:
@@ -3932,6 +3935,9 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+
+                If the model refuses, `ModelRefusalError` is raised, or returned as
+                `'parsing_error'` when `include_raw` is `True`.
             strict:
 
                 - `True`:

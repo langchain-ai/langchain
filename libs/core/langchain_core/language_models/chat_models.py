@@ -2465,6 +2465,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
 
+                If the model refuses, `ModelRefusalError` is raised, or returned as
+                `'parsing_error'` when `include_raw` is `True`.
+
         Raises:
             ValueError: If there are any unsupported `kwargs`.
             NotImplementedError: If the model does not implement
