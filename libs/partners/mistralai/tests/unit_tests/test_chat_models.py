@@ -1162,3 +1162,27 @@ def test_unclassified_status_stays_a_plain_status_error() -> None:
 def test_success_response_does_not_raise() -> None:
     """A non-error response is left alone."""
     _raise_on_error(_error_response(200))
+
+
+_REFUSED_MESSAGES = [
+    AIMessage(
+        content=[
+            {"type": "text", "text": "Here is"},
+            {"type": "refusal", "refusal": "No.", "id": "msg_1"},
+        ]
+    ),
+    AIMessage(
+        content=[
+            {"type": "text", "text": "Here is"},
+            {"type": "refusal", "refusal": "No.", "index": "lc_refusal"},
+        ],
+        response_metadata={"model_provider": "anthropic", "output_version": "v1"},
+    ),
+]
+
+
+@pytest.mark.parametrize("message", _REFUSED_MESSAGES)
+def test_refusal_blocks_not_sent(message: AIMessage) -> None:
+    sent = str(_convert_message_to_mistral_chat_message(message))
+    assert "Here is" in sent
+    assert "refusal" not in sent

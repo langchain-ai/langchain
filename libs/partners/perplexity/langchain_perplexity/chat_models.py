@@ -318,6 +318,18 @@ def _use_responses_api(payload: dict) -> bool:
     return False
 
 
+def _drop_refusal_blocks(content: str | list[str | dict]) -> str | list[str | dict]:
+    """Remove `refusal` blocks, which the API has no input type for."""
+    if isinstance(content, str):
+        return content
+    kept = [
+        block
+        for block in content
+        if not (isinstance(block, dict) and block.get("type") == "refusal")
+    ]
+    return kept or ""
+
+
 def _set_model_name_alias(response_metadata: dict[str, Any]) -> None:
     """Mirror `model` into `model_name`, which langchain-core usage callbacks
     read for cost tracking (the Chat Completions path already sets it).
@@ -986,7 +998,10 @@ class ChatPerplexity(BaseChatModel):
         elif isinstance(message, HumanMessage):
             message_dict = {"role": "user", "content": message.content}
         elif isinstance(message, AIMessage):
-            message_dict = {"role": "assistant", "content": message.content}
+            message_dict = {
+                "role": "assistant",
+                "content": _drop_refusal_blocks(message.content),
+            }
             if message.tool_calls or message.invalid_tool_calls:
                 message_dict["tool_calls"] = [
                     {

@@ -238,6 +238,7 @@ _DROPPED_CONTENT_BLOCK_TYPES: frozenset[str] = frozenset(
         "reasoning_content",
         "function_call",
         "code_interpreter_call",
+        "refusal",
     }
 )
 """Content block types the chat completions wire format does not carry.

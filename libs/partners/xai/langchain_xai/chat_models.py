@@ -572,6 +572,14 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         **kwargs: Any,
     ) -> dict:
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        for message in payload.get("messages", []):
+            content = message.get("content")
+            if message["role"] == "assistant" and isinstance(content, list):
+                message["content"] = [
+                    block
+                    for block in content
+                    if not (isinstance(block, dict) and block.get("type") == "refusal")
+                ] or ""
         if payload.get("stop") is not None:
             # xAI rejects `stop` for reasoning models. The model profile is
             # authoritative when available (it correctly distinguishes models

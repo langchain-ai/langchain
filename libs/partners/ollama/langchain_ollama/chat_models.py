@@ -1038,7 +1038,7 @@ class ChatOllama(BaseChatModel):
                         if content:
                             content += "\n"
                         content += content_part["text"]
-                    elif content_part.get("type") == "tool_use":
+                    elif content_part.get("type") in ("tool_use", "refusal"):
                         continue
                     elif content_part.get("type") == "image_url":
                         image_url = None

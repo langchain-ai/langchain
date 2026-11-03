@@ -99,6 +99,18 @@ class TGI_MESSAGE:
     tool_calls: list[dict]
 
 
+def _drop_refusal_blocks(content: str | list[str | dict]) -> str | list[str | dict]:
+    """Remove `refusal` blocks, which the API has no input type for."""
+    if isinstance(content, str):
+        return content
+    kept = [
+        block
+        for block in content
+        if not (isinstance(block, dict) and block.get("type") == "refusal")
+    ]
+    return kept or ""
+
+
 def _lc_tool_call_to_hf_tool_call(tool_call: ToolCall) -> dict:
     return {
         "type": "function",
@@ -139,7 +151,10 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, HumanMessage):
         message_dict = {"role": "user", "content": message.content}
     elif isinstance(message, AIMessage):
-        message_dict = {"role": "assistant", "content": message.content}
+        message_dict = {
+            "role": "assistant",
+            "content": _drop_refusal_blocks(message.content),
+        }
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
             # If function call only, content is None not empty string
