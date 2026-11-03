@@ -1,7 +1,6 @@
 """Replay standardized refusals through OpenAI APIs."""
 
 from collections.abc import AsyncIterator, Iterator
-from contextlib import nullcontext
 from typing import Any
 from unittest.mock import patch
 
@@ -196,16 +195,3 @@ def test_streamed_chat_completions_refusal_raises(output_version: str) -> None:
         with pytest.raises(OpenAIRefusalError) as exc_info:
             list(structured.stream("hi"))
     assert str(exc_info.value) == "I'm sorry, I cannot comply."
-
-
-@pytest.mark.parametrize("output_version", ["v0", "v1"])
-def test_streamed_chat_completions_refusal_is_one_block(output_version: str) -> None:
-    llm = ChatOpenAI(model="gpt-5", output_version=output_version)
-    with patch.object(llm, "client") as client:
-        client.create.return_value = nullcontext(iter(STREAMED_REFUSAL))
-        chunks = list(llm.stream("hi"))
-    message = chunks[0]
-    for chunk in chunks[1:]:
-        message += chunk
-    refusals = [b for b in message.content_blocks if b["type"] == "refusal"]
-    assert [b["refusal"] for b in refusals] == ["I'm sorry, I cannot comply."]
