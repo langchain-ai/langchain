@@ -66,6 +66,31 @@ def test_merge_message_runs_str_without_separator(
     assert messages == messages_model_copy
 
 
+@pytest.mark.parametrize(
+    ("roles", "expected_roles", "expected_content"),
+    [
+        (["developer", "developer"], ["developer"], ["foo\nbar"]),
+        (["system", "developer"], ["system", "developer"], ["foo", "bar"]),
+        (["developer", "system"], ["developer", "system"], ["foo", "bar"]),
+    ],
+)
+def test_merge_message_runs_developer_roles(
+    roles: list[str], expected_roles: list[str], expected_content: list[str]
+) -> None:
+    messages = convert_to_messages(
+        [
+            {"role": role, "content": content}
+            for role, content in zip(roles, ["foo", "bar"], strict=True)
+        ]
+    )
+    original = [m.model_copy(deep=True) for m in messages]
+    merged = merge_message_runs(messages)
+    wire_messages = convert_to_openai_messages(merged)
+    assert [m["role"] for m in wire_messages] == expected_roles
+    assert [m["content"] for m in wire_messages] == expected_content
+    assert messages == original
+
+
 def test_merge_message_runs_response_metadata() -> None:
     messages = [
         AIMessage("foo", id="1", response_metadata={"input_tokens": 1}),

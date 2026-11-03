@@ -1122,7 +1122,15 @@ def merge_message_runs(
         last = merged.pop() if merged else None
         if not last:
             merged.append(msg)
-        elif isinstance(msg, ToolMessage) or not isinstance(msg, last.__class__):
+        elif (
+            isinstance(msg, ToolMessage)
+            or not isinstance(msg, last.__class__)
+            or (
+                isinstance(msg, SystemMessage)
+                and msg.additional_kwargs.get("__openai_role__", "system")
+                != last.additional_kwargs.get("__openai_role__", "system")
+            )
+        ):
             merged.extend([last, msg])
         else:
             last_chunk = _msg_to_chunk(last)
