@@ -211,3 +211,82 @@ def test_convert_to_openai_messages_refusal_blocks() -> None:
         {"type": "text", "text": "Here is"},
         {"type": "refusal", "refusal": "No."},
     ]
+
+
+@pytest.mark.parametrize("provider", ["google_genai", "google_vertexai"])
+@pytest.mark.parametrize("finish_reason", ["SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST"])
+def test_google_blocked_candidate_refusal(provider: str, finish_reason: str) -> None:
+    message = AIMessage(
+        content=[],
+        response_metadata={"model_provider": provider, "finish_reason": finish_reason},
+    )
+    assert _refusal(message) == {
+        "type": "refusal",
+        "refusal": "",
+        "index": "lc_refusal",
+        "extras": {"finish_reason": finish_reason},
+    }
+
+
+def test_google_blocked_prompt_refusal() -> None:
+    message = AIMessage(
+        content="",
+        response_metadata={
+            "model_provider": "google_genai",
+            "prompt_feedback": {"block_reason": "SAFETY", "safety_ratings": []},
+        },
+    )
+    assert _refusal(message) == {
+        "type": "refusal",
+        "refusal": "",
+        "index": "lc_refusal",
+        "extras": {"block_reason": "SAFETY"},
+    }
+
+
+def test_google_refusal_keeps_finish_message() -> None:
+    message = AIMessage(
+        content=[],
+        response_metadata={
+            "model_provider": "google_genai",
+            "finish_reason": "SAFETY",
+            "finish_message": "Blocked for safety.",
+        },
+    )
+    refusal = _refusal(message)
+    assert refusal is not None
+    assert refusal["refusal"] == "Blocked for safety."
+
+
+@pytest.mark.parametrize(
+    "response_metadata",
+    [
+        {"finish_reason": "STOP"},
+        {"finish_reason": "MAX_TOKENS"},
+        {"finish_reason": "RECITATION"},
+        {"finish_reason": "SPII"},
+        {"prompt_feedback": {"block_reason": "BLOCKED_REASON_UNSPECIFIED"}},
+        {"prompt_feedback": {"block_reason": None}},
+    ],
+)
+def test_google_non_refusal_stops(response_metadata: dict[str, object]) -> None:
+    message = AIMessage(
+        content="Hi.",
+        response_metadata={"model_provider": "google_genai", **response_metadata},
+    )
+    assert _refusal(message) is None
+
+
+def test_google_streamed_refusal_aggregates_to_one_block() -> None:
+    first = AIMessageChunk(
+        content=[{"type": "text", "text": "Here is", "index": 0}],
+        response_metadata={"model_provider": "google_genai"},
+    )
+    last = AIMessageChunk(
+        content=[],
+        response_metadata={"model_provider": "google_genai", "finish_reason": "SAFETY"},
+    )
+    assert [block["type"] for block in (first + last).content_blocks] == [
+        "text",
+        "refusal",
+    ]
