@@ -206,6 +206,12 @@ mid_conversation_tools = true
 mid_conversation_system_messages = true
 mid_conversation_tools = true
 
+[overrides."gpt-6.1-terra"]
+reasoning_effort_levels = ["none", "low", "medium", "high", "xhigh", "max"]
+reasoning_effort_default = "medium"
+mid_conversation_system_messages = true
+mid_conversation_tools = true
+
 [overrides."o3"]
 mid_conversation_system_messages = true
 mid_conversation_tools = true

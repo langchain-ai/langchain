@@ -1361,6 +1361,17 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "tool_choice": True,
         "tool_call_streaming": True,
+        "reasoning_effort_levels": [
+            "none",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ],
+        "reasoning_effort_default": "medium",
+        "mid_conversation_system_messages": True,
+        "mid_conversation_tools": True,
     },
     "gpt-daybreak-blue-latest": {
         "name": "Daybreak Blue",
