@@ -376,6 +376,8 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     block["annotations"] = cast("list[types.Annotation]", citations)
                     break
 
+        if refusal := _refusal_from_metadata(message.response_metadata):
+            string_blocks.append(refusal)
         return string_blocks
 
     if not isinstance(message.content, list):
@@ -568,6 +570,8 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                 missing_tool_call_block["index"] = index
             converted_blocks.append(missing_tool_call_block)
 
+    if refusal := _refusal_from_metadata(message.response_metadata):
+        converted_blocks.append(refusal)
     return converted_blocks
 
 
@@ -609,15 +613,6 @@ def _refusal_from_metadata(
     }
 
 
-def _convert_with_refusal(message: AIMessage) -> list[types.ContentBlock]:
-    blocks = _convert_to_v1_from_genai(message)
-    if not any(block["type"] == "refusal" for block in blocks) and (
-        refusal := _refusal_from_metadata(message.response_metadata)
-    ):
-        blocks.append(refusal)
-    return blocks
-
-
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:
     """Derive standard content blocks from a message with Google (GenAI) content.
 
@@ -627,7 +622,7 @@ def translate_content(message: AIMessage) -> list[types.ContentBlock]:
     Returns:
         The derived content blocks.
     """
-    return _convert_with_refusal(message)
+    return _convert_to_v1_from_genai(message)
 
 
 def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]:
@@ -639,7 +634,7 @@ def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]
     Returns:
         The derived content blocks.
     """
-    return _convert_with_refusal(message)
+    return _convert_to_v1_from_genai(message)
 
 
 def _register_google_genai_translator() -> None:
