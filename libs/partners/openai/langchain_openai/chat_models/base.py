@@ -88,7 +88,6 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
-    get_refusal,
     is_data_content_block,
 )
 from langchain_core.messages import content as types
@@ -4475,10 +4474,11 @@ def _raise_on_refusal(message: BaseMessage) -> None:
     """Raise `OpenAIRefusalError` if the model refused or output was filtered."""
     response_metadata = message.response_metadata
     finish_reason = response_metadata.get("finish_reason")
-    if refusal := get_refusal(message):
-        if text := refusal.get("refusal"):
-            raise OpenAIRefusalError(text, raw_message=message)
-        raise OpenAIRefusalError(raw_message=message)
+    for block in message.content_blocks:
+        if block["type"] == "refusal":
+            if text := block.get("refusal"):
+                raise OpenAIRefusalError(text, raw_message=message)
+            raise OpenAIRefusalError(raw_message=message)
     incomplete_details = response_metadata.get("incomplete_details")
     incomplete_reason = (
         incomplete_details.get("reason")

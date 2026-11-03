@@ -173,7 +173,7 @@ class ModelRefusalError(ModelError):
         """Create a `ModelRefusalError` from a standard refusal block.
 
         Args:
-            refusal: The refusal block, e.g. from `get_refusal`.
+            refusal: The refusal block from the response's `content_blocks`.
             raw_message: The model response that contained the refusal.
 
         Returns:

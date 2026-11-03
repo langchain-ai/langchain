@@ -2,7 +2,12 @@
 
 import pytest
 from anthropic.types import Message, RawMessageDeltaEvent
-from langchain_core.messages import AIMessage, HumanMessage, get_refusal
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    RefusalContentBlock,
+)
 
 from langchain_anthropic import ChatAnthropic
 
@@ -11,6 +16,13 @@ STOP_DETAILS = {
     "category": "cyber",
     "explanation": "Blocked under the usage policy.",
 }
+
+
+def _refusal(message: BaseMessage) -> RefusalContentBlock | None:
+    for block in message.content_blocks:
+        if block["type"] == "refusal":
+            return block
+    return None
 
 
 @pytest.mark.parametrize("output_version", [None, "v1"])
@@ -51,7 +63,7 @@ def test_refusal_in_formatted_output(output_version: str | None) -> None:
         }
     )
     message = model._format_output(data).generations[0].message
-    assert get_refusal(message) == {
+    assert _refusal(message) == {
         "type": "refusal",
         "refusal": "Blocked under the usage policy.",
         "index": "lc_refusal",
@@ -77,7 +89,7 @@ def test_streamed_refusal_independent_of_stream_usage(*, stream_usage: bool) -> 
         event, stream_usage=stream_usage, coerce_content_to_string=False
     )
     assert chunk is not None
-    refusal = get_refusal(chunk)
+    refusal = _refusal(chunk)
     assert refusal is not None
     assert refusal.get("extras") == {"category": "cyber"}
     assert (chunk.usage_metadata is not None) is stream_usage

@@ -6,10 +6,8 @@ from langchain_core.exceptions import ModelRefusalError
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
-    HumanMessage,
     RefusalContentBlock,
     convert_to_openai_messages,
-    get_refusal,
 )
 
 STOP_DETAILS = {
@@ -17,6 +15,13 @@ STOP_DETAILS = {
     "category": "cyber",
     "explanation": "Blocked under the usage policy.",
 }
+
+
+def _refusal(message: AIMessage) -> RefusalContentBlock | None:
+    for block in message.content_blocks:
+        if block["type"] == "refusal":
+            return block
+    return None
 
 
 @pytest.mark.parametrize("message_cls", [AIMessage, AIMessageChunk])
@@ -109,7 +114,7 @@ def test_anthropic_streamed_refusal() -> None:
         },
         chunk_position="last",
     )
-    assert get_refusal(last) == get_refusal(first + last)
+    assert _refusal(last) == _refusal(first + last)
     assert [block["type"] for block in (first + last).content_blocks] == [
         "text",
         "refusal",
@@ -121,11 +126,7 @@ def test_ordinary_text_not_refused() -> None:
         "I cannot help.",
         response_metadata={"model_provider": "anthropic", "stop_reason": "end_turn"},
     )
-    assert get_refusal(message) is None
-
-
-def test_get_refusal_ignores_non_ai_messages() -> None:
-    assert get_refusal(HumanMessage("hi")) is None
+    assert _refusal(message) is None
 
 
 def test_error_from_refusal() -> None:
@@ -137,7 +138,7 @@ def test_error_from_refusal() -> None:
             "stop_details": STOP_DETAILS,
         },
     )
-    refusal = get_refusal(message)
+    refusal = _refusal(message)
     assert refusal is not None
     error = ModelRefusalError.from_refusal(refusal, raw_message=message)
     assert str(error) == (
@@ -173,26 +174,10 @@ def test_anthropic_refusal_with_malformed_stop_details(stop_details: object) -> 
             "stop_details": stop_details,
         },
     )
-    assert get_refusal(message) == {
+    assert _refusal(message) == {
         "type": "refusal",
         "refusal": "",
         "index": "lc_refusal",
-    }
-
-
-def test_get_refusal_reads_legacy_non_standard_block() -> None:
-    message = AIMessage(
-        content=[
-            {
-                "type": "non_standard",
-                "value": {"type": "refusal", "refusal": "I can't help with that."},
-            }
-        ],
-        response_metadata={"output_version": "v1"},
-    )
-    assert get_refusal(message) == {
-        "type": "refusal",
-        "refusal": "I can't help with that.",
     }
 
 
@@ -202,7 +187,7 @@ def test_error_from_openai_refusal() -> None:
         additional_kwargs={"refusal": "I can't help with that."},
         response_metadata={"model_provider": "openai", "finish_reason": "stop"},
     )
-    refusal = get_refusal(message)
+    refusal = _refusal(message)
     assert refusal is not None
     error = ModelRefusalError.from_refusal(refusal, raw_message=message)
     assert str(error) == (

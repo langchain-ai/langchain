@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from langchain_core.exceptions import ModelRefusalError
-from langchain_core.messages import get_refusal
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -24,8 +23,9 @@ if TYPE_CHECKING:
 
 
 def _raise_if_refused(message: BaseMessage) -> None:
-    if refusal := get_refusal(message):
-        raise ModelRefusalError.from_refusal(refusal, raw_message=message)
+    for block in message.content_blocks:
+        if block["type"] == "refusal":
+            raise ModelRefusalError.from_refusal(block, raw_message=message)
 
 
 def _check_refusal(response: ModelResponse[ResponseT]) -> ModelResponse[ResponseT]:
