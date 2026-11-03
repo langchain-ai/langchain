@@ -373,7 +373,7 @@ def _merge_messages(
         if any(
             all(isinstance(m, c) for m in (curr, last))
             for c in (SystemMessage, HumanMessage)
-        ):
+        ) and not (_output_config(curr) or _output_config(last)):
             if isinstance(cast("BaseMessage", last).content, str):
                 new_content: list = [
                     {"type": "text", "text": cast("BaseMessage", last).content},
@@ -552,6 +552,24 @@ _MID_CONVERSATION_OUTPUT_CONFIG_BETA = "mid-conversation-output-config-2026-07-0
 """Beta header required to send `output_config` on a mid-conversation `system` turn."""
 
 
+def _output_config(message: BaseMessage | None) -> dict | None:
+    """Return the `output_config` passed to a `SystemMessage`, if any."""
+    if not isinstance(message, SystemMessage):
+        return None
+    return (message.model_extra or {}).get("output_config")
+
+
+def _raise_if_output_config(message: BaseMessage, model: str | None) -> None:
+    """Refuse to hoist a `SystemMessage` whose `output_config` would be lost."""
+    if _output_config(message):
+        msg = (
+            "`output_config` on a `SystemMessage` is only sent on a mid-conversation "
+            "system turn, which needs a model whose profile sets "
+            f"`mid_conversation_system_messages` (model: {model!r})."
+        )
+        raise ValueError(msg)
+
+
 def _is_tool_change_block(block: object) -> bool:
     """Return whether a content block changes the tool set, in either spelling."""
     return (
@@ -710,9 +728,13 @@ def _format_in_place_system_messages(
             # This helper sits between `_format_messages` and the warning site.
             stacklevel=4,
         )
-        if content == []:
+        output_config = _output_config(pending)
+        if content == [] and not output_config:
             continue
-        turns.append({"role": "system", "content": content})
+        turn: dict = {"role": "system", "content": content}
+        if output_config:
+            turn["output_config"] = output_config
+        turns.append(turn)
     return turns
 
 
@@ -742,6 +764,7 @@ def _format_messages(
     for _i, message in enumerate(merged_messages):
         if message.type == "system":
             if _i == 0:
+                _raise_if_output_config(message, model)
                 system = _format_system_content(
                     message.content,
                     model=model,
@@ -750,6 +773,9 @@ def _format_messages(
                 continue
             if mid_conversation_system_messages and (
                 pending_system
+                # An effort-only turn may sit anywhere, e.g. between an assistant
+                # turn and the next user turn.
+                or (_output_config(message) and not message.content)
                 or _previous_turn_allows_system(
                     formatted_messages[-1] if formatted_messages else None
                 )
@@ -759,6 +785,7 @@ def _format_messages(
             if system is not None:
                 msg = "Received multiple non-consecutive system messages."
                 raise ValueError(msg)
+            _raise_if_output_config(message, model)
             system = _format_system_content(message.content, model=model)
             _warn_system_message_hoisted(model)
             continue
@@ -1065,6 +1092,12 @@ def _format_messages(
                 )
             else:
                 for pending in pending_system:
+                    if _output_config(pending) and not pending.content:
+                        formatted_messages.extend(
+                            _format_in_place_system_messages([pending], model=model)
+                        )
+                        continue
+                    _raise_if_output_config(pending, model)
                     if system is not None:
                         msg = "Received multiple non-consecutive system messages."
                         raise ValueError(msg)

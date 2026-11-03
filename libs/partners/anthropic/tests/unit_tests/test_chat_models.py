@@ -6468,3 +6468,55 @@ def test_configuration_update_requires_mid_conversation_system_messages() -> Non
                 )
             ]
         )
+
+
+def test_system_message_output_config_sends_per_message_effort() -> None:
+    """`SystemMessage(output_config=...)` is sent as an effort-only system turn."""
+    model = ChatAnthropic(model=MID_CONVERSATION_SYSTEM_MODEL)
+    payload = model._get_request_payload(
+        [
+            SystemMessage("Be terse."),
+            HumanMessage("Plan a migration."),
+            AIMessage("1. Export. 2. Import."),
+            SystemMessage([], output_config={"effort": "low"}),
+            HumanMessage("Summarize it."),
+        ]
+    )
+    assert payload["system"] == "Be terse."
+    assert payload["messages"][2:] == [
+        {"role": "system", "content": [], "output_config": {"effort": "low"}},
+        {"role": "user", "content": "Summarize it."},
+    ]
+    assert payload["betas"] == ["mid-conversation-output-config-2026-07-01"]
+
+
+def test_system_message_output_config_after_user_turn() -> None:
+    """An effort turn right after a user turn stays there, before the reply."""
+    model = ChatAnthropic(model=MID_CONVERSATION_SYSTEM_MODEL)
+    payload = model._get_request_payload(
+        [
+            HumanMessage("Hi"),
+            SystemMessage([], output_config={"effort": "high"}),
+            AIMessage("Hello!"),
+            HumanMessage("Bye"),
+        ]
+    )
+    assert payload["messages"][:3] == [
+        {"role": "user", "content": "Hi"},
+        {"role": "system", "content": [], "output_config": {"effort": "high"}},
+        {"role": "assistant", "content": "Hello!"},
+    ]
+
+
+def test_system_message_output_config_requires_mid_conversation_support() -> None:
+    """`output_config` is never silently dropped by hoisting."""
+    model = ChatAnthropic(model=MODEL_NAME)
+    with pytest.raises(ValueError, match="output_config"):
+        model._get_request_payload(
+            [
+                HumanMessage("Hi"),
+                AIMessage("Hello!"),
+                SystemMessage([], output_config={"effort": "low"}),
+                HumanMessage("Bye"),
+            ]
+        )
