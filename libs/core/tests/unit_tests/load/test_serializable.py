@@ -16,7 +16,7 @@ from langchain_core.load.load import (
     _get_default_allowed_class_paths,
 )
 from langchain_core.load.serializable import _is_field_useful, _try_neq_default
-from langchain_core.messages import AIMessage, RemoveMessage
+from langchain_core.messages import AIMessage, RemoveMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.prompts import (
     ChatPromptTemplate,
@@ -1268,3 +1268,13 @@ def test_chain_using_pick_roundtrips() -> None:
     revived = load(dumpd(chain))
 
     assert revived.invoke({"a": 1, "b": 2}) == {"a": 1}
+
+
+def test_message_extra_fields_round_trip() -> None:
+    """Extra fields passed to a message survive `dumpd`/`load`."""
+    message = SystemMessage([], output_config={"effort": "low"})
+    serialized = dumpd(message)
+    assert serialized["kwargs"]["output_config"] == {"effort": "low"}
+    loaded = load(serialized, allowed_objects=[SystemMessage])
+    assert loaded == message
+    assert loaded.output_config == {"effort": "low"}
