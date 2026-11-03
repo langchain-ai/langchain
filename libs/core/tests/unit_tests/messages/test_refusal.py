@@ -68,8 +68,8 @@ def test_anthropic_refusal_from_stop_details() -> None:
         {
             "type": "refusal",
             "refusal": "Blocked under the usage policy.",
-            "category": "cyber",
             "index": "lc_refusal",
+            "extras": {"category": "cyber"},
         }
     ]
 
@@ -140,10 +140,10 @@ def test_error_from_refusal() -> None:
     refusal = get_refusal(message)
     assert refusal is not None
     error = ModelRefusalError.from_refusal(refusal, raw_message=message)
-    assert error.provider == "anthropic"
-    assert error.stop_reason == "refusal"
-    assert error.category == "cyber"
-    assert error.explanation == "Blocked under the usage policy."
+    assert str(error) == (
+        "Model refused to produce the requested output (category='cyber'): "
+        "Blocked under the usage policy."
+    )
     assert error.raw_message is message
 
 
@@ -151,7 +151,6 @@ def test_error_from_refusal_without_text() -> None:
     block: RefusalContentBlock = {"type": "refusal", "refusal": ""}
     message = AIMessage(content_blocks=[block])
     error = ModelRefusalError.from_refusal(block, raw_message=message)
-    assert error.explanation is None
     assert str(error) == "Model refused to produce the requested output"
 
 
@@ -197,7 +196,7 @@ def test_get_refusal_reads_legacy_non_standard_block() -> None:
     }
 
 
-def test_error_from_openai_refusal_uses_finish_reason() -> None:
+def test_error_from_openai_refusal() -> None:
     message = AIMessage(
         content="",
         additional_kwargs={"refusal": "I can't help with that."},
@@ -206,9 +205,9 @@ def test_error_from_openai_refusal_uses_finish_reason() -> None:
     refusal = get_refusal(message)
     assert refusal is not None
     error = ModelRefusalError.from_refusal(refusal, raw_message=message)
-    assert error.provider == "openai"
-    assert error.stop_reason == "stop"
-    assert error.explanation == "I can't help with that."
+    assert str(error) == (
+        "Model refused to produce the requested output: I can't help with that."
+    )
 
 
 def test_convert_to_openai_messages_refusal_blocks() -> None:
@@ -216,7 +215,7 @@ def test_convert_to_openai_messages_refusal_blocks() -> None:
         content=[
             {"type": "text", "text": "Here is"},
             {"type": "refusal", "refusal": "", "index": "lc_refusal"},
-            {"type": "refusal", "refusal": "No.", "category": "cyber", "index": 1},
+            {"type": "refusal", "refusal": "No.", "extras": {"x": 1}, "index": 1},
         ]
     )
     assert convert_to_openai_messages(message)["content"] == [

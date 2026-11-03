@@ -4476,13 +4476,9 @@ def _raise_on_refusal(message: BaseMessage) -> None:
     response_metadata = message.response_metadata
     finish_reason = response_metadata.get("finish_reason")
     if refusal := get_refusal(message):
-        text = refusal.get("refusal") or None
-        raise OpenAIRefusalError(
-            text,
-            stop_reason=finish_reason,
-            explanation=text,
-            raw_message=message,
-        )
+        if text := refusal.get("refusal"):
+            raise OpenAIRefusalError(text, raw_message=message)
+        raise OpenAIRefusalError(raw_message=message)
     incomplete_details = response_metadata.get("incomplete_details")
     incomplete_reason = (
         incomplete_details.get("reason")
@@ -4490,10 +4486,8 @@ def _raise_on_refusal(message: BaseMessage) -> None:
         else None
     )
     if "content_filter" in (finish_reason, incomplete_reason):
-        raise OpenAIRefusalError(
-            stop_reason="content_filter",
-            raw_message=message,
-        )
+        msg = "Model output was stopped by a content filter"
+        raise OpenAIRefusalError(msg, raw_message=message)
 
 
 def _check_refusal(messages: Iterator[BaseMessage]) -> Iterator[BaseMessage]:
@@ -4523,33 +4517,6 @@ class OpenAIRefusalError(ModelRefusalError):
 
     See [more on refusals](https://platform.openai.com/docs/guides/structured-outputs/refusals).
     """
-
-    def __init__(
-        self,
-        message: str | None = None,
-        *,
-        stop_reason: str | None = None,
-        category: str | None = None,
-        explanation: str | None = None,
-        raw_message: BaseMessage | None = None,
-    ) -> None:
-        """Create an `OpenAIRefusalError`.
-
-        Args:
-            message: Error message. For a model refusal this is the refusal text.
-            stop_reason: The response's finish reason, e.g. `'content_filter'`.
-            category: Refusal category, if OpenAI reports one.
-            explanation: The model's refusal text, if any.
-            raw_message: The model response that contained the refusal.
-        """
-        super().__init__(
-            message,
-            provider="openai",
-            stop_reason=stop_reason,
-            category=category,
-            explanation=explanation,
-            raw_message=raw_message,
-        )
 
 
 def _create_usage_metadata(

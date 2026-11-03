@@ -509,9 +509,6 @@ class RefusalContentBlock(TypedDict):
     refusal: str
     """Human-readable refusal message, or an empty string if none was provided."""
 
-    category: NotRequired[str]
-    """Provider-reported refusal category, e.g. `'cyber'`."""
-
     id: NotRequired[str]
     """Unique identifier for this content block."""
 
@@ -519,7 +516,7 @@ class RefusalContentBlock(TypedDict):
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata, e.g. Anthropic's refusal `category`."""
 
 
 # Note: `title` and `context` are fields that could be used to provide additional

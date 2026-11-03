@@ -151,50 +151,20 @@ class ModelRefusalError(ModelError):
 
     def __init__(
         self,
-        message: str | None = None,
+        message: str = "Model refused to produce the requested output",
         *,
-        provider: str | None = None,
-        stop_reason: str | None = None,
-        category: str | None = None,
-        explanation: str | None = None,
         raw_message: BaseMessage | None = None,
     ) -> None:
         """Create a `ModelRefusalError`.
 
         Args:
-            message: Error message. If omitted, one is built from the other fields.
-            provider: Name of the model provider that reported the refusal, e.g.
-                `'anthropic'` or `'openai'`.
-            stop_reason: The provider's stop or finish reason for the response,
-                e.g. `'refusal'` or `'content_filter'`.
-            category: Provider-reported category of the refusal, if any.
-            explanation: Provider- or model-supplied explanation of the refusal,
-                if any.
-            raw_message: The model response that contained the refusal.
+            message: Error message.
+            raw_message: The model response that contained the refusal. Its
+                `content_blocks` hold the refusal block, including any
+                provider-specific details in `extras`.
         """
-        self.provider = provider
-        self.stop_reason = stop_reason
-        self.category = category
-        self.explanation = explanation
         self.raw_message = raw_message
-        super().__init__(message if message is not None else self._default_message())
-
-    def _default_message(self) -> str:
-        message = "Model refused to produce the requested output"
-        details = [
-            f"{name}={value!r}"
-            for name, value in (
-                ("provider", self.provider),
-                ("stop_reason", self.stop_reason),
-                ("category", self.category),
-            )
-            if value is not None
-        ]
-        if details:
-            message += f" ({', '.join(details)})"
-        if self.explanation:
-            message += f": {self.explanation}"
-        return message
+        super().__init__(message)
 
     @classmethod
     def from_refusal(
@@ -207,16 +177,14 @@ class ModelRefusalError(ModelError):
             raw_message: The model response that contained the refusal.
 
         Returns:
-            An error carrying the refusal's category and explanation.
+            An error whose message includes the refusal's category and text.
         """
-        metadata = raw_message.response_metadata
-        return cls(
-            provider=metadata.get("model_provider"),
-            stop_reason=metadata.get("stop_reason") or metadata.get("finish_reason"),
-            category=refusal.get("category"),
-            explanation=refusal.get("refusal") or None,
-            raw_message=raw_message,
-        )
+        message = "Model refused to produce the requested output"
+        if category := refusal.get("extras", {}).get("category"):
+            message += f" (category={category!r})"
+        if text := refusal.get("refusal"):
+            message += f": {text}"
+        return cls(message, raw_message=raw_message)
 
 
 class ErrorCode(Enum):

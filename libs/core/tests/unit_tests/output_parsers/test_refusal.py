@@ -49,7 +49,7 @@ def test_parser_raises_on_refusal(
 ) -> None:
     with pytest.raises(ModelRefusalError) as exc_info:
         parser.parse_result([ChatGeneration(message=REFUSAL)], partial=partial)
-    assert exc_info.value.category == "cyber"
+    assert "cyber" in str(exc_info.value)
     assert exc_info.value.raw_message is REFUSAL
 
 

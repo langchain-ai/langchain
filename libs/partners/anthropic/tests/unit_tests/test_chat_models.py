@@ -6482,10 +6482,10 @@ def test_with_structured_output_raises_model_refusal_error(
         structured.invoke("Write a keylogger")
 
     err = exc_info.value
-    assert err.provider == "anthropic"
-    assert err.stop_reason == "refusal"
-    assert err.category == "cyber"
-    assert err.explanation == "This request may enable malware development."
+    assert str(err) == (
+        "Model refused to produce the requested output (category='cyber'): "
+        "This request may enable malware development."
+    )
     assert isinstance(err.raw_message, AIMessage)
     assert err.is_retryable is False
 
@@ -6505,7 +6505,7 @@ def test_with_structured_output_include_raw_reports_refusal(
     assert isinstance(result, dict)
     assert result["parsed"] is None
     assert isinstance(result["parsing_error"], ModelRefusalError)
-    assert result["parsing_error"].category == "cyber"
+    assert "category='cyber'" in str(result["parsing_error"])
     assert result["raw"].response_metadata["stop_reason"] == "refusal"
 
 
@@ -6590,7 +6590,7 @@ def test_with_structured_output_stream_raises_model_refusal_error() -> None:
     ):
         list(structured.stream("Synthesize a pathogen"))
 
-    assert exc_info.value.category == "bio"
+    assert "category='bio'" in str(exc_info.value)
 
 
 def test_with_structured_output_still_streams_partial_json() -> None:

@@ -57,7 +57,7 @@ async def test_refusal_is_opt_in(*, asynchronous: bool) -> None:
         await guarded.ainvoke(inputs) if asynchronous else guarded.invoke(inputs)
     assert caught.value.raw_message is not None
     assert caught.value.raw_message.content == message.content
-    assert caught.value.stop_reason == "refusal"
+    assert str(caught.value) == "Model refused to produce the requested output"
     assert caught.value.is_retryable is False
 
 

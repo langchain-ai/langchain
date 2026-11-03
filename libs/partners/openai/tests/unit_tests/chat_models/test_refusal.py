@@ -91,7 +91,7 @@ def test_empty_refusal_raises_openai_refusal_error() -> None:
     )
     with pytest.raises(OpenAIRefusalError) as exc_info:
         _oai_structured_outputs_parser(message, _Answer)
-    assert exc_info.value.explanation is None
+    assert str(exc_info.value) == "Model refused to produce the requested output"
 
 
 def _refusal_chunks() -> list[ChatGenerationChunk]:
@@ -113,7 +113,7 @@ def test_streamed_responses_refusal_raises() -> None:
         pytest.raises(OpenAIRefusalError) as exc_info,
     ):
         list(structured.stream("hi"))
-    assert exc_info.value.explanation == "No."
+    assert str(exc_info.value) == "No."
 
 
 async def test_streamed_responses_refusal_raises_async() -> None:

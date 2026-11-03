@@ -261,8 +261,8 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     "type": "refusal",
                     "refusal": block.get("refusal", ""),
                 }
-                if category := block.get("category"):
-                    refusal_block["category"] = category
+                if extras := block.get("extras"):
+                    refusal_block["extras"] = extras
                 if "index" in block:
                     refusal_block["index"] = block["index"]
                 yield refusal_block
@@ -535,7 +535,7 @@ def _refusal_from_stop_details(
         "index": "lc_refusal",
     }
     if category := details.get("category"):
-        block["category"] = category
+        block["extras"] = {"category": category}
     return block
 
 

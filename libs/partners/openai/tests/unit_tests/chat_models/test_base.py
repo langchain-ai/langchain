@@ -5895,7 +5895,6 @@ def test_openai_refusal_error_is_model_refusal_error() -> None:
 
     assert isinstance(err, ModelRefusalError)
     assert str(err) == "I can't help with that."
-    assert err.provider == "openai"
     assert err.is_retryable is False
 
 
@@ -5925,9 +5924,6 @@ def test_with_structured_output_raises_on_chat_completions_refusal(
     err = exc_info.value
     assert isinstance(err, ModelRefusalError)
     assert str(err) == "I can't help with that request."
-    assert err.provider == "openai"
-    assert err.stop_reason == "stop"
-    assert err.explanation == "I can't help with that request."
     assert isinstance(err.raw_message, AIMessage)
 
 
@@ -5947,8 +5943,7 @@ def test_with_structured_output_raises_on_content_filter(
     ):
         structured.invoke("Something filtered")
 
-    assert exc_info.value.stop_reason == "content_filter"
-    assert exc_info.value.explanation is None
+    assert str(exc_info.value) == "Model output was stopped by a content filter"
 
 
 def test_with_structured_output_include_raw_reports_responses_refusal() -> None:
@@ -5964,7 +5959,7 @@ def test_with_structured_output_include_raw_reports_responses_refusal() -> None:
     assert isinstance(response, dict)
     assert response["parsed"] is None
     assert isinstance(response["parsing_error"], OpenAIRefusalError)
-    assert response["parsing_error"].explanation == "I can't help with that request."
+    assert str(response["parsing_error"]) == "I can't help with that request."
 
 
 def test_with_structured_output_raises_on_responses_content_filter() -> None:
@@ -5978,7 +5973,7 @@ def test_with_structured_output_raises_on_responses_content_filter() -> None:
     ):
         structured.invoke("Something filtered")
 
-    assert exc_info.value.stop_reason == "content_filter"
+    assert str(exc_info.value) == "Model output was stopped by a content filter"
 
 
 async def test_with_structured_output_raises_on_refusal_async() -> None:
@@ -6041,7 +6036,7 @@ def test_with_structured_output_stream_raises_on_content_filter() -> None:
     ):
         list(structured.stream("Something filtered"))
 
-    assert exc_info.value.stop_reason == "content_filter"
+    assert str(exc_info.value) == "Model output was stopped by a content filter"
 
 
 def test_with_structured_output_still_streams_partial_json() -> None:

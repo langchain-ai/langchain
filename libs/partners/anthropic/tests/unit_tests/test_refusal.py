@@ -54,8 +54,8 @@ def test_refusal_in_formatted_output(output_version: str | None) -> None:
     assert get_refusal(message) == {
         "type": "refusal",
         "refusal": "Blocked under the usage policy.",
-        "category": "cyber",
         "index": "lc_refusal",
+        "extras": {"category": "cyber"},
     }
 
 
@@ -79,5 +79,5 @@ def test_streamed_refusal_independent_of_stream_usage(*, stream_usage: bool) -> 
     assert chunk is not None
     refusal = get_refusal(chunk)
     assert refusal is not None
-    assert refusal["category"] == "cyber"
+    assert refusal.get("extras") == {"category": "cyber"}
     assert (chunk.usage_metadata is not None) is stream_usage
