@@ -122,6 +122,10 @@ def _convert_from_v1_to_anthropic(
                 new_block = {"text": block.get("text", ""), "type": "text"}
             new_content.append(new_block)
 
+        elif block["type"] == "refusal":
+            # The Messages API has no refusal input block.
+            continue
+
         elif block["type"] == "tool_call":
             tool_use_block = {
                 "type": "tool_use",

@@ -4,6 +4,7 @@ EXPECTED_ALL = [
     "NotificationMetadata",
     "add_notification_metadata",
     "get_notification_metadata",
+    "RefusalContentBlock",
     "MessageLikeRepresentation",
     "_message_from_dict",
     "AIMessage",
