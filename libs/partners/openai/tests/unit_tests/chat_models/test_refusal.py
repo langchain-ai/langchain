@@ -1,6 +1,6 @@
 """Replay standardized refusals through OpenAI APIs."""
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from contextlib import nullcontext
 from typing import Any
 from unittest.mock import patch
@@ -8,6 +8,7 @@ from unittest.mock import patch
 import pytest
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langchain_core.outputs import ChatGenerationChunk
+from openai.types.chat import ChatCompletion
 from pydantic import BaseModel
 
 from langchain_openai import ChatOpenAI
@@ -152,16 +153,46 @@ STREAMED_REFUSAL = [
 ]
 
 
+class _BetaStream:
+    """`beta.chat.completions.stream`: chunk events, then the final completion."""
+
+    def __enter__(self) -> "_BetaStream":
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        return None
+
+    def __iter__(self) -> Iterator[dict[str, Any]]:
+        return iter({"type": "chunk", "chunk": chunk} for chunk in STREAMED_REFUSAL)
+
+    def get_final_completion(self) -> ChatCompletion:
+        return ChatCompletion.model_validate(
+            {
+                "id": "chatcmpl-1",
+                "object": "chat.completion",
+                "created": 0,
+                "model": "gpt-5",
+                "choices": [
+                    {
+                        "index": 0,
+                        "finish_reason": "stop",
+                        "message": {
+                            "role": "assistant",
+                            "content": None,
+                            "refusal": "I'm sorry, I cannot comply.",
+                        },
+                    }
+                ],
+            }
+        )
+
+
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 def test_streamed_chat_completions_refusal_raises(output_version: str) -> None:
     llm = ChatOpenAI(model="gpt-5", output_version=output_version)
     structured = llm.with_structured_output(_Answer, method="json_schema")
-    # Structured output streams through `beta.chat.completions.stream` events.
-    events = [{"type": "chunk", "chunk": chunk} for chunk in STREAMED_REFUSAL]
     with patch.object(llm, "root_client") as root_client:
-        root_client.beta.chat.completions.stream.return_value = nullcontext(
-            iter(events)
-        )
+        root_client.beta.chat.completions.stream.return_value = _BetaStream()
         with pytest.raises(OpenAIRefusalError) as exc_info:
             list(structured.stream("hi"))
     assert str(exc_info.value) == "I'm sorry, I cannot comply."
