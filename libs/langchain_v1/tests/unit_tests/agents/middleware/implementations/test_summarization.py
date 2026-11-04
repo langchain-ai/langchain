@@ -1,10 +1,18 @@
+import asyncio
+import warnings
 from collections.abc import Iterable
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any
-from unittest.mock import patch
+from typing import Any, cast
+from unittest.mock import ANY, patch
 
 import pytest
-from langchain_core.callbacks import AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun
+from langchain_core._api.deprecation import LangChainDeprecationWarning
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    BaseCallbackHandler,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.exceptions import ContextOverflowError, ModelAuthenticationError
 from langchain_core.language_models import ModelProfile
 from langchain_core.language_models.base import (
@@ -38,14 +46,67 @@ from langchain.agents.middleware.internal_call_transformer import (
 )
 from langchain.agents.middleware.summarization import (
     ContextSize,
+    ModelResolution,
     SummarizationMiddleware,
     TriggerClause,
     _provider_matches,
+)
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ExtendedModelResponse,
+    ModelRequest,
+    ModelResponse,
 )
 from langchain.chat_models import init_chat_model
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 OPENAI_TEST_MODEL = "gpt-5.5"
+
+
+_RESPONSE_ID = "summarization-test-response"
+
+
+def _model_request(
+    middleware: SummarizationMiddleware, state: AgentState[Any]
+) -> ModelRequest[None]:
+    """Build the request the agent would send, targeting the middleware's pinned model."""
+    model = middleware.model or GenericFakeChatModel(messages=iter([]))
+    return ModelRequest(
+        model=model, messages=list(state["messages"]), state=state, runtime=Runtime()
+    )
+
+
+def _respond(_: ModelRequest[None]) -> ModelResponse[Any]:
+    return ModelResponse(result=[AIMessage(content="ok", id=_RESPONSE_ID)])
+
+
+async def _arespond(request: ModelRequest[None]) -> ModelResponse[Any]:
+    return _respond(request)
+
+
+def _summary_update(result: object) -> dict[str, Any] | None:
+    """Return the history update a summarizing call attaches, minus the model response."""
+    if not isinstance(result, ExtendedModelResponse):
+        return None
+    assert result.command is not None
+    messages = cast("dict[str, Any]", result.command.update)["messages"]
+    assert messages[-1].id == _RESPONSE_ID
+    return {"messages": messages[:-1]}
+
+
+def _summarize(
+    middleware: SummarizationMiddleware, state: AgentState[Any]
+) -> dict[str, Any] | None:
+    """Run one model call through the middleware and return its history update."""
+    return _summary_update(middleware.wrap_model_call(_model_request(middleware, state), _respond))
+
+
+async def _asummarize(
+    middleware: SummarizationMiddleware, state: AgentState[Any]
+) -> dict[str, Any] | None:
+    """Async version of `_summarize`."""
+    request = _model_request(middleware, state)
+    return _summary_update(await middleware.awrap_model_call(request, _arespond))
 
 
 def _langchain_pyproject_major_version() -> int:
@@ -159,7 +220,7 @@ def test_summarization_middleware_no_summarization_cases() -> None:
     # Test when summarization is disabled
     middleware_disabled = SummarizationMiddleware(model=model, trigger=None)
     state = AgentState[Any](messages=[HumanMessage(content="Hello"), AIMessage(content="Hi")])
-    result = middleware_disabled.before_model(state, Runtime())
+    result = _summarize(middleware_disabled, state)
     assert result is None
 
     # Test when token count is below threshold
@@ -167,7 +228,7 @@ def test_summarization_middleware_no_summarization_cases() -> None:
         return 500  # Below threshold
 
     middleware.token_counter = mock_token_counter
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is None
 
 
@@ -296,7 +357,7 @@ def test_summarization_middleware_retries_transient_failure_in_call() -> None:
     middleware = SummarizationMiddleware(model=model, trigger=("messages", 2))
     # No delay between attempts so the test runs fast and deterministically; the
     # retry count itself (3, `Runnable.with_retry`'s own default) is untouched.
-    middleware._summary_model.wait_exponential_jitter = False  # type: ignore[attr-defined]
+    middleware._summary_model.wait_exponential_jitter = False  # type: ignore[union-attr]
 
     summary = middleware._create_summary([HumanMessage(content="hi")])
 
@@ -413,7 +474,7 @@ def test_create_summary_does_not_retry_non_retryable_errors() -> None:
 
     model = AuthFailingModel()
     middleware = SummarizationMiddleware(model=model)
-    middleware._summary_model.wait_exponential_jitter = False  # type: ignore[attr-defined]
+    middleware._summary_model.wait_exponential_jitter = False  # type: ignore[union-attr]
 
     with pytest.raises(ModelAuthenticationError):
         middleware._create_summary([HumanMessage(content="hi")])
@@ -452,7 +513,7 @@ def test_create_summary_raises_on_persistent_context_overflow() -> None:
     assert len(model.prompts) == 2
 
 
-def test_summarization_middleware_before_model_raises_on_summary_failure() -> None:
+def test_summarization_middleware_wrap_model_call_raises_on_summary_failure() -> None:
     """A failed summary generation must raise, never fabricate a summary or delete history."""
     middleware = SummarizationMiddleware(
         model=_AlwaysFailingModel(), trigger=("messages", 2), keep=("messages", 1)
@@ -466,14 +527,14 @@ def test_summarization_middleware_before_model_raises_on_summary_failure() -> No
     state = AgentState[Any](messages=messages)
 
     with pytest.raises(RuntimeError, match="429 Too Many Requests"):
-        middleware.before_model(state, Runtime())
+        _summarize(middleware, state)
 
     # The original message list is untouched - no fabricated summary, no deletion.
     assert state["messages"] == messages
 
 
-async def test_summarization_middleware_abefore_model_raises_on_summary_failure() -> None:
-    """Async: same raise-on-failure behavior as `before_model`."""
+async def test_summarization_middleware_awrap_model_call_raises_on_summary_failure() -> None:
+    """Async: same raise-on-failure behavior as `wrap_model_call`."""
     middleware = SummarizationMiddleware(
         model=_AlwaysFailingModel(), trigger=("messages", 2), keep=("messages", 1)
     )
@@ -486,7 +547,7 @@ async def test_summarization_middleware_abefore_model_raises_on_summary_failure(
     state = AgentState[Any](messages=messages)
 
     with pytest.raises(RuntimeError, match="429 Too Many Requests"):
-        await middleware.abefore_model(state, Runtime())
+        await _asummarize(middleware, state)
 
     assert state["messages"] == messages
 
@@ -615,7 +676,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
     # we have total_tokens = 4 * 200 = 800
     # and max_input_tokens = 1000
     # since 0.81 * 1000 == 810 > 800 -> summarization not triggered
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is None
 
     # Engage summarization
@@ -626,7 +687,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         keep=("fraction", 0.5),
         token_counter=token_counter,
     )
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is not None
     assert isinstance(result["messages"][0], RemoveMessage)
     summary_message = result["messages"][1]
@@ -646,7 +707,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         keep=("fraction", 0.6),
         token_counter=token_counter,
     )
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is not None
     assert [message.content for message in result["messages"][2:]] == [
         "Message 2",
@@ -663,7 +724,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         keep=("fraction", 0.8),
         token_counter=token_counter,
     )
-    assert middleware.before_model(state, Runtime()) is None
+    assert _summarize(middleware, state) is None
 
     # Test with tokens_to_keep as absolute int value
     middleware_int = SummarizationMiddleware(
@@ -672,7 +733,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         keep=("tokens", 400),  # Keep exactly 400 tokens (2 messages)
         token_counter=token_counter,
     )
-    result = middleware_int.before_model(state, Runtime())
+    result = _summarize(middleware_int, state)
     assert result is not None
     assert [message.content for message in result["messages"][2:]] == [
         "Message 3",
@@ -686,7 +747,7 @@ def test_summarization_middleware_profile_inference_triggers_summary() -> None:
         keep=("tokens", 600),  # Keep 600 tokens (3 messages)
         token_counter=token_counter,
     )
-    result = middleware_int_large.before_model(state, Runtime())
+    result = _summarize(middleware_int_large, state)
     assert result is not None
     assert [message.content for message in result["messages"][2:]] == [
         "Message 2",
@@ -724,7 +785,7 @@ def test_summarization_middleware_token_retention_preserves_ai_tool_pairs() -> N
     ]
 
     state = AgentState[Any](messages=messages)
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is not None
 
     preserved_messages = result["messages"][2:]
@@ -773,7 +834,7 @@ def test_summarization_middleware_full_workflow() -> None:
     ]
 
     state = AgentState[Any](messages=messages)
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
 
     assert result is not None
     assert "messages" in result
@@ -841,7 +902,7 @@ async def test_summarization_middleware_full_workflow_async() -> None:
     ]
 
     state = AgentState[Any](messages=messages)
-    result = await middleware.abefore_model(state, Runtime())
+    result = await _asummarize(middleware, state)
 
     assert result is not None
     assert "messages" in result
@@ -871,7 +932,7 @@ def test_summarization_middleware_keep_messages() -> None:
         HumanMessage(content="4"),
     ]
     state_below = AgentState[Any](messages=messages_below)
-    result = middleware.before_model(state_below, Runtime())
+    result = _summarize(middleware, state_below)
     assert result is None
 
     # At threshold - should trigger summarization
@@ -883,7 +944,7 @@ def test_summarization_middleware_keep_messages() -> None:
         HumanMessage(content="5"),
     ]
     state_at = AgentState[Any](messages=messages_at_threshold)
-    result = middleware.before_model(state_at, Runtime())
+    result = _summarize(middleware, state_at)
     assert result is not None
     assert "messages" in result
     expected_types = ["remove", "human", "human", "human"]
@@ -894,7 +955,7 @@ def test_summarization_middleware_keep_messages() -> None:
     # Above threshold - should also trigger summarization
     messages_above: list[AnyMessage] = [*messages_at_threshold, HumanMessage(content="6")]
     state_above = AgentState[Any](messages=messages_above)
-    result = middleware.before_model(state_above, Runtime())
+    result = _summarize(middleware, state_above)
     assert result is not None
     assert "messages" in result
     expected_types = ["remove", "human", "human", "human"]
@@ -904,7 +965,7 @@ def test_summarization_middleware_keep_messages() -> None:
 
     # Test with both parameters disabled
     middleware_disabled = SummarizationMiddleware(model=MockChatModel(), trigger=None)
-    result = middleware_disabled.before_model(state_above, Runtime())
+    result = _summarize(middleware_disabled, state_above)
     assert result is None
 
 
@@ -948,13 +1009,13 @@ def test_summarization_middleware_multiple_triggers() -> None:
     # Should not trigger - neither condition met
     messages: list[AnyMessage] = [HumanMessage(content=str(i)) for i in range(5)]
     state = AgentState[Any](messages=messages)
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is None
 
     # Should trigger - message count threshold met
     messages = [HumanMessage(content=str(i)) for i in range(10)]
     state = AgentState[Any](messages=messages)
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is not None
 
     # Test token trigger
@@ -964,7 +1025,7 @@ def test_summarization_middleware_multiple_triggers() -> None:
     middleware.token_counter = mock_high_tokens
     messages = [HumanMessage(content=str(i)) for i in range(5)]
     state = AgentState[Any](messages=messages)
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is not None
 
 
@@ -1293,7 +1354,7 @@ def test_summarization_middleware_skips_when_no_safe_cutoff() -> None:
     )
     state = AgentState[Any](messages=[HumanMessage(content="Current request")])
 
-    assert middleware.before_model(state, Runtime()) is None
+    assert _summarize(middleware, state) is None
 
 
 async def test_summarization_middleware_skips_when_no_safe_cutoff_async() -> None:
@@ -1310,7 +1371,7 @@ async def test_summarization_middleware_skips_when_no_safe_cutoff_async() -> Non
     )
     state = AgentState[Any](messages=[HumanMessage(content="Current request")])
 
-    assert await middleware.abefore_model(state, Runtime()) is None
+    assert await _asummarize(middleware, state) is None
 
 
 def test_summarization_middleware_deprecated_parameters_with_defaults() -> None:
@@ -1345,7 +1406,7 @@ def test_summarization_middleware_fraction_trigger_with_no_profile() -> None:
     with patch.object(middleware, "_get_profile_limits", autospec=True, return_value=None):
         # Should still trigger based on message count
         state = AgentState[Any](messages=messages)
-        result = middleware.before_model(state, Runtime())
+        result = _summarize(middleware, state)
         assert result is not None
 
 
@@ -1392,7 +1453,7 @@ def test_summarization_middleware_many_parallel_tool_calls_safety() -> None:
     assert middleware._find_safe_cutoff_point(messages, 1) == 1
 
 
-def test_summarization_before_model_uses_unscaled_tokens_for_cutoff() -> None:
+def test_summarization_uses_unscaled_tokens_for_cutoff() -> None:
     calls: list[dict[str, Any]] = []
 
     def fake_counter(_: Iterable[MessageLikeRepresentation], **kwargs: Any) -> int:
@@ -1410,7 +1471,7 @@ def test_summarization_before_model_uses_unscaled_tokens_for_cutoff() -> None:
             token_counter=mock_counter,
         )
         state = AgentState[Any](messages=[HumanMessage(content="one"), HumanMessage(content="two")])
-        assert middleware.before_model(state, Runtime()) is not None
+        assert _summarize(middleware, state) is not None
 
     # Test we support partial token counting (which for default token counter does not
     # use use_usage_metadata_scaling)
@@ -1496,7 +1557,7 @@ def test_trigger_copies_mutable_inputs() -> None:
 
     middleware.token_counter = token_counter_low
     state = AgentState(messages=[HumanMessage(content="1"), HumanMessage(content="2")])
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is None
 
 
@@ -1562,7 +1623,7 @@ def test_and_trigger_conditions() -> None:
             HumanMessage(content="3"),
         ]
     )
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is None, "Should not summarize when only tokens condition is met"
 
     # Test case 2: Only messages threshold met (tokens = 500 < 1000)
@@ -1581,13 +1642,13 @@ def test_and_trigger_conditions() -> None:
             AIMessage(content="6"),
         ]
     )
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is None, "Should not summarize when only messages condition is met"
 
     # Test case 3: Both conditions met (tokens >= 1000 AND messages >= 5)
     # Should trigger summarization
     middleware.token_counter = token_counter_high
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is not None, "Should summarize when both conditions are met"
     assert isinstance(result["messages"][0], RemoveMessage)
 
@@ -1621,7 +1682,7 @@ def test_or_trigger_conditions_with_and_clauses() -> None:
             AIMessage(content="4"),
         ]
     )
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is not None, "Should summarize when first OR clause is met"
 
     # Test case 2: Second clause met (tokens = 3500, messages = 7)
@@ -1631,7 +1692,7 @@ def test_or_trigger_conditions_with_and_clauses() -> None:
 
     middleware.token_counter = token_counter_3500
     state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(7)])
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is not None, "Should summarize when second OR clause is met"
 
     # Test case 3: Neither clause fully met
@@ -1650,12 +1711,12 @@ def test_or_trigger_conditions_with_and_clauses() -> None:
             AIMessage(content="4"),
         ]
     )
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is None, "Should not summarize when no complete clause is met"
 
 
 async def test_and_trigger_conditions_async() -> None:
-    """AND-capable trigger conditions via the async `abefore_model` path."""
+    """AND-capable trigger conditions via the async `awrap_model_call` path."""
     middleware = SummarizationMiddleware(
         model=FakeToolCallingModel(),
         trigger={"tokens": 1000, "messages": 5},
@@ -1668,7 +1729,7 @@ async def test_and_trigger_conditions_async() -> None:
         return 500
 
     middleware.token_counter = token_counter_low
-    result = await middleware.abefore_model(state, Runtime())
+    result = await _asummarize(middleware, state)
     assert result is None, "Should not summarize when only messages condition is met"
 
     # Both conditions met -> should summarize.
@@ -1676,13 +1737,13 @@ async def test_and_trigger_conditions_async() -> None:
         return 1500
 
     middleware.token_counter = token_counter_high
-    result = await middleware.abefore_model(state, Runtime())
+    result = await _asummarize(middleware, state)
     assert result is not None, "Should summarize when both conditions are met"
     assert isinstance(result["messages"][0], RemoveMessage)
 
 
 async def test_or_trigger_conditions_with_and_clauses_async() -> None:
-    """OR across multiple AND clauses via the async `abefore_model` path."""
+    """OR across multiple AND clauses via the async `awrap_model_call` path."""
     middleware = SummarizationMiddleware(
         model=FakeToolCallingModel(),
         trigger=[
@@ -1698,7 +1759,7 @@ async def test_or_trigger_conditions_with_and_clauses_async() -> None:
         return 5500
 
     middleware.token_counter = token_counter_5500
-    result = await middleware.abefore_model(state, Runtime())
+    result = await _asummarize(middleware, state)
     assert result is not None, "Should summarize when first OR clause is met"
 
     # Neither clause fully met (tokens = 4500, messages = 4) -> should not summarize.
@@ -1706,7 +1767,7 @@ async def test_or_trigger_conditions_with_and_clauses_async() -> None:
         return 4500
 
     middleware.token_counter = token_counter_4500
-    result = await middleware.abefore_model(state, Runtime())
+    result = await _asummarize(middleware, state)
     assert result is None, "Should not summarize when no complete clause is met"
 
 
@@ -1726,7 +1787,7 @@ def test_backward_compatibility_tuple_trigger() -> None:
 
     middleware_single.token_counter = token_counter_high
     state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(3)])
-    result = middleware_single.before_model(state, Runtime())
+    result = _summarize(middleware_single, state)
     assert result is not None, "Single tuple trigger should work"
 
     # List of tuples trigger
@@ -1739,7 +1800,7 @@ def test_backward_compatibility_tuple_trigger() -> None:
     # Should trigger with high tokens (first condition met)
     middleware_list.token_counter = token_counter_high
     state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(3)])
-    result = middleware_list.before_model(state, Runtime())
+    result = _summarize(middleware_list, state)
     assert result is not None, "List of tuples should trigger when any condition met"
 
     # Should trigger with many messages (second condition met)
@@ -1748,7 +1809,7 @@ def test_backward_compatibility_tuple_trigger() -> None:
 
     middleware_list.token_counter = token_counter_low
     state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(6)])
-    result = middleware_list.before_model(state, Runtime())
+    result = _summarize(middleware_list, state)
     assert result is not None, "List of tuples should trigger when second condition met"
 
 
@@ -1772,7 +1833,7 @@ def test_mixed_and_or_conditions() -> None:
 
     middleware.token_counter = token_counter_high
     state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(12)])
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is not None, "Should trigger when AND clause is met"
 
     # Test case 2: Second simple condition met
@@ -1781,13 +1842,13 @@ def test_mixed_and_or_conditions() -> None:
 
     middleware.token_counter = token_counter_low
     state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(55)])
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is not None, "Should trigger when simple messages condition is met"
 
     # Test case 3: Neither condition met
     middleware.token_counter = token_counter_low
     state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(8)])
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is None, "Should not trigger when no condition is met"
 
 
@@ -1809,21 +1870,21 @@ def test_fraction_in_and_trigger() -> None:
     # 5 messages * 200 = 1000 tokens (profile max is 1000)
     # 1000 / 1000 = 1.0 >= 0.8  AND messages = 5 >= 5
     state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(5)])
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is not None, "Should trigger when both fraction and messages conditions met"
 
     # Test case 2: Only messages condition met
     # 3 messages * 200 = 600 tokens
     # 600 / 1000 = 0.6 < 0.8 and messages = 3 < 5
     state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(3)])
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is None, "Should not trigger when neither condition is fully met"
 
     # Test case 3: High fraction but not enough messages
     # 4 messages * 200 = 800 tokens
     # 800 / 1000 = 0.8 >= 0.8 but messages = 4 < 5
     state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(4)])
-    result = middleware.before_model(state, Runtime())
+    result = _summarize(middleware, state)
     assert result is None, "Should not trigger when only fraction condition is met"
 
 
@@ -1941,7 +2002,7 @@ def test_empty_list_trigger_never_summarizes() -> None:
     )
     assert middleware._trigger_conditions == []
     state = AgentState(messages=[HumanMessage(content=str(i)) for i in range(50)])
-    assert middleware.before_model(state, Runtime()) is None
+    assert _summarize(middleware, state) is None
 
 
 def test_reported_tokens_satisfy_tokens_within_and_clause() -> None:
@@ -2496,7 +2557,7 @@ def test_summarizer_replaces_model_call() -> None:
         HumanMessage(content="how are you", id="h1"),
     ]
 
-    result = middleware.before_model(AgentState[Any](messages=messages), Runtime())
+    result = _summarize(middleware, AgentState[Any](messages=messages))
 
     assert result is not None
     assert received == [messages[:2]]
@@ -2520,7 +2581,7 @@ def test_summarizer_receives_trimmed_messages() -> None:
     with patch.object(middleware, "_trim_messages_for_summary", return_value=messages[-2:]) as trim:
         assert middleware._create_summary(messages) == "summary"
 
-    trim.assert_called_once_with(messages)
+    trim.assert_called_once_with(messages, models=ANY)
     assert received == [messages[-2:]]
 
 
@@ -2562,7 +2623,7 @@ async def test_summarizer_async() -> None:
         HumanMessage(content="how are you", id="h1"),
     ]
 
-    result = await middleware.abefore_model(AgentState[Any](messages=messages), Runtime())
+    result = await _asummarize(middleware, AgentState[Any](messages=messages))
 
     assert result is not None
     assert result["messages"][1].text.endswith("2 messages")
@@ -2588,7 +2649,7 @@ def test_summarizer_errors_propagate() -> None:
     state = AgentState[Any](messages=messages)
 
     with pytest.raises(RuntimeError, match="summarizer down"):
-        middleware.before_model(state, Runtime())
+        _summarize(middleware, state)
     assert state["messages"] == messages
 
 
@@ -2677,7 +2738,7 @@ def test_chat_model_summarizer_does_not_retry_non_retryable_errors() -> None:
 
     summary_model = AuthFailingModel()
     middleware = SummarizationMiddleware(model=MockChatModel(), summarizer=summary_model)
-    middleware._summary_model.wait_exponential_jitter = False  # type: ignore[attr-defined]
+    middleware._summary_model.wait_exponential_jitter = False  # type: ignore[union-attr]
 
     with pytest.raises(ModelAuthenticationError):
         middleware._create_summary([HumanMessage(content="hi")])
@@ -2739,3 +2800,368 @@ def test_async_summarizer_on_sync_path_raises() -> None:
 
     with pytest.raises(TypeError, match="coroutine function synchronously"):
         middleware._create_summary([HumanMessage(content="hi")])
+
+
+_SUMMARY_PROMPT_MARKER = "Messages to summarize:"
+
+
+class _NamedModel(BaseChatModel):
+    """Chat model with a name and context window that records the prompts it gets."""
+
+    name_: str
+    max_input: int
+    calls: list[str] = Field(default_factory=list)
+
+    def __init__(self, name: str, max_input: int, **kwargs: Any) -> None:
+        super().__init__(
+            name_=name,
+            max_input=max_input,
+            profile=ModelProfile(max_input_tokens=max_input),
+            **kwargs,
+        )
+
+    def _reply(self, messages: list[BaseMessage]) -> ChatResult:
+        prompt = get_buffer_string(messages)
+        self.calls.append(prompt)
+        kind = "summary" if _SUMMARY_PROMPT_MARKER in prompt else "reply"
+        message = AIMessage(content=f"{self.name_} {kind}")
+        return ChatResult(generations=[ChatGeneration(message=message)])
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return self._reply(messages)
+
+    @override
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        for _ in range(3):
+            await asyncio.sleep(0)
+        return self._reply(messages)
+
+    @property
+    def _llm_type(self) -> str:
+        return "named-fake"
+
+    @override
+    def _get_ls_params(self, stop: list[str] | None = None, **kwargs: Any) -> LangSmithParams:
+        return LangSmithParams(ls_provider="fake", ls_model_name=self.name_, ls_model_type="chat")
+
+    def summary_calls(self) -> list[str]:
+        return [call for call in self.calls if _SUMMARY_PROMPT_MARKER in call]
+
+
+def _fixed_token_counter(_: Iterable[MessageLikeRepresentation], **__: Any) -> int:
+    """Every history counts as 1,000 tokens."""
+    return 1_000
+
+
+def _history() -> list[AnyMessage]:
+    return [
+        HumanMessage(content="first question", id="h0"),
+        AIMessage(content="first answer", id="a0"),
+        HumanMessage(content="second question", id="h1"),
+    ]
+
+
+def _call_middleware(
+    middleware: SummarizationMiddleware,
+    model: BaseChatModel,
+    *,
+    use_async: bool,
+    context: Any = None,
+) -> tuple[object, list[ModelRequest[Any]]]:
+    """Send one model call for `model` through the middleware; return result and requests."""
+    state = AgentState[Any](messages=_history())
+    request: ModelRequest[Any] = ModelRequest(
+        model=model,
+        messages=list(state["messages"]),
+        state=state,
+        runtime=Runtime(context=context),
+    )
+    seen: list[ModelRequest[Any]] = []
+
+    def handler(inner: ModelRequest[Any]) -> ModelResponse[Any]:
+        seen.append(inner)
+        return ModelResponse(result=[AIMessage(content="ok", id=_RESPONSE_ID)])
+
+    async def ahandler(inner: ModelRequest[Any]) -> ModelResponse[Any]:
+        return handler(inner)
+
+    if use_async:
+        result: object = asyncio.run(middleware.awrap_model_call(request, ahandler))
+    else:
+        result = middleware.wrap_model_call(request, handler)
+    return result, seen
+
+
+def _summary_text(result: object) -> str | None:
+    update = _summary_update(result)
+    if update is None:
+        return None
+    return cast("str", update["messages"][1].text)
+
+
+def _small() -> _NamedModel:
+    return _NamedModel("small", max_input=1_500)
+
+
+def _large() -> _NamedModel:
+    return _NamedModel("large", max_input=200_000)
+
+
+def _follow_call_middleware(**kwargs: Any) -> SummarizationMiddleware:
+    return SummarizationMiddleware(
+        trigger=("fraction", 0.5),
+        keep=("messages", 1),
+        token_counter=_fixed_token_counter,
+        **kwargs,
+    )
+
+
+class _SwapModel(AgentMiddleware):
+    """Route every call to `model`, like a `/model` command or router would."""
+
+    def __init__(self, model: BaseChatModel) -> None:
+        super().__init__()
+        self.swap_to = model
+
+    @override
+    def wrap_model_call(self, request: ModelRequest[Any], handler: Any) -> Any:
+        return handler(request.override(model=self.swap_to))
+
+    @override
+    async def awrap_model_call(self, request: ModelRequest[Any], handler: Any) -> Any:
+        return await handler(request.override(model=self.swap_to))
+
+
+def test_model_is_optional() -> None:
+    """Without a pinned model, nothing is resolved at build time."""
+    middleware = SummarizationMiddleware(trigger=("fraction", 0.5), keep=("fraction", 0.1))
+
+    assert middleware.model is None
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+def test_small_and_large_window_models_decide_differently(use_async: bool) -> None:  # noqa: FBT001
+    """The same history triggers on a small-window call but not on a large-window one."""
+    middleware = _follow_call_middleware()
+    small, large = _small(), _large()
+
+    small_result, small_requests = _call_middleware(middleware, small, use_async=use_async)
+    large_result, large_requests = _call_middleware(middleware, large, use_async=use_async)
+
+    assert _summary_text(small_result) == (
+        "Here is a summary of the conversation to date:\n\nsmall summary"
+    )
+    assert [m.text for m in small_requests[0].messages][1:] == ["second question"]
+    assert _summary_text(large_result) is None
+    assert large_requests[0].messages == _history()
+    assert large.calls == []
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+def test_default_follows_model_swapped_in_by_earlier_middleware(use_async: bool) -> None:  # noqa: FBT001
+    """Thresholds and the summary writer follow a model swapped in by earlier middleware."""
+    small, large = _small(), _large()
+    agent = create_agent(model=large, middleware=[_SwapModel(small), _follow_call_middleware()])
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LangChainDeprecationWarning)
+        if use_async:
+            result = asyncio.run(agent.ainvoke({"messages": [*_history()]}))
+        else:
+            result = agent.invoke({"messages": [*_history()]})
+
+    assert large.calls == []
+    assert len(small.summary_calls()) == 1
+    assert [m.text for m in result["messages"]] == [
+        "Here is a summary of the conversation to date:\n\nsmall summary",
+        "second question",
+        "small reply",
+    ]
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+def test_pinned_model_drives_thresholds_and_summary(use_async: bool) -> None:  # noqa: FBT001
+    """A pinned model keeps driving thresholds and summaries, whatever the call's model."""
+    small, large = _small(), _large()
+    middleware = _follow_call_middleware(model=small)
+
+    with pytest.warns(LangChainDeprecationWarning, match=r"summarizer="):
+        result, _ = _call_middleware(middleware, large, use_async=use_async)
+
+    assert (
+        _summary_text(result) == "Here is a summary of the conversation to date:\n\nsmall summary"
+    )
+    assert large.calls == []
+
+
+def test_pinned_model_matching_call_model_does_not_warn() -> None:
+    """No warning when the pinned model is the call's model, even as a separate object."""
+    middleware = _follow_call_middleware(model=_small())
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LangChainDeprecationWarning)
+        result, _ = _call_middleware(middleware, _small(), use_async=False)
+
+    assert _summary_text(result) is not None
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+def test_callable_model_chooses_context_model_per_call(use_async: bool) -> None:  # noqa: FBT001
+    """A callable picks the context model for each call from the runtime context."""
+    models = {"small": _small(), "large": _large()}
+    resolutions: list[ModelResolution[Any]] = []
+
+    def pick(resolution: ModelResolution[Any]) -> BaseChatModel:
+        resolutions.append(resolution)
+        return models[resolution.context["tier"]]
+
+    middleware = _follow_call_middleware(model=pick)
+    call_model = _large()
+
+    small_result, _ = _call_middleware(
+        middleware, call_model, use_async=use_async, context={"tier": "small"}
+    )
+    large_result, _ = _call_middleware(
+        middleware, call_model, use_async=use_async, context={"tier": "large"}
+    )
+
+    assert _summary_text(small_result) == (
+        "Here is a summary of the conversation to date:\n\nsmall summary"
+    )
+    assert _summary_text(large_result) is None
+    assert call_model.calls == []
+    assert [r.request.model for r in resolutions if r.request] == [call_model, call_model]
+    assert resolutions[0].state["messages"] == _history()
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+def test_callable_returning_string_raises(use_async: bool) -> None:  # noqa: FBT001
+    """Callables must return model objects so compaction never builds a client."""
+    middleware = _follow_call_middleware(model=lambda _: "openai:gpt-5.5")
+
+    with pytest.raises(TypeError, match=r"returned the string 'openai:gpt-5\.5'"):
+        _call_middleware(middleware, _small(), use_async=use_async)
+
+
+def test_invalid_model_type_raises() -> None:
+    with pytest.raises(TypeError, match="`model` must be"):
+        SummarizationMiddleware(model=42)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+@pytest.mark.parametrize("model_form", ["default", "pinned", "callable"])
+def test_summarizer_takes_precedence_over_every_model_form(
+    model_form: str,
+    use_async: bool,  # noqa: FBT001
+) -> None:
+    """`summarizer` writes summaries whichever way the context model is chosen."""
+    small = _small()
+    cheap = _NamedModel("cheap", max_input=1_000_000)
+    model: Any = {"default": None, "pinned": small, "callable": lambda _: small}[model_form]
+    middleware = _follow_call_middleware(model=model, summarizer=cheap)
+
+    result, _ = _call_middleware(middleware, small, use_async=use_async)
+
+    assert (
+        _summary_text(result) == "Here is a summary of the conversation to date:\n\ncheap summary"
+    )
+    assert small.calls == []
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+def test_concurrent_runs_with_different_models_do_not_cross_contaminate(
+    use_async: bool,  # noqa: FBT001
+) -> None:
+    """One compiled agent serves runs on different models without mixing them up."""
+    models = {"small": _small(), "large": _large()}
+
+    class _Router(AgentMiddleware):
+        @override
+        def wrap_model_call(self, request: ModelRequest[Any], handler: Any) -> Any:
+            return handler(request.override(model=models[request.runtime.context["tier"]]))
+
+        @override
+        async def awrap_model_call(self, request: ModelRequest[Any], handler: Any) -> Any:
+            return await handler(request.override(model=models[request.runtime.context["tier"]]))
+
+    agent: Any = create_agent(
+        model=_NamedModel("builder", max_input=10),
+        middleware=[_Router(), _follow_call_middleware()],
+    )
+    tiers = ["small", "large"] * 4
+
+    if use_async:
+
+        async def run_all() -> Any:
+            return await asyncio.gather(
+                *(agent.ainvoke({"messages": [*_history()]}, context={"tier": t}) for t in tiers)
+            )
+
+        results = asyncio.run(run_all())
+    else:
+        with ThreadPoolExecutor(max_workers=len(tiers)) as pool:
+            results = list(
+                pool.map(
+                    lambda t: agent.invoke({"messages": [*_history()]}, context={"tier": t}), tiers
+                )
+            )
+
+    for tier, result in zip(tiers, results, strict=True):
+        texts = [m.text for m in result["messages"]]
+        if tier == "small":
+            assert texts[0] == "Here is a summary of the conversation to date:\n\nsmall summary"
+            assert texts[-1] == "small reply"
+        else:
+            assert texts == [m.text for m in _history()] + ["large reply"]
+    assert len(models["small"].summary_calls()) == 4
+    assert models["large"].summary_calls() == []
+
+
+def test_summarization_run_records_compaction_models() -> None:
+    """The summarization run's metadata names the models and context window used."""
+    starts: list[dict[str, Any]] = []
+
+    class _Recorder(BaseCallbackHandler):
+        @override
+        def on_chain_start(
+            self, serialized: dict[str, Any] | None, inputs: Any, **kwargs: Any
+        ) -> None:
+            if kwargs.get("name") == "summarization":
+                starts.append(kwargs.get("metadata") or {})
+
+    small = _small()
+    agent = create_agent(
+        model=_large(),
+        middleware=[_SwapModel(small), _follow_call_middleware(summarizer=_large())],
+    )
+
+    agent.invoke({"messages": [*_history()]}, config={"callbacks": [_Recorder()]})
+
+    assert len(starts) == 1
+    assert starts[0]["summarization_context_model"] == "fake:small"
+    assert starts[0]["summarization_context_window"] == 1_500
+    assert starts[0]["summarization_model"] == "fake:large"
+    assert starts[0]["lc_source"] == "summarization"
+
+
+def test_fraction_limits_without_profile_warn_per_call() -> None:
+    """A resolved model without a profile skips fractional triggers with a warning."""
+    middleware = _follow_call_middleware()
+
+    with pytest.warns(UserWarning, match="no `max_input_tokens`"):
+        result, _ = _call_middleware(middleware, MockChatModel(), use_async=False)
+
+    assert _summary_text(result) is None
