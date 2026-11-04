@@ -659,7 +659,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.7.9"
+version = "1.7.10"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
