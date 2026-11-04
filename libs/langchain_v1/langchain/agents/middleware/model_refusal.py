@@ -13,6 +13,8 @@ from langchain.agents.middleware.types import (
     ModelRequest,
     ModelResponse,
     ResponseT,
+    TracePolicy,
+    omit_payload,
 )
 from langchain.agents.structured_output import StructuredOutputValidationError
 
@@ -45,6 +47,8 @@ class ModelRefusalMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Re
     Streaming content may already have been emitted before the refusal is known.
     This middleware does not infer refusals from text or retry blocked requests.
     """
+
+    trace_policy = TracePolicy(process_inputs=omit_payload)
 
     def wrap_model_call(
         self,
