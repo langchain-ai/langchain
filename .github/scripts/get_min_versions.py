@@ -128,6 +128,15 @@ def get_min_version_from_toml(
         requirement = Requirement(dep)
         dependencies[requirement.name].append(requirement)
 
+    # Optional extras only contribute floors for libs not already required, and
+    # only when they declare a version range to take a minimum from.
+    required = set(dependencies)
+    for deps in toml_data["project"].get("optional-dependencies", {}).values():
+        for dep in deps:
+            requirement = Requirement(dep)
+            if requirement.name not in required and requirement.specifier:
+                dependencies[requirement.name].append(requirement)
+
     # Initialize a dictionary to store the minimum versions
     min_versions = {}
 
