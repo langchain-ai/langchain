@@ -850,9 +850,6 @@ def _format_messages(
                                 "cache_control",
                             )
                         }
-                        # Links calls nested inside `code_execution` (e.g.,
-                        # dynamic filtering web search) to their parent; without
-                        # it the parent looks unclosed. `direct` is the default.
                         caller = block.get("caller")
                         if caller and caller.get("type") != "direct":
                             formatted_block["caller"] = caller
@@ -963,6 +960,11 @@ def _format_messages(
                                         "is_error",  # for mcp_tool_result
                                         "cache_control",
                                         "retrieved_at",  # for web_fetch_tool_result
+                                    )
+                                    or (
+                                        k == "caller"
+                                        and v
+                                        and v.get("type") != "direct"
                                     )
                                 },
                             ),

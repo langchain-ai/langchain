@@ -1989,7 +1989,7 @@ def test__format_messages_system_after_server_tool_result_sent_in_place(
 def test__format_messages_server_tool_use_preserves_caller() -> None:
     """Nested server tool calls keep `caller` so the API can link them to parents."""
     caller = {"type": "code_execution_20260120", "tool_id": "srvtoolu_ce"}
-    blocks = [
+    blocks: list[Any] = [
         {
             "type": "server_tool_use",
             "id": "srvtoolu_ce",
@@ -2005,6 +2005,12 @@ def test__format_messages_server_tool_use_preserves_caller() -> None:
             "caller": caller,
         },
         {
+            "type": "web_search_tool_result",
+            "tool_use_id": "srvtoolu_ws",
+            "content": [],
+            "caller": caller,
+        },
+        {
             "type": "code_execution_tool_result",
             "tool_use_id": "srvtoolu_ce",
             "content": {
@@ -2017,11 +2023,43 @@ def test__format_messages_server_tool_use_preserves_caller() -> None:
         },
     ]
     ai = AIMessage(blocks, response_metadata={"model_provider": "anthropic"})
-    _, formatted = _format_messages([HumanMessage("hi"), ai], model=None)
-    # Default `direct` caller is dropped; nested caller is kept.
+    model = ChatAnthropic(model="claude-sonnet-4-5", api_key="placeholder")
+    payload = model._get_request_payload([HumanMessage("hi"), ai, HumanMessage("next")])
     expected = copy.deepcopy(blocks)
     del expected[0]["caller"]
-    assert formatted[1]["content"] == expected
+    assert payload["messages"][1]["content"] == expected
+    assert ai.content == blocks
+
+
+@pytest.mark.parametrize(
+    "block_type", ["web_search_tool_result", "web_fetch_tool_result"]
+)
+@pytest.mark.parametrize(
+    "caller",
+    [
+        None,
+        {"type": "direct"},
+        {"type": "code_execution_20260120", "tool_id": "srvtoolu_ce"},
+    ],
+)
+def test__format_messages_server_tool_result_caller(
+    block_type: str, caller: dict[str, str] | None
+) -> None:
+    block: dict[str, Any] = {
+        "type": block_type,
+        "tool_use_id": "srvtoolu_ws",
+        "content": [],
+    }
+    if caller is not None:
+        block["caller"] = caller
+    expected = copy.deepcopy(block)
+    if caller == {"type": "direct"}:
+        del expected["caller"]
+    _, formatted = _format_messages(
+        [HumanMessage("hi"), AIMessage([block])], model=None
+    )
+    assert formatted[1]["content"] == [expected]
+    assert block.get("caller") == caller
 
 
 def test__format_messages_system_after_client_tool_result_hoisted() -> None:
