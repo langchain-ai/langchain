@@ -5051,6 +5051,79 @@ async def test_runnable_gen_async() -> None:
         await asyncio.to_thread(arunnablecallable.batch, [None, None])
 
 
+def test_runnable_generator_equality() -> None:
+    """Test RunnableGenerator equality invariants under sync and async execution."""
+
+    def gen1(_x: Iterator[Any]) -> Iterator[int]:
+        yield 1
+
+    def gen2(_x: Iterator[Any]) -> Iterator[int]:
+        yield 2
+
+    async def agen1(_x: AsyncIterator[Any]) -> AsyncIterator[int]:
+        yield 1
+
+    async def agen2(_x: AsyncIterator[Any]) -> AsyncIterator[int]:
+        yield 2
+
+    rg1 = RunnableGenerator(gen1)
+    rg1_same = RunnableGenerator(gen1)
+    rg2 = RunnableGenerator(gen2)
+    rag1 = RunnableGenerator(agen1)
+    rag1_same = RunnableGenerator(agen1)
+    rag2 = RunnableGenerator(agen2)
+
+    # Identical sync generator functions must compare equal
+    assert (rg1 == rg1_same) is True
+    assert (rg1 != rg1_same) is False
+
+    # Distinct sync generator functions must compare unequal
+    assert (rg1 != rg2) is True
+    assert (rg1 == rg2) is False
+
+    # Identical async generator functions must compare equal
+    assert (rag1 == rag1_same) is True
+    assert (rag1 != rag1_same) is False
+
+    # Distinct async generator functions must compare unequal
+    assert (rag1 != rag2) is True
+    assert (rag1 == rag2) is False
+
+    # Sync vs Async generator must compare unequal
+    assert (rg1 != rag1) is True
+    assert (rg1 == rag1) is False
+
+    # RunnableGenerator compared to non-RunnableGenerator must evaluate to False
+    assert (rg1 != "not_a_runnable") is True
+    assert (rg1 == "not_a_runnable") is False
+    assert (rg1 != 42) is True
+    assert (rg1 == 42) is False
+
+
+def test_runnable_lambda_equality_invariants() -> None:
+    """Test RunnableLambda equality invariants against non-runnables.
+
+    Verifies behavior against non-runnables and distinct functions.
+    """
+
+    def sync_fn(x: int) -> int:
+        return x + 1
+
+    async def async_fn(x: int) -> int:
+        return x + 1
+
+    rl_sync = RunnableLambda(sync_fn)
+    rl_async = RunnableLambda(async_fn)
+
+    # Non-RunnableLambda comparisons must evaluate to False
+    assert (rl_sync != 42) is True
+    assert (rl_sync == 42) is False
+    assert (rl_sync != "not_a_lambda") is True
+    assert (rl_sync == "not_a_lambda") is False
+    assert (rl_async != 42) is True
+    assert (rl_async == 42) is False
+
+
 def test_runnable_gen_context_config() -> None:
     """Test generator runnable config propagation.
 
