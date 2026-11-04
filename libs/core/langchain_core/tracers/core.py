@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import traceback
 from abc import ABC, abstractmethod
@@ -13,7 +14,7 @@ from typing import (
     cast,
 )
 
-from langchain_core.exceptions import TracerException
+from langchain_core.exceptions import ExpectedCancellation, TracerException
 from langchain_core.load import dumpd
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
@@ -146,6 +147,20 @@ class _TracerCore(ABC):
             return (msg + "\n\n".join(tb)).strip()
         except Exception:
             return msg
+
+    def _record_error(self, run: Run, error: BaseException) -> None:
+        """Set the run's error, or mark it cancelled for an expected cancellation."""
+        if (
+            isinstance(error, asyncio.CancelledError)
+            and error.args
+            and isinstance(error.args[0], ExpectedCancellation)
+        ):
+            run.extra["metadata"] = {
+                **run.extra.get("metadata", {}),
+                "end_reason": "cancelled",
+            }
+        else:
+            run.error = self._get_stacktrace(error)
 
     def _start_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:  # type: ignore[return]
         current_dotted_order = run.start_time.strftime("%Y%m%dT%H%M%S%fZ") + str(run.id)
@@ -374,7 +389,7 @@ class _TracerCore(ABC):
         self, error: BaseException, run_id: UUID, response: LLMResult | None = None
     ) -> Run:
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
-        llm_run.error = self._get_stacktrace(error)
+        self._record_error(llm_run, error)
         if response:
             if getattr(llm_run, "outputs", None) is None:
                 llm_run.outputs = {}
@@ -474,7 +489,7 @@ class _TracerCore(ABC):
         run_id: UUID,
     ) -> Run:
         chain_run = self._get_run(run_id)
-        chain_run.error = self._get_stacktrace(error)
+        self._record_error(chain_run, error)
         chain_run.end_time = datetime.now(timezone.utc)
         chain_run.events.append({"name": "error", "time": chain_run.end_time})
         if inputs is not None:
@@ -543,7 +558,7 @@ class _TracerCore(ABC):
     ) -> Run:
         """Update a tool run with error and end time."""
         tool_run = self._get_run(run_id, run_type="tool")
-        tool_run.error = self._get_stacktrace(error)
+        self._record_error(tool_run, error)
         tool_run.end_time = datetime.now(timezone.utc)
         tool_run.events.append({"name": "error", "time": tool_run.end_time})
         return tool_run
@@ -600,7 +615,7 @@ class _TracerCore(ABC):
         run_id: UUID,
     ) -> Run:
         retrieval_run = self._get_run(run_id, run_type="retriever")
-        retrieval_run.error = self._get_stacktrace(error)
+        self._record_error(retrieval_run, error)
         retrieval_run.end_time = datetime.now(timezone.utc)
         retrieval_run.events.append({"name": "error", "time": retrieval_run.end_time})
         return retrieval_run
