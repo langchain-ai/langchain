@@ -2497,3 +2497,79 @@ async def test_response_model_metadata_through_sdk_http_transport(
                 else None
             )
     assert all(request["model"] == MODEL_NAME for request in requests)
+
+
+_DUPLICATE_USAGE = {"prompt_tokens": 5, "completion_tokens": 2, "total_tokens": 7}
+_DUPLICATE_USAGE_STREAM: list[dict[str, Any]] = [
+    {
+        "model": "m",
+        "choices": [{"index": 0, "delta": {"role": "assistant", "content": "hi"}}],
+    },
+    {
+        "model": "m",
+        "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+        "usage": _DUPLICATE_USAGE,
+    },
+    {"model": "m", "choices": [], "usage": _DUPLICATE_USAGE},
+]
+
+
+def _assert_usage_reported_once(chunks: list[AIMessageChunk]) -> None:
+    assert sum(1 for c in chunks if c.usage_metadata) == 1
+    full = chunks[0]
+    for c in chunks[1:]:
+        full = full + c
+    assert full.usage_metadata == {
+        "input_tokens": 5,
+        "output_tokens": 2,
+        "total_tokens": 7,
+    }
+
+
+def test_stream_reports_usage_once_when_sent_twice() -> None:
+    """Usage on both the finish chunk and a trailing chunk is not double counted."""
+    llm = _make_llm(max_retries=0)
+    llm.client = MagicMock(create=MagicMock(return_value=iter(_DUPLICATE_USAGE_STREAM)))
+
+    chunks = [c for c in llm.stream("hi") if isinstance(c, AIMessageChunk)]
+
+    _assert_usage_reported_once(chunks)
+
+
+async def test_astream_reports_usage_once_when_sent_twice() -> None:
+    """Async variant of `test_stream_reports_usage_once_when_sent_twice`."""
+
+    async def _astream() -> Any:
+        for chunk in _DUPLICATE_USAGE_STREAM:
+            yield chunk
+
+    llm = _make_llm(max_retries=0)
+    llm.async_client = MagicMock(create=AsyncMock(return_value=_astream()))
+
+    chunks = [c async for c in llm.astream("hi") if isinstance(c, AIMessageChunk)]
+
+    _assert_usage_reported_once(chunks)
+
+
+def test_stream_keeps_last_usage_when_reports_differ() -> None:
+    """A partial early report never wins over the final one."""
+    stream = [
+        {
+            "model": "m",
+            "choices": [{"index": 0, "delta": {"role": "assistant", "content": "a"}}],
+            "usage": {"prompt_tokens": 5, "completion_tokens": 1, "total_tokens": 6},
+        },
+        {
+            "model": "m",
+            "choices": [
+                {"index": 0, "delta": {"content": "b"}, "finish_reason": "stop"}
+            ],
+        },
+        {"model": "m", "choices": [], "usage": _DUPLICATE_USAGE},
+    ]
+    llm = _make_llm(max_retries=0)
+    llm.client = MagicMock(create=MagicMock(return_value=iter(stream)))
+
+    chunks = [c for c in llm.stream("hi") if isinstance(c, AIMessageChunk)]
+
+    _assert_usage_reported_once(chunks)

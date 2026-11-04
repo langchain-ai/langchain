@@ -656,6 +656,18 @@ def _format_chunk_for_v1(message_chunk: AIMessageChunk) -> AIMessageChunk:
     )
 
 
+def _record_usage(previous: UsageMetadata | None, new: UsageMetadata) -> UsageMetadata:
+    """Return the newest usage report, logging when it disagrees with an earlier one."""
+    if previous is not None and previous != new:
+        logger.debug(
+            "Fireworks reported differing usage within one stream; using the "
+            "latest. Previous: %s, latest: %s",
+            previous,
+            new,
+        )
+    return new
+
+
 def _finalize_stream(
     stream: Iterator[ChatGenerationChunk],
 ) -> Iterator[ChatGenerationChunk]:
@@ -1350,6 +1362,17 @@ class ChatFireworks(BaseChatModel):
             combined["system_fingerprint"] = system_fingerprint
         return combined
 
+    def _usage_generation_chunk(self, usage: UsageMetadata) -> ChatGenerationChunk:
+        """Build the single chunk that carries a stream's token usage."""
+        message_chunk = AIMessageChunk(
+            content="",
+            usage_metadata=usage,
+            response_metadata={"model_provider": "fireworks"},
+        )
+        if self.output_version == "v1":
+            message_chunk = _format_chunk_for_v1(message_chunk)
+        return ChatGenerationChunk(message=message_chunk)
+
     def _stream(
         self,
         messages: list[BaseMessage],
@@ -1372,6 +1395,7 @@ class ChatFireworks(BaseChatModel):
         except APIError as e:
             _handle_fireworks_api_error(e)
         response_model = None
+        last_usage: UsageMetadata | None = None
         for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1381,6 +1405,17 @@ class ChatFireworks(BaseChatModel):
                 message_chunk, AIMessageChunk
             ):
                 message_chunk = _format_chunk_for_v1(message_chunk)
+            if (
+                isinstance(message_chunk, AIMessageChunk)
+                and message_chunk.usage_metadata
+            ):
+                # Fireworks can report usage on more than one chunk (e.g. the
+                # `finish_reason` chunk and a trailing usage-only chunk). Merging
+                # chunks sums usage, so hold it back and emit the last report once.
+                last_usage = _record_usage(last_usage, message_chunk.usage_metadata)
+                message_chunk.usage_metadata = None
+                if not chunk.get("choices"):
+                    continue
             generation_info: dict[str, Any] = {}
             logprobs = None
             if choices := chunk.get("choices"):
@@ -1403,6 +1438,11 @@ class ChatFireworks(BaseChatModel):
                     generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
                 )
             yield generation_chunk
+        if last_usage:
+            usage_chunk = self._usage_generation_chunk(last_usage)
+            if run_manager:
+                run_manager.on_llm_new_token("", chunk=usage_chunk)
+            yield usage_chunk
 
     def _generate(
         self,
@@ -1500,6 +1540,7 @@ class ChatFireworks(BaseChatModel):
         except APIError as e:
             _handle_fireworks_api_error(e)
         response_model = None
+        last_usage: UsageMetadata | None = None
         async for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1509,6 +1550,17 @@ class ChatFireworks(BaseChatModel):
                 message_chunk, AIMessageChunk
             ):
                 message_chunk = _format_chunk_for_v1(message_chunk)
+            if (
+                isinstance(message_chunk, AIMessageChunk)
+                and message_chunk.usage_metadata
+            ):
+                # Fireworks can report usage on more than one chunk (e.g. the
+                # `finish_reason` chunk and a trailing usage-only chunk). Merging
+                # chunks sums usage, so hold it back and emit the last report once.
+                last_usage = _record_usage(last_usage, message_chunk.usage_metadata)
+                message_chunk.usage_metadata = None
+                if not chunk.get("choices"):
+                    continue
             generation_info: dict[str, Any] = {}
             logprobs = None
             if choices := chunk.get("choices"):
@@ -1533,6 +1585,11 @@ class ChatFireworks(BaseChatModel):
                     logprobs=logprobs,
                 )
             yield generation_chunk
+        if last_usage:
+            usage_chunk = self._usage_generation_chunk(last_usage)
+            if run_manager:
+                await run_manager.on_llm_new_token("", chunk=usage_chunk)
+            yield usage_chunk
 
     async def _agenerate(
         self,
