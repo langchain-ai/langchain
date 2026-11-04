@@ -22,7 +22,7 @@ from tenacity import (
 from typing_extensions import override
 
 from langchain_core.env import get_runtime_environment
-from langchain_core.exceptions import ExpectedCancellation
+from langchain_core.exceptions import CancelReason
 from langchain_core.load import dumpd
 from langchain_core.messages.ai import UsageMetadata, add_usage
 from langchain_core.tracers._compat import run_construct, run_to_dict
@@ -136,9 +136,9 @@ def _get_usage_metadata_from_message(message: Any) -> UsageMetadata | None:
     return None
 
 
-def _is_expected_cancellation(error: BaseException | None) -> bool:
+def _has_cancel_reason(error: BaseException | None) -> bool:
     while isinstance(error, asyncio.CancelledError):
-        if error.args and isinstance(error.args[0], ExpectedCancellation):
+        if error.args and isinstance(error.args[0], CancelReason):
             return True
         # Python < 3.11 drops the cancel message at each task boundary but keeps
         # the previous error on `__context__`.
@@ -320,7 +320,7 @@ class LangChainTracer(BaseTracer):
 
     @override
     def _record_error(self, run: Run, error: BaseException) -> None:
-        if _is_expected_cancellation(error):
+        if _has_cancel_reason(error):
             run.extra["metadata"] = {
                 **run.extra.get("metadata", {}),
                 "end_reason": "cancelled",
