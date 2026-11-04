@@ -1,3 +1,4 @@
+import asyncio
 import concurrent.futures
 import threading
 import time
@@ -13,6 +14,7 @@ from langsmith.utils import get_env_var, get_tracer_project
 
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
+from langchain_core.runnables import RunnableLambda
 from langchain_core.tracers.langchain import (
     LangChainTracer,
     _get_usage_metadata_from_generations,
@@ -303,6 +305,32 @@ def test_get_usage_metadata_from_generations(
     """Test `_get_usage_metadata_from_generations` utility function."""
     result = _get_usage_metadata_from_generations(generations)
     assert result == expected
+
+
+async def test_cancelled_run_records_end_reason_not_error() -> None:
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+    started = asyncio.Event()
+
+    async def wait_forever(_: str) -> str:
+        started.set()
+        await asyncio.Event().wait()
+        return "unreachable"
+
+    updated: list[Run] = []
+    with unittest.mock.patch.object(tracer, "_update_run_single", updated.append):
+        task = asyncio.create_task(
+            RunnableLambda(wait_forever).ainvoke("x", {"callbacks": [tracer]})
+        )
+        await started.wait()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    assert len(updated) == 1
+    assert updated[0].error is None
+    assert updated[0].extra["metadata"]["end_reason"] == "cancelled"
 
 
 def test_on_llm_end_stores_usage_metadata_in_run_extra() -> None:

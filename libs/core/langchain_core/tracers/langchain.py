@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -380,6 +381,16 @@ class LangChainTracer(BaseTracer):
             # Errors are swallowed by the thread executor so we need to log them here
             log_error_once("patch", e)
             raise
+
+    @override
+    def _record_error(self, run: Run, error: BaseException) -> None:
+        if isinstance(error, asyncio.CancelledError):
+            run.extra["metadata"] = {
+                **run.extra.get("metadata", {}),
+                "end_reason": "cancelled",
+            }
+        else:
+            super()._record_error(run, error)
 
     def _on_llm_start(self, run: Run) -> None:
         """Persist an LLM run."""
