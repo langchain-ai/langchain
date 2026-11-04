@@ -140,9 +140,8 @@ def _is_expected_cancellation(error: BaseException | None) -> bool:
     while isinstance(error, asyncio.CancelledError):
         if error.args and isinstance(error.args[0], ExpectedCancellation):
             return True
-        # Python < 3.11 raises a new bare `CancelledError` at each task boundary and
-        # keeps the previous one as `__context__`. Nested runnables each await a
-        # task, so a parent run can be several links away from the marker.
+        # Python < 3.11 drops the cancel message at each task boundary but keeps
+        # the previous error on `__context__`.
         error = error.__context__
     return False
 
