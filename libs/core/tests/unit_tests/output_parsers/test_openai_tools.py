@@ -576,19 +576,19 @@ def test_json_output_key_tools_parser_multiple_tools_no_match(
     parser = JsonOutputKeyToolsParser(
         key_name="nonexistent", first_tool_only=True, return_id=True
     )
-    output = parser.parse_result(result)  # type: ignore[arg-type]
-
-    # Should return None when no matches
-    assert output is None
+    with pytest.raises(OutputParserException) as excinfo:
+        parser.parse_result(result)  # type: ignore[arg-type]
+    assert "Unknown tool type" in str(excinfo.value)
+    assert "nonexistent" in str(excinfo.value)
 
     # Test with return_id=False, first_tool_only=True
     parser_no_id = JsonOutputKeyToolsParser(
         key_name="nonexistent", first_tool_only=True, return_id=False
     )
-    output_no_id = parser_no_id.parse_result(result)  # type: ignore[arg-type]
-
-    # Should return None when no matches
-    assert output_no_id is None
+    with pytest.raises(OutputParserException) as excinfo:
+        parser_no_id.parse_result(result)  # type: ignore[arg-type]
+    assert "Unknown tool type" in str(excinfo.value)
+    assert "nonexistent" in str(excinfo.value)
 
 
 @pytest.mark.parametrize("use_tool_calls", [False, True])
@@ -1452,3 +1452,42 @@ def test_pydantic_tools_parser_unknown_tool_raises_output_parser_exception(
     msg = str(excinfo.value)
     assert "Unknown tool type" in msg
     assert "UnknownTool" in msg
+
+
+def test_json_output_key_tools_parser_unmatched_tool_raises() -> None:
+    parser = JsonOutputKeyToolsParser(key_name="MySchema", first_tool_only=True)
+    message = AIMessage(
+        content="",
+        tool_calls=[{"id": "call_1", "name": "WrongTool", "args": {"x": 1}}],
+    )
+    generation = ChatGeneration(message=message)
+
+    with pytest.raises(OutputParserException) as excinfo:
+        parser.parse_result([generation])
+
+    msg = str(excinfo.value)
+    assert "Unknown tool type" in msg
+    assert "WrongTool" in msg
+    assert "MySchema" in msg
+
+
+def test_json_output_key_tools_parser_no_tool_calls_returns_none() -> None:
+    parser = JsonOutputKeyToolsParser(key_name="MySchema", first_tool_only=True)
+
+    # With empty tool_calls list
+    message_empty = AIMessage(content="", tool_calls=[])
+    assert parser.parse_result([ChatGeneration(message=message_empty)]) is None
+
+    # Without tool_calls at all
+    message_none = AIMessage(content="")
+    assert parser.parse_result([ChatGeneration(message=message_none)]) is None
+
+
+def test_json_output_key_tools_parser_matching_tool_call_returns_args() -> None:
+    parser = JsonOutputKeyToolsParser(key_name="MySchema", first_tool_only=True)
+    message = AIMessage(
+        content="",
+        tool_calls=[{"id": "call_1", "name": "MySchema", "args": {"x": 1}}],
+    )
+    generation = ChatGeneration(message=message)
+    assert parser.parse_result([generation]) == {"x": 1}

@@ -280,16 +280,14 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
             parsed_result = list(
                 filter(lambda x: x["type"] == self.key_name, parsed_tool_calls)
             )
-            single_result = (
-                parsed_result[0]
-                if parsed_result and parsed_result[0]["type"] == self.key_name
-                else None
-            )
-            if self.return_id:
-                return single_result
-            if single_result:
-                return single_result["args"]
-            return None
+            if parsed_result:
+                single_result = parsed_result[0]
+                return single_result if self.return_id else single_result["args"]
+            if not parsed_tool_calls:
+                return None
+            received = ", ".join(repr(tc["type"]) for tc in parsed_tool_calls)
+            msg = f"Unknown tool type: {received}. Available tools: {self.key_name}"
+            raise OutputParserException(msg)
         return (
             [res for res in parsed_tool_calls if res["type"] == self.key_name]
             if self.return_id
