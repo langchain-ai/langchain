@@ -18,9 +18,24 @@ class TracerException(LangChainException):
 
 
 class ExpectedCancellation(Exception):  # noqa: N818
-    """Marker for an intentional stop that is not an execution failure.
+    """Reason attached to a cancellation that stops a run on purpose.
 
-    Example: `task.cancel(msg=ExpectedCancellation("superseded"))`.
+    A bare `task.cancel()` looks the same whether a run was stopped on purpose or
+    something went wrong, so tracers record every cancellation as an error. Code
+    that stops a run on purpose, such as a server handling a user interrupt or a
+    newer run that supersedes an older one, passes an instance as the cancel
+    message:
+
+    ```python
+    task.cancel(msg=ExpectedCancellation("superseded"))
+    ```
+
+    It is not raised. The task still raises `asyncio.CancelledError`, which
+    carries this object in `args[0]`. `LangChainTracer` records such a run as
+    cancelled (`end_reason: "cancelled"` in its metadata) instead of as an error.
+    Bare cancellations, other cancel messages and timeouts still record an error.
+
+    Subclass it to carry more detail about why the run stopped.
     """
 
 
