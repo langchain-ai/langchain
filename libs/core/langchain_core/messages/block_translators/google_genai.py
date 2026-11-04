@@ -589,11 +589,7 @@ def _reason_name(reason: object) -> str | None:
 def _refusal_from_metadata(
     response_metadata: dict[str, Any],
 ) -> types.RefusalContentBlock | None:
-    """Build a refusal block from Gemini's finish or prompt block reason.
-
-    The block uses a fixed index so that streamed chunks aggregate into a single
-    refusal.
-    """
+    """Build a refusal block from Gemini's finish or prompt block reason."""
     extras: dict[str, Any] = {}
     finish_reason = _reason_name(response_metadata.get("finish_reason"))
     if finish_reason in _REFUSAL_FINISH_REASONS:
@@ -608,7 +604,6 @@ def _refusal_from_metadata(
     return {
         "type": "refusal",
         "refusal": response_metadata.get("finish_message") or "",
-        "index": "lc_refusal",
         "extras": extras,
     }
 

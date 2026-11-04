@@ -35,8 +35,6 @@ def test_openai_legacy_refusal(message_cls: type[AIMessage]) -> None:
         "type": "refusal",
         "refusal": "I can't help with that.",
     }
-    if message_cls is AIMessageChunk:
-        expected["index"] = "lc_refusal"
     assert message.content_blocks == [expected]
 
 
@@ -77,7 +75,6 @@ def test_anthropic_refusal_from_stop_details() -> None:
         {
             "type": "refusal",
             "refusal": "Blocked under the usage policy.",
-            "index": "lc_refusal",
             "extras": {"category": "cyber"},
         }
     ]
@@ -88,9 +85,7 @@ def test_anthropic_refusal_without_stop_details() -> None:
         content=[],
         response_metadata={"model_provider": "anthropic", "stop_reason": "refusal"},
     )
-    assert message.content_blocks == [
-        {"type": "refusal", "refusal": "", "index": "lc_refusal"}
-    ]
+    assert message.content_blocks == [{"type": "refusal", "refusal": ""}]
 
 
 def test_anthropic_partial_output_kept_before_refusal() -> None:
@@ -100,7 +95,7 @@ def test_anthropic_partial_output_kept_before_refusal() -> None:
     )
     assert message.content_blocks == [
         {"type": "text", "text": "Here is"},
-        {"type": "refusal", "refusal": "", "index": "lc_refusal"},
+        {"type": "refusal", "refusal": ""},
     ]
 
 
@@ -181,7 +176,6 @@ def test_anthropic_refusal_with_malformed_stop_details(stop_details: object) -> 
     assert _refusal(message) == {
         "type": "refusal",
         "refusal": "",
-        "index": "lc_refusal",
     }
 
 
@@ -223,7 +217,6 @@ def test_google_blocked_candidate_refusal(provider: str, finish_reason: str) -> 
     assert _refusal(message) == {
         "type": "refusal",
         "refusal": "",
-        "index": "lc_refusal",
         "extras": {"finish_reason": finish_reason},
     }
 
@@ -239,7 +232,6 @@ def test_google_blocked_prompt_refusal() -> None:
     assert _refusal(message) == {
         "type": "refusal",
         "refusal": "",
-        "index": "lc_refusal",
         "extras": {"block_reason": "SAFETY"},
     }
 

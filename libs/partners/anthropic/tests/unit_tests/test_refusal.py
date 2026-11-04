@@ -66,7 +66,6 @@ def test_refusal_in_formatted_output(output_version: str | None) -> None:
     assert _refusal(message) == {
         "type": "refusal",
         "refusal": "Blocked under the usage policy.",
-        "index": "lc_refusal",
         "extras": {"category": "cyber"},
     }
 

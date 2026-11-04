@@ -263,10 +263,7 @@ def _convert_to_v1_from_chat_completions_chunk(
             content_blocks.append(tc)
 
     if refusal := chunk.additional_kwargs.get("refusal"):
-        # A fixed index merges streamed refusal deltas into one block.
-        content_blocks.append(
-            {"type": "refusal", "refusal": refusal, "index": "lc_refusal"}
-        )
+        content_blocks.append({"type": "refusal", "refusal": refusal})
     return content_blocks
 
 
