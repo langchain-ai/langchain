@@ -35,8 +35,6 @@ def test_openai_legacy_refusal(message_cls: type[AIMessage]) -> None:
         "type": "refusal",
         "refusal": "I can't help with that.",
     }
-    if message_cls is AIMessageChunk:
-        expected["index"] = "lc_refusal"
     assert message.content_blocks == [expected]
 
 
@@ -77,7 +75,6 @@ def test_anthropic_refusal_from_stop_details() -> None:
         {
             "type": "refusal",
             "refusal": "Blocked under the usage policy.",
-            "index": "lc_refusal",
             "extras": {"category": "cyber"},
         }
     ]
@@ -88,9 +85,7 @@ def test_anthropic_refusal_without_stop_details() -> None:
         content=[],
         response_metadata={"model_provider": "anthropic", "stop_reason": "refusal"},
     )
-    assert message.content_blocks == [
-        {"type": "refusal", "refusal": "", "index": "lc_refusal"}
-    ]
+    assert message.content_blocks == [{"type": "refusal", "refusal": ""}]
 
 
 def test_anthropic_partial_output_kept_before_refusal() -> None:
@@ -100,7 +95,7 @@ def test_anthropic_partial_output_kept_before_refusal() -> None:
     )
     assert message.content_blocks == [
         {"type": "text", "text": "Here is"},
-        {"type": "refusal", "refusal": "", "index": "lc_refusal"},
+        {"type": "refusal", "refusal": ""},
     ]
 
 
@@ -181,7 +176,6 @@ def test_anthropic_refusal_with_malformed_stop_details(stop_details: object) -> 
     assert _refusal(message) == {
         "type": "refusal",
         "refusal": "",
-        "index": "lc_refusal",
     }
 
 
@@ -210,4 +204,81 @@ def test_convert_to_openai_messages_refusal_blocks() -> None:
     assert convert_to_openai_messages(message)["content"] == [
         {"type": "text", "text": "Here is"},
         {"type": "refusal", "refusal": "No."},
+    ]
+
+
+@pytest.mark.parametrize("provider", ["google_genai", "google_vertexai"])
+@pytest.mark.parametrize("finish_reason", ["SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST"])
+def test_google_blocked_candidate_refusal(provider: str, finish_reason: str) -> None:
+    message = AIMessage(
+        content=[],
+        response_metadata={"model_provider": provider, "finish_reason": finish_reason},
+    )
+    assert _refusal(message) == {
+        "type": "refusal",
+        "refusal": "",
+        "extras": {"finish_reason": finish_reason},
+    }
+
+
+def test_google_blocked_prompt_refusal() -> None:
+    message = AIMessage(
+        content="",
+        response_metadata={
+            "model_provider": "google_genai",
+            "prompt_feedback": {"block_reason": "SAFETY", "safety_ratings": []},
+        },
+    )
+    assert _refusal(message) == {
+        "type": "refusal",
+        "refusal": "",
+        "extras": {"block_reason": "SAFETY"},
+    }
+
+
+def test_google_refusal_keeps_finish_message() -> None:
+    message = AIMessage(
+        content=[],
+        response_metadata={
+            "model_provider": "google_genai",
+            "finish_reason": "SAFETY",
+            "finish_message": "Blocked for safety.",
+        },
+    )
+    refusal = _refusal(message)
+    assert refusal is not None
+    assert refusal["refusal"] == "Blocked for safety."
+
+
+@pytest.mark.parametrize(
+    "response_metadata",
+    [
+        {"finish_reason": "STOP"},
+        {"finish_reason": "MAX_TOKENS"},
+        {"finish_reason": "RECITATION"},
+        {"finish_reason": "SPII"},
+        {"prompt_feedback": {"block_reason": "BLOCKED_REASON_UNSPECIFIED"}},
+        {"prompt_feedback": {"block_reason": None}},
+    ],
+)
+def test_google_non_refusal_stops(response_metadata: dict[str, object]) -> None:
+    message = AIMessage(
+        content="Hi.",
+        response_metadata={"model_provider": "google_genai", **response_metadata},
+    )
+    assert _refusal(message) is None
+
+
+def test_google_streamed_refusal_aggregates_to_one_block() -> None:
+    first = AIMessageChunk(
+        content=[{"type": "text", "text": "Here is", "index": 0}],
+        response_metadata={"model_provider": "google_genai"},
+    )
+    last = AIMessageChunk(
+        content=[],
+        response_metadata={"model_provider": "google_genai", "finish_reason": "SAFETY"},
+    )
+    assert [block["type"] for block in (first + last).content_blocks] == [
+        "text",
+        "refusal",
     ]

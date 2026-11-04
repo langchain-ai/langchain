@@ -521,18 +521,13 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
 def _refusal_from_stop_details(
     response_metadata: dict[str, Any],
 ) -> types.RefusalContentBlock:
-    """Build a refusal block from Anthropic's response-level refusal fields.
-
-    The block uses a fixed index so that streamed chunks aggregate into a single
-    refusal.
-    """
+    """Build a refusal block from Anthropic's response-level refusal fields."""
     details = response_metadata.get("stop_details")
     if not isinstance(details, dict):
         details = {}
     block: types.RefusalContentBlock = {
         "type": "refusal",
         "refusal": details.get("explanation") or "",
-        "index": "lc_refusal",
     }
     if category := details.get("category"):
         block["extras"] = {"category": category}
