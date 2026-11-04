@@ -30,10 +30,12 @@ class ExpectedCancellation(Exception):  # noqa: N818
     task.cancel(msg=ExpectedCancellation("superseded"))
     ```
 
-    It is not raised. The task still raises `asyncio.CancelledError`, which
-    carries this object in `args[0]`. `LangChainTracer` records such a run as
-    cancelled (`end_reason: "cancelled"` in its metadata) instead of as an error.
-    Bare cancellations, other cancel messages and timeouts still record an error.
+    Do not raise this class yourself. The cancellation itself does not change: the
+    task raises `asyncio.CancelledError` as usual, with this object in `args[0]`,
+    and the error still propagates. Only the trace changes: `LangChainTracer`
+    records the run as cancelled (`end_reason: "cancelled"` in its metadata)
+    instead of as an error. Bare cancellations, other cancel messages and timeouts
+    still record an error.
 
     Subclass it to carry more detail about why the run stopped.
     """
