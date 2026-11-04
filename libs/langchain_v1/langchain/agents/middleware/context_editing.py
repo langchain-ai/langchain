@@ -226,7 +226,11 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
                 `get_num_tokens_from_messages`.
         """
         super().__init__()
-        self.edits = list(edits or (ClearToolUsesEdit(),))
+        # Materialize the iterable before the emptiness check: iterators are
+        # always truthy, so `edits or (ClearToolUsesEdit(),)` would bypass the
+        # default policy for an empty iterator (e.g. `iter([])`).
+        materialized = list(edits) if edits is not None else []
+        self.edits = materialized or [ClearToolUsesEdit()]
         self.token_count_method = token_count_method
         self.token_counter = token_counter
 

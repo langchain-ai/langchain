@@ -15,6 +15,7 @@ from langchain_core.messages import (
 from typing_extensions import override
 
 from langchain.agents.middleware.context_editing import (
+    DEFAULT_TOOL_PLACEHOLDER,
     ClearToolUsesEdit,
     ContextEditingMiddleware,
 )
@@ -578,3 +579,91 @@ async def test_custom_token_counter_forces_clearing_async() -> None:
     cleared_tool = modified_request.messages[1]
     assert isinstance(cleared_tool, ToolMessage)
     assert cleared_tool.content == "[cleared]"
+
+
+def _build_tool_history(rounds: int) -> list[AIMessage | ToolMessage]:
+    """Build an alternating AI/tool conversation with one tool result per round."""
+    messages: list[AIMessage | ToolMessage] = []
+    for idx in range(1, rounds + 1):
+        tool_call_id = f"call-empty-{idx}"
+        messages.append(
+            AIMessage(
+                content="",
+                tool_calls=[{"id": tool_call_id, "name": "search", "args": {}}],
+            )
+        )
+        messages.append(ToolMessage(content="12345", tool_call_id=tool_call_id))
+    return messages
+
+
+def test_empty_iterables_use_default_edit() -> None:
+    """Equivalent empty iterables (`list` and iterator) fall back to the default edit.
+
+    Regression test: the emptiness check relied on truthiness, so an empty
+    iterator bypassed the default ``ClearToolUsesEdit`` policy while an empty
+    list got the default.
+    """
+    messages = _build_tool_history(4)
+
+    for edits in ([], iter([])):
+        middleware = ContextEditingMiddleware(
+            edits=edits,
+            token_counter=lambda _messages: 1_000_000_000,
+        )
+
+        # Both forms must fall back to the same default strategy.
+        assert len(middleware.edits) == 1
+        assert isinstance(middleware.edits[0], ClearToolUsesEdit)
+
+        _state, request = _make_state_and_request(messages)
+
+        modified_request = None
+
+        def mock_handler(req: ModelRequest) -> ModelResponse:
+            nonlocal modified_request
+            modified_request = req
+            return ModelResponse(result=[AIMessage(content="mock response")])
+
+        middleware.wrap_model_call(request, mock_handler)
+
+        assert modified_request is not None
+        cleared_tool = modified_request.messages[1]
+        assert isinstance(cleared_tool, ToolMessage)
+        assert cleared_tool.content == DEFAULT_TOOL_PLACEHOLDER
+        # The three most recent tool results are preserved.
+        for kept_tool in modified_request.messages[3::2]:
+            assert isinstance(kept_tool, ToolMessage)
+            assert kept_tool.content == "12345"
+
+
+async def test_empty_iterables_use_default_edit_async() -> None:
+    """Async version: equivalent empty iterables fall back to the default edit."""
+    messages = _build_tool_history(4)
+
+    for edits in ([], iter([])):
+        middleware = ContextEditingMiddleware(
+            edits=edits,
+            token_counter=lambda _messages: 1_000_000_000,
+        )
+
+        assert len(middleware.edits) == 1
+        assert isinstance(middleware.edits[0], ClearToolUsesEdit)
+
+        _state, request = _make_state_and_request(messages)
+
+        modified_request = None
+
+        async def mock_handler(req: ModelRequest) -> ModelResponse:
+            nonlocal modified_request
+            modified_request = req
+            return ModelResponse(result=[AIMessage(content="mock response")])
+
+        await middleware.awrap_model_call(request, mock_handler)
+
+        assert modified_request is not None
+        cleared_tool = modified_request.messages[1]
+        assert isinstance(cleared_tool, ToolMessage)
+        assert cleared_tool.content == DEFAULT_TOOL_PLACEHOLDER
+        for kept_tool in modified_request.messages[3::2]:
+            assert isinstance(kept_tool, ToolMessage)
+            assert kept_tool.content == "12345"
