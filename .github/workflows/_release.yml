@@ -518,7 +518,19 @@ jobs:
           PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
         run: |
           VIRTUAL_ENV=.venv uv pip install $PRERELEASE_FLAG --force-reinstall --editable .
-          VIRTUAL_ENV=.venv uv pip install $PRERELEASE_FLAG --force-reinstall $MIN_VERSIONS
+          # `langchain` is a test dependency installed from repo source, which
+          # may need a newer `langchain-core` than the minimum installed here.
+          # Install it from PyPI instead so the resolver picks a release that
+          # works with the minimum versions, as it would for a user.
+          LANGCHAIN_TEST_REQ="$(uv run python -c '
+          import tomllib
+          from packaging.requirements import Requirement
+          with open("pyproject.toml", "rb") as f:
+              reqs = tomllib.load(f).get("dependency-groups", {}).get("test", [])
+          print(next((r for r in reqs if isinstance(r, str) and Requirement(r).name == "langchain"), ""))
+          ')"
+          echo "langchain test requirement: ${LANGCHAIN_TEST_REQ:-<none>}"
+          VIRTUAL_ENV=.venv uv pip install $PRERELEASE_FLAG --force-reinstall $MIN_VERSIONS ${LANGCHAIN_TEST_REQ:+"$LANGCHAIN_TEST_REQ"}
           make tests PYTEST_EXTRA="-q -k 'not test_serdes'"
         working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
