@@ -7,7 +7,7 @@ import os
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import httpx2
 import pytest
@@ -21,6 +21,7 @@ from typing_extensions import Self, override
 
 import langchain_typesafe
 from langchain_typesafe import NoulCriteria, experimental
+from langchain_typesafe.classifier import TypeSafeClassifier
 from langchain_typesafe.client import TypeSafeInternalServerError
 from langchain_typesafe.experimental.middleware import AutoModeMiddleware
 from langchain_typesafe.experimental.middleware import __all__ as middleware_all
@@ -181,6 +182,18 @@ async def test_middleware_constructs_configurable_risk_classifier() -> None:
             instructions="Assess production impact.",
             criteria=custom_criteria,
         )
+
+
+async def test_supplied_classifier_is_used() -> None:
+    """Use a caller-supplied classifier instead of constructing a default one."""
+    classifier = MagicMock(spec=TypeSafeClassifier)
+    with patch(
+        "langchain_typesafe.experimental.middleware.auto_mode.TypeSafeClassifier",
+    ) as classifier_class:
+        middleware = AutoModeMiddleware(tools=["delete_file"], classifier=classifier)
+
+    classifier_class.assert_not_called()
+    assert middleware.classifier is classifier
 
 
 async def test_none_criteria_is_supported() -> None:
