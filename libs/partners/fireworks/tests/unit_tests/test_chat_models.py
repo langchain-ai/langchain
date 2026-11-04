@@ -2549,3 +2549,27 @@ async def test_astream_reports_usage_once_when_sent_twice() -> None:
     chunks = [c async for c in llm.astream("hi") if isinstance(c, AIMessageChunk)]
 
     _assert_usage_reported_once(chunks)
+
+
+def test_stream_keeps_last_usage_when_reports_differ() -> None:
+    """A partial early report never wins over the final one."""
+    stream = [
+        {
+            "model": "m",
+            "choices": [{"index": 0, "delta": {"role": "assistant", "content": "a"}}],
+            "usage": {"prompt_tokens": 5, "completion_tokens": 1, "total_tokens": 6},
+        },
+        {
+            "model": "m",
+            "choices": [
+                {"index": 0, "delta": {"content": "b"}, "finish_reason": "stop"}
+            ],
+        },
+        {"model": "m", "choices": [], "usage": _DUPLICATE_USAGE},
+    ]
+    llm = _make_llm(max_retries=0)
+    llm.client = MagicMock(create=MagicMock(return_value=iter(stream)))
+
+    chunks = [c for c in llm.stream("hi") if isinstance(c, AIMessageChunk)]
+
+    _assert_usage_reported_once(chunks)
