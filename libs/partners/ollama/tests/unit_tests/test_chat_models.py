@@ -1173,3 +1173,29 @@ def test_multimodal_message_content_has_no_leading_newline() -> None:
     ollama_messages = model._convert_messages_to_ollama_messages([message])
 
     assert ollama_messages[0]["content"] == "Extract all text from this image."
+
+
+_REFUSED_MESSAGES = [
+    AIMessage(
+        content=[
+            {"type": "text", "text": "Here is"},
+            {"type": "refusal", "refusal": "No.", "id": "msg_1"},
+        ]
+    ),
+    AIMessage(
+        content=[
+            {"type": "text", "text": "Here is"},
+            {"type": "refusal", "refusal": "No.", "index": "lc_refusal"},
+        ],
+        response_metadata={"model_provider": "anthropic", "output_version": "v1"},
+    ),
+]
+
+
+@pytest.mark.parametrize("message", _REFUSED_MESSAGES)
+def test_refusal_blocks_not_sent(message: AIMessage) -> None:
+    sent = str(
+        ChatOllama(model=MODEL_NAME)._convert_messages_to_ollama_messages([message])
+    )
+    assert "Here is" in sent
+    assert "refusal" not in sent

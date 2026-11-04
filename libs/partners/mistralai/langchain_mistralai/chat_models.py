@@ -586,7 +586,8 @@ def _convert_message_to_mistral_chat_message(
             content = [
                 _clean_block(block) if isinstance(block, dict) else block
                 for block in content
-            ]
+                if not (isinstance(block, dict) and block.get("type") == "refusal")
+            ] or ""
         else:
             content = message.content
 

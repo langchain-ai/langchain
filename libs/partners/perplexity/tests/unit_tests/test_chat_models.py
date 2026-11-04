@@ -796,3 +796,29 @@ def test_convert_responses_stream_event_ignores_non_function_items() -> None:
         "item": {"type": "message", "content": "hi"},
     }
     assert _convert_responses_stream_event_to_chunk(event) is None
+
+
+_REFUSED_MESSAGES = [
+    AIMessage(
+        content=[
+            {"type": "text", "text": "Here is"},
+            {"type": "refusal", "refusal": "No.", "id": "msg_1"},
+        ]
+    ),
+    AIMessage(
+        content=[
+            {"type": "text", "text": "Here is"},
+            {"type": "refusal", "refusal": "No.", "index": "lc_refusal"},
+        ],
+        response_metadata={"model_provider": "anthropic", "output_version": "v1"},
+    ),
+]
+
+
+@pytest.mark.parametrize("message", _REFUSED_MESSAGES)
+def test_refusal_blocks_not_sent(message: AIMessage) -> None:
+    sent = str(
+        ChatPerplexity(model="test", api_key="test")._convert_message_to_dict(message)
+    )
+    assert "Here is" in sent
+    assert "refusal" not in sent

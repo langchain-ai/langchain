@@ -368,3 +368,31 @@ def test_convert_chunk_recomputes_total_tokens_for_reasoning() -> None:
     assert usage_metadata["output_tokens"] == 14  # 9 completion + 5 reasoning
     assert usage_metadata["total_tokens"] == 46  # 32 + 14, invariant holds
     assert usage_metadata["output_token_details"]["reasoning"] == 5
+
+
+_REFUSED_MESSAGES = [
+    AIMessage(
+        content=[
+            {"type": "text", "text": "Here is"},
+            {"type": "refusal", "refusal": "No.", "id": "msg_1"},
+        ]
+    ),
+    AIMessage(
+        content=[
+            {"type": "text", "text": "Here is"},
+            {"type": "refusal", "refusal": "No.", "index": "lc_refusal"},
+        ],
+        response_metadata={"model_provider": "anthropic", "output_version": "v1"},
+    ),
+]
+
+
+@pytest.mark.parametrize("message", _REFUSED_MESSAGES)
+def test_refusal_blocks_not_sent(message: AIMessage) -> None:
+    sent = str(
+        ChatXAI(model=MODEL_NAME, api_key=SecretStr("test"))._get_request_payload(
+            [message]
+        )["messages"]
+    )
+    assert "Here is" in sent
+    assert "refusal" not in sent

@@ -488,6 +488,7 @@ def test_dropped_content_block_types_membership() -> None:
         "reasoning_content",
         "function_call",
         "code_interpreter_call",
+        "refusal",
     } == _DROPPED_CONTENT_BLOCK_TYPES
 
 
@@ -2337,3 +2338,4 @@ def test_langsmith_gateway_api_key_overrides_provider_key(
     monkeypatch.setenv("FIREWORKS_API_KEY", "provider-key")
     llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
     assert llm.fireworks_api_key.get_secret_value() == "gateway-key"
+

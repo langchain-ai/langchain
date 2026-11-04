@@ -16,6 +16,7 @@ from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
     _convert_dict_to_message,
 )
+from langchain_huggingface.chat_models.huggingface import _convert_message_to_dict
 from langchain_huggingface.llms import HuggingFaceEndpoint
 
 
@@ -402,3 +403,27 @@ def test_init_chat_model_huggingface() -> None:
         # The important part is that the code path doesn't raise ValidationError
         # about missing 'llm' field, which was the original bug
         pytest.skip(f"Skipping test due to model download/initialization error: {e}")
+
+
+_REFUSED_MESSAGES = [
+    AIMessage(
+        content=[
+            {"type": "text", "text": "Here is"},
+            {"type": "refusal", "refusal": "No.", "id": "msg_1"},
+        ]
+    ),
+    AIMessage(
+        content=[
+            {"type": "text", "text": "Here is"},
+            {"type": "refusal", "refusal": "No.", "index": "lc_refusal"},
+        ],
+        response_metadata={"model_provider": "anthropic", "output_version": "v1"},
+    ),
+]
+
+
+@pytest.mark.parametrize("message", _REFUSED_MESSAGES)
+def test_refusal_blocks_not_sent(message: AIMessage) -> None:
+    sent = str(_convert_message_to_dict(message))
+    assert "Here is" in sent
+    assert "refusal" not in sent
