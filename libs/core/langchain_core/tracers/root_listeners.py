@@ -20,6 +20,13 @@ AsyncListener = (
 )
 
 
+def _ended_without_error(run: Run) -> bool:
+    return (
+        run.error is None
+        and run.extra.get("metadata", {}).get("end_reason") != "cancelled"
+    )
+
+
 class RootListenersTracer(BaseTracer):
     """Tracer that calls listeners on run start, end, and error."""
 
@@ -68,7 +75,7 @@ class RootListenersTracer(BaseTracer):
         if run.id != self.root_id:
             return
 
-        if run.error is None:
+        if _ended_without_error(run):
             if self._arg_on_end is not None:
                 call_func_with_variable_args(self._arg_on_end, run, self.config)
         elif self._arg_on_error is not None:
@@ -123,7 +130,7 @@ class AsyncRootListenersTracer(AsyncBaseTracer):
         if run.id != self.root_id:
             return
 
-        if run.error is None:
+        if _ended_without_error(run):
             if self._arg_on_end is not None:
                 await acall_func_with_variable_args(self._arg_on_end, run, self.config)
         elif self._arg_on_error is not None:

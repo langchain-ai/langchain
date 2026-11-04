@@ -737,3 +737,20 @@ async def test_tracer_timeout_is_an_error() -> None:
     assert len(tracer.runs) == 1
     assert tracer.runs[0].error is not None
     assert "end_reason" not in tracer.runs[0].extra.get("metadata", {})
+
+
+async def test_with_listeners_expected_cancellation_calls_on_error() -> None:
+    ended: list[Run] = []
+    errored: list[Run] = []
+    started = asyncio.Event()
+    runnable = _sleep_forever(started).with_listeners(
+        on_end=ended.append, on_error=errored.append
+    )
+    task = asyncio.create_task(runnable.ainvoke(None))
+    await started.wait()
+    task.cancel(msg=ExpectedCancellation("stopped"))
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert not ended
+    assert len(errored) == 1
+    assert errored[0].extra["metadata"]["end_reason"] == "cancelled"

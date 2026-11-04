@@ -64,6 +64,17 @@ def _extract_gateway_metadata(response: LLMResult) -> dict[str, Any] | None:
     return None
 
 
+def _is_expected_cancellation(error: BaseException | None) -> bool:
+    """Whether `error` is a cancellation marked with `ExpectedCancellation`."""
+    while isinstance(error, asyncio.CancelledError):
+        if error.args and isinstance(error.args[0], ExpectedCancellation):
+            return True
+        # Before Python 3.11 the cancel message is lost when a cancellation
+        # crosses a task boundary; the original error is kept as `__context__`.
+        error = error.__context__
+    return False
+
+
 class _TracerCore(ABC):
     """Abstract base class for tracers.
 
@@ -150,11 +161,7 @@ class _TracerCore(ABC):
 
     def _record_error(self, run: Run, error: BaseException) -> None:
         """Set the run's error, or mark it cancelled for an expected cancellation."""
-        if (
-            isinstance(error, asyncio.CancelledError)
-            and error.args
-            and isinstance(error.args[0], ExpectedCancellation)
-        ):
+        if _is_expected_cancellation(error):
             run.extra["metadata"] = {
                 **run.extra.get("metadata", {}),
                 "end_reason": "cancelled",
