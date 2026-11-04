@@ -579,7 +579,7 @@ _REFUSAL_FINISH_REASONS = frozenset({"SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST"
 """Candidate finish reasons that mean Gemini blocked the response."""
 
 
-def _reason_name(reason: Any) -> str | None:
+def _reason_name(reason: object) -> str | None:
     """Return the enum member name of a Gemini finish or block reason."""
     if not reason:
         return None
