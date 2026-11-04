@@ -272,6 +272,9 @@ def test_parse_partial_json(json_strings: tuple[str, str]) -> None:
     [
         '{"foo": "bar"} ' + "Here is why. " * 2_000,
         '{"foo": [1, 2, ' + "x" * 20_000,
+        # Raw newlines become two-character escapes during repair, so the
+        # decoder's error offset runs ahead of the list index it maps to.
+        '{"foo": "' + "x\n" * 5_000 + '"} ' + "junk " * 2_000,
     ],
 )
 def test_parse_partial_json_long_invalid_tail(

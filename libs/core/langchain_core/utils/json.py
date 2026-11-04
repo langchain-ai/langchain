@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import re
+from bisect import bisect_right
+from itertools import accumulate
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.exceptions import OutputParserException
@@ -118,6 +120,11 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     # Reverse the stack to get the closing characters.
     stack.reverse()
 
+    # String offset at which each element of `new_chars` ends. Elements are not
+    # all one character long (a raw newline inside a string becomes `\\n`), so
+    # a decoder error offset has to be mapped back to a list index.
+    ends = list(accumulate(map(len, new_chars)))
+
     # Try to parse mods of string until we succeed or run out of characters.
     while new_chars:
         # Close any remaining open structures in the reverse
@@ -126,13 +133,16 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
         try:
             return json.loads("".join(new_chars + stack), strict=strict)
         except json.JSONDecodeError as e:
-            # Every longer candidate still contains the character the decoder
+            # Every longer candidate still contains the element the decoder
             # rejected, in the same context, so it fails the same way. Skip
-            # straight past them instead of retrying one character at a time.
-            if e.pos < len(new_chars):
-                del new_chars[e.pos :]
+            # straight past them instead of retrying one element at a time.
+            idx = bisect_right(ends, e.pos)
+            if idx < len(new_chars):
+                del new_chars[idx:]
+                del ends[idx:]
             else:
                 new_chars.pop()
+                ends.pop()
 
     # If we got here, we ran out of characters to remove
     # and still couldn't parse the string as JSON, so return the parse error
