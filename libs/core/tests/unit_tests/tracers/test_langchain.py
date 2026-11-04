@@ -12,7 +12,7 @@ from langsmith import Client
 from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var, get_tracer_project
 
-from langchain_core.exceptions import CancelReason
+from langchain_core.exceptions import ExpectedCancellation
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
 from langchain_core.runnables import RunnableLambda
@@ -703,7 +703,7 @@ def test_on_chain_error_updates_when_not_defers_inputs() -> None:
     assert update_called
 
 
-async def _cancelled_run(msg: CancelReason | None) -> Run:
+async def _cancelled_run(msg: ExpectedCancellation | None) -> Run:
     client = unittest.mock.MagicMock(spec=Client)
     client.tracing_queue = None
     tracer = LangChainTracer(client=client)
@@ -724,8 +724,8 @@ async def _cancelled_run(msg: CancelReason | None) -> Run:
     return cast("Run", update.call_args.args[0])
 
 
-async def test_cancel_reason_is_not_an_error() -> None:
-    run = await _cancelled_run(CancelReason("stopped"))
+async def test_expected_cancellation_is_not_an_error() -> None:
+    run = await _cancelled_run(ExpectedCancellation("stopped"))
     assert run.error is None
     assert run.extra["metadata"]["end_reason"] == "cancelled"
 

@@ -17,14 +17,14 @@ class TracerException(LangChainException):
     """Base class for exceptions in tracers module."""
 
 
-class CancelReason(Exception):  # noqa: N818
+class ExpectedCancellation(Exception):  # noqa: N818
     """Cancel message for a task that is stopped on purpose.
 
     Pass it to `task.cancel()`. `LangChainTracer` then records the run as
     cancelled instead of as an error.
 
     ```python
-    task.cancel(msg=CancelReason("user interrupt"))
+    task.cancel(msg=ExpectedCancellation("user interrupt"))
     ```
     """
 
