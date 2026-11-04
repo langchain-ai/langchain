@@ -1322,6 +1322,7 @@ class ChatFireworks(BaseChatModel):
     def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:
         overall_token_usage: dict = {}
         system_fingerprint = None
+        model_name = None
         for output in llm_outputs:
             if output is None:
                 # Happens in streaming
@@ -1339,7 +1340,12 @@ class ChatFireworks(BaseChatModel):
                         overall_token_usage[k] = v
             if system_fingerprint is None:
                 system_fingerprint = output.get("system_fingerprint")
-        combined = {"token_usage": overall_token_usage, "model_name": self.model_name}
+            if model_name is None:
+                model_name = output.get("model_name") or None
+        combined = {
+            "token_usage": overall_token_usage,
+            "model_name": model_name or self.model_name,
+        }
         if system_fingerprint:
             combined["system_fingerprint"] = system_fingerprint
         return combined
@@ -1365,9 +1371,11 @@ class ChatFireworks(BaseChatModel):
             _handle_fireworks_invalid_request(e)
         except APIError as e:
             _handle_fireworks_api_error(e)
+        response_model = None
         for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
+            response_model = chunk.get("model") or response_model
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             if self.output_version == "v1" and isinstance(
                 message_chunk, AIMessageChunk
@@ -1379,7 +1387,8 @@ class ChatFireworks(BaseChatModel):
                 choice = choices[0]
                 if finish_reason := choice.get("finish_reason"):
                     generation_info["finish_reason"] = finish_reason
-                    generation_info["model_name"] = self.model_name
+                    # Emit once: repeated model names concatenate when chunks merge.
+                    generation_info["model_name"] = response_model or self.model_name
                     if service_tier := chunk.get("service_tier"):
                         generation_info["service_tier"] = service_tier
                 logprobs = choice.get("logprobs")
@@ -1441,14 +1450,15 @@ class ChatFireworks(BaseChatModel):
         if not isinstance(response, dict):
             response = response.model_dump()
         token_usage = response.get("usage", {})
+        model_name = response.get("model") or self.model_name
         service_tier = response.get("service_tier")
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
             if isinstance(message, AIMessage):
+                message.response_metadata["model_name"] = model_name
                 if token_usage:
                     message.usage_metadata = _usage_to_metadata(token_usage)
                     message.response_metadata["model_provider"] = "fireworks"
-                    message.response_metadata["model_name"] = self.model_name
                 if service_tier:
                     message.response_metadata["service_tier"] = service_tier
             generation_info = {"finish_reason": res.get("finish_reason")}
@@ -1461,6 +1471,7 @@ class ChatFireworks(BaseChatModel):
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
+            "model_name": model_name,
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         if service_tier:
@@ -1488,9 +1499,11 @@ class ChatFireworks(BaseChatModel):
             _handle_fireworks_invalid_request(e)
         except APIError as e:
             _handle_fireworks_api_error(e)
+        response_model = None
         async for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
+            response_model = chunk.get("model") or response_model
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             if self.output_version == "v1" and isinstance(
                 message_chunk, AIMessageChunk
@@ -1502,7 +1515,8 @@ class ChatFireworks(BaseChatModel):
                 choice = choices[0]
                 if finish_reason := choice.get("finish_reason"):
                     generation_info["finish_reason"] = finish_reason
-                    generation_info["model_name"] = self.model_name
+                    # Emit once: repeated model names concatenate when chunks merge.
+                    generation_info["model_name"] = response_model or self.model_name
                     if service_tier := chunk.get("service_tier"):
                         generation_info["service_tier"] = service_tier
                 logprobs = choice.get("logprobs")
