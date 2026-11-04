@@ -211,6 +211,8 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
             edits: Sequence of edit strategies to apply.
 
                 Defaults to a single `ClearToolUsesEdit` mirroring Anthropic defaults.
+                The default is used when `edits` is not provided or is empty
+                (regardless of whether an empty sequence or iterator is passed).
             token_count_method: Whether to use approximate token counting
                 (faster, less accurate) or exact counting implemented by the
                 chat model (potentially slower, more accurate).
@@ -226,7 +228,11 @@ class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, 
                 `get_num_tokens_from_messages`.
         """
         super().__init__()
-        self.edits = list(edits or (ClearToolUsesEdit(),))
+        # Materialize before checking emptiness: iterators are always truthy, so
+        # `edits or (...)` would skip the default edit for an empty iterator while
+        # an empty list would get it. Both must behave identically.
+        edits_list = list(edits) if edits is not None else []
+        self.edits = edits_list or [ClearToolUsesEdit()]
         self.token_count_method = token_count_method
         self.token_counter = token_counter
 

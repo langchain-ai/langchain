@@ -578,3 +578,21 @@ async def test_custom_token_counter_forces_clearing_async() -> None:
     cleared_tool = modified_request.messages[1]
     assert isinstance(cleared_tool, ToolMessage)
     assert cleared_tool.content == "[cleared]"
+
+
+def test_empty_edits_iterable_falls_back_to_default_edit() -> None:
+    """An empty iterable for `edits` must behave like an empty list.
+
+    `edits` is typed as `Iterable[ContextEdit] | None`, but iterators are always
+    truthy, so an empty iterator must not bypass the default edit fallback the way
+    an empty list does.
+    """
+    empty_values: list[Any] = [None, [], iter([])]
+
+    for edits in empty_values:
+        middleware = ContextEditingMiddleware(edits=edits)
+
+        assert middleware.edits == [ClearToolUsesEdit()], (
+            f"expected the default ClearToolUsesEdit fallback for edits={edits!r}, "
+            f"got {middleware.edits!r}"
+        )
