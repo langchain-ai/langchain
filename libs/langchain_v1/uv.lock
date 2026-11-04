@@ -2527,7 +2527,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.7.8"
+version = "1.7.9"
 source = { editable = "../partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2666,7 +2666,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.7.4"
+version = "1.7.5"
 source = { editable = "../core" }
 dependencies = [
     { name = "certifi" },
