@@ -18,24 +18,21 @@ class TracerException(LangChainException):
 
 
 class ExpectedCancellation(Exception):  # noqa: N818
-    """Reason attached to a cancellation that stops a run on purpose.
+    """Cancel message that marks an `asyncio` cancellation as intentional.
 
-    A bare `task.cancel()` looks the same whether a run was stopped on purpose or
-    something went wrong, so tracers record every cancellation as an error. Code
-    that stops a run on purpose, such as a server handling a user interrupt or a
-    newer run that supersedes an older one, passes an instance as the cancel
-    message:
+    This is not raised. It is passed to `task.cancel()` by code that stops a run on
+    purpose, such as a server handling a user interrupt or superseding a run:
 
     ```python
     task.cancel(msg=ExpectedCancellation("superseded"))
     ```
 
-    Do not raise this class yourself. The cancellation itself does not change: the
-    task raises `asyncio.CancelledError` as usual, with this object in `args[0]`,
-    and the error still propagates. Only the trace changes: `LangChainTracer`
-    records the run as cancelled (`end_reason: "cancelled"` in its metadata)
-    instead of as an error. Bare cancellations, other cancel messages and timeouts
-    still record an error.
+    The task still raises and propagates `asyncio.CancelledError`, with this object
+    in `args[0]`. The only effect is on tracing: `LangChainTracer` records the run
+    as cancelled (`end_reason: "cancelled"` in its metadata) instead of as an
+    error. Without this marker, `LangChainTracer` cannot tell an intentional stop
+    from a failure, so bare cancellations, other cancel messages and timeouts still
+    record an error.
 
     Subclass it to carry more detail about why the run stopped.
     """
