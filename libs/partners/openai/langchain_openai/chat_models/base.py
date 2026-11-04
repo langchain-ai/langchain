@@ -37,6 +37,7 @@ from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Literal,
     TypeAlias,
     TypeVar,
@@ -800,6 +801,9 @@ class BaseChatOpenAI(BaseChatModel):
     `reasoning_content`) are not extracted. Use a provider-specific subclass for
     full provider support.
     """
+
+    supports_native_agent_tools: ClassVar[bool] = True
+    """Whether client-executed native Responses calls preserve tool-call identity."""
 
     client: Any = Field(default=None, exclude=True)
 
