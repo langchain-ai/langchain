@@ -248,11 +248,13 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
                 *request.system_message.content_blocks,
                 {"type": "text", "text": f"\n\n{self.system_prompt}"},
             ]
+            new_system_message = request.system_message.model_copy(
+                update={"content": cast("list[str | dict[str, str]]", new_system_content)}
+            )
         else:
-            new_system_content = [{"type": "text", "text": self.system_prompt}]
-        new_system_message = SystemMessage(
-            content=cast("list[str | dict[str, str]]", new_system_content)
-        )
+            new_system_message = SystemMessage(
+                content=[{"type": "text", "text": self.system_prompt}]
+            )
         return handler(request.override(system_message=new_system_message))
 
     async def awrap_model_call(
@@ -275,11 +277,13 @@ class TodoListMiddleware(AgentMiddleware[PlanningState[ResponseT], ContextT, Res
                 *request.system_message.content_blocks,
                 {"type": "text", "text": f"\n\n{self.system_prompt}"},
             ]
+            new_system_message = request.system_message.model_copy(
+                update={"content": cast("list[str | dict[str, str]]", new_system_content)}
+            )
         else:
-            new_system_content = [{"type": "text", "text": self.system_prompt}]
-        new_system_message = SystemMessage(
-            content=cast("list[str | dict[str, str]]", new_system_content)
-        )
+            new_system_message = SystemMessage(
+                content=[{"type": "text", "text": self.system_prompt}]
+            )
         return await handler(request.override(system_message=new_system_message))
 
     @override

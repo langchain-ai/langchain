@@ -6,7 +6,13 @@ from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+    convert_to_messages,
+)
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.todo import (
@@ -844,3 +850,79 @@ async def test_handler_called_with_modified_request_async() -> None:
     assert received_prompt["value"] is not None
     assert "Original" in received_prompt["value"]
     assert "write_todos" in received_prompt["value"]
+
+
+def test_preserves_developer_role_and_system_message_metadata() -> None:
+    """Test that middleware preserves developer role and metadata on system_message."""
+    existing_prompt = "Compare the supplied retention policies."
+    instruction = cast(
+        "SystemMessage",
+        convert_to_messages([{"role": "developer", "content": existing_prompt}])[0],
+    )
+    middleware = TodoListMiddleware()
+    model = GenericFakeChatModel(messages=iter([AIMessage(content="response")]))
+    request = ModelRequest(
+        model=model,
+        system_message=instruction,
+        messages=[],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=AgentState(messages=[]),
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request: ModelRequest | None = None
+
+    def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    middleware.wrap_model_call(request, mock_handler)
+
+    assert captured_request is not None
+    assert captured_request.system_message is not None
+    assert captured_request.system_message.additional_kwargs == {"__openai_role__": "developer"}
+    assert captured_request.system_prompt is not None
+    assert captured_request.system_prompt.startswith(existing_prompt)
+    assert "write_todos" in captured_request.system_prompt
+
+
+async def test_preserves_developer_role_and_system_message_metadata_async() -> None:
+    """Test async version - middleware preserves developer role and metadata on system_message."""
+    existing_prompt = "Compare the supplied retention policies."
+    instruction = cast(
+        "SystemMessage",
+        convert_to_messages([{"role": "developer", "content": existing_prompt}])[0],
+    )
+    middleware = TodoListMiddleware()
+    model = GenericFakeChatModel(messages=iter([AIMessage(content="response")]))
+    request = ModelRequest(
+        model=model,
+        system_message=instruction,
+        messages=[],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        state=AgentState(messages=[]),
+        runtime=_fake_runtime(),
+        model_settings={},
+    )
+
+    captured_request: ModelRequest | None = None
+
+    async def mock_handler(req: ModelRequest) -> ModelResponse:
+        nonlocal captured_request
+        captured_request = req
+        return ModelResponse(result=[AIMessage(content="response")])
+
+    await middleware.awrap_model_call(request, mock_handler)
+
+    assert captured_request is not None
+    assert captured_request.system_message is not None
+    assert captured_request.system_message.additional_kwargs == {"__openai_role__": "developer"}
+    assert captured_request.system_prompt is not None
+    assert captured_request.system_prompt.startswith(existing_prompt)
+    assert "write_todos" in captured_request.system_prompt
