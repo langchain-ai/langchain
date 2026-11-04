@@ -8,7 +8,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from langchain_core.messages import AIMessage, AIMessageChunk
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from perplexity.types.shared.search_result import SearchResult
 
 from langchain_perplexity import ChatPerplexity
@@ -17,6 +17,7 @@ from langchain_perplexity.chat_models import (
     _convert_responses_stream_event_to_chunk,
     _convert_responses_to_chat_result,
     _convert_responses_usage,
+    _translate_responses_input,
     _use_responses_api,
 )
 
@@ -1300,3 +1301,111 @@ def test_responses_completed_event_sets_model_name() -> None:
     chunk = _convert_responses_stream_event_to_chunk(event)
     assert chunk is not None
     assert chunk.message.response_metadata["model_name"] == "sonar-pro"
+
+
+def test_translate_responses_input_converts_text_and_image_url_blocks() -> None:
+    """Chat Completions `text` and `image_url` blocks must be converted to
+    `input_text` and `input_image` for the Perplexity Agent (Responses) API.
+    """
+    message_dicts = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "What's in this image?"},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": "https://example.com/a.png"},
+                },
+            ],
+        }
+    ]
+    translated = _translate_responses_input(message_dicts)
+    assert translated == [
+        {
+            "type": "message",
+            "role": "user",
+            "content": [
+                {"type": "input_text", "text": "What's in this image?"},
+                {"type": "input_image", "image_url": "https://example.com/a.png"},
+            ],
+        }
+    ]
+
+
+def test_translate_responses_input_handles_string_image_url_and_passthrough() -> None:
+    """String `image_url` values and pre-formatted `input_*` blocks are handled."""
+    message_dicts = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "input_text", "text": "Already formatted"},
+                {"type": "image_url", "image_url": "https://example.com/b.png"},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "https://example.com/c.png",
+                        "detail": "high",
+                    },
+                },
+            ],
+        }
+    ]
+    translated = _translate_responses_input(message_dicts)
+    assert translated == [
+        {
+            "type": "message",
+            "role": "user",
+            "content": [
+                {"type": "input_text", "text": "Already formatted"},
+                {"type": "input_image", "image_url": "https://example.com/b.png"},
+                {
+                    "type": "input_image",
+                    "image_url": "https://example.com/c.png",
+                    "detail": "high",
+                },
+            ],
+        }
+    ]
+
+
+def test_invoke_multimodal_human_message_translates_content_blocks_for_responses_api() -> (
+    None
+):
+    """End-to-end regression test for #41412: invoking with multimodal content
+    blocks on the Responses API route sends `input_text` and `input_image`.
+    """
+    llm = ChatPerplexity(
+        model="openai/gpt-5.6-sol",
+        api_key="test",
+        use_responses_api=True,
+    )
+    llm.client = MagicMock()
+    llm.client.responses.create.return_value = _stub_responses_response("An image")
+
+    llm.invoke(
+        [
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": "What's in this image?"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "https://example.com/a.png"},
+                    },
+                ]
+            )
+        ]
+    )
+
+    llm.client.responses.create.assert_called_once()
+    call_kwargs = llm.client.responses.create.call_args.kwargs
+    assert call_kwargs["input"] == [
+        {
+            "type": "message",
+            "role": "user",
+            "content": [
+                {"type": "input_text", "text": "What's in this image?"},
+                {"type": "input_image", "image_url": "https://example.com/a.png"},
+            ],
+        }
+    ]
+

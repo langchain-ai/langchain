@@ -215,6 +215,38 @@ def _content_to_text(content: Any) -> str:
     return ""
 
 
+def _translate_responses_content_block(block: Any) -> Any:
+    """Translate a Chat-Completions content block to the Responses API format.
+
+    Converts ``{"type": "text", "text": ...}`` to
+    ``{"type": "input_text", "text": ...}`` and
+    ``{"type": "image_url", "image_url": {"url": ...}}`` (or string URL) to
+    ``{"type": "input_image", "image_url": "<url>"}``. Other blocks pass
+    through unchanged.
+    """
+    if not isinstance(block, dict):
+        return block
+    block_type = block.get("type")
+    if block_type == "text":
+        return {**block, "type": "input_text"}
+    if block_type == "image_url":
+        image_url = block.get("image_url")
+        if isinstance(image_url, dict):
+            translated_block: dict[str, Any] = {
+                "type": "input_image",
+                "image_url": image_url.get("url"),
+            }
+            if "detail" in image_url:
+                translated_block["detail"] = image_url["detail"]
+            elif "detail" in block:
+                translated_block["detail"] = block["detail"]
+            return translated_block
+        if isinstance(image_url, str):
+            return {**block, "type": "input_image", "image_url": image_url}
+        return {**block, "type": "input_image"}
+    return block
+
+
 def _translate_responses_input(message_dicts: list[dict[str, Any]]) -> list[Any]:
     """Translate Chat-Completions message dicts into Responses-API input items.
 
@@ -278,7 +310,16 @@ def _translate_responses_input(message_dicts: list[dict[str, Any]]) -> list[Any]
                 }
             )
         elif role in {"assistant", "system", "user", "developer"}:
-            translated.append({**message, "type": "message"})
+            content = message.get("content")
+            if isinstance(content, list):
+                translated_content = [
+                    _translate_responses_content_block(block) for block in content
+                ]
+                translated.append(
+                    {**message, "content": translated_content, "type": "message"}
+                )
+            else:
+                translated.append({**message, "type": "message"})
         else:
             translated.append(message)
     return translated
