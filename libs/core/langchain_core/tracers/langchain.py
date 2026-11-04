@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -21,6 +22,7 @@ from tenacity import (
 from typing_extensions import override
 
 from langchain_core.env import get_runtime_environment
+from langchain_core.exceptions import ExpectedCancellation
 from langchain_core.load import dumpd
 from langchain_core.messages.ai import UsageMetadata, add_usage
 from langchain_core.tracers._compat import run_construct, run_to_dict
@@ -132,6 +134,15 @@ def _get_usage_metadata_from_message(message: Any) -> UsageMetadata | None:
         return cast("UsageMetadata", kwargs["usage_metadata"])
 
     return None
+
+
+def _is_expected_cancellation(error: BaseException | None) -> bool:
+    while isinstance(error, asyncio.CancelledError):
+        if error.args and isinstance(error.args[0], ExpectedCancellation):
+            return True
+        # Python < 3.11 drops the msg across a task boundary; it stays on __context__.
+        error = error.__context__
+    return False
 
 
 class LangChainTracer(BaseTracer):
@@ -305,6 +316,16 @@ class LangChainTracer(BaseTracer):
         self._start_trace(chat_model_run)
         self._on_chat_model_start(chat_model_run)
         return chat_model_run
+
+    @override
+    def _record_error(self, run: Run, error: BaseException) -> None:
+        if _is_expected_cancellation(error):
+            run.extra["metadata"] = {
+                **run.extra.get("metadata", {}),
+                "end_reason": "cancelled",
+            }
+        else:
+            super()._record_error(run, error)
 
     def _persist_run(self, run: Run) -> None:
         # We want to free up more memory by avoiding keeping a reference to the

@@ -20,12 +20,7 @@ class TracerException(LangChainException):
 class ExpectedCancellation(Exception):  # noqa: N818
     """Marker for an intentional stop that is not an execution failure.
 
-    Pass an instance as the cancel message, e.g.
-    `task.cancel(msg=ExpectedCancellation("superseded"))`. The run still sees
-    `asyncio.CancelledError`, with the marker in `args[0]`, and tracers record it
-    as a cancellation instead of an error.
-
-    Subclass it to carry more detail about why the run stopped.
+    Example: `task.cancel(msg=ExpectedCancellation("superseded"))`.
     """
 
 

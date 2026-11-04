@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import traceback
 from abc import ABC, abstractmethod
@@ -14,7 +13,7 @@ from typing import (
     cast,
 )
 
-from langchain_core.exceptions import ExpectedCancellation, TracerException
+from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
@@ -62,17 +61,6 @@ def _extract_gateway_metadata(response: LLMResult) -> dict[str, Any] | None:
             if isinstance(gateway_metadata, dict):
                 return gateway_metadata
     return None
-
-
-def _is_expected_cancellation(error: BaseException | None) -> bool:
-    """Whether `error` is a cancellation marked with `ExpectedCancellation`."""
-    while isinstance(error, asyncio.CancelledError):
-        if error.args and isinstance(error.args[0], ExpectedCancellation):
-            return True
-        # Before Python 3.11 the cancel message is lost when a cancellation
-        # crosses a task boundary; the original error is kept as `__context__`.
-        error = error.__context__
-    return False
 
 
 class _TracerCore(ABC):
@@ -160,14 +148,7 @@ class _TracerCore(ABC):
             return msg
 
     def _record_error(self, run: Run, error: BaseException) -> None:
-        """Set the run's error, or mark it cancelled for an expected cancellation."""
-        if _is_expected_cancellation(error):
-            run.extra["metadata"] = {
-                **run.extra.get("metadata", {}),
-                "end_reason": "cancelled",
-            }
-        else:
-            run.error = self._get_stacktrace(error)
+        run.error = self._get_stacktrace(error)
 
     def _start_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:  # type: ignore[return]
         current_dotted_order = run.start_time.strftime("%Y%m%dT%H%M%S%fZ") + str(run.id)

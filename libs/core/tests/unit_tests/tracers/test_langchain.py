@@ -1,9 +1,10 @@
+import asyncio
 import concurrent.futures
 import threading
 import time
 import unittest.mock
 import uuid
-from typing import Any
+from typing import Any, cast
 from uuid import UUID
 
 import pytest
@@ -11,8 +12,10 @@ from langsmith import Client
 from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var, get_tracer_project
 
+from langchain_core.exceptions import ExpectedCancellation
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, LLMResult
+from langchain_core.runnables import RunnableLambda
 from langchain_core.tracers.langchain import (
     LangChainTracer,
     _get_usage_metadata_from_generations,
@@ -698,6 +701,39 @@ def test_on_chain_error_updates_when_not_defers_inputs() -> None:
     # Should call update (PATCH), not persist (POST) for normal inputs
     assert not persist_called
     assert update_called
+
+
+async def _cancelled_run(msg: ExpectedCancellation | None) -> Run:
+    client = unittest.mock.MagicMock(spec=Client)
+    client.tracing_queue = None
+    tracer = LangChainTracer(client=client)
+    started = asyncio.Event()
+
+    async def _sleep(_: Any) -> None:
+        started.set()
+        await asyncio.sleep(10)
+
+    task = asyncio.create_task(
+        RunnableLambda(_sleep).ainvoke(None, {"callbacks": [tracer]})
+    )
+    await started.wait()
+    with unittest.mock.patch.object(tracer, "_update_run_single") as update:
+        task.cancel(msg=msg)
+        with pytest.raises(asyncio.CancelledError):
+            await task
+    return cast("Run", update.call_args.args[0])
+
+
+async def test_expected_cancellation_is_not_an_error() -> None:
+    run = await _cancelled_run(ExpectedCancellation("stopped"))
+    assert run.error is None
+    assert run.extra["metadata"]["end_reason"] == "cancelled"
+
+
+async def test_bare_cancellation_is_an_error() -> None:
+    run = await _cancelled_run(None)
+    assert run.error is not None
+    assert "end_reason" not in run.extra.get("metadata", {})
 
 
 class TestPatchMissingMetadata:

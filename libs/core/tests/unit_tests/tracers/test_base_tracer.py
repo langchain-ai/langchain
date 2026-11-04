@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from datetime import datetime, timezone
 from typing import Any
 from unittest.mock import MagicMock
@@ -14,10 +13,9 @@ from freezegun import freeze_time
 from langsmith import Client, traceable
 
 from langchain_core.callbacks import CallbackManager
-from langchain_core.exceptions import ExpectedCancellation, TracerException
+from langchain_core.exceptions import TracerException
 from langchain_core.messages import HumanMessage
 from langchain_core.outputs import LLMResult
-from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables import chain as as_runnable
 from langchain_core.tracers._compat import pydantic_to_dict
 from langchain_core.tracers.base import BaseTracer
@@ -679,78 +677,3 @@ def test_traceable_to_tracing() -> None:
         )
     assert result == 5
     assert has_children, "Child run not collected"
-
-
-class _SupersededError(ExpectedCancellation):
-    pass
-
-
-def _sleep_forever(started: asyncio.Event) -> RunnableLambda[Any, None]:
-    async def _sleep(_: Any) -> None:
-        started.set()
-        await asyncio.sleep(10)
-
-    return RunnableLambda(_sleep)
-
-
-async def _cancel_chain_run(msg: Any) -> Run:
-    tracer = FakeTracer()
-    started = asyncio.Event()
-    runnable = _sleep_forever(started)
-    task = asyncio.create_task(runnable.ainvoke(None, {"callbacks": [tracer]}))
-    await started.wait()
-    task.cancel(msg=msg)
-    with pytest.raises(asyncio.CancelledError):
-        await task
-    assert len(tracer.runs) == 1
-    return tracer.runs[0]
-
-
-@pytest.mark.parametrize(
-    "reason", [ExpectedCancellation("stopped"), _SupersededError("superseded")]
-)
-async def test_tracer_expected_cancellation_is_not_an_error(
-    reason: ExpectedCancellation,
-) -> None:
-    run = await _cancel_chain_run(reason)
-    assert run.error is None
-    assert run.extra["metadata"]["end_reason"] == "cancelled"
-    assert run.end_time is not None
-
-
-@pytest.mark.parametrize("reason", [None, "shutdown"])
-async def test_tracer_other_cancellation_is_an_error(reason: str | None) -> None:
-    run = await _cancel_chain_run(reason)
-    assert run.error is not None
-    assert "CancelledError" in run.error
-    assert "end_reason" not in run.extra.get("metadata", {})
-
-
-async def test_tracer_timeout_is_an_error() -> None:
-    tracer = FakeTracer()
-    started = asyncio.Event()
-    runnable = _sleep_forever(started)
-    with pytest.raises(asyncio.TimeoutError):
-        await asyncio.wait_for(
-            runnable.ainvoke(None, {"callbacks": [tracer]}), timeout=0.01
-        )
-    assert len(tracer.runs) == 1
-    assert tracer.runs[0].error is not None
-    assert "end_reason" not in tracer.runs[0].extra.get("metadata", {})
-
-
-async def test_with_listeners_expected_cancellation_calls_on_error() -> None:
-    ended: list[Run] = []
-    errored: list[Run] = []
-    started = asyncio.Event()
-    runnable = _sleep_forever(started).with_listeners(
-        on_end=ended.append, on_error=errored.append
-    )
-    task = asyncio.create_task(runnable.ainvoke(None))
-    await started.wait()
-    task.cancel(msg=ExpectedCancellation("stopped"))
-    with pytest.raises(asyncio.CancelledError):
-        await task
-    assert not ended
-    assert len(errored) == 1
-    assert errored[0].extra["metadata"]["end_reason"] == "cancelled"
