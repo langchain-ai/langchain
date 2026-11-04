@@ -511,6 +511,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
 
+        if not self._trim_messages_for_summary(messages_to_summarize):
+            return None
+
         summary = self._create_summary(messages_to_summarize)
         new_messages = self._build_new_messages(summary)
 
@@ -551,6 +554,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             return None
 
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
+
+        if not self._trim_messages_for_summary(messages_to_summarize):
+            return None
 
         summary = await self._acreate_summary(messages_to_summarize)
         new_messages = self._build_new_messages(summary)
@@ -1030,7 +1036,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         try:
             if self.trim_tokens_to_summarize is None:
                 return messages
-            return cast(
+            trimmed = cast(
                 "list[AnyMessage]",
                 trim_messages(
                     messages,
@@ -1042,5 +1048,18 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                     include_system=True,
                 ),
             )
+            if not trimmed:
+                trimmed = cast(
+                    "list[AnyMessage]",
+                    trim_messages(
+                        messages,
+                        max_tokens=self.trim_tokens_to_summarize,
+                        token_counter=self.token_counter,
+                        strategy="last",
+                        allow_partial=True,
+                        include_system=True,
+                    ),
+                )
+            return trimmed
         except Exception:
             return messages[-_DEFAULT_FALLBACK_MESSAGE_COUNT:]

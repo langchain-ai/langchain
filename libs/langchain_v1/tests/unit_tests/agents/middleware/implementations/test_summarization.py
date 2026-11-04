@@ -2739,3 +2739,116 @@ def test_async_summarizer_on_sync_path_raises() -> None:
 
     with pytest.raises(TypeError, match="coroutine function synchronously"):
         middleware._create_summary([HumanMessage(content="hi")])
+
+
+def test_summarization_middleware_tool_loop_without_human_in_trim_window() -> None:
+    """Regression test for #41146: summarize when no HumanMessage falls in trim window."""
+    calls: list[int] = []
+
+    class SpyModel(GenericFakeChatModel):
+        @override
+        def _generate(self, *args: Any, **kwargs: Any) -> ChatResult:
+            calls.append(1)
+            return super()._generate(*args, **kwargs)
+
+    messages: list[AnyMessage] = [
+        HumanMessage("Research ACME Corp and write a competitive analysis report.")
+    ]
+    for i in range(40):
+        messages.append(
+            AIMessage(
+                "",
+                tool_calls=[{"name": "search", "args": {"q": str(i)}, "id": f"call_{i}"}],
+            )
+        )
+        messages.append(
+            ToolMessage(
+                "result: " + "lorem ipsum dolor sit amet " * 30,
+                tool_call_id=f"call_{i}",
+            )
+        )
+
+    middleware = SummarizationMiddleware(
+        model=SpyModel(messages=iter([AIMessage("A high quality summary")])),
+        trigger=("tokens", 2000),
+        keep=("messages", 5),
+    )
+
+    result = middleware.before_model(AgentState[Any](messages=messages), Runtime())
+
+    assert result is not None
+    assert len(calls) == 1
+    assert "A high quality summary" in result["messages"][1].content
+    assert "Previous conversation was too long to summarize." not in result["messages"][1].content
+
+
+async def test_summarization_middleware_tool_loop_without_human_in_trim_window_async() -> None:
+    """Async regression test for #41146: summarize when no HumanMessage falls in trim window."""
+    calls: list[int] = []
+
+    class SpyModel(GenericFakeChatModel):
+        @override
+        def _generate(self, *args: Any, **kwargs: Any) -> ChatResult:
+            calls.append(1)
+            return super()._generate(*args, **kwargs)
+
+    messages: list[AnyMessage] = [
+        HumanMessage("Research ACME Corp and write a competitive analysis report.")
+    ]
+    for i in range(40):
+        messages.append(
+            AIMessage(
+                "",
+                tool_calls=[{"name": "search", "args": {"q": str(i)}, "id": f"call_{i}"}],
+            )
+        )
+        messages.append(
+            ToolMessage(
+                "result: " + "lorem ipsum dolor sit amet " * 30,
+                tool_call_id=f"call_{i}",
+            )
+        )
+
+    middleware = SummarizationMiddleware(
+        model=SpyModel(messages=iter([AIMessage("A high quality summary")])),
+        trigger=("tokens", 2000),
+        keep=("messages", 5),
+    )
+
+    result = await middleware.abefore_model(AgentState[Any](messages=messages), Runtime())
+
+    assert result is not None
+    assert len(calls) == 1
+    assert "A high quality summary" in result["messages"][1].content
+    assert "Previous conversation was too long to summarize." not in result["messages"][1].content
+
+
+def test_summarization_middleware_skips_when_trim_is_empty() -> None:
+    """When no messages fit within trim_tokens_to_summarize, leave history intact."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("messages", 2),
+        keep=("messages", 1),
+        trim_tokens_to_summarize=10,
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="x " * 500),
+        AIMessage(content="y"),
+    ]
+    assert middleware.before_model(AgentState[Any](messages=messages), Runtime()) is None
+
+
+async def test_summarization_middleware_skips_when_trim_is_empty_async() -> None:
+    """Async: when no messages fit within trim_tokens_to_summarize, leave history intact."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(),
+        trigger=("messages", 2),
+        keep=("messages", 1),
+        trim_tokens_to_summarize=10,
+    )
+    messages: list[AnyMessage] = [
+        HumanMessage(content="x " * 500),
+        AIMessage(content="y"),
+    ]
+    assert await middleware.abefore_model(AgentState[Any](messages=messages), Runtime()) is None
+
