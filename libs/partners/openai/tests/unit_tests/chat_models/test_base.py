@@ -2761,7 +2761,20 @@ def test__construct_lc_result_from_responses_api_apply_patch_response() -> None:
             "status": "completed",
         }
     ]
-    assert message.tool_calls == []
+    assert message.tool_calls == [
+        {
+            "type": "tool_call",
+            "name": "apply_patch",
+            "args": {
+                "operation": {
+                    "type": "create_file",
+                    "path": "hello.txt",
+                    "diff": "+hello\n",
+                }
+            },
+            "id": "call_123",
+        }
+    ]
     assert message.invalid_tool_calls == []
 
 

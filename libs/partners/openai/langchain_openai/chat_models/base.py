@@ -167,6 +167,11 @@ from langchain_openai.chat_models._compat import (
     _convert_to_v03_ai_message,
     _unwrap_non_standard,
 )
+from langchain_openai.chat_models._native import (
+    _native_tool_call,
+    _native_tool_output,
+    _normalize_native_tool_messages,
+)
 from langchain_openai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
@@ -212,6 +217,8 @@ WellKnownTools = (
     "image_generation",
     "tool_search",
     "apply_patch",
+    "shell",
+    "local_shell",
 )
 
 _TOOL_EXTRAS_PASSTHROUGH = ("defer_loading", "async")
@@ -2046,6 +2053,7 @@ class BaseChatOpenAI(BaseChatModel):
         payload = {**self._default_params, **kwargs}
 
         if self._use_responses_api(payload):
+            messages = _normalize_native_tool_messages(messages)
             if self.use_previous_response_id:
                 last_messages, previous_response_id = _get_last_messages(messages)
                 payload_to_use = last_messages if previous_response_id else messages
@@ -2062,6 +2070,133 @@ class BaseChatOpenAI(BaseChatModel):
                 for m in messages
             ]
         return payload
+
+    def _get_context_request_payload(
+        self, input_: LanguageModelInput, **kwargs: Any
+    ) -> dict[str, Any]:
+        payload = _construct_responses_api_payload(
+            self._convert_input(input_).to_messages(),
+            {**self._default_params, **kwargs, "store": False, "stream": False},
+        )
+        if text_format := payload.pop("text_format", None):
+            from openai.lib._parsing._responses import type_to_text_format_param
+
+            payload["text"] = {
+                **payload.get("text", {}),
+                "format": type_to_text_format_param(text_format),
+            }
+        payload.update(payload.pop("extra_body", None) or {})
+        return payload
+
+    def count_input_tokens(self, input_: LanguageModelInput, **kwargs: Any) -> int:
+        """Count Responses input tokens, including bound tools and output schemas.
+
+        !!! warning "Experimental"
+            This method uses the Responses input-token counting endpoint.
+
+        Args:
+            input_: Conversation to count using stateless Responses serialization.
+            **kwargs: Generation parameters, including tools and response_format.
+        """
+        from openai.types.responses.input_token_count_params import (
+            InputTokenCountParams,
+        )
+
+        payload = self._get_context_request_payload(input_, **kwargs)
+        return self.root_client.responses.input_tokens.count(
+            **{
+                k: v
+                for k, v in payload.items()
+                if k in InputTokenCountParams.__annotations__
+            }
+        ).input_tokens
+
+    async def acount_input_tokens(
+        self, input_: LanguageModelInput, **kwargs: Any
+    ) -> int:
+        """Count Responses input tokens asynchronously.
+
+        !!! warning "Experimental"
+            This method uses the Responses input-token counting endpoint.
+
+        Args:
+            input_: Conversation to count using stateless Responses serialization.
+            **kwargs: Generation parameters, including tools and response_format.
+        """
+        from openai.types.responses.input_token_count_params import (
+            InputTokenCountParams,
+        )
+
+        payload = self._get_context_request_payload(input_, **kwargs)
+        result = await self.root_async_client.responses.input_tokens.count(
+            **{
+                k: v
+                for k, v in payload.items()
+                if k in InputTokenCountParams.__annotations__
+            }
+        )
+        return result.input_tokens
+
+    def compact(self, input_: LanguageModelInput, **kwargs: Any) -> AIMessage:
+        """Compact Responses history into opaque replayable content.
+
+        !!! warning "Experimental"
+            The compact endpoint does not support tools or output schemas.
+
+        Args:
+            input_: Conversation to compact using stateless Responses serialization.
+            **kwargs: Generation parameters. Only SDK-supported compact parameters
+                are sent; this endpoint does not support tools or output schemas.
+        """
+        from openai.types.responses.response_compact_params import ResponseCompactParams
+
+        payload = self._get_context_request_payload(input_, **kwargs)
+        result = self.root_client.responses.compact(
+            **{
+                k: v
+                for k, v in payload.items()
+                if k in ResponseCompactParams.__annotations__
+            }
+        )
+        return self._create_compacted_message(result, payload["model"])
+
+    async def acompact(self, input_: LanguageModelInput, **kwargs: Any) -> AIMessage:
+        """Compact Responses history asynchronously into opaque replayable content.
+
+        !!! warning "Experimental"
+            The compact endpoint does not support tools or output schemas.
+
+        Args:
+            input_: Conversation to compact using stateless Responses serialization.
+            **kwargs: Generation parameters; only SDK-supported compact parameters
+                are sent, excluding tools and output schemas.
+        """
+        from openai.types.responses.response_compact_params import ResponseCompactParams
+
+        payload = self._get_context_request_payload(input_, **kwargs)
+        result = await self.root_async_client.responses.compact(
+            **{
+                k: v
+                for k, v in payload.items()
+                if k in ResponseCompactParams.__annotations__
+            }
+        )
+        return self._create_compacted_message(result, payload["model"])
+
+    @staticmethod
+    def _create_compacted_message(result: Any, model: str) -> AIMessage:
+        return AIMessage(
+            content=[
+                item.model_dump(exclude_none=True, mode="json")
+                for item in result.output
+            ],
+            id=result.id,
+            response_metadata={
+                "model_provider": "openai",
+                "model_name": model,
+                "model": model,
+            },
+        )
 
     def _create_chat_result(
         self,
@@ -2555,7 +2690,10 @@ class BaseChatOpenAI(BaseChatModel):
         if response_format and strict is not False and not self.use_responses_api:
             strict = True
         formatted_tools = [
-            convert_to_openai_tool(tool, strict=strict) for tool in tools
+            tool.copy()
+            if isinstance(tool, dict) and tool.get("type") in ("shell", "local_shell")
+            else convert_to_openai_tool(tool, strict=strict)
+            for tool in tools
         ]
         for original, formatted in zip(tools, formatted_tools, strict=False):
             if (
@@ -4959,7 +5097,7 @@ def _construct_responses_api_input(
         A list of Responses API input items derived from `messages`.
     """
     input_ = []
-    for lc_msg in messages:
+    for lc_msg in _normalize_native_tool_messages(messages):
         if isinstance(lc_msg, AIMessage):
             lc_msg = _convert_from_v03_ai_message(lc_msg)
             msg = _convert_message_to_dict(lc_msg, api="responses")
@@ -4992,7 +5130,10 @@ def _construct_responses_api_input(
                 cast(ToolMessage, lc_msg)
             )
             custom_tool_output = _make_custom_tool_output_from_message(lc_msg)  # type: ignore[arg-type]
-            if computer_call_output:
+            native_tool_output = _native_tool_output(cast(ToolMessage, lc_msg))
+            if native_tool_output is not None:
+                input_.append(native_tool_output)
+            elif computer_call_output:
                 input_.append(computer_call_output)
             elif custom_tool_output:
                 input_.append(custom_tool_output)
@@ -5063,6 +5204,7 @@ def _construct_responses_api_input(
                             if store is not False or block.get("encrypted_content"):
                                 input_.append(_pop_index_and_sub_index(block))
                         elif block_type in (
+                            "message",
                             "compaction",
                             "web_search_call",
                             "file_search_call",
@@ -5077,6 +5219,10 @@ def _construct_responses_api_input(
                             "tool_search_output",
                             "apply_patch_call",
                             "apply_patch_call_output",
+                            "shell_call",
+                            "shell_call_output",
+                            "local_shell_call",
+                            "local_shell_call_output",
                         ):
                             input_.append(_pop_index_and_sub_index(block))
                         elif block_type == "image_generation_call":
@@ -5114,7 +5260,14 @@ def _construct_responses_api_input(
                 content_call_ids = {
                     block["call_id"]
                     for block in input_
-                    if block.get("type") in ("function_call", "custom_tool_call")
+                    if block.get("type")
+                    in (
+                        "function_call",
+                        "custom_tool_call",
+                        "apply_patch_call",
+                        "shell_call",
+                        "local_shell_call",
+                    )
                     and "call_id" in block
                 }
                 for tool_call in tool_calls:
@@ -5134,6 +5287,8 @@ def _construct_responses_api_input(
                     "mcp_approval_response",
                     "tool_search_output",
                     "apply_patch_call_output",
+                    "shell_call_output",
+                    "local_shell_call_output",
                     "configuration_update",
                 )
                 for block in msg["content"]:
@@ -5314,6 +5469,11 @@ def _construct_lc_result_from_responses_api(
                 "id": output.call_id,
             }
             tool_calls.append(tool_call)
+        elif output.type in ("apply_patch_call", "shell_call", "local_shell_call"):
+            native_block = output.model_dump(exclude_none=True, mode="json")
+            content_blocks.append(native_block)
+            if native_call := _native_tool_call(native_block):
+                tool_calls.append(dict(native_call))
         elif output.type in (
             "reasoning",
             "compaction",
@@ -5327,8 +5487,9 @@ def _construct_lc_result_from_responses_api(
             "image_generation_call",
             "tool_search_call",
             "tool_search_output",
-            "apply_patch_call",
             "apply_patch_call_output",
+            "shell_call_output",
+            "local_shell_call_output",
         ):
             content_blocks.append(output.model_dump(exclude_none=True, mode="json"))
 
@@ -5594,6 +5755,24 @@ def _convert_responses_chunk_to_generation_chunk(
             function_call_content["async"] = async_flag
         content.append(function_call_content)
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
+        "apply_patch_call",
+        "shell_call",
+        "local_shell_call",
+    ):
+        _advance(chunk.output_index)
+        native_block = chunk.item.model_dump(exclude_none=True, mode="json")
+        content.append({**native_block, "index": current_index})
+        if native_call := _native_tool_call(native_block):
+            tool_call_chunks.append(
+                {
+                    "type": "tool_call_chunk",
+                    "name": native_call["name"],
+                    "args": json.dumps(native_call["args"]),
+                    "id": native_call["id"],
+                    "index": current_index,
+                }
+            )
+    elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "compaction",
         "web_search_call",
         "file_search_call",
@@ -5605,8 +5784,9 @@ def _convert_responses_chunk_to_generation_chunk(
         "image_generation_call",
         "tool_search_call",
         "tool_search_output",
-        "apply_patch_call",
         "apply_patch_call_output",
+        "shell_call_output",
+        "local_shell_call_output",
     ):
         _advance(chunk.output_index)
         tool_output = chunk.item.model_dump(exclude_none=True, mode="json")

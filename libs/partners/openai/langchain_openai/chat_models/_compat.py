@@ -118,6 +118,10 @@ def _convert_to_v03_ai_message(
                     "tool_search_output",
                     "apply_patch_call",
                     "apply_patch_call_output",
+                    "shell_call",
+                    "shell_call_output",
+                    "local_shell_call",
+                    "local_shell_call_output",
                 ):
                     # Store built-in tool calls in additional_kwargs
                     if "tool_outputs" not in message.additional_kwargs:
@@ -438,8 +442,63 @@ def _convert_from_v1_to_responses(
     content: list[types.ContentBlock], tool_calls: list[types.ToolCall]
 ) -> list[dict[str, Any]]:
     new_content: list = []
+    native_call_ids = {
+        native.get("call_id")
+        for block in content
+        if (native := _unwrap_non_standard(cast("dict[str, Any]", block))).get(
+            "type", ""
+        )
+        in ("apply_patch_call", "shell_call", "local_shell_call")
+    }
+    native_names = {
+        native["type"].removesuffix("_call")
+        for block in content
+        if (native := _unwrap_non_standard(cast("dict[str, Any]", block))).get(
+            "call_id"
+        )
+        in native_call_ids
+        and native.get("type") in ("apply_patch_call", "shell_call", "local_shell_call")
+    }
+    function_call_ids = {
+        block.get("call_id")
+        for block in content
+        if block.get("type") == "function_call"
+    }
+    for tool_call in tool_calls:
+        if (
+            tool_call["name"] in native_names
+            and tool_call["id"] not in native_call_ids
+            and tool_call["id"] not in function_call_ids
+        ):
+            msg = "A native tool call ID cannot be changed during replay."
+            raise ValueError(msg)
+    seen_native_calls: set[str] = set()
     for block in content:
         if "type" not in block:
+            continue
+        native = _unwrap_non_standard(cast("dict[str, Any]", block))
+        if native.get("type") in ("apply_patch_call", "shell_call", "local_shell_call"):
+            if native["call_id"] in seen_native_calls:
+                continue
+            seen_native_calls.add(native["call_id"])
+            for tool_call in tool_calls:
+                if tool_call["id"] != native["call_id"]:
+                    continue
+                key = "operation" if native["type"] == "apply_patch_call" else "action"
+                if tool_call["name"] != native["type"].removesuffix("_call"):
+                    msg = "A native tool call cannot be renamed during replay."
+                    raise ValueError(msg)
+                if set(tool_call["args"]) != {key} or not isinstance(
+                    tool_call["args"][key], dict
+                ):
+                    msg = f"Native tool arguments must contain a single {key} object."
+                    raise ValueError(msg)
+                native = {**native, key: tool_call["args"][key]}
+                block = cast(
+                    "types.ContentBlock", {"type": "non_standard", "value": native}
+                )
+                break
+        if block["type"] == "function_call" and block.get("call_id") in native_call_ids:
             continue
         if block["type"] == "text" and "annotations" in block:
             # Need a copy because we're changing the annotations list
@@ -461,6 +520,8 @@ def _convert_from_v1_to_responses(
                 new_block["phase"] = block["extras"]["phase"]
             new_content.append(new_block)
         elif block["type"] == "tool_call":
+            if block["id"] in native_call_ids:
+                continue
             new_block = {"type": "function_call", "call_id": block["id"]}
             if "extras" in block and "item_id" in block["extras"]:
                 new_block["id"] = block["extras"]["item_id"]
