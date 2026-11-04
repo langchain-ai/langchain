@@ -1986,7 +1986,8 @@ def test__format_messages_system_after_server_tool_result_sent_in_place(
     assert actual_messages[1]["content"] == [block]
 
 
-def test__format_messages_server_tool_use_preserves_caller() -> None:
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test__format_messages_server_tool_use_preserves_caller(output_version: str) -> None:
     """Nested server tool calls keep `caller` so the API can link them to parents."""
     caller = {"type": "code_execution_20260120", "tool_id": "srvtoolu_ce"}
     blocks: list[Any] = [
@@ -2007,7 +2008,14 @@ def test__format_messages_server_tool_use_preserves_caller() -> None:
         {
             "type": "web_search_tool_result",
             "tool_use_id": "srvtoolu_ws",
-            "content": [],
+            "content": [
+                {
+                    "type": "web_search_result",
+                    "url": "https://example.com",
+                    "title": "Example",
+                    "encrypted_content": "abc",
+                }
+            ],
             "caller": caller,
         },
         {
@@ -2023,12 +2031,18 @@ def test__format_messages_server_tool_use_preserves_caller() -> None:
         },
     ]
     ai = AIMessage(blocks, response_metadata={"model_provider": "anthropic"})
+    if output_version == "v1":
+        ai = AIMessage(
+            [dict(block) for block in ai.content_blocks],
+            response_metadata={"model_provider": "anthropic", "output_version": "v1"},
+        )
+    original_content = copy.deepcopy(ai.content)
     model = ChatAnthropic(model="claude-sonnet-4-5", api_key="placeholder")
     payload = model._get_request_payload([HumanMessage("hi"), ai, HumanMessage("next")])
     expected = copy.deepcopy(blocks)
     del expected[0]["caller"]
     assert payload["messages"][1]["content"] == expected
-    assert ai.content == blocks
+    assert ai.content == original_content
 
 
 @pytest.mark.parametrize(
