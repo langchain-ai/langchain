@@ -1372,6 +1372,7 @@ class ChatFireworks(BaseChatModel):
         except APIError as e:
             _handle_fireworks_api_error(e)
         response_model = None
+        usage_emitted = False
         for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1381,6 +1382,16 @@ class ChatFireworks(BaseChatModel):
                 message_chunk, AIMessageChunk
             ):
                 message_chunk = _format_chunk_for_v1(message_chunk)
+            if (
+                isinstance(message_chunk, AIMessageChunk)
+                and message_chunk.usage_metadata
+            ):
+                if usage_emitted:
+                    # Fireworks can report usage on both the `finish_reason` chunk
+                    # and a trailing usage-only chunk. Merging chunks sums usage,
+                    # so keep only the first report.
+                    message_chunk.usage_metadata = None
+                usage_emitted = True
             generation_info: dict[str, Any] = {}
             logprobs = None
             if choices := chunk.get("choices"):
@@ -1500,6 +1511,7 @@ class ChatFireworks(BaseChatModel):
         except APIError as e:
             _handle_fireworks_api_error(e)
         response_model = None
+        usage_emitted = False
         async for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1509,6 +1521,16 @@ class ChatFireworks(BaseChatModel):
                 message_chunk, AIMessageChunk
             ):
                 message_chunk = _format_chunk_for_v1(message_chunk)
+            if (
+                isinstance(message_chunk, AIMessageChunk)
+                and message_chunk.usage_metadata
+            ):
+                if usage_emitted:
+                    # Fireworks can report usage on both the `finish_reason` chunk
+                    # and a trailing usage-only chunk. Merging chunks sums usage,
+                    # so keep only the first report.
+                    message_chunk.usage_metadata = None
+                usage_emitted = True
             generation_info: dict[str, Any] = {}
             logprobs = None
             if choices := chunk.get("choices"):
