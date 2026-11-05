@@ -666,7 +666,16 @@ def _create_message_from_message_type(
             kwargs["example"] = example
         message: BaseMessage = HumanMessage(content=content, **kwargs)
     elif message_type in {"ai", "assistant"}:
-        if example := kwargs.get("additional_kwargs", {}).pop("example", False):
+        extra = kwargs.get("additional_kwargs", {})
+        # Restore fields that belong to ``AIMessage`` itself when round-tripping
+        # a dumped message dict (e.g. via ``model_dump()`` -> ``convert_to_messages``):
+        # they arrive as top-level keys of the dict and so end up inside
+        # ``additional_kwargs``, mirroring the ``response_metadata`` handling above.
+        if usage_metadata := extra.pop("usage_metadata", None):
+            kwargs["usage_metadata"] = usage_metadata
+        if invalid_tool_calls := extra.pop("invalid_tool_calls", None):
+            kwargs["invalid_tool_calls"] = invalid_tool_calls
+        if example := extra.pop("example", False):
             kwargs["example"] = example
         message = AIMessage(content=content, **kwargs)
     elif message_type in {"system", "developer"}:

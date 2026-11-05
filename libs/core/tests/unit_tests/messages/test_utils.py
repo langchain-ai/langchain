@@ -944,6 +944,33 @@ def test_convert_to_messages() -> None:
     assert expected == actual
 
 
+def test_convert_to_messages_restores_ai_fields_from_dump() -> None:
+    """Top-level ``usage_metadata`` / ``invalid_tool_calls`` restore to their fields.
+
+    Round-tripping an ``AIMessage`` through ``model_dump()`` and
+    ``convert_to_messages`` previously landed these keys in
+    ``additional_kwargs``, silently dropping token usage.
+    """
+    usage = {"input_tokens": 1, "output_tokens": 2, "total_tokens": 3}
+    message = AIMessage(
+        "hi",
+        usage_metadata=usage,
+        additional_kwargs={"foo": "bar"},
+    )
+    dumped = message.model_dump()
+    # Sanity check: these are top-level keys of the dump, i.e. they end up in
+    # ``**additional_kwargs`` of ``_create_message_from_message_type``.
+    assert dumped["usage_metadata"] == usage
+    assert "usage_metadata" not in dumped["additional_kwargs"]
+
+    restored = convert_to_messages([dumped])[0]
+    assert isinstance(restored, AIMessage)
+    assert restored.usage_metadata == usage
+    assert restored.invalid_tool_calls == []
+    assert restored.additional_kwargs == {"foo": "bar"}
+    assert restored == message
+
+
 def test_convert_to_messages_openai_refusal() -> None:
     actual = convert_to_messages(
         [{"role": "assistant", "content": "", "refusal": "9.1"}]
