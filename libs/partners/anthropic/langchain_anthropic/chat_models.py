@@ -2666,9 +2666,7 @@ class ChatAnthropic(BaseChatModel):
         )
 
         def _raise_if_no_tool_calls(message: AIMessage) -> AIMessage:
-            refused = any(
-                block["type"] == "refusal" for block in message.content_blocks
-            )
+            refused = message.response_metadata.get("stop_reason") == "refusal"
             if not message.tool_calls and not refused:
                 raise OutputParserException(thinking_admonition)
             return message
