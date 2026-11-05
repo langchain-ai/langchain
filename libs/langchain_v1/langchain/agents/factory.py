@@ -42,6 +42,11 @@ from langchain.agents.middleware._trace_policy import (
     _node_trace_policy,
     _resolved_transform,
 )
+from langchain.agents.middleware.model_selection import (
+    MODEL_SELECTION_KEY,
+    current_model_spec,
+    model_spec_from_model,
+)
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -276,6 +281,22 @@ def _build_commands(
     commands: list[Command[Any]] = [Command(update=state)]
     commands.extend(middleware_commands or [])
     return commands
+
+
+def _record_model_selection(
+    commands: list[Command[Any]],
+    state: AgentState[Any],
+    executed: list[BaseChatModel],
+) -> list[Command[Any]]:
+    """Record the model the call went to under `model_selection`, if it changed.
+
+    `executed` lists the models the innermost handler ran, in order; the last one
+    produced the response (earlier ones were retried or fell back from).
+    """
+    spec = model_spec_from_model(executed[-1]) if executed else None
+    if spec is None or spec == current_model_spec(state):
+        return commands
+    return [*commands, Command(update={MODEL_SELECTION_KEY: {"current": spec}})]
 
 
 def _chain_model_call_handlers(
@@ -1532,21 +1553,28 @@ def create_agent(
         )
 
         has_structured_output = initial_response_format is not None
+        executed: list[BaseChatModel] = []
+
+        def execute(model_request: ModelRequest[ContextT]) -> ModelResponse:
+            executed.append(model_request.model)
+            return _execute_model_sync(model_request)
+
         if wrap_model_call_handler is None:
-            model_response = _execute_model_sync(request)
-            return _build_commands(
+            model_response = execute(request)
+            commands = _build_commands(
                 model_response,
                 has_structured_output=has_structured_output,
                 repaired_messages=messages if messages != state["messages"] else None,
             )
-
-        result = wrap_model_call_handler(request, _execute_model_sync)
-        return _build_commands(
-            result.model_response,
-            result.commands,
-            has_structured_output=has_structured_output,
-            repaired_messages=messages if messages != state["messages"] else None,
-        )
+        else:
+            result = wrap_model_call_handler(request, execute)
+            commands = _build_commands(
+                result.model_response,
+                result.commands,
+                has_structured_output=has_structured_output,
+                repaired_messages=messages if messages != state["messages"] else None,
+            )
+        return _record_model_selection(commands, state, executed)
 
     async def _execute_model_async(request: ModelRequest[ContextT]) -> ModelResponse:
         """Execute model asynchronously and return response.
@@ -1591,21 +1619,28 @@ def create_agent(
         )
 
         has_structured_output = initial_response_format is not None
+        executed: list[BaseChatModel] = []
+
+        async def execute(model_request: ModelRequest[ContextT]) -> ModelResponse:
+            executed.append(model_request.model)
+            return await _execute_model_async(model_request)
+
         if awrap_model_call_handler is None:
-            model_response = await _execute_model_async(request)
-            return _build_commands(
+            model_response = await execute(request)
+            commands = _build_commands(
                 model_response,
                 has_structured_output=has_structured_output,
                 repaired_messages=messages if messages != state["messages"] else None,
             )
-
-        result = await awrap_model_call_handler(request, _execute_model_async)
-        return _build_commands(
-            result.model_response,
-            result.commands,
-            has_structured_output=has_structured_output,
-            repaired_messages=messages if messages != state["messages"] else None,
-        )
+        else:
+            result = await awrap_model_call_handler(request, execute)
+            commands = _build_commands(
+                result.model_response,
+                result.commands,
+                has_structured_output=has_structured_output,
+                repaired_messages=messages if messages != state["messages"] else None,
+            )
+        return _record_model_selection(commands, state, executed)
 
     # Use sync or async based on model capabilities
     graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))
