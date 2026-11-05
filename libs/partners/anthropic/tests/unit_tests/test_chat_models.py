@@ -1986,6 +1986,96 @@ def test__format_messages_system_after_server_tool_result_sent_in_place(
     assert actual_messages[1]["content"] == [block]
 
 
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test__format_messages_server_tool_use_preserves_caller(output_version: str) -> None:
+    """Nested server tool calls keep `caller` so the API can link them to parents."""
+    caller = {"type": "code_execution_20260120", "tool_id": "srvtoolu_ce"}
+    blocks: list[Any] = [
+        {
+            "type": "server_tool_use",
+            "id": "srvtoolu_ce",
+            "name": "code_execution",
+            "input": {"code": "..."},
+            "caller": {"type": "direct"},
+        },
+        {
+            "type": "server_tool_use",
+            "id": "srvtoolu_ws",
+            "name": "web_search",
+            "input": {"query": "q"},
+            "caller": caller,
+        },
+        {
+            "type": "web_search_tool_result",
+            "tool_use_id": "srvtoolu_ws",
+            "content": [
+                {
+                    "type": "web_search_result",
+                    "url": "https://example.com",
+                    "title": "Example",
+                    "encrypted_content": "abc",
+                }
+            ],
+            "caller": caller,
+        },
+        {
+            "type": "code_execution_tool_result",
+            "tool_use_id": "srvtoolu_ce",
+            "content": {
+                "type": "encrypted_code_execution_result",
+                "encrypted_stdout": "abc",
+                "stderr": "",
+                "return_code": 0,
+                "content": [],
+            },
+        },
+    ]
+    ai = AIMessage(blocks, response_metadata={"model_provider": "anthropic"})
+    if output_version == "v1":
+        ai = AIMessage(
+            [dict(block) for block in ai.content_blocks],
+            response_metadata={"model_provider": "anthropic", "output_version": "v1"},
+        )
+    original_content = copy.deepcopy(ai.content)
+    model = ChatAnthropic(model="claude-sonnet-4-5", api_key="placeholder")
+    payload = model._get_request_payload([HumanMessage("hi"), ai, HumanMessage("next")])
+    expected = copy.deepcopy(blocks)
+    del expected[0]["caller"]
+    assert payload["messages"][1]["content"] == expected
+    assert ai.content == original_content
+
+
+@pytest.mark.parametrize(
+    "block_type", ["web_search_tool_result", "web_fetch_tool_result"]
+)
+@pytest.mark.parametrize(
+    "caller",
+    [
+        None,
+        {"type": "direct"},
+        {"type": "code_execution_20260120", "tool_id": "srvtoolu_ce"},
+    ],
+)
+def test__format_messages_server_tool_result_caller(
+    block_type: str, caller: dict[str, str] | None
+) -> None:
+    block: dict[str, Any] = {
+        "type": block_type,
+        "tool_use_id": "srvtoolu_ws",
+        "content": [],
+    }
+    if caller is not None:
+        block["caller"] = caller
+    expected = copy.deepcopy(block)
+    if caller == {"type": "direct"}:
+        del expected["caller"]
+    _, formatted = _format_messages(
+        [HumanMessage("hi"), AIMessage([block])], model=None
+    )
+    assert formatted[1]["content"] == [expected]
+    assert block.get("caller") == caller
+
+
 def test__format_messages_system_after_client_tool_result_hoisted() -> None:
     """Test client-side tool results are not server tool results."""
     messages = [

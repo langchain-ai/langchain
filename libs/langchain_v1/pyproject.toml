@@ -95,7 +95,14 @@ test_integration = [
 ]
 
 [tool.uv]
-constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
+constraint-dependencies = [
+    "urllib3>=2.6.3",
+    "pygments>=2.20.0",
+    # Patched releases require Python 3.11; Python 3.10 retains affected fallbacks.
+    "dnspython>=2.9.0; python_version >= '3.11'",
+    "filelock==3.20.3; python_version < '3.11'",
+    "filelock>=4.2.1; python_version >= '3.11'",
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
