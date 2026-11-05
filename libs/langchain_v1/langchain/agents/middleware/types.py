@@ -373,16 +373,19 @@ class ModelSpec(TypedDict, total=False):
     """Context window from the model's profile, when known."""
 
     init_kwargs: dict[str, str | int | float | bool]
-    """Safe init args (sampling settings and output limits) used to rebuild the model."""
+    """Safe init args of the model (sampling settings and output limits)."""
 
 
 class ModelSelection(TypedDict, total=False):
-    """The model currently selected for the agent, stored in state as `model_selection`.
+    """Record of the agent's selected model, stored in state as `model_selection`.
 
     The agent records the model each call actually went to after every model call.
     Anything that chooses the model (a `/model` command, a router, a fallback) may
-    also write `current` ahead of the next call, e.g. with
+    also record its choice ahead of the next call, e.g. with
     `Command(update={"model_selection": {"current": spec}})`.
+
+    This is a record only: writing it does not change which model a call goes to,
+    and middleware should take the model for a call from `ModelRequest.model`.
 
     Updates are merged: when `current` changes, the replaced value moves to
     `previous`, so a switch from a large-context model to a smaller one can be
@@ -390,7 +393,7 @@ class ModelSelection(TypedDict, total=False):
     """
 
     current: ModelSpec
-    """The model selected for the next call, or used by the last one."""
+    """The model used by the last call, or recorded as chosen for the next one."""
 
     previous: ModelSpec | None
     """The model `current` replaced, if any."""

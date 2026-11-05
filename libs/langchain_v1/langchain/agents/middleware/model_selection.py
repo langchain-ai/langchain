@@ -1,21 +1,20 @@
-"""Record and rebuild the model selected for an agent.
+"""Record the model selected for an agent.
 
-The agent stores a [`ModelSpec`][langchain.agents.middleware.types.ModelSpec] for
-the model each call goes to under the `model_selection` state key (see
-[`ModelSelection`][langchain.agents.middleware.types.ModelSelection]), so
-middleware such as `SummarizationMiddleware` can follow the current model from
-any hook, regardless of middleware order.
+After every model call, the agent stores a
+[`ModelSpec`][langchain.agents.middleware.types.ModelSpec] for the model the call
+went to under the `model_selection` state key (see
+[`ModelSelection`][langchain.agents.middleware.types.ModelSelection]). The record
+is informational: it lets middleware and clients see which model is in use and
+detect switches, but it never chooses the model for a call.
 """
 
 from __future__ import annotations
 
-import json
 from collections.abc import Mapping
-from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
 from langchain.agents.middleware.types import ModelSelection, ModelSpec
-from langchain.chat_models.base import _BUILTIN_PROVIDERS, init_chat_model
+from langchain.chat_models.base import _BUILTIN_PROVIDERS
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
@@ -25,7 +24,6 @@ __all__ = [
     "ModelSelection",
     "ModelSpec",
     "current_model_spec",
-    "init_model_from_spec",
     "model_spec_from_model",
 ]
 
@@ -36,12 +34,10 @@ SAFE_INIT_KWARGS = ("temperature", "top_p", "top_k", "max_tokens", "reasoning_ef
 """Model attributes copied into `ModelSpec.init_kwargs`.
 
 An allow list rather than a deny list, so credentials, headers, clients and
-endpoints (which may embed tokens, or redirect a rebuilt client's API key) are
-never stored or used to rebuild a model.
+endpoints (which may embed tokens) are never stored in agent state.
 """
 
 _SCALAR_TYPES = (str, int, float, bool)
-_REBUILT_MODEL_CACHE_SIZE = 32
 
 
 def model_spec_from_model(model: BaseChatModel) -> ModelSpec | None:
@@ -83,51 +79,6 @@ def current_model_spec(state: Mapping[str, Any]) -> ModelSpec | None:
     """
     selection: ModelSelection | None = state.get(MODEL_SELECTION_KEY)
     return selection.get("current") if selection else None
-
-
-def init_model_from_spec(spec: ModelSpec) -> BaseChatModel:
-    """Build (or reuse) a chat model for `spec` with `init_chat_model`.
-
-    Only `init_chat_model`'s built-in providers and `SAFE_INIT_KWARGS` are used, so a
-    spec written to state cannot point a rebuilt client, and its credentials, at
-    another endpoint. Credentials come from the environment, as with
-    `init_chat_model`.
-
-    Rebuilt models are cached in a bounded, thread-safe LRU keyed by the spec's
-    canonical JSON (never by object `id()`), so repeated calls reuse one client.
-
-    Args:
-        spec: The model spec.
-
-    Returns:
-        The chat model.
-
-    Raises:
-        ValueError: If the spec's provider is not a built-in `init_chat_model`
-            provider.
-    """
-    provider = spec.get("provider")
-    if provider not in _BUILTIN_PROVIDERS:
-        msg = (
-            f"Cannot rebuild a chat model for provider {provider!r}: only "
-            "`init_chat_model`'s built-in providers can be rebuilt from agent state."
-        )
-        raise ValueError(msg)
-    key = {
-        "provider": provider,
-        "model": spec["model"],
-        "init_kwargs": _safe_init_kwargs(spec.get("init_kwargs") or {}),
-    }
-    return _init_cached(json.dumps(key, sort_keys=True))
-
-
-@lru_cache(maxsize=_REBUILT_MODEL_CACHE_SIZE)
-def _init_cached(key: str) -> BaseChatModel:
-    spec = json.loads(key)
-    model: BaseChatModel = init_chat_model(
-        str(spec["model"]), model_provider=str(spec["provider"]), **spec["init_kwargs"]
-    )
-    return model
 
 
 def _safe_init_kwargs(values: Mapping[str, Any]) -> dict[str, str | int | float | bool]:
