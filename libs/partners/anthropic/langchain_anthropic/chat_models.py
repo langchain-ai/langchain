@@ -2674,7 +2674,8 @@ class ChatAnthropic(BaseChatModel):
         )
 
         def _raise_if_no_tool_calls(message: AIMessage) -> AIMessage:
-            if not message.tool_calls:
+            refused = message.response_metadata.get("stop_reason") == "refusal"
+            if not message.tool_calls and not refused:
                 raise OutputParserException(thinking_admonition)
             return message
 
@@ -2937,7 +2938,8 @@ class ChatAnthropic(BaseChatModel):
                     structured output. When `thinking` is enabled, or on models
                     that don't support forced tool use (Claude Opus 5.5, Claude
                     Fable 5.1, Claude Sonnet 5.5), the tool call isn't forced,
-                    and a missing tool call raises `OutputParserException`.
+                    and a missing tool call raises `OutputParserException`
+                    (`ModelRefusalError` if the model refused).
                 - `'json_schema'`: Use Claude's dedicated
                     [structured output](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)
                     feature.
