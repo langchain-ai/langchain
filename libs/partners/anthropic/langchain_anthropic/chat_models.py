@@ -850,6 +850,9 @@ def _format_messages(
                                 "cache_control",
                             )
                         }
+                        caller = block.get("caller")
+                        if caller and caller.get("type") != "direct":
+                            formatted_block["caller"] = caller
                         # Attempt to parse streamed output
                         if block.get("input") == {} and "partial_json" in block:
                             try:
@@ -957,6 +960,11 @@ def _format_messages(
                                         "is_error",  # for mcp_tool_result
                                         "cache_control",
                                         "retrieved_at",  # for web_fetch_tool_result
+                                    )
+                                    or (
+                                        k == "caller"
+                                        and v
+                                        and v.get("type") != "direct"
                                     )
                                 },
                             ),
