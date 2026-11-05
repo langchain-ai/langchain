@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.15' and platform_python_implementation == 'PyPy'",
@@ -8,8 +8,8 @@ resolution-markers = [
     "python_full_version >= '3.13' and python_full_version < '3.15' and platform_python_implementation != 'PyPy'",
     "python_full_version == '3.12.*' and platform_python_implementation != 'PyPy' and sys_platform == 'emscripten'",
     "python_full_version == '3.12.*' and platform_python_implementation == 'PyPy' and sys_platform == 'emscripten'",
-    "(python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation != 'PyPy' and sys_platform != 'emscripten') or (python_full_version == '3.11.*' and platform_python_implementation != 'PyPy' and sys_platform == 'emscripten')",
-    "(python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation == 'PyPy' and sys_platform != 'emscripten') or (python_full_version == '3.11.*' and platform_python_implementation == 'PyPy' and sys_platform == 'emscripten')",
+    "(python_full_version == '3.11.*' and platform_python_implementation != 'PyPy') or (python_full_version == '3.12.*' and platform_python_implementation != 'PyPy' and sys_platform != 'emscripten')",
+    "(python_full_version == '3.11.*' and platform_python_implementation == 'PyPy') or (python_full_version == '3.12.*' and platform_python_implementation == 'PyPy' and sys_platform != 'emscripten')",
     "python_full_version < '3.11' and platform_python_implementation != 'PyPy'",
     "python_full_version < '3.11' and platform_python_implementation == 'PyPy'",
 ]
@@ -591,7 +591,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.4.7"
+version = "1.4.8"
 source = { editable = "../../langchain_v1" }
 dependencies = [
     { name = "langchain-core" },
@@ -627,7 +627,7 @@ requires-dist = [
 provides-extras = ["community", "anthropic", "openai", "azure-ai", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "baseten", "deepseek", "xai", "perplexity", "meta", "mcp"]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.15.0,<0.17.0" }]
+lint = [{ name = "ruff", specifier = ">=0.15.0,<0.18.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.26,<1.6.0" },
     { name = "fastmcp", specifier = ">=4.0.11,<5.0.0" },
@@ -653,13 +653,13 @@ test-integration = [
 ]
 typing = [
     { name = "fastmcp", specifier = ">=4.0.11,<5.0.0" },
-    { name = "mypy", specifier = ">=2.1.0,<2.2.0" },
+    { name = "mypy", specifier = ">=2.1.0,<2.5.0" },
     { name = "types-toml", specifier = ">=0.10.8.20240310,<1.0.0.0" },
 ]
 
 [[package]]
 name = "langchain-anthropic"
-version = "1.7.7"
+version = "1.7.10"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -732,9 +732,10 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.6.13"
+version = "1.7.5"
 source = { editable = "../../core" }
 dependencies = [
+    { name = "certifi" },
     { name = "httpx" },
     { name = "jsonpatch" },
     { name = "langchain-protocol" },
@@ -749,6 +750,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "certifi", specifier = ">=2026.10.19" },
     { name = "httpx", specifier = ">=0.23.0" },
     { name = "jsonpatch", specifier = ">=1.33.0" },
     { name = "langchain-protocol", specifier = ">=0.0.20" },
@@ -765,9 +767,9 @@ requires-dist = [
 dev = [
     { name = "grandalf", specifier = ">=0.8.0,<1.0.0" },
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
-    { name = "setuptools", specifier = ">=67.6.1,<84.0.0" },
+    { name = "setuptools", specifier = ">=67.6.1,<85.0.0" },
 ]
-lint = [{ name = "ruff", specifier = ">=0.15.0,<0.17.0" }]
+lint = [{ name = "ruff", specifier = ">=0.15.0,<0.18.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -780,7 +782,7 @@ test = [
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
-    { name = "pytest-socket", specifier = ">=0.7.0,<0.8.0" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<0.9.0" },
     { name = "pytest-watcher", specifier = ">=0.3.4,<1.0.0" },
     { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
     { name = "responses", specifier = ">=0.25.0,<1.0.0" },
@@ -789,7 +791,7 @@ test = [
 test-integration = []
 typing = [
     { name = "langchain-text-splitters", directory = "../../text-splitters" },
-    { name = "mypy", specifier = ">=2.1.0,<2.2.0" },
+    { name = "mypy", specifier = ">=2.1.0,<2.5.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
     { name = "types-requests", specifier = ">=2.28.11.5,<3.0.0.0" },
 ]
@@ -833,7 +835,7 @@ requires-dist = [
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
     { name = "pytest", specifier = ">=9.0.3" },
     { name = "pytest-asyncio", specifier = ">=1.3.0" },
-    { name = "pytest-benchmark" },
+    { name = "pytest-benchmark", specifier = ">=5.3.1" },
     { name = "pytest-codspeed" },
     { name = "pytest-recording" },
     { name = "pytest-socket", specifier = ">=0.7.0" },
@@ -842,11 +844,11 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.15.0,<0.17.0" }]
+lint = [{ name = "ruff", specifier = ">=0.15.0,<0.18.0" }]
 test = []
 test-integration = []
 typing = [
-    { name = "mypy", specifier = ">=2.1.0,<2.4.0" },
+    { name = "mypy", specifier = ">=2.1.0,<2.5.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
 ]
 
@@ -1185,8 +1187,8 @@ resolution-markers = [
     "python_full_version >= '3.13' and python_full_version < '3.15' and platform_python_implementation != 'PyPy'",
     "python_full_version == '3.12.*' and platform_python_implementation != 'PyPy' and sys_platform == 'emscripten'",
     "python_full_version == '3.12.*' and platform_python_implementation == 'PyPy' and sys_platform == 'emscripten'",
-    "(python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation != 'PyPy' and sys_platform != 'emscripten') or (python_full_version == '3.11.*' and platform_python_implementation != 'PyPy' and sys_platform == 'emscripten')",
-    "(python_full_version >= '3.11' and python_full_version < '3.13' and platform_python_implementation == 'PyPy' and sys_platform != 'emscripten') or (python_full_version == '3.11.*' and platform_python_implementation == 'PyPy' and sys_platform == 'emscripten')",
+    "(python_full_version == '3.11.*' and platform_python_implementation != 'PyPy') or (python_full_version == '3.12.*' and platform_python_implementation != 'PyPy' and sys_platform != 'emscripten')",
+    "(python_full_version == '3.11.*' and platform_python_implementation == 'PyPy') or (python_full_version == '3.12.*' and platform_python_implementation == 'PyPy' and sys_platform != 'emscripten')",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/76/65/21b3bc86aac7b8f2862db1e808f1ea22b028e30a225a34a5ede9bf8678f2/numpy-2.3.5.tar.gz", hash = "sha256:784db1dcdab56bf0517743e746dfb0f885fc68d948aba86eeec2cba234bdf1c0", size = 20584950, upload-time = "2025-11-16T22:52:42.067Z" }
 wheels = [
@@ -1429,12 +1431,12 @@ wheels = [
 ]
 
 [[package]]
-name = "py-cpuinfo"
-version = "9.0.0"
+name = "py-cpuinfo2"
+version = "10.1.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/37/a8/d832f7293ebb21690860d2e01d8115e5ff6f2ae8bbdc953f0eb0fa4bd2c7/py-cpuinfo-9.0.0.tar.gz", hash = "sha256:3cdbbf3fac90dc6f118bfd64384f309edeadd902d7c8fb17f02ffa1fc3f49690", size = 104716, upload-time = "2022-10-25T20:38:06.303Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/dc/97/a8b1ddada14c8280a047c0746f95cb05d94a31b1a331cea22bcdc2b2a82d/py_cpuinfo2-10.1.1.tar.gz", hash = "sha256:7861133863663f16e06eca63b12904ef100b5760415e92372dac0162799a4771", size = 100840, upload-time = "2026-03-25T21:49:40.797Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e0/a9/023730ba63db1e494a271cb018dcd361bd2c917ba7004c3e49d5daf795a2/py_cpuinfo-9.0.0-py3-none-any.whl", hash = "sha256:859625bc251f64e21f077d099d4162689c762b5d6a4c3c97553d56241c9674d5", size = 22335, upload-time = "2022-10-25T20:38:27.636Z" },
+    { url = "https://files.pythonhosted.org/packages/23/0a/ba69d2dde1ae12ef1d389ea5a216384c5ff6ef7a1e7a48d1e9b6686f6790/py_cpuinfo2-10.1.1-py3-none-any.whl", hash = "sha256:adc53396bfb206e6498d078ec2ab407f85799ecd819584ac36a8f80a2d4d762d", size = 23791, upload-time = "2026-03-25T21:49:39.574Z" },
 ]
 
 [[package]]
@@ -1622,15 +1624,15 @@ wheels = [
 
 [[package]]
 name = "pytest-benchmark"
-version = "5.0.1"
+version = "5.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "py-cpuinfo" },
+    { name = "py-cpuinfo2" },
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/48/b79272b2b8938513a66a62204a0649ef730dcf6cb52c812f4dc4daa62cd5/pytest-benchmark-5.0.1.tar.gz", hash = "sha256:8138178618c85586ce056c70cc5e92f4283c2e6198e8422c2c825aeb3ace6afd", size = 337310, upload-time = "2024-10-30T01:12:16.991Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/13/d1/1bc61155de46f25473a06476ad1b3a94f96d40d49cfa98f82c1184117808/pytest_benchmark-5.3.1.tar.gz", hash = "sha256:c1ee70a58f9bfb1ac955cc634247a340b0df7bcb949071cfca396f16c6fc3516", size = 385467, upload-time = "2026-11-01T03:32:10.048Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f7/e2/c0da4989a933d6bac364f215217c47de37d2f641953aa69a37b66efd6d1b/pytest_benchmark-5.0.1-py3-none-any.whl", hash = "sha256:d75fec4cbf0d4fd91e020f425ce2d845e9c127c21bae35e77c84db8ed84bfaa6", size = 44062, upload-time = "2024-10-30T01:12:13.716Z" },
+    { url = "https://files.pythonhosted.org/packages/78/75/919ac85ad3f762e45aa369d2f68d40390e316474b6bb8434aeb6e3c8bf8b/pytest_benchmark-5.3.1-py3-none-any.whl", hash = "sha256:d7732a9952b1c4a4a32277adc693739126eab37afc3a711847f53805ccadc020", size = 49142, upload-time = "2026-11-01T03:32:08.359Z" },
 ]
 
 [[package]]

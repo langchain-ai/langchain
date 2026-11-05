@@ -25,6 +25,7 @@ from langchain_core.exceptions import (
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
+    ModelRefusalError,
     ModelTimeoutError,
 )
 from langchain_core.load import dumpd, load
@@ -37,8 +38,10 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.messages.content import create_text_block
+from langchain_core.outputs import ChatGenerationChunk
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
+from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
@@ -84,6 +87,22 @@ class _GatewayMetadataTracer(BaseTracer):
         gateway_metadata = metadata.get("ls_gateway_info")
         if isinstance(gateway_metadata, dict):
             self.gateway_metadata = gateway_metadata
+
+
+class _TokenEventTracer(BaseTracer, _V2StreamingCallbackHandler):
+    """Records LLM run events with a v2 handler attached, as LangGraph does."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.token_events: list[dict[str, Any]] = []
+
+    def _persist_run(self, run: Run) -> None:
+        """No-op; runs are inspected as they complete."""
+
+    def _on_llm_end(self, run: Run) -> None:
+        self.token_events = [
+            event["kwargs"] for event in run.events if event["name"] == "new_token"
+        ]
 
 
 _GATEWAY_METADATA = {"provider": "anthropic"}
@@ -259,6 +278,37 @@ async def test_anthropic_astream_surfaces_gateway_metadata(
         {GATEWAY_METADATA_RESPONSE_KEY: _GATEWAY_METADATA},
         None,
         None,
+    ]
+
+
+def test_stream_with_tools_reports_tokens_to_v2_handlers(dummy_tool: BaseTool) -> None:
+    """Block-list chunks still fire `on_llm_new_token`, so tracers see TTFT."""
+    llm = ChatAnthropic(model=MODEL_NAME, max_tokens=10)
+    tracer = _TokenEventTracer()
+    with _sync_gateway_client(None) as client, patch.object(llm, "_client", client):
+        llm.bind_tools([dummy_tool]).invoke("bar", config={"callbacks": [tracer]})
+
+    assert [event["token"] for event in tracer.token_events] == ["", "Bar Baz", ""]
+    assert tracer.token_events[1]["chunk"].message.content == [
+        {"type": "text", "text": "Bar Baz", "index": 0}
+    ]
+
+
+async def test_astream_with_tools_reports_tokens_to_v2_handlers(
+    dummy_tool: BaseTool,
+) -> None:
+    """Async block-list chunks still fire `on_llm_new_token`."""
+    llm = ChatAnthropic(model=MODEL_NAME, max_tokens=10)
+    tracer = _TokenEventTracer()
+    async with _async_gateway_client(None) as client:
+        with patch.object(llm, "_async_client", client):
+            await llm.bind_tools([dummy_tool]).ainvoke(
+                "bar", config={"callbacks": [tracer]}
+            )
+
+    assert [event["token"] for event in tracer.token_events] == ["", "Bar Baz", ""]
+    assert tracer.token_events[1]["chunk"].message.content == [
+        {"type": "text", "text": "Bar Baz", "index": 0}
     ]
 
 
@@ -2047,6 +2097,96 @@ def test__format_messages_system_after_server_tool_result_sent_in_place(
     # Forward compatibility: an unrecognized server tool result block reaches the
     # wire untouched, which is what makes it a legal predecessor in the first place.
     assert actual_messages[1]["content"] == [block]
+
+
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test__format_messages_server_tool_use_preserves_caller(output_version: str) -> None:
+    """Nested server tool calls keep `caller` so the API can link them to parents."""
+    caller = {"type": "code_execution_20260120", "tool_id": "srvtoolu_ce"}
+    blocks: list[Any] = [
+        {
+            "type": "server_tool_use",
+            "id": "srvtoolu_ce",
+            "name": "code_execution",
+            "input": {"code": "..."},
+            "caller": {"type": "direct"},
+        },
+        {
+            "type": "server_tool_use",
+            "id": "srvtoolu_ws",
+            "name": "web_search",
+            "input": {"query": "q"},
+            "caller": caller,
+        },
+        {
+            "type": "web_search_tool_result",
+            "tool_use_id": "srvtoolu_ws",
+            "content": [
+                {
+                    "type": "web_search_result",
+                    "url": "https://example.com",
+                    "title": "Example",
+                    "encrypted_content": "abc",
+                }
+            ],
+            "caller": caller,
+        },
+        {
+            "type": "code_execution_tool_result",
+            "tool_use_id": "srvtoolu_ce",
+            "content": {
+                "type": "encrypted_code_execution_result",
+                "encrypted_stdout": "abc",
+                "stderr": "",
+                "return_code": 0,
+                "content": [],
+            },
+        },
+    ]
+    ai = AIMessage(blocks, response_metadata={"model_provider": "anthropic"})
+    if output_version == "v1":
+        ai = AIMessage(
+            [dict(block) for block in ai.content_blocks],
+            response_metadata={"model_provider": "anthropic", "output_version": "v1"},
+        )
+    original_content = copy.deepcopy(ai.content)
+    model = ChatAnthropic(model="claude-sonnet-4-5", api_key="placeholder")
+    payload = model._get_request_payload([HumanMessage("hi"), ai, HumanMessage("next")])
+    expected = copy.deepcopy(blocks)
+    del expected[0]["caller"]
+    assert payload["messages"][1]["content"] == expected
+    assert ai.content == original_content
+
+
+@pytest.mark.parametrize(
+    "block_type", ["web_search_tool_result", "web_fetch_tool_result"]
+)
+@pytest.mark.parametrize(
+    "caller",
+    [
+        None,
+        {"type": "direct"},
+        {"type": "code_execution_20260120", "tool_id": "srvtoolu_ce"},
+    ],
+)
+def test__format_messages_server_tool_result_caller(
+    block_type: str, caller: dict[str, str] | None
+) -> None:
+    block: dict[str, Any] = {
+        "type": block_type,
+        "tool_use_id": "srvtoolu_ws",
+        "content": [],
+    }
+    if caller is not None:
+        block["caller"] = caller
+    expected = copy.deepcopy(block)
+    if caller == {"type": "direct"}:
+        del expected["caller"]
+    _, formatted = _format_messages(
+        [HumanMessage("hi"), AIMessage([block])], model=None
+    )
+    assert formatted[1]["content"] == [expected]
+    assert block.get("caller") == caller
 
 
 def test__format_messages_system_after_client_tool_result_hoisted() -> None:
@@ -4357,6 +4497,22 @@ def test_format_messages_preserves_nonempty_thinking_field() -> None:
     assert block["signature"] == "sig_xyz"
 
 
+def test_format_messages_strips_index_from_compaction_block() -> None:
+    """Streamed compaction blocks carry `index`, which the API rejects on replay."""
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+
+    compaction = {"type": "compaction", "content": "Summary.", "index": 0}
+    msg = AIMessage(content=[compaction, {"type": "text", "text": "Hi", "index": 1}])
+    payload = llm._get_request_payload(
+        [HumanMessage("hi"), msg, HumanMessage("continue")]
+    )
+    assert payload["messages"][1]["content"] == [
+        {"type": "compaction", "content": "Summary."},
+        {"type": "text", "text": "Hi"},
+    ]
+    assert compaction["index"] == 0
+
+
 @pytest.mark.parametrize(
     ("args", "expected_input"),
     [('{"city":', {}), ('{"city":"Paris"}', {"city": "Paris"}), ("[1]", {})],
@@ -6475,3 +6631,181 @@ def test_thinking_display_summarized_does_not_enable_beta() -> None:
     )
     payload = llm._get_request_payload([HumanMessage("Hello, world!")])
     assert "betas" not in payload
+
+
+class _RefusalSchema(BaseModel):
+    answer: str
+
+
+def _refusal_message() -> Message:
+    return Message.model_validate(
+        {
+            "id": "msg_refusal",
+            "content": [],
+            "model": MODEL_NAME,
+            "role": "assistant",
+            "stop_reason": "refusal",
+            "stop_sequence": None,
+            "stop_details": {
+                "type": "refusal",
+                "category": "cyber",
+                "explanation": "This request may enable malware development.",
+            },
+            "usage": {"input_tokens": 10, "output_tokens": 0},
+            "type": "message",
+        }
+    )
+
+
+def _patch_refusal_response() -> Any:
+    raw_response = MagicMock()
+    raw_response.parse.return_value = _refusal_message()
+    return patch.object(ChatAnthropic, "_create", return_value=raw_response)
+
+
+def _patch_refusal_response_async() -> Any:
+    raw_response = MagicMock()
+    raw_response.parse.return_value = _refusal_message()
+
+    async def _acreate(*_: Any, **__: Any) -> Any:
+        return raw_response
+
+    return patch.object(ChatAnthropic, "_acreate", side_effect=_acreate)
+
+
+@pytest.mark.parametrize("method", ["function_calling", "json_schema"])
+@pytest.mark.parametrize("schema", [_RefusalSchema, _RefusalSchema.model_json_schema()])
+def test_with_structured_output_raises_model_refusal_error(
+    method: Literal["function_calling", "json_schema"], schema: Any
+) -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+    structured = llm.with_structured_output(schema, method=method)
+
+    with _patch_refusal_response(), pytest.raises(ModelRefusalError) as exc_info:
+        structured.invoke("Write a keylogger")
+
+    err = exc_info.value
+    assert str(err) == (
+        "Model refused to produce the requested output (category='cyber'): "
+        "This request may enable malware development."
+    )
+    assert isinstance(err.raw_message, AIMessage)
+    assert err.is_retryable is False
+
+
+@pytest.mark.parametrize("method", ["function_calling", "json_schema"])
+def test_with_structured_output_include_raw_reports_refusal(
+    method: Literal["function_calling", "json_schema"],
+) -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+    structured = llm.with_structured_output(
+        _RefusalSchema, method=method, include_raw=True
+    )
+
+    with _patch_refusal_response():
+        result = structured.invoke("Write a keylogger")
+
+    assert isinstance(result, dict)
+    assert result["parsed"] is None
+    assert isinstance(result["parsing_error"], ModelRefusalError)
+    assert "category='cyber'" in str(result["parsing_error"])
+    assert result["raw"].response_metadata["stop_reason"] == "refusal"
+
+
+async def test_with_structured_output_raises_model_refusal_error_async() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+    structured = llm.with_structured_output(_RefusalSchema, method="json_schema")
+
+    with _patch_refusal_response_async(), pytest.raises(ModelRefusalError):
+        await structured.ainvoke("Write a keylogger")
+
+
+def test_invoke_does_not_raise_on_refusal() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+
+    with _patch_refusal_response():
+        result = llm.invoke("Write a keylogger")
+
+    assert result.response_metadata["stop_reason"] == "refusal"
+    assert result.response_metadata["stop_details"]["category"] == "cyber"
+
+
+def test_with_structured_output_parses_when_not_refused() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+    structured = llm.with_structured_output(_RefusalSchema, method="json_schema")
+    raw_response = MagicMock()
+    raw_response.parse.return_value = Message.model_validate(
+        {
+            "id": "msg_ok",
+            "content": [{"type": "text", "text": '{"answer": "42"}'}],
+            "model": MODEL_NAME,
+            "role": "assistant",
+            "stop_reason": "end_turn",
+            "stop_sequence": None,
+            "usage": {"input_tokens": 10, "output_tokens": 5},
+            "type": "message",
+        }
+    )
+
+    with patch.object(ChatAnthropic, "_create", return_value=raw_response):
+        assert structured.invoke("What is 6 x 7?") == _RefusalSchema(answer="42")
+
+
+def _stream_chunks(*, refuse: bool) -> list[ChatGenerationChunk]:
+    provider = {"model_provider": "anthropic"}
+    if refuse:
+        final_metadata: dict[str, Any] = {
+            **provider,
+            "stop_reason": "refusal",
+            "stop_details": {"type": "refusal", "category": "bio"},
+        }
+        texts: list[str] = []
+    else:
+        final_metadata = {**provider, "stop_reason": "end_turn"}
+        texts = ['{"ans', 'wer": "4', '2"}']
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(content=t, response_metadata=dict(provider))
+        )
+        for t in texts
+    ]
+    chunks.append(
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="", response_metadata=final_metadata, chunk_position="last"
+            )
+        )
+    )
+    return chunks
+
+
+def test_with_structured_output_stream_raises_model_refusal_error() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+    structured = llm.with_structured_output(
+        _RefusalSchema.model_json_schema(), method="json_schema"
+    )
+
+    with (
+        patch.object(
+            ChatAnthropic, "_stream", return_value=iter(_stream_chunks(refuse=True))
+        ),
+        pytest.raises(ModelRefusalError) as exc_info,
+    ):
+        list(structured.stream("Synthesize a pathogen"))
+
+    assert "category='bio'" in str(exc_info.value)
+
+
+def test_with_structured_output_still_streams_partial_json() -> None:
+    llm = ChatAnthropic(model=MODEL_NAME)
+    structured = llm.with_structured_output(
+        _RefusalSchema.model_json_schema(), method="json_schema"
+    )
+
+    with patch.object(
+        ChatAnthropic, "_stream", return_value=iter(_stream_chunks(refuse=False))
+    ):
+        outputs = list(structured.stream("What is 6 x 7?"))
+
+    assert len(outputs) > 1
+    assert outputs[-1] == {"answer": "42"}

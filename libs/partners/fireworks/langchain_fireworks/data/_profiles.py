@@ -293,7 +293,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "name": "MiniMax-M3.1-Flash",
         "release_date": "2026-10-19",
         "last_updated": "2026-10-19",
-        "open_weights": False,
+        "open_weights": True,
         "max_input_tokens": 1000000,
         "max_output_tokens": 512000,
         "text_inputs": True,

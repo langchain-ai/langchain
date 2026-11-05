@@ -67,6 +67,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
                 have been returned so far.
 
         Raises:
+            ModelRefusalError: If the model refused to answer.
             OutputParserException: If the result is not valid JSON or does not conform
                 to the Pydantic model.
 

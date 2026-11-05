@@ -786,6 +786,9 @@ def _format_messages(
                         != "anthropic"
                     ):
                         continue
+                    # The Messages API has no refusal input block.
+                    if block["type"] == "refusal":
+                        continue
                     if block["type"] == "image_url":
                         # convert format
                         source = _format_image(block["image_url"]["url"])
@@ -847,6 +850,9 @@ def _format_messages(
                                 "cache_control",
                             )
                         }
+                        caller = block.get("caller")
+                        if caller and caller.get("type") != "direct":
+                            formatted_block["caller"] = caller
                         # Attempt to parse streamed output
                         if block.get("input") == {} and "partial_json" in block:
                             try:
@@ -955,10 +961,15 @@ def _format_messages(
                                         "cache_control",
                                         "retrieved_at",  # for web_fetch_tool_result
                                     )
+                                    or (
+                                        k == "caller"
+                                        and v
+                                        and v.get("type") != "direct"
+                                    )
                                 },
                             ),
                         )
-                    elif block["type"] == "advisor_tool_result":
+                    elif block["type"] in ("advisor_tool_result", "compaction"):
                         content.append({k: v for k, v in block.items() if k != "index"})
                     else:
                         content.append(block)
@@ -2274,8 +2285,8 @@ class ChatAnthropic(BaseChatModel):
                         else None,
                     )
                     is_first_chunk = False
-                    if run_manager and isinstance(msg.content, str):
-                        run_manager.on_llm_new_token(msg.content, chunk=chunk)
+                    if run_manager:
+                        run_manager.on_llm_new_token(chunk.text, chunk=chunk)
                     yield chunk
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
@@ -2324,8 +2335,8 @@ class ChatAnthropic(BaseChatModel):
                         else None,
                     )
                     is_first_chunk = False
-                    if run_manager and isinstance(msg.content, str):
-                        await run_manager.on_llm_new_token(msg.content, chunk=chunk)
+                    if run_manager:
+                        await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
                     yield chunk
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
@@ -2528,8 +2539,10 @@ class ChatAnthropic(BaseChatModel):
                 message_chunk = AIMessageChunk(content=[content_block])
 
         # Process final usage metadata and completion info
-        elif event.type == "message_delta" and stream_usage:
-            usage_metadata = _create_usage_metadata(event.usage)
+        elif event.type == "message_delta":
+            usage_metadata = (
+                _create_usage_metadata(event.usage) if stream_usage else None
+            )
             response_metadata = {
                 "stop_reason": event.delta.stop_reason,
                 "stop_sequence": event.delta.stop_sequence,
@@ -2600,7 +2613,13 @@ class ChatAnthropic(BaseChatModel):
         ):
             # TODO: dump all `data` with `mode="json"`
             llm_output["container"]["expires_at"] = expires_at.isoformat()
-        response_metadata = {"model_provider": "anthropic"}
+        response_metadata: dict[str, Any] = {"model_provider": "anthropic"}
+        if llm_output.get("stop_reason") == "refusal":
+            # Needed on the message itself so `output_version="v1"` content, which
+            # is built before `llm_output` is merged, includes the refusal block.
+            response_metadata["stop_reason"] = "refusal"
+            if stop_details := llm_output.get("stop_details"):
+                response_metadata["stop_details"] = stop_details
         if "model" in llm_output and "model_name" not in llm_output:
             llm_output["model_name"] = llm_output["model"]
         if (
@@ -2695,7 +2714,8 @@ class ChatAnthropic(BaseChatModel):
         )
 
         def _raise_if_no_tool_calls(message: AIMessage) -> AIMessage:
-            if not message.tool_calls:
+            refused = message.response_metadata.get("stop_reason") == "refusal"
+            if not message.tool_calls and not refused:
                 raise OutputParserException(thinking_admonition)
             return message
 
@@ -2949,13 +2969,17 @@ class ChatAnthropic(BaseChatModel):
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+
+                If the model refuses, `ModelRefusalError` is raised, or returned as
+                `'parsing_error'` when `include_raw` is `True`.
             method: The structured output method to use. Options are:
 
                 - `'function_calling'` (default): Use forced tool calling to get
                     structured output. When `thinking` is enabled, or on models
                     that don't support forced tool use (Claude Opus 5.5, Claude
                     Fable 5.1, Claude Sonnet 5.5), the tool call isn't forced,
-                    and a missing tool call raises `OutputParserException`.
+                    and a missing tool call raises `OutputParserException`
+                    (`ModelRefusalError` if the model refused).
                 - `'json_schema'`: Use Claude's dedicated
                     [structured output](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)
                     feature.
