@@ -6341,6 +6341,63 @@ async def test_a_merge_that_raises_after_the_stream_still_ends_the_run(
     assert isinstance(root_error.error, ValueError)
 
 
+class _ChainErrors(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.errors: list[BaseException] = []
+
+    @override
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
+        self.errors.append(error)
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_an_unmergeable_input_does_not_replace_an_upstream_error(
+    *, use_async: bool
+) -> None:
+    usage: UsageMetadata = {
+        "input_tokens": 1,
+        "output_tokens": 1,
+        "total_tokens": 2,
+        "input_token_details": cast("InputTokenDetails", {"unknown": 0.5}),
+    }
+    chunks = [AIMessageChunk(content="x", usage_metadata=usage) for _ in range(2)]
+
+    class UpstreamError(Exception):
+        pass
+
+    def up(_: Iterator[Any]) -> Iterator[AIMessageChunk]:
+        yield from chunks
+        raise UpstreamError
+
+    async def aup(_: AsyncIterator[Any]) -> AsyncIterator[AIMessageChunk]:
+        for chunk in chunks:
+            yield chunk
+        raise UpstreamError
+
+    def down(it: Iterator[Any]) -> Iterator[Any]:
+        yield next(it)
+
+    async def adown(it: AsyncIterator[Any]) -> AsyncIterator[Any]:
+        yield await anext(it)
+
+    errors = _ChainErrors()
+    chain = RunnableGenerator(up, aup) | RunnableGenerator(down, adown)
+    config: RunnableConfig = {"callbacks": [errors]}
+
+    async def consume() -> None:
+        if use_async:
+            _ = [chunk async for chunk in chain.astream("hi", config)]
+        else:
+            _ = list(chain.stream("hi", config))
+
+    with pytest.raises(UpstreamError):
+        await consume()
+
+    # Every run that saw the error ended with it, not with the merge error.
+    assert errors.errors
+    assert all(isinstance(error, UpstreamError) for error in errors.errors)
+
+
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_tracing_and_a_lambda_handle_a_none_between_messages_as_before(
     *, use_async: bool

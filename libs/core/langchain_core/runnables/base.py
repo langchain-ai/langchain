@@ -155,6 +155,17 @@ class _ChunkAccumulator:
         self._flush()
         return self._value
 
+    def value_for_error(self) -> Any:
+        """Return `value`, or what was merged so far if merging raises.
+
+        For error handlers, so a failed merge can't replace the error being
+        reported.
+        """
+        try:
+            return self.value
+        except Exception:
+            return self._value
+
     def add(self, chunk: Any) -> None:
         if self._value is None and self._addable and isinstance(chunk, AIMessageChunk):
             self._message_chunks.append(chunk)
@@ -2619,7 +2630,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 merged_input = final_input.value
                 merged_output = final_output.value
         except BaseException as e:
-            run_manager.on_chain_error(e, inputs=final_input.value)
+            run_manager.on_chain_error(e, inputs=final_input.value_for_error())
             raise
         else:
             run_manager.on_chain_end(merged_output, inputs=merged_input)
@@ -2704,7 +2715,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 merged_input = final_input.value
                 merged_output = final_output.value
         except BaseException as e:
-            await run_manager.on_chain_error(e, inputs=final_input.value)
+            await run_manager.on_chain_error(e, inputs=final_input.value_for_error())
             raise
         else:
             await run_manager.on_chain_end(merged_output, inputs=merged_input)
