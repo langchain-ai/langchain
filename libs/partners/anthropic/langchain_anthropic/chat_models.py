@@ -2666,7 +2666,6 @@ class ChatAnthropic(BaseChatModel):
         )
 
         def _raise_if_no_tool_calls(message: AIMessage) -> AIMessage:
-            # A refusal has no tool call; the output parser raises `ModelRefusalError`.
             refused = any(
                 block["type"] == "refusal" for block in message.content_blocks
             )
