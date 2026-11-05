@@ -307,9 +307,21 @@ class HTMLHeaderTextSplitter:
             if not tag:
                 continue
 
-            text_elements = [
-                str(child).strip() for child in _find_all_strings(node, recursive=False)
-            ]
+            if tag in self.header_tags:
+                # Headers: use recursive text extraction to include nested
+                # elements like <code>, <a>, <em> that are part of the heading
+                # text (issue #41704). Without this, `<h1><code>pkg</code>
+                # guide</h1>` loses "pkg" because <code> is not a direct
+                # string child.
+                text_elements = [
+                    str(child).strip()
+                    for child in _find_all_strings(node, recursive=True)
+                ]
+            else:
+                text_elements = [
+                    str(child).strip()
+                    for child in _find_all_strings(node, recursive=False)
+                ]
             node_text = " ".join(elem for elem in text_elements if elem)
             if not node_text:
                 continue
