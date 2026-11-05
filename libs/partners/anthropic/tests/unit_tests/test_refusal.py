@@ -1,13 +1,18 @@
 """Standard refusal blocks for Anthropic responses and requests."""
 
+from unittest.mock import patch
+
 import pytest
 from anthropic.types import Message, RawMessageDeltaEvent
+from langchain_core.exceptions import ModelRefusalError
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,
     RefusalContentBlock,
 )
+from langchain_core.outputs import ChatGeneration, ChatResult
+from pydantic import BaseModel
 
 from langchain_anthropic import ChatAnthropic
 
@@ -92,3 +97,48 @@ def test_streamed_refusal_independent_of_stream_usage(*, stream_usage: bool) -> 
     assert refusal is not None
     assert refusal.get("extras") == {"category": "cyber"}
     assert (chunk.usage_metadata is not None) is stream_usage
+
+
+@pytest.mark.parametrize(
+    "model_kwargs",
+    [
+        pytest.param({"model": "claude-sonnet-5-5"}, id="no-forced-tool-model"),
+        pytest.param(
+            {
+                "model": "claude-haiku-4-5",
+                "max_tokens": 2048,
+                "thinking": {"type": "enabled", "budget_tokens": 1024},
+            },
+            id="thinking-enabled",
+        ),
+    ],
+)
+@pytest.mark.parametrize("include_raw", [False, True])
+@pytest.mark.filterwarnings("ignore:You are attempting to use structured output")
+def test_structured_output_without_forced_tool_raises_refusal(
+    model_kwargs: dict, *, include_raw: bool
+) -> None:
+    """A refusal is not reported as a missing tool call."""
+
+    class Answer(BaseModel):
+        answer: str
+
+    model = ChatAnthropic(api_key="test", **model_kwargs)  # type: ignore[arg-type]
+    refused = AIMessage(
+        content=[],
+        response_metadata={
+            "model_provider": "anthropic",
+            "stop_reason": "refusal",
+            "stop_details": STOP_DETAILS,
+        },
+    )
+    structured = model.with_structured_output(Answer, include_raw=include_raw)
+    result = ChatResult(generations=[ChatGeneration(message=refused)])
+    with patch.object(ChatAnthropic, "_generate", return_value=result):
+        if include_raw:
+            output = structured.invoke("hi")
+            assert isinstance(output, dict)
+            assert isinstance(output["parsing_error"], ModelRefusalError)
+        else:
+            with pytest.raises(ModelRefusalError, match="category='cyber'"):
+                structured.invoke("hi")
