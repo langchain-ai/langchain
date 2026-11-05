@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5f3e42ff88d1453f11657eb30bd9e47aa07b43ec4be4486c4159f1a9e275af7f",
+  "pageVersion": "sha256:044fb828227f165bbf56fb6381c68f67accf1d385c436505f91b6e8d6553c298",
   "claims": [
     {
       "id": "claim_bfd9abbe9d6f4a7b84caf7cb98fb5029",
@@ -99,8 +99,8 @@
       "statement": "The pre-release-checks job validates packages before publishing: installs wheel from built artifact, runs unit tests, checks for prerelease dependencies, tests against minimum supported versions, and runs integration tests for partner packages with live API keys. Intentionally disables caching to catch missing dependencies.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/_release.yml#L400-L559",
-          "version": "repo-lines-v1:sha256:943782b033ba883dab456d6cb9268256b62e9582dc950d694d3ecb841dbe7ccd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNmI2OTNjOWRmMzU1MThmNzEyODQwN2UyNDhiODM3ZTAxZjBlZmJmNTQ4ZTg4MGUyMDA4NTgyZDdmMTI3MDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxYTU5ZmRkM2Q4MWZkMTUyZDU5ZTJiNzliYTIxOGNmMGJhMDgyYWQ2NzM3ZmE3ZTFiYTEwYjRlY2FlMjlkY2I3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MTZhZDk2YzhlNWQyNGQ4OWU2MWQyZTkwMzEyOGY2YWE0YWYzYmQ2Y2I2MjhmNWMzYzY5NTI5YWUxNDJjZWY4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNzBkZDYxNTE3ZTAxOGI4NWVmYzNjOWM3YWM0ZWM5ZjUxYTU2NzMyMWU1Mjk4MjEwYjZmZjZlN2FkNTkzYjFmIn0"
+          "resource": "repo://.github/workflows/_release.yml#L414-L560",
+          "version": "repo-lines-v1:sha256:0b07687fda6c3e4a7a02113a0a141803d68c9cf239b60382d05acecbe855fe18:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNmI2OTNjOWRmMzU1MThmNzEyODQwN2UyNDhiODM3ZTAxZjBlZmJmNTQ4ZTg4MGUyMDA4NTgyZDdmMTI3MDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxZGRmODM0M2NmN2Y5OGZkMWY4OWQ1NGRjOGEwMGFkYjhhOTRkYmZhYThiM2I4YmZlMGM4NmFhNzY3NmU3NTM0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MTZhZDk2YzhlNWQyNGQ4OWU2MWQyZTkwMzEyOGY2YWE0YWYzYmQ2Y2I2MjhmNWMzYzY5NTI5YWUxNDJjZWY4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2MTMwMTFmMjU5Yzk0MThlMDJjM2FjN2UyMTYzZTEyNGJhNWFjZTU4MjQ3MjEwZDE1MWNlYzlkODE2ZDVmODY0In0"
         }
       ]
     },
@@ -174,13 +174,13 @@
       "evidence": [
         {
           "resource": "repo://.github/workflows/_release.yml#L97-L120",
-          "version": "repo-lines-v1:sha256:b37ce1e5f7520875a8f78a7402ef4c41a41bdf376171294c5862c5d3e72be216:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiZTQ0ZjE1MjE1OGI2ZGI4MGYzZjMwNWM2NWM2MjJmNmZkZjBjNjliMTEyZGQ3YWZlY2Y1ZWE2MzdjMjM2MjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzZTA5YzdlNzNlZjVmN2ViYzk5ZWRmZDJiMGMwNzg0Y2FiMDMxZmM3YjdhNTFmMjVjZmNiNTZiYzM0ZTQyYmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzYzFiZDMwYmRhMDk4OTNiMzdlZjQyMzMwNmU2NjY2ZjFjYzE0NTk3OTc3NzlkZjJhOWJjZGZiY2NmNDk1MWUifQ"
+          "version": "repo-lines-v1:sha256:1f692eeec49cfc0c0837f348aac16f49c6a17da9de352db45b08dbd02843f6da:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiZTQ0ZjE1MjE1OGI2ZGI4MGYzZjMwNWM2NWM2MjJmNmZkZjBjNjliMTEyZGQ3YWZlY2Y1ZWE2MzdjMjM2MjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkzZTA5YzdlNzNlZjVmN2ViYzk5ZWRmZDJiMGMwNzg0Y2FiMDMxZmM3YjdhNTFmMjVjZmNiNTZiYzM0ZTQyYmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzYzFiZDMwYmRhMDk4OTNiMzdlZjQyMzMwNmU2NjY2ZjFjYzE0NTk3OTc3NzlkZjJhOWJjZGZiY2NmNDk1MWUifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-29T08:20:01.046Z"
+    "at": "2026-11-05T08:18:41.280Z"
   }
 }

@@ -1,11 +1,8 @@
 ---
 type: Workflow
-title: "Composability: Building Modular Systems"
-description: "Composition patterns for building complex applications from simple, reusable components. Covers Runnable piping, component interfaces, and composability boundaries."
-tags: [composition, runnables, lcel, modular, piping, parallel, branching, fallback]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
+title: "Composability: Chaining & Piping Runnables"
+description: "Learn how to build complex applications by composing runnables through pipe operators, parallel execution, branching, and fallbacks. Includes composition patterns, type safety, configuration threading, and debugging techniques."
+tags: [composition, runnables, lcel, modular, piping, parallel, branching, fallback, streaming, debugging]
 sources:
   - id: openwiki-source-65071982a626569c8820a34b
     resource: repo://libs/core/langchain_core/runnables/__init__.py
@@ -17,10 +14,13 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/config.py
   - id: openwiki-source-f9f4c1dc4f9cdf80d824ce15
     resource: repo://libs/core/langchain_core/runnables/fallbacks.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-05T08:18:41.280Z
 ---
 
-# Composability: Building Modular Systems
+# Composability: Chaining & Piping Runnables
 
 LangChain's composition system enables building complex applications from simple, single-purpose components. Every component—prompts, models, parsers, tools, and custom logic—is a **Runnable**, unified by a composable interface. This document explains composition operators, component design, practical patterns, and boundaries for building production systems.
 
@@ -171,14 +171,16 @@ result = chain.invoke({"topic": "quantum computing"})
 
 ### Parallel Composition: RunnableParallel
 
-**Dict literal** or **RunnableParallel** invokes multiple Runnables concurrently with the same input, collecting results into a dict.
+**Dict literal**, **RunnableParallel**, or **itemgetter** invoke multiple Runnables concurrently with the same input, collecting results into a dict.
 
 **Location**: `repo://libs/core/langchain_core/runnables/base.py#L3868-L3950`
 
-```python
-from langchain_core.runnables import RunnableParallel, RunnableLambda
+#### Dict Literal (Automatic Coercion)
 
-# Via dict literal (automatic coercion)
+```python
+from langchain_core.runnables import RunnableLambda
+
+# Dict literal is coerced to RunnableParallel
 parallel = RunnableLambda(lambda x: x + 1) | {
     "add": RunnableLambda(lambda x: x + 10),
     "mul": RunnableLambda(lambda x: x * 2),
@@ -186,8 +188,13 @@ parallel = RunnableLambda(lambda x: x + 1) | {
 
 result = parallel.invoke(5)
 # {"add": 16, "mul": 12}
+```
 
-# Explicit RunnableParallel
+#### Explicit RunnableParallel
+
+```python
+from langchain_core.runnables import RunnableParallel
+
 parallel = RunnableParallel(
     sentiment=sentiment_chain,
     entities=entity_chain,
@@ -198,6 +205,32 @@ result = parallel.invoke("Apple released a new iPhone today.")
 # {"sentiment": "positive", "entities": ["Apple", "iPhone"], "topics": ["tech"]}
 ```
 
+#### itemgetter: Extract Fields from Dict Input
+
+Use `itemgetter` to extract and pass specific fields from a dict:
+
+```python
+from operator import itemgetter
+from langchain_core.runnables import RunnablePassthrough
+
+# Extract fields from input dict
+parallel = {
+    "question": itemgetter("question"),
+    "context": itemgetter("context"),
+    "reasoning": RunnableLambda(lambda x: analyze(x["question"])),
+}
+
+result = parallel.invoke({
+    "question": "What is AI?",
+    "context": "Artificial Intelligence...",
+})
+# {
+#     "question": "What is AI?",
+#     "context": "Artificial Intelligence...",
+#     "reasoning": "..."
+# }
+```
+
 **Key behaviors**:
 
 - **Same input**: All branches receive the same input simultaneously.
@@ -205,6 +238,7 @@ result = parallel.invoke("Apple released a new iPhone today.")
 - **Concurrency control**: `max_concurrency` in config limits parallelism.
 - **Exception handling**: First exception raises unless `return_exceptions=True`.
 - **Output structure**: Results are a dict with user-specified keys.
+- **Dict construction**: Dict literals are automatically coerced to RunnableParallel.
 
 **Use cases**:
 
@@ -358,6 +392,55 @@ result = model.invoke("Hello")
 - **Attempt tracking**: Tags callback runs as `retry:attempt:N`.
 - **Batch retry**: In batch mode, retries only failed inputs.
 - **Stream limitation**: Streaming is not retried (ambiguous semantics).
+
+#### Error Handling in Chains
+
+Errors in composed chains can be handled at multiple levels:
+
+**1. Try-except around chain invocation** (application level):
+
+```python
+try:
+    result = chain.invoke(input_data)
+except ValueError as e:
+    print(f"Validation error: {e}")
+except TimeoutError as e:
+    print(f"Timeout: {e}")
+```
+
+**2. Fallback within chain** (component level):
+
+```python
+# Fallback in the middle of a chain
+chain = (
+    preprocessor
+    | model.with_fallbacks([cached_response_provider])
+    | parser
+)
+```
+
+**3. Callback error handling** (observability level):
+
+```python
+class ErrorTracker(BaseCallbackHandler):
+    def on_chain_error(self, error, **kwargs):
+        # Log, track, or alert on error
+        print(f"Chain error: {error}")
+
+chain.invoke(input_data, config={"callbacks": [ErrorTracker()]})
+```
+
+**4. Conditional branching on error** (routing level):
+
+```python
+def handle_error(error: Exception) -> str:
+    return f"Recovered from {type(error).__name__}"
+
+chain = model.with_fallbacks(
+    [RunnableLambda(handle_error)],
+    exception_key="error"
+)
+```
 
 ## Component Interface Design
 
@@ -604,43 +687,83 @@ class LoggingRunnable(Runnable[Input, Output]):
 
 All composition operators automatically support the full execution API: sync, async, batch, and streaming.
 
-### Sync Execution
+### Sync Execution: invoke()
 
 ```python
 chain = prompt | model | parser
 result = chain.invoke({"topic": "AI"})
+# Blocks until complete, returns final output
 ```
 
-### Async Execution
+### Async Execution: ainvoke()
 
 ```python
 result = await chain.ainvoke({"topic": "AI"})
+# Non-blocking async call
 ```
 
-### Batch Processing
+### Batch Processing: batch() and abatch()
+
+Process multiple inputs efficiently with parallel execution:
 
 ```python
 inputs = [{"topic": "AI"}, {"topic": "ML"}, {"topic": "DL"}]
 results = chain.batch(inputs)
+# Returns list of results in same order as inputs
+
+# Async batch
+results = await chain.abatch(inputs)
 ```
 
-### Streaming
+Batching is optimized: each step in the sequence receives all inputs at once and processes them in parallel (respecting `max_concurrency` config).
+
+### Streaming: stream() and astream()
+
+Process output incrementally as it becomes available, enabling real-time feedback:
 
 ```python
+# Sync streaming
 for chunk in chain.stream({"topic": "AI"}):
     print(chunk, end="", flush=True)
-```
 
-### Async Streaming
-
-```python
+# Async streaming
 async for chunk in chain.astream({"topic": "AI"}):
     print(chunk, end="", flush=True)
 ```
 
+**How streaming works in composed chains**:
+
+1. If all steps implement `transform()` (or `atransform()`), chunks flow end-to-end progressively.
+2. Each step receives a stream of chunks and yields transformed chunks immediately.
+3. If any step lacks `transform()`, streaming pauses until that step completes, then resumes.
+
+**Example: Streaming model output through parser**
+
+```python
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+from langchain_core.output_parsers import StrOutputParser
+
+prompt = ChatPromptTemplate.from_template("Explain {topic}")
+model = ChatOpenAI(model="gpt-4o-mini")
+parser = StrOutputParser()
+
+chain = prompt | model | parser
+
+# Chunks flow: prompt → model (token by token) → parser
+for chunk in chain.stream({"topic": "quantum computing"}):
+    print(chunk, end="", flush=True)
+```
+
+The model streams tokens, and the parser processes them as they arrive.
+
 ## Configuration Threading Through Composition
 
-Configuration (tags, metadata, callbacks, concurrency limits) flows through composed chains automatically:
+Configuration (tags, metadata, callbacks, concurrency limits) flows through composed chains automatically via context variables. Each step receives a merged configuration that accumulates parent settings.
+
+### Config Merging and Propagation
+
+When invoking a chain with config:
 
 ```python
 chain = prompt | model | parser
@@ -652,32 +775,114 @@ result = chain.invoke(
         "metadata": {"user_id": "123"},
         "callbacks": [tracing_handler],
         "max_concurrency": 5,
+        "configurable": {"temperature": 0.7},
     },
 )
 ```
 
-All intermediate steps receive merged config:
-- Tags and metadata accumulate.
-- Callbacks receive hooks for all steps.
-- `max_concurrency` applies to batch and parallel operations.
+**Merging behavior**:
+
+| Field | Merge Rule |
+|-------|-----------|
+| `tags` | Accumulated (deduplicated, sorted) |
+| `metadata` | Child values override parent |
+| `callbacks` | Accumulated (all handlers called) |
+| `configurable` | Child values override parent |
+| `max_concurrency` | Child value overrides parent |
+| `recursion_limit` | Child value overrides parent |
+
+**Location**: `repo://libs/core/langchain_core/runnables/config.py#L431-L494`
+
+### Context Variable Propagation
+
+LangChain uses `ContextVar` (`var_child_runnable_config`) to automatically propagate config down the call stack without explicit parameter passing:
+
+```python
+from langchain_core.runnables.config import var_child_runnable_config
+
+# Parent sets config
+config = {"tags": ["parent"], "metadata": {"level": "top"}}
+
+# When child Runnable invokes ensure_config(None):
+# It merges var_child_runnable_config + explicit config
+# Result: tags=["parent"], metadata={"level": "top"}
+```
+
+**Location**: `repo://libs/core/langchain_core/runnables/config.py#L174-L280`
+
+This mechanism enables:
+- Transparent config inheritance without plumbing through function signatures
+- Automatic callback chaining across all nested Runnables
+- Per-input config in batch mode (each input can have different tags/metadata)
+
+### ConfigurableField: Runtime Control
+
+Mark fields as configurable to override them at runtime:
+
+```python
+from langchain_core.runnables import ConfigurableField
+from langchain_openai import ChatOpenAI
+
+model = ChatOpenAI(model="gpt-4o-mini").configurable_fields(
+    temperature=ConfigurableField(
+        id="temp",
+        name="Temperature",
+        description="Sampling temperature (0.0 to 2.0)",
+    ),
+)
+
+# Override at runtime
+result = model.invoke(
+    "Hello",
+    config={"configurable": {"temp": 0.9}},
+)
+```
 
 ## Debugging and Visualization
 
-### Implicit Debugging
+### Graph Introspection and Visualization
 
-Enable global debug to see all step executions:
+**Get and print the composition graph**:
+
+```python
+# Get the graph structure
+graph = chain.get_graph()
+
+# Print as ASCII art
+graph.print_ascii()
+
+# Or draw as Mermaid diagram
+graph.draw_mermaid()  # Returns Mermaid code as string
+
+# Or save as PNG
+graph.draw_png("chain.png")
+```
+
+The graph visualizes:
+- All nodes (inputs, Runnables, outputs)
+- Data flow and dependencies
+- Parallel branches
+- Conditional paths (in RunnableBranch)
+
+**Location**: `repo://libs/core/langchain_core/runnables/graph.py#L258-L650`
+
+### Global Debug Mode
+
+Enable global debug to see all step executions with detailed tracing:
 
 ```python
 from langchain_core.globals import set_debug
 
 set_debug(True)
 chain.invoke({"topic": "AI"})
-# Prints invocation details for each step
+# Prints invocation details for each step: inputs, outputs, execution time
 ```
 
-### Explicit Callbacks
+This is useful for development but should be disabled in production.
 
-Use custom callbacks for fine-grained observability:
+### Custom Callbacks for Observability
+
+Use callbacks for fine-grained observability, metrics collection, and tracing:
 
 ```python
 from langchain_core.callbacks import BaseCallbackHandler
@@ -685,6 +890,12 @@ from langchain_core.callbacks import BaseCallbackHandler
 class MyHandler(BaseCallbackHandler):
     def on_chain_start(self, serialized, inputs, **kwargs):
         print(f"Chain started: {inputs}")
+    
+    def on_chain_end(self, output, **kwargs):
+        print(f"Chain ended: {output}")
+    
+    def on_chain_error(self, error: BaseException, **kwargs):
+        print(f"Chain error: {error}")
 
 chain.invoke(
     {"topic": "AI"},
@@ -692,16 +903,14 @@ chain.invoke(
 )
 ```
 
-### Graph Visualization
+Callbacks receive hooks for:
+- Chain start/end
+- Tool calls
+- Retrieval steps
+- Token streaming (for LLMs)
+- Errors
 
-Visualize the composition graph:
-
-```python
-graph = chain.get_graph()
-graph.print_ascii()  # ASCII art representation
-# or
-graph.draw_mermaid_png(outfile="chain.png")  # Mermaid diagram
-```
+Multiple callbacks can be passed; they execute in order.
 
 ## Summary: Composability Best Practices
 

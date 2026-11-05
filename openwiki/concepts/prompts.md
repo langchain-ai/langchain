@@ -5,7 +5,7 @@ description: "Prompt templates define message sequences and variable substitutio
 tags: [prompt, template, few-shot, variable-substitution, runnable, composition, chat-model]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
+    at: 2026-11-05T08:18:41.280Z
 sources:
   - id: openwiki-source-269af2bb49a21bd6c548b3f0
     resource: repo://libs/core/langchain_core/prompt_values.py

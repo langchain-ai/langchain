@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9033c1ff13fba2d7dede0bcda759843105e463f35de01d451b85873e3d74f339",
+  "pageVersion": "sha256:fe97f7af2753d70c28ae8b51ba91b6f9e5786676cf9d0a4fc20d0905424886e7",
   "claims": [
     {
       "id": "claim_d2cdcf05dd4149bb9ea0a5fb0d1568d8",
@@ -117,8 +117,8 @@
       "statement": "with_structured_output() constrains model output to a specified schema (Pydantic class, TypedDict, dict, or OpenAI tool schema). It delegates to bind_tools([schema], tool_choice='any') and chains through output parsers (PydanticToolsParser or JsonOutputKeyToolsParser). If include_raw=True, output is wrapped in {raw, parsed, parsing_error}. Requires bind_tools() implementation.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2385-L2565",
-          "version": "repo-lines-v1:sha256:673bc22e396265b7dbabfa67b802837132337352be622cd69c071cfc5dfd1c84:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOTk3OTkzN2Q3ZGUxOTkyNzZjM2I3YzVkMTJkZWM2ODJhZTBmOTVjNTliZjA2OTlhNGI2OTRhZDg1ZWQxMTVhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5OTUyMjA5NzQ4ZWJiMjJhOWM3Nzc5ZWEwMTBkODNiNzUzYmVlY2Q3ZDFmY2M2ODRiYTBmNDQyZjU4MDE4YzMwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ODYzYTc3NDFkMDgxOGZiZWMxOGIzODJlN2YyNzZjZTQxNGVlOGY1NGYyYzZjNWU0OGEzYTdkNDIzNDAxNzgxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NTBjNDUzZDgxMjdmZGVmYWVkNTg3YWQxNGJlZDM0NWJiMGYzMTg3Njk3MTIwMWQzN2FjYmVkOGQ2NzgyZTFhIn0"
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2428-L2611",
+          "version": "repo-lines-v1:sha256:d3d259d9493ccf896a19273743db3066a296ae6238df1ff1515c2212418f02f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTg0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOTk3OTkzN2Q3ZGUxOTkyNzZjM2I3YzVkMTJkZWM2ODJhZTBmOTVjNTliZjA2OTlhNGI2OTRhZDg1ZWQxMTVhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5OTUyMjA5NzQ4ZWJiMjJhOWM3Nzc5ZWEwMTBkODNiNzUzYmVlY2Q3ZDFmY2M2ODRiYTBmNDQyZjU4MDE4YzMwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ODYzYTc3NDFkMDgxOGZiZWMxOGIzODJlN2YyNzZjZTQxNGVlOGY1NGYyYzZjNWU0OGEzYTdkNDIzNDAxNzgxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NTBjNDUzZDgxMjdmZGVmYWVkNTg3YWQxNGJlZDM0NWJiMGYzMTg3Njk3MTIwMWQzN2FjYmVkOGQ2NzgyZTFhIn0"
         }
       ]
     },
@@ -397,6 +397,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-29T08:20:01.046Z"
+    "at": "2026-11-05T08:18:41.280Z"
   }
 }

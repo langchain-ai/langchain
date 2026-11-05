@@ -3,9 +3,6 @@ type: Workflow
 title: "Structured Output: Type-Safe Results from Language Models"
 description: "Patterns for obtaining structured, validated output from language models using Pydantic schemas, JSON schemas, and output parsers. Bind schemas to chat models with with_structured_output() or parse raw model responses using BaseOutputParser implementations. For agents, use ToolStrategy, ProviderStrategy, or AutoStrategy to enforce structured output."
 tags: [structured-output, output-parser, pydantic, json-schema, validation, type-safe, agent-framework]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-29T08:20:01.046Z
 sources:
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
@@ -26,6 +23,9 @@ sources:
   - id: openwiki-source-ec30ab6256dd50cc670919f6
     resource: repo://libs/langchain_v1/langchain/agents/structured_output.py
 generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-05T08:18:41.280Z
 ---
 
 ## Overview

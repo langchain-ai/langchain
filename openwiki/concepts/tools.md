@@ -1,10 +1,11 @@
 ---
-type: "Reference"
-title: "Bare decorator - infers schema from function signature"
-openwiki_generated: true
+type: "Concept"
+title: "Tools: Function Calling and Tool Use"
+description: "Explain the BaseTool abstraction: schema generation, invocation, callbacks, and error handling; when and how models bind tools; tool selection patterns in agents."
+tags: ["tools", "function-calling", "agent-execution", "schema", "runnable"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
+    at: 2026-11-05T08:18:41.280Z
 sources:
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py

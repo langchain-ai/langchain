@@ -1,17 +1,17 @@
 ---
 type: "Reference"
-title: "OpenAI Provider Implementation"
-description: "Reference implementation of the partner pattern using OpenAI. Covers ChatModel implementation, message conversion, tool calling, structured output, vision support, and streaming."
-tags: ["chat-model", "openai", "tool-calling", "structured-output", "vision", "streaming", "partner-pattern"]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-29T08:20:01.046Z
+title: "OpenAI Provider: ChatOpenAI Implementation"
+description: "Deep dive into the ChatOpenAI implementation: API client setup, message translation, tool handling, structured output, streaming, and Azure support."
+tags: ["chat-model", "openai", "tool-calling", "structured-output", "vision", "streaming", "partner-pattern", "azure"]
 sources:
   - id: openwiki-source-738512768ef81ae009b097ac
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
   - id: openwiki-source-b65307f1d05bd74532af2eee
     resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-05T08:18:41.280Z
 ---
 
 # OpenAI Provider Implementation
@@ -30,6 +30,40 @@ The chat model hierarchy is:
 - `BaseChatOpenAI`: Abstract base supporting both Chat Completions and Responses APIs
 - `ChatOpenAI`: Concrete subclass routing between APIs based on model and parameters
 - `AzureChatOpenAI`: Azure-specific variant with authentication and deployment handling
+
+## Azure OpenAI Support
+
+`AzureChatOpenAI` extends `BaseChatOpenAI` with Azure-specific authentication and deployment handling:
+
+```python
+from langchain_openai import AzureChatOpenAI
+
+model = AzureChatOpenAI(
+    azure_deployment="your-deployment",  # Required: Azure deployment name
+    api_version="2024-05-01-preview",    # Azure API version
+    temperature=0,
+    max_tokens=None,
+    timeout=None,
+    max_retries=2,
+    # model="gpt-4",  # Underlying model name (for tracing/tokens)
+    # model_version="0125",  # Model version
+)
+
+response = model.invoke([
+    ("system", "Translate to French"),
+    ("human", "Hello world")
+])
+```
+
+**Azure-specific configuration:**
+- **`azure_deployment`** (required): Name of the Azure OpenAI deployment.
+- **`api_version`**: Azure REST API version (distinct from model version); defaults to `AZURE_OPENAI_API_VERSION`.
+- **`azure_endpoint`**: Azure endpoint URL; defaults to `AZURE_OPENAI_ENDPOINT` env var.
+- **`api_key`**: Azure API key; defaults to `AZURE_OPENAI_API_KEY` env var.
+- **Authentication**: Supports API key, AD token provider, or workload identity (via `azure-identity` module).
+- **Response metadata**: Includes Azure content filter results (hate, self-harm, sexual, violence) in `response_metadata`.
+
+All other parameters (`temperature`, `max_tokens`, `tool_choice`, `streaming`, etc.) inherit from `BaseChatOpenAI` and work identically.
 
 ## Chat Model Inheritance and Required Methods
 
