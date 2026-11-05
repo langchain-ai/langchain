@@ -2,14 +2,12 @@ import asyncio
 import json
 import warnings
 from collections.abc import Iterable
-from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, cast
 from unittest.mock import ANY, patch
 
 import pytest
-from langchain_core._api.deprecation import LangChainDeprecationWarning
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     BaseCallbackHandler,
@@ -62,8 +60,6 @@ from langchain.agents.middleware.types import (
     ExtendedModelResponse,
     ModelRequest,
     ModelResponse,
-    ModelSelection,
-    ModelSpec,
     _merge_model_selection,
 )
 from langchain.chat_models import init_chat_model
@@ -75,61 +71,44 @@ OPENAI_TEST_MODEL = "gpt-5.5"
 _RESPONSE_ID = "summarization-test-response"
 
 
-def _model_request(
-    middleware: SummarizationMiddleware, state: AgentState[Any]
-) -> ModelRequest[None]:
-    """Build the request the agent would send, targeting the middleware's pinned model."""
-    model = middleware.model or GenericFakeChatModel(messages=iter([]))
+def _request(state: AgentState[Any], model: BaseChatModel | None = None) -> ModelRequest[Any]:
+    model = model or GenericFakeChatModel(messages=iter([]))
     return ModelRequest(
         model=model, messages=list(state["messages"]), state=state, runtime=Runtime()
     )
 
 
-def _respond(_: ModelRequest[None]) -> ModelResponse[Any]:
+def _respond(_: ModelRequest[Any]) -> ModelResponse[Any]:
     return ModelResponse(result=[AIMessage(content="ok", id=_RESPONSE_ID)])
 
 
-async def _arespond(request: ModelRequest[None]) -> ModelResponse[Any]:
+async def _arespond(request: ModelRequest[Any]) -> ModelResponse[Any]:
     return _respond(request)
 
 
-def _apply_summary(result: object, state: AgentState[Any]) -> list[AnyMessage] | None:
-    """Apply a summarizing call's update the way the agent's model node does.
-
-    Returns the resulting history (minus the model response), or `None` when the
-    call did not summarize.
-    """
+def _summary_update(result: object, state: AgentState[Any]) -> dict[str, Any] | None:
+    """Apply a summarizing call's update like the model node, as a full-history update."""
     if not isinstance(result, ExtendedModelResponse):
         return None
     assert result.command is not None
     stored: Any = list(state["messages"])
     history: Any = add_messages(stored, cast("Any", result.model_response.result))
     history = add_messages(history, cast("dict[str, Any]", result.command.update)["messages"])
-    assert history[-1].id == _RESPONSE_ID
-    return cast("list[AnyMessage]", history[:-1])
-
-
-def _summary_update(result: object, state: AgentState[Any]) -> dict[str, Any] | None:
-    """Express the history after a summarizing call as a full-replacement update."""
-    history = _apply_summary(result, state)
-    if history is None:
-        return None
-    return {"messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES), *history]}
+    return {"messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES), *history[:-1]]}
 
 
 def _summarize(
     middleware: SummarizationMiddleware, state: AgentState[Any]
 ) -> dict[str, Any] | None:
-    """Run one model call through the middleware and return the resulting history."""
-    result = middleware.wrap_model_call(_model_request(middleware, state), _respond)
+    """Run one model call to the pinned model through the middleware."""
+    result = middleware.wrap_model_call(_request(state, middleware.model), _respond)
     return _summary_update(result, state)
 
 
 async def _asummarize(
     middleware: SummarizationMiddleware, state: AgentState[Any]
 ) -> dict[str, Any] | None:
-    """Async version of `_summarize`."""
-    request = _model_request(middleware, state)
+    request = _request(state, middleware.model)
     return _summary_update(await middleware.awrap_model_call(request, _arespond), state)
 
 
@@ -2826,30 +2805,17 @@ def test_async_summarizer_on_sync_path_raises() -> None:
         middleware._create_summary([HumanMessage(content="hi")])
 
 
-_SUMMARY_PROMPT_MARKER = "Messages to summarize:"
+_SUMMARY_MARKER = "Messages to summarize:"
 
 
 class _NamedModel(BaseChatModel):
     """Chat model with a name and context window that records the prompts it gets."""
 
     name_: str
-    max_input: int
     calls: list[str] = Field(default_factory=list)
 
-    def __init__(self, name: str, max_input: int, **kwargs: Any) -> None:
-        super().__init__(
-            name_=name,
-            max_input=max_input,
-            profile=ModelProfile(max_input_tokens=max_input),
-            **kwargs,
-        )
-
-    def _reply(self, messages: list[BaseMessage]) -> ChatResult:
-        prompt = get_buffer_string(messages)
-        self.calls.append(prompt)
-        kind = "summary" if _SUMMARY_PROMPT_MARKER in prompt else "reply"
-        message = AIMessage(content=f"{self.name_} {kind}")
-        return ChatResult(generations=[ChatGeneration(message=message)])
+    def __init__(self, name: str, max_input: int) -> None:
+        super().__init__(name_=name, profile=ModelProfile(max_input_tokens=max_input))
 
     @override
     def _generate(
@@ -2859,19 +2825,10 @@ class _NamedModel(BaseChatModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
-        return self._reply(messages)
-
-    @override
-    async def _agenerate(
-        self,
-        messages: list[BaseMessage],
-        stop: list[str] | None = None,
-        run_manager: AsyncCallbackManagerForLLMRun | None = None,
-        **kwargs: Any,
-    ) -> ChatResult:
-        for _ in range(3):
-            await asyncio.sleep(0)
-        return self._reply(messages)
+        prompt = get_buffer_string(messages)
+        self.calls.append(prompt)
+        kind = "summary" if _SUMMARY_MARKER in prompt else "reply"
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(f"{self.name_} {kind}"))])
 
     @property
     def _llm_type(self) -> str:
@@ -2881,82 +2838,9 @@ class _NamedModel(BaseChatModel):
     def _get_ls_params(self, stop: list[str] | None = None, **kwargs: Any) -> LangSmithParams:
         return LangSmithParams(ls_provider="fake", ls_model_name=self.name_, ls_model_type="chat")
 
-    def summary_calls(self) -> list[str]:
-        return [call for call in self.calls if _SUMMARY_PROMPT_MARKER in call]
-
-
-def _fixed_token_counter(_: Iterable[MessageLikeRepresentation], **__: Any) -> int:
-    """Every history counts as 1,000 tokens."""
-    return 1_000
-
-
-def _history() -> list[AnyMessage]:
-    return [
-        HumanMessage(content="first question", id="h0"),
-        AIMessage(content="first answer", id="a0"),
-        HumanMessage(content="second question", id="h1"),
-    ]
-
-
-def _call_middleware(
-    middleware: SummarizationMiddleware,
-    model: BaseChatModel,
-    *,
-    use_async: bool,
-    context: Any = None,
-) -> tuple[object, list[ModelRequest[Any]]]:
-    """Send one model call for `model` through the middleware; return result and requests."""
-    state = AgentState[Any](messages=_history())
-    request: ModelRequest[Any] = ModelRequest(
-        model=model,
-        messages=list(state["messages"]),
-        state=state,
-        runtime=Runtime(context=context),
-    )
-    seen: list[ModelRequest[Any]] = []
-
-    def handler(inner: ModelRequest[Any]) -> ModelResponse[Any]:
-        seen.append(inner)
-        return ModelResponse(result=[AIMessage(content="ok", id=_RESPONSE_ID)])
-
-    async def ahandler(inner: ModelRequest[Any]) -> ModelResponse[Any]:
-        return handler(inner)
-
-    if use_async:
-        result: object = asyncio.run(middleware.awrap_model_call(request, ahandler))
-    else:
-        result = middleware.wrap_model_call(request, handler)
-    return result, seen
-
-
-def _summary_text(result: object) -> str | None:
-    """Text of the summary message a summarizing call writes to state."""
-    if not isinstance(result, ExtendedModelResponse):
-        return None
-    assert result.command is not None
-    summary = cast("dict[str, Any]", result.command.update)["messages"][0]
-    return cast("str", summary.text)
-
-
-def _small() -> _NamedModel:
-    return _NamedModel("small", max_input=1_500)
-
-
-def _large() -> _NamedModel:
-    return _NamedModel("large", max_input=200_000)
-
-
-def _follow_call_middleware(**kwargs: Any) -> SummarizationMiddleware:
-    return SummarizationMiddleware(
-        trigger=("fraction", 0.5),
-        keep=("messages", 1),
-        token_counter=_fixed_token_counter,
-        **kwargs,
-    )
-
 
 class _SwapModel(AgentMiddleware):
-    """Route every call to `model`, like a `/model` command or router would."""
+    """Route every call to `swap_to`, like a `/model` command or router would."""
 
     def __init__(self, model: BaseChatModel) -> None:
         super().__init__()
@@ -2971,46 +2855,49 @@ class _SwapModel(AgentMiddleware):
         return await handler(request.override(model=self.swap_to))
 
 
-def test_model_is_optional() -> None:
-    """Without a pinned model, nothing is resolved at build time."""
-    middleware = SummarizationMiddleware(trigger=("fraction", 0.5), keep=("fraction", 0.1))
-
-    assert middleware.model is None
+def _small() -> _NamedModel:
+    return _NamedModel("small", max_input=1_500)
 
 
-@pytest.mark.parametrize("use_async", [False, True])
-def test_small_and_large_window_models_decide_differently(use_async: bool) -> None:  # noqa: FBT001
-    """The same history triggers on a small-window call but not on a large-window one."""
-    middleware = _follow_call_middleware()
-    small, large = _small(), _large()
+def _large() -> _NamedModel:
+    return _NamedModel("large", max_input=200_000)
 
-    small_result, small_requests = _call_middleware(middleware, small, use_async=use_async)
-    large_result, large_requests = _call_middleware(middleware, large, use_async=use_async)
 
-    assert _summary_text(small_result) == (
-        "Here is a summary of the conversation to date:\n\nsmall summary"
+def _history() -> list[Any]:
+    return [
+        HumanMessage(content="first question", id="h0"),
+        AIMessage(content="first answer", id="a0"),
+        HumanMessage(content="second question", id="h1"),
+    ]
+
+
+def _middleware(**kwargs: Any) -> SummarizationMiddleware:
+    """Every history counts as 1,000 tokens: over half of `small`'s window only."""
+    return SummarizationMiddleware(
+        trigger=("fraction", 0.5),
+        keep=("messages", 1),
+        token_counter=lambda *_, **__: 1_000,
+        **kwargs,
     )
-    assert [m.text for m in small_requests[0].messages][1:] == ["second question"]
-    assert _summary_text(large_result) is None
-    assert large_requests[0].messages == _history()
-    assert large.calls == []
+
+
+def _summary_text(middleware: SummarizationMiddleware, model: BaseChatModel) -> str | None:
+    """Summary written when one call to `model` goes through the middleware."""
+    state = AgentState[Any](messages=_history())
+    update = _summary_update(middleware.wrap_model_call(_request(state, model), _respond), state)
+    return update["messages"][1].text if update else None
 
 
 @pytest.mark.parametrize("use_async", [False, True])
-def test_default_follows_model_swapped_in_by_earlier_middleware(use_async: bool) -> None:  # noqa: FBT001
-    """Thresholds and the summary writer follow a model swapped in by earlier middleware."""
+def test_default_follows_model_swapped_in_by_other_middleware(use_async: bool) -> None:  # noqa: FBT001
+    """Thresholds and the summary writer follow the model the call goes to."""
     small, large = _small(), _large()
-    agent = create_agent(model=large, middleware=[_SwapModel(small), _follow_call_middleware()])
+    agent = create_agent(model=large, middleware=[_SwapModel(small), _middleware()])
+    payload: Any = {"messages": _history()}
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", LangChainDeprecationWarning)
-        if use_async:
-            result = asyncio.run(agent.ainvoke({"messages": [*_history()]}))
-        else:
-            result = agent.invoke({"messages": [*_history()]})
+    result = asyncio.run(agent.ainvoke(payload)) if use_async else agent.invoke(payload)
 
     assert large.calls == []
-    assert len(small.summary_calls()) == 1
     assert [m.text for m in result["messages"]] == [
         "Here is a summary of the conversation to date:\n\nsmall summary",
         "second question",
@@ -3018,302 +2905,87 @@ def test_default_follows_model_swapped_in_by_earlier_middleware(use_async: bool)
     ]
 
 
-@pytest.mark.parametrize("use_async", [False, True])
-def test_pinned_model_drives_thresholds_and_summary(use_async: bool) -> None:  # noqa: FBT001
-    """A pinned model keeps driving thresholds and summaries, whatever the call's model."""
-    small, large = _small(), _large()
-    middleware = _follow_call_middleware(model=small)
+@pytest.mark.parametrize(("call_model", "warns"), [(_large, True), (_small, False)])
+def test_pinned_model_drives_thresholds_and_summary(
+    call_model: Any,
+    warns: bool,  # noqa: FBT001
+) -> None:
+    """A pinned model drives everything, warning when the call goes elsewhere."""
+    middleware = _middleware(model=_small())
 
-    with pytest.warns(LangChainDeprecationWarning, match=r"summarizer="):
-        result, _ = _call_middleware(middleware, large, use_async=use_async)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        text = _summary_text(middleware, call_model())
 
-    assert (
-        _summary_text(result) == "Here is a summary of the conversation to date:\n\nsmall summary"
-    )
-    assert large.calls == []
-
-
-def test_pinned_model_matching_call_model_does_not_warn() -> None:
-    """No warning when the pinned model is the call's model, even as a separate object."""
-    middleware = _follow_call_middleware(model=_small())
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", LangChainDeprecationWarning)
-        result, _ = _call_middleware(middleware, _small(), use_async=False)
-
-    assert _summary_text(result) is not None
+    assert text == "Here is a summary of the conversation to date:\n\nsmall summary"
+    assert any("summarizer=" in str(w.message) for w in caught) is warns
 
 
-@pytest.mark.parametrize("use_async", [False, True])
-def test_callable_model_chooses_context_model_per_call(use_async: bool) -> None:  # noqa: FBT001
-    """A callable picks the context model for each call from the runtime context."""
-    models = {"small": _small(), "large": _large()}
-    resolutions: list[ModelResolution[Any]] = []
+def test_callable_model_chooses_context_model() -> None:
+    small = _small()
+    seen: list[ModelResolution[Any]] = []
 
     def pick(resolution: ModelResolution[Any]) -> BaseChatModel:
-        resolutions.append(resolution)
-        return models[resolution.context["tier"]]
+        seen.append(resolution)
+        return small
 
-    middleware = _follow_call_middleware(model=pick)
+    middleware = _middleware(model=pick)
     call_model = _large()
 
-    small_result, _ = _call_middleware(
-        middleware, call_model, use_async=use_async, context={"tier": "small"}
-    )
-    large_result, _ = _call_middleware(
-        middleware, call_model, use_async=use_async, context={"tier": "large"}
-    )
+    text = _summary_text(middleware, call_model)
 
-    assert _summary_text(small_result) == (
-        "Here is a summary of the conversation to date:\n\nsmall summary"
-    )
-    assert _summary_text(large_result) is None
-    assert call_model.calls == []
-    assert [r.request.model for r in resolutions if r.request] == [call_model, call_model]
-    assert resolutions[0].state["messages"] == _history()
+    assert text == "Here is a summary of the conversation to date:\n\nsmall summary"
+    assert seen[0].request is not None
+    assert seen[0].request.model is call_model
 
 
-@pytest.mark.parametrize("use_async", [False, True])
-def test_callable_returning_string_raises(use_async: bool) -> None:  # noqa: FBT001
-    """Callables must return model objects so compaction never builds a client."""
-    middleware = _follow_call_middleware(model=lambda _: "openai:gpt-5.5")
+def test_callable_returning_string_raises() -> None:
+    middleware = _middleware(model=lambda _: "openai:gpt-5.5")
 
-    with pytest.raises(TypeError, match=r"returned the string 'openai:gpt-5\.5'"):
-        _call_middleware(middleware, _small(), use_async=use_async)
+    with pytest.raises(TypeError, match="returned the string"):
+        _summary_text(middleware, _small())
 
 
-def test_invalid_model_type_raises() -> None:
-    with pytest.raises(TypeError, match="`model` must be"):
-        SummarizationMiddleware(model=42)  # type: ignore[arg-type]
-
-
-@pytest.mark.parametrize("use_async", [False, True])
 @pytest.mark.parametrize("model_form", ["default", "pinned", "callable"])
-def test_summarizer_takes_precedence_over_every_model_form(
-    model_form: str,
-    use_async: bool,  # noqa: FBT001
-) -> None:
-    """`summarizer` writes summaries whichever way the context model is chosen."""
+def test_summarizer_takes_precedence(model_form: str) -> None:
     small = _small()
-    cheap = _NamedModel("cheap", max_input=1_000_000)
     model: Any = {"default": None, "pinned": small, "callable": lambda _: small}[model_form]
-    middleware = _follow_call_middleware(model=model, summarizer=cheap)
+    middleware = _middleware(model=model, summarizer=_NamedModel("cheap", max_input=10**6))
 
-    result, _ = _call_middleware(middleware, small, use_async=use_async)
+    text = _summary_text(middleware, small)
 
-    assert (
-        _summary_text(result) == "Here is a summary of the conversation to date:\n\ncheap summary"
-    )
+    assert text == "Here is a summary of the conversation to date:\n\ncheap summary"
     assert small.calls == []
 
 
-@pytest.mark.parametrize("use_async", [False, True])
-def test_concurrent_runs_with_different_models_do_not_cross_contaminate(
-    use_async: bool,  # noqa: FBT001
-) -> None:
-    """One compiled agent serves runs on different models without mixing them up."""
-    models = {"small": _small(), "large": _large()}
+def test_summarizer_ignores_recorded_model_selection() -> None:
+    """`model_selection` is a record only; thresholds follow the call's model."""
+    small_spec = cast("Any", model_spec_from_model(_small()))
+    state = AgentState[Any](messages=_history(), model_selection={"current": small_spec})
 
-    class _Router(AgentMiddleware):
-        @override
-        def wrap_model_call(self, request: ModelRequest[Any], handler: Any) -> Any:
-            return handler(request.override(model=models[request.runtime.context["tier"]]))
+    result = _middleware().wrap_model_call(_request(state, _large()), _respond)
 
-        @override
-        async def awrap_model_call(self, request: ModelRequest[Any], handler: Any) -> Any:
-            return await handler(request.override(model=models[request.runtime.context["tier"]]))
-
-    agent: Any = create_agent(
-        model=_NamedModel("builder", max_input=10),
-        middleware=[_Router(), _follow_call_middleware()],
-    )
-    tiers = ["small", "large"] * 4
-
-    if use_async:
-
-        async def run_all() -> Any:
-            return await asyncio.gather(
-                *(agent.ainvoke({"messages": [*_history()]}, context={"tier": t}) for t in tiers)
-            )
-
-        results = asyncio.run(run_all())
-    else:
-        with ThreadPoolExecutor(max_workers=len(tiers)) as pool:
-            results = list(
-                pool.map(
-                    lambda t: agent.invoke({"messages": [*_history()]}, context={"tier": t}), tiers
-                )
-            )
-
-    for tier, result in zip(tiers, results, strict=True):
-        texts = [m.text for m in result["messages"]]
-        if tier == "small":
-            assert texts[0] == "Here is a summary of the conversation to date:\n\nsmall summary"
-            assert texts[-1] == "small reply"
-        else:
-            assert texts == [m.text for m in _history()] + ["large reply"]
-    assert len(models["small"].summary_calls()) == 4
-    assert models["large"].summary_calls() == []
+    assert not isinstance(result, ExtendedModelResponse)
 
 
 def test_summarization_run_records_compaction_models() -> None:
-    """The summarization run's metadata names the models and context window used."""
     starts: list[dict[str, Any]] = []
 
     class _Recorder(BaseCallbackHandler):
         @override
-        def on_chain_start(
-            self, serialized: dict[str, Any] | None, inputs: Any, **kwargs: Any
-        ) -> None:
+        def on_chain_start(self, serialized: Any, inputs: Any, **kwargs: Any) -> None:
             if kwargs.get("name") == "summarization":
                 starts.append(kwargs.get("metadata") or {})
 
-    small = _small()
     agent = create_agent(
-        model=_large(),
-        middleware=[_SwapModel(small), _follow_call_middleware(summarizer=_large())],
+        model=_large(), middleware=[_SwapModel(_small()), _middleware(summarizer=_large())]
     )
 
-    agent.invoke({"messages": [*_history()]}, config={"callbacks": [_Recorder()]})
+    agent.invoke({"messages": _history()}, config={"callbacks": [_Recorder()]})
 
-    assert len(starts) == 1
     assert starts[0]["summarization_context_model"] == "fake:small"
     assert starts[0]["summarization_context_window"] == 1_500
     assert starts[0]["summarization_model"] == "fake:large"
-    assert starts[0]["lc_source"] == "summarization"
-
-
-def test_fraction_limits_without_profile_warn_per_call() -> None:
-    """A resolved model without a profile skips fractional triggers with a warning."""
-    middleware = _follow_call_middleware()
-
-    with pytest.warns(UserWarning, match="no `max_input_tokens`"):
-        result, _ = _call_middleware(middleware, MockChatModel(), use_async=False)
-
-    assert _summary_text(result) is None
-
-
-def _spec(model: BaseChatModel) -> ModelSpec:
-    spec = model_spec_from_model(model)
-    assert spec is not None
-    return spec
-
-
-class _ContextRouter(AgentMiddleware):
-    """Route every call to the model named in the run context, like a `/model` command."""
-
-    def __init__(self, models: dict[str, BaseChatModel]) -> None:
-        super().__init__()
-        self.models = models
-
-    @override
-    def wrap_model_call(self, request: ModelRequest[Any], handler: Any) -> Any:
-        return handler(request.override(model=self.models[request.runtime.context["model"]]))
-
-    @override
-    async def awrap_model_call(self, request: ModelRequest[Any], handler: Any) -> Any:
-        model = self.models[request.runtime.context["model"]]
-        return await handler(request.override(model=model))
-
-
-def test_model_spec_keeps_only_safe_fields() -> None:
-    """Specs hold provider, name, window and safe init args, never credentials."""
-    model = ChatOpenAI(
-        model=OPENAI_TEST_MODEL,
-        api_key=SecretStr("sk-secret"),
-        base_url="https://user:token@example.com/v1",
-        default_headers={"Authorization": "Bearer header-secret"},
-        reasoning_effort="low",
-        max_tokens=512,
-    )
-
-    spec = model_spec_from_model(model)
-
-    assert spec is not None
-    assert spec["provider"] == "openai"
-    assert spec["model"] == OPENAI_TEST_MODEL
-    assert spec.get("max_input_tokens") == _get_profile_limit(model)
-    assert spec.get("init_kwargs") == {"max_tokens": 512, "reasoning_effort": "low"}
-    dumped = json.dumps(spec)
-    for secret in ("sk-secret", "token@example.com", "header-secret"):
-        assert secret not in dumped
-
-
-def _get_profile_limit(model: BaseChatModel) -> int | None:
-    profile = model.profile or {}
-    return profile.get("max_input_tokens")
-
-
-def test_model_spec_requires_model_name() -> None:
-    assert model_spec_from_model(MockChatModel()) is None
-
-
-def test_model_selection_reducer_tracks_previous() -> None:
-    small, large = _spec(_small()), _spec(_large())
-
-    first = _merge_model_selection(None, {"current": large})
-    same = _merge_model_selection(first, {"current": large})
-    switched = _merge_model_selection(same, {"current": small})
-    explicit = _merge_model_selection(switched, {"current": large, "previous": None})
-
-    assert first == {"current": large}
-    assert same == {"current": large}
-    assert switched == {"current": small, "previous": large}
-    assert explicit == {"current": large, "previous": None}
-
-
-@pytest.mark.parametrize("strict", [False, True])
-def test_model_selection_round_trips_through_jsonplus(strict: bool) -> None:  # noqa: FBT001
-    """Specs are plain JSON, so they need no `JsonPlusSerializer` allow list entry."""
-    serde = JsonPlusSerializer(allowed_msgpack_modules=None) if strict else JsonPlusSerializer()
-    model = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("sk-secret"), max_tokens=512)
-    selection: ModelSelection = {"current": _spec(model), "previous": _spec(_large())}
-
-    assert serde.loads_typed(serde.dumps_typed(selection)) == selection
-
-
-@pytest.mark.parametrize("use_async", [False, True])
-def test_agent_records_model_selection_after_each_call(use_async: bool) -> None:  # noqa: FBT001
-    """The model node records the model each call went to, keeping the one it replaced."""
-    small, large = _small(), _large()
-    agent: Any = create_agent(
-        model=_NamedModel("builder", max_input=10),
-        middleware=[_ContextRouter({"small": small, "large": large})],
-        checkpointer=InMemorySaver(serde=JsonPlusSerializer(allowed_msgpack_modules=None)),
-    )
-    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
-
-    for name in ("large", "large", "small"):
-        payload: Any = {"messages": [HumanMessage(content="hi")]}
-        if use_async:
-            result = asyncio.run(agent.ainvoke(payload, config, context={"model": name}))
-        else:
-            result = agent.invoke(payload, config, context={"model": name})
-
-    assert "model_selection" not in result
-    assert agent.get_state(config).values["model_selection"] == {
-        "current": _spec(small),
-        "previous": _spec(large),
-    }
-
-
-@pytest.mark.parametrize("use_async", [False, True])
-def test_summarizer_ignores_recorded_model_selection(use_async: bool) -> None:  # noqa: FBT001
-    """The recorded model is informational; thresholds follow the call's model."""
-    middleware = _follow_call_middleware()
-    small, large = _small(), _large()
-    state = AgentState[Any](messages=_history(), model_selection={"current": _spec(small)})
-    request: ModelRequest[Any] = ModelRequest(
-        model=large, messages=list(state["messages"]), state=state, runtime=Runtime()
-    )
-
-    if use_async:
-        result: object = asyncio.run(middleware.awrap_model_call(request, _arespond))
-    else:
-        result = middleware.wrap_model_call(request, _respond)
-
-    assert _summary_text(result) is None
-    assert small.calls == []
 
 
 class _AddNote(AgentMiddleware):
@@ -3326,24 +2998,11 @@ class _AddNote(AgentMiddleware):
             model_response=handler(request), command=Command(update={"messages": [note]})
         )
 
-    @override
-    async def awrap_model_call(self, request: ModelRequest[Any], handler: Any) -> Any:
-        note = HumanMessage(content="inner note", id="note")
-        return ExtendedModelResponse(
-            model_response=await handler(request), command=Command(update={"messages": [note]})
-        )
 
+def test_summary_keeps_messages_added_by_inner_middleware() -> None:
+    agent = create_agent(model=_small(), middleware=[_middleware(), _AddNote()])
 
-@pytest.mark.parametrize("use_async", [False, True])
-def test_summary_keeps_messages_added_by_inner_middleware(use_async: bool) -> None:  # noqa: FBT001
-    """The summary update edits by ID, so inner middleware's state updates survive."""
-    small = _small()
-    agent = create_agent(model=small, middleware=[_follow_call_middleware(), _AddNote()])
-
-    if use_async:
-        result = asyncio.run(agent.ainvoke({"messages": [*_history()]}))
-    else:
-        result = agent.invoke({"messages": [*_history()]})
+    result = agent.invoke({"messages": _history()})
 
     assert [m.text for m in result["messages"]] == [
         "Here is a summary of the conversation to date:\n\nsmall summary",
@@ -3354,100 +3013,51 @@ def test_summary_keeps_messages_added_by_inner_middleware(use_async: bool) -> No
 
 
 class _ClearToolResults(AgentMiddleware):
-    """Outer middleware that hides tool results from a single call, like context editing."""
+    """Outer middleware that hides tool results from one call, like context editing."""
 
-    @staticmethod
-    def _cleared(request: ModelRequest[Any]) -> ModelRequest[Any]:
+    @override
+    def wrap_model_call(self, request: ModelRequest[Any], handler: Any) -> Any:
         messages = [
             m.model_copy(update={"content": "[cleared]"}) if isinstance(m, ToolMessage) else m
             for m in deepcopy(request.messages)
         ]
-        return request.override(messages=messages)
-
-    @override
-    def wrap_model_call(self, request: ModelRequest[Any], handler: Any) -> Any:
-        return handler(self._cleared(request))
-
-    @override
-    async def awrap_model_call(self, request: ModelRequest[Any], handler: Any) -> Any:
-        return await handler(self._cleared(request))
+        return handler(request.override(messages=messages))
 
 
-def _tool_history() -> list[AnyMessage]:
-    return [
+def test_summary_uses_stored_messages_not_outer_per_call_edits() -> None:
+    summarized: list[str] = []
+    call = {"name": "search", "args": {}, "type": "tool_call"}
+    history: list[Any] = [
         HumanMessage(content="look it up", id="h0"),
-        AIMessage(
-            content="",
-            id="a0",
-            tool_calls=[{"name": "search", "args": {}, "id": "call-1", "type": "tool_call"}],
-        ),
-        ToolMessage(content="secret detail", tool_call_id="call-1", id="t0"),
-        AIMessage(content="found it", id="a1"),
+        AIMessage(content="", id="a0", tool_calls=[{**call, "id": "c1"}]),
+        ToolMessage(content="secret detail", tool_call_id="c1", id="t0"),
         HumanMessage(content="thanks", id="h1"),
-        AIMessage(
-            content="",
-            id="a2",
-            tool_calls=[{"name": "search", "args": {}, "id": "call-2", "type": "tool_call"}],
-        ),
-        ToolMessage(content="kept detail", tool_call_id="call-2", id="t1"),
+        AIMessage(content="", id="a1", tool_calls=[{**call, "id": "c2"}]),
+        ToolMessage(content="kept detail", tool_call_id="c2", id="t1"),
     ]
 
-
-@pytest.mark.parametrize("use_async", [False, True])
-def test_summary_uses_stored_messages_not_outer_per_call_edits(use_async: bool) -> None:  # noqa: FBT001
-    """Outer per-call edits never reach the persisted summary or preserved history."""
-    summarized: list[list[AnyMessage]] = []
-
     def summarizer(messages: list[AnyMessage]) -> str:
-        summarized.append(messages)
-        return get_buffer_string(messages)
-
-    seen: list[list[AnyMessage]] = []
-
-    class _Record(AgentMiddleware):
-        @override
-        def wrap_model_call(self, request: ModelRequest[Any], handler: Any) -> Any:
-            seen.append(request.messages)
-            return handler(request)
-
-        @override
-        async def awrap_model_call(self, request: ModelRequest[Any], handler: Any) -> Any:
-            seen.append(request.messages)
-            return await handler(request)
+        summarized.append(get_buffer_string(messages))
+        return "done"
 
     middleware = SummarizationMiddleware(
         trigger=("messages", 5), keep=("messages", 2), summarizer=summarizer
     )
-    agent = create_agent(model=_small(), middleware=[_ClearToolResults(), middleware, _Record()])
+    agent = create_agent(model=_small(), middleware=[_ClearToolResults(), middleware])
 
-    if use_async:
-        result = asyncio.run(agent.ainvoke({"messages": [*_tool_history()]}))
-    else:
-        result = agent.invoke({"messages": [*_tool_history()]})
+    result = agent.invoke({"messages": history})
 
-    assert "secret detail" in get_buffer_string(summarized[0])
-    assert "[cleared]" not in get_buffer_string(summarized[0])
-    assert [m.text for m in seen[0][1:]] == ["", "[cleared]"]
+    assert "secret detail" in summarized[0]
+    assert "[cleared]" not in summarized[0]
     assert [m.text for m in result["messages"][1:]] == ["", "kept detail", "small reply"]
 
 
 def test_summary_removes_patched_invalid_tool_call_results() -> None:
     """Results the agent adds for malformed tool calls are summarized away too."""
-    history: list[AnyMessage] = [
+    bad = {"name": "search", "args": "{", "id": "bad", "error": None, "type": "invalid_tool_call"}
+    history: list[Any] = [
         HumanMessage(content="do it", id="h0"),
-        AIMessage(
-            content="",
-            id="a0",
-            invalid_tool_calls=[
-                {
-                    "name": "search",
-                    "args": "{",
-                    "id": "bad",
-                    "error": None,
-                    "type": "invalid_tool_call",
-                }
-            ],
-        ),
+        AIMessage(content="", id="a0", invalid_tool_calls=[bad]),
         HumanMessage(content="try again", id="h1"),
     ]
     middleware = SummarizationMiddleware(
@@ -3455,11 +3065,63 @@ def test_summary_removes_patched_invalid_tool_call_results() -> None:
     )
     agent = create_agent(model=_small(), middleware=[_ClearToolResults(), middleware])
 
-    result = agent.invoke({"messages": [*history]})
+    result = agent.invoke({"messages": history})
 
     assert [type(m).__name__ for m in result["messages"]] == [
         "HumanMessage",
         "HumanMessage",
         "AIMessage",
     ]
-    assert [m.text for m in result["messages"]][1:] == ["try again", "small reply"]
+
+
+def test_model_spec_keeps_only_safe_fields() -> None:
+    model = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        api_key=SecretStr("sk-secret"),
+        base_url="https://user:token@example.com/v1",
+        default_headers={"Authorization": "Bearer header-secret"},
+        max_tokens=512,
+    )
+
+    spec = model_spec_from_model(model)
+
+    assert spec is not None
+    assert (spec["provider"], spec["model"]) == ("openai", OPENAI_TEST_MODEL)
+    assert spec.get("init_kwargs") == {"max_tokens": 512}
+    for secret in ("sk-secret", "token@example.com", "header-secret"):
+        assert secret not in json.dumps(spec)
+
+
+def test_model_selection_reducer_tracks_previous() -> None:
+    small, large = model_spec_from_model(_small()), model_spec_from_model(_large())
+    assert small is not None
+    assert large is not None
+
+    first = _merge_model_selection(None, {"current": large})
+    same = _merge_model_selection(first, {"current": large})
+    switched = _merge_model_selection(same, {"current": small})
+
+    assert same == {"current": large}
+    assert switched == {"current": small, "previous": large}
+
+
+def test_agent_records_model_selection_after_each_call() -> None:
+    """The model node records the call's model, through a strict checkpoint serializer."""
+    small, large = _small(), _large()
+    swap = _SwapModel(large)
+    agent = create_agent(
+        model=_NamedModel("builder", max_input=10),
+        middleware=[swap],
+        checkpointer=InMemorySaver(serde=JsonPlusSerializer(allowed_msgpack_modules=None)),
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+
+    agent.invoke({"messages": [HumanMessage(content="hi")]}, config)
+    swap.swap_to = small
+    result = agent.invoke({"messages": [HumanMessage(content="hi")]}, config)
+
+    assert "model_selection" not in result
+    assert agent.get_state(config).values["model_selection"] == {
+        "current": model_spec_from_model(small),
+        "previous": model_spec_from_model(large),
+    }

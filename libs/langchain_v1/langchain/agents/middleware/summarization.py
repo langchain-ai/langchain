@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Any, Generic, Literal, TypedDict, cast
 
-from langchain_core._api.deprecation import LangChainDeprecationWarning
 from langchain_core.exceptions import ContextOverflowError
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.messages import (
@@ -452,9 +451,9 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 !!! warning "Pinning `model` to choose a summary-writing model"
 
                     If a pinned `model` differs from the model a call goes to, a
-                    `LangChainDeprecationWarning` is emitted. To summarize with a
-                    cheaper model while following the agent's model, pass
-                    `summarizer=` instead and omit `model`.
+                    `UserWarning` is emitted, since thresholds then come from the
+                    pinned model. To summarize with a cheaper model while following
+                    the agent's model, pass `summarizer=` instead and omit `model`.
 
                 !!! example
 
@@ -861,12 +860,12 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         msg = (
             f"`SummarizationMiddleware` is pinned to `model={_model_identifier(pinned)}`, "
             f"but this call goes to `{_model_identifier(call_model)}`. Trigger "
-            "thresholds, token counting and summaries use the pinned model. Using "
-            "`model=` to choose a model for writing summaries is deprecated: pass "
+            "thresholds, token counting and summaries use the pinned model. If you "
+            "only meant to choose the model that writes summaries, pass "
             "`summarizer=` instead and omit `model=` so thresholds follow each "
-            "call's model. Keep `model=` only to deliberately pin the context model."
+            "call's model."
         )
-        warnings.warn(msg, LangChainDeprecationWarning, stacklevel=3)
+        warnings.warn(msg, UserWarning, stacklevel=3)
 
     def _call_models_for(self, context_model: BaseChatModel) -> _CallModels:
         """Derive token counters and the summary model for a resolved context model.
