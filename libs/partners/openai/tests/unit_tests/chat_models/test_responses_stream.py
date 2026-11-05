@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import logging
+from types import SimpleNamespace
 from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
@@ -1226,6 +1227,106 @@ def test_responses_stream_function_call_preserves_namespace() -> None:
     assert first_block.get("namespace") == "my_namespace", (
         f"Expected namespace 'my_namespace', got {first_block.get('namespace')}"
     )
+
+
+def test_responses_stream_function_call_done_emits_marker() -> None:
+    """A completed function call emits a completion marker exactly once."""
+    current_index = -1
+    current_output_index = -1
+    current_sub_index = -1
+    chunks = []
+
+    added_item = SimpleNamespace(
+        type="function_call",
+        name="echo",
+        arguments="",
+        call_id="call_1",
+        id="fc_1",
+        status="in_progress",
+    )
+    added = SimpleNamespace(
+        type="response.output_item.added",
+        output_index=0,
+        item=added_item,
+    )
+    current_index, current_output_index, current_sub_index, chunk = (
+        _convert_responses_chunk_to_generation_chunk(
+            added,
+            current_index,
+            current_output_index,
+            current_sub_index,
+            output_version="responses/v1",
+        )
+    )
+    assert chunk is not None
+    chunks.append(chunk)
+
+    for delta in ('{"text":', '"OK"}'):
+        args_delta = SimpleNamespace(
+            type="response.function_call_arguments.delta",
+            output_index=0,
+            delta=delta,
+        )
+        current_index, current_output_index, current_sub_index, chunk = (
+            _convert_responses_chunk_to_generation_chunk(
+                args_delta,
+                current_index,
+                current_output_index,
+                current_sub_index,
+                output_version="responses/v1",
+            )
+        )
+        assert chunk is not None
+        chunks.append(chunk)
+
+    done_item = SimpleNamespace(
+        type="function_call",
+        name="echo",
+        arguments='{"text":"OK"}',
+        call_id="call_1",
+        id="fc_1",
+    )
+    done = SimpleNamespace(
+        type="response.output_item.done",
+        output_index=0,
+        item=done_item,
+    )
+    current_index, current_output_index, current_sub_index, completion_chunk = (
+        _convert_responses_chunk_to_generation_chunk(
+            done,
+            current_index,
+            current_output_index,
+            current_sub_index,
+            output_version="responses/v1",
+        )
+    )
+
+    assert completion_chunk is not None
+    assert completion_chunk.message.content == [
+        {
+            "type": "function_call",
+            "id": "fc_1",
+            "status": "completed",
+            "index": 0,
+        }
+    ]
+
+    chunks.append(completion_chunk)
+    full = chunks[0].message
+    for chunk in chunks[1:]:
+        full += chunk.message
+
+    assert full.content == [
+        {
+            "type": "function_call",
+            "name": "echo",
+            "arguments": '{"text":"OK"}',
+            "call_id": "call_1",
+            "id": "fc_1",
+            "status": "completed",
+            "index": 0,
+        }
+    ]
 
 
 def test_responses_stream_tolerates_dict_response_field() -> None:

@@ -5629,6 +5629,18 @@ def _convert_responses_chunk_to_generation_chunk(
                 "index": current_index,
             }
         )
+    elif (
+        chunk.type == "response.output_item.done" and chunk.item.type == "function_call"
+    ):
+        _advance(chunk.output_index)
+        content.append(
+            {
+                "type": "function_call",
+                "id": chunk.item.id,
+                "status": getattr(chunk.item, "status", None) or "completed",
+                "index": current_index,
+            }
+        )
     elif chunk.type == "response.function_call_arguments.delta":
         _advance(chunk.output_index)
         tool_call_chunks.append(
