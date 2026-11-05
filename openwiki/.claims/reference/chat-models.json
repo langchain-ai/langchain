@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bd61bfc2e4e2524fd99763a7fc47c68d818c5e75ed4394c646781751a4f6cf75",
+  "pageVersion": "sha256:f4efb6a0c737be717d157cee285e30ea64b08a7edebf163cc503fd23902ea057",
   "claims": [
     {
       "id": "claim_5633cbdae03d43a7a2eb0f1ba252f3e3",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://libs/core/langchain_core/language_models/chat_models.py",
-          "version": "repo-file-v1:sha256:a9c85a53e979f592420cfa094599dccd6a71184e83daf86d8bc0f3ba444314cc"
+          "version": "repo-file-v1:sha256:8718437fafd6c5d9f2a646c6127dcafa8fa2d41ad39bd15616df83f761e3f130"
         }
       ]
     },
@@ -18,7 +18,7 @@
       "evidence": [
         {
           "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2409-L2608",
-          "version": "repo-lines-v1:sha256:486fd7fba6e33661647a4bf515612922dd9d6be4c9de49d015c680a04c53ec6d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmMTg1NGIwNDY5MTdlM2FiMmFkMDI5ZTBlZWFlN2Y5MWQwYmUzZDY5MDE0YmI2MjdhYWRkZWYyZTY5ZDM4ODJkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5OTUyMjA5NzQ4ZWJiMjJhOWM3Nzc5ZWEwMTBkODNiNzUzYmVlY2Q3ZDFmY2M2ODRiYTBmNDQyZjU4MDE4YzMwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhNTc0M2IzMGM3OTkyNjM5MDRmOGU4MTg0MjQzNzlmOWQyMmIyYzIwMWNiNmUyZjc1MzMwNDE3N2NmMWM5ODlkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NTBjNDUzZDgxMjdmZGVmYWVkNTg3YWQxNGJlZDM0NWJiMGYzMTg3Njk3MTIwMWQzN2FjYmVkOGQ2NzgyZTFhIn0"
+          "version": "repo-lines-v1:sha256:e8f65df776525ea4527aa0c05b614ba165c8f6a57c0e00c95de2e302b2b4216c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmMTg1NGIwNDY5MTdlM2FiMmFkMDI5ZTBlZWFlN2Y5MWQwYmUzZDY5MDE0YmI2MjdhYWRkZWYyZTY5ZDM4ODJkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5OTUyMjA5NzQ4ZWJiMjJhOWM3Nzc5ZWEwMTBkODNiNzUzYmVlY2Q3ZDFmY2M2ODRiYTBmNDQyZjU4MDE4YzMwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhNTc0M2IzMGM3OTkyNjM5MDRmOGU4MTg0MjQzNzlmOWQyMmIyYzIwMWNiNmUyZjc1MzMwNDE3N2NmMWM5ODlkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NTBjNDUzZDgxMjdmZGVmYWVkNTg3YWQxNGJlZDM0NWJiMGYzMTg3Njk3MTIwMWQzN2FjYmVkOGQ2NzgyZTFhIn0"
         },
         {
           "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L516-L565",
@@ -107,8 +107,8 @@
           "version": "repo-lines-v1:sha256:a2c56a9bc7a84b7ed47b879ac55e9139606dc73bd2023a8ced246310d05fb38c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYxODU0YjA0NjkxN2UzYWIyYWQwMjllMGVlYWU3ZjkxZDBiZTNkNjkwMTRiYjYyN2FhZGRlZjJlNjlkMzg4MmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3YjQ4Nzk3YmM1N2JkZGEzOGQ4MTE5NjhkMTE0YjgzNTZkN2I0YmUzMzFhMTQyZmY4ZDgzNWUwMzc3NjVlYzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE1NzQzYjMwYzc5OTI2MzkwNGY4ZTgxODQyNDM3OWY5ZDIyYjJjMjAxY2I2ZTJmNzUzMzA0MTc3Y2YxYzk4OWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhMTQxNjFmOTNhMDJmMzU5YmQ4MDVmZWI0Yjg5NmM0ZjExZWFiNGM1Zjc4NDA2ZmRjZjk5N2NlZGM2N2MyZGIifQ"
         },
         {
-          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2428-L2608",
-          "version": "repo-lines-v1:sha256:673bc22e396265b7dbabfa67b802837132337352be622cd69c071cfc5dfd1c84:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOTk3OTkzN2Q3ZGUxOTkyNzZjM2I3YzVkMTJkZWM2ODJhZTBmOTVjNTliZjA2OTlhNGI2OTRhZDg1ZWQxMTVhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5OTUyMjA5NzQ4ZWJiMjJhOWM3Nzc5ZWEwMTBkODNiNzUzYmVlY2Q3ZDFmY2M2ODRiYTBmNDQyZjU4MDE4YzMwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ODYzYTc3NDFkMDgxOGZiZWMxOGIzODJlN2YyNzZjZTQxNGVlOGY1NGYyYzZjNWU0OGEzYTdkNDIzNDAxNzgxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NTBjNDUzZDgxMjdmZGVmYWVkNTg3YWQxNGJlZDM0NWJiMGYzMTg3Njk3MTIwMWQzN2FjYmVkOGQ2NzgyZTFhIn0"
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2428-L2611",
+          "version": "repo-lines-v1:sha256:d3d259d9493ccf896a19273743db3066a296ae6238df1ff1515c2212418f02f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTg0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOTk3OTkzN2Q3ZGUxOTkyNzZjM2I3YzVkMTJkZWM2ODJhZTBmOTVjNTliZjA2OTlhNGI2OTRhZDg1ZWQxMTVhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5OTUyMjA5NzQ4ZWJiMjJhOWM3Nzc5ZWEwMTBkODNiNzUzYmVlY2Q3ZDFmY2M2ODRiYTBmNDQyZjU4MDE4YzMwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ODYzYTc3NDFkMDgxOGZiZWMxOGIzODJlN2YyNzZjZTQxNGVlOGY1NGYyYzZjNWU0OGEzYTdkNDIzNDAxNzgxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NTBjNDUzZDgxMjdmZGVmYWVkNTg3YWQxNGJlZDM0NWJiMGYzMTg3Njk3MTIwMWQzN2FjYmVkOGQ2NzgyZTFhIn0"
         }
       ]
     },
@@ -175,6 +175,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-29T08:20:01.046Z"
+    "at": "2026-11-05T08:18:41.280Z"
   }
 }

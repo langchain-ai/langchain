@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:56cdd12874504cf8887c53b2422176e7af962c931cb2e28cceb58f68e9ba8049",
+  "pageVersion": "sha256:cca7a5e62570a6c91aa30748afb61cad4c5a438a4baac374212a3f6bbe6af1f9",
   "claims": [
     {
       "id": "claim_31a05d6469ea495ebed1cdff1e3c3f8a",
@@ -209,10 +209,80 @@
           "version": "repo-lines-v1:sha256:a7fbd80411acecdd918b88984171870f95e8f17a6b404be8064ba76ba6764977:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDhhN2M2ZTg2ZDY0MzYxMjdjODdmOWYxNzhjMDllMTE3YmE5NmEwMzVlMmEzNTRkZGJkN2ViMDkzM2RkOTg3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzgzNzQ1ZTU1YTIzYmI0MzZjYTUxMGFiMTgwNGQyODMwMjhhNTJlNzc5MjE5YmNlNzAyODRkOWY3YjEwMDcxMCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_01c56721f6a646519a0368f92e2c4472",
+      "statement": "FakeChatModel subclasses (FakeListChatModel, GenericFakeChatModel, FakeMessagesListChatModel, ParrotFakeChatModel) enable testing chains without API calls by returning predefined or cycled responses; GenericFakeChatModel accepts any iterable (including itertools.cycle) for repeating responses, and all variants support both sync invoke and async ainvoke/astream methods.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/fake/test_fake_chat_model.py#L27-L85",
+          "version": "repo-lines-v1:sha256:87f1e57d0343c7f7bf38a965c49ad7c98122a464037c3b9bb5372e9fd8fd2687:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3OTI5ZDk3NjYyODhhNzNhMGJjYzFlOGJmM2FjYjJiMDRhMDI5Njg5NDI3N2JmNTFiYzg4MTRiZmMyOThiZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0YzVlMDIzMTJiNjVhZTU1M2IwNzEyMmJkMmQ4ZTM0OWIxMDBhYzYyYTY2ODY0MGQwMjAxNDk0MGMwMDk3MzYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5NDBjYTIxYTYwN2Q2ZTNmZTFkN2NiNzcxODJhNDlhNDEwOGIyMDY1YTZiMTVkMzYwOTI3ODI2MDRiN2EzZTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9407df1b562945a9a614eedd11c3d3ce",
+      "statement": "FakeListLLM and FakeStreamingListLLM provide string-based responses without API calls; FakeListLLM returns complete strings, while FakeStreamingListLLM streams responses incrementally by token/space.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/test_runnable.py#L40-L46",
+          "version": "repo-lines-v1:sha256:2128613c02177391d6a9d3c3297f81d894df931ad352c662b28ee397e48d5192:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGQxNGQ5ODk5MDNmMTc4MTI4NDk2YzcwZGNjYmFhYjJhNTgzOTUyMjg3MzAyNTgyN2QwNWViY2JkZjk4NmNiMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjA2ZWExOTQ0ZDdmODA0MjA1ZmI0YmVjMWViMWE3NmM4MTBlZDBkOWM1YWU5ZDM0ZTUwNDA4NzNkZDg4YTk3MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjU3YmJhNWJiYWMxNzA5OTI1M2NkYTBmZGM3ODFmMmVkYTNhYjU0Zjg4MGNiMGNhZjE0ZWViMzAwYjE2NGQ2NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDIxOTMzZDhmOWU1YjcxZDVjMTU2NmM5ZjY0YTQ2YjY4YjgyMzMwZGNmNGYxZTFkMTVlNmNlZjBmNzkwMTVjYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3b3c0999f6634239902a32b8da470baf",
+      "statement": "Message testing patterns verify message construction with content blocks, tool_calls, and invalid_tool_calls; serialization via dumpd/load; and content block types (text, tool_call, tool_call_chunk, invalid_tool_call).",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/messages/test_ai.py#L19-L100",
+          "version": "repo-lines-v1:sha256:3d1d6ce4cd4ebf7205c21cb00bdaff1c115ba66da7fc2ca37de5975528a5f02c:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzZTQyMmZlYjVhY2Q2ZDBhOTJlOTc3NWE0NDQwOTlhMDM4MDliYTQwYjdmYWVkMDU3MDVhYWZmYTMxYzI3ZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0ZWRlYzUwM2Q0NGYxM2RmNjA2Y2Y4YTY0N2JmZjA2Y2U4Y2MxZjQxNTFlMTdmN2Y1Mjc5ZDljZTEwY2I5MzUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ3ZTY5MWU1MDFjMzg1Nzk5ZDIxMGY0NzFmNzNlMGFmM2Y5MTk4YjM0OGM2MDYyY2FkOGU4NTA2NWNlNDQ5MzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiNTg2MzMyYzQ1MTA3ZTJlMWYyOGVhNDQ3YjlmMTQ2ZDJkYjg0YTlmODQxZGMwMmYwZWRlYzU0NWYyYTg1MGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_72fc0efad74a4ba6acd73d8ca1835d1e",
+      "statement": "Tool testing patterns verify tool schema (args_schema as Pydantic BaseModel), tool_call_schema JSON output, invoke/ainvoke execution, StructuredTool.from_function with custom schemas, and @tool decorator for simple functions.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/test_tools.py#L119-L299",
+          "version": "repo-lines-v1:sha256:ab456f9c1d70f3d1259f08cecd1eb7dfbe156d67b1337555e69d068b2a100204:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5OTRkZWNjMTY0MjMyZDA3YjZkOWU5NDFiNjA2NDliYzEyNTMyY2ZkNDYxZDQ3MThlZTI1ZjQyMGUzYzdjNTY4IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzMGMxZjE4OGYxNDJlZDdhODI0NjgwYjIwNzE3MmM1NTE5YmM2MTRhNDhmZGE3Y2YxNjdlZGI4ZGRmNzk5NTZjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4M2YxYjhhMjU0ZTgzMzk0YTBmZTlmOTI3NDgzMWNmNTZmMDY3N2E5ZWQ4NzJkNWUyNWY5NGJhMDIyMjdlM2U2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyMTBlOGJjYWEzYzE3OTI2M2YwMDQwMDZjNmI1OTI4OGVjNjk1NWQzNDkyM2ViNmE2MDg2ZDExNzgzZmVjZjZiIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_1cf56f2745174a64ac1a9e19553ce20a",
+      "statement": "Runnable testing covers invoke (sync), ainvoke (async), stream (chunks), astream (async chunks), batch (multiple inputs), and abatch (async batch); tests verify output types, chunk composition, and metadata propagation through config.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/test_runnable.py#L224-L245",
+          "version": "repo-lines-v1:sha256:5565516fa650c8b6039c2e670dabbd9e217114d84bd98154bf9a453ddd912721:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhMzk4YzY4ZDAzYmZkYTFiYTE5ODgwOTk3NDdmNWM5YWNjZGQzYTMwY2NlNDZmNjUwNWNhNzVjMGU0ZDE1ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjMzllNGY4ZDkwNWU3ZTExMjY1NGEwNGMwZmZkZmQ4ZWJhYzlkYzEyODJiOTBjMTAwNTAwMTQyYWJlMzg1ZDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiM2I1OTZlMDZlMzQ0YWYzYjlhMTA1M2Y2NmRkNzU4YTg3NjAwNDQ0NDAyYTM4MjE2MGJkNzAyMzBhNmNkY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwYmNmODUwNmU3MjFiYjA3ZjcxODIwZDFiNDRjMTE2ZTNmYzczY2E5YWRkZDg0OGM5NmViODljOGRjZDIyZDAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3d0608cb1b0f4a4dbb3e458749b858a6",
+      "statement": "Configuration testing verifies ensure_config does not mutate original input, merges metadata/configurable dicts correctly, preserves callback lists, and propagates tags and recursion limits through the config chain.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/test_config.py#L31-L149",
+          "version": "repo-lines-v1:sha256:41405a4e1fb780b275ff2d1c9d0dd3f909f14c229a9f10d8ad89fdbfef32eb9c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjZWI2MDM5NGFhZjQ3M2Y4Y2E2ODc3NDJkMDhlZDExNjQyNTEyMzYwYjUxYWY0N2MwYTdiNzFhNmNhMWI4Mzc5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODkzZjQwZTM3ODFlYjg5NmM4MmQwNDZhMDgwNjdhMTFlMzVjZGYyZjFkZmFmMjZmZWE5MGI4ZGI2Njc2NDEzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmNjYzOWRhMDYwMTlmOGMyMWM5ZjJmZTA1OGYwYmI2MTE2YjdjY2EyZjgyZTY1YWQwMTA4NmVjYWZhMGQ5ZWRkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwNmIxOTI3MWM2NDI0NTk1ZTVjZGNhZjNiNDQ2OTM4MTY2MDcxYzUxNmFiZGFjOTY2MTU3ODI0NGJmMDYxYmU2In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_6353e1634ccc4fddaff41bc4e749e955",
+      "statement": "Callback handler testing uses pytest-mock to spy on or mock handler methods (on_chain_start, on_llm_start, on_chain_end) and verifies they are invoked with correct arguments when passed in config callbacks.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/callbacks/test_async_callback_manager.py#L22-L119",
+          "version": "repo-lines-v1:sha256:405d79d681ca70d254e3bfd68334c0d639c4bdf46a59db1a360c7c1497d8a4d1:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiYjQzZjQwMmVhN2UxYjA3NTU3YjdhYTRjZDFjYjlhZDIxMjMxNmRhYWMwZDBlN2U0MTg0Mzg0NmJlM2MwZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlZjE4MmFjNWY0YmUwNzRjOWVhYzAyODI1M2M3MzFmYjljZTZjOTE5MTljNjNlODQ4NWU1YzlhYzdjZWYwNjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1MTE2MmY3MGY5ZDI2YzNkMzc0M2E5YzYyOGY5OGNhNjIzZDMwMTlkY2FiNDc0ZDZmYjg4ZjIyMmUxMmY3MzUifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-29T08:20:01.046Z"
+    "at": "2026-11-05T08:18:41.280Z"
   }
 }

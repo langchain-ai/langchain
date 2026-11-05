@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7b5b999b51570891bb8ead28880e8656a79a81b6a51fb14186c53431dbc079c0",
+  "pageVersion": "sha256:8ea2b9339de8391b844afb22b1092337a57e30f5d98443055a07a67b7610f6bb",
   "claims": [
     {
       "id": "claim_6ed03c3da42e493bb141460b032fc3d8",
@@ -8,17 +8,17 @@
       "evidence": [
         {
           "resource": "repo://libs/partners/openai/langchain_openai/chat_models/azure.py",
-          "version": "repo-file-v1:sha256:8fd07b7e713ef4f8f15d22b2e3f725360ac51435a66728845a193fefcc38c53d"
+          "version": "repo-file-v1:sha256:584af2fb8cb007c56d1a4a101860e999b242df08c6c294ab44986e2cfa52406a"
         },
         {
           "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py",
-          "version": "repo-file-v1:sha256:50aec54e3bdec7e049a579eb53a1cdb999011889714a4f8b8b6be409b1cd025a"
+          "version": "repo-file-v1:sha256:1311fb3487aa309c8b649440ae07a3c1c472e6bdf913408fb979549877579e30"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-11-05T08:18:41.280Z"
   }
 }

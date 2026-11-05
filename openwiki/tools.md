@@ -22,10 +22,10 @@ sources:
     resource: repo://libs/core/langchain_core/utils/function_calling.py
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-20T08:25:57.412Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
+    at: 2026-11-05T08:18:41.280Z
 ---
 
 ## Overview
@@ -579,26 +579,6 @@ Invalid docstrings (missing Args section, args not in signature, malformed) rais
 **Verbose Output:**
 
 Set `verbose=True` to log tool execution. Combined with callback managers for comprehensive observability.
-
-## Tool Call Extraction and Validation
-
-Models return tool calls embedded in AIMessage objects when bound with tools. The extraction and validation process:
-
-1. **Parsing:** Models emit structured JSON in tool_calls field of AIMessage
-2. **Extraction:** ToolNode or custom code accesses `message.tool_calls` list
-3. **Validation:** Each ToolCall dict contains name, args (JSON), and id
-4. **Resolution:** Tool name is looked up against the agent's tool registry
-5. **Input Validation:** Tool's args_schema validates the args dict via Pydantic
-6. **Execution:** Tool is invoked with validated args and tool_call_id
-
-**Invalid Tool Calls:**
-
-Models may emit invalid tool calls:
-- Unknown tool name: ToolNode reports error via ToolMessage with status="error"
-- Invalid JSON args: Validation error caught per handle_validation_error
-- Missing required args: Pydantic ValidationError during schema validation
-
-These errors are returned to the model as ToolMessage, allowing it to correct and retry.
 
 ## Summary: When to Use Each Pattern
 

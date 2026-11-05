@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:02037840318b46956ceeb132f145cef2f96daf457434c80939aa8cb83e678259",
+  "pageVersion": "sha256:d5a360206833fe15c7c8b1754db3fe243025afe5f69677ca71ed4236d4290f97",
   "claims": [
     {
       "id": "claim_a6e2f6dc51a74a52a2a9c237a0424c26",
@@ -126,11 +126,11 @@
     },
     {
       "id": "claim_69516317616242d48733a2eb8ce08288",
-      "statement": "RunnableGenerator wraps generator functions (sync or async) to create streaming runnables. It automatically implements transform() for end-to-end streaming through chains.",
+      "statement": "RunnableGenerator wraps generator functions (sync or async) to create streaming runnables. It implements transform() and atransform() by delegating to _transform_stream_with_config, enabling end-to-end streaming through chains where partial outputs flow as they are generated.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/runnables/base.py",
-          "version": "repo-file-v1:sha256:4cdcf9f699860ef49c02fe75339cdd8f302f050fa108b625f9a18d84cf3367ba"
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L4418-L4720",
+          "version": "repo-lines-v1:sha256:9203aa24cf15b0085f4b2699abc5d950eb6c6a19c2fa640953ef6980ff90a827:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2YjM3ODk3MGM1MDhkMzUzYjI2NmJjNmNhMWE2NzA4NzI5MWE1MzJjM2Q2NGY3ZTI4MDIyNjNkZDYxNTFmYzNlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhYmYxNTEwZGU1OTAzNTVmZjEzNzA1OTdkYzg1ZmExZjU4ZTQyOThjNmY0ZjE5YzM2NDcyOTVmNjc0Nzg5ZmE1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlMmRmZmU5YWI5OTAxZGRkOTdiYmQ3NjZmMDE3OGE4YWI5YjZhZDkyMTYxZWM5NzFjZDNiMDgyZDcxYWQ3ZTdmIn0"
         }
       ]
     },
@@ -197,6 +197,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-11-05T08:18:41.280Z"
   }
 }

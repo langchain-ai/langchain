@@ -3,9 +3,6 @@ type: "Operations Reference"
 title: "CI/CD Operations and Release Management"
 description: "Operational runbook for CI/CD workflows, troubleshooting, and release procedures."
 tags: [ci, cd, release, automation, github-actions, pypi]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-29T08:20:01.046Z
 sources:
   - id: openwiki-source-34e57b5a3a0c875639ab72a7
     resource: repo://.github/scripts/check_diff.py
@@ -20,6 +17,9 @@ sources:
   - id: openwiki-source-f8781d847f6481a966a44a68
     resource: repo://.github/workflows/pr_labeler.yml
 generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-05T08:18:41.280Z
 ---
 
 

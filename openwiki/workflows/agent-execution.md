@@ -5,13 +5,13 @@ description: "End-to-end agent execution patterns using the Agent Factory and mi
 tags: ["agents", "middleware", "tool-calling", "agentic-loop", "create_agent"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
+    at: 2026-11-05T08:18:41.280Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
 ---
 
 # Agent Execution: Building Agentic Workflows
@@ -117,6 +117,7 @@ def create_agent(
 | `store` | Cross-thread persistence | Retrieve context across conversations |
 | `interrupt_before/after` | Human-in-the-loop | Pause before/after named nodes |
 | `debug` | Verbose logging | Prints execution trace |
+| `name` | Graph name | Used for subagent identification in multi-agent systems |
 | `transformers` | Stream output formatters | Custom `StreamTransformer` factories |
 
 ## Tool Binding and Execution
@@ -271,7 +272,7 @@ Returns:
 
 ```python
 class ToolRetryMiddleware(AgentMiddleware):
-    def wrap_tool_call(self, request: ToolCallRequest, handler):
+    def wrap_tool_call(self, request, handler):
         """Retry tool execution if result is invalid."""
         for attempt in range(2):
             result = handler(request)  # Execute the tool
@@ -774,6 +775,7 @@ def test_retry_middleware():
 
 - **Chat Models**: Language models that accept messages and return responses (see `/openwiki/concepts/chat-models.md`)
 - **Tools**: Schema-driven functions that agents can invoke (see `/openwiki/concepts/tools.md`)
-- **Middleware Framework**: Base classes and decorators for custom extensions (covered in this document)
+- **Middleware Framework**: Base classes and decorators for custom extensions (see `/openwiki/workflows/middleware.md`)
 - **Streaming**: Real-time output via `stream()` and `astream()` (see `/openwiki/workflows/streaming.md`)
+- **Structured Output**: Type-safe results from language models (see `/openwiki/workflows/structured-output.md`)
 - **Model and Provider Integration**: Specific model bindings and configurations (see `/openwiki/integrations/mcp-integration.md`)

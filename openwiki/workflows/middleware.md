@@ -3,9 +3,6 @@ type: "Workflow"
 title: "Middleware: Extensible Request Processing"
 description: "Middleware system for composing agent behavior. Covers middleware interface, execution order, state management, and patterns for routing, logging, and tool control."
 tags: ["agents", "middleware", "composition", "hooks", "extensibility", "request-handling"]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
 sources:
   - id: openwiki-source-07e634f5cd5f00c636010306
     resource: repo://libs/langchain_v1/langchain/agents/middleware/__init__.py
@@ -13,7 +10,10 @@ sources:
     resource: repo://libs/langchain_v1/langchain/agents/middleware/tool_error.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-05T08:18:41.280Z
 ---
 
 # Middleware: Extensible Request Processing
@@ -603,18 +603,37 @@ class RateLimitMiddleware(AgentMiddleware):
 
 LangChain provides production-ready middleware for common needs:
 
+### Model and Tool Execution Control
+
 - **`ModelRetryMiddleware`**: Automatic retry with exponential backoff for model calls.
 - **`ToolRetryMiddleware`**: Automatic retry for failed tool executions.
-- **`ToolErrorMiddleware`**: Convert tool exceptions to error `ToolMessage`s (opt-in per exception).
 - **`ModelCallLimitMiddleware`**: Enforce maximum model calls per agent run.
 - **`ToolCallLimitMiddleware`**: Enforce maximum tool calls per agent run.
-- **`ToolErrorMiddleware`**: Handle and format tool execution errors.
-- **`HumanInTheLoopMiddleware`**: Interrupt execution for human review/approval.
-- **`LLMToolSelectorMiddleware`**: Use a smaller LLM to filter to the most relevant tools.
 - **`ModelFallbackMiddleware`**: Fallback to alternative models on primary model failure.
+- **`ToolErrorMiddleware`**: Convert tool exceptions to error `ToolMessage`s (opt-in per exception).
+
+### Tool Selection and Execution Policies
+
+- **`LLMToolSelectorMiddleware`**: Use a smaller LLM to filter to the most relevant tools before sending to the primary model.
+- **`ProviderToolSearchMiddleware`**: Search for and select tools from external tool providers.
+- **`LLMToolEmulator`**: Emulate tool behavior using an LLM instead of executing real tools.
+
+### Content and Safety
+
 - **`PIIMiddleware`**: Detect and redact personally identifiable information.
-- **`ShellToolMiddleware`**: Sandboxed shell execution with resource limits.
+- **`ModelRefusalMiddleware`**: Handle model refusal responses gracefully.
+
+### Execution and Modification
+
+- **`ShellToolMiddleware`**: Sandboxed shell execution with resource limits and execution policies.
+- **`ContextEditingMiddleware`**: Edit conversation context before and after model calls.
 - **`SummarizationMiddleware`**: Summarize message history to manage context window.
+- **`TodoListMiddleware`**: Track and manage agent-generated task lists.
+
+### Advanced Features
+
+- **`HumanInTheLoopMiddleware`**: Interrupt execution for human review and approval.
+- **`FilesystemFileSearchMiddleware`**: Search and retrieve files from the filesystem.
 
 For details, consult the API documentation and use examples in the middleware package.
 

@@ -1,7 +1,11 @@
 ---
 type: "Reference"
-title: "Run only core tests (skip all @pytest.mark.requires tests)"
-openwiki_generated: true
+title: "Unit Testing: Test Organization & Patterns"
+description: "Guide to writing unit tests: test structure, fixtures, mocking models/tools, and standard test patterns across core, langchain_v1, and partners."
+tags: [unit-testing, pytest, fixtures, async-testing, mocking, fake-models, tools, callbacks, runnables, snapshot-testing]
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-05T08:18:41.280Z
 sources:
   - id: openwiki-source-8f1875229ad4a704c8e20a06
     resource: repo://libs/core/Makefile
@@ -13,75 +17,97 @@ sources:
     resource: repo://libs/core/tests/unit_tests/callbacks/test_async_callback_manager.py
   - id: openwiki-source-727aef6a92fb635fdbb41cd6
     resource: repo://libs/core/tests/unit_tests/conftest.py
+  - id: openwiki-source-e8916b46b41eee662deabd17
+    resource: repo://libs/core/tests/unit_tests/fake/test_fake_chat_model.py
+  - id: openwiki-source-f2640c09053c8d4424d50999
+    resource: repo://libs/core/tests/unit_tests/messages/test_ai.py
   - id: openwiki-source-344bd4b667096c3c45c8fa82
     resource: repo://libs/core/tests/unit_tests/runnables/conftest.py
+  - id: openwiki-source-ab713857815256e872473e57
+    resource: repo://libs/core/tests/unit_tests/runnables/test_config.py
   - id: openwiki-source-4717abc86db20c5c76bbf23a
     resource: repo://libs/core/tests/unit_tests/runnables/test_runnable.py
   - id: openwiki-source-f1101c726c80bfb588acd467
     resource: repo://libs/core/tests/unit_tests/test_ssrf_protection.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-29T08:20:01.046Z
+  - id: openwiki-source-a690cf632a02205e3f555be8
+    resource: repo://libs/core/tests/unit_tests/test_tools.py
+generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
 ---
-
 
 ## Overview
 
-LangChain's unit test suite validates core components in isolation using **pytest** with specialized plugins for network isolation, async support, mocking, and snapshot testing. Tests enforce determinism, reproducibility, and rapid feedback through fixtures, markers, and careful configuration.
+LangChain's unit test suite validates core components in isolation using **pytest** with specialized plugins for network isolation, async support, mocking, and snapshot testing. Tests enforce determinism, reproducibility, and rapid feedback through fixtures, markers, and careful configuration. The test suite is organized hierarchically with module-specific conftest files and shared test utilities.
 
 ## Test Organization and Structure
 
 ### Directory Layout
 
-Tests in `libs/core/tests/` follow this hierarchy:
+Tests in `libs/core/tests/` follow this mirror structure:
 
-- **`unit_tests/`** – Core component tests organized by module (`runnables/`, `callbacks/`, `language_models/`, etc.)
+- **`unit_tests/`** – Core component tests organized by module mirroring source structure
+  - `runnables/` – Runnable chain and executor tests
+  - `callbacks/` – Callback handler and manager tests
+  - `language_models/` – Chat model and LLM tests
+  - `messages/` – Message type and content block tests
+  - `prompts/` – Prompt template tests
+  - `output_parsers/` – Parser and schema tests
+  - `tools/` → Test files in `test_tools.py` alongside main test files
 - **`integration_tests/`** – Tests requiring external services (marked with `@pytest.mark.requires`)
 - **`benchmarks/`** – Performance tests using pytest-benchmark and pytest-codspeed
 
-Each major module (e.g., `runnables/`, `callbacks/`) has its own `conftest.py` to define module-specific fixtures and configuration.
+This mirror structure ensures test discovery and organization aligns with source organization. Each major module (e.g., `runnables/`, `callbacks/`) defines its own `conftest.py` for module-specific fixtures and configuration.
 
 ### conftest.py Hierarchy
 
-Pytest discovers and applies `conftest.py` files from parent directories up through the test file itself:
+Pytest discovers and applies `conftest.py` files hierarchically from root to test file:
 
-1. **Root conftest** (`tests/unit_tests/conftest.py`) – Global fixtures, markers, CLI options
-2. **Module conftest** (e.g., `tests/unit_tests/runnables/conftest.py`) – Shared fixtures for a test module
+1. **Root conftest** (`tests/unit_tests/conftest.py`) 
+   - Global fixtures: `blockbuster` (async blocking detection), `deterministic_uuids`
+   - Custom markers and CLI options: `--only-extended`, `--only-core`, `requires` marker
+   - Central point for project-wide test behavior
+
+2. **Module conftest** (e.g., `tests/unit_tests/runnables/conftest.py`)
+   - Module-specific fixtures and setup
+   - Environment isolation (e.g., disabling LangSmith tracing for runnable tests)
 
 #### Global Test Configuration
 
-The main `conftest.py` provides:
+The root `conftest.py` provides:
 
-- **`blockbuster` fixture** – Async blocking detection preventing accidental I/O in async contexts
-- **`deterministic_uuids` fixture** – Replaces `uuid.uuid4()` with deterministic values for reproducible snapshots
-- **Custom markers and CLI options** – `--only-extended`, `--only-core` to filter test execution
-- **`requires` marker** – Conditional test skipping when optional dependencies are missing
+- **`blockbuster` fixture** – Autouse fixture that detects async blocking violations by monitoring `os.stat`, `os.path.abspath`, and `io.TextIOWrapper.read` calls. Allows blocking only in specific safe callsites like langsmith client configuration and freezegun internal APIs.
 
-Example:
-```python
-@pytest.mark.requires("optional_package")
-def test_feature():
-    # Test is skipped if optional_package is not installed
-    pass
-```
+- **`deterministic_uuids` fixture** – Replaces `uuid.uuid4()` with a generator yielding sequential UUIDs (`UUID('00000000-0000-4000-8000-{i:012}')`) for reproducible snapshot tests and deterministic trace comparison.
+
+- **`requires` marker** – Conditional test skipping for optional dependencies:
+  ```python
+  @pytest.mark.requires("langchain-openai", "anthropic")
+  def test_feature():
+      # Test is skipped if packages not installed (unless --only-extended)
+      pass
+  ```
+
+- **Custom CLI options**:
+  - `--only-core` – Skip all `@pytest.mark.requires` tests
+  - `--only-extended` – Run only `@pytest.mark.requires` tests; fail if dependencies missing
 
 #### Module-Level Configuration
 
-Runnables module (`conftest.py`) isolates tests from developer LangSmith environment variables to prevent tracing leakage:
+Runnables conftest isolates tests from developer LangSmith environment:
 
 ```python
 @pytest.fixture(scope="session", autouse=True)
 def _disable_local_langsmith_tracing():
     """Keep runnable unit tests independent of developer LangSmith env vars."""
-    # Disables LANGSMITH_TRACING, clears API key, project, etc.
+    # Disables LANGSMITH_TRACING, clears API key, project, and cache
 ```
+
+This prevents trace leakage when developers have LangSmith configured locally.
 
 ## Pytest Configuration
 
 ### Core Settings
 
-pytest configuration in `pyproject.toml`:
+Pytest configuration in `pyproject.toml`:
 
 ```toml
 [tool.pytest.ini_options]
@@ -94,22 +120,24 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 ```
 
+Key settings:
 - **`asyncio_mode = "auto"`** – Automatically marks async test functions and fixtures as asyncio tests
-- **`asyncio_default_fixture_loop_scope = "function"`** – Fresh event loop per test function
+- **`asyncio_default_fixture_loop_scope = "function"`** – Fresh event loop per test function prevents state leakage
 - **`--snapshot-warn-unused`** – Warns about unused snapshot files during test runs
 - **`--strict-markers`** – Rejects undefined markers to catch typos
 
 ### Execution with Network Isolation
 
-The standard test command enforces network isolation:
+Standard test command enforces network isolation:
 
 ```bash
 pytest -n auto --benchmark-disable --disable-socket --allow-unix-socket
 ```
 
-- **`--disable-socket`** – Prevents all network calls (from pytest-socket)
+- **`-n auto`** – Parallel test execution via pytest-xdist, distributing tests across CPU cores
+- **`--disable-socket`** – Prevents all network calls (pytest-socket); catches accidental external dependencies
 - **`--allow-unix-socket`** – Permits Unix sockets for inter-process communication
-- **`-n auto`** – Parallel test execution (pytest-xdist)
+- **`--benchmark-disable`** – Skips performance benchmarks in standard runs
 
 ## Testing Frameworks and Dependencies
 
@@ -118,33 +146,33 @@ pytest -n auto --benchmark-disable --disable-socket --allow-unix-socket
 | Package | Purpose |
 |---------|---------|
 | `pytest>=9.0.3` | Test runner and framework |
-| `pytest-asyncio>=1.3.0` | Async/await test support |
-| `pytest-mock>=3.10.0` | `MockerFixture` for mocking |
-| `pytest-socket>=0.7.0` | Network call blocking |
-| `pytest-xdist>=3.6.1` | Parallel test execution |
-| `syrupy>=5.0.0` | Snapshot testing |
-| `freezegun>=1.2.2` | Time mocking for determinism |
-| `responses>=0.25.0` | HTTP request mocking |
-| `blockbuster>=1.5.18` | Async blocking detection |
-| `pytest-benchmark` | Performance micro-benchmarks |
-| `pytest-codspeed` | Continuous benchmarking |
+| `pytest-asyncio>=1.3.0` | Async/await test support with `asyncio_mode = "auto"` |
+| `pytest-mock>=3.10.0` | `MockerFixture` for mocking and spying on methods |
+| `pytest-socket>=0.7.0` | Network call blocking and validation |
+| `pytest-xdist>=3.6.1` | Parallel test execution via `-n auto` |
+| `syrupy>=5.0.0` | Snapshot testing for complex outputs |
+| `freezegun>=1.2.2` | Time mocking for deterministic tests |
+| `responses>=0.25.0` | HTTP request mocking for service tests |
+| `blockbuster>=1.5.18` | Async blocking detection in sync contexts |
+| `pytest-benchmark` | Performance micro-benchmarks per test |
+| `pytest-codspeed` | Continuous benchmarking integration |
 
 ## Async Testing Patterns
 
 ### Basic Async Test
 
-Pytest-asyncio automatically runs async test functions:
+Pytest-asyncio automatically runs async test functions when `asyncio_mode = "auto"`:
 
 ```python
 async def test_async_invoke() -> None:
     prompt = ChatPromptTemplate.from_template("Hello {name}")
     result = await prompt.ainvoke({"name": "World"})
-    assert result == ChatPromptValue(...)
+    assert isinstance(result, ChatPromptValue)
 ```
 
 ### Async Fixtures
 
-Fixtures can be async and are scoped per function by default:
+Fixtures can be async with function-level loop scope:
 
 ```python
 @pytest.fixture
@@ -158,7 +186,7 @@ async def test_with_async_fixture(async_handler):
     await async_handler.on_chain_start(...)
 ```
 
-### Context Variables in Async Tests
+### Context Variable Propagation in Async Tests
 
 Tests verify context propagation for inline handlers:
 
@@ -173,14 +201,89 @@ async def test_context_propagation() -> None:
     manager = AsyncCallbackManager(handlers=[CustomHandler(run_inline=True)])
     some_var.set("unset")
     await manager.on_llm_start({}, ["prompt"])
-    assert some_var.get() == "on_llm_start"
+    assert some_var.get() == "on_llm_start"  # Inline handlers update parent context
+```
+
+## Fake Models and Testing Without API Calls
+
+### FakeChatModel Classes
+
+LangChain provides multiple fake chat models to test chains without API calls:
+
+#### FakeListChatModel
+
+Returns responses from a predefined list in order:
+
+```python
+def test_with_fake_chat_model() -> None:
+    chat = FakeListChatModel(responses=["Hello", "World"])
+    result = chat.invoke([HumanMessage(content="Hi")])
+    assert result.content == "Hello"
+    
+    result2 = chat.invoke([HumanMessage(content="Bye")])
+    assert result2.content == "World"
+```
+
+#### FakeListLLM
+
+Returns string responses from a predefined list:
+
+```python
+def test_with_fake_llm() -> None:
+    llm = FakeListLLM(responses=["Hello", "World"])
+    result = llm.invoke("prompt")
+    assert result == "Hello"
+```
+
+#### GenericFakeChatModel
+
+Accepts any iterable (including `itertools.cycle`) for infinite repeating responses:
+
+```python
+def test_with_generic_fake_chat_model() -> None:
+    from itertools import cycle
+    infinite_responses = cycle([AIMessage(content="hello"), AIMessage(content="goodbye")])
+    model = GenericFakeChatModel(messages=infinite_responses)
+    
+    # Invoke multiple times; cycles through responses
+    assert model.invoke("input1").content == "hello"
+    assert model.invoke("input2").content == "goodbye"
+    assert model.invoke("input3").content == "hello"
+```
+
+#### FakeMessagesListChatModel
+
+Returns message objects with additional kwargs and streaming:
+
+```python
+async def test_streaming_with_fake_model() -> None:
+    messages = [
+        AIMessage(content="hello goodbye")
+    ]
+    model = GenericFakeChatModel(messages=cycle(messages))
+    
+    chunks = [chunk async for chunk in model.astream("input")]
+    # Chunks are split by word: "hello", " ", "goodbye"
+    assert len(chunks) == 3
+```
+
+#### FakeStreamingListLLM
+
+Streams LLM responses incrementally:
+
+```python
+def test_streaming_llm() -> None:
+    llm = FakeStreamingListLLM(responses=["Hello World"])
+    chunks = list(llm.stream("prompt"))
+    # Chunks are split by token/space: "Hello", " ", "World"
+    assert len(chunks) >= 2
 ```
 
 ## Mocking Patterns
 
 ### Using pytest-mock
 
-The `MockerFixture` provides convenient mock creation and assertion:
+The `MockerFixture` provides convenient mock creation:
 
 ```python
 def test_with_mock(mocker: MockerFixture) -> None:
@@ -189,14 +292,13 @@ def test_with_mock(mocker: MockerFixture) -> None:
     with pytest.raises(ValueError):
         mock_func()
     
-    # Verify call arguments
     assert mock_func.call_count == 1
     mock_func.assert_called_once()
 ```
 
 ### Spying on Methods
 
-Use `mocker.spy()` to track calls to real methods:
+Use `mocker.spy()` to track calls to real methods without replacing implementation:
 
 ```python
 def test_with_spy(mocker: MockerFixture) -> None:
@@ -211,27 +313,29 @@ def test_with_spy(mocker: MockerFixture) -> None:
     mocker.stop(spy)
 ```
 
-### Mocking LLM Responses
+### Callback Mocking
 
-LangChain provides fake language models for testing without API calls:
+Mock callback handlers to verify runnable execution paths:
 
 ```python
-def test_with_fake_llm() -> None:
-    llm = FakeListLLM(responses=["Hello", "World"])
-    result = llm.invoke("prompt")
-    assert result == "Hello"
+def test_callback_invocation(mocker: MockerFixture) -> None:
+    mock_start = mocker.Mock()
+    mock_end = mocker.Mock()
     
-    result2 = llm.invoke("another prompt")
-    assert result2 == "World"
-```
-
-Fake chat models return messages:
-
-```python
-def test_with_fake_chat_model() -> None:
-    chat = FakeListChatModel(responses=["I'm a chatbot"])
-    result = chat.invoke([HumanMessage(content="Hi")])
-    assert result.content == "I'm a chatbot"
+    class TestCallback(BaseCallbackHandler):
+        def on_chain_start(self, *args, **kwargs):
+            mock_start(*args, **kwargs)
+        def on_chain_end(self, *args, **kwargs):
+            mock_end(*args, **kwargs)
+    
+    chain = prompt | chat
+    chain.invoke(
+        {"input": "test"},
+        config={"callbacks": [TestCallback()]}
+    )
+    
+    assert mock_start.called
+    assert mock_end.called
 ```
 
 ### HTTP Request Mocking
@@ -250,7 +354,6 @@ def test_http_endpoint():
         status=200
     )
     
-    # Your code that makes HTTP calls
     result = fetch_data()
     assert result["status"] == "ok"
 ```
@@ -259,15 +362,15 @@ def test_http_endpoint():
 
 ### pytest-socket Enforcement
 
-Tests run with `--disable-socket` to prevent unintended network calls. This catches tests that accidentally depend on external services.
+Tests run with `--disable-socket` to prevent unintended network calls. This catches tests that accidentally depend on external services:
+
+```bash
+pytest tests/unit_tests/ --disable-socket --allow-unix-socket
+```
 
 ### Allowing Specific Network Operations
 
-**Unix sockets** are allowed for local inter-process communication:
-
-```bash
-pytest --disable-socket --allow-unix-socket
-```
+Unix sockets are allowed for local inter-process communication but TCP/UDP sockets are blocked by default.
 
 ### SSRF Protection Testing
 
@@ -302,7 +405,7 @@ def test_runnable_schema(snapshot: SnapshotAssertion) -> None:
     assert schema == snapshot
 ```
 
-On first run, syrupy stores the snapshot. On subsequent runs, it compares against the stored snapshot. Update snapshots with:
+On first run, syrupy stores the snapshot in `__snapshots__/`. On subsequent runs, it compares against stored snapshots. Update snapshots with:
 
 ```bash
 pytest --snapshot-update
@@ -315,6 +418,7 @@ Snapshots enable tests to detect unintended changes while allowing intentional u
 - Snapshots are stored in `__snapshots__/` directories adjacent to test files
 - `--snapshot-warn-unused` flags snapshots no longer referenced by tests
 - Use `--snapshot-update` to commit intentional schema or output changes
+- Always review snapshot diffs to catch unintended regressions
 
 ### Example: Runnable Graph Snapshots
 
@@ -331,23 +435,21 @@ def test_graph_mermaid(snapshot: SnapshotAssertion) -> None:
 
 ### Deterministic UUIDs
 
-Tests use a fixture to replace random UUIDs:
+Tests use the `deterministic_uuids` fixture to replace random UUIDs:
 
 ```python
-@pytest.fixture
-def deterministic_uuids(mocker: MockerFixture) -> MockerFixture:
-    side_effect = (
-        UUID(f"00000000-0000-4000-8000-{i:012}", version=4) 
-        for i in range(10000)
-    )
-    return mocker.patch("uuid.uuid4", side_effect=side_effect)
+def test_with_deterministic_ids(deterministic_uuids):
+    id1 = uuid.uuid4()
+    id2 = uuid.uuid4()
+    assert id1 == UUID("00000000-0000-4000-8000-000000000000")
+    assert id2 == UUID("00000000-0000-4000-8000-000000000001")
 ```
 
-This ensures trace IDs, run IDs, and message IDs are predictable in snapshot tests.
+This ensures trace IDs, run IDs, and message IDs are predictable for snapshot tests.
 
 ### Time Freezing
 
-`freezegun` freezes time for deterministic timestamps:
+`freezegun` freezes time at specific moments for deterministic timestamps:
 
 ```python
 from freezegun import freeze_time
@@ -355,12 +457,12 @@ from freezegun import freeze_time
 @freeze_time("2023-01-01 12:00:00")
 def test_timestamp_in_trace() -> None:
     tracer = MyTracer()
-    # Timestamps in recorded traces will use frozen time
+    # All timestamps in recorded traces will use frozen time
 ```
 
 ### Fake Tracer for Testing
 
-Tests define a `FakeTracer` that captures and normalizes execution traces:
+Tests define a `FakeTracer` that captures execution traces and replaces run IDs with deterministic UUIDs:
 
 ```python
 class FakeTracer(BaseTracer):
@@ -378,46 +480,190 @@ class FakeTracer(BaseTracer):
         self.runs.append(self._copy_run(run))
 ```
 
-## Common Fixtures
+## Message and Tool Testing Patterns
 
-### UUID Determinism
+### Message Type Testing
+
+Tests verify message construction, serialization, and content blocks:
 
 ```python
-def test_with_deterministic_ids(deterministic_uuids):
-    # uuid.uuid4() returns sequential UUIDs for snapshots
-    id1 = uuid.uuid4()
-    id2 = uuid.uuid4()
-    assert id1 == UUID("00000000-0000-4000-8000-000000000000")
+from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages.tool import tool_call
+
+def test_message_with_tool_calls() -> None:
+    msg = AIMessage(
+        content=[{"text": "I'll use a tool", "type": "text"}],
+        tool_calls=[tool_call(name="search", args={"query": "LLM"}, id="call_1")]
+    )
+    assert msg.tool_calls[0].name == "search"
+    assert msg.tool_calls[0].args == {"query": "LLM"}
 ```
 
-### Config Handling
+### Tool Creation and Testing
 
-Tests verify config merging and preservation:
+Tests verify tool schema, execution, and async variants:
 
 ```python
-def test_ensure_config() -> None:
-    run_id = str(uuid.uuid4())
-    arg = {
-        "callbacks": [StdOutCallbackHandler()],
-        "metadata": {"foo": "bar"},
-        "tags": ["tag1"],
-    }
-    
-    config = ensure_config(cast(RunnableConfig, arg))
-    
-    # Verify original arg unchanged
-    assert arg["callbacks"] is not config["callbacks"]
-    # Verify merged config
-    assert config["metadata"] == {"foo": "bar"}
+from langchain_core.tools import tool, BaseTool, StructuredTool
+
+@tool
+def search_api(query: str) -> str:
+    """Search the API for the query."""
+    return f"Results for {query}"
+
+def test_tool_invocation() -> None:
+    result = search_api.invoke({"query": "LLM"})
+    assert "LLM" in result
+
+async def test_tool_async() -> None:
+    if hasattr(search_api, "_arun"):
+        result = await search_api.ainvoke({"query": "LLM"})
+        assert "LLM" in result
 ```
 
-### Async Callback Manager Testing
+Tool schema testing with structured arguments:
 
 ```python
-async def test_callback_manager():
-    manager = AsyncCallbackManager(handlers=[CustomHandler()])
-    await manager.on_llm_start({}, ["prompt1", "prompt2"])
-    # Verify handler was invoked with multiple prompts
+from pydantic import BaseModel
+
+class SearchSchema(BaseModel):
+    query: str
+    limit: int = 10
+
+search_tool = StructuredTool.from_function(
+    func=search_api,
+    name="search",
+    args_schema=SearchSchema
+)
+
+def test_tool_schema() -> None:
+    schema = search_tool.tool_call_schema
+    assert "query" in schema["properties"]
+    assert "limit" in schema["properties"]
+```
+
+## Runnable Testing Patterns
+
+### Testing Invoke
+
+Test synchronous invocation with various input types:
+
+```python
+def test_prompt_invoke() -> None:
+    prompt = ChatPromptTemplate.from_template("Hello {name}")
+    result = prompt.invoke({"name": "World"})
+    assert isinstance(result, ChatPromptValue)
+    assert "World" in str(result)
+```
+
+### Testing Stream
+
+Test streaming output in chunks:
+
+```python
+def test_prompt_stream() -> None:
+    prompt = ChatPromptTemplate.from_template("Hello {name}")
+    chunks = list(prompt.stream({"name": "World"}))
+    assert len(chunks) > 0
+    assert isinstance(chunks[0], ChatPromptValue)
+```
+
+### Testing Batch
+
+Test batch processing of multiple inputs:
+
+```python
+def test_prompt_batch() -> None:
+    prompt = ChatPromptTemplate.from_template("Hello {name}")
+    results = prompt.batch([{"name": "Alice"}, {"name": "Bob"}])
+    assert len(results) == 2
+    assert "Alice" in str(results[0])
+    assert "Bob" in str(results[1])
+```
+
+### Testing Async Variants
+
+Test async invoke, stream, and batch:
+
+```python
+async def test_prompt_ainvoke() -> None:
+    prompt = ChatPromptTemplate.from_template("Hello {name}")
+    result = await prompt.ainvoke({"name": "World"})
+    assert isinstance(result, ChatPromptValue)
+
+async def test_prompt_astream() -> None:
+    prompt = ChatPromptTemplate.from_template("Hello {name}")
+    chunks = [part async for part in prompt.astream({"name": "World"})]
+    assert len(chunks) > 0
+
+async def test_prompt_abatch() -> None:
+    prompt = ChatPromptTemplate.from_template("Hello {name}")
+    results = await prompt.abatch([{"name": "Alice"}, {"name": "Bob"}])
+    assert len(results) == 2
+```
+
+### Configuration and Metadata Testing
+
+Tests verify config merging, metadata propagation, and recursion limits:
+
+```python
+def test_config_with_metadata(mocker: MockerFixture) -> None:
+    spy = mocker.spy(fake.__class__, "invoke")
+    
+    fake.invoke("input", {"metadata": {"a": "b"}})
+    
+    spy.assert_called_once_with(
+        "input", {"tags": [], "metadata": {"a": "b"}}
+    )
+```
+
+### Middleware Testing Patterns
+
+Middleware in LangChain is implemented by wrapping runnables in chains. Test middleware behavior by composing runnables and verifying state propagation:
+
+```python
+def test_middleware_state_propagation() -> None:
+    """Test that wrapping runnables propagates config through the chain."""
+    
+    class StateTrackingRunnable(Runnable):
+        def invoke(self, input, config=None):
+            # Verify config reaches wrapped runnable
+            assert config is not None
+            assert config.get("metadata", {}).get("request_id") is not None
+            return input
+    
+    # Wrap middleware around core runnable
+    wrapped = RunnablePassthrough() | StateTrackingRunnable()
+    
+    result = wrapped.invoke(
+        "test",
+        config={"metadata": {"request_id": "123"}}
+    )
+    assert result == "test"
+
+def test_middleware_chain_with_callbacks() -> None:
+    """Test middleware-like callback behavior through chain composition."""
+    
+    call_log = []
+    
+    class LoggingMiddleware(RunnableLambda):
+        def __init__(self, runnable):
+            self.runnable = runnable
+            super().__init__(lambda x: runnable.invoke(x))
+        
+        def invoke(self, input, config=None):
+            call_log.append(("before", input))
+            result = self.runnable.invoke(input, config)
+            call_log.append(("after", result))
+            return result
+    
+    llm = FakeListChatModel(responses=["Hello"])
+    middleware = LoggingMiddleware(llm)
+    
+    middleware.invoke([HumanMessage(content="Hi")])
+    
+    assert call_log[0] == ("before", [HumanMessage(content="Hi")])
+    assert call_log[1][0] == "after"
 ```
 
 ## Test Markers and Filtering
@@ -455,6 +701,9 @@ pytest --only-extended
 
 # Run single test file
 pytest tests/unit_tests/runnables/test_runnable.py
+
+# Run tests matching pattern
+pytest tests/unit_tests/ -k "test_invoke"
 ```
 
 ## Performance Testing
@@ -477,18 +726,13 @@ def test_sync_callback_performance(benchmark: BenchmarkFixture) -> None:
 Benchmarks run separately and are disabled in standard test runs:
 
 ```bash
-pytest --benchmark-disable  # Standard tests
+pytest --benchmark-disable  # Standard tests (benchmarks disabled)
 pytest tests/benchmarks --codspeed  # Performance tests
 ```
 
 ### Continuous Benchmarking
 
-`pytest-codspeed` integrates with CodSpeed for continuous performance tracking:
-
-```bash
-# Run benchmarks for performance analysis
-pytest tests/benchmarks --codspeed
-```
+`pytest-codspeed` integrates with CodSpeed for continuous performance tracking and regression detection across commits.
 
 ## Test Execution and CI Integration
 
@@ -500,10 +744,10 @@ make test
 ```
 
 This command:
-- Unsets LangSmith environment variables
+- Unsets LangSmith environment variables (prevents tracing)
 - Runs pytest with parallel execution (`-n auto`)
-- Disables socket access
-- Disables benchmarks
+- Disables socket access (`--disable-socket`)
+- Disables benchmarks (`--benchmark-disable`)
 
 ### Watch Mode
 
@@ -511,7 +755,7 @@ This command:
 make test_watch
 ```
 
-Watches test files and reruns affected tests with snapshot auto-update.
+Watches test files and reruns affected tests with snapshot auto-update enabled.
 
 ### Extended Tests
 
@@ -521,81 +765,47 @@ make extended_tests
 
 Runs tests with `@pytest.mark.requires` only if dependencies are installed.
 
-## Test Patterns in LangChain
+## Standard Tests and Cross-Provider Conformance
 
-### Runnables Testing
-
-Runnable tests verify invoke, stream, and async variants with various input types:
+LangChain uses **standard-tests** (in `libs/standard-tests/`) for cross-provider conformance testing. Partner integrations inherit test suites to verify consistency across providers:
 
 ```python
-def test_prompt_invoke() -> None:
-    prompt = ChatPromptTemplate.from_template("Hello {name}")
-    result = prompt.invoke({"name": "World"})
-    assert isinstance(result, ChatPromptValue)
+# In langchain-openai or other partner packages
+from langchain_tests.standard_tests import ChatModelTests
 
-def test_prompt_batch() -> None:
-    prompt = ChatPromptTemplate.from_template("Hello {name}")
-    results = prompt.batch([{"name": "Alice"}, {"name": "Bob"}])
-    assert len(results) == 2
-
-async def test_prompt_astream() -> None:
-    prompt = ChatPromptTemplate.from_template("Hello {name}")
-    chunks = [part async for part in prompt.astream({"name": "World"})]
-    assert len(chunks) > 0
+class TestChatOpenAI(ChatModelTests):
+    """Verify OpenAI's ChatOpenAI meets standard chat model interface."""
+    
+    @property
+    def chat_model_class(self):
+        return ChatOpenAI
+    
+    @property
+    def chat_model_params(self):
+        return {"model": "gpt-4"}
 ```
 
-### Callback Handler Testing
-
-Tests verify callbacks are invoked with correct arguments:
-
-```python
-def test_callback_invocation(mocker: MockerFixture) -> None:
-    mock_start = mocker.Mock()
-    mock_end = mocker.Mock()
-    
-    chain = prompt | chat
-    
-    # Run with callback listener
-    chain.invoke(
-        {"input": "test"},
-        config={"callbacks": [MyCallback(mock_start, mock_end)]}
-    )
-    
-    # Verify callbacks were called
-    assert mock_start.called
-    assert mock_end.called
-```
-
-### Configuration Testing
-
-Tests verify config merging, metadata propagation, and recursion limits:
-
-```python
-def test_config_with_metadata(mocker: MockerFixture) -> None:
-    spy = mocker.spy(fake.__class__, "invoke")
-    
-    fake.invoke("input", {"metadata": {"a": "b"}})
-    
-    spy.assert_called_once_with(
-        "input", {"tags": [], "metadata": {"a": "b"}}
-    )
-```
+Standard tests verify:
+- Input/output types match documented interfaces
+- Async variants work correctly
+- Streaming behaves consistently
+- Tool calling follows conventions
+- Configuration propagates properly
 
 ## Best Practices
 
-1. **Use Fake Models** – Replace real LLM calls with `FakeListLLM`, `FakeListChatModel` to avoid API costs and network dependency
+1. **Use Fake Models** – Replace real LLM calls with `FakeListChatModel`, `GenericFakeChatModel` to avoid API costs and network dependency
 2. **Enable Network Isolation** – Always run with `--disable-socket` to catch accidental network calls
 3. **Snapshot Critical Outputs** – Use syrupy for JSON schemas, serialized structures, and graph visualizations
 4. **Deterministic Tests** – Use `deterministic_uuids`, `freezegun`, and fake models to ensure reproducible snapshots
-5. **Test Async Thoroughly** – Test both sync and async variants of public methods (invoke/ainvoke, stream/astream)
+5. **Test Async Thoroughly** – Test both sync and async variants of public methods (invoke/ainvoke, stream/astream, batch/abatch)
 6. **Mock External Dependencies** – Use `mocker.Mock()` and `mocker.spy()` to isolate units under test
 7. **Organize by Module** – Place tests in `tests/unit_tests/` mirroring source structure, with module-specific conftest files
 8. **Document Markers** – Define custom pytest markers in conftest and document their meaning
-9. **Parallelize Safely** – Use pytest-xdist (`-n auto`) for speed, ensuring tests don't share mutable state
+9. **Parallelize Safely** – Use pytest-xdist (`-n auto`) for speed, ensuring tests don't share mutable state or global config
 10. **Review Snapshot Changes** – Always review snapshot diffs when updating to catch unintended regressions
 
 ## Related Pages
 
-- [Integration Testing](/openwiki/testing/integration-tests.md) – Testing with external services and real APIs
-- [CI Workflows](/openwiki/operations/ci-workflows.md) – GitHub Actions test execution and validation
-- [Development Commands](/openwiki/operations/dev-commands.md) – Running tests and linting locally
+- [Integration Testing](/openwiki/testing/integration-tests.md) – Testing with external services, VCR cassettes, and real APIs
+- [Development Commands](/openwiki/operations/dev-commands.md) – uv, make, and pre-commit setup

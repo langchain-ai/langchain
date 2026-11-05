@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1a4fdf9d4a0763396ba3036350b72efbd18b055e4820082848b5a9df2eeeb1fa",
+  "pageVersion": "sha256:21e99b2315c66b531a11f4444e7a7c6a9e91e4417ffaf0390dbc2750feda51d2",
   "claims": [
     {
       "id": "claim_fc612ca95e764c84b4bd1c6e12a8536a",
@@ -104,11 +104,11 @@
     },
     {
       "id": "claim_512212713cf943b092ca5b8d081534b6",
-      "statement": "LangChain provides production middleware including ModelRetryMiddleware, ToolRetryMiddleware, ToolErrorMiddleware, ModelCallLimitMiddleware, ToolCallLimitMiddleware, HumanInTheLoopMiddleware, LLMToolSelectorMiddleware, ModelFallbackMiddleware, PIIMiddleware, ShellToolMiddleware, and SummarizationMiddleware for common agent customization needs.",
+      "statement": "LangChain provides production-ready middleware including ModelRetryMiddleware, ToolRetryMiddleware, ToolErrorMiddleware, ModelCallLimitMiddleware, ToolCallLimitMiddleware, ModelFallbackMiddleware, HumanInTheLoopMiddleware, LLMToolSelectorMiddleware, PIIMiddleware, ShellToolMiddleware, SummarizationMiddleware, ModelRefusalMiddleware, ContextEditingMiddleware, FilesystemFileSearchMiddleware, ProviderToolSearchMiddleware, TodoListMiddleware, and LLMToolEmulator for common agent customization needs.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py#L1-L100",
-          "version": "repo-lines-v1:sha256:51b55618fb209bce1e69f2911b367963da549d930f5eef1b1125cd19a26586ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNDA5OTU2YzRjNTg2NDc3MzNhYTU3Mjc0OTdhYmU0ZWFlZDY2NDdiMjkyNDk0MmI2NWUxYjJmOWM3OWQ1Y2Y1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmOTQxNmUwOWY3OGJhMzE2YzAzMjU2ODIxM2I4NTVlZTc1NmU0MTU2NWQ5MThmMDk1MTljODFmZDYyMGY0MDYwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py#L1-L102",
+          "version": "repo-lines-v1:sha256:2ed2639dea637ba04a59441b1698bf8e005b8c0f6e0be7fbaa97fc55827e3f17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNDA5OTU2YzRjNTg2NDc3MzNhYTU3Mjc0OTdhYmU0ZWFlZDY2NDdiMjkyNDk0MmI2NWUxYjJmOWM3OWQ1Y2Y1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmOTQxNmUwOWY3OGJhMzE2YzAzMjU2ODIxM2I4NTVlZTc1NmU0MTU2NWQ5MThmMDk1MTljODFmZDYyMGY0MDYwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -155,6 +155,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-11-05T08:18:41.280Z"
   }
 }
