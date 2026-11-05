@@ -558,6 +558,20 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                     requires async invocation (e.g. `ainvoke`), and a sync function
                     runs in a thread pool when invoked asynchronously.
 
+                !!! note "Fitting the summarizer's context window"
+
+                    The summarizer's input is first trimmed to
+                    `trim_tokens_to_summarize` tokens, counted with the context
+                    model's token counter. Choose a summarizer whose context window
+                    fits that budget plus `summary_prompt`. If a chat model
+                    summarizer still raises `ContextOverflowError`, the call is
+                    retried once with the middle of the history cut out, sized to
+                    its profile's `max_input_tokens` when known. A `Runnable` or
+                    function summarizer gets no overflow retry, so it must handle
+                    oversized input itself. With `trim_tokens_to_summarize=None`,
+                    the whole summarized history is sent, so make sure the
+                    summarizer can take it.
+
                 !!! example
 
                     ```python
