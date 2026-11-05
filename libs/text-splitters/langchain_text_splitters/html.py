@@ -297,20 +297,24 @@ class HTMLHeaderTextSplitter:
         stack = [body]
         while stack:
             node = stack.pop()
-            children = list(node.children)
-
-            stack.extend(
-                child for child in reversed(children) if isinstance(child, tag_cls)
-            )
-
             tag = getattr(node, "name", None)
             if not tag:
                 continue
 
-            text_elements = [
-                str(child).strip() for child in _find_all_strings(node, recursive=False)
-            ]
-            node_text = " ".join(elem for elem in text_elements if elem)
+            if tag in self.header_tags:
+                # Inline markup belongs to the heading, not to separate body chunks.
+                node_text = node.get_text(separator=" ", strip=True)
+            else:
+                stack.extend(
+                    child
+                    for child in reversed(list(node.children))
+                    if isinstance(child, tag_cls)
+                )
+                text_elements = [
+                    str(child).strip()
+                    for child in _find_all_strings(node, recursive=False)
+                ]
+                node_text = " ".join(elem for elem in text_elements if elem)
             if not node_text:
                 continue
 
