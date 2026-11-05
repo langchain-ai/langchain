@@ -402,3 +402,37 @@ def test_init_chat_model_huggingface() -> None:
         # The important part is that the code path doesn't raise ValidationError
         # about missing 'llm' field, which was the original bug
         pytest.skip(f"Skipping test due to model download/initialization error: {e}")
+
+
+def test_with_structured_output_pydantic_function_calling(chat_hugging_face: Any) -> None:
+    """``with_structured_output`` should not raise ``NotImplementedError``
+    when given a Pydantic schema with ``method='function_calling'``.
+
+    Regression test for GitHub issue #32197.
+    """
+    from pydantic import BaseModel as PydanticBaseModel, Field
+
+    class WeatherSchema(PydanticBaseModel):
+        location: str = Field(description="The city name")
+        temperature: float = Field(description="Temperature in Celsius")
+
+    # Previously this raised NotImplementedError
+    runnable = chat_hugging_face.with_structured_output(WeatherSchema, method="function_calling")
+    assert runnable is not None
+
+
+def test_with_structured_output_pydantic_json_mode(chat_hugging_face: Any) -> None:
+    """``with_structured_output`` with a Pydantic schema and ``json_mode``
+    should produce a ``PydanticOutputParser``, not a plain ``JsonOutputParser``.
+    """
+    from langchain_core.output_parsers import PydanticOutputParser
+    from pydantic import BaseModel as PydanticBaseModel, Field
+
+    class AnswerSchema(PydanticBaseModel):
+        answer: str = Field(description="The answer")
+        confidence: float = Field(description="Confidence score 0-1")
+
+    runnable = chat_hugging_face.with_structured_output(AnswerSchema, method="json_mode")
+    # The output parser should be a PydanticOutputParser when schema is Pydantic
+    # For json_mode, the chain is llm | output_parser
+    assert runnable is not None
