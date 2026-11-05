@@ -9,8 +9,12 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import ChatResult
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
+from langchain_core.output_parsers.openai_tools import PydanticToolsParser
+from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.runnables import RunnableSequence
 from langchain_core.tools import BaseTool
+from pydantic import BaseModel
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
@@ -402,3 +406,138 @@ def test_init_chat_model_huggingface() -> None:
         # The important part is that the code path doesn't raise ValidationError
         # about missing 'llm' field, which was the original bug
         pytest.skip(f"Skipping test due to model download/initialization error: {e}")
+
+
+class Joke(BaseModel):
+    """A joke structured output schema for tests."""
+
+    setup: str
+    punchline: str
+
+
+_JOKE_JSON = (
+    '{"setup": "Why did the chicken cross the road?", '
+    '"punchline": "To get to the other side."}'
+)
+
+_JOKE_DICT_SCHEMA: dict[str, Any] = {
+    "title": "Joke",
+    "type": "object",
+    "properties": {
+        "setup": {"type": "string"},
+        "punchline": {"type": "string"},
+    },
+    "required": ["setup", "punchline"],
+}
+
+
+def _chat_result(message: AIMessage) -> ChatResult:
+    return ChatResult(generations=[ChatGeneration(message=message)])
+
+
+@pytest.mark.parametrize("method", ["json_schema", "json_mode"])
+def test_with_structured_output_pydantic_model(
+    chat_hugging_face: Any, method: str
+) -> None:
+    """Pydantic schemas are parsed into model instances, not dicts."""
+    chat_hugging_face.streaming = False
+    structured_model = chat_hugging_face.with_structured_output(Joke, method=method)
+    assert isinstance(structured_model, RunnableSequence)
+    assert isinstance(structured_model.steps[-1], PydanticOutputParser)
+
+    message = AIMessage(content=_JOKE_JSON)
+    with patch.object(ChatHuggingFace, "_generate", return_value=_chat_result(message)):
+        result = structured_model.invoke([HumanMessage(content="Tell me a joke")])
+
+    assert isinstance(result, Joke)
+    assert result.setup == "Why did the chicken cross the road?"
+    assert result.punchline == "To get to the other side."
+
+
+def test_with_structured_output_pydantic_function_calling(
+    chat_hugging_face: Any,
+) -> None:
+    """Pydantic schemas work with the default `function_calling` method."""
+    chat_hugging_face.streaming = False
+    structured_model = chat_hugging_face.with_structured_output(Joke)
+    assert isinstance(structured_model, RunnableSequence)
+    assert isinstance(structured_model.steps[-1], PydanticToolsParser)
+
+    message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "name": "Joke",
+                "args": {
+                    "setup": "Why did the chicken cross the road?",
+                    "punchline": "To get to the other side.",
+                },
+                "id": "call_1",
+                "type": "tool_call",
+            }
+        ],
+    )
+    with patch.object(ChatHuggingFace, "_generate", return_value=_chat_result(message)):
+        result = structured_model.invoke([HumanMessage(content="Tell me a joke")])
+
+    assert isinstance(result, Joke)
+    assert result.punchline == "To get to the other side."
+
+
+@pytest.mark.parametrize("method", ["json_schema", "json_mode"])
+def test_with_structured_output_pydantic_include_raw(
+    chat_hugging_face: Any, method: str
+) -> None:
+    """With `include_raw=True`, `parsed` holds the Pydantic model instance."""
+    chat_hugging_face.streaming = False
+    structured_model = chat_hugging_face.with_structured_output(
+        Joke, method=method, include_raw=True
+    )
+
+    message = AIMessage(content=_JOKE_JSON)
+    with patch.object(ChatHuggingFace, "_generate", return_value=_chat_result(message)):
+        result = structured_model.invoke([HumanMessage(content="Tell me a joke")])
+
+    assert result["raw"] == message
+    assert isinstance(result["parsed"], Joke)
+    assert result["parsing_error"] is None
+
+
+def test_with_structured_output_pydantic_include_raw_parse_error(
+    chat_hugging_face: Any,
+) -> None:
+    """With `include_raw=True`, parsing errors are returned, not raised."""
+    chat_hugging_face.streaming = False
+    structured_model = chat_hugging_face.with_structured_output(
+        Joke, method="json_schema", include_raw=True
+    )
+
+    message = AIMessage(content="This is not JSON.")
+    with patch.object(ChatHuggingFace, "_generate", return_value=_chat_result(message)):
+        result = structured_model.invoke([HumanMessage(content="Tell me a joke")])
+
+    assert result["raw"] == message
+    assert result["parsed"] is None
+    assert result["parsing_error"] is not None
+
+
+def test_with_structured_output_dict_schema_unchanged(
+    chat_hugging_face: Any,
+) -> None:
+    """Dict / JSON schemas still return plain dicts via `JsonOutputParser`."""
+    chat_hugging_face.streaming = False
+    structured_model = chat_hugging_face.with_structured_output(
+        _JOKE_DICT_SCHEMA, method="json_schema"
+    )
+    assert isinstance(structured_model, RunnableSequence)
+    assert isinstance(structured_model.steps[-1], JsonOutputParser)
+    assert not isinstance(structured_model.steps[-1], PydanticOutputParser)
+
+    message = AIMessage(content=_JOKE_JSON)
+    with patch.object(ChatHuggingFace, "_generate", return_value=_chat_result(message)):
+        result = structured_model.invoke([HumanMessage(content="Tell me a joke")])
+
+    assert result == {
+        "setup": "Why did the chicken cross the road?",
+        "punchline": "To get to the other side.",
+    }
