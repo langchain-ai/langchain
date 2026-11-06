@@ -96,8 +96,12 @@ class _MCPToolExecutionError(ToolException):
     conversion failures are not `ToolException`s, so they bypass error handling.
     """
 
-    def __init__(self, tool_content: list[ToolMessageContentBlock]) -> None:
-        super().__init__(_summarize_tool_error(tool_content))
+    def __init__(
+        self,
+        tool_content: list[ToolMessageContentBlock],
+        artifact: MCPToolArtifact | None = None,
+    ) -> None:
+        super().__init__(_summarize_tool_error(tool_content), artifact=artifact)
         self.tool_content = tool_content
 
 
@@ -171,12 +175,12 @@ def _convert_call_tool_result(
     """Split an MCP tool result into model-visible content and an artifact."""
     tool_content = [_convert_content_block(block) for block in result.content]
 
-    if result.is_error:
-        raise _MCPToolExecutionError(tool_content)
-
     artifact: MCPToolArtifact | None = None
     if result.structured_content is not None:
         artifact = MCPToolArtifact(structured_content=result.structured_content)
+
+    if result.is_error:
+        raise _MCPToolExecutionError(tool_content, artifact)
     return tool_content, artifact
 
 

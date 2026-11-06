@@ -20,6 +20,9 @@ from mcp.types import (
     Tool,
     ToolAnnotations,
 )
+from mcp.types import (
+    CallToolResult as MCPCallToolResult,
+)
 
 from langchain.mcp import as_langchain_tool
 from langchain.mcp.elicitation import _arm_for_interrupts
@@ -108,6 +111,42 @@ async def test_tool_error_reaches_the_model_as_failed_output(
     [block] = _blocks_without_ids(message.content)
     assert block["type"] == "text"
     assert "the widget is jammed" in block["text"]
+    assert message.artifact is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("elicitation", [None, "interrupt"], ids=["fastmcp", "interrupt"])
+@pytest.mark.parametrize(
+    ("text", "expected_text"),
+    [
+        ("rate limited", "rate limited"),
+        (None, "The MCP tool reported an error with empty content."),
+    ],
+    ids=["text", "no-text"],
+)
+async def test_tool_error_keeps_structured_content_as_artifact(
+    elicitation: Literal["interrupt"] | None,
+    text: str | None,
+    expected_text: str,
+) -> None:
+    server: FastMCP[None] = FastMCP("limited")
+    payload = {"code": "RATE_LIMITED", "retry_after": 30}
+
+    @server.tool
+    def lookup() -> MCPCallToolResult:
+        """Fail with a structured error."""
+        content = [TextContent(type="text", text=text)] if text is not None else []
+        return MCPCallToolResult(content=content, structuredContent=payload, isError=True)
+
+    tool, _ = await _one_tool(server, elicitation=elicitation)
+
+    message = await tool.ainvoke(
+        {"name": "lookup", "args": {}, "id": "call-1", "type": "tool_call"}
+    )
+
+    assert message.status == "error"
+    assert message.artifact == {"structured_content": payload}
+    assert _blocks_without_ids(message.content) == [{"type": "text", "text": expected_text}]
 
 
 @pytest.mark.asyncio
