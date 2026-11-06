@@ -2,11 +2,21 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+from dataclasses import replace
 from functools import partial
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
+from langchain_core.callbacks import CallbackManager
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
+from langchain_core.runnables.config import (
+    ensure_config,
+    patch_config,
+    var_child_runnable_config,
+)
+from langgraph.constants import TAG_NOSTREAM
 from langgraph.stream import StreamTransformer
+from langgraph.types import Command
 from typing_extensions import override
 
 from langchain.agents.middleware._redaction import (
@@ -25,15 +35,44 @@ from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ContextT,
+    ModelRequest,
+    ModelResponse,
     ResponseT,
+    ToolCallRequest,
     hook_config,
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable, Iterator
 
+    from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
     from langgraph.stream._types import ProtocolEvent
+
+_MessageT = TypeVar("_MessageT", bound=BaseMessage)
+
+
+@contextmanager
+def _hidden_from_stream() -> Iterator[None]:
+    # Tags the calls rather than the model, so a model that a later middleware swaps
+    # in is covered too. The tag rides on the callbacks: a model bound with its own
+    # tags replaces `config["tags"]`.
+    config = ensure_config()
+    callbacks = CallbackManager.configure(config.get("callbacks"), inheritable_tags=[TAG_NOSTREAM])
+    token = var_child_runnable_config.set(patch_config(config, callbacks=callbacks))
+    try:
+        yield
+    finally:
+        var_child_runnable_config.reset(token)
+
+
+def _hide_tool_from_stream(tool: BaseTool) -> BaseTool:
+    # A copy, because `ToolNode` invokes the tool with the config it captured before
+    # any wrapper ran, so a tag set around the call would not reach it.
+    tags = tool.tags or []
+    if TAG_NOSTREAM in tags:
+        return tool
+    return tool.model_copy(update={"tags": [*tags, TAG_NOSTREAM]})
 
 
 _DEFAULT_STREAM_LOOKBACK = 128
@@ -541,6 +580,17 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
     | `mask`   | No                  | Human readability, customer service UIs |
     | `hash`   | Yes (pseudonymous)  | Analytics, debugging                    |
 
+    Every `PIIMiddleware`, including one that only checks input, wraps the agent's
+    model and tool calls. As a result:
+
+    - A tool-less agent gets a `tools` node.
+    - A tool-less agent whose model returns a tool call gets an error `ToolMessage` and
+        calls the model again instead of ending.
+    - `create_agent` skips its check for unknown tools added by middleware: instead of a
+        `ValueError`, such a tool is offered to the model and calling it gives an error
+        `ToolMessage`.
+    - Traces show `PIIMiddleware[...]` wrapper spans.
+
     Example:
         ```python
         from langchain.agents.middleware import PIIMiddleware
@@ -611,33 +661,22 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
             apply_to_input: Whether to check user messages before model call.
             apply_to_output: Whether to check AI messages after model call.
 
-                When `True`, a stream transformer is also installed so
-                that every wire surface of an agent run is redacted in
-                flight:
-
-                * Streamed AI text deltas (`content-block-delta` of type
-                  `text-delta`)
-                * Streamed tool-call arguments (`content-block-delta`
-                  of type `tool-call-delta`, or `block-delta` with
-                  `tool_call_chunk` / `server_tool_call_chunk` fields,
-                  plus the finalized `tool_call` content block on
-                  `content-block-finish`)
-                * Tool execution events on the `tools` channel
-                  (`tool-started.input`, `tool-output-delta`,
-                  `tool-finished.output`, `tool-error.message`)
-                * State snapshots on the `values` channel — message
-                  lists are walked and each message's `.content` is
-                  redacted on a fresh copy (state itself stays intact
-                  for `before_model` / `after_model` to act on
-                  independently)
-
-                State-level redaction via `after_model` (and
-                `before_model` with `apply_to_tool_results`) remains the
-                canonical enforcer; the streaming transformer ensures
-                consumers reading `astream_events(version="v3")` or
-                `run.messages` / `run.tool_calls` / `run.values` never
-                see PII on the wire.
+                The reply is checked before it is written to state or streamed.
+                Model calls made under this middleware, including those of middleware
+                listed after it, are tagged `nostream`, so their tokens are not
+                streamed: the reply arrives as one message. Tool-call arguments and
+                reasoning are not checked and stay as the model wrote them.
+                `astream_events` v1/v2 and tracing still see the raw reply;
+                `stream_events(version="v3")` redacts its own wire.
             apply_to_tool_results: Whether to check tool result messages after tool execution.
+
+                Each result is checked before it is written to state or streamed,
+                including the `ToolMessage`s in a `Command` or list the tool returns. The
+                tool runs as a copy tagged `nostream`, so its calls do not appear in the
+                `tools` stream mode. The copy is shallow, so an attribute the tool
+                reassigns on itself is not kept and a lazily created private client is
+                rebuilt on every call; a tool that a later middleware swaps in is not
+                tagged.
 
         Raises:
             ValueError: If `pii_type` is not built-in and no detector is provided.
@@ -715,6 +754,36 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
                 changed = True
             new_blocks.append(new_block)
         return (new_blocks, True) if changed else (content, False)
+
+    def _redact_message(self, message: _MessageT) -> _MessageT:
+        if not message.content:
+            return message
+        content, changed = self._process_content(message.content)
+        return message.model_copy(update={"content": content}) if changed else message
+
+    def _redact_response(self, response: ModelResponse[ResponseT]) -> ModelResponse[ResponseT]:
+        return replace(
+            response,
+            result=[
+                self._redact_message(message) if isinstance(message, AIMessage) else message
+                for message in response.result
+            ],
+        )
+
+    def _redact_tool_result(self, result: ToolMessage | Command[Any]) -> ToolMessage | Command[Any]:
+        if isinstance(result, list):
+            # `ToolNode` accepts a list of results from one tool; the handler type omits it.
+            return [self._redact_tool_result(item) for item in result]  # type: ignore[return-value]
+        if isinstance(result, ToolMessage):
+            return self._redact_message(result)
+        update = result.update if isinstance(result, Command) else None
+        if not isinstance(update, dict) or not isinstance(update.get("messages"), list):
+            return result
+        messages = [
+            self._redact_message(message) if isinstance(message, ToolMessage) else message
+            for message in update["messages"]
+        ]
+        return replace(result, update={**update, "messages": messages})
 
     @hook_config(can_jump_to=["end"])
     @override
@@ -886,6 +955,102 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
             PIIDetectionError: If PII is detected and strategy is `'block'`.
         """
         return self.after_model(state, runtime)
+
+    @override
+    def wrap_model_call(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT]:
+        """Check AI messages before they are streamed or written to state.
+
+        Args:
+            request: The model request.
+            handler: Callback that runs the model.
+
+        Returns:
+            The model response with PII handled according to strategy.
+
+        Raises:
+            PIIDetectionError: If PII is detected and strategy is `'block'`.
+        """
+        if not self.apply_to_output:
+            return handler(request)
+        with _hidden_from_stream():
+            response = handler(request)
+        return self._redact_response(response)
+
+    @override
+    async def awrap_model_call(
+        self,
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT]:
+        """Async check AI messages before they are streamed or written to state.
+
+        Args:
+            request: The model request.
+            handler: Async callback that runs the model.
+
+        Returns:
+            The model response with PII handled according to strategy.
+
+        Raises:
+            PIIDetectionError: If PII is detected and strategy is `'block'`.
+        """
+        if not self.apply_to_output:
+            return await handler(request)
+        with _hidden_from_stream():
+            response = await handler(request)
+        return self._redact_response(response)
+
+    @override
+    def wrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
+        """Check a tool result before it is streamed or written to state.
+
+        Args:
+            request: The tool call request.
+            handler: Callback that runs the tool.
+
+        Returns:
+            The tool result with PII handled according to strategy.
+
+        Raises:
+            PIIDetectionError: If PII is detected and strategy is `'block'`.
+        """
+        if not self.apply_to_tool_results:
+            return handler(request)
+        if request.tool is not None:
+            request = request.override(tool=_hide_tool_from_stream(request.tool))
+        return self._redact_tool_result(handler(request))
+
+    @override
+    async def awrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+    ) -> ToolMessage | Command[Any]:
+        """Async check a tool result before it is streamed or written to state.
+
+        Args:
+            request: The tool call request.
+            handler: Async callback that runs the tool.
+
+        Returns:
+            The tool result with PII handled according to strategy.
+
+        Raises:
+            PIIDetectionError: If PII is detected and strategy is `'block'`.
+        """
+        if not self.apply_to_tool_results:
+            return await handler(request)
+        if request.tool is not None:
+            request = request.override(tool=_hide_tool_from_stream(request.tool))
+        return self._redact_tool_result(await handler(request))
 
 
 __all__ = [

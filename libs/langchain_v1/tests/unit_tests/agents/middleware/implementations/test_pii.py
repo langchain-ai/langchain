@@ -7,8 +7,8 @@
 # langgraph adds a `__getattr__` fallback (strict mode's `warn_unused_ignores`).
 
 import re
-from collections.abc import Callable
-from typing import Any
+from collections.abc import Callable, Iterable
+from typing import Annotated, Any
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
@@ -20,14 +20,19 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
-from langchain_core.tools import tool
+from langchain_core.runnables import RunnableConfig
+from langchain_core.tools import BaseTool, InjectedToolCallId, tool
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.runtime import Runtime
 from langgraph.stream._types import ProtocolEvent
 from langgraph.stream.transformers import MessagesTransformer
+from langgraph.types import Command, StateSnapshot, StreamPart
 
 from langchain.agents import AgentState
 from langchain.agents import middleware as middleware_package
 from langchain.agents.factory import create_agent
+from langchain.agents.middleware import ModelRequest, ModelResponse, wrap_model_call
 from langchain.agents.middleware import PIIMatch as PublicPIIMatch
 from langchain.agents.middleware._redaction import RedactionRule
 from langchain.agents.middleware.pii import (
@@ -819,6 +824,286 @@ class TestMultipleMiddleware:
         content = result["messages"][0].content
         assert "test@example.com" not in content
         assert "10.0.0.1" not in content
+
+
+_RAW_EMAIL = "alice@example.com"
+_THREAD: RunnableConfig = {"configurable": {"thread_id": "1"}}
+_STREAM_MODES: list[Any] = ["messages", "updates", "values", "checkpoints", "tools"]
+
+
+def _email_model() -> GenericFakeChatModel:
+    return GenericFakeChatModel(messages=iter([AIMessage(f"Reach me at {_RAW_EMAIL} today.")]))
+
+
+def _model_calling(tool_name: str) -> FakeToolCallingModel:
+    return FakeToolCallingModel(
+        tool_calls=[[ToolCall(name=tool_name, args={"user_id": "u1"}, id="c1")], []]
+    )
+
+
+@tool
+def lookup_user(user_id: str) -> str:
+    """Look up a user."""
+    return f"User {user_id}: {_RAW_EMAIL}"
+
+
+@tool
+def lookup_user_command(
+    user_id: str, tool_call_id: Annotated[str, InjectedToolCallId]
+) -> Command[Any]:
+    """Look up a user."""
+    message = ToolMessage(f"User {user_id}: {_RAW_EMAIL}", tool_call_id=tool_call_id)
+    return Command(update={"messages": [message]})
+
+
+@tool
+def lookup_user_list(
+    user_id: str, tool_call_id: Annotated[str, InjectedToolCallId]
+) -> list[ToolMessage]:
+    """Look up a user."""
+    return [ToolMessage(f"User {user_id}: {_RAW_EMAIL}", tool_call_id=tool_call_id)]
+
+
+@tool
+def lookup_user_command_list(
+    user_id: str, tool_call_id: Annotated[str, InjectedToolCallId]
+) -> list[Command[Any]]:
+    """Look up a user."""
+    message = ToolMessage(f"User {user_id}: {_RAW_EMAIL}", tool_call_id=tool_call_id)
+    return [Command(update={"messages": [message]})]
+
+
+@tool
+def lookup_user_mixed_list(
+    user_id: str, tool_call_id: Annotated[str, InjectedToolCallId]
+) -> list[ToolMessage | Command[Any]]:
+    """Look up a user."""
+    message = ToolMessage(f"User {user_id}: {_RAW_EMAIL}", tool_call_id=tool_call_id)
+    return [Command(update={"structured_response": None}), message]
+
+
+def _stream(agent: CompiledStateGraph[Any, Any, Any, Any]) -> list[StreamPart[Any, Any]]:
+    return list(
+        agent.stream(
+            {"messages": [HumanMessage("hi")]}, _THREAD, stream_mode=_STREAM_MODES, version="v2"
+        )
+    )
+
+
+async def _astream(agent: CompiledStateGraph[Any, Any, Any, Any]) -> list[StreamPart[Any, Any]]:
+    return [
+        part
+        async for part in agent.astream(
+            {"messages": [HumanMessage("hi")]}, _THREAD, stream_mode=_STREAM_MODES, version="v2"
+        )
+    ]
+
+
+def _modes_with_raw_email(parts: list[StreamPart[Any, Any]]) -> list[str]:
+    return [part["type"] for part in parts if _RAW_EMAIL in repr(part["data"])]
+
+
+def _steps_with_raw_email(history: Iterable[StateSnapshot]) -> list[int | None]:
+    return [
+        (snapshot.metadata or {}).get("step")
+        for snapshot in history
+        if _RAW_EMAIL in repr(snapshot)
+    ]
+
+
+def _streamed_messages(parts: list[StreamPart[Any, Any]]) -> list[tuple[type, Any]]:
+    return [
+        (type(part["data"][0]), part["data"][0].content)
+        for part in parts
+        if part["type"] == "messages"
+    ]
+
+
+_LOOKUP_TOOLS = pytest.mark.parametrize(
+    "lookup",
+    [
+        lookup_user,
+        lookup_user_command,
+        lookup_user_list,
+        lookup_user_command_list,
+        lookup_user_mixed_list,
+    ],
+    ids=["text", "command", "list", "command_list", "mixed_list"],
+)
+
+
+class TestNoPIIOnStreamOrCheckpoint:
+    def test_output_pii_never_streams_or_persists(self) -> None:
+        agent = create_agent(
+            _email_model(),
+            [],
+            middleware=[PIIMiddleware("email", apply_to_output=True)],
+            checkpointer=InMemorySaver(),
+        )
+
+        parts = _stream(agent)
+
+        assert _modes_with_raw_email(parts) == []
+        assert _steps_with_raw_email(agent.get_state_history(_THREAD)) == []
+        assert _streamed_messages(parts) == [(AIMessage, "Reach me at [REDACTED_EMAIL] today.")]
+
+    async def test_output_pii_never_streams_or_persists_async(self) -> None:
+        agent = create_agent(
+            _email_model(),
+            [],
+            middleware=[PIIMiddleware("email", apply_to_output=True)],
+            checkpointer=InMemorySaver(),
+        )
+
+        parts = await _astream(agent)
+
+        history = [snapshot async for snapshot in agent.aget_state_history(_THREAD)]
+        assert _modes_with_raw_email(parts) == []
+        assert _steps_with_raw_email(history) == []
+        assert _streamed_messages(parts) == [(AIMessage, "Reach me at [REDACTED_EMAIL] today.")]
+
+    def test_output_pii_never_persists_with_invoke(self) -> None:
+        agent = create_agent(
+            _email_model(),
+            [],
+            middleware=[PIIMiddleware("email", apply_to_output=True)],
+            checkpointer=InMemorySaver(),
+        )
+
+        result = agent.invoke({"messages": [HumanMessage("hi")]}, _THREAD)
+
+        assert result["messages"][-1].content == "Reach me at [REDACTED_EMAIL] today."
+        assert _steps_with_raw_email(agent.get_state_history(_THREAD)) == []
+
+    @_LOOKUP_TOOLS
+    def test_tool_result_pii_never_streams_or_persists(self, lookup: BaseTool) -> None:
+        agent = create_agent(
+            _model_calling(lookup.name),
+            [lookup],
+            middleware=[PIIMiddleware("email", apply_to_tool_results=True)],
+            checkpointer=InMemorySaver(),
+        )
+
+        parts = _stream(agent)
+
+        assert _modes_with_raw_email(parts) == []
+        assert _steps_with_raw_email(agent.get_state_history(_THREAD)) == []
+        assert {part["type"] for part in parts} == {"messages", "updates", "values", "checkpoints"}
+
+    @_LOOKUP_TOOLS
+    async def test_tool_result_pii_never_streams_or_persists_async(self, lookup: BaseTool) -> None:
+        agent = create_agent(
+            _model_calling(lookup.name),
+            [lookup],
+            middleware=[PIIMiddleware("email", apply_to_tool_results=True)],
+            checkpointer=InMemorySaver(),
+        )
+
+        parts = await _astream(agent)
+
+        history = [snapshot async for snapshot in agent.aget_state_history(_THREAD)]
+        assert _modes_with_raw_email(parts) == []
+        assert _steps_with_raw_email(history) == []
+        assert {part["type"] for part in parts} == {"messages", "updates", "values", "checkpoints"}
+
+    @pytest.mark.parametrize("apply_to_output", [True, False], ids=["output", "tool_results"])
+    def test_block_strategy_raises_before_any_pii_streams(self, *, apply_to_output: bool) -> None:
+        agent = create_agent(
+            _email_model() if apply_to_output else _model_calling(lookup_user.name),
+            [] if apply_to_output else [lookup_user],
+            middleware=[
+                PIIMiddleware(
+                    "email",
+                    strategy="block",
+                    apply_to_output=apply_to_output,
+                    apply_to_tool_results=not apply_to_output,
+                )
+            ],
+            checkpointer=InMemorySaver(),
+        )
+        parts: list[StreamPart[Any, Any]] = []
+
+        with pytest.raises(PIIDetectionError):
+            parts.extend(
+                agent.stream(
+                    {"messages": [HumanMessage("hi")]},
+                    _THREAD,
+                    stream_mode=_STREAM_MODES,
+                    version="v2",
+                )
+            )
+
+        assert _modes_with_raw_email(parts) == []
+        assert _steps_with_raw_email(agent.get_state_history(_THREAD)) == []
+
+    def test_stacked_pii_middleware_keep_every_type_off_the_stream(self) -> None:
+        model = GenericFakeChatModel(
+            messages=iter([AIMessage(f"Mail {_RAW_EMAIL} from 192.168.1.100")])
+        )
+        agent = create_agent(
+            model,
+            [],
+            middleware=[
+                PIIMiddleware("email", apply_to_output=True),
+                PIIMiddleware("ip", strategy="mask", apply_to_output=True),
+            ],
+            checkpointer=InMemorySaver(),
+        )
+
+        parts = _stream(agent)
+
+        assert [part["type"] for part in parts if "192.168.1.100" in repr(part["data"])] == []
+        assert _modes_with_raw_email(parts) == []
+        assert _streamed_messages(parts) == [(AIMessage, "Mail [REDACTED_EMAIL] from *.*.*.100")]
+
+    def test_model_swapped_in_by_a_later_middleware_is_hidden_too(self) -> None:
+        @wrap_model_call
+        def swap_model(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
+            return handler(request.override(model=_email_model()))
+
+        agent = create_agent(
+            GenericFakeChatModel(messages=iter([])),
+            [],
+            middleware=[PIIMiddleware("email", apply_to_output=True), swap_model],
+            checkpointer=InMemorySaver(),
+        )
+
+        parts = _stream(agent)
+
+        assert _modes_with_raw_email(parts) == []
+        assert _streamed_messages(parts) == [(AIMessage, "Reach me at [REDACTED_EMAIL] today.")]
+
+    def test_output_of_a_model_bound_with_its_own_tags_never_streams(self) -> None:
+        agent = create_agent(  # type: ignore[call-overload]
+            _email_model().with_config(tags=["support"]),
+            [],
+            middleware=[PIIMiddleware("email", apply_to_output=True)],
+            checkpointer=InMemorySaver(),
+        )
+
+        parts = _stream(agent)
+
+        assert _modes_with_raw_email(parts) == []
+        assert _streamed_messages(parts) == [(AIMessage, "Reach me at [REDACTED_EMAIL] today.")]
+
+    def test_model_tokens_still_stream_without_apply_to_output(self) -> None:
+        agent = create_agent(
+            GenericFakeChatModel(messages=iter([AIMessage("hello there")])),
+            [],
+            middleware=[PIIMiddleware("email", apply_to_tool_results=True)],
+        )
+
+        parts = list(
+            agent.stream({"messages": [HumanMessage("hi")]}, stream_mode="messages", version="v2")
+        )
+
+        assert [part["data"][0].content for part in parts if part["type"] == "messages"] == [
+            "hello",
+            " ",
+            "there",
+        ]
 
 
 # ============================================================================
@@ -2262,13 +2547,10 @@ class TestPIIStreamingEndToEnd:
                     content = payload.get("content") or {}
                     if content.get("type") == "text":
                         surfaces.append(content.get("text", ""))
-            # Legacy `(BaseMessage, metadata)` shape: message carries text
-            # directly on `.content`. The langgraph→langchain adapter falls
-            # back to this when `_astream` isn't streaming chunks.
+            # Legacy `(BaseMessage, metadata)` shape: a whole message, sent
+            # when the model streams no chunks or its call is tagged `nostream`.
             elif isinstance(payload, BaseMessage):
-                content = payload.content
-                if isinstance(content, str):
-                    surfaces.append(content)
+                surfaces.append(payload.text)
 
         # Every observed text surface — deltas, finalized snapshots, or
         # legacy whole-message payloads — must already be redacted.
