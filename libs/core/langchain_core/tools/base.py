@@ -377,6 +377,20 @@ class ToolException(Exception):  # noqa: N818
     result is returned as an observation to the agent.
     """
 
+    artifact: Any = None
+    """Raw output to attach to the error `ToolMessage` as its `artifact`."""
+
+    def __init__(self, *args: object, artifact: Any = None) -> None:
+        """Create a tool exception.
+
+        Args:
+            *args: Positional arguments passed to `Exception`.
+            artifact: Raw output to attach to the error `ToolMessage` when
+                `handle_tool_error` handles this exception.
+        """
+        super().__init__(*args)
+        self.artifact = artifact
+
 
 ArgsSchema = TypeBaseModel | dict[str, Any]
 MessageContentBlock = str | dict[str, Any]
@@ -1123,6 +1137,7 @@ class ChildTool(BaseTool):
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
+                artifact = e.artifact
                 status = "error"
         except BaseException as e:
             error_to_raise = e
@@ -1253,6 +1268,7 @@ class ChildTool(BaseTool):
                 error_to_raise = e
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
+                artifact = e.artifact
                 status = "error"
         except BaseException as e:
             error_to_raise = e
