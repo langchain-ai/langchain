@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:eafc421257e18bbe41b7b4368d1880e71ad8390579ac4078974ead0ed2b92e32",
+  "pageVersion": "sha256:28a599d6507524f45e155336ee5a0ad88e4486c91b60b1fc4c03a63b97100dda",
   "claims": [
     {
       "id": "claim_2744b97852c94bb9873ec92717376683",
@@ -136,7 +136,7 @@
     },
     {
       "id": "claim_167a6d30d524411096044f31bf8dc9ba",
-      "statement": "Prompts serialize via langchain_core.load using dumpd() and loads() (recommended modern API). The older save()/load_prompt_from_config() API is deprecated (since 1.2.21, removal 2.0.0). Serialization preserves template content, format, input_variables, partial_variables, and message structure. Selectors using external resources (e.g., SemanticSimilarityExampleSelector with vector stores) are not serializable.",
+      "statement": "Prompts serialize via langchain_core.load using dumpd() and dumps() (recommended modern API). The older save()/load_prompt_from_config() API is deprecated (since 1.2.21, removal 2.0.0). Serialization preserves template content, format, input_variables, partial_variables, and message structure. Selectors using external resources (e.g., SemanticSimilarityExampleSelector with vector stores) are not serializable.",
       "evidence": [
         {
           "resource": "repo://libs/core/langchain_core/prompts/base.py#L381-L400",
@@ -157,6 +157,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-05T08:18:41.280Z"
+    "at": "2026-11-06T08:17:28.425Z"
   }
 }

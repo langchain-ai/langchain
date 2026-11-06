@@ -1,11 +1,11 @@
 ---
 type: "Reference"
 title: "Unit Testing: Test Organization & Patterns"
-description: "Guide to writing unit tests: test structure, fixtures, mocking models/tools, and standard test patterns across core, langchain_v1, and partners."
-tags: [unit-testing, pytest, fixtures, async-testing, mocking, fake-models, tools, callbacks, runnables, snapshot-testing]
+description: "Guide to writing unit tests for LangChain: test structure, fixtures, mocking models/tools, test patterns, edge cases, and CI integration."
+tags: [unit-testing, pytest, fixtures, async-testing, mocking, fake-models, tools, callbacks, runnables, snapshot-testing, edge-cases, ci-integration]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-05T08:18:41.280Z
+    at: 2026-11-06T08:17:28.425Z
 sources:
   - id: openwiki-source-8f1875229ad4a704c8e20a06
     resource: repo://libs/core/Makefile
@@ -31,7 +31,7 @@ sources:
     resource: repo://libs/core/tests/unit_tests/test_ssrf_protection.py
   - id: openwiki-source-a690cf632a02205e3f555be8
     resource: repo://libs/core/tests/unit_tests/test_tools.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
 ---
 
 ## Overview
@@ -102,6 +102,56 @@ def _disable_local_langsmith_tracing():
 ```
 
 This prevents trace leakage when developers have LangSmith configured locally.
+
+## Test Directory Structure and Naming
+
+### Mirror Structure Pattern
+
+Test files mirror the source code structure for clarity and organization:
+
+```
+libs/core/
+├── langchain_core/
+│   ├── runnables/
+│   │   ├── base.py
+│   │   ├── config.py
+│   │   └── ...
+│   ├── language_models/
+│   │   ├── chat_model.py
+│   │   ├── fake_chat_models.py
+│   │   └── ...
+│   └── ...
+└── tests/
+    └── unit_tests/
+        ├── runnables/
+        │   ├── conftest.py
+        │   ├── test_base.py
+        │   ├── test_config.py
+        │   └── ...
+        ├── language_models/
+        │   ├── test_chat_model.py
+        │   ├── test_fake_chat_models.py
+        │   └── ...
+        ├── conftest.py
+        └── ...
+```
+
+### Test File Naming Conventions
+
+- **`test_*.py`** – Test modules containing test functions and classes
+- **`conftest.py`** – Pytest configuration and fixture definitions at any directory level
+- **`__snapshots__/`** – Directory containing syrupy snapshot files adjacent to test modules
+- **`stubs.py`** or `fixtures.py`** – Shared test utilities and helper functions
+
+### Conftest Hierarchy
+
+Pytest discovers and applies `conftest.py` files in order:
+
+1. **Root conftest** (`tests/unit_tests/conftest.py`) – Global fixtures and markers
+2. **Module conftest** (e.g., `tests/unit_tests/runnables/conftest.py`) – Module-specific configuration
+3. **Test file imports** – Local fixtures and setup
+
+Fixtures at higher levels are available to all tests in subdirectories, but lower-level fixtures override higher-level ones with the same name.
 
 ## Pytest Configuration
 
@@ -666,6 +716,95 @@ def test_middleware_chain_with_callbacks() -> None:
     assert call_log[1][0] == "after"
 ```
 
+## Edge Cases and Error Conditions
+
+Testing edge cases and error conditions ensures components fail safely and provide meaningful feedback:
+
+### Empty Input Handling
+
+Test how components handle empty or minimal inputs:
+
+```python
+def test_prompt_template_empty_input() -> None:
+    """Test handling of empty input dict."""
+    prompt = ChatPromptTemplate.from_template("Hello {name}")
+    
+    # Should raise ValueError when required variable is missing
+    with pytest.raises(ValueError, match="Missing required"):
+        prompt.invoke({})
+
+def test_runnable_batch_empty_list() -> None:
+    """Test batch processing with empty input list."""
+    prompt = ChatPromptTemplate.from_template("Hello {name}")
+    results = prompt.batch([])
+    assert results == []
+```
+
+### Malformed Input Validation
+
+Test schema validation and type checking:
+
+```python
+def test_tool_invalid_argument_types() -> None:
+    """Test tool execution with wrong argument types."""
+    @tool
+    def add(a: int, b: int) -> int:
+        return a + b
+    
+    # Should fail validation
+    with pytest.raises(ValidationError):
+        add.invoke({"a": "not_a_number", "b": 5})
+
+def test_message_invalid_content_block() -> None:
+    """Test message construction with invalid content blocks."""
+    with pytest.raises(ValidationError):
+        AIMessage(
+            content=[{"type": "invalid_type", "data": "content"}]
+        )
+```
+
+### Error Propagation
+
+Test that errors are propagated correctly through chains:
+
+```python
+def test_chain_error_propagation() -> None:
+    """Test that errors in later stages propagate through earlier stages."""
+    
+    def failing_function(input_dict):
+        raise ValueError("Intentional failure")
+    
+    prompt = ChatPromptTemplate.from_template("Hello {name}")
+    failing_runnable = RunnableLambda(failing_function)
+    chain = prompt | failing_runnable
+    
+    with pytest.raises(ValueError, match="Intentional failure"):
+        chain.invoke({"name": "World"})
+```
+
+### Timeout and Cancellation
+
+Test handling of long-running operations:
+
+```python
+async def test_runnable_cancellation() -> None:
+    """Test that tasks can be cancelled safely."""
+    import asyncio
+    
+    async def slow_runnable(input):
+        await asyncio.sleep(10)
+        return "done"
+    
+    runnable = RunnableLambda(slow_runnable)
+    task = asyncio.create_task(runnable.ainvoke("test"))
+    
+    # Cancel the task
+    task.cancel()
+    
+    with pytest.raises(asyncio.CancelledError):
+        await task
+```
+
 ## Test Markers and Filtering
 
 ### `requires` Marker
@@ -736,34 +875,94 @@ pytest tests/benchmarks --codspeed  # Performance tests
 
 ## Test Execution and CI Integration
 
-### Standard Test Run
+### Local Test Execution
+
+#### Standard Test Run
 
 ```bash
 cd libs/core
 make test
 ```
 
-This command:
-- Unsets LangSmith environment variables (prevents tracing)
-- Runs pytest with parallel execution (`-n auto`)
-- Disables socket access (`--disable-socket`)
-- Disables benchmarks (`--benchmark-disable`)
+This command (via `Makefile`):
+- Unsets LangSmith environment variables (`LANGSMITH_TRACING`, `LANGSMITH_API_KEY`, etc.) to prevent accidental tracing
+- Runs pytest with parallel execution (`-n auto`) across all CPU cores
+- Disables socket access (`--disable-socket`) to prevent accidental network calls
+- Allows Unix sockets (`--allow-unix-socket`) for inter-process communication
+- Disables benchmarks (`--benchmark-disable`) for faster feedback
 
-### Watch Mode
+#### Watch Mode
 
 ```bash
 make test_watch
 ```
 
-Watches test files and reruns affected tests with snapshot auto-update enabled.
+Watches test files for changes and reruns affected tests with:
+- Snapshot auto-update enabled (`--snapshot-update`)
+- Verbose output for detailed feedback
+- Unix socket support for local testing
 
-### Extended Tests
+#### Extended Tests
 
 ```bash
 make extended_tests
 ```
 
-Runs tests with `@pytest.mark.requires` only if dependencies are installed.
+Runs tests marked with `@pytest.mark.requires` to verify optional dependencies:
+- Fails if required packages are not installed
+- Allows testing against all available integrations
+- Useful for testing in CI or before releases
+
+### GitHub Actions CI Integration
+
+Tests run in `.github/workflows/_test.yml` with the following stages:
+
+1. **Environment Setup**
+   - Checkout code
+   - Install Python version (e.g., 3.10, 3.11, 3.12)
+   - Cache dependencies with UV
+
+2. **Current Dependency Testing**
+   - Install test dependencies (`uv sync --group test`)
+   - Run full test suite with `make test`
+   - Report test failures and coverage
+
+3. **Minimum Dependency Testing**
+   - Calculate minimum supported versions using `.github/scripts/get_min_versions.py`
+   - Reinstall dependencies at minimum versions
+   - Rerun full test suite to verify backward compatibility
+
+4. **Validation**
+   - Verify working directory is clean (no uncommitted changes from test artifacts)
+   - Check that test execution didn't modify source files
+
+#### CI Test Artifacts and Reporting
+
+- Test output is captured with `-q` flag for quiet mode in CI
+- Test durations are reported via `--durations=5` to identify slow tests
+- Snapshot changes are detected and reported as test failures
+- Test runs timeout after 20 minutes to prevent hanging jobs
+
+### Pre-commit Hook Integration
+
+Tests are integrated into pre-commit hooks (`.pre-commit-config.yaml`):
+
+```yaml
+- repo: local
+  hooks:
+    - id: core
+      name: format and lint core
+      language: system
+      entry: make -C libs/core format lint
+      files: ^libs/core/
+      pass_filenames: false
+```
+
+When running `git commit`:
+1. Pre-commit hooks automatically run `make format lint` for changed files
+2. This includes running code formatters (ruff) and linters
+3. Tests are NOT run on commit (only unit test changes trigger test runs in CI)
+4. Use `git commit --no-verify` to skip hooks if necessary
 
 ## Standard Tests and Cross-Provider Conformance
 
