@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import traceback
 from abc import ABC, abstractmethod
+from contextvars import ContextVar
 from datetime import datetime, timezone
 from typing import (
     TYPE_CHECKING,
@@ -19,7 +20,7 @@ from langchain_core.tracers.schemas import Run
 from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 
 if TYPE_CHECKING:
-    from collections.abc import Coroutine, Sequence
+    from collections.abc import Callable, Coroutine, Sequence
     from uuid import UUID
 
     from tenacity import RetryCallState
@@ -34,6 +35,19 @@ if TYPE_CHECKING:
     )
 
 logger = logging.getLogger(__name__)
+
+_tracing_error_handlers: ContextVar[
+    tuple[Callable[[BaseException, Run], None], ...]
+] = ContextVar("tracing_error_handlers", default=())
+
+
+def _handle_tracing_error(error: BaseException, run: Run) -> None:
+    for handler in _tracing_error_handlers.get():
+        try:
+            handler(error, run)
+        except Exception:
+            logger.warning("Error in tracing error handler", exc_info=True)
+
 
 SCHEMA_FORMAT_TYPE = Literal["original", "streaming_events"]
 
@@ -393,6 +407,7 @@ class _TracerCore(ABC):
         llm_run.end_time = datetime.now(timezone.utc)
         llm_run.events.append({"name": "error", "time": llm_run.end_time})
 
+        _handle_tracing_error(error, llm_run)
         return llm_run
 
     def _create_chain_run(
@@ -479,6 +494,7 @@ class _TracerCore(ABC):
         chain_run.events.append({"name": "error", "time": chain_run.end_time})
         if inputs is not None:
             chain_run.inputs = self._get_chain_inputs(inputs)
+        _handle_tracing_error(error, chain_run)
         return chain_run
 
     def _create_tool_run(
@@ -546,6 +562,7 @@ class _TracerCore(ABC):
         tool_run.error = self._get_stacktrace(error)
         tool_run.end_time = datetime.now(timezone.utc)
         tool_run.events.append({"name": "error", "time": tool_run.end_time})
+        _handle_tracing_error(error, tool_run)
         return tool_run
 
     def _create_retrieval_run(
@@ -603,6 +620,7 @@ class _TracerCore(ABC):
         retrieval_run.error = self._get_stacktrace(error)
         retrieval_run.end_time = datetime.now(timezone.utc)
         retrieval_run.events.append({"name": "error", "time": retrieval_run.end_time})
+        _handle_tracing_error(error, retrieval_run)
         return retrieval_run
 
     def __deepcopy__(self, memo: dict[int, Any] | None = None) -> _TracerCore:
