@@ -128,5 +128,13 @@ def extract_sub_links(
             if not path.startswith(base_url_to_use):
                 continue
 
+            # Boundary check: ensure the match is at a URL path boundary.
+            # If base_url_to_use doesn't end with /, ?, or #, the next character
+            # after the matched prefix must be one of those.
+            if not base_url_to_use.endswith(('/', '?', '#')):
+                after = path[len(base_url_to_use) :]
+                if after and after[0] not in ("/", "?", "#"):
+                    continue
+
         results.append(path)
     return results
