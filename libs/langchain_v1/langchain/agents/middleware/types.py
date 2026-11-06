@@ -675,7 +675,9 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
         """Logic to run once when an async agent run is cancelled.
 
         Runs after the cancelled run finishes saving, under a short time limit, so the
-        next run starts from state it can continue from.
+        next run starts from state it can continue from. Only cancels with a
+        `langgraph.errors.RunCancelled` message run it; plain cancels such as timeouts
+        or shutdown skip it.
 
         !!! warning
 

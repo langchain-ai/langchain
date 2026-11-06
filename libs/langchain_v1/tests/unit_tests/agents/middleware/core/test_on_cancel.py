@@ -1,6 +1,7 @@
 import asyncio
 from typing import Any
 
+import langgraph.errors
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
@@ -12,6 +13,8 @@ from langgraph.runtime import Runtime
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+RunCancelled = getattr(langgraph.errors, "RunCancelled", None)
 
 needs_cancel_handler = pytest.mark.skipif(
     not hasattr(StateGraph, "set_cancel_handler"),
@@ -66,7 +69,7 @@ class AsyncNoop(AgentMiddleware):
 async def _cancel_during_tool(agent: Any, config: RunnableConfig) -> None:
     run = asyncio.create_task(agent.ainvoke({"messages": [HumanMessage("hi")]}, config))
     await asyncio.sleep(0.2)
-    run.cancel()
+    run.cancel(RunCancelled("user stop") if RunCancelled else None)
     with pytest.raises(asyncio.CancelledError):
         await run
 
