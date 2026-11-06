@@ -671,6 +671,39 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
             Agent state updates to apply after agent execution.
         """
 
+    def on_cancel(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
+        """Logic to run once when an async agent run is cancelled.
+
+        Runs after the cancelled run finishes saving, under a short time limit, so the
+        next run starts from state it can continue from. Only cancels with a
+        `langgraph.errors.RunCancelled` message run it; plain cancels such as timeouts
+        or shutdown skip it.
+
+        !!! warning
+
+            Experimental. Requires a checkpointer and only runs for top-level async runs.
+            Not supported on langgraph versions without `StateGraph.set_cancel_handler`:
+            `create_agent` warns and the hook does not run.
+
+        Args:
+            state: The latest saved agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Agent state updates to save before the cancellation propagates.
+        """
+
+    async def aon_cancel(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
+        """Async logic to run once when an async agent run is cancelled.
+
+        Args:
+            state: The latest saved agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Agent state updates to save before the cancellation propagates.
+        """
+
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
