@@ -46,7 +46,7 @@ def _convert_from_v1_to_groq(
                 if "executed_tools" not in new_additional_kwargs:
                     new_additional_kwargs["executed_tools"] = []
                 new_additional_kwargs["executed_tools"].append(new_block)
-        elif block["type"] == "server_tool_result":
+        elif block["type"] in ("server_tool_result", "invalid_tool_call"):
             continue
 
         elif (
