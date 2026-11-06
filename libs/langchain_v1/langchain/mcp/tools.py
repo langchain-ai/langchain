@@ -285,7 +285,7 @@ async def as_langchain_tool(
     ) -> tuple[list[ToolMessageContentBlock], MCPToolArtifact | None]:
         """Call the captured MCP tool and convert its result."""
         result: _ToolCallResult
-        async with client:
+        async with requesting_client:
             if drives_interrupts:
                 result = await _call_tool_with_interrupts(client, tool.name, arguments)
             else:
