@@ -207,3 +207,11 @@ def test_extract_sub_links_with_query() -> None:
         )
     )
     assert actual == expected, f"Expected {expected}, but got {actual}"
+
+
+def test_extract_sub_links_query_only_link() -> None:
+    html = '<a href="?page=2">next</a>'
+    actual = extract_sub_links(
+        html, "https://foobar.com/list?page=1", base_url="https://foobar.com"
+    )
+    assert actual == ["https://foobar.com/list?page=2"]
