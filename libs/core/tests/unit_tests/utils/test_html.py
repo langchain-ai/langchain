@@ -207,3 +207,22 @@ def test_extract_sub_links_with_query() -> None:
         )
     )
     assert actual == expected, f"Expected {expected}, but got {actual}"
+
+
+def test_prevent_outside_path_boundary() -> None:
+    html = (
+        '<a href="/docs">OK</a>'
+        '<a href="/docs/intro">OK</a>'
+        '<a href="/docs?v=2">OK</a>'
+        '<a href="/docsite/secret">BAD</a>'
+    )
+    actual = sorted(
+        extract_sub_links(
+            html, "https://foobar.com/docs", base_url="https://foobar.com/docs"
+        )
+    )
+    assert actual == [
+        "https://foobar.com/docs",
+        "https://foobar.com/docs/intro",
+        "https://foobar.com/docs?v=2",
+    ]
