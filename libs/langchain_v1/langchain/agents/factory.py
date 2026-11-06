@@ -819,6 +819,33 @@ def _chain_async_tool_call_wrappers(
     return result
 
 
+def _chain_on_cancel(
+    middleware: Sequence[AgentMiddleware[Any, Any, Any]],
+) -> Callable[[Any, Runtime[Any]], Awaitable[dict[str, Any] | None]]:
+    """Combine `on_cancel` hooks into one cancel handler, in middleware order.
+
+    Each hook sees the saved state. List values from later hooks are appended, so
+    every middleware's `messages` are kept; other keys take the last value.
+    """
+
+    async def on_cancel(state: Any, runtime: Runtime[Any]) -> dict[str, Any] | None:
+        update: dict[str, Any] = {}
+        for m in middleware:
+            if m.__class__.aon_cancel is not AgentMiddleware.aon_cancel:
+                result = await m.aon_cancel(state, runtime)
+            else:
+                result = m.on_cancel(state, runtime)
+            for key, value in (result or {}).items():
+                previous = update.get(key)
+                if isinstance(previous, list) and isinstance(value, list):
+                    update[key] = [*previous, *value]
+                else:
+                    update[key] = value
+        return update or None
+
+    return on_cancel
+
+
 # No `response_format`: there is no structured output, so `ResponseT` resolves to `Any`.
 @overload
 def create_agent(
@@ -1183,6 +1210,12 @@ def create_agent(
         for m in middleware
         if m.__class__.after_agent is not AgentMiddleware.after_agent
         or m.__class__.aafter_agent is not AgentMiddleware.aafter_agent
+    ]
+    middleware_w_on_cancel = [
+        m
+        for m in middleware
+        if m.__class__.on_cancel is not AgentMiddleware.on_cancel
+        or m.__class__.aon_cancel is not AgentMiddleware.aon_cancel
     ]
     # Collect middleware with wrap_model_call or awrap_model_call hooks
     # Include middleware with either implementation to ensure NotImplementedError is raised
@@ -1905,6 +1938,9 @@ def create_agent(
     # each declare `InternalCallTransformer` on their own `transformers` tuple so
     # it's only registered when one of them is actually in use.
     middleware_transformers = [t for m in middleware for t in getattr(m, "transformers", ())]
+
+    if middleware_w_on_cancel:
+        graph.set_cancel_handler(_chain_on_cancel(middleware_w_on_cancel))
 
     return graph.compile(
         checkpointer=checkpointer,
