@@ -87,14 +87,14 @@ class RetrieversIntegrationTests(BaseStandardTests):
             for k, v in self.retriever_constructor_params.items()
             if k != self.num_results_arg_name
         }
-        params_3 = {**params, self.num_results_arg_name: 3}
-        retriever_3 = self.retriever_constructor(**params_3)
+        params[self.num_results_arg_name] = 3
+        retriever_3 = self.retriever_constructor(**params)
         result_3 = retriever_3.invoke(self.retriever_query_example)
         assert len(result_3) == 3
         assert all(isinstance(doc, Document) for doc in result_3)
 
-        params_1 = {**params, self.num_results_arg_name: 1}
-        retriever_1 = self.retriever_constructor(**params_1)
+        params[self.num_results_arg_name] = 1
+        retriever_1 = self.retriever_constructor(**params)
         result_1 = retriever_1.invoke(self.retriever_query_example)
         assert len(result_1) == 1
         assert all(isinstance(doc, Document) for doc in result_1)
