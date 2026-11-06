@@ -1452,3 +1452,167 @@ def test_pydantic_tools_parser_unknown_tool_raises_output_parser_exception(
     msg = str(excinfo.value)
     assert "Unknown tool type" in msg
     assert "UnknownTool" in msg
+
+
+def test_parse_tool_call_with_reasoning_tags_deepseek() -> None:
+    """Test parse_tool_call strips reasoning tags from DeepSeek-R1 output.
+
+    DeepSeek-R1 and similar reasoning models wrap their thinking process
+    in <think></think> tags before returning the actual tool call.
+    This test ensures we correctly extract the JSON from such output.
+
+    See: https://github.com/langchain-ai/langchain/issues/32120
+    """
+    raw_tool_call = {
+        "function": {
+            "name": "AnalysisResult",
+            "arguments": (
+                "<think>\nLet me analyze...\n</think>\n"
+                "<tool_call>\n"
+                '{"result": [{"name": {"战略点名称": "促销优化"}, '
+                '"information": {"战略点说明": "在成熟市场中利用促销手段"}}]}\n'
+                "</tool_call>"
+            ),
+        },
+        "id": "call_deepseek_1",
+        "type": "function",
+    }
+
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "AnalysisResult"
+    assert isinstance(result["args"], dict)
+    assert "result" in result["args"]
+    assert len(result["args"]["result"]) == 1
+    assert result["args"]["result"][0]["name"]["战略点名称"] == "促销优化"
+
+
+def test_parse_tool_call_with_think_tags_only() -> None:
+    """Test parse_tool_call removes only <think> tags, preserving JSON."""
+    raw_tool_call = {
+        "function": {
+            "name": "ExtractData",
+            "arguments": (
+                "<think>Processing the request</think>"
+                '{"key": "value", "nested": {"field": 123}}'
+            ),
+        },
+        "id": "call_123",
+        "type": "function",
+    }
+
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "ExtractData"
+    assert result["args"] == {"key": "value", "nested": {"field": 123}}
+
+
+def test_parse_tool_call_with_tool_call_wrapper_tags() -> None:
+    """Test parse_tool_call removes <tool_call> wrapper tags."""
+    raw_tool_call = {
+        "function": {
+            "name": "ProcessData",
+            "arguments": '<tool_call>{"data": [1, 2, 3]}</tool_call>',
+        },
+        "id": "call_456",
+        "type": "function",
+    }
+
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "ProcessData"
+    assert result["args"] == {"data": [1, 2, 3]}
+
+
+def test_parse_tool_call_with_both_think_and_tool_call_tags() -> None:
+    """Test parse_tool_call removes both <think> and <tool_call> tags."""
+    raw_tool_call = {
+        "function": {
+            "name": "AnalyzeDocument",
+            "arguments": (
+                "<think>Analyzing the document structure\n"
+                "Line 2 of thinking</think>"
+                '<tool_call>{"analysis": "complete", "score": 95}</tool_call>'
+            ),
+        },
+        "id": "call_789",
+        "type": "function",
+    }
+
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "AnalyzeDocument"
+    assert result["args"] == {"analysis": "complete", "score": 95}
+
+
+def test_parse_tool_call_without_reasoning_tags_still_works() -> None:
+    """Test parse_tool_call still works normally with regular JSON (no tags)."""
+    raw_tool_call = {
+        "function": {
+            "name": "NormalTool",
+            "arguments": '{"param1": "value1", "param2": 42}',
+        },
+        "id": "call_normal",
+        "type": "function",
+    }
+
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "NormalTool"
+    assert result["args"] == {"param1": "value1", "param2": 42}
+
+
+def test_parse_tool_call_with_whitespace_around_json() -> None:
+    """Test parse_tool_call handles whitespace correctly after tag removal."""
+    raw_tool_call = {
+        "function": {
+            "name": "TrimTest",
+            "arguments": (
+                '  \n  <think>thinking...</think>  \n\n  {"result": "success"}  \n  '
+            ),
+        },
+        "id": "call_trim",
+        "type": "function",
+    }
+
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "TrimTest"
+    assert result["args"] == {"result": "success"}
+
+
+def test_parse_tool_call_preserves_tags_in_legitimate_json_content() -> None:
+    """Test parse_tool_call preserves <think> and <tool_call> inside valid JSON strings.
+
+    When argument content legitimately contains <think> or <tool_call> tags
+    inside a valid JSON string value (e.g. text summarization or code generation),
+    parse_tool_call MUST NOT strip or corrupt the data.
+    """
+    raw_tool_call = {
+        "function": {
+            "name": "SummarizeText",
+            "arguments": (
+                '{"prompt": "How do I use <think>tags</think> and '
+                '<tool_call>wrapper</tool_call> in HTML?"}'
+            ),
+        },
+        "id": "call_legit_tags",
+        "type": "function",
+    }
+
+    result = parse_tool_call(raw_tool_call, return_id=True)
+
+    assert result is not None
+    assert result["name"] == "SummarizeText"
+    assert result["args"] == {
+        "prompt": (
+            "How do I use <think>tags</think> and "
+            "<tool_call>wrapper</tool_call> in HTML?"
+        )
+    }
