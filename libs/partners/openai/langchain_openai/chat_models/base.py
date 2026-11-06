@@ -1949,6 +1949,7 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         self._ensure_sync_client_available()
+        defer_responses_parse_errors = bool(kwargs.get("_defer_responses_parse_errors"))
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
         raw_response = None
@@ -1969,7 +1970,10 @@ class BaseChatOpenAI(BaseChatModel):
                     raw_response = self.root_client.responses.with_raw_response.create(
                         **payload
                     )
-                response = raw_response.parse()
+                response, deferred_parse = _parse_responses_raw_response(
+                    raw_response,
+                    defer_parse_errors=defer_responses_parse_errors,
+                )
                 if self.include_response_headers:
                     generation_info = {"headers": dict(raw_response.headers)}
                 generation_info = generation_info or {}
@@ -1981,7 +1985,9 @@ class BaseChatOpenAI(BaseChatModel):
                 )
                 result = _construct_lc_result_from_responses_api(
                     response,
-                    schema=original_schema_obj,
+                    # A deferred parse already failed. Re-validating here would
+                    # raise before `include_raw` can record `parsing_error`.
+                    schema=None if deferred_parse else original_schema_obj,
                     metadata=generation_info,
                     output_version=self.output_version,
                 )
@@ -2044,6 +2050,9 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs["stop"] = stop
 
         payload = {**self._default_params, **kwargs}
+        # Internal signal from `with_structured_output(..., include_raw=True)`.
+        # It must not be forwarded to the API.
+        payload.pop("_defer_responses_parse_errors", None)
 
         if self._use_responses_api(payload):
             if self.use_previous_response_id:
@@ -2249,6 +2258,7 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: AsyncCallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
+        defer_responses_parse_errors = bool(kwargs.get("_defer_responses_parse_errors"))
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = {}
         raw_response = None
@@ -2273,7 +2283,10 @@ class BaseChatOpenAI(BaseChatModel):
                             **payload
                         )
                     )
-                response = raw_response.parse()
+                response, deferred_parse = _parse_responses_raw_response(
+                    raw_response,
+                    defer_parse_errors=defer_responses_parse_errors,
+                )
                 if self.include_response_headers:
                     generation_info = {"headers": dict(raw_response.headers)}
                 _add_gateway_metadata(generation_info, raw_response)
@@ -2284,7 +2297,9 @@ class BaseChatOpenAI(BaseChatModel):
                 )
                 result = _construct_lc_result_from_responses_api(
                     response,
-                    schema=original_schema_obj,
+                    # A deferred parse already failed. Re-validating here would
+                    # raise before `include_raw` can record `parsing_error`.
+                    schema=None if deferred_parse else original_schema_obj,
                     metadata=generation_info,
                     output_version=self.output_version,
                 )
@@ -2879,6 +2894,10 @@ class BaseChatOpenAI(BaseChatModel):
         )
 
         if include_raw:
+            # Responses `parse()` validates Pydantic output inside the model call.
+            # Defer that failure so a truncated payload still produces an
+            # `AIMessage` and this fallback can store the `ValidationError`.
+            llm = llm.bind(_defer_responses_parse_errors=True)
             parser_assign = RunnablePassthrough.assign(
                 parsed=itemgetter("raw") | checked_parser, parsing_error=lambda _: None
             )
@@ -4470,6 +4489,13 @@ def _oai_structured_outputs_parser(
     _raise_on_refusal(ai_msg)
     if ai_msg.tool_calls:
         return None
+    # `include_raw` defers SDK parsing for incomplete Responses output. Validate
+    # the raw text here so the runnable records a `ValidationError` instead of
+    # failing before the raw message exists.
+    validate_json = getattr(schema, "model_validate_json", None)
+    text = _structured_output_message_text(ai_msg)
+    if text and callable(validate_json):
+        return validate_json(text)
     msg = (
         "Structured Output response does not have a 'parsed' field nor a 'refusal' "
         f"field. Received message:\n\n{ai_msg}"
@@ -5173,6 +5199,116 @@ def _construct_responses_api_input(
             input_.append(msg)
 
     return input_
+
+
+def _structured_output_message_text(message: AIMessage) -> str:
+    """Return concatenated text blocks from a structured-output message.
+
+    Args:
+        message: Model message that may hold truncated JSON in its text blocks.
+
+    Returns:
+        The joined text, or an empty string when the message has none.
+    """
+    content = message.content
+    if isinstance(content, str):
+        return content
+    if not isinstance(content, list):
+        return ""
+    parts: list[str] = []
+    for block in content:
+        if isinstance(block, str):
+            parts.append(block)
+        elif isinstance(block, dict) and block.get("type") == "text":
+            text = block.get("text")
+            if isinstance(text, str):
+                parts.append(text)
+    return "".join(parts)
+
+
+def _parse_responses_raw_response(
+    raw_response: Any, *, defer_parse_errors: bool
+) -> tuple[Any, bool]:
+    """Parse a Responses raw payload, keeping incomplete output when asked.
+
+    `responses.parse()` validates a Pydantic `text_format` before LangChain can
+    build an `AIMessage`. Truncated JSON raises `ValidationError`, so
+    `include_raw=True` never sees `status` or `incomplete_details`.
+
+    When `defer_parse_errors` is set and the output is incomplete or not valid
+    JSON, return the unparsed response so the structured-output parser can
+    record that error. Schema mismatches on completed, well-formed JSON still
+    raise.
+
+    Args:
+        raw_response: SDK object from `responses.with_raw_response`.
+        defer_parse_errors: Whether `include_raw` asked to keep parse failures.
+
+    Returns:
+        The parsed or recovered response, and whether parsing was deferred.
+    """
+    try:
+        return raw_response.parse(), False
+    except ValidationError:
+        if not defer_parse_errors:
+            raise
+        recovered = _recover_responses_response(raw_response)
+        if recovered is None or not _responses_output_parse_is_recoverable(recovered):
+            raise
+        return recovered, True
+
+
+def _recover_responses_response(raw_response: Any) -> Any | None:
+    """Build a `Response` from the HTTP body after SDK parsing raises.
+
+    Args:
+        raw_response: SDK raw response whose `.parse()` failed.
+
+    Returns:
+        The recovered response, or `None` when the body is not one.
+    """
+    http_response = getattr(raw_response, "http_response", None)
+    if http_response is None:
+        return None
+    try:
+        data = http_response.json()
+    except (JSONDecodeError, UnicodeDecodeError, ValueError, TypeError):
+        return None
+    if not isinstance(data, dict):
+        return None
+    from openai.types.responses import Response
+
+    try:
+        return Response.model_validate(data)
+    except ValidationError:
+        return None
+
+
+def _responses_output_parse_is_recoverable(response: Any) -> bool:
+    """Return whether a failed structured parse should still yield a message.
+
+    Incomplete responses and non-JSON output text are recoverable. A completed
+    response whose text is valid JSON failed schema validation and stays strict.
+
+    Args:
+        response: Unparsed Responses API object.
+
+    Returns:
+        `True` when the raw response should be kept instead of re-raised.
+    """
+    if getattr(response, "status", None) == "incomplete":
+        return True
+    try:
+        text = _get_output_text(response)
+    except (AttributeError, TypeError):
+        return False
+    if not text:
+        return False
+    try:
+        json.loads(text)
+    except JSONDecodeError:
+        return True
+    return False
 
 
 def _get_output_text(response: Response) -> str:
