@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from typing import Any
+from unittest.mock import MagicMock
 
 import httpx2
 import pytest
@@ -311,6 +312,31 @@ async def test_ainvoke_accepts_classifier_request() -> None:
     assert observed_payload["state"] == "Please help ASAP."
     assert set(observed_payload["questions"]) == {"urgent"}
     await async_client.aclose()
+
+
+@pytest.mark.parametrize("asynchronous", [False, True])
+async def test_empty_questions_are_rejected_before_request(
+    *, asynchronous: bool
+) -> None:
+    """Reject requests without classification questions before sending them."""
+    client = MagicMock(spec=httpx2.Client)
+    async_client = MagicMock(spec=httpx2.AsyncClient)
+    classifier = TypeSafeClassifier(
+        api_key=API_KEY,
+        client=client,
+        async_client=async_client,
+    )
+    request: ClassifierRequest = {"state": "hello", "questions": {}}
+
+    if asynchronous:
+        with pytest.raises(ValueError, match="at least one question"):
+            await classifier.ainvoke(request)
+    else:
+        with pytest.raises(ValueError, match="at least one question"):
+            classifier.invoke(request)
+
+    client.post.assert_not_called()
+    async_client.post.assert_not_awaited()
 
 
 @pytest.mark.asyncio
