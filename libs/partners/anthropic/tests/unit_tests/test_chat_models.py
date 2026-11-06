@@ -6483,9 +6483,10 @@ def test_system_message_output_config_sends_per_message_effort() -> None:
         ]
     )
     assert payload["system"] == "Be terse."
+    # Moved after the user turn: same effect, and the cached prefix still matches.
     assert payload["messages"][2:] == [
-        {"role": "system", "content": [], "output_config": {"effort": "low"}},
         {"role": "user", "content": "Summarize it."},
+        {"role": "system", "content": [], "output_config": {"effort": "low"}},
     ]
     assert payload["betas"] == ["mid-conversation-output-config-2026-07-01"]
 

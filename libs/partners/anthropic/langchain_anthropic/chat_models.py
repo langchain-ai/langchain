@@ -793,6 +793,7 @@ def _format_messages(
         role = _message_type_lookups[message.type]
         content: str | list
         effort_update: str | None = None
+        effort_after_turn: list[BaseMessage] = []
 
         if not isinstance(message.content, str):
             # parse as dict
@@ -1093,9 +1094,9 @@ def _format_messages(
             else:
                 for pending in pending_system:
                     if _output_config(pending) and not pending.content:
-                        formatted_messages.extend(
-                            _format_in_place_system_messages([pending], model=model)
-                        )
+                        # Sent after the user turn instead: it applies to the same
+                        # reply, and placing it before the turn restarts the cache.
+                        effort_after_turn.append(pending)
                         continue
                     _raise_if_output_config(pending, model)
                     if system is not None:
@@ -1115,6 +1116,9 @@ def _format_messages(
                 ):
                     block.setdefault("toolset_name", toolset_name)
         formatted_messages.append({"role": role, "content": content})
+        formatted_messages.extend(
+            _format_in_place_system_messages(effort_after_turn, model=model)
+        )
         if effort_update:
             # Per-message effort: an empty `system` turn right after the user turn
             # sets the effort for the reply and keeps the cached prefix intact.
