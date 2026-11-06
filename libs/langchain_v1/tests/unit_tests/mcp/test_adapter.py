@@ -24,6 +24,8 @@ from langchain.mcp import MCPAdapter
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
     from mcp.client.caching import CacheMode
 
 
@@ -97,6 +99,29 @@ async def test_colliding_tool_names_reach_their_own_server(
 
     assert calc["text"] == "3"
     assert greet["text"] == "greetings 1 and 2"
+
+
+@pytest.mark.asyncio
+async def test_group_tool_call_connects_only_its_own_server(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A call through a group tool enters its member client, not the whole group."""
+    adapter = MCPAdapter(_group())
+    tools = {tool.name: tool for tool in await adapter.list_tools()}
+    members = cast("ClientGroup", adapter.client).clients
+    entered: list[Client[Any]] = []
+    real_aenter = cast("Callable[[Client[Any]], Awaitable[Client[Any]]]", Client.__aenter__)
+
+    async def recording_aenter(self: Client[Any]) -> Client[Any]:
+        entered.append(self)
+        return await real_aenter(self)
+
+    monkeypatch.setattr(Client, "__aenter__", recording_aenter)
+
+    [block] = await tools["calc_add"].ainvoke({"a": 1, "b": 2})
+
+    assert block["text"] == "3"
+    assert entered == [members["calc"]]
 
 
 @pytest.mark.asyncio
