@@ -6,6 +6,7 @@ import functools
 import importlib
 import itertools
 import re
+import warnings
 from dataclasses import dataclass, field, fields
 from typing import (
     TYPE_CHECKING,
@@ -844,6 +845,23 @@ def _chain_on_cancel(
         return update or None
 
     return on_cancel
+
+
+def _register_on_cancel(
+    graph: StateGraph[Any, Any, Any, Any],
+    middleware: Sequence[AgentMiddleware[Any, Any, Any]],
+) -> None:
+    """Register `on_cancel` hooks, or warn that the installed langgraph can't run them."""
+    if not hasattr(graph, "set_cancel_handler"):
+        names = ", ".join(m.name for m in middleware)
+        msg = (
+            f"`on_cancel` is not supported by the installed langgraph, which has no "
+            f"`StateGraph.set_cancel_handler`. These hooks will not run: {names}. "
+            "Upgrade langgraph to use them."
+        )
+        warnings.warn(msg, UserWarning, stacklevel=3)
+        return
+    graph.set_cancel_handler(_chain_on_cancel(middleware))
 
 
 # No `response_format`: there is no structured output, so `ResponseT` resolves to `Any`.
@@ -1940,7 +1958,7 @@ def create_agent(
     middleware_transformers = [t for m in middleware for t in getattr(m, "transformers", ())]
 
     if middleware_w_on_cancel:
-        graph.set_cancel_handler(_chain_on_cancel(middleware_w_on_cancel))
+        _register_on_cancel(graph, middleware_w_on_cancel)
 
     return graph.compile(
         checkpointer=checkpointer,

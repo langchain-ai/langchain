@@ -680,6 +680,8 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
         !!! warning
 
             Experimental. Requires a checkpointer and only runs for top-level async runs.
+            Not supported on langgraph versions without `StateGraph.set_cancel_handler`:
+            `create_agent` warns and the hook does not run.
 
         Args:
             state: The latest saved agent state.

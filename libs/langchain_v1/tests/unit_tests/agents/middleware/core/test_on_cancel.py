@@ -6,11 +6,17 @@ from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.graph import StateGraph
 from langgraph.runtime import Runtime
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
 from tests.unit_tests.agents.model import FakeToolCallingModel
+
+needs_cancel_handler = pytest.mark.skipif(
+    not hasattr(StateGraph, "set_cancel_handler"),
+    reason="installed langgraph has no `StateGraph.set_cancel_handler`",
+)
 
 
 @tool
@@ -65,6 +71,7 @@ async def _cancel_during_tool(agent: Any, config: RunnableConfig) -> None:
         await run
 
 
+@needs_cancel_handler
 async def test_on_cancel_answers_dangling_tool_call() -> None:
     agent = create_agent(
         _model(), [slow], middleware=[AnswerOnCancel("a")], checkpointer=InMemorySaver()
@@ -79,6 +86,7 @@ async def test_on_cancel_answers_dangling_tool_call() -> None:
     assert messages[-1].status == "error"
 
 
+@needs_cancel_handler
 async def test_next_run_continues_after_cancel() -> None:
     model = FakeToolCallingModel(
         tool_calls=[[{"name": "slow", "args": {"query": "x"}, "id": "1"}], []]
@@ -100,6 +108,7 @@ async def test_next_run_continues_after_cancel() -> None:
     ]
 
 
+@needs_cancel_handler
 async def test_on_cancel_hooks_run_in_order_and_combine() -> None:
     AsyncNoop.calls = 0
     agent = create_agent(
@@ -117,6 +126,23 @@ async def test_on_cancel_hooks_run_in_order_and_combine() -> None:
     assert AsyncNoop.calls == 1
 
 
+async def test_on_cancel_warns_and_skips_on_unsupported_langgraph(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delattr(StateGraph, "set_cancel_handler", raising=False)
+
+    with pytest.warns(UserWarning, match="not supported by the installed langgraph"):
+        agent = create_agent(
+            _model(), [slow], middleware=[AnswerOnCancel("a")], checkpointer=InMemorySaver()
+        )
+    config: RunnableConfig = {"configurable": {"thread_id": "1"}}
+
+    await _cancel_during_tool(agent, config)
+
+    messages = (await agent.aget_state(config)).values["messages"]
+    assert [type(m).__name__ for m in messages] == ["HumanMessage", "AIMessage"]
+
+
 async def test_no_cancel_handler_without_on_cancel() -> None:
     agent = create_agent(_model(), [slow], checkpointer=InMemorySaver())
-    assert agent.cancel_handler is None
+    assert getattr(agent, "cancel_handler", None) is None
