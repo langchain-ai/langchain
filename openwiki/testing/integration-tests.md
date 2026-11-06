@@ -32,10 +32,10 @@ sources:
     resource: repo://libs/standard-tests/langchain_tests/conftest.py
   - id: openwiki-source-025cad4ae99967890152b7e0
     resource: repo://libs/standard-tests/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-05T08:18:41.280Z
+    at: 2026-11-06T08:17:28.425Z
 ---
 
 ## Overview
@@ -110,7 +110,8 @@ VCR configuration is set per-package in a `vcr_config` pytest fixture (e.g., `/l
 | `allow_playback_repeats` | `True` | Replay the same cassette response for duplicate requests |
 | `decode_compressed_response` | `True` | Decompress gzipped API responses before matching |
 | `cassette_library_dir` | `tests/cassettes` | Where cassettes are stored |
-| `path_transformer` | `VCR.ensure_suffix(".yaml.gz")` | Auto-append filename suffix to cassette name |
+| `path_transformer` | `VCR.ensure_suffix(".yaml")` | Auto-append filename suffix; partners override with `.yaml.gz` |
+| `serializer` | `CustomSerializer` | Uses YAML + gzip compression (registered per-package via `pytest_recording_configure`) |
 
 **Custom matchers** (e.g., OpenAI's `_json_body_matcher`) normalize JSON bodies to ignore key order and docstring formatting changes across Python versions.
 

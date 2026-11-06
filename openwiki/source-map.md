@@ -5,7 +5,7 @@ description: "Quick reference for locating code by topic, mapping LangChain conc
 tags: [reference, file-organization, monorepo, codebase-map, pathfinding]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-05T08:18:41.280Z
+    at: 2026-11-06T08:17:28.425Z
 sources:
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml

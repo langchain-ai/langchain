@@ -5,10 +5,12 @@ description: "Explain the BaseTool abstraction: schema generation, invocation, c
 tags: ["tools", "function-calling", "agent-execution", "schema", "runnable"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-05T08:18:41.280Z
+    at: 2026-11-06T08:17:28.425Z
 sources:
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
+  - id: openwiki-source-77dc1fb726463969f9d53658
+    resource: repo://libs/core/langchain_core/messages/ai.py
   - id: openwiki-source-4ff475d7b00540f962384251
     resource: repo://libs/core/langchain_core/tools/base.py
   - id: openwiki-source-9c422fcb5ac12738f17d1cd1
@@ -19,7 +21,13 @@ sources:
     resource: repo://libs/core/langchain_core/tools/simple.py
   - id: openwiki-source-b816e651a5890bde13cf8013
     resource: repo://libs/core/langchain_core/tools/structured.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+  - id: openwiki-source-716439ad921db0ba7cb11ebf
+    resource: repo://libs/core/langchain_core/utils/function_calling.py
+  - id: openwiki-source-7de1ace618efbdfd8bacb5cb
+    resource: repo://libs/partners/anthropic/langchain_anthropic/chat_models.py
+  - id: openwiki-source-738512768ef81ae009b097ac
+    resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
+generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
 ---
 
 
@@ -312,6 +320,241 @@ detailed = render_text_description_and_args([search_tool])
 # search - Search for information, args: {"query": {"type": "string"}}
 ```
 
+## Provider-Specific Tool Calling
+
+### OpenAI
+
+**Supported Models**: GPT-4, GPT-4 Turbo, GPT-3.5-Turbo, and newer models support tool calling.
+
+**Schema Format**: OpenAI uses the function calling format with nested `function` objects:
+```python
+{
+    "type": "function",
+    "function": {
+        "name": "search",
+        "description": "Search for information",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string"}
+            },
+            "required": ["query"]
+        }
+    }
+}
+```
+
+**Tool Binding Options**:
+- `tool_choice`: Control which tool the model uses. Options include:
+  - A tool name (string): force that specific tool
+  - `"auto"`: automatically select a tool (or no tool)
+  - `"none"`: force no tool use
+  - `"any"` or `"required"`: force at least one tool call
+  - `dict` format: `{"type": "function", "function": {"name": "tool_name"}}`
+
+- `parallel_tool_calls` (default: `True`): Enable or disable multiple parallel tool calls in one response.
+
+- `strict` (default: `None`): Enforce strict schema adherence. When combined with `response_format`, OpenAI requires `strict=True`.
+
+```python
+from langchain_openai import ChatOpenAI
+
+model = ChatOpenAI(model="gpt-4")
+bound_model = model.bind_tools(
+    [search_tool, calculator_tool],
+    tool_choice="any",
+    parallel_tool_calls=False
+)
+```
+
+### Anthropic
+
+**Supported Models**: Claude 3 family and newer support tool use.
+
+**Schema Format**: Anthropic uses the `input_schema` format:
+```python
+{
+    "name": "search",
+    "description": "Search for information",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "query": {"type": "string"}
+        },
+        "required": ["query"]
+    }
+}
+```
+
+**Tool Binding Options**:
+- `tool_choice`: Control tool use. Options include:
+  - A tool name (string): force that specific tool
+  - `"auto"`: automatically select a tool or none (default)
+  - `"any"`: force at least one tool call
+  - `dict` format: `{"type": "tool", "name": "tool_name"}`
+
+- `parallel_tool_calls` (default: `True`): Enable or disable multiple parallel tool calls. Converted to `disable_parallel_tool_use` in the API call.
+
+- `strict` (default: `None`): Enable strict schema adherence. Requires Claude Sonnet 4.5+ or Opus 4.1+.
+
+```python
+from langchain_anthropic import ChatAnthropic
+
+model = ChatAnthropic(model="claude-opus-4-1-20250805")
+bound_model = model.bind_tools(
+    [search_tool, calculator_tool],
+    tool_choice="any",
+    parallel_tool_calls=False
+)
+```
+
+**Provider-Specific Extras**: Anthropic tools support extras like `cache_control` and `defer_loading`:
+```python
+@tool(extras={
+    "cache_control": {"type": "ephemeral"},
+    "defer_loading": True
+})
+def my_tool(query: str) -> str:
+    """Tool with Anthropic-specific options."""
+    return query
+```
+
+### Schema Conversion
+
+The `convert_to_openai_tool()` function converts Pydantic models, BaseTool instances, and raw dicts to OpenAI format. The `convert_to_anthropic_tool()` function converts to Anthropic format. Both accept a `strict` parameter to enforce schema validation.
+
+```python
+from langchain_core.utils.function_calling import convert_to_openai_tool
+from langchain_anthropic import ChatAnthropic
+from langchain_anthropic.chat_models import convert_to_anthropic_tool
+
+# Convert BaseTool to OpenAI format
+oai_tool = convert_to_openai_tool(my_tool)
+
+# Convert BaseTool to Anthropic format
+anthropic_tool = convert_to_anthropic_tool(my_tool)
+```
+
+## Multiple Tool Calls and Parallel Execution
+
+### Multiple Tool Calls in One Response
+
+When a model supports parallel tool calls (enabled by default), it can generate multiple tool calls in a single response:
+
+```python
+response = model.invoke("What is 2+2 and what is the weather in Paris?")
+# response.tool_calls contains multiple ToolCall objects
+for tool_call in response.tool_calls:
+    result = invoke_tool(tool_call)
+```
+
+The AIMessage's `tool_calls` property contains all generated tool calls as a list. Each has a unique `tool_call_id`.
+
+### Disabling Parallel Tool Calls
+
+Set `parallel_tool_calls=False` at binding time to force sequential tool calls:
+
+```python
+bound_model = model.bind_tools(
+    [search_tool, calculator_tool],
+    parallel_tool_calls=False
+)
+```
+
+### Execution Pattern with Multiple Calls
+
+A typical agent loop with parallel tool calls:
+
+```python
+response = bound_model.invoke(user_input)
+
+# Execute all tool calls
+results = []
+for tool_call in response.tool_calls:
+    tool = tool_map[tool_call["name"]]
+    result = tool.invoke(
+        tool_call["args"],
+        config={"tags": ["agent"]}
+    )
+    results.append(ToolMessage(
+        content=result,
+        tool_call_id=tool_call["id"],
+        name=tool_call["name"]
+    ))
+
+# Pass results back to model for next iteration
+response = model.invoke(messages + results)
+```
+
+## Edge Cases and Error Handling
+
+### Invalid or Missing Tool Calls
+
+When a model generates a tool call for a tool that isn't bound:
+
+1. The agent must check `tool_map.get(tool_call["name"])` before invoking.
+2. If the tool is missing, return a `ToolMessage` with an error status or content describing the missing tool.
+3. The model will receive this error and can adjust its next response.
+
+```python
+for tool_call in response.tool_calls:
+    tool = tool_map.get(tool_call["name"])
+    if not tool:
+        results.append(ToolMessage(
+            content=f"Tool '{tool_call['name']}' not found",
+            tool_call_id=tool_call["id"],
+            name=tool_call["name"]
+        ))
+        continue
+    # ... execute tool
+```
+
+### Validation Errors
+
+Tool input validation errors are controlled by `handle_validation_error`:
+
+- `False` (default): re-raise the ValidationError
+- `True`: return the error message as tool output
+- Custom string: return that string
+- Callable: invoke the handler and use its return value
+
+```python
+@tool(handle_validation_error=True)
+def search(query: str) -> str:
+    """Search (validation errors are caught and returned)."""
+    return f"Results for {query}"
+
+# If invoked with invalid input, returns error message instead of raising
+result = search.invoke({"query": 123})  # Returns error message
+```
+
+### Tool Errors
+
+`ToolException` is controlled by `handle_tool_error`:
+
+```python
+@tool(handle_tool_error="Search failed, please try again")
+def search(query: str) -> str:
+    """Search implementation."""
+    if not query:
+        raise ToolException("Query cannot be empty")
+    return f"Results for {query}"
+```
+
+Custom error handlers can perform logging, fallback logic, or transformation:
+
+```python
+def handle_search_error(e: ToolException) -> str:
+    if "timeout" in str(e).lower():
+        return "Search timed out, please try a simpler query"
+    return f"Search failed: {e}"
+
+@tool(handle_tool_error=handle_search_error)
+def search(query: str) -> str:
+    """Search with custom error handling."""
+    return query
+```
+
 ## Advanced Patterns
 
 ### Error Handling with Custom Handlers
@@ -436,3 +679,4 @@ Tools can be pickled for serialization, but memoized schemas (which are dynamica
 - **Callback Integration**: Emit lifecycle events (`on_tool_start`, `on_tool_end`, `on_tool_error`) for observability and debugging.
 - **Runnable Protocol**: Implement `invoke` and `ainvoke` for pipeline composition and streaming support.
 - **Model Integration**: Expose schemas in provider formats (OpenAI, Anthropic, etc.) for model binding and structured tool calling.
+- **Provider Adaptation**: Convert tool schemas between formats, apply provider-specific constraints, and support provider-specific extras.

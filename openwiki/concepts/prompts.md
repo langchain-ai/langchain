@@ -1,11 +1,11 @@
 ---
 type: "Reference"
-title: "Prompts: Templating and Composability"
-description: "Prompt templates define message sequences and variable substitution patterns for language models. Covers template syntax, PromptValue routing, runnable integration, and few-shot learning with dynamic example selection."
-tags: [prompt, template, few-shot, variable-substitution, runnable, composition, chat-model]
+title: "Prompts: Templates and Formatting"
+description: "Prompt templates define parameterized message sequences and variable substitution patterns for language models. Covers template syntax, variable handling, few-shot learning, image inputs, message composition, PromptValue routing, and runnable integration."
+tags: [prompt, template, few-shot, variable-substitution, runnable, composition, chat-model, image-input, formatting]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-05T08:18:41.280Z
+    at: 2026-11-06T08:17:28.425Z
 sources:
   - id: openwiki-source-269af2bb49a21bd6c548b3f0
     resource: repo://libs/core/langchain_core/prompt_values.py
@@ -19,10 +19,10 @@ sources:
     resource: repo://libs/core/langchain_core/prompts/prompt.py
   - id: openwiki-source-cf81d0ba0a387a7cd9b5dfb8
     resource: repo://libs/core/langchain_core/prompts/string.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
 ---
 
-# Prompts: Templating and Composability
+# Prompts: Templates and Formatting
 
 Prompts are the **primary input interface** to language models in LangChain. They accept user-provided variables, format them into structured message sequences, and return `PromptValue` objects that can be routed to chat models, string-based APIs, or output parsers. The system provides three core abstractions: `PromptTemplate` for strings, `ChatPromptTemplate` for message sequences, and `FewShotPromptTemplate` for including examples that teach models by demonstration.
 
@@ -225,6 +225,76 @@ assert isinstance(result, ChatPromptValue)
 string_repr = result.to_string()
 ```
 
+## Message Composition: Building Conversation Structures
+
+ChatPromptTemplate enables flexible composition of different message types into cohesive conversation structures. Message templates can be combined to build complex, multi-turn interaction patterns.
+
+### Message Template Types
+
+Each message has a specific role and template class:
+
+- **`SystemMessagePromptTemplate`**: System instructions (always first, provides model behavior guidance).
+- **`HumanMessagePromptTemplate`**: User input messages (what the user asks or provides).
+- **`AIMessagePromptTemplate`**: Model response messages (typically used in few-shot examples to show desired behavior).
+- **`ToolMessagePromptTemplate`**: Tool execution results (for agents and tool-use patterns).
+- **`ChatMessagePromptTemplate`**: Generic messages with custom roles.
+
+### Combining Message Templates
+
+Messages naturally compose via the `from_messages()` method or the `+` operator:
+
+```python
+from langchain_core.prompts import ChatPromptTemplate
+
+# Method 1: from_messages() (recommended)
+template = ChatPromptTemplate.from_messages([
+    ("system", "You are a {role}."),
+    ("human", "{user_question}"),
+])
+
+# Method 2: Composition with + operator
+system = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant."),
+])
+
+user_input = ChatPromptTemplate.from_messages([
+    ("human", "{question}"),
+])
+
+combined = system + user_input
+
+# Both produce ChatPromptTemplate instances
+result = combined.invoke({"question": "What is Python?"})
+```
+
+### Variable Inference Across Messages
+
+ChatPromptTemplate automatically collects variables from all constituent messages:
+
+```python
+template = ChatPromptTemplate.from_messages([
+    ("system", "You are a {profession}."),
+    ("human", "Help me with {task}."),
+    MessagesPlaceholder("history"),  # Dynamic conversation history
+])
+
+# Inferred variables
+print(template.input_variables)      # ['profession', 'task']
+print(template.optional_variables)   # ['history'] (because MessagesPlaceholder is optional)
+```
+
+When a template has exactly one input variable, `invoke()` auto-wraps non-dict arguments:
+
+```python
+template = ChatPromptTemplate.from_messages([
+    ("human", "{question}"),
+])
+
+# Both are equivalent:
+result1 = template.invoke({"question": "Hello"})
+result2 = template.invoke("Hello")  # Auto-wrapped
+```
+
 ## PromptValue: Flexible Output Representation
 
 All prompts return **`PromptValue`** objects, an abstract base that encodes formatted output in both string and message forms, enabling **routing** to different downstream consumers.
@@ -270,6 +340,93 @@ pv_chat = chat_prompt.invoke({"text": "hello"})
 pv_string.to_messages()  # Works even though it started as string
 pv_chat.to_string()      # Works even though it started as messages
 ```
+
+## Image Inputs: Multimodal Prompts
+
+**`ImagePromptTemplate`** enables multimodal prompts by formatting image URLs or configurations. This is essential for vision models like GPT-4V or Claude.
+
+### Basic Image Template
+
+```python
+from langchain_core.prompts import ChatPromptTemplate
+
+template = ChatPromptTemplate.from_messages([
+    ("human", [
+        {"type": "text", "text": "What is in this image?"},
+        {"type": "image_url", "image_url": {"url": "{image_url}", "detail": "high"}},
+    ]),
+])
+
+# Invoke with an image URL
+result = template.invoke({"image_url": "https://example.com/image.jpg"})
+```
+
+### Image URL Configuration
+
+Image URLs support multiple formats:
+
+```python
+from langchain_core.prompts import ChatPromptTemplate
+
+# Full control over image parameters
+template = ChatPromptTemplate.from_messages([
+    ("human", [
+        "Describe this image:",
+        {
+            "type": "image_url",
+            "image_url": {
+                "url": "{image_url}",
+                "detail": "{detail:high|low|auto}",  # Control token usage vs quality
+            },
+        },
+    ]),
+])
+
+# Base64-encoded images
+result = template.invoke({
+    "image_url": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+    "detail": "high",
+})
+
+# Regular HTTPS URLs
+result = template.invoke({
+    "image_url": "https://example.com/photo.png",
+    "detail": "low",  # Faster processing, fewer tokens
+})
+```
+
+### Multimodal Message Composition
+
+Combine text and images in a single message:
+
+```python
+template = ChatPromptTemplate.from_messages([
+    ("system", "You are a detailed image analyst."),
+    ("human", [
+        "Image 1:\n",
+        {
+            "type": "image_url",
+            "image_url": {"url": "{image1_url}"},
+        },
+        "\nImage 2:\n",
+        {
+            "type": "image_url",
+            "image_url": {"url": "{image2_url}"},
+        },
+        "\nCompare these images.",
+    ]),
+])
+
+result = template.invoke({
+    "image1_url": "https://example.com/photo1.jpg",
+    "image2_url": "https://example.com/photo2.jpg",
+})
+```
+
+**Key constraints**:
+- Image variables cannot be named `'url'`, `'path'`, or `'detail'` (reserved keywords).
+- Images are specified via URLs (HTTPS or base64 data URIs); local file paths are not supported.
+- The `detail` parameter controls quality vs. token cost (`'auto'`, `'low'`, `'high'`).
 
 ## Variable Management and Partial Application
 

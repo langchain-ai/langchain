@@ -1,8 +1,8 @@
 ---
 type: "Workflow"
-title: "Middleware: Extensible Request Processing"
-description: "Middleware system for composing agent behavior. Covers middleware interface, execution order, state management, and patterns for routing, logging, and tool control."
-tags: ["agents", "middleware", "composition", "hooks", "extensibility", "request-handling"]
+title: "Middleware: Intercepting and Modifying Execution"
+description: "Middleware composability in LangChain agents: request/response interceptors that modify model execution, validate inputs, cache prompts, and add features. Covers composition order, writing custom middleware, and partner-specific middleware."
+tags: ["agents", "middleware", "composition", "hooks", "extensibility", "request-handling", "validation", "feature-composition"]
 sources:
   - id: openwiki-source-07e634f5cd5f00c636010306
     resource: repo://libs/langchain_v1/langchain/agents/middleware/__init__.py
@@ -10,23 +10,39 @@ sources:
     resource: repo://libs/langchain_v1/langchain/agents/middleware/tool_error.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+  - id: openwiki-source-6fa6e4a0f13e64dd9907ccc9
+    resource: repo://libs/partners/anthropic/langchain_anthropic/middleware/__init__.py
+  - id: openwiki-source-e3412bc3238042c78399e60b
+    resource: repo://libs/partners/anthropic/langchain_anthropic/middleware/anthropic_tools.py
+  - id: openwiki-source-555ad520d5a27b13fd260665
+    resource: repo://libs/partners/anthropic/langchain_anthropic/middleware/bash.py
+  - id: openwiki-source-c0cf139319b8143cbff81996
+    resource: repo://libs/partners/anthropic/langchain_anthropic/middleware/file_search.py
+  - id: openwiki-source-c62e502917422540257fa9b7
+    resource: repo://libs/partners/anthropic/langchain_anthropic/middleware/prompt_caching.py
+generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-05T08:18:41.280Z
+    at: 2026-11-06T08:17:28.425Z
 ---
 
-# Middleware: Extensible Request Processing
+# Middleware: Intercepting and Modifying Execution
 
-Middleware in LangChain agents provides a composable system for intercepting and customizing agent behavior at multiple execution phases. Middleware enables cross-cutting concerns—logging, validation, caching, retries, security checks, and routing—without modifying core agent logic.
+Middleware in LangChain agents provides a composable system for intercepting and customizing agent behavior at multiple execution phases. Middleware enables cross-cutting concerns—logging, validation, caching, retries, security checks, tool control, and feature composition—without modifying core agent logic.
 
-Middleware operates by defining handlers for distinct phases:
-- **Lifecycle hooks** (`before_agent`, `after_agent`, `before_model`, `after_model`): Execute synchronously at state transition boundaries
-- **Wrapper handlers** (`wrap_model_call`, `wrap_tool_call`): Intercept actual LLM and tool invocations with handler callbacks
+Middleware enables two fundamental patterns:
 
-Multiple middleware compose automatically, with the first in the list acting as the outermost layer, wrapping inner middleware in nested closures.
+- **Request/response interceptors**: Pre-processing (modify messages/tools), post-processing (transform output), and conditional execution (retry, cache, short-circuit)
+- **Observational middleware**: Logging, metrics, tracing, and debugging without changing execution behavior
 
-## Middleware Interface and Architecture
+## Middleware Definition and Architecture
+
+Middleware is composable and stackable. Each middleware intercepts execution at one or more phases:
+
+- **Lifecycle hooks** (`before_agent`, `after_agent`, `before_model`, `after_model`): Execute at state transition boundaries, allowing state inspection and modification
+- **Wrapper handlers** (`wrap_model_call`, `wrap_tool_call`): Intercept actual LLM and tool invocations with full control: retry, cache, modify request/response, or skip execution entirely
+
+Multiple middleware compose automatically, with the first in the list acting as the **outermost layer**, wrapping inner middleware in nested closures. This enables clean layering: each middleware handles one responsibility (retry, validation, logging) and they nest predictably.
 
 ### Core Base Class
 
@@ -53,6 +69,7 @@ class AgentMiddleware(Generic[StateT, ContextT, ResponseT]):
 ```
 
 To create middleware, subclass `AgentMiddleware` and override any combination of:
+
 - Lifecycle hooks: `before_agent`, `abefore_agent`, `after_agent`, `aafter_agent`, `before_model`, `abefore_model`, `after_model`, `aafter_model`
 - Wrapper handlers: `wrap_model_call`, `awrap_model_call`, `wrap_tool_call`, `awrap_tool_call`
 
@@ -160,7 +177,7 @@ Runs once when the agent execution completes (no more tools or end condition met
 **Signature:**
 ```python
 def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None
-async def aafter_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None
+async def after_agent(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None
 ```
 
 **Use cases:**
@@ -373,6 +390,92 @@ When multiple middleware have different schemas, they must be compatible (share 
 - For other fields, later updates **overwrite** earlier ones (last writer wins).
 - Middleware composition order matters: outermost middleware updates override inner ones.
 
+## Middleware Composition and Execution Order
+
+### How Middleware Chains
+
+Multiple middleware compose as nested layers:
+
+```python
+from langchain.agents import create_agent
+
+middleware = [
+    RetryMiddleware(),      # Outermost (first in list)
+    ToolSelectorMiddleware(),
+    LoggingMiddleware(),    # Innermost (last in list)
+]
+
+agent = create_agent(model, tools, middleware=middleware)
+```
+
+### Execution Flow: Wrapper Handlers
+
+Wrapper handlers (`wrap_model_call`, `wrap_tool_call`) execute in nesting order:
+
+```
+RetryMiddleware.wrap_model_call
+  → ToolSelectorMiddleware.wrap_model_call
+    → LoggingMiddleware.wrap_model_call
+      → handler (actual model call)
+```
+
+Each middleware can:
+- Call `handler()` zero times (short-circuit or reject)
+- Call `handler()` once (normal flow, potentially after modification)
+- Call `handler()` multiple times (retry with backoff or decision loops)
+- Modify request before calling `handler()`
+- Modify response after calling `handler()`
+
+**Mermaid: Wrapper Handler Composition**
+
+```mermaid
+graph TD
+    A["Request arrives<br/>(ModelRequest)"] --> B["RetryMiddleware<br/>.wrap_model_call"]
+    B -->|modify request or cache| C["ToolSelectorMiddleware<br/>.wrap_model_call"]
+    C -->|filter tools| D["LoggingMiddleware<br/>.wrap_model_call"]
+    D -->|observe| E["handler<br/>Actual Model Call"]
+    E -->|response| D
+    D -->|log + return| C
+    C -->|return| B
+    B -->|retry logic| B
+    B -->|final response| F["Response returned<br/>to agent loop"]
+```
+
+### Execution Flow: Lifecycle Hooks
+
+For state-transition hooks, all middleware hooks run in order (unlike wrapper handlers which nest):
+
+```python
+before_agent 1, before_agent 2, before_agent 3
+  → model call
+before_model 1, before_model 2, before_model 3
+  → handler (model invocation)
+after_model 1, after_model 2, after_model 3
+  → tool calls
+...
+after_agent 1, after_agent 2, after_agent 3
+```
+
+State updates are applied cumulatively. If multiple middleware return state updates, later ones **overwrite** earlier ones for the same key (except for **messages**, which merge).
+
+**Mermaid: Lifecycle Hook Execution**
+
+```mermaid
+sequenceDiagram
+    participant Agent Loop
+    participant Middleware 1
+    participant Middleware 2
+    participant Middleware 3
+    
+    Agent Loop->>Middleware 1: before_model(state)
+    Middleware 1-->>Agent Loop: state updates
+    Agent Loop->>Middleware 2: before_model(state)
+    Middleware 2-->>Agent Loop: state updates
+    Agent Loop->>Middleware 3: before_model(state)
+    Middleware 3-->>Agent Loop: state updates
+    Agent Loop->>Agent Loop: Call model with merged state
+```
+
 ## Decorator Factories
 
 Rather than subclassing, use decorator functions to create lightweight middleware for single hooks:
@@ -440,59 +543,73 @@ def system_from_state(request: ModelRequest) -> str | SystemMessage:
     return SystemMessage(content="Be helpful and concise.")
 ```
 
-## Execution Order and Composition
+## Writing Custom Middleware
 
-### Middleware Chain Structure
+### Basic Pattern: Subclassing
 
-Multiple middleware compose as nested layers:
-
-```python
-from langchain.agents import create_agent
-
-middleware = [
-    RetryMiddleware(),      # Outermost (first in list)
-    ToolSelectorMiddleware(),
-    LoggingMiddleware(),    # Innermost (last in list)
-]
-
-agent = create_agent(model, tools, middleware=middleware)
-```
-
-**Execution order (first in list = outermost):**
-
-For `wrap_model_call`:
-```
-RetryMiddleware.wrap_model_call
-  → ToolSelectorMiddleware.wrap_model_call
-    → LoggingMiddleware.wrap_model_call
-      → handler (actual model call)
-```
-
-Each middleware can:
-- Call `handler()` zero times (short-circuit)
-- Call `handler()` once (normal flow)
-- Call `handler()` multiple times (retry)
-- Modify request before calling `handler()`
-- Modify response after calling `handler()`
-
-### Lifecycle Hook Order
-
-For state-transition hooks, all middleware hooks run in order:
+Create custom middleware by subclassing `AgentMiddleware`:
 
 ```python
-before_agent 1, before_agent 2, before_agent 3
-  → model call
-before_model 1, before_model 2, before_model 3
-  → handler (model invocation)
-after_model 1, after_model 2, after_model 3
-  → tool calls
-...
-after_agent 1, after_agent 2, after_agent 3
+from langchain.agents.middleware import AgentMiddleware
+from langchain_core.messages import HumanMessage
+from typing import Any
+
+class ValidationMiddleware(AgentMiddleware):
+    """Example middleware that validates tool arguments."""
+    
+    def wrap_tool_call(self, request, handler):
+        tool_name = request.tool_call["name"]
+        args = request.tool_call["args"]
+        
+        # Validation logic
+        if tool_name == "database_query" and "password" in args:
+            raise ValueError("Password cannot be passed as argument")
+        
+        return handler(request)
 ```
 
-State updates are applied cumulatively. If multiple middleware return state updates, later ones **overwrite** earlier ones for the same key (except for **messages**, which merge).
+### Error Handling in Middleware
 
-## Practical Patterns
+**Lifecycle hooks** (`before_*`, `after_*`):
+- Exceptions propagate to the caller.
+- Use try/except inside the hook to handle gracefully.
+
+**Wrapper handlers** (`wrap_model_call`, `wrap_tool_call`):
+- Exceptions in `handler()` propagate unless caught by middleware.
+- Return a fallback value (e.g., error `AIMessage` or `ToolMessage`) to suppress.
+
+**Langgraph control-flow exceptions** (interrupts, parent commands):
+- Always propagate; middleware never catches them.
+
+**Example: Graceful Error Recovery**
+```python
+from langchain_core.messages import AIMessage, ToolMessage
+
+@wrap_model_call
+def fallback_on_error(request, handler):
+    try:
+        return handler(request)
+    except Exception as e:
+        # Return a safe fallback response
+        return AIMessage(content=f"I encountered an error: {str(e)}")
+
+@wrap_tool_call
+def tool_error_recovery(request, handler):
+    try:
+        return handler(request)
+    except ValueError as e:
+        # Return error message to the model
+        return ToolMessage(
+            content=f"Invalid input: {str(e)}",
+            tool_call_id=request.tool_call["id"],
+            status="error"
+        )
+    except Exception:
+        # Let other exceptions propagate
+        raise
+```
+
+## Practical Patterns and Real-World Examples
 
 ### Pattern: Input Validation and Sanitization
 
@@ -533,7 +650,7 @@ def filter_tools(request, handler):
     return handler(request)
 ```
 
-### Pattern: Distributed Tracing and Monitoring
+### Pattern: Logging and Monitoring
 
 Log execution timing and resource usage:
 
@@ -637,49 +754,102 @@ LangChain provides production-ready middleware for common needs:
 
 For details, consult the API documentation and use examples in the middleware package.
 
-## Error Handling and Propagation
+## Partner-Specific Middleware
 
-### Exception Handling in Middleware
+Beyond the core LangChain middleware, partners like Anthropic provide specialized middleware to unlock provider-specific features.
 
-**Lifecycle hooks** (`before_*`, `after_*`):
-- Exceptions propagate to the caller.
-- Use try/except inside the hook to handle gracefully.
+### Anthropic Middleware
 
-**Wrapper handlers** (`wrap_model_call`, `wrap_tool_call`):
-- Exceptions in `handler()` propagate unless caught by middleware.
-- Return a fallback value (e.g., error `AIMessage` or `ToolMessage`) to suppress.
+The `langchain_anthropic` package provides middleware for Anthropic's Claude models:
 
-**Langgraph control-flow exceptions** (interrupts, parent commands):
-- Always propagate; middleware never catches them.
+#### `AnthropicPromptCachingMiddleware`
 
-### Example: Graceful Error Recovery
+Optimizes API usage by caching conversation prefixes for Anthropic models. Prompt caching reduces latency and cost for stable agent content.
 
 ```python
-from langchain_core.messages import AIMessage, ToolMessage
+from langchain_anthropic import ChatAnthropic
+from langchain_anthropic.middleware import AnthropicPromptCachingMiddleware
+from langchain.agents import create_agent
 
-@wrap_model_call
-def fallback_on_error(request, handler):
-    try:
-        return handler(request)
-    except Exception as e:
-        # Return a safe fallback response
-        return AIMessage(content=f"I encountered an error: {str(e)}")
+middleware = [
+    AnthropicPromptCachingMiddleware(
+        type="ephemeral",
+        ttl="5m",
+        min_messages_to_cache=0,
+    )
+]
 
-@wrap_tool_call
-def tool_error_recovery(request, handler):
-    try:
-        return handler(request)
-    except ValueError as e:
-        # Return error message to the model
-        return ToolMessage(
-            content=f"Invalid input: {str(e)}",
-            tool_call_id=request.tool_call["id"],
-            status="error"
-        )
-    except Exception:
-        # Let other exceptions propagate
-        raise
+agent = create_agent(
+    model=ChatAnthropic(model="claude-3-5-sonnet"),
+    tools=[...],
+    middleware=middleware,
+)
 ```
+
+**Key features:**
+- Tags system message and tool definitions with `cache_control` so they are cached on first request.
+- Passes `cache_control` through `model_settings` to the Anthropic API.
+- Supports ephemeral cache with TTL of `5m` (5 minutes) or `1h` (1 hour).
+- Configurable minimum message threshold before caching activates.
+
+#### `ClaudeBashToolMiddleware`
+
+Exposes Anthropic's native bash tool (`bash_20250124`) to agents for direct shell command execution with sandboxing.
+
+```python
+from langchain_anthropic.middleware import ClaudeBashToolMiddleware
+from langchain.agents import create_agent
+
+middleware = [
+    ClaudeBashToolMiddleware(
+        workspace_root="/tmp/agent",
+        execution_policy=HostExecutionPolicy(timeout_seconds=30),
+    )
+]
+
+agent = create_agent(model, tools=[], middleware=middleware)
+```
+
+**Key features:**
+- Registers native Anthropic bash tool descriptor with model.
+- Supports workspace root, startup/shutdown commands, and execution policies.
+- Integrates with Anthropic's sandboxing for safe shell access.
+
+#### `StateFileSearchMiddleware` and Text Editor Tools
+
+Provide Glob and Grep search over state-based virtual files, plus text editor tools for Anthropic agents.
+
+```python
+from langchain_anthropic.middleware import (
+    StateFileSearchMiddleware,
+    StateClaudeTextEditorMiddleware,
+)
+from langchain.agents import create_agent
+
+middleware = [
+    StateClaudeTextEditorMiddleware(),      # Adds editor tools
+    StateFileSearchMiddleware(),            # Adds search tools
+]
+
+agent = create_agent(model, tools=[], middleware=middleware)
+```
+
+**Key features:**
+- Text editor tools allow agents to create, edit, and view files stored in state.
+- Search tools provide fast pattern matching (glob) and content search (grep).
+- Works with state-based file storage, enabling multi-turn file management.
+- Designed for coding, data analysis, and document processing tasks.
+
+#### Memory and File Tools
+
+Anthropic middleware also provides memory and file editing tools tailored to Claude's capabilities:
+
+- **`StateClaudeMemoryMiddleware`**: State-based memory tool for agents to read/write long-term context.
+- **`FilesystemClaudeMemoryMiddleware`**: Filesystem-based memory persistence.
+- **`StateClaudeTextEditorMiddleware`**: Text editor tool operating on state-based files.
+- **`FilesystemClaudeTextEditorMiddleware`**: Text editor tool on the filesystem.
+
+These tools extend Claude's ability to maintain stateful context and manage files across agent runs.
 
 ## Tracing and Observability
 
@@ -708,6 +878,62 @@ class SensitiveMiddleware(AgentMiddleware):
 This is useful for:
 - Keeping trace logs lean (timing only, no payloads).
 - Excluding sensitive data from observability systems.
+
+## Testing Middleware
+
+### Unit Testing Middleware Logic
+
+Test middleware independently by mocking request and handler:
+
+```python
+from unittest.mock import Mock
+from langchain.agents.middleware import ModelRetryMiddleware
+from langchain.agents.middleware.types import ModelRequest, ModelResponse
+from langchain_core.messages import AIMessage
+
+def test_retry_on_failure():
+    middleware = ModelRetryMiddleware(max_retries=3)
+    
+    request = Mock(spec=ModelRequest)
+    request.model = Mock()
+    
+    # Simulate failure then success
+    handler = Mock(side_effect=[
+        Exception("Rate limit"),
+        AIMessage(content="Success")
+    ])
+    
+    result = middleware.wrap_model_call(request, handler)
+    
+    assert handler.call_count == 2
+    assert result.content == "Success"
+```
+
+### Integration Testing with Models
+
+Test middleware with real models in end-to-end scenarios:
+
+```python
+from langchain_anthropic import ChatAnthropic
+from langchain.agents import create_agent
+from langchain_core.messages import HumanMessage
+
+def test_agent_with_middleware():
+    agent = create_agent(
+        model=ChatAnthropic(model="claude-3-5-sonnet"),
+        tools=[calculator, search],
+        middleware=[
+            ModelRetryMiddleware(max_retries=2),
+            ToolErrorMiddleware(on_error=lambda e, r: str(e)),
+        ]
+    )
+    
+    result = agent.invoke({
+        "messages": [HumanMessage("What is 2 + 2?")]
+    })
+    
+    assert result["messages"][-1].content == "4"
+```
 
 ## Integration with Agent Factory
 
@@ -744,10 +970,12 @@ Middleware provides a clean, composable way to extend agent behavior:
 
 - **Lifecycle hooks** handle state transitions (before/after agent, before/after model).
 - **Wrapper handlers** intercept actual LLM and tool calls with full control.
-- **Composition** uses nested closures; first in list = outermost layer.
+- **Composition** uses nested closures for wrapper handlers; lifecycle hooks run sequentially.
 - **State updates** merge messages (via reducers) and overwrite other fields.
 - **Decorators** simplify single-hook middleware without subclassing.
 - **Built-in middleware** covers common patterns (retries, limits, human-in-loop, tool selection, error handling).
+- **Partner middleware** unlocks provider features (Anthropic prompt caching, bash tool, file search).
 - **Tracing and observability** are integrated; control verbosity with `trace_policy`.
+- **Testing** follows unit and integration patterns to validate middleware behavior.
 
-This architecture enables modular, testable, and reusable agent customizations across logging, validation, optimization, and control flow concerns.
+This architecture enables modular, testable, and reusable agent customizations across logging, validation, optimization, control flow, and feature composition concerns.
