@@ -5,7 +5,7 @@ description: "Explain the BaseTool abstraction: schema generation, invocation, c
 tags: ["tools", "function-calling", "agent-execution", "schema", "runnable"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
+    at: 2026-11-07T08:15:07.286Z
 sources:
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py

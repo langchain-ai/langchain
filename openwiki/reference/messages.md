@@ -5,11 +5,23 @@ description: "Complete API reference for LangChain message types, serialization 
 tags: ["messages", "api", "serialization", "notification-metadata", "content-blocks"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-30T08:19:17.669Z
+    at: 2026-11-07T08:15:07.286Z
 sources:
+  - id: openwiki-source-77dc1fb726463969f9d53658
+    resource: repo://libs/core/langchain_core/messages/ai.py
+  - id: openwiki-source-b32b84365d17276620c41ebc
+    resource: repo://libs/core/langchain_core/messages/base.py
+  - id: openwiki-source-fc874ddb29b9c5840565397f
+    resource: repo://libs/core/langchain_core/messages/content.py
+  - id: openwiki-source-56c6ea6a11f04b5c0e01aa7b
+    resource: repo://libs/core/langchain_core/messages/notification.py
+  - id: openwiki-source-9861ba5cf0c42c142cf732f9
+    resource: repo://libs/core/langchain_core/messages/tool.py
+  - id: openwiki-source-498a9586e021b126ab8a8b42
+    resource: repo://libs/core/langchain_core/messages/utils.py
   - id: openwiki-source-85004ebd4eba7aec1e145503
     resource: repo://libs/langchain/langchain_classic/schema/messages.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-30T08:19:17.669Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-07T08:15:07.286Z" }
 ---
 
 # Messages API Reference
@@ -22,7 +34,7 @@ Messages are the fundamental I/O abstraction for language model interactions. Th
 
 - **Message types**: `BaseMessage`, `HumanMessage`, `AIMessage`, `SystemMessage`, `ToolMessage`, `ChatMessage`, `FunctionMessage`, `RemoveMessage`, and streaming variants
 - **Serialization**: `message_to_dict()`, `messages_to_dict()`, `messages_from_dict()`, `_message_from_dict()`
-- **Content blocks**: Standardized multimodal content (text, images, audio, video, files, tool calls, reasoning)
+- **Content blocks**: Standardized multimodal content (text, images, audio, video, files, plaintext, tool calls, reasoning, refusals)
 - **Utilities**: `filter_messages()`, `merge_message_runs()`, `message_chunk_to_message()`, `trim_messages()`, `get_buffer_string()`
 - **Notification metadata**: `NotificationMetadata`, `add_notification_metadata()`, `get_notification_metadata()` for marking agent-added messages
 
@@ -42,9 +54,10 @@ from langchain_core.messages import (
     message_to_dict, messages_to_dict, messages_from_dict,
     # Content blocks
     ContentBlock, TextContentBlock, ImageContentBlock, AudioContentBlock,
-    VideoContentBlock, FileContentBlock, DataContentBlock,
+    VideoContentBlock, FileContentBlock, PlainTextContentBlock, DataContentBlock,
+    ReasoningContentBlock, RefusalContentBlock,
     # Tool calling
-    ToolCall, ToolCallChunk, InvalidToolCall,
+    ToolCall, ToolCallChunk, InvalidToolCall, ServerToolCall, ServerToolResult,
     # Notification metadata
     NotificationMetadata, add_notification_metadata, get_notification_metadata,
     # Utilities
@@ -55,7 +68,7 @@ from langchain_core.messages import (
 
 ## Message Types
 
-All message types inherit from `BaseMessage` and are serializable. For detailed semantics, see [`/openwiki/concepts/messages.md`](/openwiki/concepts/messages.md).
+All message types inherit from `BaseMessage` and are serializable. Messages are the inputs and outputs of a chat model.
 
 ### BaseMessage
 
@@ -85,10 +98,11 @@ class BaseMessage:
 **Key methods and properties**:
 
 - `is_lc_serializable()` → `True`: Messages are always serializable
-- `.text` property: Extracts text content from both string and list-based content
-- `.content_blocks` property: Parses message content into typed `ContentBlock` objects
+- `.text` property: Extracts text content from both string and list-based content (deprecated: calling as `.text()` method still works with warning)
+- `.content_blocks` property: Parses message content into typed `ContentBlock` objects with automatic handling of provider-specific formats (Anthropic, OpenAI, Google, Bedrock)
 - `model_copy(update={...})`: Create a shallow copy with updated fields
 - `model_dump()`: Convert to a plain dict for serialization
+- `.pretty_repr()`, `.pretty_print()`: Formatted human-readable output
 
 ### HumanMessage
 
@@ -146,7 +160,7 @@ msg = AIMessage(
 **Unique fields**:
 - **`tool_calls`**: `list[ToolCall]` — Tool invocations requested by the model
 - **`invalid_tool_calls`**: `list[InvalidToolCall]` — Tool calls with parsing errors
-- **`usage_metadata`**: `UsageMetadata | None` — Token usage with optional breakdown fields
+- **`usage_metadata`**: `UsageMetadata | None` — Token usage with optional breakdown fields (`input_token_details`, `output_token_details`)
 
 **Streaming variant**: `AIMessageChunk` — carries partial content and tool call chunks. Chunks merge intelligently: string content concatenates, tool call chunks with matching `index` merge their `args` strings, and usage counts sum.
 
@@ -192,6 +206,8 @@ msg = ToolMessage(
 - **`artifact`**: `Any` — Optional data not sent to the model
 - **`status`**: `Literal["success", "error"]` — Tool execution status
 
+**Note**: ToolMessages are never merged by `merge_message_runs()` since each has a distinct `tool_call_id`.
+
 ### ChatMessage
 
 Arbitrary role message for custom participants.
@@ -214,6 +230,9 @@ from langchain_core.messages import FunctionMessage
 
 msg = FunctionMessage(name="my_function", content="result")
 ```
+
+- **`type`**: Always `"function"`
+- **Streaming variant**: `FunctionMessageChunk`
 
 ### RemoveMessage
 
@@ -306,7 +325,7 @@ msg = _message_from_dict({
 
 ## Content Blocks
 
-Content blocks represent standardized, provider-agnostic message content. Each block is a `TypedDict` with a `type` discriminator.
+Content blocks represent standardized, provider-agnostic message content. Each block is a `TypedDict` with a `type` discriminator. This unified format facilitates translation between different LLM provider APIs.
 
 ### TextContentBlock
 
@@ -335,8 +354,9 @@ from langchain_core.messages.content import ImageContentBlock
 block: ImageContentBlock = {
     "type": "image",
     "url": "https://example.com/image.png",
-    # or: "data": "iVBORw0KGgoAAAANS...", (base64)
+    # or: "base64": "iVBORw0KGgoAAAANS...", (base64 encoded)
     "mime_type": "image/png",  # Optional
+    "file_id": "file_123",  # For Files API reference
 }
 ```
 
@@ -370,7 +390,7 @@ block: VideoContentBlock = {
 
 ### FileContentBlock
 
-Generic file content.
+Generic file content (PDFs, documents, etc.).
 
 ```python
 from langchain_core.messages.content import FileContentBlock
@@ -378,7 +398,25 @@ from langchain_core.messages.content import FileContentBlock
 block: FileContentBlock = {
     "type": "file",
     "url": "https://example.com/document.pdf",
+    # or "base64": "JVBERi0xLjQK...",
     "mime_type": "application/pdf",
+    "file_id": "file_456",  # Optional file storage reference
+}
+```
+
+### PlainTextContentBlock
+
+Plain text data (`.txt`, `.md`, documents).
+
+```python
+from langchain_core.messages.content import PlainTextContentBlock
+
+block: PlainTextContentBlock = {
+    "type": "text-plain",
+    "text": "Plain text content from a document",
+    "mime_type": "text/plain",
+    "title": "Document Title",  # Optional
+    "context": "Document description",  # Optional
 }
 ```
 
@@ -398,7 +436,7 @@ block: DataContentBlock = {
 
 ### ReasoningContentBlock
 
-Reasoning/thinking content from models.
+Reasoning/thinking content from models (e.g., from models with chain-of-thought).
 
 ```python
 from langchain_core.messages.content import ReasoningContentBlock
@@ -408,6 +446,21 @@ block: ReasoningContentBlock = {
     "reasoning": "Let me think about this step by step...",
 }
 ```
+
+### RefusalContentBlock
+
+An explicit refusal reported by the model provider.
+
+```python
+from langchain_core.messages.content import RefusalContentBlock
+
+block: RefusalContentBlock = {
+    "type": "refusal",
+    "refusal": "I can't help with that request.",
+}
+```
+
+**Note**: Providers report refusals differently (OpenAI returns refusal content; Anthropic reports a refusal stop reason). Both are normalized to this block type.
 
 ### NonStandardContentBlock
 
@@ -489,9 +542,52 @@ invalid: InvalidToolCall = {
 **Fields**:
 - `type`: Always `"invalid_tool_call"`
 - `id`: `str | None`
-- `name`: `str` — Attempted tool name
-- `args`: `str` — Raw argument string
+- `name`: `str | None` — Attempted tool name
+- `args`: `str | None` — Raw argument string
 - `error`: `str | None` — Error description
+
+### ServerToolCall
+
+Tool call executed server-side (e.g., code execution, web search).
+
+```python
+from langchain_core.messages.content import ServerToolCall
+
+call: ServerToolCall = {
+    "type": "server_tool_call",
+    "id": "call_xyz789",
+    "name": "code_interpreter",
+    "args": {"language": "python", "code": "print('hello')"}
+}
+```
+
+**Fields**:
+- `type`: Always `"server_tool_call"`
+- `id`: `str` — Unique identifier (required)
+- `name`: `str` — Tool name
+- `args`: `dict[str, Any]` — Parsed arguments
+
+### ServerToolResult
+
+Result of a server-side tool call.
+
+```python
+from langchain_core.messages.content import ServerToolResult
+
+result: ServerToolResult = {
+    "type": "server_tool_result",
+    "tool_call_id": "call_xyz789",
+    "status": "success",
+    "output": "hello"
+}
+```
+
+**Fields**:
+- `type`: Always `"server_tool_result"`
+- `id`: `str | None` — Unique identifier for this result block
+- `tool_call_id`: `str` — ID of the corresponding server tool call
+- `status`: `Literal["success", "error"]` — Execution status
+- `output`: `Any` — Tool output
 
 ## Notification Metadata API
 
@@ -692,6 +788,8 @@ def filter_messages(
 
 **Returns**: `list[BaseMessage]` — Messages matching at least one `include_*` condition and none of the `exclude_*` conditions
 
+**Behavior**: If no `include_*` conditions are specified, messages that do not match any `exclude_*` conditions are included by default.
+
 ### merge_message_runs()
 
 Merge consecutive messages of the same type.
@@ -799,7 +897,7 @@ def trim_messages(
     messages: Sequence[BaseMessage],
     max_tokens: int,
     *,
-    strategy: Literal["last", "first", "sliding_window"] = "last",
+    strategy: Literal["last", "first"] = "last",
     token_counter: Callable[[str], int] | Callable[[BaseMessage], int] | None = None,
     end_on: Sequence[str | type[BaseMessage]] | None = None,
     start_on: Sequence[str | type[BaseMessage]] | None = None,
@@ -809,7 +907,7 @@ def trim_messages(
 **Parameters**:
 - `messages` — Sequence to trim
 - `max_tokens: int` — Maximum total tokens
-- `strategy`: `"last"` (keep most recent), `"first"` (keep oldest), or `"sliding_window"` (keep recent + some old)
+- `strategy`: `"last"` (keep most recent) or `"first"` (keep oldest)
 - `token_counter` — Function to count tokens in a message or string
 - `end_on`, `start_on` — Message types to use as boundaries
 
@@ -897,127 +995,3 @@ def async_subagent_result(result: str, subagent_name: str):
         data={"subagent": subagent_name, "completion_time": 12.5}
     )
 ```
-
-### Workflow Checkpoints
-
-```python
-from langchain_core.messages import HumanMessage, add_notification_metadata
-import json
-
-def resumable_checkpoint(state_snapshot: dict):
-    """Record a resumable checkpoint."""
-    return add_notification_metadata(
-        HumanMessage("Checkpoint saved."),
-        source="resumable_checkpoint",
-        data={"state_id": "chk_xyz", "timestamp": 1729000000}
-    )
-```
-
-### Message Filtering with Metadata
-
-When you need to inspect which messages were user-typed vs. system-generated:
-
-```python
-from langchain_core.messages import get_notification_metadata
-
-def get_user_messages(messages):
-    """Extract only user-typed messages, excluding system-generated ones."""
-    user_messages = []
-    for msg in messages:
-        # Skip system-generated messages
-        if msg.type == "human" and get_notification_metadata(msg) is None:
-            user_messages.append(msg)
-    return user_messages
-
-def get_system_notifications(messages):
-    """Extract all system-generated messages with their metadata."""
-    notifications = []
-    for msg in messages:
-        metadata = get_notification_metadata(msg)
-        if metadata is not None:
-            notifications.append((msg, metadata))
-    return notifications
-```
-
-## Serialization Workflow Example
-
-Complete example: create, serialize, deserialize, and add metadata to messages.
-
-```python
-from langchain_core.messages import (
-    HumanMessage, AIMessage, message_to_dict, messages_to_dict,
-    messages_from_dict, add_notification_metadata, get_notification_metadata
-)
-import json
-
-# 1. Create messages
-user_msg = HumanMessage("What is LLM?")
-ai_msg = AIMessage("An LLM (Large Language Model) is...")
-
-messages = [user_msg, ai_msg]
-
-# 2. Serialize to dict
-dicts = messages_to_dict(messages)
-print(json.dumps(dicts, indent=2))
-# Output:
-# [
-#   {
-#     "type": "human",
-#     "data": {
-#       "content": "What is LLM?",
-#       "additional_kwargs": {},
-#       ...
-#     }
-#   },
-#   {
-#     "type": "ai",
-#     "data": {
-#       "content": "An LLM (Large Language Model) is...",
-#       ...
-#     }
-#   }
-# ]
-
-# 3. Serialize to JSON string and store
-json_str = json.dumps(dicts)
-stored_messages = json_str
-
-# 4. Deserialize from JSON string
-recovered_dicts = json.loads(stored_messages)
-recovered_messages = messages_from_dict(recovered_dicts)
-
-# 5. Add notification to one of the messages
-notified_msg = add_notification_metadata(
-    recovered_messages[0],
-    source="storage_service",
-    data={"loaded_from": "s3://bucket/messages", "timestamp": 1729000000}
-)
-
-# 6. Check metadata
-metadata = get_notification_metadata(notified_msg)
-print(metadata)
-# Output: {"source": "storage_service", "data": {"loaded_from": "...", ...}}
-
-# 7. Re-serialize with notification
-updated_dicts = messages_to_dict([notified_msg, recovered_messages[1]])
-print(updated_dicts[0]["data"]["additional_kwargs"])
-# Output: {"lc_source": "storage_service", "lc_data": {"loaded_from": "...", ...}}
-```
-
-## Best Practices
-
-1. **Serialization for persistence**: Use `messages_to_dict()` before storing, and `messages_from_dict()` to restore. This ensures all message types and metadata are preserved.
-
-2. **Notification metadata only for HumanMessage**: Only call `add_notification_metadata()` on `HumanMessage` instances. It is designed to mark user-like input that was actually generated by the system.
-
-3. **Content blocks over raw dicts**: Prefer `.content_blocks` property for accessing structured content instead of manually parsing raw content lists.
-
-4. **Message filtering before inference**: Use `filter_messages()` to remove internal metadata (tool calls, artifacts) before sending to downstream models.
-
-5. **Merging for cleanup**: Use `merge_message_runs()` to consolidate consecutive messages of the same type before serializing or passing to models.
-
-6. **Token budget management**: Use `trim_messages()` with an appropriate token counter (e.g., from `tiktoken`) to keep message histories within model context limits.
-
-7. **Metadata for auditability**: Use notification metadata to mark and track system-generated input, but do not rely on it for security decisions.
-
-8. **Chunk accumulation**: When streaming, accumulate `MessageChunk` objects (using `+`) until streaming is complete, then convert to non-chunk messages via `message_chunk_to_message()`.

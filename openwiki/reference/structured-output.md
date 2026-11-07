@@ -5,7 +5,7 @@ description: Complete API reference for structured output classes, error types, 
 tags: [structured-output, api-reference, schema, validation, error-handling]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-29T08:20:01.046Z
+    at: 2026-11-07T08:15:07.286Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py

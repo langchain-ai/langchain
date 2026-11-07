@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0073a574f7458cc2f38e158b1c4fcb9375e0810fa2dcff69c31c78995d49f572",
+  "pageVersion": "sha256:5ef1fe54da988646bd15cad271f7372abd068de02bc5da1748d5da3fc5dd1983",
   "claims": [
     {
       "id": "claim_47375636619d4fb3bae06dd6648f2392",
@@ -11,10 +11,40 @@
           "version": "repo-file-v1:sha256:a7ecb306d4f080eeef15bda54ccf8f2c07de4e84499093d76585cd20f6dd689d"
         }
       ]
+    },
+    {
+      "id": "claim_1992758a050441d681fdfd02c42e8cbc",
+      "statement": "The /openwiki/reference/composability.md page documents the technical API reference for agent composability including middleware hook lifecycle, request/response types, state objects, subagent detection via SubagentTransformer, create_agent factory parameters, schema composition rules, and error handling patterns for building hierarchical agent systems.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L44-L195",
+          "version": "repo-lines-v1:sha256:b8bbd6ae65398ae4403bcaba01bcd0924481cb76f336f3885b902568ccdbca59:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMDRmOGRkNDEyODQ5Y2MyY2VkOWU3MzgzN2ExZGI2Yjk2ZTk5ZTdmZDZiNjE5YjQyYzYwZDA4ZGZkY2U1YWQxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiZDY5ZTU2YWQzYTNhZmE5YWY5MTE2MTJkYTliNWQ1ZDIzOTcyYWQyMDRhNmE4OTJmMzczYmU3OWIxNzY2ZGU4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MjAwOTdlNGFhNTAwNjhiYTE1N2Y5YTI3MzlmYWQ4Njk5NWUxZTBjZGNjZGFkYzU4OTdjMjAzNGM3NGQzZWZhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlNWEzOWIwYmJhZWI3NGIxODU2ZWJjMjBkNmVkNzJkZWNhYzhhMmMwYzE3MzlhN2FjNjc3YWJhMGYyOTZjYzIyIn0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L281-L370",
+          "version": "repo-lines-v1:sha256:272c0933c5414b8cecc2e64643c365fa65e76088a91d385cdab443f37076f035:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1Y2IwNmM0MzdmOTk3ODhiZDVjOGM4MDY5MjU0MTI5YmVlN2ExNGYzMzc2ZTFjZWY2MTczYWUyMGE3Y2YyZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViZjVlNjBjNjUyNDc1YjVjNzhmMzdlYmI2OTJjNWIxM2NhZDMwMjI4NmM3MDFlYzBhZTAxODVhMWZiMzVjZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4YjE2YTdhZjFkZDFlYzI4OTY3MWRhMWU5MmExY2UzN2I4MTA0YWFlYjZlYjU3MzY1NmU4NWVhMzU0YTNhY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5YTcwM2FiYzE5MWZjZWUxOWIwMzM5NTc3MjEzZWQ2OTMyMGRlOTFmZWMwNDdjZjAzYTY0NTUyYzNiYTY1NjQifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L74-L180",
+          "version": "repo-lines-v1:sha256:e86586cc8ba9f432f85ac5b21d3d28d569a0cfd4e67edaae3e01c7b76cedf5a7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiNmZiYWUwYjkxZDQ0ZmMwZDQ5ZjVkZTY5MWRhNmZjNDMxZjI2MDEzNGJmNzMxZTBlMjFmNzY0ODA5NDMzNGNiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjMWQ5ZmU1NDc4NzExOTg3MTBlMTg1YTNiZWY1YmI0ZDg0NDIzZWZhZjcwYzIyZjAzN2M5NGUyNjY1ODQ2MGE5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzN2M0ZTI1ZTAwZjFiZmM4NzI4ZjkyMDM3NzEwMjc2YWFkZWM1NDEwMTEzYjBhMzVkNWRhNmFmZTM1ZDIwMTgxIn0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L824-L1225",
+          "version": "repo-lines-v1:sha256:bf171d57ff64d93eec5a9d17bdd5fc41a899d925f20dc71ecbcfe51dd083f947:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNjg5OTkzM2ZhODgwYTBlZjI2YzJhOGI0OTAwZTM3MTc0Nzg4YWRiNWFlYjA3YmVkNTczMjY0MmIwNDU1ZTBlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkZjNlYjVkMmNjYTU1Nzc5ZGM2ZDgwNDU5YjEyYjJiNTY4OTIzMWIyMzlkMTczZTM2Yzk3MDhlZDc4MWNjMTMwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkOGVlODRmMzA5ZDlmMGY4ZTdkNmUwOTk3OGI3NzY2OGIwZDVlMDU1NzFlMTljZjJjNzBiY2FlZTUzYmEwYTJiIn0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L385-L700",
+          "version": "repo-lines-v1:sha256:f90b758bb6bf3dc6b697afac86c51e9515c0e4cca5983f6be487365b97970e3c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzE2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkYTZiYjZmZDM3N2VmMGEwZDlmMDZkZmYyNGNjYjNhMmI1NzY1ZTA5MDY5NTExNmU4MzBjOTAzYTdjMmQ3MmMwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4MzA0MzcwMzM4MjQyMzJhMjZhZDJiZTI2MGY0ZjA3MzA1MWFiOWU3MTQwN2MzZTY3Nzc3ZGU2MjAyMzFmNDg3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2NmJhYThhZGNkYmI0M2JiMTdiNzU1ZTE4MDgxNGY5MzM2NjEyYThkMTEwMTdmMmY1MTZlMWUyYzIzNTExYzQyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0NzRkZmI4YWI5MWRkMmRmMDRjYzM3MDVhNGYwNjUyZTI4OTdkOWNjODVhMDBjODM0ZjBjZjBiMzQ1NGY2MzczIn0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L68-L356",
+          "version": "repo-lines-v1:sha256:a294b0e42628b297ea6c4582ead4ef758b26039d7292f6d55289bc4b520e68a5:eyJzZWxlY3RlZExpbmVDb3VudCI6Mjg5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4MmMyNWM1NjA1NTNlYmQwZjkzOTEzNGYwYTVmM2FjNmY5MjFiMDdhNGFhMzdlNjgxZTU2YWZiYmZiNTZlZGNmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0ZTVkNzI2Y2NjMDMzM2QzMjcwMTdjZWNiNDBkYzJkZTNkNTc0YmRhYzZhNDQ0ODY4ODE4YmY5OTY3ZmE0MzIyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhMTFlOWIxMzJjN2Q2YWFmZGFjNDBiMzMyY2EzZjJmZTc0MjMzOTJiNThhOTEwYzgzOWExZTc1NTliMTE5NzJiIn0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-11-07T08:15:07.286Z"
   }
 }

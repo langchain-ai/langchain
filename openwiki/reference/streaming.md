@@ -5,7 +5,7 @@ description: Core streaming APIs for incremental output delivery via BaseChatMod
 tags: [streaming, token-streaming, api-reference, chat-models, callbacks, AIMessageChunk, ChatModelStream]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-29T08:20:01.046Z
+    at: 2026-11-07T08:15:07.286Z
 sources:
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py
