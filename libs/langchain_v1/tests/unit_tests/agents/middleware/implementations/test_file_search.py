@@ -19,7 +19,8 @@ from langchain.agents.middleware.file_search import (
 class TestFilesystemGrepSearch:
     """Tests for filesystem-backed grep search."""
 
-    def test_grep_invalid_include_pattern(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize("include", ["*.{py", "{" * 1000 + "}" * 1000])
+    def test_grep_invalid_include_pattern(self, tmp_path: Path, include: str) -> None:
         """Return error when include glob cannot be parsed."""
         (tmp_path / "example.py").write_text("print('hello')\n", encoding="utf-8")
 
@@ -27,7 +28,7 @@ class TestFilesystemGrepSearch:
 
         assert isinstance(middleware.grep_search, StructuredTool)
         assert middleware.grep_search.func is not None
-        result = middleware.grep_search.func(pattern="print", include="*.{py")
+        result = middleware.grep_search.func(pattern="print", include=include)
 
         assert result == "Invalid include pattern"
 
@@ -511,12 +512,21 @@ class TestExpandIncludePatterns:
         assert "test.a.c" in result
         assert "test.b.d" in result
 
+    def test_expand_patterns_many_groups_within_limits(self) -> None:
+        """Test expansion with many brace groups under the limits."""
+        result = _expand_include_patterns("{a,b}" * 9)
+        assert result is not None
+        assert len(result) == 512
+
     @pytest.mark.parametrize(
         "pattern",
         [
             "*.py}",  # closing brace without opening
             "*.{}",  # empty braces
             "*.{py",  # unclosed brace
+            "{" * 1000 + "}" * 1000,  # too many brace groups
+            "{a,b}" * 11,  # too many brace groups
+            "{" + ",".join(map(str, range(1001))) + "}",  # too many expansions
         ],
     )
     def test_expand_patterns_invalid_braces(self, pattern: str) -> None:
