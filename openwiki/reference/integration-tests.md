@@ -5,7 +5,7 @@ description: LangChain's integration testing framework for partner libraries and
 tags: [integration-tests, testing, vcr-cassettes, pytest, ci-cd, chat-models]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-26T08:33:32.568Z
+    at: 2026-11-07T08:15:07.286Z
 sources:
   - id: openwiki-source-9069a5dd5fbb579fbd5470ce
     resource: repo://.github/workflows/integration_tests.yml

@@ -1,8 +1,11 @@
 ---
 type: Workflow
-title: "Composability: Chaining & Piping Runnables"
-description: "Learn how to build complex applications by composing runnables through pipe operators, parallel execution, branching, and fallbacks. Includes composition patterns, type safety, configuration threading, and debugging techniques."
-tags: [composition, runnables, lcel, modular, piping, parallel, branching, fallback, streaming, debugging]
+title: "Agent Composability: Building Complex Agents"
+description: "Patterns for composing agents through middleware layers, subagent delegation, tool selection strategies, and context management across hierarchical agent workflows."
+tags: [agents, middleware, composition, subagents, hierarchical, extensibility, tool-management, state-merging]
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-07T08:15:07.286Z
 sources:
   - id: openwiki-source-65071982a626569c8820a34b
     resource: repo://libs/core/langchain_core/runnables/__init__.py
@@ -14,911 +17,459 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/config.py
   - id: openwiki-source-f9f4c1dc4f9cdf80d824ce15
     resource: repo://libs/core/langchain_core/runnables/fallbacks.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
+generated: { by: "openwiki/0.5.0", at: "2026-11-07T08:15:07.286Z" }
 ---
 
-# Composability: Chaining & Piping Runnables
+# Agent Composability: Building Complex Agents
 
-LangChain's composition system enables building complex applications from simple, single-purpose components. Every component—prompts, models, parsers, tools, and custom logic—is a **Runnable**, unified by a composable interface. This document explains composition operators, component design, practical patterns, and boundaries for building production systems.
+Agent composability in LangChain enables building sophisticated multi-agent systems through two fundamental mechanisms: **middleware composition** for layering cross-cutting concerns onto a single agent, and **subagent delegation** for spawning nested agents from tool calls. Together, these patterns enable composable, reusable agent behaviors without monolithic implementations.
 
-## Philosophy: Small, Single-Purpose Components
+## Middleware Composition: Layered Customization
 
-The composability philosophy rests on three principles:
+Middleware provides composable request/response interception at multiple execution phases. Multiple middleware instances compose into a single middleware stack where the first instance wraps all others, creating predictable layering.
 
-1. **Single responsibility**: Each component does one thing well—transform input to output.
-2. **Reusability**: Components are generic over input/output types and can be composed in any order.
-3. **Declarative assembly**: Complex chains are built by composing simple operators (pipe, parallel, branch, fallback) without custom glue code.
+### Middleware Registration and Composition Order
 
-A **Runnable** is a unit of work with a unified interface:
+Middleware is registered as a sequence on `create_agent()`:
 
 ```python
-from langchain_core.runnables import RunnableLambda
-from langchain_core.prompts import PromptTemplate
-from langchain_openai import ChatOpenAI
-from langchain_core.output_parsers import StrOutputParser
-
-# Each is a Runnable: prompt, model, parser
-prompt = PromptTemplate.from_template("Explain {topic} in one sentence")
-model = ChatOpenAI(model="gpt-4o-mini")
-parser = StrOutputParser()
-
-# Compose into a chain via operators
-chain = prompt | model | parser
-
-# Unified execution: sync, async, batch, stream
-result = chain.invoke({"topic": "machine learning"})
-```
-
-## Input/Output Type Contracts
-
-Every Runnable is generic over input and output types: `Runnable[Input, Output]`. Type contracts enable validation, schema introspection, and composability guarantees.
-
-### Type Inference and Validation
-
-Runnables infer input/output types from generic parameters or function signatures:
-
-```python
-from langchain_core.runnables import RunnableLambda
-from typing import Any
-
-def extract_keywords(text: str) -> list[str]:
-    """Extract keywords from text."""
-    return text.lower().split()
-
-runnable = RunnableLambda(extract_keywords)
-print(runnable.input_schema)   # Schema for str input
-print(runnable.output_schema)  # Schema for list[str] output
-```
-
-When composing, the output type of one component must be compatible with the input type of the next:
-
-```python
-# Type-safe: output of prompt (str) matches model input
-chain = prompt | model  # PromptTemplate[dict, str] | ChatOpenAI[str, BaseMessage]
-
-# If types don't match, coercion happens automatically via RunnableLambda wrapping
-# or an explicit adapter is needed
-def adapt_to_dict(output: str) -> dict:
-    return {"result": output}
-
-adapted_chain = chain | RunnableLambda(adapt_to_dict)
-```
-
-### Schema Introspection
-
-Composition maintains transparent schemas throughout the chain:
-
-```python
-chain = prompt | model | parser
-
-# Input schema: what prompt expects
-print(chain.input_schema)   # {"topic": str, ...}
-
-# Output schema: what parser produces
-print(chain.output_schema)  # str
-
-# Config schema: what configuration is available
-print(chain.config_schema())  # Configurable fields, if any
-```
-
-Schemas enable:
-- **API documentation**: Auto-generate OpenAPI/GraphQL schemas.
-- **Validation**: Reject invalid inputs before execution.
-- **Tool calling**: Pass schema to LLMs for tool invocation.
-
-## Composition Operators
-
-### Sequential Composition: Pipe Operator `|`
-
-The **pipe operator** chains Runnables sequentially. Each output becomes the next input.
-
-**Location**: `repo://libs/core/langchain_core/runnables/base.py#L648-L722`
-
-```python
-from langchain_core.runnables import RunnableLambda, RunnableSequence
-
-def add_one(x: int) -> int:
-    return x + 1
-
-def mul_two(x: int) -> int:
-    return x * 2
-
-# Pipe operator
-sequence = RunnableLambda(add_one) | RunnableLambda(mul_two)
-
-# Equivalent explicit form
-sequence = RunnableSequence(
-    first=RunnableLambda(add_one),
-    last=RunnableLambda(mul_two),
-)
-
-sequence.invoke(5)  # (5 + 1) * 2 = 12
-```
-
-**Key behaviors**:
-
-- **Flattening**: Nested sequences are automatically flattened to avoid redundant nesting.
-- **Type propagation**: Input type from first component, output type from last.
-- **Config threading**: Configuration is merged and propagated through all steps.
-- **Execution modes**: Inherits sync (`invoke`), async (`ainvoke`), batch (`batch`, `abatch`), and streaming (`stream`, `astream`) from components.
-
-**Real-world example: Prompt → Model → Parser**
-
-```python
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
-from langchain_core.output_parsers import JsonOutputParser
-from pydantic import BaseModel, Field
-
-class Article(BaseModel):
-    title: str = Field(..., description="Article title")
-    summary: str = Field(..., description="2-3 sentence summary")
-
-prompt = ChatPromptTemplate.from_template(
-    "Write an article about {topic}. Format as JSON."
-)
-model = ChatOpenAI(model="gpt-4o-mini")
-parser = JsonOutputParser(pydantic_object=Article)
-
-chain = prompt | model | parser
-
-result = chain.invoke({"topic": "quantum computing"})
-# result is Article(title=..., summary=...)
-```
-
-### Parallel Composition: RunnableParallel
-
-**Dict literal**, **RunnableParallel**, or **itemgetter** invoke multiple Runnables concurrently with the same input, collecting results into a dict.
-
-**Location**: `repo://libs/core/langchain_core/runnables/base.py#L3868-L3950`
-
-#### Dict Literal (Automatic Coercion)
-
-```python
-from langchain_core.runnables import RunnableLambda
-
-# Dict literal is coerced to RunnableParallel
-parallel = RunnableLambda(lambda x: x + 1) | {
-    "add": RunnableLambda(lambda x: x + 10),
-    "mul": RunnableLambda(lambda x: x * 2),
-}
-
-result = parallel.invoke(5)
-# {"add": 16, "mul": 12}
-```
-
-#### Explicit RunnableParallel
-
-```python
-from langchain_core.runnables import RunnableParallel
-
-parallel = RunnableParallel(
-    sentiment=sentiment_chain,
-    entities=entity_chain,
-    topics=topic_chain,
-)
-
-result = parallel.invoke("Apple released a new iPhone today.")
-# {"sentiment": "positive", "entities": ["Apple", "iPhone"], "topics": ["tech"]}
-```
-
-#### itemgetter: Extract Fields from Dict Input
-
-Use `itemgetter` to extract and pass specific fields from a dict:
-
-```python
-from operator import itemgetter
-from langchain_core.runnables import RunnablePassthrough
-
-# Extract fields from input dict
-parallel = {
-    "question": itemgetter("question"),
-    "context": itemgetter("context"),
-    "reasoning": RunnableLambda(lambda x: analyze(x["question"])),
-}
-
-result = parallel.invoke({
-    "question": "What is AI?",
-    "context": "Artificial Intelligence...",
-})
-# {
-#     "question": "What is AI?",
-#     "context": "Artificial Intelligence...",
-#     "reasoning": "..."
-# }
-```
-
-**Key behaviors**:
-
-- **Same input**: All branches receive the same input simultaneously.
-- **Parallel execution**: Async branches use `asyncio.gather`; sync uses thread pool.
-- **Concurrency control**: `max_concurrency` in config limits parallelism.
-- **Exception handling**: First exception raises unless `return_exceptions=True`.
-- **Output structure**: Results are a dict with user-specified keys.
-- **Dict construction**: Dict literals are automatically coerced to RunnableParallel.
-
-**Use cases**:
-
-- **Multi-aspect analysis**: Sentiment, entities, topics on same text.
-- **Ensemble methods**: Multiple classifiers voting on same input.
-- **Context retrieval**: Fetch from multiple sources in parallel.
-- **A/B testing**: Run model variants concurrently and compare.
-
-**Real-world example: Multi-step retrieval and summarization**
-
-```python
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
-
-# Retrieve context from multiple sources, summarize key points
-parallel = {
-    "input": RunnablePassthrough(),  # Pass original input through
-    "context": retriever,            # Fetch relevant docs
-    "entities": entity_extractor,    # Extract entities
-}
-
-chain = parallel | summary_model
-```
-
-### Branching: RunnableBranch
-
-**RunnableBranch** evaluates conditions and routes execution to one of several branches.
-
-**Location**: `repo://libs/core/langchain_core/runnables/branch.py#L43-L290`
-
-```python
-from langchain_core.runnables import RunnableBranch, RunnableLambda
-
-# Multi-branch based on input type and content
-branch = RunnableBranch(
-    (
-        lambda x: isinstance(x, str) and len(x) < 10,
-        RunnableLambda(lambda x: f"Short: {x}"),
-    ),
-    (
-        lambda x: isinstance(x, str) and len(x) >= 10,
-        RunnableLambda(lambda x: f"Long: {x}"),
-    ),
-    RunnableLambda(lambda x: f"Not a string: {x}"),  # Default
-)
-
-branch.invoke("hi")        # "Short: hi"
-branch.invoke("hello world")  # "Long: hello world"
-branch.invoke(42)          # "Not a string: 42"
-```
-
-**Key behaviors**:
-
-- **Sequential evaluation**: Conditions are checked in order; first match is selected.
-- **Async conditions**: Conditions can be async or sync callables/Runnables.
-- **Type-based routing**: Common pattern is `isinstance` checks for polymorphism.
-- **Default fallback**: If no condition matches, the default branch executes.
-- **Callback tagging**: Conditions tagged as `condition:N`, branches as `branch:N` or `branch:default`.
-
-**Real-world example: Query classification and routing**
-
-```python
-from langchain_core.runnables import RunnableBranch
-
-# Route queries to specialized chains
-def is_math_query(x: dict) -> bool:
-    return "calculate" in x["query"].lower()
-
-def is_search_query(x: dict) -> bool:
-    return "find" in x["query"].lower()
-
-router = RunnableBranch(
-    (is_math_query, math_solver_chain),
-    (is_search_query, search_chain),
-    general_qa_chain,  # Default for unclassified
-)
-
-result = router.invoke({"query": "calculate 2 + 2"})  # Uses math_solver_chain
-result = router.invoke({"query": "find restaurants near me"})  # Uses search_chain
-```
-
-### Fallback and Retry: Resilience Patterns
-
-#### Fallback: RunnableWithFallbacks
-
-**RunnableWithFallbacks** tries a primary Runnable, then fallbacks in order until one succeeds.
-
-**Location**: `repo://libs/core/langchain_core/runnables/fallbacks.py#L37-L590`
-
-```python
-from langchain_openai import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-
-# Primary model, then fallback providers
-model = ChatOpenAI(model="gpt-4o-mini").with_fallbacks([
-    ChatAnthropic(model="claude-3-5-sonnet"),
-    # Additional fallbacks as needed
-])
-
-result = model.invoke("Hello")
-# Tries OpenAI first; if it fails, tries Anthropic
-```
-
-**Key behaviors**:
-
-- **Sequential trials**: Runs primary, then each fallback in order.
-- **Exception filtering**: Only catches exceptions in `exceptions_to_handle` (default: all).
-- **Exception injection**: If `exception_key` is set, the exception dict is passed to fallbacks as input for adaptive recovery.
-- **Batch retry**: For batches, tracks per-input success/failure and retries only failed inputs.
-- **Async support**: Native async execution with proper exception handling.
-
-**Real-world example: Multi-provider LLM with adaptive fallback**
-
-```python
-from langchain_core.runnables import RunnableWithFallbacks, RunnableLambda
-
-# Fallback with error information
-def adaptive_recovery(inputs: dict) -> str:
-    """Generate response based on prior error."""
-    error = inputs.get("error")
-    if error:
-        return f"Request failed: {str(error)}. Returning cached response."
-    return inputs["result"]
-
-model = ChatOpenAI().with_fallbacks(
-    [ChatAnthropic(), RunnableLambda(adaptive_recovery)],
-    exception_key="error",
+from langchain.agents import create_agent
+from langchain.agents.middleware import AgentMiddleware
+
+graph = create_agent(
+    model="openai:gpt-5.5",
+    tools=[...],
+    middleware=[
+        LoggingMiddleware(),      # Outermost: sees all requests first
+        ValidationMiddleware(),    # Middle: validates after logging
+        CacheMiddleware(),         # Innermost: caches before execution
+    ]
 )
 ```
 
-#### Retry: with_retry()
+**Composition semantics**: Request flows from outermost to innermost (logging → validation → cache → execution), response flows back (execution → cache → validation → logging). Each middleware receives a `handler` callback to invoke the next layer.
 
-Retry logic is available on any Runnable via `.with_retry()`:
+### Hooking Points and Execution Phases
+
+Middleware can intercept at six lifecycle phases and two execution wrappers:
+
+**Lifecycle hooks** (state transitions):
+- `before_agent` / `abefore_agent`: Runs once at agent start, before any model call
+- `before_model` / `abefore_model`: Before each model invocation
+- `after_model` / `aafter_model`: After model returns (before tool routing)
+- `after_agent` / `aafter_agent`: After agent terminates
+
+**Execution wrappers** (function interception):
+- `wrap_model_call` / `awrap_model_call`: Wraps LLM invocation; can retry, cache, modify request/response
+- `wrap_tool_call` / `awrap_tool_call`: Wraps tool execution; can validate, audit, route, or skip
+
+Each hook method has sync and async variants. When using `invoke()` or `stream()`, sync variants are called; `ainvoke()` or `astream()` call async variants. At least one variant must be implemented; if only async is defined, sync invocations raise `NotImplementedError`.
+
+### Handler Composition Pattern
+
+Middleware handlers compose via closures, chaining inner calls with accumulated state:
 
 ```python
-from langchain_openai import ChatOpenAI
-
-model = ChatOpenAI(model="gpt-4o-mini").with_retry(
-    retry_if_exception_type=(RuntimeError,),
-    stop_after_attempt=3,
-    wait_exponential_jitter=True,
-)
-
-result = model.invoke("Hello")
-# Retries up to 3 times on RuntimeError with exponential backoff
+def _chain_model_call_handlers(
+    handlers: Sequence[_ModelCallHandler],
+) -> _ComposedModelCallHandler | None:
+    """Compose handlers where first = outermost layer."""
+    
+    if len(handlers) == 1:
+        return handlers[0]
+    
+    def compose_two(outer, inner):
+        """Compose two handlers where outer wraps inner."""
+        def composed(request, handler):
+            accumulated_commands = []
+            
+            def inner_handler(req):
+                # Capture commands from inner before normalizing
+                inner_result = inner(req, handler)
+                if isinstance(inner_result, _ComposedExtendedModelResponse):
+                    accumulated_commands.extend(inner_result.commands)
+                    return inner_result.model_response
+                return _normalize_to_model_response(inner_result)
+            
+            outer_result = outer(request, inner_handler)
+            # Merge accumulated commands from inner with outer result
+            return _to_composed_result(outer_result, accumulated_commands)
+        
+        return composed
+    
+    # Compose right-to-left: outermost(inner(innermost))
+    composed = compose_two(handlers[-2], handlers[-1])
+    for h in reversed(handlers[:-2]):
+        composed = compose_two(h, composed)
+    
+    return composed
 ```
 
-**Key behaviors**:
+**Key properties**:
+- **Command accumulation**: Commands from all middleware layers (inner-first) are collected into a list
+- **Normalization**: Handler results (`ModelResponse`, `AIMessage`, `ExtendedModelResponse`) are normalized consistently
+- **Clear/retry safety**: Commands are cleared on each retry within middleware to avoid stale accumulation
 
-- **Selective retry**: Only retries on specified exception types.
-- **Exponential backoff**: Built-in exponential backoff with optional jitter.
-- **Attempt tracking**: Tags callback runs as `retry:attempt:N`.
-- **Batch retry**: In batch mode, retries only failed inputs.
-- **Stream limitation**: Streaming is not retried (ambiguous semantics).
+### State Schema Merging
 
-#### Error Handling in Chains
-
-Errors in composed chains can be handled at multiple levels:
-
-**1. Try-except around chain invocation** (application level):
+Middleware can extend agent state via `state_schema` parameter. When multiple middleware declare schemas, they are merged in declaration order with user-supplied `state_schema` winning conflicts:
 
 ```python
-try:
-    result = chain.invoke(input_data)
-except ValueError as e:
-    print(f"Validation error: {e}")
-except TimeoutError as e:
-    print(f"Timeout: {e}")
+from typing_extensions import TypedDict
+from langchain.agents.middleware import AgentState, OmitFromInput, PrivateStateAttr
+
+class CacheMiddlewareState(TypedDict):
+    cache_hits: int  # Visible in input/output
+    cache_metadata: Annotated[dict, PrivateStateAttr]  # Internal only
+
+class MyMiddleware(AgentMiddleware):
+    state_schema = CacheMiddlewareState
 ```
 
-**2. Fallback within chain** (component level):
+Schema resolution follows this order:
+1. Middleware state schemas (in registration order)
+2. User-supplied `state_schema` parameter (if provided)
+3. Base `AgentState` (default)
+
+Later schemas override earlier ones on field conflicts. Use `OmitFromSchema`, `OmitFromInput`, and `OmitFromOutput` to exclude fields from specific schemas.
+
+## Subagent Delegation: Hierarchical Composition
+
+Subagent delegation enables agents to spawn nested agents from within tool calls. A tool in the parent agent can invoke another `create_agent()` graph as a nested execution, with automatic lifecycle tracking and causation edges.
+
+### Subagent Creation and Binding
+
+Subagents are named agents spawned via tool calls in the parent:
 
 ```python
-# Fallback in the middle of a chain
-chain = (
-    preprocessor
-    | model.with_fallbacks([cached_response_provider])
-    | parser
-)
-```
+from langchain.agents import create_agent
 
-**3. Callback error handling** (observability level):
-
-```python
-class ErrorTracker(BaseCallbackHandler):
-    def on_chain_error(self, error, **kwargs):
-        # Log, track, or alert on error
-        print(f"Chain error: {error}")
-
-chain.invoke(input_data, config={"callbacks": [ErrorTracker()]})
-```
-
-**4. Conditional branching on error** (routing level):
-
-```python
-def handle_error(error: Exception) -> str:
-    return f"Recovered from {type(error).__name__}"
-
-chain = model.with_fallbacks(
-    [RunnableLambda(handle_error)],
-    exception_key="error"
-)
-```
-
-## Component Interface Design
-
-Composable components follow a consistent interface:
-
-### 1. Single Transformation
-
-Each component transforms a single input to a single output. No side effects in the core execution path:
-
-```python
-from langchain_core.runnables import RunnableLambda
-
-# Good: pure transformation
-def extract_text(doc: dict) -> str:
-    return doc["content"]
-
-runnable = RunnableLambda(extract_text)
-```
-
-### 2. Type Clarity
-
-Make input and output types explicit via type hints or generic parameters:
-
-```python
-from langchain_core.runnables import Runnable
-from typing import Generic
-
-# Explicit types in function signature
-def process(x: str) -> dict[str, int]:
-    return {"length": len(x)}
-
-# Or as a Runnable subclass
-class CustomRunnable(Runnable[str, dict[str, int]]):
-    def invoke(self, input: str, config=None):
-        return {"length": len(input)}
-```
-
-### 3. Composition Boundaries
-
-Know when to create a new component vs. extend an existing one:
-
-| Scenario | Action | Reason |
-|----------|--------|--------|
-| **Reusable logic across chains** | Create a new Runnable | Promotes reuse and testing |
-| **Linear sequence of transformations** | Keep as one Runnable | Reduces nesting; same transform |
-| **Conditional routing within component** | Extract to RunnableBranch | Makes control flow explicit |
-| **Catching specific exceptions** | Wrap with RunnableWithFallbacks | Separates error handling |
-| **Simple transformations (< 5 lines)** | Use RunnableLambda | Low ceremony; easy to inline |
-
-**Example: When to create a component**
-
-```python
-# AVOID: Logic buried in lambda
-chain = prompt | model | RunnableLambda(
-    lambda x: json.loads(x) if x.startswith("{") else {"error": x}
-)
-
-# BETTER: Extract to named component
-class SafeJsonParser(Runnable[str, dict]):
-    def invoke(self, input: str, config=None):
-        try:
-            return json.loads(input)
-        except:
-            return {"error": input}
-
-chain = prompt | model | SafeJsonParser()
-```
-
-### 4. Configuration Support
-
-Mark dynamic fields as configurable so they can be overridden at runtime:
-
-```python
-from langchain_core.runnables import ConfigurableField
-from langchain_openai import ChatOpenAI
-
-model = ChatOpenAI(model="gpt-4o-mini").configurable_fields(
-    model=ConfigurableField(
-        id="model_name",
-        name="Model Name",
-        description="Which model to use",
-    ),
-    temperature=ConfigurableField(
-        id="temp",
-        name="Temperature",
-        description="Sampling temperature",
-    ),
-)
-
-# Override at runtime without recreation
-result = model.invoke(
-    "Hello",
-    config={"configurable": {"model_name": "gpt-4-turbo", "temp": 0.5}},
-)
-```
-
-## Practical Composition Patterns
-
-### Pattern 1: Input Enrichment
-
-Add context before invoking a chain:
-
-```python
-from langchain_core.runnables import RunnableParallel, RunnablePassthrough
-
-# Preserve input, fetch context in parallel
-chain = {
-    "input": RunnablePassthrough(),
-    "context": retriever,
-} | RunnableLambda(
-    lambda x: f"Question: {x['input']}\nContext: {x['context']}"
-) | model | parser
-```
-
-### Pattern 2: Multi-Stage Extraction
-
-Extract different aspects in parallel, then merge:
-
-```python
-chain = (
-    model
-    | RunnableParallel(
-        text=lambda x: x.content,
-        metadata=lambda x: x.response_metadata,
-        usage=lambda x: x.usage_metadata,
+# Parent agent with a tool that delegates to a subagent
+def delegate_to_research_team(query: str) -> str:
+    """Delegate a research task to the research team subagent."""
+    research_agent = create_agent(
+        name="research_team",
+        model="openai:gpt-5.5",
+        tools=[web_search, summarize],
+        system_prompt="You are a research specialist..."
     )
-    | RunnableLambda(
-        lambda results: {
-            "answer": results["text"],
-            "cost": results["usage"],
-            "model": results["metadata"]["model"],
-        }
-    )
+    
+    result = research_agent.invoke({
+        "messages": [{"role": "user", "content": query}]
+    })
+    return result["messages"][-1].content
+
+# Parent agent with delegation tool
+parent = create_agent(
+    model="openai:gpt-5.5",
+    tools=[delegate_to_research_team],
+    system_prompt="You are a manager coordinating specialized teams..."
 )
 ```
 
-### Pattern 3: Conditional Retry with Fallback
+**Subagent boundaries are detected via**:
+- `lc_agent_name`: A field in run config set by `create_agent(name=...)` to identify the agent
+- `lc_agent_name` differs from parent's: A nested run with a different `lc_agent_name` is a subagent boundary
+- **Same-named nested agents** (e.g., recursive calls) are still surfaced; unnamed agents (`lc_agent_name=None`) are excluded
 
-Retry once, then fallback:
+### SubagentRunStream and Causation Tracking
+
+When a subagent is detected, the `SubagentTransformer` (registered by default) surfaces a typed handle on `run.subagents`:
 
 ```python
-primary = model.with_retry(
-    stop_after_attempt=2,
-    retry_if_exception_type=(TimeoutError,),
+class SubagentRunStream(SubgraphRunStream):
+    """Typed sync handle for nested named-agent execution.
+    
+    Surfaces on `run.subagents` when nested run's `lc_agent_name` differs
+    from parent's.
+    """
+    
+    @property
+    def name(self) -> str | None:
+        """Subagent name (the nested run's `lc_agent_name`)."""
+        return self.graph_name
+    
+    @property
+    def cause(self) -> LifecycleCause | None:
+        """Causation edge — the tool call that triggered this subagent.
+        
+        Returns `{"type": "toolCall", "tool_call_id": ...}` dict when the
+        originating tool call could be joined, else `None`.
+        """
+        return self._cause
+```
+
+**Causation tracking**: The transformer recovers the originating tool call from the parent task's pending tool calls and exposes it via `cause`. This creates a verifiable edge from parent tool invocation to child execution.
+
+**Async variant**: `AsyncSubagentRunStream` provides the same interface for async execution paths.
+
+### Subagent Lifecycle and State Isolation
+
+Subagents execute in their own state namespace and have independent lifecycles:
+
+```python
+# Parent invocation
+for event in parent.stream({"messages": [...]}, stream_mode="updates"):
+    if "research_team" in event:  # Subagent updates
+        for subagent_event in event["research_team"]["subagents"]:
+            print(f"Subagent: {subagent_event.name}")
+            print(f"Caused by: {subagent_event.cause}")
+```
+
+**Lifecycle semantics**:
+- Subagent is created on first tool call to its delegating function
+- Subagent state (messages, state fields) is isolated from parent
+- Parent's model sees only the tool result returned by the subagent
+- Subagent completion is tracked and can be awaited independently
+- Multiple subagents run sequentially within the same tool call (no auto-parallelism across subagents)
+
+## Tool Selection and Dynamic Tool Management
+
+Middleware can dynamically modify tools at request time, enabling tool selection, authorization, and feature composition.
+
+### Tool Override and Dynamic Addition
+
+The `wrap_model_call` middleware receives and can override `request.tools`:
+
+```python
+class ToolSelectionMiddleware(AgentMiddleware):
+    def wrap_model_call(self, request, handler):
+        """Select tools based on context."""
+        # Filter tools by category
+        if request.state.get("context") == "research":
+            request = request.override(
+                tools=[t for t in request.tools if t.name.startswith("web_")]
+            )
+        
+        # Add runtime tools for this specific context
+        if request.state.get("needs_calculator"):
+            request = request.override(
+                tools=request.tools + [self.calculator_tool]
+            )
+        
+        return handler(request)
+```
+
+**Tool resolution**:
+- **Built-in tools** (dict format): Defined by model provider (e.g., Claude's native tools)
+- **Client-side tools** (BaseTool/callable): Registered upfront or added by middleware
+- **Validation**: Unknown client-side tools raise `ValueError` unless `wrap_tool_call` is defined (dynamic tool handling)
+
+### Structured Output Tools
+
+When `response_format` is provided with `ToolStrategy`, pseudo-tools are created to represent structured outputs:
+
+```python
+from pydantic import BaseModel
+from langchain.agents.structured_output import ToolStrategy
+
+class ArticleOutput(BaseModel):
+    title: str
+    summary: str
+
+graph = create_agent(
+    model="openai:gpt-5.5",
+    response_format=ToolStrategy(schema=ArticleOutput),
+    # Pseudo-tool "__structured_output_ArticleOutput__" is auto-created
 )
-
-fallback_chain = (
-    primary.with_fallbacks([
-        cached_response_provider,
-    ])
-)
 ```
 
-### Pattern 4: Ensemble with Consensus
+These tools are not available for manual tool calls—they represent the final structured response and trigger automatic termination on completion.
 
-Run multiple models, vote on result:
+## Context Management and Configuration Threading
 
-```python
-ensemble = RunnableParallel(
-    model_a=model_a,
-    model_b=model_b,
-    model_c=model_c,
-) | RunnableLambda(
-    lambda results: majority_vote(
-        results["model_a"],
-        results["model_b"],
-        results["model_c"],
-    )
-)
-```
+Middleware and subagents operate within a shared context that threads configuration and runtime state down the execution stack.
 
-### Pattern 5: Conditional Routing Based on Input Analysis
+### RunnableConfig Threading
 
-Classify input, then route to specialized chain:
+`RunnableConfig` (tags, metadata, callbacks, max_concurrency, configurable fields) is propagated through composed chains automatically:
 
 ```python
-classifier = RunnableLambda(classify_query)
-
-router = RunnableBranch(
-    (
-        lambda x: x["category"] == "technical",
-        technical_qa_chain,
-    ),
-    (
-        lambda x: x["category"] == "creative",
-        creative_chain,
-    ),
-    general_chain,
-)
-
-chain = classifier | router
-```
-
-## Composability Boundaries
-
-When to stop composing and create a new abstraction:
-
-### 1. Deep Nesting (> 5 levels)
-
-Deep chains are hard to debug. Extract intermediate groups:
-
-```python
-# AVOID: Chain of 8+ components
-chain = step1 | step2 | step3 | step4 | step5 | step6 | step7 | step8
-
-# BETTER: Group related steps
-preprocessing = step1 | step2 | step3
-inference = step4 | step5
-postprocessing = step6 | step7 | step8
-chain = preprocessing | inference | postprocessing
-```
-
-### 2. Reusable Subchains
-
-Subchains used in multiple places should be extracted and named:
-
-```python
-# Reused in multiple contexts
-retrieval_chain = query_processor | retriever | context_formatter
-
-answer_chain = retrieval_chain | model | parser
-summary_chain = retrieval_chain | summarizer
-```
-
-### 3. Stateful or Side-Effect Components
-
-Components with state or side effects (logging, metrics, external calls) should be isolated and clear:
-
-```python
-class LoggingRunnable(Runnable[Input, Output]):
-    """Wraps a runnable and logs input/output."""
-    def __init__(self, runnable, logger):
-        self.runnable = runnable
-        self.logger = logger
-
-    def invoke(self, input, config=None):
-        self.logger.info(f"Input: {input}")
-        output = self.runnable.invoke(input, config)
-        self.logger.info(f"Output: {output}")
-        return output
-```
-
-## Execution Modes Across Composition
-
-All composition operators automatically support the full execution API: sync, async, batch, and streaming.
-
-### Sync Execution: invoke()
-
-```python
-chain = prompt | model | parser
-result = chain.invoke({"topic": "AI"})
-# Blocks until complete, returns final output
-```
-
-### Async Execution: ainvoke()
-
-```python
-result = await chain.ainvoke({"topic": "AI"})
-# Non-blocking async call
-```
-
-### Batch Processing: batch() and abatch()
-
-Process multiple inputs efficiently with parallel execution:
-
-```python
-inputs = [{"topic": "AI"}, {"topic": "ML"}, {"topic": "DL"}]
-results = chain.batch(inputs)
-# Returns list of results in same order as inputs
-
-# Async batch
-results = await chain.abatch(inputs)
-```
-
-Batching is optimized: each step in the sequence receives all inputs at once and processes them in parallel (respecting `max_concurrency` config).
-
-### Streaming: stream() and astream()
-
-Process output incrementally as it becomes available, enabling real-time feedback:
-
-```python
-# Sync streaming
-for chunk in chain.stream({"topic": "AI"}):
-    print(chunk, end="", flush=True)
-
-# Async streaming
-async for chunk in chain.astream({"topic": "AI"}):
-    print(chunk, end="", flush=True)
-```
-
-**How streaming works in composed chains**:
-
-1. If all steps implement `transform()` (or `atransform()`), chunks flow end-to-end progressively.
-2. Each step receives a stream of chunks and yields transformed chunks immediately.
-3. If any step lacks `transform()`, streaming pauses until that step completes, then resumes.
-
-**Example: Streaming model output through parser**
-
-```python
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
-from langchain_core.output_parsers import StrOutputParser
-
-prompt = ChatPromptTemplate.from_template("Explain {topic}")
-model = ChatOpenAI(model="gpt-4o-mini")
-parser = StrOutputParser()
-
-chain = prompt | model | parser
-
-# Chunks flow: prompt → model (token by token) → parser
-for chunk in chain.stream({"topic": "quantum computing"}):
-    print(chunk, end="", flush=True)
-```
-
-The model streams tokens, and the parser processes them as they arrive.
-
-## Configuration Threading Through Composition
-
-Configuration (tags, metadata, callbacks, concurrency limits) flows through composed chains automatically via context variables. Each step receives a merged configuration that accumulates parent settings.
-
-### Config Merging and Propagation
-
-When invoking a chain with config:
-
-```python
-chain = prompt | model | parser
-
-result = chain.invoke(
-    {"topic": "AI"},
+result = agent.invoke(
+    {"messages": [...]},
     config={
-        "tags": ["production", "v1"],
-        "metadata": {"user_id": "123"},
-        "callbacks": [tracing_handler],
-        "max_concurrency": 5,
-        "configurable": {"temperature": 0.7},
-    },
+        "tags": ["production", "critical"],
+        "metadata": {"user_id": "123", "session": "abc"},
+        "callbacks": [custom_callback],
+        "max_concurrency": 4,
+    }
 )
 ```
 
-**Merging behavior**:
+**Threading semantics**:
+- Configuration is merged at composition boundaries
+- Child values override parent values
+- List fields (tags, metadata) accumulate rather than replace
+- Context variables propagate config down the call stack automatically
 
-| Field | Merge Rule |
-|-------|-----------|
-| `tags` | Accumulated (deduplicated, sorted) |
-| `metadata` | Child values override parent |
-| `callbacks` | Accumulated (all handlers called) |
-| `configurable` | Child values override parent |
-| `max_concurrency` | Child value overrides parent |
-| `recursion_limit` | Child value overrides parent |
+### Runtime Context and Subagent Coordination
 
-**Location**: `repo://libs/core/langchain_core/runnables/config.py#L431-L494`
-
-### Context Variable Propagation
-
-LangChain uses `ContextVar` (`var_child_runnable_config`) to automatically propagate config down the call stack without explicit parameter passing:
+Agents execute within a `Runtime` context that provides access to checkpointer, store, and other infrastructure:
 
 ```python
-from langchain_core.runnables.config import var_child_runnable_config
-
-# Parent sets config
-config = {"tags": ["parent"], "metadata": {"level": "top"}}
-
-# When child Runnable invokes ensure_config(None):
-# It merges var_child_runnable_config + explicit config
-# Result: tags=["parent"], metadata={"level": "top"}
+class MyMiddleware(AgentMiddleware):
+    async def abefore_model(self, state, runtime):
+        """Access shared infrastructure via runtime."""
+        # runtime.checkpointer: For persisting state
+        # runtime.store: For cross-agent data sharing
+        # runtime.created_at: Execution start time
+        return None
 ```
 
-**Location**: `repo://libs/core/langchain_core/runnables/config.py#L174-L280`
-
-This mechanism enables:
-- Transparent config inheritance without plumbing through function signatures
-- Automatic callback chaining across all nested Runnables
-- Per-input config in batch mode (each input can have different tags/metadata)
-
-### ConfigurableField: Runtime Control
-
-Mark fields as configurable to override them at runtime:
-
+**Subagent coordination** through shared store:
 ```python
-from langchain_core.runnables import ConfigurableField
-from langchain_openai import ChatOpenAI
-
-model = ChatOpenAI(model="gpt-4o-mini").configurable_fields(
-    temperature=ConfigurableField(
-        id="temp",
-        name="Temperature",
-        description="Sampling temperature (0.0 to 2.0)",
-    ),
-)
-
-# Override at runtime
-result = model.invoke(
-    "Hello",
-    config={"configurable": {"temp": 0.9}},
-)
+def delegate_with_shared_context(query: str) -> str:
+    """Subagent can access parent's store data."""
+    research_agent = create_agent(
+        name="research",
+        model="openai:gpt-5.5",
+        tools=[web_search],
+        store=shared_store,  # Same store as parent
+    )
+    return research_agent.invoke({"messages": [...]})["messages"][-1].content
 ```
 
-## Debugging and Visualization
+## Extension Points and Best Practices
 
-### Graph Introspection and Visualization
+### Writing Custom Middleware
 
-**Get and print the composition graph**:
+Middleware should follow these principles:
 
-```python
-# Get the graph structure
-graph = chain.get_graph()
-
-# Print as ASCII art
-graph.print_ascii()
-
-# Or draw as Mermaid diagram
-graph.draw_mermaid()  # Returns Mermaid code as string
-
-# Or save as PNG
-graph.draw_png("chain.png")
-```
-
-The graph visualizes:
-- All nodes (inputs, Runnables, outputs)
-- Data flow and dependencies
-- Parallel branches
-- Conditional paths (in RunnableBranch)
-
-**Location**: `repo://libs/core/langchain_core/runnables/graph.py#L258-L650`
-
-### Global Debug Mode
-
-Enable global debug to see all step executions with detailed tracing:
+1. **Single responsibility**: Each middleware handles one concern (validation, caching, logging)
+2. **Composability**: Never assume it's the only middleware; use the `handler` callback
+3. **Immutability**: Use `request.override()` instead of direct assignment
+4. **Command clarity**: Accumulate commands in `ExtendedModelResponse` for state updates
+5. **Async support**: Implement both sync and async variants or use bridging decorators
 
 ```python
-from langchain_core.globals import set_debug
+from langchain.agents.middleware import AgentMiddleware, ModelRequest, ModelResponse
 
-set_debug(True)
-chain.invoke({"topic": "AI"})
-# Prints invocation details for each step: inputs, outputs, execution time
-```
-
-This is useful for development but should be disabled in production.
-
-### Custom Callbacks for Observability
-
-Use callbacks for fine-grained observability, metrics collection, and tracing:
-
-```python
-from langchain_core.callbacks import BaseCallbackHandler
-
-class MyHandler(BaseCallbackHandler):
-    def on_chain_start(self, serialized, inputs, **kwargs):
-        print(f"Chain started: {inputs}")
+class CustomMiddleware(AgentMiddleware):
+    """Example middleware with both phases."""
     
-    def on_chain_end(self, output, **kwargs):
-        print(f"Chain ended: {output}")
+    def before_model(self, state, runtime):
+        """Prepare before model call."""
+        return {"prepared": True}
     
-    def on_chain_error(self, error: BaseException, **kwargs):
-        print(f"Chain error: {error}")
+    def wrap_model_call(self, request, handler):
+        """Wrap and potentially modify model call."""
+        # Validate request
+        if not request.messages:
+            raise ValueError("No messages")
+        
+        # Call next layer
+        response = handler(request)
+        
+        # Post-process response
+        return response
+```
 
-chain.invoke(
-    {"topic": "AI"},
-    config={"callbacks": [MyHandler()]},
+### Subagent Best Practices
+
+1. **Name subagents**: Always use `create_agent(name=...)` to enable detection
+2. **Isolate concerns**: Each subagent should have a focused responsibility
+3. **Share infrastructure**: Use `store` for cross-agent knowledge
+4. **Handle failures**: Subagent errors surface as tool errors in parent
+5. **Monitor causation**: Use `cause` edge to trace parent-child relationships
+
+### Testing and Debugging
+
+```python
+from langchain.agents import create_agent
+
+# Enable debug output
+agent = create_agent(
+    model="openai:gpt-5.5",
+    tools=[...],
+    debug=True,  # Verbose logging of execution
+)
+
+# Trace middleware execution
+for event in agent.stream(
+    {"messages": [...]},
+    stream_mode="updates",
+):
+    print(f"Event: {event}")
+```
+
+## Composition Patterns and Real-World Examples
+
+### Multi-Agent Hierarchies
+
+Parent agents orchestrate multiple specialized subagents:
+
+```python
+# Specialized subagents
+def research_task(query: str) -> str:
+    return create_agent(name="researcher", ...)({"messages": [...]})
+
+def analysis_task(data: str) -> str:
+    return create_agent(name="analyst", ...)({"messages": [...]})
+
+# Coordinator agent
+coordinator = create_agent(
+    model="openai:gpt-5.5",
+    tools=[research_task, analysis_task],
+    system_prompt="You coordinate research and analysis tasks..."
 )
 ```
 
-Callbacks receive hooks for:
-- Chain start/end
-- Tool calls
-- Retrieval steps
-- Token streaming (for LLMs)
-- Errors
+### Middleware Stacks for Cross-Cutting Concerns
 
-Multiple callbacks can be passed; they execute in order.
+```python
+# Security stack
+security_stack = [
+    RateLimitMiddleware(max_calls_per_minute=10),
+    ToolAuthorizationMiddleware(permissions_db),
+    AuditLoggingMiddleware(),
+]
 
-## Summary: Composability Best Practices
+# Resilience stack
+resilience_stack = [
+    RetryMiddleware(max_retries=3),
+    TimeoutMiddleware(timeout_seconds=30),
+    FallbackMiddleware(fallback_model="openai:gpt-4o-mini"),
+]
 
-1. **Single responsibility**: Each component does one thing.
-2. **Type safety**: Explicit input/output types enable validation and composition.
-3. **Declarative assembly**: Use operators (`|`, dicts, RunnableBranch) rather than custom glue.
-4. **Config threading**: Leverage built-in config propagation; don't hardcode settings.
-5. **Reuse over inheritance**: Compose smaller pieces rather than extending large classes.
-6. **Extract boundaries**: Create named subchains for readability and reusability.
-7. **Test components independently**: Unit-test individual Runnables before composition.
-8. **Monitor execution**: Use callbacks and debugging to understand production behavior.
+# Combine both
+agent = create_agent(
+    model="openai:gpt-5.5",
+    tools=[...],
+    middleware=security_stack + resilience_stack,
+)
+```
+
+### Dynamic Tool Selection by Domain
+
+```python
+class DomainToolSelectionMiddleware(AgentMiddleware):
+    """Select tools based on detected domain."""
+    
+    def wrap_model_call(self, request, handler):
+        # Analyze messages to detect domain
+        domain = detect_domain(request.messages)
+        
+        # Filter tools to domain-specific subset
+        domain_tools = {
+            "finance": [calculate_roi, analyze_portfolio],
+            "research": [web_search, cite_paper],
+            "general": request.tools,
+        }
+        
+        selected = domain_tools.get(domain, request.tools)
+        request = request.override(tools=selected)
+        
+        return handler(request)
+```
+
+## Summary
+
+Agent composability through middleware and subagent delegation enables:
+
+- **Reusable behaviors** via middleware stacks (logging, caching, validation, retry)
+- **Hierarchical execution** via subagent delegation with causation tracking
+- **Flexible tool management** through dynamic selection and authorization
+- **Clean separation of concerns** without monolithic agent implementations
+- **Predictable composition** via closure-based handler chaining and automatic state merging
+
+These patterns form the foundation for building production agents that are maintainable, testable, and extensible across diverse use cases.

@@ -1,24 +1,56 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f58b109c60f07f1bc5a6b9cc6cd4351dce2318f7123c7337213b20415a6865aa",
+  "pageVersion": "sha256:d0e278bfdcf51cc51d131946684e7c93e41e512ea28dff75d1d0377767d3ab36",
   "claims": [
     {
       "id": "claim_22e1af2a8d934d20bb1c8c530bf54dd2",
-      "statement": "/openwiki/reference/unit-tests.md is a deprecated redirect page that directs readers to the primary Unit Testing and Mocking documentation for comprehensive coverage of test structure, standard test classes, fixtures, mocking strategies, agent testing patterns, assertions, async testing, callbacks, and integration patterns.",
+      "statement": "/openwiki/reference/unit-tests.md is a comprehensive reference documenting test fixtures, utilities, standard test classes, and configuration infrastructure for LangChain unit testing, including blockbuster socket restrictions, VCR cassette handling, fake callback handlers, Pydantic utilities, and standard test class patterns (ChatModelTests, ToolsUnitTests).",
       "evidence": [
         {
           "resource": "repo://libs/core/tests/unit_tests/conftest.py",
           "version": "repo-file-v1:sha256:db4edbdb240f9a7e3c35fc6eab5dd5024c15e3a4efa8155295fdb30489a34b75"
         },
         {
+          "resource": "repo://libs/core/tests/unit_tests/fake/callbacks.py",
+          "version": "repo-file-v1:sha256:ccf91cc5acefdc15b6e52c09110bc586866d7a704c4a4e0d651fd1c0dc149405"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/pydantic_utils.py",
+          "version": "repo-file-v1:sha256:c80ecf32bea0b4e7d5a86ae816614622e63f082e45bf2dc665118ddcb8400d87"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/conftest.py",
+          "version": "repo-file-v1:sha256:1f9c4139e890e6c962d28d9f149844704c684d6598aa99c03d678fabc797e1d1"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/stubs.py",
+          "version": "repo-file-v1:sha256:3d42d384f2ef72708c96fc0dd013c0571cbf102d84024d4fd0f6b511ad1185c0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/conftest.py",
+          "version": "repo-file-v1:sha256:96fe086dccf9798c2b1e0413de3da4fd3dfa3a8d63c41957dca11d3d909fbe1a"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/base.py",
+          "version": "repo-file-v1:sha256:62a5d5e75b59be001165917da5164c60bbdb07394b364df2ea1b949916ba3cab"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/conftest.py",
+          "version": "repo-file-v1:sha256:ffaec6ae30a13340601f8c60408aedd2607a44153ebb040fe6ac4a7725ce32f4"
+        },
+        {
           "resource": "repo://libs/standard-tests/langchain_tests/unit_tests/chat_models.py",
           "version": "repo-file-v1:sha256:ac985614811c80fb63a3563c19699732cd394425fafe39e39ea2a67124ef1179"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/unit_tests/tools.py",
+          "version": "repo-file-v1:sha256:97c50a0689f2f2305a41ffbf2ee27b9fff732b3cd2ca38e20e97a4f8516f45ac"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-11-07T08:15:07.286Z"
   }
 }

@@ -5,7 +5,7 @@ description: "Guide to writing unit tests: test structure, mocking chat models, 
 tags: [unit-tests, pytest, testing, fixtures, mocking, chat-models, tools, agents, integration, assertions]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-29T08:20:01.046Z
+    at: 2026-11-07T08:15:07.286Z
 sources:
   - id: openwiki-source-8f1875229ad4a704c8e20a06
     resource: repo://libs/core/Makefile

@@ -20,10 +20,10 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/config.py
   - id: openwiki-source-bfd8b1aa6ad00852a2e99762
     resource: repo://libs/core/langchain_core/tracers/context.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-07T08:15:07.286Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
+    at: 2026-11-07T08:15:07.286Z
 ---
 
 
@@ -71,16 +71,16 @@ Each run manager holds the **run_id** and **parent_run_id** for the operation, e
 
 The callback system uses two dispatch functions:
 
-**handle_event** (`repo://libs/core/langchain_core/callbacks/manager.py#L285-L368`, sync) iterates over handlers and calls the corresponding event method. It handles:
+**handle_event** (`repo://libs/core/langchain_core/callbacks/manager.py#L296-L379`, sync) iterates over handlers and calls the corresponding event method. It handles:
 
 - Skipping handlers based on ignore conditions (e.g., `ignore_llm`, `ignore_chain`)
 - Catching and logging exceptions (respecting `raise_error`)
 - Collecting async coroutines and running them via executor pool or event loop
 - Converting `on_chat_model_start` to `on_llm_start` fallback when not implemented
 
-**ahandle_event** (`repo://libs/core/langchain_core/callbacks/manager.py#L453-L488`, async) separates inline (sequential) and non-inline (concurrent) handlers, using `asyncio.gather()` for parallelism.
+**ahandle_event** (`repo://libs/core/langchain_core/callbacks/manager.py#L464-L499`, async) separates inline (sequential) and non-inline (concurrent) handlers, using `asyncio.gather()` for parallelism.
 
-The **shielded** decorator (`repo://libs/core/langchain_core/callbacks/manager.py#L221-L254`) preserves context variables in async handlers when cancellation occurs, avoiding task cancellation deadlocks.
+The **shielded** decorator (`repo://libs/core/langchain_core/callbacks/manager.py#L232-L264`) preserves context variables in async handlers when cancellation occurs, avoiding task cancellation deadlocks.
 
 ## Built-in Handlers
 
@@ -191,7 +191,7 @@ with tracing_v2_enabled(project_name="my_project") as tracer:
     print(f"View trace at: {run_url}")
 ```
 
-**Automatic trace callback injection** (`repo://libs/core/langchain_core/tracers/context.py#L105-L130`) happens via `_get_trace_callbacks`, which:
+**Automatic trace callback injection** (`repo://libs/core/langchain_core/tracers/context.py#L113-L138`) happens via `_get_trace_callbacks`, which:
 
 1. Checks if tracing is enabled via `_tracing_v2_is_enabled()`
 2. Creates or reuses an existing LangChainTracer
@@ -291,7 +291,7 @@ Operations form a parent-child hierarchy where each child receives a **parent_ru
 LLMResult -> parent_run_id=run_id_chain -> parent_run_id=run_id_outer
 ```
 
-This enables LangSmith to reconstruct the full call tree. The **ParentRunManager** (`repo://libs/core/langchain_core/callbacks/manager.py#L599-L619`) provides `get_child()` to create child callback managers that inherit tags and inheritable handlers.
+This enables LangSmith to reconstruct the full call tree. The **ParentRunManager** (`repo://libs/core/langchain_core/callbacks/manager.py#L610-L630`) provides `get_child()` to create child callback managers that inherit tags and inheritable handlers.
 
 ### Inheritance Rules
 

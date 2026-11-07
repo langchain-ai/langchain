@@ -1,22 +1,22 @@
 # Files
 
-- [Agent Execution (Deprecated Reference)](agent-execution.md) - This page has been superseded. See the primary Agent Execution Flow and Loop Control documentation for current content.
-- [Agent Factory (Deprecated Reference)](agent-factory.md) - This page has been moved. For the authoritative documentation on the agent factory and create_agent function, see the Agent Execution Flow documentation.
-- [Callbacks (Deprecated Reference)](callbacks.md) - Deprecated reference page. See /openwiki/concepts/callbacks.md for current documentation on LangChain's callback system.
+- [Agent Execution - Reference Guide](agent-execution.md) - Technical reference for agent execution architecture, including state schemas, control flow logic, middleware composition, and the conditional edge system that governs tool dispatch and loop termination.
+- [Agent Factory - Function Reference](agent-factory.md) - Complete reference documentation for create_agent function signature, parameters, return types, middleware composition rules, state schemas, and factory construction internals.
+- [Callback Manager Interfaces and Run Managers](callbacks.md) - Technical reference for callback manager classes, run manager lifecycle, event dispatch mechanisms, and handler configuration patterns in LangChain's instrumentation layer.
 - [Chat Models API Reference](chat-models.md) - Complete API reference for BaseChatModel, covering all methods, parameters, return types, and protocol implementation contracts for chat model integration in LangChain.
 - [GitHub Actions CI Workflows Reference](ci-workflows.md) - Complete technical reference for LangChain's GitHub Actions workflows, job configurations, triggers, matrix testing, and environment variables.
-- [Composability (Deprecated Reference)](composability.md) - This page has been moved. For the authoritative documentation on agent composability, middleware composition, and subagent delegation patterns, see the Agent Composability documentation.
-- [Dev Commands (Old Page Reference)](dev-commands.md) - Deprecated: See /openwiki/operations/dev-commands.md instead.
+- [Composability API Reference](composability.md) - Technical reference for agent composition patterns, middleware hooks, request/response types, and subagent lifecycle in LangChain agents.
+- [Development Commands Reference](dev-commands.md) - Complete reference for make targets, uv commands, and development utilities across the LangChain Python monorepo.
 - [Integration Tests](integration-tests.md) - LangChain's integration testing framework for partner libraries and chat models, including VCR cassette recording, pytest markers for test classification, and scheduled CI/CD execution against live APIs.
-- [MCP Integration (Old Page Reference)](mcp-integration.md) - Deprecated reference page. See /openwiki/integrations/mcp-integration.md for the current MCP integration documentation.
+- [MCP Adapter Configuration and Protocol](mcp-integration.md) - Technical reference for MCPAdapter implementation, protocol handling, target types, elicitation mechanism, tool conversion, and error handling in LangChain MCP integration.
 - [Messages API Reference](messages.md) - Complete API reference for LangChain message types, serialization utilities, content blocks, and notification metadata functions for marking system-generated messages in conversations.
-- [Middleware (Deprecated Reference)](middleware.md) - Deprecated reference page. See /openwiki/middleware.md for comprehensive documentation on agent middleware, lifecycle hooks, and composition patterns.
-- [Model Initialization (Deprecated Reference)](model-initialization.md) - Deprecated reference page. See /openwiki/model-initialization.md for comprehensive documentation on model initialization, the init_chat_model factory, provider configuration, and runtime model switching.
-- [OpenAI Provider (Old Page Reference)](openai-provider.md) - Deprecated: See /openwiki/integrations/openai-provider.md instead.
-- [Partner Pattern (Deprecated Reference)](partner-pattern.md) - This page has been moved. See /openwiki/integrations/partner-pattern.md for current documentation on LangChain's partner integration framework.
-- [Prompts (Deprecated Reference)](prompts.md) - This page has been consolidated. See /openwiki/concepts/prompts.md for current documentation on prompt templates, templating, and composability.
-- [Runnables (Old Reference)](runnables.md) - Deprecated reference page. Runnables documentation has been consolidated into /openwiki/concepts/runnables.md.
+- [Middleware Types and Interfaces](middleware.md) - Reference documentation for middleware types, interfaces, decorators, and composition patterns. Details AgentMiddleware protocol, lifecycle hooks, request/response types, state schema annotations, and decorator-based middleware construction.
+- [init_chat_model API Reference](model-initialization.md) - Complete API reference for init_chat_model function parameters, return types, built-in provider registry, and creator function specifications.
+- [OpenAI Chat Provider API Reference](openai-provider.md) - Technical reference for ChatOpenAI and AzureChatOpenAI classes, covering class structure, constructor parameters, initialization behavior, and Azure integration.
+- [Partner Pattern Reference](partner-pattern.md) - Technical reference for LangChain partner package structure, core abstractions, message conversion, tool calling, structured output, streaming, error handling, and model profiles.
+- [Prompt Template Classes and Composition Methods](prompts.md) - Technical reference for BasePromptTemplate hierarchy, string and chat prompt classes, composition operators, partial variables, variable validation, and factory methods. Covers PromptTemplate, ChatPromptTemplate, FewShot variants, and formatting pipelines.
+- [Runnables: Complete Protocol Reference](runnables.md) - Complete API reference for the Runnable protocol, execution methods, composition operators, configuration threading, and streaming patterns in LangChain.
 - [Streaming API Reference](streaming.md) - Core streaming APIs for incremental output delivery via BaseChatModel.stream() and astream(), message chunk composition, ChatModelStream projections, and callback integration.
 - [Structured Output API Reference](structured-output.md) - Complete API reference for structured output classes, error types, and validation mechanisms used by agents to enforce JSON schema compliance on language model responses.
-- [Tools (Deprecated Reference)](tools.md) - Deprecated reference page. See /openwiki/concepts/tools.md for current documentation on LangChain's tools system.
-- [Unit Testing and Mocking (Deprecated Reference)](unit-tests.md) - This page has been superseded. See the primary Unit Testing and Mocking documentation for current content.
+- [Tools Interface and Binding Reference](tools.md) - Reference documentation for LangChain tool interfaces, decorators, binding strategies, and runtime injection mechanisms that enable structured agent interactions with external systems.
+- [Unit Tests Reference](unit-tests.md) - Reference documentation for test fixtures, mocking utilities, assertion helpers, and testing infrastructure used in LangChain unit tests.

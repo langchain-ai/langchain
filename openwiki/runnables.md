@@ -16,7 +16,7 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/retry.py
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
+    at: 2026-11-07T08:15:07.286Z
 generated: { by: "openwiki/0.5.0", at: "2026-10-20T08:25:57.412Z" }
 ---
 

@@ -5,7 +5,7 @@ description: "Quick reference for locating code by topic, mapping LangChain conc
 tags: [reference, file-organization, monorepo, codebase-map, pathfinding]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
+    at: 2026-11-07T08:15:07.286Z
 sources:
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
@@ -61,7 +61,7 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
   - id: openwiki-source-bd29e79613d5f366a00068f5
     resource: repo://libs/standard-tests/langchain_tests/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-07T08:15:07.286Z" }
 ---
 
 ## Overview
@@ -71,9 +71,9 @@ This page provides a quick reference for locating code by topic in the LangChain
 - **langchain-core** (v1.7.6): Base abstractions for messages, runnables, tools, prompts, language models, callbacks, and refusal handling
 - **langchain** (v1.4.9): Orchestration, agent factory, middleware composition, and model initialization
 - **langchain-classic** (v1.0.8): Legacy chains, memory, retrieval abstractions, and backward compatibility
-- **partners** (`langchain-*` packages): Provider-specific implementations (OpenAI, Anthropic, Ollama, etc.)
-- **text-splitters** (v1.x): Text splitting and chunking utilities
-- **model-profiles**: LLM metadata and capability profiles
+- **partners** (monorepo): Provider-specific implementations (OpenAI, Anthropic, Ollama, etc.); external packages referenced through `init_chat_model()` registry
+- **text-splitters** (v1.1.3): Text splitting and chunking utilities
+- **model-profiles** (v0.0.6): LLM metadata and capability profiles
 - **standard-tests** (shared): Ecosystem test contracts and conformance suites
 
 Use this map to navigate directly to the code responsible for a given concept, understand architectural layering, and locate integration points.
@@ -87,7 +87,7 @@ Use this map to navigate directly to the code responsible for a given concept, u
 | **Caches & Prompt Caching** | `repo://libs/core/langchain_core/caches.py` | Optional caching layer for LLM results (distinct from provider prompt caching); in-memory and custom cache backends |
 | **Chat Models (Core)** | `repo://libs/core/langchain_core/language_models/chat_models.py` | `BaseChatModel` abstract base and unified provider interface for streaming, batching, token counting, and structured outputs |
 | **Chat Models (Discovery)** | `repo://libs/langchain_v1/langchain/chat_models/base.py` | `init_chat_model()` factory for dynamic model discovery and loading by provider:model identifier |
-| **Chat Models (Implementations)** | `repo://libs/partners/*/langchain_*/chat_models/` (e.g., `openai/`) | Provider-specific implementations: ChatOpenAI, ChatAnthropic, ChatOllama, ChatGroq, etc. |
+| **Chat Models (Implementations)** | `repo://libs/partners/*/langchain_*/chat_models/` (monorepo: openai, anthropic, ollama, groq, mistralai, etc.); external packages for others | Provider-specific implementations in monorepo: ChatOpenAI, ChatAnthropic, ChatOllama, ChatGroq, etc.; additional providers (azure-ai, google, together) available via `init_chat_model()` |
 | **Callbacks & Tracing** | `repo://libs/core/langchain_core/callbacks/` | Callback manager, base handlers, streaming output, LangSmith integration, and event instrumentation |
 | **Decisions (OpenAI)** | `repo://libs/partners/openai/langchain_openai/decisions/` | OpenAI structured outputs API integration for deterministic response marshaling and routing |
 | **Document Loaders** | `repo://libs/core/langchain_core/document_loaders/` | Base loaders for ingesting documents from files, URLs, LangSmith, and blob storage |
@@ -240,7 +240,7 @@ Use this map to navigate directly to the code responsible for a given concept, u
 │   ├── Makefile
 │   └── pyproject.toml
 │
-├── partners/                       # Provider-specific integrations
+├── partners/                       # Provider-specific integrations (monorepo)
 │   ├── openai/                     # ChatOpenAI, embeddings, decisions API
 │   │   ├── langchain_openai/
 │   │   │   ├── chat_models/base.py # ChatOpenAI implementation
@@ -264,20 +264,19 @@ Use this map to navigate directly to the code responsible for a given concept, u
 │   ├── perplexity/                 # Perplexity models
 │   ├── fireworks/                  # Fireworks inference
 │   ├── openrouter/                 # OpenRouter aggregator
-│   ├── together/                   # Together AI models
-│   ├── google-vertexai/            # Google Vertex AI
-│   ├── google-genai/               # Google Generative AI
-│   ├── azure-ai/                   # Azure OpenAI and AI services
-│   ├── aws/                        # AWS Bedrock and SageMaker
 │   ├── chroma/                     # Chroma vector store
 │   ├── qdrant/                     # Qdrant vector store
 │   ├── exa/                        # Exa search
 │   ├── nomic/                      # Nomic embeddings
 │   ├── typesafe/                   # Typesafe schema generation
-│   ├── cohere/                     # Cohere models
 │   └── Makefile
 │
-├── text-splitters/                 # Text splitting utilities (v1.x)
+│   # Additional provider packages available via init_chat_model() but external to monorepo:
+│   # - langchain-anthropic (bedrock variants), langchain-aws (Bedrock, SageMaker)
+│   # - langchain-azure-ai, langchain-google-vertexai, langchain-google-genai
+│   # - langchain-together, langchain-cohere, and others (see _BUILTIN_PROVIDERS)
+│
+├── text-splitters/                 # Text splitting utilities (v1.1.3)
 │   ├── langchain_text_splitters/
 │   │   ├── base.py                 # TextSplitter base class
 │   │   ├── character.py            # Character-based splitting
@@ -342,10 +341,12 @@ Backward-compatible implementations for v0.x users:
 - **Loaders**: Legacy document loader patterns
 
 ### Layer 4: Partners (Provider Integrations)
-Provider-specific implementations as independent packages:
+Provider-specific implementations in `/libs/partners/` and external packages:
+- **Monorepo partners** (in `/libs/partners/`): openai, anthropic, ollama, groq, mistralai, huggingface, deepseek, xai, perplexity, fireworks, openrouter, chroma, qdrant, exa, nomic, typesafe
+- **External provider packages** (referenced via `init_chat_model()` registry): azure-ai, google-vertexai, google-genai, together, cohere, aws, and others
 - Each partner follows the **partner pattern**: extends core abstractions, released independently, dependencies pinned to core versions
-- **ChatOpenAI, ChatAnthropic, ChatOllama, etc.**: Each implements BaseChatModel
-- **Decisions API**: OpenAI-specific structured outputs integration
+- **Chat Models**: Each implements BaseChatModel (e.g., ChatOpenAI, ChatAnthropic, ChatOllama)
+- **Decisions API**: OpenAI-specific structured outputs integration in `repo://libs/partners/openai/langchain_openai/decisions/`
 - **Vector Stores**: Chroma, Qdrant implementations of BaseVectorStore
 - **Embeddings**: Provider-specific embedding models
 

@@ -5,7 +5,7 @@ description: "How init_chat_model routes model identifiers to provider-specific 
 tags: [model-initialization, factory, provider-routing, model-discovery, chat-models, configuration, profiles]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
+    at: 2026-11-07T08:15:07.286Z
 sources:
   - id: openwiki-source-c479d4fffee5cf62576699e4
     resource: repo://libs/langchain_v1/langchain/chat_models/base.py
