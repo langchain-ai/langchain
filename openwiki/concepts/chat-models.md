@@ -3,9 +3,6 @@ type: "Concept"
 title: "Chat Models: Core Abstractions and Protocol"
 description: "Chat models are the fundamental abstraction for conversational AI in LangChain. This page documents the base class contract, lifecycle phases, message I/O semantics, streaming protocol, and integration boundaries."
 tags: ["chat-models", "language-models", "streaming", "tool-calling", "caching", "callbacks"]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-29T08:20:01.046Z
 sources:
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
@@ -17,7 +14,10 @@ sources:
     resource: repo://libs/partners/anthropic/langchain_anthropic/chat_models.py
   - id: openwiki-source-738512768ef81ae009b097ac
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-06T08:17:28.425Z
 ---
 
 # Chat Models: Core Abstractions and Protocol
@@ -27,7 +27,7 @@ Chat models form the core abstraction for conversational AI in LangChain, operat
 - **`BaseChatModel`** (in `langchain_core.language_models.chat_models`): The abstract base class defining the contract all implementations must follow.
 - **Streaming protocol**: Two complementary modes (V1 callback-based and V2 event-based) for yielding incremental output.
 - **Tool calling and structured output**: Declarative bindings that transform models into function-calling and structured-response systems.
-- **Lifecycle and lifecycle management**: Caching, rate limiting, callback dispatch, and message normalization woven throughout.
+- **Lifecycle and management**: Caching, rate limiting, callback dispatch, and message normalization woven throughout.
 
 ## BaseChatModel: The Core Contract
 
@@ -85,11 +85,18 @@ Generated `AIMessage` objects carry:
 The **`output_version`** field controls content storage:
 
 - `None` / `"v0"` (default): Provider-specific format in `content`; `content_blocks` property lazily parses into standard format.
-- `"v1"`: Standard format written to `content` directly; `content_blocks` and `content` equivalent. Explicitly indexing content blocks for structured output.
+- `"v1"`: Standard format written to `content` directly; `content_blocks` and `content` equivalent.
+
+### Provider-Specific Message Conversion
+
+Each provider implements conversion to its native format:
+
+- **OpenAI** (via `_convert_message_to_dict`): Converts `BaseMessage` to `{"role": "...", "content": "..."}` dicts, with tool_calls extracted from `message.tool_calls` or `additional_kwargs["tool_calls"]`.
+- **Anthropic** (via `_convert_message_to_anthropic`): Converts to content blocks (text, images, tool_use), merges tool results into human messages, normalizes tool call IDs to alphanumeric pattern (`^[a-zA-Z0-9_-]+$`).
 
 ## Streaming Protocol
 
-Chat models support two complementary streaming modes:
+Chat models support two complementary streaming modes, triggered by different callback handler types and configuration:
 
 ### V1 Streaming: Callback-Based Token Dispatch
 
@@ -99,7 +106,7 @@ Triggered when:
 - `streaming=True` is set on the model instance.
 
 Flow:
-1. `stream()` / `astream()` routes to `_stream()` / `_astream()`.
+1. `stream()` / `astream()` calls `_should_stream()` to decide whether to route through `_stream()` / `_astream()`.
 2. Each chunk is a `ChatGenerationChunk` carrying `AIMessageChunk` with incremental content.
 3. Chunks are decorated with `response_metadata` and a run ID if missing.
 4. `run_manager.on_llm_new_token(content, chunk=chunk)` fires per chunk, enabling real-time display or logging.
@@ -112,7 +119,7 @@ A final empty chunk with `chunk_position="last"` signals completion if not yield
 Triggered when a `_V2StreamingCallbackHandler` is attached to the run manager (gates the v2 path even if v1 would also trigger).
 
 Flow:
-1. `_generate_with_cache()` / `_agenerate_with_cache()` route through `_iter_v2_events()` / `_aiter_v2_events()`.
+1. `_generate_with_cache()` / `_agenerate_with_cache()` check `_should_use_protocol_streaming()` and route through `_iter_v2_events()` / `_aiter_v2_events()` if true.
 2. The event iterator prefers native `_stream_chat_model_events()` / `_astream_chat_model_events()` hooks if implemented.
 3. Otherwise, bridges `_stream()` / `_astream()` chunks via `chunks_to_events()`, translating chunks into standardized protocol events (content-block lifecycle, message structure).
 4. Each event fires `run_manager.on_stream_event(event)`, enabling LangGraph integration and structured tracing.
@@ -137,8 +144,8 @@ Flow:
 
 The base implementation raises `NotImplementedError`. Each provider overrides to convert tools to its format:
 
-- **OpenAI**: Via `convert_to_openai_tool()` to function schema dicts.
-- **Anthropic**: Via `AnthropicTool` with `input_schema` (JSON Schema) and optional beta headers for built-in tools.
+- **OpenAI**: Via `convert_to_openai_tool()` to function schema dicts, sent in `tools` parameter with optional `tool_choice` constraint.
+- **Anthropic**: Via `AnthropicTool` TypedDict with `input_schema` (JSON Schema) and optional beta headers for built-in tools (web_fetch, computer_use, etc.).
 
 ### Tool Calling in Responses
 
@@ -255,6 +262,25 @@ The `init_chat_model()` function (in `langchain_v1.langchain.chat_models.base`) 
 - Returns a fixed `BaseChatModel` instance or a configurable proxy (`_ConfigurableModel`) that defers instantiation and applies queued operations (bind_tools, with_structured_output) when invoked with runtime config.
 
 This enables workflows where tool binding and model provider are determined at runtime rather than at code-write time.
+
+### Provider Inference
+
+Model names are inferred to providers via prefix matching:
+
+- `gpt-`, `o1`, `o3`, `chatgpt`, `text-davinci` → `openai`
+- `claude` → `anthropic`
+- `gemini` → `google_vertexai`
+- `command` → `cohere`
+- `mistral`, `mixtral` → `mistralai`
+- `deepseek` → `deepseek`
+- `grok` → `xai`
+- `sonar` → `perplexity`
+- `amazon.`, `anthropic.`, `meta.` → `bedrock`
+- And ~25 additional providers in the registry.
+
+### Built-in Provider Registry
+
+The `_BUILTIN_PROVIDERS` registry maps provider names to module paths, class names, and creator functions, enabling dynamic import and instantiation without explicit imports. Partners can register custom providers by installing their packages (e.g., `langchain-openai`, `langchain-anthropic`).
 
 ## Key Entrypoints and Dispatch
 

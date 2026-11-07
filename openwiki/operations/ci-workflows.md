@@ -3,10 +3,9 @@ type: "Operations Reference"
 title: "CI/CD Operations and Release Management"
 description: "Operational runbook for CI/CD workflows, troubleshooting, and release procedures."
 tags: [ci, cd, release, automation, github-actions, pypi]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-29T08:20:01.046Z
 sources:
+  - id: openwiki-source-6445599f26c9a35886c1c46e
+    resource: repo://.github/PULL_REQUEST_TEMPLATE.md
   - id: openwiki-source-34e57b5a3a0c875639ab72a7
     resource: repo://.github/scripts/check_diff.py
   - id: openwiki-source-c92cc62695c6def991956428
@@ -19,7 +18,12 @@ sources:
     resource: repo://.github/workflows/openwiki-update.yml
   - id: openwiki-source-f8781d847f6481a966a44a68
     resource: repo://.github/workflows/pr_labeler.yml
-generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
+  - id: openwiki-source-12805fbf767dc2a3e238645e
+    resource: repo://.github/workflows/pr_lint.yml
+generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-06T08:17:28.425Z
 ---
 
 
@@ -198,6 +202,67 @@ Uses concurrency group per PR number with separate handling:
 
 ---
 
+## PR Requirements & Conventional Commits
+
+### PR Title Format (Conventional Commits 1.0.0)
+
+All PRs must use the format: `<type>[optional scope]: <description>`
+
+**Allowed Types:**
+- `feat` — new feature (MINOR bump)
+- `fix` — bug fix (PATCH bump)
+- `docs` — documentation only
+- `style` — formatting/linting (no code change)
+- `refactor` — code change (no feature/fix)
+- `perf` — performance improvement
+- `test` — add/fix tests
+- `build` — build system changes
+- `ci` — CI/CD configuration changes
+- `chore` — other changes
+- `revert` — revert previous commit
+- `release` — version release
+- `hotfix` — urgent fix
+
+**Allowed Scopes (optional but recommended):**
+Core packages: `core`, `langchain`, `langchain-classic`, `model-profiles`, `standard-tests`, `text-splitters`
+Partner packages: `anthropic`, `chroma`, `deepseek`, `exa`, `fireworks`, `groq`, `huggingface`, `mistralai`, `nomic`, `ollama`, `openai`, `openrouter`, `perplexity`, `qdrant`, `typesafe`, `xai`
+Infrastructure: `infra`, `deps`, `partners`, `docs`
+
+**Breaking Changes:**
+- Append `!` after type/scope: `feat(core)!: remove deprecated API`
+- Requires major version bump (MAJOR)
+
+### PR Description Requirements
+
+1. **Issue linking** (required for external contributors)
+   - Start with `Fixes #<issue-number>` — auto-closes issue on merge
+   - Link to approved solution before working
+
+2. **Concise description**
+   - 1-2 sentences explaining who benefits, what problem it solves
+   - Prefer user story over lengthy summary
+   - Note any breaking changes clearly
+   - Document dependencies on other PRs
+
+3. **Release notes** (required for features/breaking bugfixes)
+   - Provide user-visible change in release-note-ready language
+   - Omit for chores, refactors, test-only changes
+
+### PR Validation Checklist
+
+1. **Local testing required**
+   - Run `make format`, `make lint`, `make test` before pushing
+   - PR fails CI review unless these three pass in CI
+
+2. **Scope limits**
+   - Avoid touching multiple packages unless necessary
+   - Keep PRs focused for faster review and clearer CI output
+
+3. **No dependency changes without approval**
+   - Don't update `uv.lock` files or `pyproject.toml` dependencies without explicit maintainer permission
+
+---
+
 ## Scheduled Integration Tests
 
 ### Workflow: `integration_tests.yml`
@@ -285,6 +350,12 @@ Manually triggered workflow that builds, tests, and publishes LangChain packages
 - Fails if requested release version doesn't match `pyproject.toml`
 - Fails if version already published on PyPI (prevents re-publishing)
 - **Fails closed** if PyPI is unreachable: aborts rather than assuming version is free
+
+**Version Format (PEP 440):**
+- Standard releases: `1.0.0`, `2.1.3`
+- Pre-releases: `1.0.0a1`, `1.0.0b2`, `1.0.0rc1`
+- Post-releases: `1.0.0.post1`
+- Dev releases: `1.0.0.dev0`
 
 #### 2. Release Notes Job (`release-notes`)
 
@@ -461,6 +532,55 @@ LangSmith, OpenAI (with Azure deployments), Anthropic, Google Cloud (Vertex AI, 
 
 ---
 
+## Hotfixes: Emergency Release Process
+
+### When to Use Hotfixes
+
+Hotfixes are **critical patches** that must be released immediately to production to fix:
+- Security vulnerabilities
+- Breaking bugs affecting production usage
+- Data corruption issues
+- High-impact API problems
+
+Do **not** use hotfixes for:
+- Normal feature development
+- Non-critical bug fixes
+- Dependency updates
+- Performance improvements
+
+### Hotfix Release Process
+
+1. **Create hotfix branch from master**
+   ```bash
+   git checkout -b hotfix/issue-description
+   ```
+
+2. **Implement fix** with appropriate test coverage
+   - Keep changes minimal and focused
+   - Run `make format`, `make lint`, `make test` locally
+   - Create PR with `hotfix(scope): description` title
+
+3. **Bump patch version** in `pyproject.toml`
+   - Change `version = "1.2.3"` to `version = "1.2.4"`
+   - Use only PATCH bumps for hotfixes (never MINOR/MAJOR)
+
+4. **Merge to master** after PR approval
+
+5. **Trigger release workflow** with `dangerous-nonmaster-release=false`
+   - Use standard release flow if merging to master first
+   - If releasing from hotfix branch: set `dangerous-nonmaster-release=true` and **create follow-up PR to master** to merge hotfix back
+
+6. **Document reason** in release notes
+   - Add context about urgency and impact
+   - Include security advisory if applicable
+
+### Hotfix Naming Convention
+
+PR titles should use: `hotfix(scope): brief description`
+- Examples: `hotfix(openai): fix token counting`, `hotfix(core): prevent memory leak`
+
+---
+
 ## Release Workflow Inputs & Bypasses
 
 ### Primary Inputs
@@ -479,6 +599,7 @@ The release workflow uses **layered safety gates**:
 1. **Version verification** (build job)
    - Validates version matches pyproject.toml
    - Prevents duplicate publishes
+   - Fails closed if PyPI is unreachable
 
 2. **Pre-release checks** (pre-release-checks job)
    - Runs unit tests, integration tests
@@ -500,6 +621,47 @@ The release workflow uses **layered safety gates**:
 6. **Manual approval** (Release environment)
    - Release job requires environment approval
    - Adds human gate before production publish
+
+---
+
+## Versioning Policy
+
+### Version Scheme
+
+LangChain uses **Semantic Versioning** with **PEP 440** normalization:
+
+- **MAJOR.MINOR.PATCH** — `1.5.3`
+- **Pre-release** — `1.5.0a1` (alpha), `1.5.0b2` (beta), `1.5.0rc3` (release candidate)
+- **Post-release** — `1.5.0.post1` (hotfix for already-released version)
+
+### Independent Versioning
+
+**Core packages are independently versioned:**
+- `langchain-core` — Core abstractions and interfaces
+- `langchain` — Main orchestration package
+- `langchain-text-splitters` — Text splitting utilities
+- `langchain_v1` — Legacy LangChain v0.x compatibility
+- `langchain-model-profiles` — Model configuration profiles
+- Partner packages — Each partner (openai, anthropic, etc.) versions independently
+
+**Version bumping rules:**
+- `feat:` → MINOR bump (new feature, backward-compatible)
+- `fix:` → PATCH bump (bug fix, backward-compatible)
+- `feat!:` or `fix!:` → MAJOR bump (breaking change)
+- `hotfix` → PATCH bump (emergency fix)
+
+### Breaking Changes
+
+**Breaking changes require MAJOR bump:**
+- API removals or renames
+- Behavior changes in existing APIs
+- Dependency version changes that affect end users
+- Signature changes in public functions
+
+**Document breaking changes:**
+- Note in PR description: "Breaking change: ..."
+- Include migration path for users
+- Add to release notes explicitly
 
 ---
 
@@ -630,6 +792,7 @@ Automatically updates repository documentation from source code using OpenWiki a
 3. **Test locally** — Run `make tests` and `make lint` before pushing
 4. **Check extended test status** — Extended tests catch integration issues early
 5. **Review integration test results** — Scheduled integration tests run daily; check results before merging
+6. **Use Conventional Commits** — Follow `type(scope): description` format for all PR titles
 
 ### For CI Maintainers
 

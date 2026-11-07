@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:609315b863ad7b5fefe6844df3de5f13ffbb9aa87911a94980905fe8ee9e56e6",
+  "pageVersion": "sha256:95feabbf002e804885314f984ca5854fc5b94b2f1ff1981aa0d670bd2e8e5834",
   "claims": [
     {
       "id": "claim_106c015e2cd54bee94baf1f2020dab90",
@@ -79,8 +79,8 @@
       "statement": "with_structured_output() binds schema as a single tool, invokes with tool_choice='any', and parses output via JsonOutputToolsParser or PydanticToolsParser, supporting Pydantic, TypedDict, and JSON schema inputs.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2385-L2565",
-          "version": "repo-lines-v1:sha256:673bc22e396265b7dbabfa67b802837132337352be622cd69c071cfc5dfd1c84:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOTk3OTkzN2Q3ZGUxOTkyNzZjM2I3YzVkMTJkZWM2ODJhZTBmOTVjNTliZjA2OTlhNGI2OTRhZDg1ZWQxMTVhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5OTUyMjA5NzQ4ZWJiMjJhOWM3Nzc5ZWEwMTBkODNiNzUzYmVlY2Q3ZDFmY2M2ODRiYTBmNDQyZjU4MDE4YzMwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ODYzYTc3NDFkMDgxOGZiZWMxOGIzODJlN2YyNzZjZTQxNGVlOGY1NGYyYzZjNWU0OGEzYTdkNDIzNDAxNzgxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NTBjNDUzZDgxMjdmZGVmYWVkNTg3YWQxNGJlZDM0NWJiMGYzMTg3Njk3MTIwMWQzN2FjYmVkOGQ2NzgyZTFhIn0"
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2586-L2611",
+          "version": "repo-lines-v1:sha256:79f6b64a2a4b9c8d8a1245f4bb43237bd9f3533277edef04d0f7e52a8afb52b1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4OTE3MmM2NTAwMWQzZWRmOTMzMTJhMTRkYmFkOTZlM2JiOGIwYzkzYjhhOTQzNjE5MzUwODVkNzcxMDk3Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5NTIyMDk3NDhlYmIyMmE5Yzc3NzllYTAxMGQ4M2I3NTNiZWVjZDdkMWZjYzY4NGJhMGY0NDJmNTgwMThjMzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVkNzc3MGIzZDRhYzhjMGU2YzVlZDdjZDBhOTdiY2YwODE0NTc1MzIyMGMwNWE1YTAwYWZhNjk4NzY1ZjVlMzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1MGM0NTNkODEyN2ZkZWZhZWQ1ODdhZDE0YmVkMzQ1YmIwZjMxODc2OTcxMjAxZDM3YWNiZWQ4ZDY3ODJlMWEifQ"
         }
       ]
     },
@@ -181,8 +181,8 @@
       "statement": "OpenAI provider (langchain_openai.ChatOpenAI) converts BaseMessage to role/content dicts, extracts tool_calls from function and tool_calls fields, handles vision/audio, and supports structured outputs via native and function-calling modes.",
       "evidence": [
         {
-          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L218-L282",
-          "version": "repo-lines-v1:sha256:adf75f5a37024e890e20a5b780ca4de846af6fa2f0ae26cbd5c286493e19ea04:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlOTRiYmJkZTFhNTc4ZTU0MDk3NjZmZjRhOTc3ODU2YzU4MmNkZDBiZDU5MzhkMDcxZDdkNjY2YTRkMzU2NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyNDJmZmEwNDkzOWY2ZGQ3NDdlMzc0ZTMyNjU0MDc4ZDBiZDA1ZWNlODYyMTg0N2EzNTMzZmY4ZTFkNTJiMzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlYzQyOTU5MTY5N2YyNDg0N2RkNWQ1Yzk2ZDM2ZDRiZDU2NzVmMzZhNDY3YWNhNjZkMjRiNzZiYzU0MDEyYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkMTJmNDFjMWY1ZGFhMmM1NWMyNzI5NDg1ZDAwN2ZjMTg4YzBiMjBjNmViZmMwMzdlM2MwMGRmZWJmNGUwNTcifQ"
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L476-L555",
+          "version": "repo-lines-v1:sha256:19d3968712a35b837a1571d6054d2a26eb3b7b8333e34e719777d3ec4c457712:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1MGQ3ZDFiOWU4Mjk2ZjUxMGRkN2U3NGUyMjFlYWYzMzFmNzU5YjQ1ZGFmMGJlYjg0NDhkY2I2MWZjYThhOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0NmQ1YzA0YjU5YjFmYmU0ZDAzNzc1ZmJmODI3ZjY5ODBhYmM1ZWE3OGE2ZDU4ZGViZDRmZWYyZmYyMjZmN2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMWZhYjNmYzQwYmE5YTFkMWRhNWZhOGIyZTU0ZTU5YWI4YTZjNjFjYzBmYWFjMmE4ZDEyZDVmYTg3MWJhMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg5NmY1ZWNhZDA4NzFlNzEyNzRjMjliMGIyM2RjZjhhYjI4MWZmYmY0ZGFlYWFjZGRmOWUzYWE5ODg3N2M0YmMifQ"
         }
       ]
     },
@@ -233,6 +233,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-29T08:20:01.046Z"
+    "at": "2026-11-06T08:17:28.425Z"
   }
 }

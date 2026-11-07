@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ee25482b21d36edeea42afddbdffb43142ad276560066c586c64ce2855b48fcb",
+  "pageVersion": "sha256:d78d196d20411de632053ee85bfefd84cc3fec5cad6d41271d6232d169c3c7e1",
   "claims": [
     {
       "id": "claim_cb5fe3f72803497eac3f09ebf02d97cd",
@@ -89,8 +89,8 @@
       "statement": "Pre-release checks (pre-release-checks job) disable caching to catch missing dependencies, import the built wheel directly, run unit tests on both current and minimum dependency versions, block prerelease dependencies for stable releases, and run integration tests for partner packages.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/_release.yml#L400-L560",
-          "version": "repo-lines-v1:sha256:dfd4171d114eb6ecd24e196b082826b80830cebe86233bc6224be15d0cfba7f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNmI2OTNjOWRmMzU1MThmNzEyODQwN2UyNDhiODM3ZTAxZjBlZmJmNTQ4ZTg4MGUyMDA4NTgyZDdmMTI3MDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MTZhZDk2YzhlNWQyNGQ4OWU2MWQyZTkwMzEyOGY2YWE0YWYzYmQ2Y2I2MjhmNWMzYzY5NTI5YWUxNDJjZWY4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwM2YwY2ViYjhlODY5OTBkMjBiMzc5MzljYmI1NzYyMDUwNmU4ZTJiZGNhOGU2NzBlZjVkMTczNTQxYmVlMDkzIn0"
+          "resource": "repo://.github/workflows/_release.yml#L414-L585",
+          "version": "repo-lines-v1:sha256:b603e390fcf7f13072d7489541e688df01105b3bb9ca3ce98e2898b18a117faa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNmI2OTNjOWRmMzU1MThmNzEyODQwN2UyNDhiODM3ZTAxZjBlZmJmNTQ4ZTg4MGUyMDA4NTgyZDdmMTI3MDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxYTU5ZmRkM2Q4MWZkMTUyZDU5ZTJiNzliYTIxOGNmMGJhMDgyYWQ2NzM3ZmE3ZTFiYTEwYjRlY2FlMjlkY2I3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MTZhZDk2YzhlNWQyNGQ4OWU2MWQyZTkwMzEyOGY2YWE0YWYzYmQ2Y2I2MjhmNWMzYzY5NTI5YWUxNDJjZWY4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNzBkZDYxNTE3ZTAxOGI4NWVmYzNjOWM3YWM0ZWM5ZjUxYTU2NzMyMWU1Mjk4MjEwYjZmZjZlN2FkNTkzYjFmIn0"
         }
       ]
     },
@@ -99,8 +99,8 @@
       "statement": "Release notes generation finds previous release tags via git history with special handling for pre-releases (matches base version, falls back to latest) and stable releases (searches previous patch, falls back to latest), then extracts changelog via git log between tags for the working directory.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/_release.yml#L320-L398",
-          "version": "repo-lines-v1:sha256:2fcac23a4f6e47ad2812170ad1fdbe42b5dd62790f6c4f983905a3746154c582:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0YjE2ZjJjYmZkYzMzNWVmZmU2ZTQzYjI5YzcwY2ViNjRhNWRjNWRiN2Y1ZGUyNGJjMTllM2Y2NjAzODI4NGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0Mzk5NDc4OWM4MWE2ZGFlY2IyMWQzOWU2NGZmYTliODA2ZjczYWFiNjQzMTQ4MGFmZmY4MzE3MTExNTA5ZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2NWM1YTMwNTFmODU2YzQ1YTdhNGI2N2JmODQ1YmNlMjgzM2Q2ODRiMDdmODJhOTE3NGVhYTY0MWUxMzNmMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2M2E0YWRjZjllMjgyNTNjMTM3ZjQyMjA4YmVhNTBjYzNjNzY0YjQwNDcxMWFhNDE3NWJmOTc3MTg4MzhkMDAifQ"
+          "resource": "repo://.github/workflows/_release.yml#L309-L412",
+          "version": "repo-lines-v1:sha256:8bd2255ebf6255442dcf5105bdec3f8ab3eedd618a0b1e178e6b1b419a1e23c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5ZDRiNjFkZTc4OWM1MDkwZDM4NTBkMGYzNjY5ZDVmZDczNDQ3MmQ1ZjU0ZjBlNzhhOTFhMmM0NWUwNmIzMDI5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NDM5OTQ3ODljODFhNmRhZWNiMjFkMzllNjRmZmE5YjgwNmY3M2FhYjY0MzE0ODBhZmZmODMxNzExMTUwOWU5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxODdiNjVjZDQxODQ5ZDJjM2JlYjI0YjhjMTQwZGQ5MDMzNDUwNTQwMDQ3ZmJkOWFlMTNjZTQzOGMwMTc5ZDZjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlNjNhNGFkY2Y5ZTI4MjUzYzEzN2Y0MjIwOGJlYTUwY2MzYzc2NGI0MDQ3MTFhYTQxNzViZjk3NzE4ODM4ZDAwIn0"
         }
       ]
     },
@@ -153,8 +153,8 @@
       "statement": "Minimum version testing uses get_min_versions.py script to extract version constraints from pyproject.toml, query PyPI for earliest satisfying published versions, and downgrade dependencies for retest; supports two modes: pull_request (lenient) and release (strict) for different CI contexts.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/_release.yml#L470-L490",
-          "version": "repo-lines-v1:sha256:189ad3f1c987c3d09705339f603b9284e4c2833c8e29a910602c4a3838e9c3d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlZTZiYWEyMzFjNDUwODllY2ZlMDYyYWNkOTNhNDAwYzQ4MGU4M2NmMWU1MTdjN2M3M2M2OWY2Y2RkOTI2OWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhNTlmZGQzZDgxZmQxNTJkNTllMmI3OWJhMjE4Y2YwYmEwODJhZDY3MzdmYTdlMWJhMTBiNGVjYWUyOWRjYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyYjY3YzFiZTU1ZTZlNzc1NGRlNDQyYTM5ZWJjZTI4MWM4ODgxOWFkNDgyMzU1MGRmOTY2NTY2MTU4N2UyNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzMmM4NWUxNzFlYmVlZGNjMmI3MjY4OTNhMjEwMDY4M2M5ZDJkY2QzODRhZDE0MGMxYWMyYzZhN2IzODAzZmUifQ"
+          "resource": "repo://.github/workflows/_release.yml#L503-L535",
+          "version": "repo-lines-v1:sha256:577f03749273cf8e820244e3ef1a3dd9c6f753e28a4774e5131228f651762db0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlZTZiYWEyMzFjNDUwODllY2ZlMDYyYWNkOTNhNDAwYzQ4MGU4M2NmMWU1MTdjN2M3M2M2OWY2Y2RkOTI2OWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhNTlmZGQzZDgxZmQxNTJkNTllMmI3OWJhMjE4Y2YwYmEwODJhZDY3MzdmYTdlMWJhMTBiNGVjYWUyOWRjYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyYjY3YzFiZTU1ZTZlNzc1NGRlNDQyYTM5ZWJjZTI4MWM4ODgxOWFkNDgyMzU1MGRmOTY2NTY2MTU4N2UyNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzMmM4NWUxNzFlYmVlZGNjMmI3MjY4OTNhMjEwMDY4M2M5ZDJkY2QzODRhZDE0MGMxYWMyYzZhN2IzODAzZmUifQ"
         },
         {
           "resource": "repo://.github/workflows/_test.yml#L55-L72",
@@ -295,12 +295,12 @@
           "version": "repo-lines-v1:sha256:982121e07cd5f75c29a9930729c7a209856069184833c0734e87f74505e1325d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNTYyYjE2NWU4MjM1MjY0ZGZlNDc2YzNhMWY1NzM5OTBjOGE1NzAyNDY3YjhkNTc5OWFiMTFhNDNjMTI2N2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxMDM2ZTY3ZjMxNTRiM2Q5YWQwZmIwMTYzMGI2ODk0YTIwYmFmNmRkM2QwNmFkYWJjMjIyNGZkNjg4OGIwOWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyODlkNmNiN2NkNDYyMjM5NTFkODE2NGI4NTM2ZWI0ZTc0YzkyODBjMjc4OTRmNjJjZmE2YThjMTM0NGJlYTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://.github/workflows/_release.yml#L410-L492",
-          "version": "repo-lines-v1:sha256:5bb1449627e4a2f4a989394180d981e1aa5bdc906e70bd46780ea417ef688070:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MzU3MmI1MzNmZGI0NWZkZmY2YjY4NWRkM2M1OTUwYTQ3NzY3MjAxNWFjMTkyMDMxZjFkNjY5ZTFiZTljOWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4YjUzZmMwMjFlNDkxZWY4YWE5YTU1M2MxN2ZjZGE5MmY0NTZlNTIyZGZlMTU3ZDQwMzY4MmYxZjA2OGQ0ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxYTllMjBmNWFiOTQxZDA0NGQ0NDNjYzJhMzkyNTcyMWZjNjA5MDNhMWY4ZWQxOTg5MDUwNjMyNDg1ZDc0MzUifQ"
+          "resource": "repo://.github/workflows/_release.yml#L442-L490",
+          "version": "repo-lines-v1:sha256:a3405ce57ab32acd1c60b9a5d9179f09fc27f4368aa6ce7e9ebf57c733138f51:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MzU3MmI1MzNmZGI0NWZkZmY2YjY4NWRkM2M1OTUwYTQ3NzY3MjAxNWFjMTkyMDMxZjFkNjY5ZTFiZTljOWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlYzljZjgxMTJiZGUyMDcxYzczNzVjODcwMWY3MjZiM2ZlZmUzZGRmNTY2NjAxMDQxMjJmNDBiMjUxMjI2MDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4YjUzZmMwMjFlNDkxZWY4YWE5YTU1M2MxN2ZjZGE5MmY0NTZlNTIyZGZlMTU3ZDQwMzY4MmYxZjA2OGQ0ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ5YmM1ZGM3Mjc0MmE0MTcyOTc2YzgzODlkNTY1MDlmZjg4NDYxNzQ5OTY4ZDFkOWExNmU4NmM2M2FhMWM1OGQifQ"
         },
         {
-          "resource": "repo://.pre-commit-config.yaml#L23-L170",
-          "version": "repo-lines-v1:sha256:ff03a7d9d2684779b52ae774b382473b09885ff9361ab0b4fe1f13dadacc6a53:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmYTY4MWNlZGM0YzJlMTVlOTQzMjI4NmE4NTMzMTVjNGZmMTgyNTllZTU0NGI2MDI0MDM4YTYzYzBiNzg2MmZkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2ZTk0MGY2NjliNzFlZWVlZWY3NjVmMmMxMjJiYTc3ZjRlNzhkMTJlMDAzZWZlYzg3NzQ0M2U4MjEwZjc4MTc5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhMDhlNjlmZTk5ODQ0YjA5OGY2YTg2ZGIxZjc0YWQ2NGM3ZmIxMzY1ODY2NDA2MjRmZTRlZGJhYjM5NWYyZDIwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwOTRkN2IwZGVhNDdiZmVhNjYzZWJiMjI2ZDYyYmQxZmNjOTAxNjkxYmViYzE5ZDFkNGMzMmRiNmRhNDYzMGQwIn0"
+          "resource": "repo://.pre-commit-config.yaml#L1-L200",
+          "version": "repo-lines-v1:sha256:d90a7db12e21999b427f58f7e8da653d632e6cb396c9bb0bde749a7da497ec7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YTExMGRiNWE5MzU3Y2RhMWQ3ODIxNmNkYzBiZjhiMjU1ZTMzOGNiYzFmMzI3ZTBkZjA4Y2ZjNzczOTFkZGVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2ZTk0MGY2NjliNzFlZWVlZWY3NjVmMmMxMjJiYTc3ZjRlNzhkMTJlMDAzZWZlYzg3NzQ0M2U4MjEwZjc4MTc5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjOGUzNDIyZmQwNDFiMzUxZDgwY2NjNWZiNjNmYjI1MjgxYzU2Y2E1YjI1MGE5NTM1YWU0Mjk5N2YxNDYxNDU2In0"
         }
       ]
     },
@@ -335,6 +335,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-29T08:20:01.046Z"
+    "at": "2026-11-05T08:18:41.280Z"
   }
 }

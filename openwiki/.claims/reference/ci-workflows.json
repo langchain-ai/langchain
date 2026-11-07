@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:27680f1e9ea4e304142f9ad494c2a7c1ac96a94202493b7b678ee81dc3210352",
+  "pageVersion": "sha256:1c7140af9cc7dd78e369bbc548685411b66ed167731794c7bb32e7bd6fc76fd0",
   "claims": [
     {
       "id": "claim_582624e6ba514810bdb789729d4765b2",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://.github/workflows/_release.yml",
-          "version": "repo-file-v1:sha256:822fa4bb71af65076a9d218a02365d95d9c0f461f36a5f790b0558ce9de80763"
+          "version": "repo-file-v1:sha256:dadd11ec102a00319c7ca5e7a121a94ab6acdd12cd02d5d2cd0cf98963b9a1cd"
         },
         {
           "resource": "repo://.github/workflows/check_diffs.yml",
@@ -23,6 +23,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-29T08:20:01.046Z"
+    "at": "2026-11-05T08:18:41.280Z"
   }
 }

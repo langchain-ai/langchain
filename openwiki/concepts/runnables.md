@@ -3,9 +3,6 @@ type: Concept
 title: "Runnables: Core Execution Abstraction"
 description: "Runnable is the foundational execution abstraction in LangChain. It defines a unified, composable interface for synchronous, asynchronous, batch, and streaming execution. Every LangChain component—prompts, models, parsers, retrievers, tools—is a Runnable, enabling declarative composition and uniform control flow."
 tags: [runnable, lcel, composition, invoke, stream, batch, async, protocol]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
 sources:
   - id: openwiki-source-a1981e868973f6fd7f71e12e
     resource: repo://libs/core/langchain_core/runnables/base.py
@@ -18,6 +15,9 @@ sources:
   - id: openwiki-source-7a970e5b49bde2fe4f9be3db
     resource: repo://libs/core/langchain_core/runnables/passthrough.py
 generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-06T08:17:28.425Z
 ---
 
 ## Overview

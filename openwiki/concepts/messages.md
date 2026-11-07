@@ -4,6 +4,8 @@ title: "Messages: Core Abstraction for LLM Conversations"
 description: "Core message types (AIMessage, HumanMessage, ToolMessage, SystemMessage), content blocks, serialization, filtering utilities, notification metadata, and the message protocol at the heart of LangChain workflows."
 tags: ["messages", "content-blocks", "tool-calling", "multimodal", "streaming", "message-chunks", "notification-metadata"]
 sources:
+  - id: openwiki-source-082de992161c42ff19186b3a
+    resource: repo://libs/core/langchain_core/exceptions.py
   - id: openwiki-source-0f6ea1dd09fb4675ff4112b1
     resource: repo://libs/core/langchain_core/messages/__init__.py
   - id: openwiki-source-77dc1fb726463969f9d53658
@@ -12,6 +14,8 @@ sources:
     resource: repo://libs/core/langchain_core/messages/base.py
   - id: openwiki-source-2e77747f30fe980d17d5d1a2
     resource: repo://libs/core/langchain_core/messages/block_translators/__init__.py
+  - id: openwiki-source-b0f0ae0889f60e428f2f1b96
+    resource: repo://libs/core/langchain_core/messages/block_translators/anthropic.py
   - id: openwiki-source-ac2e0f8b0fb1cb3b223672b7
     resource: repo://libs/core/langchain_core/messages/block_translators/openai.py
   - id: openwiki-source-ecd2d8742bfabb625fcb2773
@@ -38,10 +42,10 @@ sources:
     resource: repo://libs/core/tests/unit_tests/messages/test_notification.py
   - id: openwiki-source-5b54a79fff5b1358acd7d4f3
     resource: repo://libs/core/tests/unit_tests/test_messages.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-30T08:19:17.669Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-30T08:19:17.669Z
+    at: 2026-11-06T08:17:28.425Z
 ---
 
 # Messages: Core Abstraction for LLM Conversations
@@ -309,6 +313,8 @@ AIMessage(content="Here are 3 Python tutorials...")
 
 Messages support **content blocks**—a unified, provider-agnostic representation of multimodal content. A message's `content` field can be a list of blocks; each block is a `TypedDict` with a `type` field.
 
+**Overview**: Content blocks include text content, images, audio, video, files, tool calls, reasoning, refusals, and server-side tool execution blocks. The `ContentBlock` type is a union of all these types, providing unified type checking across the full spectrum of model outputs.
+
 ### Standard Content Block Types
 
 #### TextContentBlock
@@ -407,6 +413,44 @@ Model's reasoning or thinking process (from models like o1, deepseek, etc.).
 }
 ```
 
+#### RefusalContentBlock
+Model refusal: indicates the provider explicitly refused to generate content.
+
+```python
+{
+    "type": "refusal",
+    "refusal": "I can't help with that request.",
+    "id": "ref_123",                    # Optional unique ID
+    "index": 0,                         # Used during streaming
+    "extras": {"category": "illegal"}   # Provider-specific metadata (e.g., Anthropic category)
+}
+```
+
+**Fields**:
+- **`refusal`**: `str` — Human-readable refusal message (may be empty if provider doesn't supply text).
+- **`id`**: `str | None` (optional) — Unique identifier for this refusal block.
+- **`index`**: `int | str | None` (optional) — Used during streaming to correlate chunks.
+- **`extras`**: `dict[str, Any]` (optional) — Provider-specific metadata (e.g., Anthropic's refusal `category`, OpenAI's structured output refusal reasons).
+
+**Integration with ModelRefusalError**:
+When a model response contains a `RefusalContentBlock`, applications that require structured output (e.g., with `with_structured_output()`) can raise `ModelRefusalError` via its `from_refusal()` class method to signal that the model declined to provide the requested content. The error preserves the original message and refusal details for handling:
+
+```python
+from langchain_core.exceptions import ModelRefusalError
+
+# In an output parser
+for block in message.content_blocks:
+    if block.get("type") == "refusal":
+        raise ModelRefusalError.from_refusal(block, raw_message=message)
+```
+
+The `raw_message` field in `ModelRefusalError` provides access to the full response and its `content_blocks` for provider-specific inspection (e.g., Anthropic's refusal `category`).
+
+**Provider notes**:
+- **OpenAI**: Returns explicit `refusal` text in message content.
+- **Anthropic**: Reports refusals via `stop_reason="refusal"` and optionally a `category` field in `extras`.
+- **Other providers**: Varies; refusals may be detected at various stages.
+
 #### ServerToolCall / ServerToolResult
 Server-side tool execution blocks (for models that execute tools themselves).
 
@@ -436,16 +480,52 @@ Provider-specific content that doesn't map to standard blocks.
 }
 ```
 
-### Content Block Parsing
+### Content Block Parsing and Abstraction
 
-**Key properties**:
-- **`BaseMessage.content_blocks`**: Returns a list of typed `ContentBlock` objects by parsing the raw `content` field. Uses provider-specific translators (OpenAI, Anthropic, etc.) when available; falls back to best-effort parsing.
-- **`BaseMessage.text`**: Extracts and concatenates all text from text-type blocks, ignoring other types.
+The **`content_blocks`** property on `BaseMessage` (and subclasses) provides a unified view of message content as a list of standard `ContentBlock` objects, abstracting away provider-specific formats:
 
-**Provider translation workflow**:
-1. If `response_metadata.get("model_provider")` is set (e.g., `"openai"`, `"anthropic"`), call the registered translator for that provider.
-2. Otherwise, use best-effort parsing: split content into blocks, translate known block types, wrap unknown as `non_standard`.
-3. For `AIMessage`, additionally extract tool calls from the `tool_calls` field into `ToolCall` blocks and extract reasoning from `additional_kwargs`.
+```python
+# AIMessage with complex content
+msg = AIMessage(
+    content=[...],
+    tool_calls=[...],
+    response_metadata={"model_provider": "openai"}
+)
+
+# Unified access to all content
+blocks = msg.content_blocks
+# → list[ContentBlock] with text, tool calls, reasoning, etc.
+```
+
+**Abstraction layers**:
+1. **Provider translation** (if registered): When `response_metadata.get("model_provider")` is set, the registered translator for that provider is invoked first. Translators understand provider-specific response formats and convert them to standard `ContentBlock` objects.
+2. **Best-effort parsing** (fallback): If no translator is available or translation raises `NotImplementedError`, content is parsed into blocks manually:
+   - String items → `TextContentBlock`
+   - Dict items with known types → recognized block types
+   - Dict items with unknown types → `NonStandardContentBlock`
+3. **AIMessage-specific enhancement**: For `AIMessage` only:
+   - Tool calls from the `tool_calls` field are injected as `ToolCall` blocks if not already in content.
+   - Reasoning content from `additional_kwargs["reasoning_content"]` is injected as `ReasoningContentBlock` if present and not already in content.
+
+**Example with provider translator**:
+```python
+# OpenAI response with refusal
+msg = AIMessage(
+    content=None,  # or [{"type": "refusal", "refusal": "..."}]
+    response_metadata={"model_provider": "openai"}
+)
+blocks = msg.content_blocks
+# OpenAI translator converts provider format → [RefusalContentBlock]
+```
+
+**Provider translators available**:
+- **OpenAI**: `openai` (covers Chat Completions format including structured outputs)
+- **Anthropic**: `anthropic` (handles Anthropic's content block format and refusal stop reasons)
+- **Google GenAI**: `google_genai` (Google's Generative AI format)
+- **Google Vertex AI**: `google_vertexai` (Vertex AI format)
+- **AWS Bedrock**: `bedrock` and `bedrock_converse` (Bedrock converse API)
+- **Groq**: `groq`
+- **Custom**: External providers can register translators via `register_translator()`
 
 ## Message Metadata and Lifecycle
 
@@ -577,49 +657,87 @@ msg = messages_from_dict([msg_dict])[0]
 
 ## Provider-Specific Message Conversion
 
-Different LLM providers use different message formats. LangChain abstracts these via **block translators**.
+Different LLM providers use different message formats and report refusals, reasoning, and structured outputs differently. LangChain abstracts these via **block translators**, which convert provider-specific response formats to standard `ContentBlock` objects.
+
+### Block Translator Architecture
+
+**Registration and lookup**:
+- Translators are registered in `PROVIDER_TRANSLATORS` dict, mapping provider names to translator function pairs.
+- Each provider entry contains two functions:
+  - `"translate_content"`: Converts full `AIMessage` content to `list[ContentBlock]`
+  - `"translate_content_chunk"`: Converts streamed `AIMessageChunk` content to `list[ContentBlock]`
+- When `.content_blocks` is accessed, if `response_metadata["model_provider"]` is set, the registered translator is invoked; otherwise, best-effort parsing applies.
+
+**Responsibility model**:
+- Each translator is responsible for understanding the provider's complete response format, including text, multimodal content, tool calls, reasoning, refusals, and provider-specific metadata.
+- Translators may raise `NotImplementedError` for unsupported response types, triggering fallback to best-effort parsing.
+- Provider-specific metadata can be stored in `extras` fields of standard blocks for downstream use.
 
 ### OpenAI Conversion Pattern
 
-OpenAI expects messages with `role` (`"user"`, `"assistant"`, `"system"`) and `content` (string or list of content objects with `type` and nested data).
-
-**LangChain → OpenAI**:
+**Message conversion** (via `convert_to_openai_message`):
 - `HumanMessage` → `{"role": "user", ...}`
 - `AIMessage` → `{"role": "assistant", ...}`
 - `SystemMessage` → `{"role": "system", ...}`
 - `ToolMessage` → `{"role": "tool", "tool_call_id": "...", ...}`
 
-**Content block translation** (via `convert_to_openai_data_block`):
+**Content block translation** (via `convert_to_openai_data_block`, `convert_to_openai_image_block`):
 - `ImageContentBlock` with URL → `{"type": "image_url", "image_url": {"url": "..."}}`
 - `ImageContentBlock` with base64 → `{"type": "image_url", "image_url": {"url": "data:mime_type;base64,..."}}`
-- `AudioContentBlock` → `{"type": "input_audio", "input_audio": {"data": "...", "format": "..."}}`
+- `AudioContentBlock` (input) → `{"type": "input_audio", "input_audio": {"data": "...", "format": "..."}}`
 - `FileContentBlock` → `{"type": "file", "file": {"file_id": "..." or "file_data": "data:..."}}`
+- `RefusalContentBlock` ← Extracted from message's `refusal` field in structured outputs or response.
 
-**Tool call handling**:
-- `AIMessage.tool_calls` → Encoded in `additional_kwargs` or as part of response structure.
-- Parsing occurs in reverse: extract tool calls from API response and populate `AIMessage.tool_calls` field.
+**Reverse translation** (API response → `AIMessage`):
+- OpenAI's tool calls with `type="tool_calls"` → Parsed into `AIMessage.tool_calls` list.
+- OpenAI's `refusal` field in structured outputs → Converted to `RefusalContentBlock` in `content_blocks`.
+- Text content → `TextContentBlock`.
 
 ### Anthropic Conversion Pattern
 
-Anthropic expects a similar role/content structure but uses different content types and tool call IDs with stricter requirements.
+**Message conversion**:
+- Similar role/content structure to OpenAI, but Anthropic uses different content type names and tool definitions.
 
 **Content block translation differences**:
 - `ImageContentBlock` → `{"type": "image", "source": {"type": "base64" or "url", ...}}`
-- Tool call IDs must be non-numeric strings; LangChain sanitizes if needed.
+- `AudioContentBlock` → May be handled differently or not supported.
+- Tool call IDs must be non-numeric strings; LangChain sanitizes numeric IDs automatically.
 
-### Provider Translator Registration
+**Refusal handling**:
+- Anthropic signals refusals via `stop_reason="refusal"` in the API response.
+- The translator detects this and creates a `RefusalContentBlock` with optional `extras["category"]` field containing Anthropic's refusal reason category (e.g., `"consent_abuse"`, `"illegal"`).
+
+### Other Provider Patterns
+
+- **Google GenAI**: Handles Gemini's content structure and reasoning blocks.
+- **AWS Bedrock**: Supports both Bedrock and Bedrock Converse APIs with different formats.
+- **Groq**: Similar to OpenAI but with Groq-specific response fields.
+
+### Custom Provider Translator Registration
 
 External providers (outside langchain-core) can register custom translators:
 
 ```python
 from langchain_core.messages.block_translators import register_translator
+from langchain_core.messages import AIMessage, AIMessageChunk
+from langchain_core.messages.content import ContentBlock
 
 def translate_my_provider(message: AIMessage) -> list[ContentBlock]:
-    # Custom parsing logic
-    return [...]
+    """Convert MyProvider response format to standard content blocks."""
+    blocks: list[ContentBlock] = []
+    # Custom parsing logic to inspect message.content, 
+    # message.additional_kwargs, etc., and extract blocks
+    return blocks
+
+def translate_my_provider_chunk(chunk: AIMessageChunk) -> list[ContentBlock]:
+    """Convert streamed MyProvider chunks to content blocks."""
+    # Similar logic for streaming
+    return []
 
 register_translator("my_provider", translate_my_provider, translate_my_provider_chunk)
 ```
+
+Once registered, any `AIMessage` or `AIMessageChunk` with `response_metadata["model_provider"]="my_provider"` will use the custom translator when accessing `.content_blocks`.
 
 ## Streaming and MessageChunk
 
@@ -781,10 +899,11 @@ The primary entry point for message types and utilities is **`langchain_core.mes
 - `ToolCall`, `ToolCallChunk`, `InvalidToolCall`
 
 **Content block types**:
-- `ContentBlock` (union type)
-- `TextContentBlock`, `ImageContentBlock`, `AudioContentBlock`, `VideoContentBlock`, `FileContentBlock`, `PlainTextContentBlock`, `ReasoningContentBlock`, `DataContentBlock`
-- `ServerToolCall`, `ServerToolCallChunk`, `ServerToolResult`
-- `NonStandardContentBlock`, `Annotation`, `Citation`, `NonStandardAnnotation`
+- **Main union**: `ContentBlock` (represents all possible content block types)
+- **Data blocks** (`DataContentBlock` union): `ImageContentBlock`, `AudioContentBlock`, `VideoContentBlock`, `FileContentBlock`, `PlainTextContentBlock`
+- **Text and reasoning**: `TextContentBlock`, `ReasoningContentBlock`, `RefusalContentBlock`
+- **Tool calling**: `ToolCall`, `ToolCallChunk`, `InvalidToolCall`, `ServerToolCall`, `ServerToolCallChunk`, `ServerToolResult`
+- **Custom/unknown**: `NonStandardContentBlock`, `Annotation`, `Citation`, `NonStandardAnnotation`
 
 **Serialization and utilities**:
 - `message_to_dict()`, `messages_to_dict()`, `messages_from_dict()`, `_message_from_dict()`

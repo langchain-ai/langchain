@@ -1,22 +1,22 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:86dee6233f4d83f2f18bd3976eb15ff53c618a9984d754667258168ee7f91ec3",
+  "pageVersion": "sha256:e42f83e2bd780eae32e5d742758442f77c38fa57a72fdb7c5a85e07d3e83fe63",
   "claims": [
     {
       "id": "claim_45a8435fd4d34f05bd759e8dc55f0454",
       "statement": "Structured output enables obtaining data from language models in a well-defined, type-safe format through three complementary patterns: native structured output via with_structured_output() on chat models, explicit output parsing via BaseOutputParser subclasses, and streaming structured output that progressively yields partial objects.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2385-L2430",
-          "version": "repo-lines-v1:sha256:e58c9eb50f8f9076045683f509edbbc578084e997f9dd90a3e4cd0bc28c1c51c:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5OTc5OTM3ZDdkZTE5OTI3NmMzYjdjNWQxMmRlYzY4MmFlMGY5NWM1OWJmMDY5OWE0YjY5NGFkODVlZDExNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyY2U3ODA0OTU2MDcwZjY5ODYwYmNlMjczODQxMDQ4OWNjMjM4ZTQ3Mzc0ZWExZmMyMWRlYWZhYzhmZmJkMTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4NjNhNzc0MWQwODE4ZmJlYzE4YjM4MmU3ZjI3NmNlNDE0ZWU4ZjU0ZjJjNmM1ZTQ4YTNhN2Q0MjM0MDE3ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmM2M3MGQzMDNmZDk2MzRmMTY3YzZiOTkyZjNiODBkNmVlOWZiYjUzYjhkNzk0YjY5MDc0ODhkYmZhZDhiN2EifQ"
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2428-L2611",
+          "version": "repo-lines-v1:sha256:d3d259d9493ccf896a19273743db3066a296ae6238df1ff1515c2212418f02f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTg0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOTk3OTkzN2Q3ZGUxOTkyNzZjM2I3YzVkMTJkZWM2ODJhZTBmOTVjNTliZjA2OTlhNGI2OTRhZDg1ZWQxMTVhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5OTUyMjA5NzQ4ZWJiMjJhOWM3Nzc5ZWEwMTBkODNiNzUzYmVlY2Q3ZDFmY2M2ODRiYTBmNDQyZjU4MDE4YzMwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ODYzYTc3NDFkMDgxOGZiZWMxOGIzODJlN2YyNzZjZTQxNGVlOGY1NGYyYzZjNWU0OGEzYTdkNDIzNDAxNzgxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NTBjNDUzZDgxMjdmZGVmYWVkNTg3YWQxNGJlZDM0NWJiMGYzMTg3Njk3MTIwMWQzN2FjYmVkOGQ2NzgyZTFhIn0"
         },
         {
-          "resource": "repo://libs/core/langchain_core/output_parsers/__init__.py",
-          "version": "repo-file-v1:sha256:83930fac3f2c24af23799442202bd6469f9db40ab58eacbe7c5fb04b97a0af94"
+          "resource": "repo://libs/core/langchain_core/output_parsers/__init__.py#L24-L50",
+          "version": "repo-lines-v1:sha256:e4c348afc773402e238a3c4accc257e77701c9e7e0312a4b358fbc5910cf97f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwNzgwZWY2NzZhOWFjYjk4N2M1ZGU3OTFiNWNhMjM3NGQzY2I4Y2EyY2M1OTMyMjQ0ZmNkNTM4OWI1ZmIwOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1MDUwN2NhYzBjODBlN2M3YjZkNzJlN2NhNTJiMjQwMTQxMmYwODA4MjI3Y2Y2NzNiYzY1YjYzNGE0ZWRhMzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3OWMyZTU3ZDAzZWE0NDZhOTM1NDc1OGY3NTMzYTZkODE5MDFmYWQyNDgzNDgwZmYxN2M3MjBlMzJmY2Y0MWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIyZmRmNTZiOTUzMjI5MjQ4Zjk3Yjk0YTljZjcwOGQ4MmE4NTRkZmU1MzAyMTJjZjk5NWZjNTZkYzZkZjcyY2QifQ"
         },
         {
-          "resource": "repo://libs/core/langchain_core/output_parsers/transform.py#L99-L110",
-          "version": "repo-lines-v1:sha256:af1e1f113e14af0f45f87f78cfddbc9f550c545df7c0f362c3cd5c940d909ecc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZWFlOTU3ODQ1ZGQyYWMwYTlhZTk4ODI2ODU1MTExNzRhNzRiMDBiY2U5NzU4NDAzYjc4OWMzZjkyNzk2MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzZjRhYTI1NzY5YzFlNzA2YjAzM2VjOGExMDljZTFlM2RjYzM1YWEwZGY5YTc5NWYwYzgyNjJiZGI4NjRiMGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMzg5NzhjZGMxYThkNzYxMjBhMzFmZjg2MDU0NWNhNDNiMWE0ZWFjOWU2YWJiMmIwNWQ2MjE5ZTE4NDExODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRmN2FiYTMyYjg0ZjIwN2U1ODNmNjMwYjBjOGEzMDJlZTY2ODgwZTA0ZjA5MjhlNDk4OGU0YWY3OWRjZTVlN2YifQ"
+          "resource": "repo://libs/core/langchain_core/output_parsers/transform.py#L99-L175",
+          "version": "repo-lines-v1:sha256:08e19dbcd661fd5a07423af3d9ba2bb0460f29c4bca2ce73fabfe13d1a8c0e5a:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZWFlOTU3ODQ1ZGQyYWMwYTlhZTk4ODI2ODU1MTExNzRhNzRiMDBiY2U5NzU4NDAzYjc4OWMzZjkyNzk2MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlM2RiNzc4MThhYmYwYTJkNDM1NGNhMWU3NGQ2NDBmYTQzM2MxYTg3ZjY3NjhiMmNlNzJlMjdjMDdjYzc4MTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMzg5NzhjZGMxYThkNzYxMjBhMzFmZjg2MDU0NWNhNDNiMWE0ZWFjOWU2YWJiMmIwNWQ2MjE5ZTE4NDExODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -35,8 +35,8 @@
       "statement": "with_structured_output() is a method on BaseChatModel that wraps a model to enforce structured output by leveraging the model provider's native capabilities. It accepts Pydantic models, TypedDict classes, JSON schema dicts, or OpenAI function schemas, and returns a Runnable that outputs instances of the schema type (validated) or dicts (unvalidated). The include_raw parameter controls whether to return only parsed output or also raw response and parsing errors.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2385-L2565",
-          "version": "repo-lines-v1:sha256:673bc22e396265b7dbabfa67b802837132337352be622cd69c071cfc5dfd1c84:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOTk3OTkzN2Q3ZGUxOTkyNzZjM2I3YzVkMTJkZWM2ODJhZTBmOTVjNTliZjA2OTlhNGI2OTRhZDg1ZWQxMTVhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5OTUyMjA5NzQ4ZWJiMjJhOWM3Nzc5ZWEwMTBkODNiNzUzYmVlY2Q3ZDFmY2M2ODRiYTBmNDQyZjU4MDE4YzMwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ODYzYTc3NDFkMDgxOGZiZWMxOGIzODJlN2YyNzZjZTQxNGVlOGY1NGYyYzZjNWU0OGEzYTdkNDIzNDAxNzgxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NTBjNDUzZDgxMjdmZGVmYWVkNTg3YWQxNGJlZDM0NWJiMGYzMTg3Njk3MTIwMWQzN2FjYmVkOGQ2NzgyZTFhIn0"
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2428-L2611",
+          "version": "repo-lines-v1:sha256:d3d259d9493ccf896a19273743db3066a296ae6238df1ff1515c2212418f02f9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTg0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOTk3OTkzN2Q3ZGUxOTkyNzZjM2I3YzVkMTJkZWM2ODJhZTBmOTVjNTliZjA2OTlhNGI2OTRhZDg1ZWQxMTVhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5OTUyMjA5NzQ4ZWJiMjJhOWM3Nzc5ZWEwMTBkODNiNzUzYmVlY2Q3ZDFmY2M2ODRiYTBmNDQyZjU4MDE4YzMwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ODYzYTc3NDFkMDgxOGZiZWMxOGIzODJlN2YyNzZjZTQxNGVlOGY1NGYyYzZjNWU0OGEzYTdkNDIzNDAxNzgxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NTBjNDUzZDgxMjdmZGVmYWVkNTg3YWQxNGJlZDM0NWJiMGYzMTg3Njk3MTIwMWQzN2FjYmVkOGQ2NzgyZTFhIn0"
         }
       ]
     },
@@ -46,7 +46,7 @@
       "evidence": [
         {
           "resource": "repo://libs/core/langchain_core/output_parsers/pydantic.py#L19-L124",
-          "version": "repo-lines-v1:sha256:a588180fc4e69f457c9e46cdda957c771911d19c74dfaee25ae02b86313e9421:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzM2RjMWQ2Mzc0YjU1NDA5OTg2NzRjOTg1YjRmNDBjOWY1MmQ4MmE1YjkxODgxM2Y3OTczNDRlMTlkNDVmMGVjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhOThiMDYzZDliNDdlNjUzNzk2MjU1NzJjY2UxOTc2NjlkNTc2N2UxMmMxOGJlMDc1NjUyYjhjZDk4MWNlOGQ1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjMmQxMzE3ZmY5ZjRiYjMxZDliMjRlYzJlZWYzODU2MjE3M2M5NjQ4MTAzZWY1ZTkxNDM4NDNjYjJhMjhmMmM4In0"
+          "version": "repo-lines-v1:sha256:fd2747d6950063411ccf408f81bae9565f8dfa4d4e1f2200aa4f491685cbfd76:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzM2RjMWQ2Mzc0YjU1NDA5OTg2NzRjOTg1YjRmNDBjOWY1MmQ4MmE1YjkxODgxM2Y3OTczNDRlMTlkNDVmMGVjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhOThiMDYzZDliNDdlNjUzNzk2MjU1NzJjY2UxOTc2NjlkNTc2N2UxMmMxOGJlMDc1NjUyYjhjZDk4MWNlOGQ1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjMmQxMzE3ZmY5ZjRiYjMxZDliMjRlYzJlZWYzODU2MjE3M2M5NjQ4MTAzZWY1ZTkxNDM4NDNjYjJhMjhmMmM4In0"
         }
       ]
     },
@@ -55,12 +55,12 @@
       "statement": "JsonOutputParser parses JSON output without strict schema validation and extends BaseCumulativeTransformOutputParser to support streaming. In streaming mode, it accumulates text chunks and yields partial JSON objects containing all keys returned so far, or optionally JSONPatch diffs if diff=True.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/output_parsers/json.py#L31-L139",
-          "version": "repo-lines-v1:sha256:33a896ab63c392d81a7f99abf937060dc64ac4f656697fe3b4cc7be750698f80:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0MTU5ZDc5ZWNmNzRmOWRhYzdlZDcyZmZhYzAwNTg5YzBlNDA3OGNjOWI2ODIwZDIwZGEzNTJkODkzMGY3OTE1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmOTQxNmUwOWY3OGJhMzE2YzAzMjU2ODIxM2I4NTVlZTc1NmU0MTU2NWQ5MThmMDk1MTljODFmZDYyMGY0MDYwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjNDdjMWQyZDJiNjYwMzcxOGE5MWQ4ZjE0YjE3NzM0OWE2YWUzM2QxZjdlZTk2ZmZmYzI5ZWRkZDA2YTk4MzAwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://libs/core/langchain_core/output_parsers/json.py#L32-L132",
+          "version": "repo-lines-v1:sha256:498fde431a3bf2f8ca89f982ce95a7f8f2ee55b2eae92f5f76fa0e09407e736a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0MTU5ZDc5ZWNmNzRmOWRhYzdlZDcyZmZhYzAwNTg5YzBlNDA3OGNjOWI2ODIwZDIwZGEzNTJkODkzMGY3OTE1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjNDdjMWQyZDJiNjYwMzcxOGE5MWQ4ZjE0YjE3NzM0OWE2YWUzM2QxZjdlZTk2ZmZmYzI5ZWRkZDA2YTk4MzAwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5NjYyZDJmM2NmYzY4ZTczZWVhODQyNmIwZjU4ODk2Y2Y0OGI5ZjFlZWNkNDAxMjI5YzRjNjIzZDc1Mjg1NTQyIn0"
         },
         {
-          "resource": "repo://libs/core/langchain_core/output_parsers/transform.py#L99-L150",
-          "version": "repo-lines-v1:sha256:108d77f7b44420ccf47c0484035466fd72e0be74696a698d7d210d89ea562b9c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZWFlOTU3ODQ1ZGQyYWMwYTlhZTk4ODI2ODU1MTExNzRhNzRiMDBiY2U5NzU4NDAzYjc4OWMzZjkyNzk2MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZGE5MzUwMDE5ZGMxZTY2NzQ1MjY0Mzg3MzE2MTk5NzIyNWU5Y2U2MDEwN2FmN2I2NGY4NDBkZGVjZmRhNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMzg5NzhjZGMxYThkNzYxMjBhMzFmZjg2MDU0NWNhNDNiMWE0ZWFjOWU2YWJiMmIwNWQ2MjE5ZTE4NDExODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNGRmYzFhNzEzNGVlNTc4MWFiYTM5NDZjMzZiN2EyODhjZWJmZWRjMTBhMjY2NjcwOTE4YjEzZmM0OTNmMDUifQ"
+          "resource": "repo://libs/core/langchain_core/output_parsers/transform.py#L99-L175",
+          "version": "repo-lines-v1:sha256:08e19dbcd661fd5a07423af3d9ba2bb0460f29c4bca2ce73fabfe13d1a8c0e5a:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZWFlOTU3ODQ1ZGQyYWMwYTlhZTk4ODI2ODU1MTExNzRhNzRiMDBiY2U5NzU4NDAzYjc4OWMzZjkyNzk2MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlM2RiNzc4MThhYmYwYTJkNDM1NGNhMWU3NGQ2NDBmYTQzM2MxYTg3ZjY3NjhiMmNlNzJlMjdjMDdjYzc4MTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMzg5NzhjZGMxYThkNzYxMjBhMzFmZjg2MDU0NWNhNDNiMWE0ZWFjOWU2YWJiMmIwNWQ2MjE5ZTE4NDExODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -69,12 +69,12 @@
       "statement": "Streaming structured output is implemented via BaseCumulativeTransformOutputParser, which accumulates streamed tokens and yields partial parsed objects after each chunk if the object changed. The parser calls parse_result(..., partial=True), which uses parse_json_markdown() and parse_partial_json() to extract incomplete JSON structures, enabling responsive UIs and early feedback.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/output_parsers/json.py#L31-L92",
-          "version": "repo-lines-v1:sha256:280c6317bccb7f8c880a14528d72fce66ede6597c8d76a9e49b3c68ae07a5824:eyJzZWxlY3RlZExpbmVDb3VudCI6NjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxNTlkNzllY2Y3NGY5ZGFjN2VkNzJmZmFjMDA1ODljMGU0MDc4Y2M5YjY4MjBkMjBkYTM1MmQ4OTMwZjc5MTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0N2MxZDJkMmI2NjAzNzE4YTkxZDhmMTRiMTc3MzQ5YTZhZTMzZDFmN2VlOTZmZmZjMjllZGRkMDZhOTgzMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMjk2OTZiNTVkMDIxNjJmZTkxZTZhNzc0MmQyMDE2ZmZiMjk3ODFhNmJmYzdjMzgzNzIwYzAyNTRmY2EzYzQifQ"
+          "resource": "repo://libs/core/langchain_core/output_parsers/json.py#L62-L95",
+          "version": "repo-lines-v1:sha256:fa274ece79a1c27e59b57a039daae154b38f2df373ece3f00aa97bba64e2c42b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5ODk0NGMzZmUwYjVmZGM4MTNhM2QzZWY5YjI1ZTc1NDg2ZmVlYjJjYjAxZGI2YWY2MmY2MTNjMWU2NzA0ZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkNTI2M2E5NjQ5M2NmZTI2MDliODk5YTY0OTIzZGZlNGYyNGNiZTg1ZmM3OWQxZGM3NDM2NGUzYWIzN2IzZWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3NjViYjdhZmU5MmZlN2U1MDEyYjA2Yjk0MTAzMjQxYjc4NWY0M2QzNDQ4MjlhMDEyYzVkYTdlMDJhZmQxNGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0MjA0NGYwOTY2ZDVjOGM4MzJmMWIzMGE4ODJjYmU4MjQ0Njk4ZTRiMzA1ZmZhN2VmMmQzMzE4YTYwNTA2NGQifQ"
         },
         {
-          "resource": "repo://libs/core/langchain_core/output_parsers/transform.py#L99-L150",
-          "version": "repo-lines-v1:sha256:108d77f7b44420ccf47c0484035466fd72e0be74696a698d7d210d89ea562b9c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZWFlOTU3ODQ1ZGQyYWMwYTlhZTk4ODI2ODU1MTExNzRhNzRiMDBiY2U5NzU4NDAzYjc4OWMzZjkyNzk2MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZGE5MzUwMDE5ZGMxZTY2NzQ1MjY0Mzg3MzE2MTk5NzIyNWU5Y2U2MDEwN2FmN2I2NGY4NDBkZGVjZmRhNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMzg5NzhjZGMxYThkNzYxMjBhMzFmZjg2MDU0NWNhNDNiMWE0ZWFjOWU2YWJiMmIwNWQ2MjE5ZTE4NDExODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjNGRmYzFhNzEzNGVlNTc4MWFiYTM5NDZjMzZiN2EyODhjZWJmZWRjMTBhMjY2NjcwOTE4YjEzZmM0OTNmMDUifQ"
+          "resource": "repo://libs/core/langchain_core/output_parsers/transform.py#L99-L175",
+          "version": "repo-lines-v1:sha256:08e19dbcd661fd5a07423af3d9ba2bb0460f29c4bca2ce73fabfe13d1a8c0e5a:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyZWFlOTU3ODQ1ZGQyYWMwYTlhZTk4ODI2ODU1MTExNzRhNzRiMDBiY2U5NzU4NDAzYjc4OWMzZjkyNzk2MzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlM2RiNzc4MThhYmYwYTJkNDM1NGNhMWU3NGQ2NDBmYTQzM2MxYTg3ZjY3NjhiMmNlNzJlMjdjMDdjYzc4MTQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMzg5NzhjZGMxYThkNzYxMjBhMzFmZjg2MDU0NWNhNDNiMWE0ZWFjOWU2YWJiMmIwNWQ2MjE5ZTE4NDExODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -83,8 +83,8 @@
       "statement": "When using function calling (tool calls) instead of raw text output, JsonOutputToolsParser and PydanticToolsParser extract and validate the structured data from tool call arguments. PydanticToolsParser validates parsed tool arguments against Pydantic schemas and raises ValidationError if validation fails, supporting first_tool_only mode to extract a single structured output.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/output_parsers/openai_tools.py#L139-L350",
-          "version": "repo-lines-v1:sha256:5669c169d4d9dd26ccaadbea957eac3a492777611f47c450f992dac26317f291:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3YTRlYWQyMWE2MmQ1ZDgwYmI4NmI5OWRhNjk0NjdhOGE0ZWIxZjEyYmQyZWRkMDJmMzg1ODcwYjZlZjAzYTk1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyMTUyYmM3MGE5M2Y2OGRmNTZlMmI2Y2U2Y2NhZjkwNTUxZmY5MTgxOGIyOWYxN2JiMmE2OGQ0ZmI1MjM1Mzc1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3ZTBlNWJiMjg3MmM4ZjBhNmY0MmFiYzUzOWY2NTdjOTVmNjMxZDJlMGYwMmIyOWIwZDVjNzE4ZGZmYmI4YWMzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiZWI0YTcwYTEzZjU3OTEyNjg2MDUxNjUzOWJlOTYzY2M1OGE4MzcxNzU1ZWI1NzNjYTdmYzVmOWEwZTU2NmU2In0"
+          "resource": "repo://libs/core/langchain_core/output_parsers/openai_tools.py#L140-L213",
+          "version": "repo-lines-v1:sha256:17b1669feaef3f75f942adcb34490a55751d13debb7694da69c270e42f53ea75:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhNGVhZDIxYTYyZDVkODBiYjg2Yjk5ZGE2OTQ2N2E4YTRlYjFmMTJiZDJlZGQwMmYzODU4NzBiNmVmMDNhOTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyODgxNjVjOTIwZGNkZGM5YTQyYmE2OWVkMDE0ZTM2NTg4MzQwYWM4MzZlMGE1MWMzYTA4NmNjYzYyYTc4MWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdlMGU1YmIyODcyYzhmMGE2ZjQyYWJjNTM5ZjY1N2M5NWY2MzFkMmUwZjAyYjI5YjBkNWM3MThkZmZiYjhhYzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI0NjkzMTg2ZGU4OTMwNDg2OWNlM2E4NzMwZmIxMjliODZkYmRkYzhmN2E2YzM2OWEwNTA3YzFiNGZlOGZjNzEifQ"
         }
       ]
     },
@@ -185,6 +185,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-29T08:20:01.046Z"
+    "at": "2026-11-06T08:17:28.425Z"
   }
 }

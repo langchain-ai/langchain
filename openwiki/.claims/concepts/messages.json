@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:dcff1751ba6233504d6d52d39c0c02f1ac29628f04bc34e3e71e561e8b05af08",
+  "pageVersion": "sha256:5c2614eef0e737f96a1dd9788ba46bbaee437b6a3602eec5a4efe2a3ff8c3af4",
   "claims": [
     {
       "id": "claim_e7c4f3b3322d4e87af9595005d380245",
@@ -84,19 +84,23 @@
     },
     {
       "id": "claim_cc9f3230261d4d9a9a9b4bb4b2badd1d",
-      "statement": "Content blocks are TypedDict objects representing multimodal content with types including TextContentBlock, ImageContentBlock, AudioContentBlock, VideoContentBlock, FileContentBlock, ToolCall blocks, ReasoningContentBlock, and ServerToolCall/ServerToolResult blocks.",
+      "statement": "Content blocks are TypedDict objects representing multimodal content within a union type ContentBlock, which includes TextContentBlock, ReasoningContentBlock, RefusalContentBlock, InvalidToolCall, NonStandardContentBlock, DataContentBlock (union of ImageContentBlock, VideoContentBlock, AudioContentBlock, PlainTextContentBlock, FileContentBlock), and ToolContentBlock (union of ToolCall, ToolCallChunk, ServerToolCall, ServerToolCallChunk, ServerToolResult).",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/messages/content.py#L1-L40",
-          "version": "repo-lines-v1:sha256:3db88880142985a4ef84607400feca4f52dc75d21c3f59a2e6cbd5e62abeb62b:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwMDU0ZjZiZmQwY2ZjMzQzZDgwOTdhMDE2YjU3NGY1MGE2MTA4YzEyMzE4Mzg2NGMwNGQ1NjdmYjRlMmM4N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlMDJhZWI3NzVjZjEzM2IzZWVkYWZjZGZmMTMxNjMyZWI5YzhmNzczZmJiZjMxMGI2YzNhZjcxZTQ1YzU1ZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmZTMzZmVhNjM4ODU0NzAyOTljZWEwYjhiNTc3OThjYmRkZTExYzg4YTRiNTc2ZTI1ODQxYjg1ZmE1YTIzYzIifQ"
-        },
-        {
-          "resource": "repo://libs/core/langchain_core/messages/content.py#L207-L547",
-          "version": "repo-lines-v1:sha256:8106a303ccb8fccf0f241ebb847e95e06a69c5f0316c229741085a7765672f79:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5Mzc0NWI4ZTkxYmJjODU4NWNkOGNlNWJlZTJmNzNjYTZjNGZmMmIzYzJjYWE4NjNlNmYyY2VhM2YxMTczZjJlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI1ZWNmZTZhMjUyYWQ1NjZhYjNjODdlMDJmYjQxYWEwMDJmOTQ5NTRiMTdiMjAwN2M0NjNkM2I4MmRiMTRhMTVjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2MjQ5YWQyOGIyMjYxNzAwNmI0MWU1MGI2NzliYzM4NGNjMzhkODc4MTA0ZDYwMWUwNDhmOGM1YzJlYzE3MzJiIn0"
+          "resource": "repo://libs/core/langchain_core/messages/content.py#L207-L245",
+          "version": "repo-lines-v1:sha256:3aec4c96b5c59564dfaf57d7cf03ea424a8f598414221ed73b980830e5dc84e9:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzNzQ1YjhlOTFiYmM4NTg1Y2Q4Y2U1YmVlMmY3M2NhNmM0ZmYyYjNjMmNhYTg2M2U2ZjJjZWEzZjExNzNmMmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlY2ZlNmEyNTJhZDU2NmFiM2M4N2UwMmZiNDFhYTAwMmY5NDk1NGIxN2IyMDA3YzQ2M2QzYjgyZGIxNGExNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzYWU0YmZjOTExOTE4MjNiOGZiODkyZjUzZjk3ZmE1MTlkZTc1ZDMxMDczMWU2OGIyZTkyODljNjcyMmI5YjYifQ"
         },
         {
           "resource": "repo://libs/core/langchain_core/messages/content.py#L372-L454",
           "version": "repo-lines-v1:sha256:0d0861d62a7c7f4e07a9ccf9f9c3035c96790465a51dffd49ee58f34d6a93b70:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhNTYzNzhjZDkyY2YzMWYyYjU1NjllNjk3NTZjMWIzNDFkOGY2N2JlYTc0NjBlOTIwOTkzNWVmNDEzZTgyNmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3NjdiM2JhMDUyYmEzOGFlMzIxZTNjZmQ3Y2FmY2M0YTU5NzM5ZjNiMTc5ZTE4NDQ5M2I0YmM4MmEyNTI1NDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyMGQ1YzYzNTZhMmRiZjlkOTA2MTc1YzEwNzFhM2VhYzlhZWM3YjFjZGE2ZjQ0NGE1YWYxZTBlNGUzM2FhZWIifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/content.py#L456-L520",
+          "version": "repo-lines-v1:sha256:534e17d349c5b03586a1f407ae86bfe26e87121bc47df34b8c3442ede6334d08:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2MmQ0MTExM2E4MDMxYmRlMWQ4NTA2M2Q4NzNlMGZlNzllMzM4N2EyOWQ1MzhhMTEzYmYyN2ZkZjJlNDc1NDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3NjdiM2JhMDUyYmEzOGFlMzIxZTNjZmQ3Y2FmY2M0YTU5NzM5ZjNiMTc5ZTE4NDQ5M2I0YmM4MmEyNTI1NDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMjdiN2U3ZjBiZTMyOTM1YWQ1M2Y4MDBjNDhiOWJmZDJjMDY4ODhhNWVhZjEwYmQ3YTA5NmE4NzU1YWFiMzIifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/content.py#L859-L880",
+          "version": "repo-lines-v1:sha256:09ac53504be51a7e5d9a448670c236032e879cb13723c2cb4628553bce0fd957:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5M2U3YTQzNzM0NmZhMzQyZDY0MzEzOWE4ODZkMGY5MTQ5NGY0NDY0OTE2OGExNTBmNzAzZWRiZWY4MDAwNDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2NTk0ZGJlM2M0MzY5ZDdhODQ1NGMxNGJmYTkyYzQ0ODJlYzFlNGM1OGVjM2Y4NmM4M2FmMmM2ZWEzZWU2ZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2ZDhlNTdjYTM1MzQwZGZjYmM2ZjkwNjk3YTAwMmY3OWY5MWVhZGY4YTNlZjI3NWMyNTIxN2M2ZTg2ZDRkNTEifQ"
         }
       ]
     },
@@ -303,10 +307,72 @@
           "version": "repo-lines-v1:sha256:d500b2da591da575558a56bcc7bab5b249e911968c4392aa203ebfeb15e4e731:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzhmZDFlODVhYTU4ODMzYjljMmFhZGNkZGFmNjY2NzljMjM5NWUxZDQ2OTM5NzM2NjQ3NTk1MWVmNTU0MDRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBjMWYxODhmMTQyZWQ3YTgyNDY4MGIyMDcxNzJjNTUxOWJjNjE0YTQ4ZmRhN2NmMTY3ZWRiOGRkZjc5OTU2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGNiYmRhNTVmODZmNDkyOTlhNWU0NDA1NDRjMGVjYTFkNDYyMzkyMThmNzlhNjY1ZDc0MzY5NzEyYTA3NmM3ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2Q5YzBmNGQyN2I4M2U2ZDQ1YmE2MDU4Njc1YTZkMWU2OTA2MzY1OTM4MzMyZTg1YzY1ODJmZmIxYWY5ZmIzMCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_97f6e8a715864501acb770a11c92107a",
+      "statement": "RefusalContentBlock is a content block representing an explicit model refusal with fields: refusal (str), id (optional unique identifier), index (optional for streaming), and extras (optional provider-specific metadata like Anthropic's refusal category); added in langchain-core 1.7.5.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/messages/content.py#L495-L520",
+          "version": "repo-lines-v1:sha256:0f917a0efbc4f637d61b94dfb6e7bf35df09e56844a77dd5d050f64e0d74a5f4:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyNTA4YmQ1NjI3N2FmYzUwYThjZTIwYzBkMGYwYjY2MjM2MjIzZDNhYmZhMWFhMzg3YTM4NzQzZjczYmNmYjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk3NjdiM2JhMDUyYmEzOGFlMzIxZTNjZmQ3Y2FmY2M0YTU5NzM5ZjNiMTc5ZTE4NDQ5M2I0YmM4MmEyNTI1NDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzMjdiN2U3ZjBiZTMyOTM1YWQ1M2Y4MDBjNDhiOWJmZDJjMDY4ODhhNWVhZjEwYmQ3YTA5NmE4NzU1YWFiMzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f5dd4b8980342cba0bedc798121a83f",
+      "statement": "ModelRefusalError is an exception raised when a model declines to produce requested output; it can be created via from_refusal() class method from a RefusalContentBlock to extract refusal details, and preserves the raw_message containing the full response for provider-specific inspection of extras fields.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/exceptions.py#L137-L187",
+          "version": "repo-lines-v1:sha256:36475c30489e68a1f15d9a9ebea120cfe421dba9b69301aeb6bb3169be5cf919:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkNDM0OGExNGY3ZjY4NGEyMjg3ZWQ4NmYxMWNmNDkzNTkwNTBlODIyMzVmYzRkZDRmZjNhZTM5NjFkYzc1ODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyMTZkOWEwYTMyMTc4NjUxNTA3NzgyYzFlN2M2M2ViYWJlZTU2ODVmMmJlNWVmMTEzZGI0MjU0YTdmMjY4NWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyYjI1NzhkODVmMDU0N2ZhOTE3ZGE3YjE4ZDIwNzg5OTE4MjlhNTM4MmM3OTEyOGJlMTZmNmYxMDg4ZjdhYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmZjAyNTRmOTQ2Y2E3ZTE0ZjE5MzA1YjNhM2JhMTE2MWVjNTIwYmJiZmE0YmQ0NWJmNzJjZjE3ZWIyN2E2YzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_14b8b924fb5648119e9745ecaad5f539",
+      "statement": "Block translators are registered in PROVIDER_TRANSLATORS dict, mapping provider names to translator function pairs (translate_content for AIMessage and translate_content_chunk for AIMessageChunk); when response_metadata[model_provider] is set, the corresponding translator is invoked to convert provider-specific response formats to standard ContentBlock objects, with fallback to best-effort parsing if translator unavailable or raises NotImplementedError.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/messages/ai.py#L242-L304",
+          "version": "repo-lines-v1:sha256:208010ce60bbc0d99fa6bc3bb69c71f1f0a49dcb80add7e5132cfd51d79ce712:eyJzZWxlY3RlZExpbmVDb3VudCI6NjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZDAwY2YyNzA5NjRkNDRhMTNkZmFjODc1MmIwOWZjYzQzNWIwZjE5YjMxNmFiY2Y4MWE3YWE2NGJiMTIyZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNhY2ExZGNhNzcwZDMzOTU2MDc1NGI3ZmNmNDlhZTNkMjYxZjljNjc2MGU3YjU3YjIyYWY2MTMxM2FjZGVmNjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2MzcyYjViNGM2ZWYwZWFlMDc5MDJjMWJmMzU4MjkwMzBiYjM4NjU0ZTQwMzczMjdhNmU0YTBmMDNlY2JjMDgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmOWU4NTZmNTQxY2Y0MzdlNjI4N2JhMTRkMDg3Yjk5MDg4ZmMzNDU5MmM5YzUzYzdlYjIzOTBjYzRiNWMyMTAifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/block_translators/__init__.py#L23-L71",
+          "version": "repo-lines-v1:sha256:40d2d431e12dbba1ba6835d839cb9931a53daaddce09921a04148714ea7233d6:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzYjBhODM3M2U2NGFmNjVjYTU0MjcwMWU1NDYzMDgxNjViNzcyODI2YjAyNGVlZGFjYmNjM2JjMzk4N2JkOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMTJjNzAxZWY0YTFiYzVjOWQ0MjYyZTAxOWVmNjE3NTkxMGE1MGRkNmRiZjZiZDg5NzA0MjA0YTQyMzJkY2UiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzMjE3NmQ4MDYyYjk0ZjMzNDc0OGQyYWRlODBjNDI5MjI4NjNlNThiY2Q4NThkOWJmZDhjYmQ2OWQ2MmRmZjgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1ae6bbf9972741838f586a4561789687",
+      "statement": "OpenAI block translators (convert_to_openai_image_block, convert_to_openai_data_block) transform standard ImageContentBlock to image_url format with URL or data: URI, AudioContentBlock to input_audio format, and FileContentBlock to file format with file_id or base64 data; the translator handles structured output refusals by extracting OpenAI refusal field into RefusalContentBlock.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/messages/block_translators/openai.py#L22-L150",
+          "version": "repo-lines-v1:sha256:26b5d3b2b9f47e0d68579fe49ac2a59838fb6fe3fd37c1ca7599e0748e1fc1ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1MjM4ZWI3MTg2NDAzODBmYmZhN2FkYWNmOTFiNmFhN2I2NTFmNTU2YzBkNzE4OTMzMGQzNDhlZTFkZGE3ZGNmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlZmY5NmU0MDIwMDNlMGQ4MTQzMjU4NzY0ZTZmMjY4YzYyNWUwNWZjZmVmYmQ4MDM4OTAxYWQ2MWM0NjAyN2MwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxZjE5YWJiYTAzOWU0OTZmM2M2MDExYTdiODJkNzMzOWU5ZWNjZTA0OTlhNmM2NWZjNWI3YmExY2ZhMWQ2YTk1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmOGJmMTk0M2NmYzliMDQ5ZDJjNDhjZTE5NDFmNWRlY2M3OGYxMDliMTg4NDg2ZTg4NDQ1NjU0NGM1YmNjN2VhIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/block_translators/openai.py#L675-L695",
+          "version": "repo-lines-v1:sha256:1c2b72002130a46d0de6cafafce7036f5af48e3540155596f402bfccc9eb3fa5:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkOTAzNmFhMzU1NDE3M2RmNDRmOTZkM2M5OWI0YjdiOTQ4YTQwMDUzOTU3OWFkYTljZmNiNzIzZDkwYmYxY2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjNjJmMmM5NTQxNWU4ZjljYjk4MmQzMWQ0ZGU0NmVmNDYwZDI3ZWVmOTRiOWVkNjE2ODViYTI4NDFmODFiNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAxZjVlZjYxNjBhOTM0MWJkMzVjNTMwYjg5YWNhMGUzNDI2NzhlYjA2YWFjZTk2ZmZiYjhhN2YyZGU5ZGU5YjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyOThhNzczYTYwMzI5NzQwNDkyMzI1OTJjMWJkNjlhYjI2YzE1YjNlYmVkMDg4ZTM2ODY1NjVmY2E0YjFhMzAifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_aabfe01eb35e484c930697a9b230dbc8",
+      "statement": "Anthropic block translator detects refusals via stop_reason=refusal and creates RefusalContentBlock with optional extras[category] field containing Anthropic's refusal reason category (e.g., consent_abuse, illegal).",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/messages/block_translators/anthropic.py#L250-L270",
+          "version": "repo-lines-v1:sha256:cc1bd022b0c4d3609fb0b55bd33d05cbead69da64f91af7706375f2029ed3ceb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0MWM3YTdhMDk2ZGIyMWZlNDg3ZDZlN2VjODFjYzMxZWE2NjZkZmIxYzc5YTA5MGE2YmNkZGM1NTZmNzllNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA5Mzg5ZjYyNmQxZWZmY2QwNmIyMTM1MzI2ZTg2ZGU2NDVjYTA1OTZlOGExOTQ4YmM1NmQ5ZjU1OTVjMThlNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5NTc0YjcxMTgwZTAwODQ4MjZjOTdhNDg3Mjk5YmViNzU5NGJjZmZjOTgyNTRjMzY4NjBjYzVjMDk5YzAyMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0NTU5NGFjMzQxYzYxNjBjNzNhOWRiZWRjODFiMmM0NjkyMGVmMGVkMGU3ZmRmMDJlZDliMTA5N2E2ODdkNjMifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/block_translators/anthropic.py#L520-L538",
+          "version": "repo-lines-v1:sha256:a14b21ccd35671b3efabbfaf797ba5092f4a0583093bcbfb1f3114ab9316dc82:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEwMzM0Y2ZiZTI3NDA0ZTgxZjI3YWU4MzhiYjg1MTIxNTIxZjBhN2FiYzRhMTRiNTlhNjNjMjZhNzcxNzNhYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJlNzhhYzVkYTQyOGIxYWE1M2JlNzljNmIzMmQ2NTkxNzAzODdiMWQ0ZWMzZTE3YjNiYzg3NmEzNzQyMjYzZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhMDgyOTUzZjZiYmY1YjcyNDc1MmEyOGIyMDNiNmIxNWQ4YzdkNjc0MWUyYWVkMjc4NTUwN2M3NDQ3ZWUxMDIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-30T08:19:17.669Z"
+    "at": "2026-11-06T08:17:28.425Z"
   }
 }
