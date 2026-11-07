@@ -144,7 +144,9 @@ def test_result_without_structured_content_has_no_artifact() -> None:
 
 
 @pytest.mark.asyncio
-async def test_tool_stays_callable_after_its_client_context_exits() -> None:
+async def test_tool_stays_callable_after_its_client_context_exits(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """FastMCP clients are reentrant, so a converted tool reconnects on demand."""
     server: FastMCP[None] = FastMCP("calc")
 
@@ -155,6 +157,13 @@ async def test_tool_stays_callable_after_its_client_context_exits() -> None:
 
     tool, client = await _one_tool(server)
     assert not client.is_connected()
+    call_tool = client.call_tool
+
+    async def require_tool_listing(name: str, *args: Any, **kwargs: Any) -> Any:
+        assert name in client.session._x_mcp_header_maps
+        return await call_tool(name, *args, **kwargs)
+
+    monkeypatch.setattr(client, "call_tool", require_tool_listing)
 
     message = await tool.ainvoke(
         {"name": "double", "args": {"a": 4}, "id": "c1", "type": "tool_call"}
