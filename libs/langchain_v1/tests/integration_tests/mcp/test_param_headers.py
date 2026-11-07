@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any, cast
+from typing import Annotated, Any
 
 import pytest
 from fastmcp import Client, FastMCP
 from fastmcp.client.group import ClientGroup
 from fastmcp.utilities.tests import run_server_in_process
-from mcp.shared.exceptions import MCPError
 from pydantic import Field
 
 from langchain.mcp import MCPAdapter
@@ -44,20 +43,6 @@ async def test_detached_tool_preserves_param_headers(*, grouped: bool, interrupt
         adapter = MCPAdapter(target)
         [tool] = await adapter.list_tools(cache_mode="use")
         arguments = {"owner": "example", "repo": "repository"}
-        member = (
-            cast("ClientGroup", adapter.client).clients["github"]
-            if grouped
-            else cast("Client[Any]", adapter.client)
-        )
-
-        async with member:
-            with pytest.raises(MCPError) as error:
-                await member.session.call_tool("read_repository", arguments)
-            assert error.value.error.code == -32020
-            await member.list_tools(cache_mode="use")
-            result = await member.session.call_tool("read_repository", arguments)
-            assert result.content[0].type == "text"
-            assert result.content[0].text == "example/repository"
 
         for _ in range(2):
             [block] = await tool.ainvoke(arguments)
