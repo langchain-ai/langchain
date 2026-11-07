@@ -224,7 +224,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 )
             else:
                 result = self._get_relevant_documents(input, **kwargs_)
-        except Exception as e:
+        except BaseException as e:
             run_manager.on_retriever_error(e)
             raise
         else:
@@ -285,7 +285,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                 )
             else:
                 result = await self._aget_relevant_documents(input, **kwargs_)
-        except Exception as e:
+        except BaseException as e:
             await run_manager.on_retriever_error(e)
             raise
         else:
