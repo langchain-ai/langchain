@@ -1268,3 +1268,26 @@ def test_chain_using_pick_roundtrips() -> None:
     revived = load(dumpd(chain))
 
     assert revived.invoke({"a": 1, "b": 2}) == {"a": 1}
+
+
+def _nest(depth: int, *, as_dict: bool) -> str:
+    open_, close = ('{"a": ', "}") if as_dict else ("[", "]")
+    return open_ * depth + '"leaf"' + close * depth
+
+
+@pytest.mark.parametrize("as_dict", [True, False])
+def test_load_rejects_deeply_nested_input(*, as_dict: bool) -> None:
+    text = _nest(500, as_dict=as_dict)
+
+    with pytest.raises(ValueError, match="nested more than 200 levels"):
+        load(json.loads(text), allowed_objects="messages")
+    with pytest.raises(ValueError, match="nested more than 200 levels"):
+        loads(text, allowed_objects="messages")
+
+
+@pytest.mark.parametrize("as_dict", [True, False])
+def test_load_accepts_nesting_up_to_limit(*, as_dict: bool) -> None:
+    text = _nest(200, as_dict=as_dict)
+
+    assert load(json.loads(text), allowed_objects="messages") == json.loads(text)
+    assert loads(text, allowed_objects="messages") == json.loads(text)

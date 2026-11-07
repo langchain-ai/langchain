@@ -154,6 +154,9 @@ DISALLOW_LOAD_FROM_PATH = [
     "langchain",
 ]
 
+_MAX_DEPTH = 200
+"""Maximum nesting depth of dicts and lists that `load()` will walk."""
+
 ALL_SERIALIZABLE_MAPPINGS = {
     **SERIALIZABLE_MAPPING,
     **OLD_CORE_NAMESPACES_MAPPING,
@@ -650,7 +653,8 @@ def loads(
         Revived LangChain objects.
 
     Raises:
-        ValueError: If an object's class path is not in the `allowed_objects` allowlist.
+        ValueError: If an object's class path is not in the `allowed_objects` allowlist,
+            or if the input is nested more than 200 levels deep.
     """
     if allowed_objects is None:
         warn_deprecated(
@@ -763,7 +767,8 @@ def load(
         Revived LangChain objects.
 
     Raises:
-        ValueError: If an object's class path is not in the `allowed_objects` allowlist.
+        ValueError: If an object's class path is not in the `allowed_objects` allowlist,
+            or if the input is nested more than 200 levels deep.
 
     Example:
         ```python
@@ -811,7 +816,10 @@ def load(
         init_validator=init_validator,
     )
 
-    def _load(obj: Any) -> Any:
+    def _load(obj: Any, depth: int = 0) -> Any:
+        if depth > _MAX_DEPTH:
+            msg = f"Cannot load object nested more than {_MAX_DEPTH} levels deep."
+            raise ValueError(msg)
         if isinstance(obj, dict):
             # Check for escaped dict FIRST (before recursing).
             # Escaped dicts are user data that should NOT be processed as LC objects.
@@ -819,10 +827,10 @@ def load(
                 return _unescape_value(obj)
 
             # Not escaped - recurse into children then apply reviver
-            loaded_obj = {k: _load(v) for k, v in obj.items()}
+            loaded_obj = {k: _load(v, depth + 1) for k, v in obj.items()}
             return reviver(loaded_obj)
         if isinstance(obj, list):
-            return [_load(o) for o in obj]
+            return [_load(o, depth + 1) for o in obj]
         return obj
 
     return _load(obj)
