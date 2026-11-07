@@ -3,7 +3,7 @@
 import logging
 import re
 from collections.abc import Sequence
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urldefrag, urljoin, urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -100,9 +100,10 @@ def extract_sub_links(
             elif link.startswith("//"):
                 absolute_path = f"{parsed_url.scheme}:{link}"
             else:
-                absolute_path = urljoin(url, parsed_link.path)
-                if parsed_link.query:
-                    absolute_path += f"?{parsed_link.query}"
+                # Resolve the full relative reference so that query-only
+                # links replace the page's query instead of being appended
+                # to it, and drop any fragment.
+                absolute_path = urldefrag(urljoin(url, link)).url
             absolute_paths.add(absolute_path)
         except Exception as e:
             if continue_on_failure:

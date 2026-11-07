@@ -129,6 +129,27 @@ def test_extract_sub_links_base() -> None:
     assert actual == expected
 
 
+def test_extract_sub_links_query_only_link() -> None:
+    html = (
+        '<a href="?page=2">next page</a>'
+        '<a href="/list?filter=new">filtered list</a>'
+        '<a href="/list/2#top">page two with fragment</a>'
+    )
+    actual = sorted(
+        extract_sub_links(
+            html, "https://foobar.com/list?page=1", base_url="https://foobar.com"
+        )
+    )
+    expected = sorted(
+        [
+            "https://foobar.com/list?page=2",
+            "https://foobar.com/list?filter=new",
+            "https://foobar.com/list/2",
+        ]
+    )
+    assert actual == expected
+
+
 def test_extract_sub_links_exclude() -> None:
     html = (
         '<a href="https://foobar.com">one</a>'
