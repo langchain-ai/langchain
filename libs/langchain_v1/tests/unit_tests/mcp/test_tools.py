@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, cast
+from typing import Annotated, Any, Literal, cast
 from unittest.mock import AsyncMock
 
 import pytest
 from fastmcp import Client, FastMCP
 from fastmcp.client.client import CallToolResult
 from fastmcp.exceptions import ToolError
+from fastmcp.server.middleware import Middleware
 from mcp.types import (
     AudioContent,
     BlobResourceContents,
@@ -20,6 +21,7 @@ from mcp.types import (
     Tool,
     ToolAnnotations,
 )
+from pydantic import Field
 
 from langchain.mcp import as_langchain_tool
 from langchain.mcp.elicitation import _arm_for_interrupts
@@ -161,6 +163,49 @@ async def test_tool_stays_callable_after_its_client_context_exits() -> None:
     )
 
     assert _blocks_without_ids(message.content) == [{"type": "text", "text": "8"}]
+
+
+class _ListingCounter(Middleware):
+    """Count the `tools/list` requests a server receives."""
+
+    def __init__(self) -> None:
+        self.count = 0
+
+    async def on_list_tools(self, context: Any, call_next: Any) -> Any:
+        self.count += 1
+        return await call_next(context)
+
+
+@pytest.mark.asyncio
+async def test_tools_list_once_per_session_before_calls() -> None:
+    """Each session lists before its first call, so held sessions do not re-list."""
+    counter = _ListingCounter()
+    server: FastMCP[None] = FastMCP("repos", middleware=[counter])
+
+    @server.tool
+    def read(owner: Annotated[str, Field(json_schema_extra={"x-mcp-header": "owner"})]) -> str:
+        """Read a repository, mirroring `owner` into a request header."""
+        return owner
+
+    @server.tool
+    def count(owner: str) -> int:
+        """Count a repository's stars."""
+        return len(owner)
+
+    client: Client[Any] = Client(server)
+    async with client:
+        mcp_tools = await client.list_tools()
+    read_tool, count_tool = [await as_langchain_tool(t, client) for t in mcp_tools]
+    discovery = counter.count
+
+    await read_tool.ainvoke({"owner": "example"})
+    await count_tool.ainvoke({"owner": "example"})
+    async with client:
+        await read_tool.ainvoke({"owner": "example"})
+        await read_tool.ainvoke({"owner": "example"})
+        await count_tool.ainvoke({"owner": "example"})
+
+    assert counter.count - discovery == 3
 
 
 @pytest.mark.asyncio
