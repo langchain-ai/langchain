@@ -129,6 +129,31 @@ def test_extract_sub_links_base() -> None:
     assert actual == expected
 
 
+def test_extract_sub_links_path_boundary() -> None:
+    html = (
+        '<a href="/docs/intro">inside</a>'
+        '<a href="/docsite/secret">sibling dir</a>'
+        '<a href="/docs-internal/page">sibling prefix</a>'
+        '<a href="/docs">the page itself</a>'
+        '<a href="/docs?topic=x">the page with a query</a>'
+        '<a href="/docs/">trailing-slash child</a>'
+    )
+    actual = sorted(
+        extract_sub_links(
+            html, "https://foobar.com/docs", base_url="https://foobar.com/docs"
+        )
+    )
+    expected = sorted(
+        [
+            "https://foobar.com/docs/intro",
+            "https://foobar.com/docs",
+            "https://foobar.com/docs?topic=x",
+            "https://foobar.com/docs/",
+        ]
+    )
+    assert actual == expected
+
+
 def test_extract_sub_links_exclude() -> None:
     html = (
         '<a href="https://foobar.com">one</a>'

@@ -128,5 +128,15 @@ def extract_sub_links(
             if not path.startswith(base_url_to_use):
                 continue
 
+            # Require the remainder to start at a path boundary so that a
+            # base_url ending in /docs does not also accept /docsite.
+            base_len = len(base_url_to_use)
+            if (
+                not base_url_to_use.endswith("/")
+                and len(path) > base_len
+                and path[base_len] not in ("/", "?", "#")
+            ):
+                continue
+
         results.append(path)
     return results
