@@ -5,16 +5,21 @@ that generate traces based on the callbacks. The traces are all verified
 via snapshot testing (e.g., see unit tests for runnables).
 """
 
+import asyncio
+import contextlib
 import contextvars
 from contextlib import asynccontextmanager
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
+import pytest
 from typing_extensions import override
 
+from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import (
     AsyncCallbackHandler,
     AsyncCallbackManager,
+    AsyncCallbackManagerForChainRun,
     BaseCallbackHandler,
 )
 
@@ -210,3 +215,68 @@ async def test_shielded_callback_context_preservation() -> None:
         f"but got {handler.context_values}. "
         f"This indicates the shielded decorator is not preserving context variables."
     )
+
+
+class _SuspendingAgentRecorder(AsyncCallbackHandler):
+    """Records agent callbacks, but only after yielding once.
+
+    Inside a cancelled anyio scope an unshielded callback is cut off at its first
+    suspension point, so recording only after a yield makes a missing `@shielded`
+    fail deterministically instead of depending on timing.
+    """
+
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    async def _record(self, name: str) -> None:
+        await asyncio.sleep(0)
+        self.calls.append(name)
+
+    @override
+    async def on_agent_action(self, action: AgentAction, **kwargs: Any) -> None:
+        await self._record("on_agent_action")
+
+    @override
+    async def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
+        await self._record("on_agent_finish")
+
+
+_AGENT_CALLBACKS: list[tuple[str, Any]] = [
+    ("on_agent_action", AgentAction(tool="search", tool_input="q", log="")),
+    ("on_agent_finish", AgentFinish(return_values={"output": "x"}, log="")),
+]
+
+
+@pytest.mark.parametrize(
+    ("method", "arg"),
+    _AGENT_CALLBACKS,
+    ids=[method for method, _ in _AGENT_CALLBACKS],
+)
+async def test_agent_callbacks_survive_cancelled_anyio_scope(
+    method: str, arg: Any
+) -> None:
+    """Agent callbacks must still fire when the enclosing scope is cancelled.
+
+    Starlette and FastAPI cancel request handlers through an anyio cancel scope
+    when the client disconnects. Without `@shielded`, `on_agent_action` and
+    `on_agent_finish` are cut off at their first suspension point, so an agent
+    run ends with no action or finish event in its trace.
+    """
+    anyio = pytest.importorskip("anyio")
+    recorder = _SuspendingAgentRecorder()
+    manager = AsyncCallbackManagerForChainRun(
+        run_id=uuid4(), handlers=[recorder], inheritable_handlers=[recorder]
+    )
+
+    with anyio.CancelScope() as scope:
+        scope.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await getattr(manager, method)(arg)
+
+    # A shielded callback finishes in its own task after the scope has exited.
+    for _ in range(100):
+        if recorder.calls:
+            break
+        await asyncio.sleep(0)
+
+    assert recorder.calls == [method]
