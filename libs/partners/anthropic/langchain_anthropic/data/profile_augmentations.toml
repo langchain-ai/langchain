@@ -102,14 +102,6 @@ mid_conversation_system_messages = true
 mid_conversation_tools = true
 
 [overrides."claude-fable-5-2"]
-name = "Claude Fable 5.2"
-max_input_tokens = 1000000
-max_output_tokens = 128000
-text_inputs = true
-image_inputs = true
-text_outputs = true
-reasoning_output = true
-tool_calling = true
 structured_output = true
 tool_choice = false
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
@@ -118,14 +110,6 @@ mid_conversation_system_messages = true
 mid_conversation_tools = true
 
 [overrides."claude-mythos-5-2"]
-name = "Claude Mythos 5.2"
-max_input_tokens = 1000000
-max_output_tokens = 128000
-text_inputs = true
-image_inputs = true
-text_outputs = true
-reasoning_output = true
-tool_calling = true
 structured_output = true
 tool_choice = false
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]

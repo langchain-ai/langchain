@@ -42,8 +42,6 @@ Use `model="claude-fable-5-2"` or `model="claude-mythos-5-2"`. Both profiles sup
 
 The integration retains API version `2023-06-01` when upgrading to Anthropic SDK 2.7 to preserve existing sampling and message behavior on older models. Set `default_headers={"anthropic-version": "2026-10-21"}` to opt into the newer API contract.
 
-Mythos requires verified organization access. Retention, CMEK restrictions on native structured output, and compatible advisor pairings are enforced by Anthropic; see the [migration guide](https://platform.claude.com/docs/en/models/fable-5-2/migration-guide).
-
 ## Migrating to Claude Sonnet 5.5
 
 ```python
