@@ -124,6 +124,12 @@ def test_numbered_list() -> None:
         assert list(parser.transform(iter([text]))) == expectedlist
 
 
+def test_markdown_list_plus_bullets() -> None:
+    """`+` is a valid Markdown bullet and must not be dropped."""
+    parser = MarkdownListOutputParser()
+    assert parser.parse("Items:\n+ apple\n+ banana") == ["apple", "banana"]
+
+
 def test_markdown_list() -> None:
     parser = MarkdownListOutputParser()
     text1 = (
