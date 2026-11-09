@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from langchain_core.decisions import BaseDecisionModel, Choice, ChoiceAnswer, Content, Question
 from langchain_core.language_models import BaseChatModel  # noqa: TC002  # used by pydantic
 from langchain_core.messages import HumanMessage
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, JsonValue
 from typing_extensions import NotRequired, override
 
 from langchain.agents.middleware.types import (
@@ -41,7 +41,7 @@ class ModelChoice:
     """
 
     model: str | BaseChatModel
-    criteria: Content | None
+    criteria: JsonValue
 
 
 class _ModelRouterConfig(BaseModel):
