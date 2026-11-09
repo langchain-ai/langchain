@@ -18,19 +18,20 @@ from langchain_core.decisions import (
 )
 
 
-def test_noul_accepts_instructions_or_described_outcome() -> None:
-    assert Noul(instructions="Is this urgent?").criteria is None
-    assert Noul(criteria=NoulCriteria(true="Urgent.")).instructions is None
-
-
 @pytest.mark.parametrize(
-    "criteria", [None, NoulCriteria(), NoulCriteria(true=None, false=None)]
+    ("question_type", "kwargs"),
+    [
+        (Noul, {}),
+        (Choice, {"criteria": {"a": None}}),
+        (Score, {"criteria": ["low", "high"]}),
+        (Box, {}),
+    ],
 )
-def test_noul_requires_instructions_or_described_outcome(
-    criteria: NoulCriteria | None,
+def test_questions_require_instructions(
+    question_type: type[Noul | Choice | Score | Box], kwargs: dict[str, Any]
 ) -> None:
-    with pytest.raises(ValidationError, match="requires `instructions`"):
-        Noul(criteria=criteria)
+    with pytest.raises(ValidationError, match="instructions"):
+        question_type(**kwargs)
 
 
 def test_noul_criteria_reject_unknown_keys() -> None:
@@ -45,6 +46,7 @@ def test_noul_criteria_reject_unknown_keys() -> None:
     [
         (Choice, {"criteria": {}}),
         (Score, {"criteria": []}),
+        (Score, {"criteria": ["only level"]}),
         (Choice, {"criteria": {"a": None}, "extra": 1}),
     ],
 )
@@ -52,7 +54,7 @@ def test_questions_validate_their_criteria(
     question_type: type[Choice | Score], kwargs: dict[str, Any]
 ) -> None:
     with pytest.raises(ValidationError):
-        question_type(**kwargs)
+        question_type(instructions="Classify.", **kwargs)
 
 
 def test_questions_accept_structured_content() -> None:
@@ -63,13 +65,17 @@ def test_questions_accept_structured_content() -> None:
 
     assert question.model_dump(mode="json") == {
         "type": "choice",
-        "instructions": {"task": "Route the request."},
         "criteria": {"billing": {"examples": ["refund"]}, "other": None},
+        "instructions": {"task": "Route the request."},
     }
 
 
-def test_box_instructions_are_optional() -> None:
-    assert Box().model_dump() == {"type": "box", "instructions": None}
+def test_criteria_accept_any_json_value() -> None:
+    noul = Noul(instructions="Is this urgent?", criteria=NoulCriteria(true=1, false=0))
+    score = Score(instructions="Rate it.", criteria=[0.0, {"label": "high"}])
+
+    assert noul.criteria == NoulCriteria(true=1, false=0)
+    assert score.criteria == [0.0, {"label": "high"}]
 
 
 def test_response_views_filter_by_answer_type() -> None:
@@ -111,19 +117,17 @@ def test_response_views_filter_by_answer_type() -> None:
     )
 
 
-def test_response_skips_unknown_answer_types(caplog: pytest.LogCaptureFixture) -> None:
-    response = ClassifierResponse.model_validate(
-        {
-            "model": "fake-model",
-            "answers": {
-                "urgent": {"type": "noul", "noul": 0.9},
-                "future": {"type": "UNKNOWN"},
-            },
-        }
-    )
-
-    assert set(response.answers) == {"urgent"}
-    assert "Skipping answer 'future' with unsupported type 'UNKNOWN'" in caplog.text
+def test_response_rejects_unknown_answer_types() -> None:
+    with pytest.raises(ValidationError):
+        ClassifierResponse.model_validate(
+            {
+                "model": "fake-model",
+                "answers": {
+                    "urgent": {"type": "noul", "noul": 0.9},
+                    "future": {"type": "UNKNOWN"},
+                },
+            }
+        )
 
 
 def test_response_ignores_unknown_fields() -> None:

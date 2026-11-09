@@ -2,30 +2,16 @@
 
 from __future__ import annotations
 
-import logging
 from collections.abc import Mapping, Sequence
 from typing import Annotated, Any, Literal, TypeAlias
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    JsonValue,
-    field_validator,
-    model_validator,
-    with_config,
-)
-from typing_extensions import Self, TypedDict
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
+from typing_extensions import TypedDict
 
 from langchain_core.messages import BaseMessage, UsageMetadata
 
-logger = logging.getLogger(__name__)
-
 Content: TypeAlias = str | dict[str, JsonValue] | list[JsonValue]
-"""Text, a JSON object, or a JSON array used in question instructions and criteria.
-
-Providers that only accept text send JSON content as JSON text.
-"""
+"""Text, a JSON object, or a JSON array used in question instructions."""
 
 _StateValue: TypeAlias = (
     str
@@ -39,31 +25,41 @@ _StateValue: TypeAlias = (
 )
 
 State: TypeAlias = str | BaseMessage | Sequence[_StateValue] | Mapping[str, _StateValue]
-"""State accepted by decision models: text, messages, or JSON-compatible data.
+"""Root state accepted by decision models.
 
-LangChain messages may appear at the root or nested inside JSON objects and arrays.
+State is a string, JSON object, or JSON array. LangChain `BaseMessage` objects and
+message sequences can appear at the root or at any depth inside objects and arrays.
 LangChain standard media blocks (for example `{"type": "image", "base64": ...,
 "mime_type": ...}`) may appear anywhere in the state. Each provider documents which
 media it supports and how it sends state its API cannot accept natively.
 """
 
 
-@with_config(ConfigDict(extra="forbid"))
-class NoulCriteria(TypedDict, total=False):
-    """Optional descriptions for the two outcomes of a `Noul` question."""
+class NoulCriteria(BaseModel):
+    """Optional descriptions for the two outcomes of a `Noul` question.
 
-    true: Content | None
+    Criteria clarify what should count as yes and no when the instruction alone leaves
+    room for interpretation. Both values accept any JSON-compatible content, so callers
+    can provide a short description or structured examples.
+    """
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    true: JsonValue = None
     """Description of the yes outcome, or `None` when no clarification is needed."""
 
-    false: Content | None
+    false: JsonValue = None
     """Description of the no outcome, or `None` when no clarification is needed."""
 
 
 class Noul(BaseModel):
-    """Ask a yes/no question and receive the probability that the answer is yes.
+    """Ask a binary question and receive the probability that its answer is yes.
 
-    A value near `1` favors yes, a value near `0` favors no, and a value near `0.5`
-    indicates uncertainty.
+    Use `Noul` when the probability itself is useful to application code, such as
+    deciding whether a message reports a bug or requests a refund. A value near `1`
+    indicates strong support for yes, a value near `0` indicates strong support for no,
+    and a value near `0.5` indicates uncertainty. Noul answers do not include a separate
+    confidence value.
 
     ??? example "Detect an urgent support request"
 
@@ -80,7 +76,9 @@ class Noul(BaseModel):
                 },
             }
         )
-        if response.nouls["urgent"].noul >= 0.8:
+        urgency = response.nouls["urgent"].noul
+
+        if urgency >= 0.8:
             page_on_call_engineer()
         ```
     """
@@ -88,32 +86,26 @@ class Noul(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     type: Literal["noul"] = "noul"
-    """Discriminator for a yes/no question."""
+    """Wire discriminator for a binary question."""
 
-    instructions: Content | None = None
-    """Complete yes/no judgment to make about the state.
+    instructions: Content
+    """Complete yes/no judgment to make about the input state.
 
-    Optional when `criteria` describes at least one outcome.
+    Instructions may be text or structured JSON. Write the full question here even when
+    its ID in `ClassifierRequest.questions` appears self-explanatory.
     """
 
     criteria: NoulCriteria | None = None
     """Optional descriptions that define what the yes and no outcomes mean."""
 
-    @model_validator(mode="after")
-    def _require_instructions_or_criteria(self) -> Self:
-        if self.instructions is None and not any(
-            value is not None for value in (self.criteria or {}).values()
-        ):
-            msg = "A Noul question requires `instructions` or a described outcome."
-            raise ValueError(msg)
-        return self
-
 
 class Choice(BaseModel):
-    """Select one label from a fixed, unordered set of alternatives.
+    """Select one label from a fixed set of alternatives.
 
-    Include a fallback label such as `other` when the alternatives may not cover every
-    input.
+    Use `Choice` for categorical decisions with no inherent ordering, such as routing a
+    support request, detecting a document type, or selecting an intent. The answer
+    includes the selected label, a probability for every supplied label, and a
+    confidence value.
 
     ??? example "Route a support request"
 
@@ -129,32 +121,45 @@ class Choice(BaseModel):
                         criteria={
                             "billing": "Payment, invoice, or subscription issues.",
                             "technical": "Product bugs or integration failures.",
+                            "sales": "Pricing or purchasing questions.",
                         },
                     )
                 },
             }
         )
-        print(response.choices["department"].choice)
+        department = response.choices["department"]
+
+        if department.confidence >= 0.7:
+            route_to(department.choice)
+        else:
+            route_to_human_triage()
         ```
     """
 
     model_config = ConfigDict(extra="forbid")
 
     type: Literal["choice"] = "choice"
-    """Discriminator for a categorical question."""
+    """Wire discriminator for a categorical question."""
 
-    instructions: Content | None = None
-    """Complete categorical judgment to make about the state."""
+    criteria: dict[str, JsonValue] = Field(min_length=1)
+    """Candidate labels mapped to their descriptions.
 
-    criteria: dict[str, Content | None] = Field(min_length=1)
-    """Candidate labels mapped to optional descriptions of when each applies."""
+    Descriptions may be text, structured JSON, or `None`. Include an `other` or
+    `none_of_the_above` label when the supplied alternatives may not cover every input.
+    """
+
+    instructions: Content
+    """Complete categorical judgment to make about the input state."""
 
 
 class Score(BaseModel):
     """Evaluate state against an ordered rubric.
 
-    Criteria are numbered from zero in their supplied order. The returned score is the
-    probability-weighted average of those levels, so it may fall between them.
+    Use `Score` when the answer lies on a spectrum whose levels can be described, such
+    as severity, urgency, or customer frustration. Criteria are numbered from zero in
+    their supplied order. The returned score is an expected value and may fall between
+    integer levels; the full probability distribution remains available for custom
+    decision logic.
 
     ??? example "Score customer frustration"
 
@@ -167,36 +172,47 @@ class Score(BaseModel):
                 "questions": {
                     "frustration": Score(
                         instructions="How frustrated does the customer appear?",
-                        criteria=["Calm.", "Concerned but civil.", "Very angry."],
+                        criteria=[
+                            "Calm and neutral.",
+                            "Concerned but civil.",
+                            "Very angry or using strong language.",
+                        ],
                     )
                 },
             }
         )
-        print(response.scores["frustration"].score)  # For example, 1.35.
+        frustration = response.scores["frustration"]
+
+        print(frustration.score)  # May be fractional, for example 1.35.
+        print(frustration.legend)  # The original zero-based rubric.
+        print(frustration.probabilities)  # Probability for each rubric level.
         ```
     """
 
     model_config = ConfigDict(extra="forbid")
 
     type: Literal["score"] = "score"
-    """Discriminator for an ordinal question."""
+    """Wire discriminator for an ordinal question."""
 
-    instructions: Content | None = None
-    """Complete ordinal judgment to make about the state."""
+    criteria: list[JsonValue] = Field(min_length=2)
+    """Two or more ordered descriptions for score levels starting at zero."""
 
-    criteria: list[Content] = Field(min_length=1)
-    """Ordered descriptions of the score levels, starting at zero."""
+    instructions: Content
+    """Complete ordinal judgment to make about the input state."""
 
 
 class Box(BaseModel):
-    """Locate what the instructions describe in an image in the state."""
+    """Locate what the instructions describe in an image in the state.
+
+    The answer gives the edges of a box as fractions of the image height and width.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     type: Literal["box"] = "box"
-    """Discriminator for a localization question."""
+    """Wire discriminator for a localization question."""
 
-    instructions: Content | None = None
+    instructions: Content
     """What to locate in the image."""
 
 
@@ -207,26 +223,22 @@ Question = Annotated[Noul | Choice | Score | Box, Field(discriminator="type")]
 class ClassifierRequest(TypedDict):
     """Complete input for one decision model invocation.
 
-    Keeping the state and questions together in the `Runnable` input ensures both
+    Keeping the state and questions in the Runnable input ensures both values
     participate in composition, batching, and tracing.
     """
 
     state: State
     """Text, structured JSON, or LangChain messages to classify."""
 
-    questions: Mapping[str, Question | Mapping[str, Any]]
-    """Non-empty mapping of answer IDs to questions.
-
-    Questions may be `Noul`, `Choice`, `Score`, or `Box` objects, or plain dicts with
-    the same fields.
-    """
+    questions: Mapping[str, Question]
+    """Non-empty mapping of answer IDs to typed classification questions."""
 
 
 class NoulAnswer(BaseModel):
     """Probability that a `Noul` question's answer is yes."""
 
     type: Literal["noul"]
-    """Discriminator identifying a yes/no answer."""
+    """Wire discriminator identifying a binary answer."""
 
     noul: float = Field(ge=0.0, le=1.0)
     """Probability of yes in the inclusive range from `0` to `1`."""
@@ -236,19 +248,23 @@ class ChoiceAnswer(BaseModel):
     """Selected `Choice` label with its probability distribution and confidence."""
 
     type: Literal["choice"]
-    """Discriminator identifying a categorical answer."""
+    """Wire discriminator identifying a categorical answer."""
 
     choice: str
     """Label selected from the options supplied in `Choice.criteria`."""
 
     probabilities: dict[str, float]
-    """Probability assigned to each candidate label, keyed by label."""
+    """Probability assigned to each candidate label, keyed by label name.
+
+    The complete distribution is retained so applications can use a confidence measure
+    or risk policy different from the provider's.
+    """
 
     confidence: float = Field(ge=0.0, le=1.0)
-    """Certainty from `0` to `1` in the selected label.
+    """Scalar certainty from `0` to `1` in the selected label.
 
-    Each provider documents how it derives confidence. Choose thresholds according to
-    the consequences of an incorrect automated decision.
+    Each provider documents how it derives confidence. Thresholds should be chosen
+    according to the consequences of an incorrect automated decision.
     """
 
 
@@ -256,19 +272,23 @@ class ScoreAnswer(BaseModel):
     """Expected `Score` value with its rubric, distribution, and confidence."""
 
     type: Literal["score"]
-    """Discriminator identifying an ordinal answer."""
+    """Wire discriminator identifying an ordinal answer."""
 
     score: float
-    """Expected position on the ordered rubric, which may be fractional."""
+    """Expected position on the ordered rubric.
+
+    This value may be fractional because it summarizes the probability distribution
+    over integer rubric levels rather than selecting exactly one level.
+    """
 
     legend: dict[int, JsonValue]
-    """Rubric descriptions keyed by their zero-based levels."""
+    """Original rubric descriptions keyed by their zero-based integer levels."""
 
     probabilities: dict[int, float]
-    """Probability of each zero-based rubric level."""
+    """Probability distribution over the zero-based integer rubric levels."""
 
     confidence: float = Field(ge=0.0, le=1.0)
-    """Certainty from `0` to `1` in the score."""
+    """Scalar certainty from `0` to `1`, derived from the level distribution."""
 
 
 class BoxCoordinates(BaseModel):
@@ -291,7 +311,7 @@ class BoxAnswer(BaseModel):
     """Location of what a `Box` question describes."""
 
     type: Literal["box"]
-    """Discriminator identifying a localization answer."""
+    """Wire discriminator identifying a localization answer."""
 
     box: BoxCoordinates
     """Edges of the located box."""
@@ -306,27 +326,20 @@ Answer = Annotated[
 ]
 """A discriminated union of answers returned by decision models."""
 
-_ANSWER_TYPES = frozenset({"noul", "choice", "score", "box"})
-
 
 class ClassifierResponse(BaseModel):
     """Typed answers and metadata returned from one classification request.
 
     Access every answer through `answers`, or use `nouls`, `choices`, `scores`, and
     `boxes` for views filtered by answer type. Each mapping preserves the question IDs
-    supplied in `ClassifierRequest.questions`.
-
-    Answers of a type this version does not recognize are dropped with a warning, so
-    new provider answer types do not fail an otherwise successful request.
+    supplied to `ClassifierRequest.questions`.
     """
-
-    model_config = ConfigDict(extra="ignore")
 
     model: str
     """Model that answered the request."""
 
     answers: dict[str, Answer]
-    """All recognized answers keyed by their question IDs."""
+    """All answers keyed by their original question IDs."""
 
     usage: UsageMetadata | None = None
     """Token usage reported for the request, or `None` when not reported.
@@ -336,7 +349,7 @@ class ClassifierResponse(BaseModel):
     """
 
     request_id: str | None = None
-    """Provider request ID, or `None` when not reported."""
+    """Provider request ID, useful when diagnosing a request with provider support."""
 
     @field_validator("usage", mode="before")
     @classmethod
@@ -352,31 +365,9 @@ class ClassifierResponse(BaseModel):
             "total_tokens": usage.get("total_tokens") or input_tokens + output_tokens,
         }
 
-    @model_validator(mode="before")
-    @classmethod
-    def _drop_unknown_answers(cls, data: Any) -> Any:
-        if not isinstance(data, Mapping) or not isinstance(
-            answers := data.get("answers"), Mapping
-        ):
-            return data
-        known = {}
-        for name, answer in answers.items():
-            answer_type = (
-                answer.get("type")
-                if isinstance(answer, Mapping)
-                else getattr(answer, "type", None)
-            )
-            if answer_type in _ANSWER_TYPES:
-                known[name] = answer
-            else:
-                logger.warning(
-                    "Skipping answer %r with unsupported type %r.", name, answer_type
-                )
-        return {**data, "answers": known}
-
     @property
     def nouls(self) -> dict[str, NoulAnswer]:
-        """Return yes/no answers keyed by their question IDs."""
+        """Return binary answers keyed by their original question IDs."""
         return {
             name: answer
             for name, answer in self.answers.items()
@@ -385,7 +376,7 @@ class ClassifierResponse(BaseModel):
 
     @property
     def choices(self) -> dict[str, ChoiceAnswer]:
-        """Return categorical answers keyed by their question IDs."""
+        """Return categorical answers keyed by their original question IDs."""
         return {
             name: answer
             for name, answer in self.answers.items()
@@ -394,7 +385,7 @@ class ClassifierResponse(BaseModel):
 
     @property
     def scores(self) -> dict[str, ScoreAnswer]:
-        """Return ordinal answers keyed by their question IDs."""
+        """Return ordinal answers keyed by their original question IDs."""
         return {
             name: answer
             for name, answer in self.answers.items()
@@ -403,7 +394,7 @@ class ClassifierResponse(BaseModel):
 
     @property
     def boxes(self) -> dict[str, BoxAnswer]:
-        """Return localization answers keyed by their question IDs."""
+        """Return localization answers keyed by their original question IDs."""
         return {
             name: answer
             for name, answer in self.answers.items()

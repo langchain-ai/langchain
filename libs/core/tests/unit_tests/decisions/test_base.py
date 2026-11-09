@@ -2,23 +2,22 @@
 
 from __future__ import annotations
 
+from types import MappingProxyType
 from typing import Any
 
 import pytest
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import Field
 from typing_extensions import override
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.decisions import (
     BaseDecisionModel,
-    Choice,
     ChoiceAnswer,
     ClassifierRequest,
     ClassifierResponse,
     Noul,
     NoulAnswer,
     Question,
-    Score,
     ScoreAnswer,
     State,
 )
@@ -135,43 +134,12 @@ async def test_ainvoke_uses_native_aclassify() -> None:
     assert model.requests == []
 
 
-class _OtherNoul(BaseModel):
-    type: str = "noul"
-    instructions: str
-
-
-def test_questions_are_validated_from_dicts_and_other_models() -> None:
+def test_mapping_questions_are_passed_as_dict() -> None:
     model = _FakeDecisionModel(model="fake-model")
 
-    model.invoke(
-        {
-            "state": "hello",
-            "questions": {
-                "dept": {"type": "choice", "criteria": {"billing": None}},
-                "urgent": _OtherNoul(instructions="Is this urgent?"),  # type: ignore[dict-item]
-            },
-        }
-    )
+    model.invoke({"state": "hello", "questions": MappingProxyType({"urgent": _URGENT})})
 
-    assert model.requests[0][1] == {
-        "dept": Choice(criteria={"billing": None}),
-        "urgent": _URGENT,
-    }
-
-
-def test_empty_questions_are_rejected() -> None:
-    model = _FakeDecisionModel(model="fake-model")
-
-    with pytest.raises(ValueError, match="At least one question"):
-        model.invoke({"state": "hello", "questions": {}})
-    assert model.requests == []
-
-
-def test_invalid_question_is_rejected() -> None:
-    model = _FakeDecisionModel(model="fake-model")
-
-    with pytest.raises(ValidationError):
-        model.invoke({"state": "hello", "questions": {"x": {"type": "unknown"}}})
+    assert model.requests == [("hello", {"urgent": _URGENT})]
 
 
 def test_run_carries_provider_identity_and_caller_metadata() -> None:
@@ -221,9 +189,3 @@ def test_tracing_failure_does_not_fail_request(
 
     assert response.usage is not None
     assert response.usage["input_tokens"] == 42
-
-
-def test_score_accepts_structured_criteria() -> None:
-    score = Score(criteria=[{"label": "low"}, "high"])
-
-    assert score.criteria == [{"label": "low"}, "high"]

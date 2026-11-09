@@ -4,31 +4,21 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from langsmith.run_helpers import get_current_run_tree
-from pydantic import BaseModel, TypeAdapter
 from typing_extensions import override
 
 from langchain_core.decisions.types import (
-    Box,
-    Choice,
     ClassifierRequest,
     ClassifierResponse,
-    Noul,
     Question,
-    Score,
     State,
 )
 from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config, run_in_executor
 
-if TYPE_CHECKING:
-    from collections.abc import Mapping
-
 logger = logging.getLogger(__name__)
-
-_QUESTION_ADAPTER: TypeAdapter[Noul | Choice | Score | Box] = TypeAdapter(Question)
 
 
 class BaseDecisionModel(
@@ -43,7 +33,7 @@ class BaseDecisionModel(
     thresholds.
 
     Subclasses implement `_classify`, and optionally `_aclassify`, to call a provider.
-    This class validates questions and handles callbacks, tracing metadata, and
+    This class handles callbacks, tracing metadata, and
     token-usage reporting.
 
     ??? example "Implement a decision model"
@@ -81,7 +71,7 @@ class BaseDecisionModel(
 
         Args:
             state: State to evaluate.
-            questions: Validated questions keyed by answer ID.
+            questions: Questions keyed by answer ID.
 
         Returns:
             Typed answers keyed by answer ID, with request metadata.
@@ -97,7 +87,7 @@ class BaseDecisionModel(
 
         Args:
             state: State to evaluate.
-            questions: Validated questions keyed by answer ID.
+            questions: Questions keyed by answer ID.
 
         Returns:
             Typed answers keyed by answer ID, with request metadata.
@@ -121,9 +111,6 @@ class BaseDecisionModel(
 
         Returns:
             Typed answers keyed by answer ID, with request metadata.
-
-        Raises:
-            ValueError: If no questions are supplied or a question is invalid.
         """
         return self._call_with_config(
             self._classify_and_record,
@@ -149,9 +136,6 @@ class BaseDecisionModel(
 
         Returns:
             Typed answers keyed by answer ID, with request metadata.
-
-        Raises:
-            ValueError: If no questions are supplied or a question is invalid.
         """
         return await self._acall_with_config(
             self._aclassify_and_record,
@@ -161,13 +145,13 @@ class BaseDecisionModel(
         )
 
     def _classify_and_record(self, request: ClassifierRequest) -> ClassifierResponse:
-        questions = _validate_questions(request["questions"])
+        questions = dict(request["questions"])
         return _record_usage(self._classify(request["state"], questions))
 
     async def _aclassify_and_record(
         self, request: ClassifierRequest
     ) -> ClassifierResponse:
-        questions = _validate_questions(request["questions"])
+        questions = dict(request["questions"])
         return _record_usage(await self._aclassify(request["state"], questions))
 
     def _traced_config(self, config: RunnableConfig | None) -> RunnableConfig:
@@ -180,28 +164,6 @@ class BaseDecisionModel(
             "ls_model_type": "chat",
         }
         return config
-
-
-def _validate_questions(
-    questions: Mapping[str, Question | Mapping[str, Any]],
-) -> dict[str, Question]:
-    """Validate questions supplied as question objects, other models, or dicts.
-
-    Raises:
-        ValueError: If no questions are supplied or a question is invalid.
-    """
-    if not questions:
-        msg = "At least one question is required."
-        raise ValueError(msg)
-    return {name: _validate_question(question) for name, question in questions.items()}
-
-
-def _validate_question(question: object) -> Question:
-    if isinstance(question, (Noul, Choice, Score, Box)):
-        return question
-    if isinstance(question, BaseModel):
-        question = question.model_dump()
-    return _QUESTION_ADAPTER.validate_python(question)
 
 
 def _record_usage(response: ClassifierResponse) -> ClassifierResponse:
