@@ -169,6 +169,34 @@ def test_max_tokens_runtime_override() -> None:
     assert model.max_tokens == 8192
 
 
+@pytest.mark.parametrize("at_invocation", [False, True])
+@pytest.mark.parametrize("asynchronous", [False, True])
+async def test_max_completion_tokens_overrides_profile_default(
+    *, at_invocation: bool, asynchronous: bool
+) -> None:
+    token_kwargs: dict[str, Any] = {"max_completion_tokens": 100}
+    response = {
+        "choices": [{"message": {"role": "assistant", "content": "Hello"}}],
+    }
+    client = AsyncMock() if asynchronous else MagicMock()
+    client.create.return_value = response
+    model = _make_model(
+        profile={"max_output_tokens": 8192},
+        model_kwargs={} if at_invocation else token_kwargs,
+        client=client,
+        async_client=client,
+    )
+    invocation_kwargs = token_kwargs if at_invocation else {}
+
+    if asynchronous:
+        await model.ainvoke("Hello", **invocation_kwargs)
+    else:
+        model.invoke("Hello", **invocation_kwargs)
+
+    assert client.create.call_args.kwargs["max_completion_tokens"] == 100
+    assert "max_tokens" not in client.create.call_args.kwargs
+
+
 def test_convert_dict_to_message_with_reasoning_content() -> None:
     """Test that reasoning_content is correctly extracted from API response."""
     response_dict = {

@@ -841,6 +841,8 @@ def _prepare_sdk_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
     (callers using `extra_body` are presumed to want explicit control); the
     discarded top-level value is logged.
     """
+    if "max_completion_tokens" in kwargs:
+        kwargs.pop("max_tokens", None)
     extra_body = dict(kwargs.pop("extra_body", None) or {})
     top_level_stream_options = kwargs.pop("stream_options", None)
     if top_level_stream_options is not None:
