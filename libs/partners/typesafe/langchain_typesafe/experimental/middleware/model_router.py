@@ -32,7 +32,7 @@ from pydantic import BaseModel, Field, JsonValue
 from typing_extensions import NotRequired, override
 
 from langchain_typesafe.classifier import TypeSafeClassifier
-from langchain_typesafe.types import Choice, ChoiceAnswer, Question
+from langchain_typesafe.types import Choice, ChoiceAnswer, Content, Question
 
 _QUESTION_ID = "model_route"
 _QuestionContent = str | dict[str, JsonValue] | list[JsonValue]
@@ -48,7 +48,7 @@ class ModelChoice:
     """
 
     model: str | BaseChatModel
-    criteria: JsonValue
+    criteria: Content | None
 
 
 class _ModelRouterConfig(BaseModel):

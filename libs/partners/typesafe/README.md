@@ -13,7 +13,7 @@ Set the `TYPESAFE_API_KEY` environment variable before making requests.
 
 ## Usage
 
-`TypeSafeClassifier` is a LangChain `Runnable` for probabilistic classification and scoring with TypeSafe.
+`TypeSafeClassifier` is a LangChain decision model (`langchain_core.decisions.BaseDecisionModel`) for probabilistic classification, scoring, and localization with TypeSafe. It supports `Noul`, `Choice`, `Score`, and `Box` questions.
 
 ```python
 from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
@@ -57,6 +57,22 @@ request: ClassifierRequest = {
     "questions": {"urgent": Noul(instructions="Is this urgent?")},
 }
 result = classifier.invoke(request)
+```
+
+### Images
+
+Image content blocks with inline base64 data or a base64 `data:` URL can appear anywhere in `state` or in question `instructions` and `criteria`, including inside messages. They are sent to TypeSafe as request assets. PNG and JPEG images are supported; images are not downloaded from remote URLs.
+
+```python
+from langchain_typesafe import Box
+
+result = classifier.invoke(
+    {
+        "state": {"type": "image", "base64": image_data, "mime_type": "image/png"},
+        "questions": {"dog": Box(instructions="Where is the dog?")},
+    }
+)
+print(result.boxes["dog"].box)
 ```
 
 ### Experimental middleware

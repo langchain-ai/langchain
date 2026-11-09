@@ -200,7 +200,9 @@ async def test_none_criteria_is_supported() -> None:
     """Allow callers to classify without outcome criteria."""
     async with _middleware(0.2, tools=["delete_file"]) as middleware:
         assert middleware.config.criteria is None
-        assert _risk_questions(middleware.config)["is_risky"].criteria is None
+        question = _risk_questions(middleware.config)["is_risky"]
+        assert isinstance(question, Noul)
+        assert question.criteria is None
 
 
 async def test_base_tool_name_is_inferred() -> None:
