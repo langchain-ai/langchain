@@ -1,5 +1,6 @@
 """Tests for `AutoModeMiddleware`."""
 
+import asyncio
 from collections.abc import Sequence
 from typing import Any
 
@@ -105,7 +106,7 @@ async def _run_agent(
     state = InputAgentState(messages=messages or [HumanMessage("Delete the temporary report.")])
     if async_:
         return await agent.ainvoke(state)
-    return agent.invoke(state)
+    return await asyncio.to_thread(agent.invoke, state)
 
 
 def _tool_messages(result: dict[str, Any]) -> list[ToolMessage]:

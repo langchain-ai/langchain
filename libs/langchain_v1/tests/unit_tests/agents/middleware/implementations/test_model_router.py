@@ -1,5 +1,6 @@
 """Tests for `ModelRouterMiddleware`."""
 
+import asyncio
 from typing import Any
 from unittest.mock import patch
 
@@ -76,7 +77,7 @@ async def _run_agent(
     agent = create_agent(model, middleware=[middleware])
     if async_:
         return await agent.ainvoke(inputs)
-    return agent.invoke(inputs)
+    return await asyncio.to_thread(agent.invoke, inputs)
 
 
 def test_routing_question_is_built_from_choices() -> None:
