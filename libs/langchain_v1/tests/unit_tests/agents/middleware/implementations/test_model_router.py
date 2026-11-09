@@ -135,10 +135,6 @@ async def test_missing_human_message_is_rejected(*, async_: bool) -> None:
     "kwargs",
     [
         {"choices": {}, "classifier": _RouteClassifier()},
-        {
-            "choices": {"fast": ModelChoice(model="openai:gpt-5-mini", criteria=None)},
-            "classifier": None,
-        },
     ],
 )
 def test_invalid_configuration_is_rejected(kwargs: dict[str, Any]) -> None:

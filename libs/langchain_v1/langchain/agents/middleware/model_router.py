@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from langchain_core.decisions import BaseDecisionModel, Choice, ChoiceAnswer, Content, Question
 from langchain_core.language_models import BaseChatModel  # noqa: TC002  # used by pydantic
 from langchain_core.messages import HumanMessage
-from pydantic import BaseModel, ConfigDict, Field, JsonValue
+from pydantic import BaseModel, Field, JsonValue
 from typing_extensions import NotRequired, override
 
 from langchain.agents.middleware.types import (
@@ -47,11 +47,8 @@ class ModelChoice:
 class _ModelRouterConfig(BaseModel):
     """Validated model-router configuration."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
     choices: dict[str, ModelChoice] = Field(min_length=1)
     instructions: Content
-    classifier: BaseDecisionModel
 
 
 def _routing_questions(config: _ModelRouterConfig) -> dict[str, Question]:
@@ -127,9 +124,8 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         classifier: BaseDecisionModel,
     ) -> None:
         """Initialize the model router."""
-        super().__init__()
         self.config = _ModelRouterConfig.model_validate(
-            {"choices": choices, "instructions": instructions, "classifier": classifier}
+            {"choices": choices, "instructions": instructions}
         )
         self.models = {
             route: init_chat_model(choice.model) if isinstance(choice.model, str) else choice.model

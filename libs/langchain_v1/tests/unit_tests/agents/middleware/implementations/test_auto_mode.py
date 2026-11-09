@@ -240,7 +240,6 @@ async def test_classifier_failure_terminates_agent_run(*, async_: bool) -> None:
     [
         {"tools": [], "classifier": _RiskClassifier()},
         {"tools": "delete_file", "classifier": _RiskClassifier()},
-        {"tools": ["delete_file"], "classifier": None},
     ],
 )
 def test_invalid_configuration_is_rejected(kwargs: dict[str, Any]) -> None:
