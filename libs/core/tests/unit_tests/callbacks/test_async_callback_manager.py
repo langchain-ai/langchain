@@ -5,16 +5,22 @@ that generate traces based on the callbacks. The traces are all verified
 via snapshot testing (e.g., see unit tests for runnables).
 """
 
+import asyncio
 import contextvars
+import uuid
 from contextlib import asynccontextmanager
 from typing import Any
 from uuid import UUID
 
+import anyio
 from typing_extensions import override
 
+from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import (
     AsyncCallbackHandler,
     AsyncCallbackManager,
+    AsyncCallbackManagerForChainRun,
+    AsyncCallbackManagerForToolRun,
     BaseCallbackHandler,
 )
 
@@ -210,3 +216,79 @@ async def test_shielded_callback_context_preservation() -> None:
         f"but got {handler.context_values}. "
         f"This indicates the shielded decorator is not preserving context variables."
     )
+
+
+async def test_shielded_agent_callbacks_preserve_execution_during_cancellation() -> (
+    None
+):
+    """Verify on_agent_action and on_agent_finish execute in cancelled scope."""
+    events: list[str] = []
+
+    class AgentHandler(AsyncCallbackHandler):
+        @override
+        async def on_agent_action(self, action: Any, **kwargs: Any) -> None:
+            await asyncio.sleep(0)
+            events.append("action")
+
+        @override
+        async def on_agent_finish(self, finish: Any, **kwargs: Any) -> None:
+            await asyncio.sleep(0)
+            events.append("finish")
+
+    handler = AgentHandler()
+    mgr = AsyncCallbackManagerForChainRun(
+        run_id=uuid.uuid4(), handlers=[handler], inheritable_handlers=[handler]
+    )
+
+    with anyio.CancelScope() as scope:
+        scope.cancel()
+        try:
+            await mgr.on_agent_action(
+                AgentAction(tool="test_tool", tool_input={}, log="")
+            )
+        except (asyncio.CancelledError, anyio.get_cancelled_exc_class()):
+            pass
+        try:
+            await mgr.on_agent_finish(
+                AgentFinish(return_values={"output": "done"}, log="")
+            )
+        except (asyncio.CancelledError, anyio.get_cancelled_exc_class()):
+            pass
+
+    await asyncio.sleep(0.05)
+    assert events == ["action", "finish"]
+
+
+async def test_shielded_tool_callbacks_preserve_execution_during_cancellation() -> None:
+    """Verify on_tool_end and on_tool_error execute even in a cancelled AnyIO scope."""
+    events: list[str] = []
+
+    class ToolHandler(AsyncCallbackHandler):
+        @override
+        async def on_tool_end(self, output: Any, **kwargs: Any) -> None:
+            await asyncio.sleep(0)
+            events.append("end")
+
+        @override
+        async def on_tool_error(self, error: BaseException, **kwargs: Any) -> None:
+            await asyncio.sleep(0)
+            events.append(f"error:{type(error).__name__}")
+
+    handler = ToolHandler()
+    mgr = AsyncCallbackManagerForToolRun(
+        run_id=uuid.uuid4(), handlers=[handler], inheritable_handlers=[handler]
+    )
+
+    with anyio.CancelScope() as scope:
+        scope.cancel()
+        try:
+            await mgr.on_tool_end("tool_result")
+        except (asyncio.CancelledError, anyio.get_cancelled_exc_class()):
+            pass
+        try:
+            await mgr.on_tool_error(ValueError("tool failure"))
+        except (asyncio.CancelledError, anyio.get_cancelled_exc_class()):
+            pass
+
+    await asyncio.sleep(0.05)
+    assert events == ["end", "error:ValueError"]
