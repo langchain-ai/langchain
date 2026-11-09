@@ -670,7 +670,11 @@ def loads(
         allowed_objects = "core"
 
     # Parse JSON and delegate to load() for proper escape handling
-    raw_obj = json.loads(text)
+    try:
+        raw_obj = json.loads(text)
+    except RecursionError as e:
+        msg = f"Cannot load object nested more than {_MAX_DEPTH} levels deep."
+        raise ValueError(msg) from e
     return load(
         raw_obj,
         allowed_objects=allowed_objects,
