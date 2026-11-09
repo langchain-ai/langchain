@@ -75,25 +75,20 @@ result = classifier.invoke(
 print(result.boxes["dog"].box)
 ```
 
-### Experimental middleware
+### Agent middleware
 
-Install the experimental extra to use TypeSafe-powered agent middleware. APIs under `langchain_typesafe.experimental` may change without notice.
+LangChain's `ModelRouterMiddleware` and `AutoModeMiddleware` accept any decision model as their `classifier`. Pass a `TypeSafeClassifier` to use TypeSafe.
 
-```bash
-uv add "langchain-typesafe[experimental]"
-```
+> **Deprecated:** `langchain_typesafe.experimental.middleware` is deprecated since 0.1.0 and will be removed in 0.2.0. Import the middleware from `langchain.agents.middleware` and pass `classifier=TypeSafeClassifier()` instead.
 
 #### `ModelRouterMiddleware`
 
-`ModelRouterMiddleware` routes an agent to a model selected by a TypeSafe `Choice` question:
-
+`ModelRouterMiddleware` routes an agent to a model selected by a `Choice` question:
 
 ```python
 from langchain.agents import create_agent
-from langchain_typesafe.experimental.middleware import (
-    ModelChoice,
-    ModelRouterMiddleware,
-)
+from langchain.agents.middleware import ModelChoice, ModelRouterMiddleware
+from langchain_typesafe import TypeSafeClassifier
 
 router = ModelRouterMiddleware(
     choices={
@@ -107,6 +102,7 @@ router = ModelRouterMiddleware(
         ),
     },
     instructions="Choose the least costly model suited to the task.",
+    classifier=TypeSafeClassifier(),
 )
 agent = create_agent("openai:gpt-5-mini", middleware=[router])
 ```
@@ -118,8 +114,8 @@ The model router classifies the latest human message once per agent run and stor
 `AutoModeMiddleware` classifies calls to explicitly configured tools and blocks risky calls before execution:
 
 ```python
-from langchain_typesafe import NoulCriteria
-from langchain_typesafe.experimental.middleware import AutoModeMiddleware
+from langchain.agents.middleware import AutoModeMiddleware
+from langchain_typesafe import NoulCriteria, TypeSafeClassifier
 
 auto_mode = AutoModeMiddleware(
     tools=[delete_file],
@@ -127,6 +123,7 @@ auto_mode = AutoModeMiddleware(
         true="The call writes, deletes, publishes, or changes access.",
         false="The call only reads public or user-provided data.",
     ),
+    classifier=TypeSafeClassifier(),
 )
 agent = create_agent(
     model,
