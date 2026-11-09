@@ -1,9 +1,4 @@
-"""Decision models: typed probabilistic answers about text, messages, or state.
-
-!!! warning "Beta"
-
-    This module is in beta. Its API may change in future releases.
-"""
+"""Decision models: typed probabilistic answers about text, messages, or state."""
 
 from typing import TYPE_CHECKING
 

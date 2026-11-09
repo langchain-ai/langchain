@@ -24,10 +24,6 @@ from langchain_core.decisions import (
 )
 from langchain_core.decisions import base as base_module
 
-pytestmark = pytest.mark.filterwarnings(
-    "ignore::langchain_core._api.LangChainBetaWarning"
-)
-
 
 def _response() -> ClassifierResponse:
     return ClassifierResponse(
@@ -105,10 +101,6 @@ _URGENT = Noul(instructions="Is this urgent?")
 
 def _request() -> ClassifierRequest:
     return {"state": "hello", "questions": {"urgent": _URGENT}}
-
-
-def test_is_beta() -> None:
-    assert (BaseDecisionModel.__doc__ or "").startswith(".. beta::")
 
 
 def test_cannot_instantiate_without_provider_methods() -> None:

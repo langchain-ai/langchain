@@ -10,7 +10,6 @@ from langsmith.run_helpers import get_current_run_tree
 from pydantic import BaseModel, TypeAdapter
 from typing_extensions import override
 
-from langchain_core._api import beta
 from langchain_core.decisions.types import (
     Box,
     Choice,
@@ -32,7 +31,6 @@ logger = logging.getLogger(__name__)
 _QUESTION_ADAPTER: TypeAdapter[Noul | Choice | Score | Box] = TypeAdapter(Question)
 
 
-@beta()
 class BaseDecisionModel(
     RunnableSerializable[ClassifierRequest, ClassifierResponse], ABC
 ):
