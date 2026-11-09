@@ -192,6 +192,36 @@ def test_convert_to_v1_from_anthropic() -> None:
     assert message.content != expected_content  # check no mutation
 
 
+def test_convert_to_v1_from_anthropic_index_no_mutation() -> None:
+    """`index` is lifted onto the `non_standard` wrapper without mutating `content`.
+
+    Regression test: the `else` branch built `non_standard["value"]` from the
+    original block dict (not a copy) and then `.pop("index")`'d off of it, deleting
+    `index` from `message.content` as a side effect of reading `.content_blocks`.
+    """
+    original_block = {"type": "something_else", "foo": "bar", "index": 3}
+    message = AIMessage(
+        content=[dict(original_block)],
+        response_metadata={"model_provider": "anthropic"},
+    )
+
+    first = message.content_blocks
+    second = message.content_blocks
+
+    assert message.content == [original_block]
+    assert (
+        first
+        == second
+        == [
+            {
+                "type": "non_standard",
+                "value": {"type": "something_else", "foo": "bar"},
+                "index": 3,
+            }
+        ]
+    )
+
+
 def test_convert_to_v1_from_anthropic_chunk() -> None:
     chunks = [
         AIMessageChunk(
@@ -572,3 +602,34 @@ def test_convert_to_v1_from_anthropic_malformed_citations() -> None:
             ],
         },
     ]
+
+
+def test_toolset_namespace_in_content_blocks() -> None:
+    block = {
+        "type": "tool_use",
+        "id": "call_1",
+        "name": "click",
+        "input": {},
+        "toolset_name": "computer",
+    }
+    metadata = {"model_provider": "anthropic"}
+    message = AIMessage([block], response_metadata=metadata)
+    content_block = message.content_blocks[0]
+    assert content_block["type"] == "tool_call"
+    assert content_block["extras"]["toolset_name"] == "computer"
+    chunk = AIMessageChunk(
+        content=[{**block, "index": 0}],
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "id": "call_1",
+                "name": "click",
+                "args": "{}",
+                "index": 0,
+            }
+        ],
+        response_metadata=metadata,
+    )
+    chunk_block = chunk.content_blocks[0]
+    assert chunk_block["type"] == "tool_call_chunk"
+    assert chunk_block["extras"]["toolset_name"] == "computer"

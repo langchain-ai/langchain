@@ -5,6 +5,7 @@ EXPECTED_ALL = [
     "OpenAI",
     "ChatOpenAI",
     "OpenAIEmbeddings",
+    "OpenAIDecisions",
     "AzureOpenAI",
     "AzureChatOpenAI",
     "AzureOpenAIEmbeddings",

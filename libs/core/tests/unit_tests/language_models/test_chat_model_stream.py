@@ -953,3 +953,329 @@ class TestAsyncChatModelStream:
             await stream.text
         with pytest.raises(RuntimeError, match="async fail"):
             await stream
+
+
+# ---------------------------------------------------------------------------
+# Tool-call args: `tool-call-delta` slices and `block-delta` snapshots
+# ---------------------------------------------------------------------------
+
+_ARGS_PARTS = ['{"path": ', '"a.py", ', '"content": ', '"hi"}']
+
+
+def _start(index: int, block: dict[str, Any]) -> dict[str, Any]:
+    return {"event": "content-block-start", "index": index, "content": block}
+
+
+def _tool_call_start(
+    index: int, *, id_: str | None = "c1", name: str | None = "write_file"
+) -> dict[str, Any]:
+    return _start(
+        index, {"type": "tool_call_chunk", "id": id_, "name": name, "args": ""}
+    )
+
+
+def _tool_call_delta(index: int, args: str) -> dict[str, Any]:
+    return {
+        "event": "content-block-delta",
+        "index": index,
+        "delta": {"type": "tool-call-delta", "args": args},
+    }
+
+
+def _tool_call_finish(
+    index: int, args: dict[str, Any], *, id_: str = "c1", name: str = "write_file"
+) -> dict[str, Any]:
+    return {
+        "event": "content-block-finish",
+        "index": index,
+        "content": {"type": "tool_call", "id": id_, "name": name, "args": args},
+    }
+
+
+def _dispatch_all(stream: ChatModelStream, events: list[dict[str, Any]]) -> None:
+    for event in events:
+        stream.dispatch(event)
+
+
+def _block_delta(index: int, **fields: Any) -> dict[str, Any]:
+    return {
+        "event": "content-block-delta",
+        "index": index,
+        "delta": {
+            "type": "block-delta",
+            "fields": {"type": "tool_call_chunk", **fields},
+        },
+    }
+
+
+def _slice_events() -> list[dict[str, Any]]:
+    """One tool call streamed as `tool-call-delta` slices (emitting cores)."""
+    return [
+        {"event": "message-start", "role": "ai"},
+        _tool_call_start(0),
+        *[_tool_call_delta(0, part) for part in _ARGS_PARTS],
+        _tool_call_finish(0, {"path": "a.py", "content": "hi"}),
+        {"event": "message-finish"},
+    ]
+
+
+def _snapshot_events() -> list[dict[str, Any]]:
+    """The same tool call streamed as `block-delta` snapshots (older cores)."""
+    snapshots = ["".join(_ARGS_PARTS[: i + 1]) for i in range(len(_ARGS_PARTS))]
+    return [
+        {"event": "message-start", "role": "ai"},
+        _tool_call_start(0),
+        *[
+            _block_delta(0, id="c1", name="write_file", args=snapshot)
+            for snapshot in snapshots
+        ],
+        _tool_call_finish(0, {"path": "a.py", "content": "hi"}),
+        {"event": "message-finish"},
+    ]
+
+
+_EXPECTED_DELTAS = [
+    {"type": "tool_call_chunk", "id": "c1", "name": "write_file", "args": '{"path": '},
+    {"type": "tool_call_chunk", "id": "c1", "name": "write_file", "args": '"a.py", '},
+    {
+        "type": "tool_call_chunk",
+        "id": "c1",
+        "name": "write_file",
+        "args": '"content": ',
+    },
+    {"type": "tool_call_chunk", "id": "c1", "name": "write_file", "args": '"hi"}'},
+]
+
+
+class TestToolCallArgs:
+    """`.tool_calls` yields deltas whatever form the args arrive in."""
+
+    def test_slice_stream_yields_deltas_carrying_id_and_name(self) -> None:
+        stream = ChatModelStream()
+        _dispatch_all(stream, _slice_events())
+
+        assert list(stream.tool_calls) == _EXPECTED_DELTAS
+
+    def test_snapshot_stream_yields_the_same_deltas(self) -> None:
+        stream = ChatModelStream()
+        _dispatch_all(stream, _snapshot_events())
+
+        assert list(stream.tool_calls) == _EXPECTED_DELTAS
+
+    def test_both_forms_assemble_the_same_tool_calls(self) -> None:
+        from_slices = ChatModelStream()
+        _dispatch_all(from_slices, _slice_events())
+        from_snapshots = ChatModelStream()
+        _dispatch_all(from_snapshots, _snapshot_events())
+
+        expected = [
+            {
+                "type": "tool_call",
+                "id": "c1",
+                "name": "write_file",
+                "args": {"path": "a.py", "content": "hi"},
+            }
+        ]
+        assert from_slices.tool_calls.get() == expected
+        assert from_snapshots.tool_calls.get() == expected
+        assert from_slices.output == from_snapshots.output
+
+    def test_call_whose_args_stop_extending_goes_quiet_until_finish(self) -> None:
+        stream = ChatModelStream()
+        _dispatch_all(
+            stream,
+            [
+                {"event": "message-start", "role": "ai"},
+                _tool_call_start(0),
+                _block_delta(0, args='{"path": '),
+                # Doesn't extend '{"path": ', so no delta can express it.
+                _block_delta(0, args="{"),
+                # Lines up again, but the call stays quiet.
+                _block_delta(0, args='{"path": "a.py", '),
+                _tool_call_delta(0, '"content": "hi"}'),
+                _tool_call_finish(0, {"path": "a.py", "content": "hi"}),
+                {"event": "message-finish"},
+            ],
+        )
+
+        assert list(stream.tool_calls) == [
+            {
+                "type": "tool_call_chunk",
+                "id": "c1",
+                "name": "write_file",
+                "args": '{"path": ',
+            },
+        ]
+        assert stream.output.tool_calls == [
+            {
+                "type": "tool_call",
+                "id": "c1",
+                "name": "write_file",
+                "args": {"path": "a.py", "content": "hi"},
+            }
+        ]
+
+    def test_block_delta_without_args_yields_nothing_and_updates_id_and_name(
+        self,
+    ) -> None:
+        stream = ChatModelStream()
+        _dispatch_all(
+            stream,
+            [
+                {"event": "message-start", "role": "ai"},
+                _tool_call_start(0, id_=None, name=None),
+                _tool_call_delta(0, '{"path": '),
+                _block_delta(0, id="c1", name="write_file"),
+                _tool_call_delta(0, '"a.py"}'),
+                _tool_call_finish(0, {"path": "a.py"}),
+                {"event": "message-finish"},
+            ],
+        )
+
+        assert list(stream.tool_calls) == [
+            {"type": "tool_call_chunk", "id": None, "name": None, "args": '{"path": '},
+            {
+                "type": "tool_call_chunk",
+                "id": "c1",
+                "name": "write_file",
+                "args": '"a.py"}',
+            },
+        ]
+
+    def test_unknown_delta_variant_is_ignored(self) -> None:
+        stream = ChatModelStream()
+        unknown = {
+            "event": "content-block-delta",
+            "index": 0,
+            "delta": {"type": "future-delta", "args": "ignored"},
+        }
+        events = _slice_events()
+        events.insert(3, unknown)
+        _dispatch_all(stream, events)
+
+        assert list(stream.tool_calls) == _EXPECTED_DELTAS
+        assert stream.output.tool_calls[0]["args"] == {"path": "a.py", "content": "hi"}
+
+    def test_deltas_carry_the_provider_index_from_the_start(self) -> None:
+        stream = ChatModelStream()
+        start = _start(
+            0,
+            {
+                "type": "tool_call_chunk",
+                "id": "c1",
+                "name": "write_file",
+                "args": "",
+                "index": 3,
+            },
+        )
+        _dispatch_all(stream, [start, _tool_call_delta(0, "{}")])
+
+        assert list(stream.tool_calls) == [
+            {
+                "type": "tool_call_chunk",
+                "id": "c1",
+                "name": "write_file",
+                "args": "{}",
+                "index": 3,
+            }
+        ]
+
+    def test_tool_call_delta_without_a_seen_start_is_left_to_finish(self) -> None:
+        stream = ChatModelStream()
+        _dispatch_all(
+            stream,
+            [
+                {"event": "message-start", "role": "ai"},
+                # The start was trimmed from the replay window.
+                *[_tool_call_delta(0, part) for part in _ARGS_PARTS],
+                _tool_call_finish(0, {"path": "a.py", "content": "hi"}),
+                {"event": "message-finish"},
+            ],
+        )
+
+        assert list(stream.tool_calls) == []
+        assert stream.output.tool_calls[0]["args"] == {"path": "a.py", "content": "hi"}
+
+    def test_tool_call_deltas_assemble_a_call_with_no_finish(self) -> None:
+        stream = ChatModelStream()
+        events = [e for e in _slice_events() if e["event"] != "content-block-finish"]
+        _dispatch_all(stream, events)
+
+        assert stream.output.tool_calls == [
+            {
+                "type": "tool_call",
+                "id": "c1",
+                "name": "write_file",
+                "args": {"path": "a.py", "content": "hi"},
+            }
+        ]
+
+    def test_server_tool_call_deltas_append_without_yielding(self) -> None:
+        stream = ChatModelStream()
+        _dispatch_all(
+            stream,
+            [
+                {"event": "message-start", "role": "ai"},
+                _start(
+                    0,
+                    {
+                        "type": "server_tool_call_chunk",
+                        "id": "s1",
+                        "name": "web_search",
+                        "args": "",
+                    },
+                ),
+                _tool_call_delta(0, '{"query": '),
+                _tool_call_delta(0, '"weather"}'),
+                # No content-block-finish: the message-finish sweep
+                # parses what the deltas appended.
+                {"event": "message-finish"},
+            ],
+        )
+
+        assert list(stream.tool_calls) == []
+        content = cast("list[dict[str, Any]]", stream.output.content)
+        assert content[0]["type"] == "server_tool_call"
+        assert content[0]["id"] == "s1"
+        assert content[0]["args"] == {"query": "weather"}
+
+    def test_args_on_the_start_are_the_first_delta(self) -> None:
+        stream = ChatModelStream()
+        start = _start(
+            0,
+            {
+                "type": "tool_call_chunk",
+                "id": "c1",
+                "name": "write_file",
+                "args": _ARGS_PARTS[0],
+            },
+        )
+        _dispatch_all(
+            stream, [start, *[_tool_call_delta(0, part) for part in _ARGS_PARTS[1:]]]
+        )
+
+        assert list(stream.tool_calls) == _EXPECTED_DELTAS
+
+    def test_legacy_content_block_deltas_carry_id_and_name(self) -> None:
+        stream = ChatModelStream()
+        legacy_parts = [
+            {"type": "tool_call_chunk", "id": "c1", "name": "write_file", "args": ""},
+            *[{"type": "tool_call_chunk", "args": part} for part in _ARGS_PARTS],
+        ]
+        _dispatch_all(
+            stream,
+            [
+                {"event": "content-block-delta", "index": 0, "content_block": part}
+                for part in legacy_parts
+            ],
+        )
+
+        assert list(stream.tool_calls) == _EXPECTED_DELTAS
+
+    @pytest.mark.asyncio
+    async def test_async_stream_yields_the_same_deltas(self) -> None:
+        stream = AsyncChatModelStream()
+        for event in _slice_events():
+            stream.dispatch(event)
+
+        assert [d async for d in stream.tool_calls] == _EXPECTED_DELTAS

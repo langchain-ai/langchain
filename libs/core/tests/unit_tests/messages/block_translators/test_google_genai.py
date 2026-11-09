@@ -1,8 +1,13 @@
 """Tests for Google GenAI block translator."""
 
+from copy import deepcopy
+from typing import Any
+
+from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages.block_translators.google_genai import (
     translate_grounding_metadata_to_citations,
 )
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 
 
 def test_translate_grounding_metadata_web() -> None:
@@ -216,3 +221,142 @@ def test_translate_grounding_metadata_multiple_chunks() -> None:
     assert (
         citations[1].get("extras", {})["google_ai_metadata"]["place_id"] == "places/123"
     )
+
+
+def _image_block(data: str, index: int) -> dict[str, Any]:
+    return {
+        "type": "image_url",
+        "image_url": {"url": f"data:image/png;base64,{data}"},
+        "index": index,
+    }
+
+
+def _genai_chunk(**kwargs: Any) -> AIMessageChunk:
+    return AIMessageChunk(
+        response_metadata={"model_provider": "google_genai"}, **kwargs
+    )
+
+
+def test_content_blocks_preserve_index_for_images() -> None:
+    """Streaming index must survive the `image_url` -> `image` conversion.
+
+    Consumers that key blocks by index (the `v3` event stream) merge blocks that
+    share one, so dropping the index collapses distinct images into one.
+    """
+    message = _genai_chunk(
+        content=[_image_block("QUFBQQ==", 0), _image_block("QkJCQg==", 1)]
+    )
+
+    blocks = message.content_blocks
+
+    assert [block["type"] for block in blocks] == ["image", "image"]
+    assert [block.get("index") for block in blocks] == [0, 1]
+
+
+def test_content_blocks_preserve_index_for_parallel_tool_calls() -> None:
+    """Tool calls rebuilt from `tool_calls` must recover their chunk index."""
+    message = _genai_chunk(
+        content=[],
+        tool_call_chunks=[
+            create_tool_call_chunk(name="f1", args='{"a": 1}', id="id-1", index=0),
+            create_tool_call_chunk(name="f2", args='{"b": 2}', id="id-2", index=1),
+        ],
+    )
+
+    blocks = message.content_blocks
+
+    assert [block["type"] for block in blocks] == ["tool_call", "tool_call"]
+    assert [block.get("id") for block in blocks] == ["id-1", "id-2"]
+    assert [block.get("index") for block in blocks] == ["lc_tc_0", "lc_tc_1"]
+
+
+def test_content_blocks_tool_call_index_cannot_collide_with_content() -> None:
+    """Tool call indices must not land in the content block index namespace.
+
+    Tool call indices count from zero independently of content block indices, so
+    an unprefixed copy lets an image at index 0 and the first tool call share a
+    wire block -- the image starts the block and the tool call finishes it,
+    silently dropping the image. A per-message translator cannot dedupe against
+    indices used by earlier chunks, so the namespaces must be disjoint.
+    """
+    image_chunk = _genai_chunk(content=[_image_block("QUFBQQ==", 0)])
+    tool_chunk = _genai_chunk(
+        content=[],
+        tool_call_chunks=[
+            create_tool_call_chunk(name="f1", args='{"a": 1}', id="id-1", index=0)
+        ],
+    )
+
+    image_index = image_chunk.content_blocks[0]["index"]
+    tool_index = tool_chunk.content_blocks[0]["index"]
+
+    assert image_index == 0
+    assert tool_index != image_index
+
+
+def test_content_blocks_omit_index_when_source_has_none() -> None:
+    """Blocks without a source index must not gain a spurious one."""
+    message = _genai_chunk(
+        content=[
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/png;base64,QUFBQQ=="},
+            }
+        ],
+        tool_call_chunks=[
+            create_tool_call_chunk(name="f1", args='{"a": 1}', id="id-1", index=None)
+        ],
+    )
+
+    for block in message.content_blocks:
+        assert "index" not in block
+
+
+def test_content_blocks_index_propagation_is_one_to_one() -> None:
+    """Each source item must map to exactly one indexed block.
+
+    Index propagation copies an item's index onto the block it produced. If an
+    item ever expanded into several blocks, copying one index onto all of them
+    would recreate the very collision this propagation prevents, so indices must
+    never be duplicated across blocks.
+    """
+    message = _genai_chunk(
+        content=[
+            {"type": "thinking", "thinking": "hmm", "index": 0},
+            _image_block("QUFBQQ==", 1),
+            {"type": "text", "text": "hi", "index": 2},
+        ]
+    )
+
+    indices = [block["index"] for block in message.content_blocks if "index" in block]
+
+    assert indices == [0, 1, 2]
+    assert len(indices) == len(set(indices))
+
+
+_GROUNDING_METADATA = {
+    "grounding_chunks": [{"web": {"uri": "https://example.com", "title": "Example"}}],
+    "grounding_supports": [
+        {
+            "segment": {"start_index": 0, "end_index": 5},
+            "grounding_chunk_indices": [0],
+        }
+    ],
+}
+
+
+def test_grounding_citations_do_not_mutate_content() -> None:
+    """Attaching grounding citations must leave `message.content` unchanged."""
+    message = AIMessage(
+        content=[{"type": "text", "text": "hello"}],
+        response_metadata={
+            "model_provider": "google_genai",
+            "grounding_metadata": _GROUNDING_METADATA,
+        },
+    )
+    original_content = deepcopy(message.content)
+
+    blocks = message.content_blocks
+
+    assert message.content == original_content
+    assert "annotations" in blocks[0]

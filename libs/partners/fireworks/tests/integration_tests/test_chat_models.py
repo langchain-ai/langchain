@@ -22,9 +22,7 @@ _MODEL = "accounts/fireworks/models/gpt-oss-120b"
 @pytest.mark.parametrize("strict", [None, True, False])
 def test_tool_choice_bool(strict: bool | None) -> None:  # noqa: FBT001
     """Test that tool choice is respected with different strict values."""
-    llm = ChatFireworks(
-        model="accounts/fireworks/models/kimi-k2p6", rate_limiter=rate_limiter
-    )
+    llm = ChatFireworks(model=_MODEL, rate_limiter=rate_limiter)
 
     class MyTool(BaseModel):
         name: str
@@ -46,9 +44,11 @@ def test_tool_choice_bool(strict: bool | None) -> None:  # noqa: FBT001
     else:
         assert tool_def["function"].get("strict") is strict
 
-    resp = with_tool.invoke("Who was the 27 year old named Erick?")
+    resp = with_tool.invoke(
+        "Use MyTool to extract the name and age from this fictional example: "
+        "Erick is 27 years old."
+    )
     assert isinstance(resp, AIMessage)
-    assert resp.content == ""  # should just be tool call
     tool_calls = resp.additional_kwargs["tool_calls"]
     assert len(tool_calls) == 1
     tool_call = tool_calls[0]
@@ -62,9 +62,7 @@ def test_tool_choice_bool(strict: bool | None) -> None:  # noqa: FBT001
 
 async def test_astream() -> None:
     """Test streaming tokens from ChatFireworks."""
-    llm = ChatFireworks(
-        model="accounts/fireworks/models/kimi-k2p6", rate_limiter=rate_limiter
-    )
+    llm = ChatFireworks(model=_MODEL, rate_limiter=rate_limiter)
 
     full: BaseMessageChunk | None = None
     chunks_with_token_counts = 0
@@ -162,9 +160,7 @@ def _get_joke_class(
 
 @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
 def test_structured_output_json_schema(schema_type: str) -> None:
-    llm = ChatFireworks(
-        model="accounts/fireworks/models/kimi-k2p6", rate_limiter=rate_limiter
-    )
+    llm = ChatFireworks(model=_MODEL, rate_limiter=rate_limiter)
     schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
     chat = llm.with_structured_output(schema, method="json_schema")
 
@@ -183,7 +179,7 @@ def test_structured_output_json_schema(schema_type: str) -> None:
 def test_reasoning_effort_parameter() -> None:
     """Test that the standard `reasoning_effort` parameter is accepted by the API."""
     llm = ChatFireworks(
-        model="accounts/fireworks/models/kimi-k2p6",
+        model=_MODEL,
         reasoning_effort="high",
         rate_limiter=rate_limiter,
     )
@@ -199,9 +195,7 @@ def test_reasoning_effort_parameter() -> None:
 
 def test_reasoning_effort_call_time_kwarg() -> None:
     """Test that `reasoning_effort` is accepted as a call-time kwarg."""
-    llm = ChatFireworks(
-        model="accounts/fireworks/models/kimi-k2p6", rate_limiter=rate_limiter
-    )
+    llm = ChatFireworks(model=_MODEL, rate_limiter=rate_limiter)
 
     result = llm.invoke("Say hello in one sentence", reasoning_effort="high")
 

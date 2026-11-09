@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import warnings
 from functools import partial
@@ -23,6 +24,7 @@ from langchain_core.exceptions import (
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
+    ModelRefusalError,
     ModelTimeoutError,
 )
 from langchain_core.load import dumps, loads
@@ -43,7 +45,7 @@ from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.block_translators.openai import (
     _convert_from_v03_ai_message,
 )
-from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
@@ -181,12 +183,57 @@ def test_profile() -> None:
     assert model.profile["max_input_tokens"] == 272_000
 
 
-def test_gpt_5_3_chat_latest_profile_has_no_reasoning_effort() -> None:
-    model = ChatOpenAI(model="gpt-5.3-chat-latest")
+def test_gpt_5_reasoning_effort_levels() -> None:
+    """GPT-5 and GPT-5.1 predate `xhigh`, and GPT-5 supports `minimal`."""
+    for model_name in ("gpt-5", "gpt-5-mini", "gpt-5-nano"):
+        model = ChatOpenAI(model=model_name)
+        assert model.profile
+        assert model.profile["reasoning_effort_levels"] == [
+            "minimal",
+            "low",
+            "medium",
+            "high",
+        ]
+
+    model = ChatOpenAI(model="gpt-5.1")
+    assert model.profile
+    assert model.profile["reasoning_effort_levels"] == ["none", "low", "medium", "high"]
+
+
+def test_gpt_6_astra_reasoning_effort_levels() -> None:
+    model = ChatOpenAI(model="gpt-6-astra")
 
     assert model.profile
-    assert model.profile["reasoning_output"] is False
-    assert "reasoning_effort_levels" not in model.profile
+    assert model.profile["reasoning_effort_levels"] == [
+        "low",
+        "medium",
+        "high",
+        "xhigh",
+        "max",
+    ]
+    assert "reasoning_effort_default" not in model.profile
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "expected"),
+    [
+        ({"use_responses_api": True}, True),
+        # Routes every request to the Responses API.
+        ({"reasoning": {"effort": "low"}}, True),
+        ({"use_responses_api": False}, False),
+        # Routing is decided per request, so it can't be claimed up front.
+        ({}, False),
+    ],
+)
+def test_profile_mid_conversation_tools_follow_responses_api(
+    kwargs: dict[str, Any], expected: bool
+) -> None:
+    """Only the Responses API carries an `additional_tools` input item."""
+    model = ChatOpenAI(model="gpt-5.6", **kwargs)
+
+    assert model.profile
+    assert model.profile["mid_conversation_tools"] is expected
+    assert model.profile["mid_conversation_system_messages"] is True
 
 
 def test_function_message_dict_to_function_message() -> None:
@@ -1285,6 +1332,14 @@ def test_get_num_tokens_from_messages_o_series(model: str) -> None:
         messages
     )
     assert actual == expected
+
+
+def test_get_num_tokens_from_messages_gpt_6() -> None:
+    llm = ChatOpenAI(model="gpt-6-astra")
+    messages = [HumanMessage("how are you")]
+
+    assert llm._get_encoding_model()[1].name == "o200k_base"
+    assert llm.get_num_tokens_from_messages(messages) > 0
 
 
 class Foo(BaseModel):
@@ -4305,6 +4360,22 @@ def test_get_request_payload_use_previous_response_id() -> None:
     assert len(payload["input"]) == 1
 
 
+def test_get_request_payload_explicit_previous_response_id() -> None:
+    """Test that an explicit `previous_response_id` kwarg reaches the payload."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+    ]
+    payload = llm._get_request_payload(messages, previous_response_id="resp_123")
+    # Passing the ID engages the Responses API on its own.
+    assert "input" in payload
+    assert payload["previous_response_id"] == "resp_123"
+    # Unlike `use_previous_response_id`, history is not trimmed.
+    assert len(payload["input"]) == 3
+
+
 def test_make_computer_call_output_from_message() -> None:
     # List content
     tool_message = ToolMessage(
@@ -4538,6 +4609,89 @@ def test_gpt_5_temperature_case_insensitive(
         assert payload["temperature"] == 0.7
 
 
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"output_version": "responses/v1"},
+        {"context_management": []},
+        {"include": []},
+        {"reasoning": {}},
+        {"truncation": "auto"},
+        {"use_previous_response_id": True},
+        {"model": "gpt-5-pro"},
+        {"model": "gpt-5.3-codex"},
+    ],
+)
+@pytest.mark.parametrize("explicit", [None, True, False])
+def test_infer_use_responses_api(kwargs: dict, explicit: bool | None) -> None:
+    llm = ChatOpenAI(**kwargs, use_responses_api=explicit)
+    expected = explicit if explicit is not None else True
+    assert llm.use_responses_api is expected
+    assert llm._use_responses_api({}) is expected
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {},
+        {"output_version": "v1"},
+        {"reasoning_effort": "low"},
+        {"model": "gpt-6-astra"},
+        {"model_kwargs": {"text": {}}},
+        {"model_kwargs": {"tools": [{"type": "web_search"}]}},
+    ],
+)
+def test_infer_use_responses_api_remains_dynamic(kwargs: dict) -> None:
+    llm = ChatOpenAI(**kwargs)
+    assert llm.use_responses_api is None
+    assert llm._use_responses_api({"tools": [{"type": "web_search"}]})
+    assert llm._use_responses_api({"text": {}})
+    assert not llm._use_responses_api({})
+
+
+def test_infer_use_responses_api_from_output_version_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LC_OUTPUT_VERSION", "responses/v1")
+    assert ChatOpenAI().use_responses_api is True
+
+
+def test_inferred_responses_api_bind_tools_strict() -> None:
+    llm = ChatOpenAI(reasoning={})
+    tool = {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    }
+    bound = llm.bind_tools(
+        [tool],
+        response_format={"title": "Weather", "type": "object", "properties": {}},
+    )
+    assert isinstance(bound, RunnableBinding)
+    assert "strict" not in bound.kwargs["tools"][0]["function"]
+
+
+def test_gpt_6_tools_use_responses_api() -> None:
+    llm = ChatOpenAI(model="gpt-6-astra")
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_weather",
+                "description": "Get the weather",
+                "parameters": {"type": "object", "properties": {}},
+            },
+        }
+    ]
+
+    payload = llm._get_request_payload([HumanMessage(content="Hello")], tools=tools)
+
+    assert "input" in payload
+    assert "messages" not in payload
+
+
 @pytest.mark.parametrize("use_responses_api", [False, True])
 def test_gpt_5_1_temperature_with_reasoning_effort_none(
     use_responses_api: bool,
@@ -4599,13 +4753,15 @@ def test_gpt_5_1_temperature_with_reasoning_effort_none(
 
 
 def test_model_prefers_responses_api() -> None:
-    # Pro models (with and without date snapshots): Responses API only
+    # Pro and Sol models (with and without date snapshots): Responses API only
     assert _model_prefers_responses_api("gpt-5-pro")
     assert _model_prefers_responses_api("gpt-5-pro-2025-10-06")
     assert _model_prefers_responses_api("gpt-5.2-pro")
     assert _model_prefers_responses_api("gpt-5.2-pro-2025-12-11")
     assert _model_prefers_responses_api("gpt-5.4-pro")
     assert _model_prefers_responses_api("gpt-5.4-pro-2026-03-05")
+    assert _model_prefers_responses_api("gpt-5.6-sol")
+    assert _model_prefers_responses_api("gpt-5.6-sol-2026-09-01")
     # Codex models: Responses API only
     assert _model_prefers_responses_api("gpt-5.3-codex")
     assert _model_prefers_responses_api("gpt-5.3-codex")
@@ -5138,6 +5294,154 @@ def test_defer_loading_in_responses_api_payload() -> None:
     assert {"type": "tool_search"} in result["tools"]
 
 
+def test__construct_lc_result_from_responses_api_async_tool_call() -> None:
+    """Test that `async` on a `function_call` item reaches `tool_call` extras."""
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall.model_validate(
+                {
+                    "type": "function_call",
+                    "id": "fc_1",
+                    "call_id": "call_A",
+                    "name": "lookup_price",
+                    "arguments": '{"sku": "WIDGET"}',
+                    "async": True,
+                }
+            ),
+            ResponseFunctionToolCall.model_validate(
+                {
+                    "type": "function_call",
+                    "id": "fc_2",
+                    "call_id": "call_B",
+                    "name": "get_time",
+                    "arguments": "{}",
+                }
+            ),
+        ],
+    )
+    message = cast(
+        AIMessage,
+        _construct_lc_result_from_responses_api(response).generations[0].message,
+    )
+    extras: dict[Any, dict[str, Any]] = {
+        block.get("id"): cast(dict[str, Any], block.get("extras") or {})
+        for block in message.content_blocks
+    }
+    assert extras["call_A"]["async"] is True
+    assert "async" not in extras["call_B"]
+    # The flag is metadata only; both remain ordinary tool calls.
+    assert [tc["id"] for tc in message.tool_calls] == ["call_A", "call_B"]
+
+
+def test_async_tool_call_round_trips_to_next_request() -> None:
+    """Test that `async` survives response -> message -> next request."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"async": True})
+    def lookup_price(sku: str) -> str:
+        """Look up a price."""
+        return "1200"
+
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=[
+            ResponseFunctionToolCall.model_validate(
+                {
+                    "type": "function_call",
+                    "id": "fc_1",
+                    "call_id": "call_A",
+                    "name": "lookup_price",
+                    "arguments": '{"sku": "WIDGET"}',
+                    "async": True,
+                }
+            )
+        ],
+    )
+    for output_version in ("responses/v1", "v1"):
+        message = (
+            _construct_lc_result_from_responses_api(
+                response, output_version=output_version
+            )
+            .generations[0]
+            .message
+        )
+        llm = ChatOpenAI(
+            model=OPENAI_TEST_MODEL,
+            use_responses_api=True,
+            output_version=output_version,
+        )
+        bound = llm.bind_tools([lookup_price])
+        payload = bound._get_request_payload(  # type: ignore[attr-defined]
+            [HumanMessage("price?"), message, HumanMessage("anything else?")],
+            **bound.kwargs,  # type: ignore[attr-defined]
+        )
+        function_calls = [
+            item for item in payload["input"] if item.get("type") == "function_call"
+        ]
+        # Without the flag the Responses API rejects the turn for a missing output.
+        assert function_calls[0]["async"] is True, output_version
+
+
+def test_async_tool_from_extras_in_payload() -> None:
+    """Test that `async` from `BaseTool.extras` reaches the Responses tool def."""
+    from langchain_core.tools import tool
+
+    @tool(extras={"async": True})
+    def lookup_price(sku: str) -> str:
+        """Look up a price."""
+        return "1200"
+
+    @tool
+    def get_time() -> str:
+        """Get the current time."""
+        return "14:05"
+
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    bound = llm.bind_tools([lookup_price, get_time])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    tools_by_name = {t["name"]: t for t in payload["tools"]}
+    assert tools_by_name["lookup_price"]["async"] is True
+    # Tools that don't opt in are unaffected.
+    assert "async" not in tools_by_name["get_time"]
+
+
+def test_async_tool_raw_dict_passthrough() -> None:
+    """Test that `async` on a raw tool dict is preserved."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    raw_tool = {
+        "type": "function",
+        "name": "lookup_price",
+        "description": "Look up a price.",
+        "async": True,
+        "parameters": {
+            "type": "object",
+            "properties": {"sku": {"type": "string"}},
+        },
+    }
+    bound = llm.bind_tools([raw_tool])
+    payload = bound._get_request_payload(  # type: ignore[attr-defined]
+        "test",
+        **bound.kwargs,  # type: ignore[attr-defined]
+    )
+    assert payload["tools"][0]["async"] is True
+
+
 def test_langsmith_gateway_true(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
     llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
@@ -5217,3 +5521,543 @@ def test_langsmith_gateway_provider_base_url_uses_provider_key(
     assert llm.openai_api_base == "https://api.openai.com/v1"
     assert isinstance(llm.openai_api_key, SecretStr)
     assert llm.openai_api_key.get_secret_value() == "provider-key"
+
+
+_ADDITIONAL_TOOLS_BLOCK = {
+    "type": "additional_tools",
+    "role": "developer",
+    "tools": [
+        {
+            "type": "function",
+            "name": "get_customer",
+            "description": "Look up a customer by ID.",
+            "parameters": {
+                "type": "object",
+                "properties": {"customer_id": {"type": "string"}},
+                "required": ["customer_id"],
+                "additionalProperties": False,
+            },
+        }
+    ],
+}
+_FOREIGN_TOOL_CHANGE_BLOCK = {
+    "type": "tool_removal",
+    "tool": {"type": "tool_reference", "name": "get_weather"},
+}
+
+
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+def test_additional_tools_block_becomes_input_item(spelling: str) -> None:
+    """An `additional_tools` block is hoisted to a top-level Responses input item."""
+    block: dict = (
+        _ADDITIONAL_TOOLS_BLOCK
+        if spelling == "bare"
+        else {"type": "non_standard", "value": _ADDITIONAL_TOOLS_BLOCK}
+    )
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    payload = llm._get_request_payload(
+        [
+            HumanMessage("Earlier question"),
+            AIMessage("Earlier answer", response_metadata={"id": "resp_123"}),
+            SystemMessage([{"type": "text", "text": "Be concise."}, block]),
+            HumanMessage("Next question"),
+        ]
+    )
+
+    # The item precedes the message it was carried on, matching how the Responses
+    # API converter hoists every other non-message input item.
+    assert payload["input"][2] == _ADDITIONAL_TOOLS_BLOCK
+    assert payload["input"][3] == {
+        "role": "system",
+        "content": [{"type": "input_text", "text": "Be concise."}],
+        "type": "message",
+    }
+    assert payload["input"][4]["role"] == "user"
+
+
+def test_additional_tools_block_empties_message() -> None:
+    """A system message carrying only the block leaves no message behind."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    payload = llm._get_request_payload(
+        [
+            HumanMessage("Earlier question"),
+            SystemMessage([_ADDITIONAL_TOOLS_BLOCK]),
+        ]
+    )
+
+    assert payload["input"] == [
+        {"role": "user", "content": "Earlier question", "type": "message"},
+        _ADDITIONAL_TOOLS_BLOCK,
+    ]
+
+
+def test_additional_tools_block_does_not_mutate_input_content() -> None:
+    """Hoisting the item must leave the caller's own message content untouched."""
+    content: list[str | dict] = [
+        {"type": "text", "text": "Be concise."},
+        _ADDITIONAL_TOOLS_BLOCK,
+    ]
+    before = copy.deepcopy(content)
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    llm._get_request_payload([HumanMessage("Earlier question"), SystemMessage(content)])
+    assert content == before
+
+
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+def test_additional_tools_block_on_chat_completions_raises(spelling: str) -> None:
+    """`additional_tools` requires the Responses API."""
+    block: dict = (
+        _ADDITIONAL_TOOLS_BLOCK
+        if spelling == "bare"
+        else {"type": "non_standard", "value": _ADDITIONAL_TOOLS_BLOCK}
+    )
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    with pytest.raises(ValueError, match="use_responses_api=True"):
+        llm._get_request_payload(
+            [HumanMessage("Earlier question"), SystemMessage([block])]
+        )
+
+
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+@pytest.mark.parametrize("use_responses_api", [True, False])
+@pytest.mark.parametrize("message_type", ["human", "tool"])
+def test_additional_tools_block_off_system_message_raises(
+    message_type: str,
+    use_responses_api: bool,
+    spelling: str,
+) -> None:
+    """OpenAI restricts the input item to `role: "developer"`.
+
+    Anywhere but a `SystemMessage` it is this provider's own block in a position
+    this provider forbids, so it is raised rather than dropped. Guards against
+    client-supplied content blocks reaching the top-level input list.
+    """
+    block: dict = (
+        _ADDITIONAL_TOOLS_BLOCK
+        if spelling == "bare"
+        else {"type": "non_standard", "value": _ADDITIONAL_TOOLS_BLOCK}
+    )
+    message: BaseMessage = (
+        HumanMessage([block])
+        if message_type == "human"
+        else ToolMessage([block], tool_call_id="call_1")
+    )
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=use_responses_api)
+    with pytest.raises(ValueError, match="SystemMessage"):
+        llm._get_request_payload([message])
+
+
+def test_additional_tools_block_on_ai_message_not_rejected() -> None:
+    """`additional_tools` is also a Responses *output* item.
+
+    Replaying an assistant turn that echoes one must not raise; handling the output
+    form is out of scope, and out of scope should mean untouched, not fatal.
+    """
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    llm._get_request_payload(
+        [
+            HumanMessage("Earlier question"),
+            AIMessage(
+                [{"type": "text", "text": "Sure."}, _ADDITIONAL_TOOLS_BLOCK],
+                response_metadata={"id": "resp_123"},
+            ),
+        ]
+    )
+
+
+@pytest.mark.parametrize("spelling", ["bare", "non_standard"])
+def test_unrecognized_system_block_dropped_with_warning(spelling: str) -> None:
+    """Responses system content is a closed set, so an unknown block is reported."""
+    block: dict = (
+        _FOREIGN_TOOL_CHANGE_BLOCK
+        if spelling == "bare"
+        else {"type": "non_standard", "value": _FOREIGN_TOOL_CHANGE_BLOCK}
+    )
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    with pytest.warns(UserWarning, match="tool_removal"):
+        payload = llm._get_request_payload(
+            [
+                HumanMessage("Earlier question"),
+                SystemMessage([{"type": "text", "text": "Be concise."}, block]),
+            ]
+        )
+
+    assert payload["input"][-1] == {
+        "role": "system",
+        "content": [{"type": "input_text", "text": "Be concise."}],
+        "type": "message",
+    }
+
+
+def test_unrecognized_user_block_dropped_silently() -> None:
+    """User content is an open set, so dropping an unknown block stays quiet."""
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        payload = llm._get_request_payload(
+            [
+                HumanMessage(
+                    [
+                        {"type": "text", "text": "Hello"},
+                        {"type": "made_up_block", "foo": "bar"},
+                    ]
+                )
+            ]
+        )
+
+    assert payload["input"] == [
+        {
+            "role": "user",
+            "content": [{"type": "input_text", "text": "Hello"}],
+            "type": "message",
+        },
+    ]
+
+
+@pytest.mark.parametrize("role", ["system", "human"])
+def test_unrecognized_block_forwarded_on_chat_completions(role: str) -> None:
+    """Chat Completions keeps its long-standing passthrough for unknown blocks.
+
+    `additional_tools` is the one system block it rejects, as that's a common mistake
+    (needs responses api). Every other unknown block is passed through as the caller
+    wrote it.
+    """
+    message = (
+        SystemMessage([_FOREIGN_TOOL_CHANGE_BLOCK])
+        if role == "system"
+        else HumanMessage([_FOREIGN_TOOL_CHANGE_BLOCK])
+    )
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        payload = llm._get_request_payload([message])
+
+    assert payload["messages"] == [
+        {
+            "role": role if role == "system" else "user",
+            "content": [_FOREIGN_TOOL_CHANGE_BLOCK],
+        }
+    ]
+
+
+def test_configuration_update_block_becomes_input_item() -> None:
+    """A `configuration_update` block is hoisted out of the message content.
+
+    The Responses API expects it as a top-level input item preceding the message
+    it applies to, not as a content block nested inside one.
+    """
+    llm = ChatOpenAI(model="gpt-6-astra", use_responses_api=True)
+    payload = llm._get_request_payload(
+        [
+            HumanMessage(
+                [
+                    {"type": "configuration_update", "reasoning": {"effort": "high"}},
+                    {"type": "text", "text": "Hello"},
+                ]
+            )
+        ]
+    )
+
+    assert payload["input"] == [
+        {"type": "configuration_update", "reasoning": {"effort": "high"}},
+        {
+            "role": "user",
+            "content": [{"type": "input_text", "text": "Hello"}],
+            "type": "message",
+        },
+    ]
+
+
+def test_configuration_update_block_keeps_position_across_turns() -> None:
+    """The item stays put as the conversation grows, so the prefix stays cacheable.
+
+    Re-deriving the item per request would shift it forward each turn and truncate
+    the cached prefix to whatever precedes it.
+    """
+    llm = ChatOpenAI(model="gpt-6-astra", use_responses_api=True)
+    messages: list = [
+        HumanMessage("First question"),
+        AIMessage("First answer", response_metadata={"id": "resp_123"}),
+        HumanMessage(
+            [
+                {"type": "configuration_update", "reasoning": {"effort": "high"}},
+                {"type": "text", "text": "Second question"},
+            ]
+        ),
+    ]
+    first = llm._get_request_payload(messages)
+    assert [item.get("role") or item["type"] for item in first["input"]] == [
+        "user",
+        "assistant",
+        "configuration_update",
+        "user",
+    ]
+
+    messages += [
+        AIMessage("Second answer", response_metadata={"id": "resp_456"}),
+        HumanMessage("Third question"),
+    ]
+    second = llm._get_request_payload(messages)
+    assert second["input"][: len(first["input"])] == first["input"]
+
+
+def test_configuration_update_block_without_text() -> None:
+    """An update with no accompanying text still yields the input item."""
+    llm = ChatOpenAI(model="gpt-6-astra", use_responses_api=True)
+    payload = llm._get_request_payload(
+        [
+            HumanMessage("Earlier question"),
+            AIMessage("Earlier answer", response_metadata={"id": "resp_123"}),
+            HumanMessage(
+                [{"type": "configuration_update", "reasoning": {"effort": "low"}}]
+            ),
+        ]
+    )
+
+    assert payload["input"][-1] == {
+        "type": "configuration_update",
+        "reasoning": {"effort": "low"},
+    }
+
+
+class _RefusalSchema(BaseModel):
+    answer: str
+
+
+def _chat_completions_result(
+    *, content: str | None, finish_reason: str, refusal: str | None = None
+) -> ChatResult:
+    from openai.types.chat import ChatCompletion
+
+    completion = ChatCompletion.model_validate(
+        {
+            "id": "chatcmpl-123",
+            "object": "chat.completion",
+            "created": 1234567890,
+            "model": OPENAI_TEST_MODEL,
+            "choices": [
+                {
+                    "index": 0,
+                    "finish_reason": finish_reason,
+                    "message": {
+                        "role": "assistant",
+                        "content": content,
+                        "refusal": refusal,
+                    },
+                }
+            ],
+            "usage": {"prompt_tokens": 5, "completion_tokens": 0, "total_tokens": 5},
+        }
+    )
+    return ChatOpenAI(model=OPENAI_TEST_MODEL)._create_chat_result(completion)
+
+
+def _responses_result(
+    *, output: list, incomplete_reason: str | None = None
+) -> ChatResult:
+    response = Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        output=output,
+        status="incomplete" if incomplete_reason else "completed",
+        incomplete_details=(
+            IncompleteDetails(reason=incomplete_reason)  # type: ignore[arg-type]
+            if incomplete_reason
+            else None
+        ),
+    )
+    return _construct_lc_result_from_responses_api(response)
+
+
+def _responses_refusal_output() -> list:
+    return [
+        ResponseOutputMessage(
+            type="message",
+            id="msg_123",
+            status="completed",
+            role="assistant",
+            content=[
+                ResponseOutputRefusal(
+                    type="refusal", refusal="I can't help with that request."
+                )
+            ],
+        )
+    ]
+
+
+def test_openai_refusal_error_is_model_refusal_error() -> None:
+    err = OpenAIRefusalError("I can't help with that.")
+
+    assert isinstance(err, ModelRefusalError)
+    assert str(err) == "I can't help with that."
+    assert err.is_retryable is False
+
+
+@pytest.mark.parametrize(
+    ("method", "schema"),
+    [
+        ("json_schema", _RefusalSchema),
+        ("json_schema", _RefusalSchema.model_json_schema()),
+        ("function_calling", _RefusalSchema),
+    ],
+)
+def test_with_structured_output_raises_on_chat_completions_refusal(
+    method: Literal["json_schema", "function_calling"], schema: Any
+) -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    structured = llm.with_structured_output(schema, method=method)
+    result = _chat_completions_result(
+        content=None, finish_reason="stop", refusal="I can't help with that request."
+    )
+
+    with (
+        patch.object(ChatOpenAI, "_generate", return_value=result),
+        pytest.raises(OpenAIRefusalError) as exc_info,
+    ):
+        structured.invoke("Write a keylogger")
+
+    err = exc_info.value
+    assert isinstance(err, ModelRefusalError)
+    assert str(err) == "I can't help with that request."
+    assert isinstance(err.raw_message, AIMessage)
+
+
+@pytest.mark.parametrize("method", ["json_schema", "function_calling", "json_mode"])
+def test_with_structured_output_raises_on_content_filter(
+    method: Literal["json_schema", "function_calling", "json_mode"],
+) -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    structured = llm.with_structured_output(
+        _RefusalSchema.model_json_schema(), method=method
+    )
+    result = _chat_completions_result(content=None, finish_reason="content_filter")
+
+    with (
+        patch.object(ChatOpenAI, "_generate", return_value=result),
+        pytest.raises(ModelRefusalError) as exc_info,
+    ):
+        structured.invoke("Something filtered")
+
+    assert str(exc_info.value) == "Model output was stopped by a content filter"
+
+
+def test_with_structured_output_include_raw_reports_responses_refusal() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    structured = llm.with_structured_output(
+        _RefusalSchema.model_json_schema(), method="json_schema", include_raw=True
+    )
+    result = _responses_result(output=_responses_refusal_output())
+
+    with patch.object(ChatOpenAI, "_generate", return_value=result):
+        response = structured.invoke("Write a keylogger")
+
+    assert isinstance(response, dict)
+    assert response["parsed"] is None
+    assert isinstance(response["parsing_error"], OpenAIRefusalError)
+    assert str(response["parsing_error"]) == "I can't help with that request."
+
+
+def test_with_structured_output_raises_on_responses_content_filter() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    structured = llm.with_structured_output(_RefusalSchema, method="json_schema")
+    result = _responses_result(output=[], incomplete_reason="content_filter")
+
+    with (
+        patch.object(ChatOpenAI, "_generate", return_value=result),
+        pytest.raises(ModelRefusalError) as exc_info,
+    ):
+        structured.invoke("Something filtered")
+
+    assert str(exc_info.value) == "Model output was stopped by a content filter"
+
+
+async def test_with_structured_output_raises_on_refusal_async() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    structured = llm.with_structured_output(_RefusalSchema, method="json_schema")
+    result = _chat_completions_result(
+        content=None, finish_reason="stop", refusal="I can't help with that request."
+    )
+
+    async def _agenerate(*_: Any, **__: Any) -> ChatResult:
+        return result
+
+    with (
+        patch.object(ChatOpenAI, "_agenerate", _agenerate),
+        pytest.raises(OpenAIRefusalError),
+    ):
+        await structured.ainvoke("Write a keylogger")
+
+
+def test_invoke_does_not_raise_on_refusal_or_content_filter() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    for result in (
+        _chat_completions_result(
+            content=None, finish_reason="stop", refusal="I can't help."
+        ),
+        _chat_completions_result(content=None, finish_reason="content_filter"),
+    ):
+        with patch.object(ChatOpenAI, "_generate", return_value=result):
+            assert isinstance(llm.invoke("hi"), AIMessage)
+
+
+def test_with_structured_output_parses_when_not_refused() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    structured = llm.with_structured_output(
+        _RefusalSchema.model_json_schema(), method="json_schema"
+    )
+    result = _chat_completions_result(content='{"answer": "42"}', finish_reason="stop")
+
+    with patch.object(ChatOpenAI, "_generate", return_value=result):
+        assert structured.invoke("What is 6 x 7?") == {"answer": "42"}
+
+
+def test_with_structured_output_stream_raises_on_content_filter() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    structured = llm.with_structured_output(
+        _RefusalSchema.model_json_schema(), method="json_schema"
+    )
+    chunks = [
+        ChatGenerationChunk(message=AIMessageChunk(content='{"ans')),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="", response_metadata={"finish_reason": "content_filter"}
+            )
+        ),
+    ]
+
+    with (
+        patch.object(ChatOpenAI, "_stream", return_value=iter(chunks)),
+        pytest.raises(ModelRefusalError) as exc_info,
+    ):
+        list(structured.stream("Something filtered"))
+
+    assert str(exc_info.value) == "Model output was stopped by a content filter"
+
+
+def test_with_structured_output_still_streams_partial_json() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    structured = llm.with_structured_output(
+        _RefusalSchema.model_json_schema(), method="json_schema"
+    )
+    chunks = [
+        ChatGenerationChunk(message=AIMessageChunk(content=text))
+        for text in ['{"ans', 'wer": "4', '2"}']
+    ]
+    chunks.append(
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="", response_metadata={"finish_reason": "stop"}
+            )
+        )
+    )
+
+    with patch.object(ChatOpenAI, "_stream", return_value=iter(chunks)):
+        outputs = list(structured.stream("What is 6 x 7?"))
+
+    assert len(outputs) > 1
+    assert outputs[-1] == {"answer": "42"}

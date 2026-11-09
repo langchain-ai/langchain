@@ -135,7 +135,6 @@ class FileCallbackHandler(BaseCallbackHandler):
             text: The text to write to the file.
             color: Optional color for the text. Defaults to `self.color`.
             end: String appended after the text.
-            file: Optional file to write to. Defaults to `self.file`.
 
         Raises:
             RuntimeError: If the file is closed or not available.

@@ -296,6 +296,27 @@ def _convert_to_v1_from_genai_input(
     return list(_iter_blocks())
 
 
+def _tool_call_indices(message: AIMessage) -> dict[str, str]:
+    """Map tool call id to its streaming index.
+
+    ChatGoogleGenerativeAI AIMessage .content does not carry function call parts, so
+    we recover sequencing information from the tool_call_chunks field.
+
+    Args:
+        message: The message whose tool call chunks should be indexed.
+
+    Returns:
+        Mapping of tool call id to prefixed index, for chunks that have both.
+    """
+    indices: dict[str, str] = {}
+    for chunk in getattr(message, "tool_call_chunks", None) or []:
+        id_ = chunk.get("id")
+        index = chunk.get("index")
+        if id_ and index is not None:
+            indices[id_] = f"lc_tc_{index}"  # prefix to keep disjoint w other indices
+    return indices
+
+
 def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
     """Convert Google GenAI message content to v1 format.
 
@@ -321,6 +342,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
             for block in string_blocks
             if isinstance(block, dict) and block.get("type") == "tool_call"
         }
+        tool_call_indices = _tool_call_indices(message)
         for tool_call in message.tool_calls:
             id_ = tool_call.get("id")
             if id_ and id_ not in content_tool_call_ids:
@@ -330,6 +352,8 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     "name": tool_call["name"],
                     "args": tool_call["args"],
                 }
+                if (index := tool_call_indices.get(id_)) is not None:
+                    string_tool_call_block["index"] = index
                 string_blocks.append(string_tool_call_block)
 
         # Handle audio from additional_kwargs if present (for empty content cases)
@@ -352,6 +376,8 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     block["annotations"] = cast("list[types.Annotation]", citations)
                     break
 
+        if refusal := _refusal_from_metadata(message.response_metadata):
+            string_blocks.append(refusal)
         return string_blocks
 
     if not isinstance(message.content, list):
@@ -361,6 +387,8 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
     converted_blocks: list[types.ContentBlock] = []
 
     for item in message.content:
+        # Where this item's blocks start, so they can inherit its `index` below.
+        block_start = len(converted_blocks)
         if isinstance(item, str):
             # Conversation history strings
 
@@ -487,14 +515,29 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
             # Non-dict, non-string content
             converted_blocks.append({"type": "non_standard", "value": item})  # type: ignore[unreachable]
 
+        # Each item yields exactly one block today. Guarded, not assumed:
+        # duplicate indices would merge the blocks back together.
+        new_blocks = converted_blocks[block_start:]
+        if (
+            len(new_blocks) == 1
+            and isinstance(item, dict)
+            and (index := item.get("index")) is not None
+        ):
+            new_blocks[0].setdefault("index", index)
+
     grounding_metadata = message.response_metadata.get("grounding_metadata")
     if grounding_metadata:
         citations = translate_grounding_metadata_to_citations(grounding_metadata)
 
-        for block in converted_blocks:
+        for i, block in enumerate(converted_blocks):
             if block["type"] == "text" and citations:
-                # Add citations to text blocks (only the first text block)
-                block["annotations"] = cast("list[types.Annotation]", citations)
+                # Add citations to text blocks (only the first text block).
+                # Replaced rather than assigned into: `block` is the caller's own
+                # dict from `message.content`.
+                converted_blocks[i] = cast(
+                    "types.TextContentBlock",
+                    {**block, "annotations": citations},
+                )
                 break
 
     # Audio is stored on the message.additional_kwargs
@@ -513,6 +556,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
         for block in converted_blocks
         if isinstance(block, dict) and block.get("type") == "tool_call"
     }
+    tool_call_indices = _tool_call_indices(message)
     for tool_call in message.tool_calls:
         id_ = tool_call.get("id")
         if id_ and id_ not in content_tool_call_ids:
@@ -522,9 +566,46 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                 "name": tool_call["name"],
                 "args": tool_call["args"],
             }
+            if (index := tool_call_indices.get(id_)) is not None:
+                missing_tool_call_block["index"] = index
             converted_blocks.append(missing_tool_call_block)
 
+    if refusal := _refusal_from_metadata(message.response_metadata):
+        converted_blocks.append(refusal)
     return converted_blocks
+
+
+_REFUSAL_FINISH_REASONS = frozenset({"SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST"})
+"""Candidate finish reasons that mean Gemini blocked the response."""
+
+
+def _reason_name(reason: object) -> str | None:
+    """Return the enum member name of a Gemini finish or block reason."""
+    if not reason:
+        return None
+    return str(getattr(reason, "name", reason)).rsplit(".", 1)[-1]
+
+
+def _refusal_from_metadata(
+    response_metadata: dict[str, Any],
+) -> types.RefusalContentBlock | None:
+    """Build a refusal block from Gemini's finish or prompt block reason."""
+    extras: dict[str, Any] = {}
+    finish_reason = _reason_name(response_metadata.get("finish_reason"))
+    if finish_reason in _REFUSAL_FINISH_REASONS:
+        extras["finish_reason"] = finish_reason
+    feedback = response_metadata.get("prompt_feedback")
+    if isinstance(feedback, dict):
+        block_reason = _reason_name(feedback.get("block_reason"))
+        if block_reason and block_reason != "BLOCKED_REASON_UNSPECIFIED":
+            extras["block_reason"] = block_reason
+    if not extras:
+        return None
+    return {
+        "type": "refusal",
+        "refusal": response_metadata.get("finish_message") or "",
+        "extras": extras,
+    }
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:

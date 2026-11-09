@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:0073a574f7458cc2f38e158b1c4fcb9375e0810fa2dcff69c31c78995d49f572",
+  "claims": [
+    {
+      "id": "claim_47375636619d4fb3bae06dd6648f2392",
+      "statement": "The /openwiki/reference/composability.md page is a redirect marker that directs readers to the primary Agent Composability documentation for authoritative information about middleware composition, subagent delegation, tool selection strategies, and context management in hierarchical agent workflows.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py",
+          "version": "repo-file-v1:sha256:a7ecb306d4f080eeef15bda54ccf8f2c07de4e84499093d76585cd20f6dd689d"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

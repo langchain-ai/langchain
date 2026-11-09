@@ -19,16 +19,20 @@ from packaging.version import Version, parse
 
 MIN_VERSION_LIBS = [
     "langchain-core",
+    "langchain-openai",
     "langchain",
     "langchain-text-splitters",
     "numpy",
     "SQLAlchemy",
+    "anthropic",
+    "openai",
 ]
 
 # some libs only get checked on release because of simultaneous changes in
 # multiple libs
 SKIP_IF_PULL_REQUEST = [
     "langchain-core",
+    "langchain-openai",
     "langchain-text-splitters",
     "langchain",
 ]
@@ -123,6 +127,15 @@ def get_min_version_from_toml(
     for dep in toml_data["project"]["dependencies"]:
         requirement = Requirement(dep)
         dependencies[requirement.name].append(requirement)
+
+    # Optional extras only contribute floors for libs not already required, and
+    # only when they declare a version range to take a minimum from.
+    required = set(dependencies)
+    for deps in toml_data["project"].get("optional-dependencies", {}).values():
+        for dep in deps:
+            requirement = Requirement(dep)
+            if requirement.name not in required and requirement.specifier:
+                dependencies[requirement.name].append(requirement)
 
     # Initialize a dictionary to store the minimum versions
     min_versions = {}

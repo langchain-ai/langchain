@@ -38,6 +38,7 @@ from langchain_core.messages import (
     ToolMessageChunk,
 )
 from langchain_core.messages.ai import (
+    InputTokenDetails,
     OutputTokenDetails,
     UsageMetadata,
     subtract_usage,
@@ -344,6 +345,10 @@ def _convert_responses_usage(usage: Any) -> UsageMetadata | None:
     Returns `None` if `usage` itself is missing or if either token field is
     absent — emitting zeroed `UsageMetadata` would silently undercount usage
     in downstream cost dashboards.
+
+    Cache hits and cache writes reported under `input_tokens_details` are mapped
+    onto the standard `InputTokenDetails` slots so downstream consumers can tell
+    cached input from fresh input.
     """
     if usage is None:
         return None
@@ -354,10 +359,22 @@ def _convert_responses_usage(usage: Any) -> UsageMetadata | None:
     total_tokens = _get_attr(usage, "total_tokens", None)
     if total_tokens is None:
         total_tokens = input_tokens + output_tokens
+
+    input_token_details: InputTokenDetails = {}
+    details = _get_attr(usage, "input_tokens_details", None)
+    if details is not None:
+        cache_read = _get_attr(details, "cache_read_input_tokens", None)
+        if cache_read is not None:
+            input_token_details["cache_read"] = cache_read
+        cache_creation = _get_attr(details, "cache_creation_input_tokens", None)
+        if cache_creation is not None:
+            input_token_details["cache_creation"] = cache_creation
+
     return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         total_tokens=total_tokens,
+        input_token_details=input_token_details,
     )
 
 
@@ -396,10 +413,17 @@ def _convert_responses_to_chat_result(response: Any) -> ChatResult:
     content = _extract_responses_text(response)
 
     tool_calls: list[dict[str, Any]] = []
+    additional_kwargs: dict[str, Any] = {}
     output = _get_attr(response, "output", None) or []
     for item in output:
         item_type = _get_attr(item, "type", None)
-        if item_type == "function_call":
+        if item_type == "search_results":
+            if results := _get_attr(item, "results", None):
+                additional_kwargs.setdefault("search_results", []).extend(
+                    result.model_dump() if isinstance(result, BaseModel) else result
+                    for result in results
+                )
+        elif item_type == "function_call":
             raw_args = _get_attr(item, "arguments", "") or ""
             try:
                 parsed_args = json.loads(raw_args) if raw_args else {}
@@ -425,7 +449,6 @@ def _convert_responses_to_chat_result(response: Any) -> ChatResult:
 
     usage_metadata = _convert_responses_usage(_get_attr(response, "usage", None))
 
-    additional_kwargs: dict[str, Any] = {}
     for key in (
         "citations",
         "images",
@@ -436,7 +459,7 @@ def _convert_responses_to_chat_result(response: Any) -> ChatResult:
     ):
         value = _get_attr(response, key, None)
         if value:
-            additional_kwargs[key] = value
+            additional_kwargs.setdefault(key, value)
 
     response_metadata: dict[str, Any] = {}
     for key in ("id", "model", "status", "object"):
@@ -487,7 +510,8 @@ def _convert_responses_stream_event_to_chunk(
 ) -> ChatGenerationChunk | None:
     """Convert a Responses API streaming event to a `ChatGenerationChunk`.
 
-    Handles `response.output_text.delta` (text chunk), `response.output_item.done`
+    Handles `response.reasoning.search_results` (source metadata),
+    `response.output_text.delta` (text chunk), `response.output_item.done`
     carrying a `function_call` (surfaced as a tool-call chunk), `response.completed`
     (final usage + metadata), and `response.failed` / `response.error`
     (raises `PerplexityResponsesStreamError`). Returns `None` for any other
@@ -495,6 +519,22 @@ def _convert_responses_stream_event_to_chunk(
     diagnosable without flooding logs.
     """
     event_type = _get_attr(event, "type", None)
+    if event_type == "response.reasoning.search_results":
+        if results := _get_attr(event, "results", None):
+            return ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content="",
+                    additional_kwargs={
+                        "search_results": [
+                            result.model_dump()
+                            if isinstance(result, BaseModel)
+                            else result
+                            for result in results
+                        ]
+                    },
+                )
+            )
+        return None
     if event_type == "response.output_text.delta":
         delta = _get_attr(event, "delta", "") or ""
         return ChatGenerationChunk(message=AIMessageChunk(content=delta))
@@ -685,17 +725,32 @@ class ChatPerplexity(BaseChatModel):
         Responses-only field (`previous_response_id`, `instructions`, `input`,
         `include`) is supplied.
 
+        The Agent API uses its own model catalog (see
+        https://docs.perplexity.ai/docs/agent-api/models). Select routing by
+        passing either an explicit `model=` such as `"openai/gpt-5.6-sol"`, or a
+        Perplexity `preset` (`"fast"`, `"low"`, `"medium"`, `"high"`, `"xhigh"`,
+        or `"wide-research"`) through
+        `model_kwargs`. Perplexity's built-in tools and Agent-API-only fields
+        also go through `model_kwargs`:
+
         ```python
         from langchain_perplexity import ChatPerplexity
 
-        model = ChatPerplexity(model="sonar-pro", use_responses_api=True)
-        model.invoke("What is the capital of France?")
+        model = ChatPerplexity(
+            use_responses_api=True,
+            model_kwargs={
+                "preset": "medium",
+                "tools": [{"type": "web_search"}],
+            },
+        )
+        model.invoke("What did Perplexity announce most recently?")
         ```
 
-        Auto-detection example:
+        Auto-detection example (routes to the Agent API because a built-in
+        `web_search` tool is present):
 
         ```python
-        model = ChatPerplexity(model="sonar-pro")
+        model = ChatPerplexity(model="openai/gpt-5.6-sol")
         model.invoke(
             "Find recent news about AI.",
             tools=[{"type": "web_search"}],
@@ -1303,6 +1358,7 @@ class ChatPerplexity(BaseChatModel):
 
         added_model_name: bool = False
         added_search_queries: bool = False
+        added_search_context_size: bool = False
         async for chunk in stream_resp:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -1326,8 +1382,10 @@ class ChatPerplexity(BaseChatModel):
                     if not added_search_queries:
                         generation_info["num_search_queries"] = num_search_queries
                         added_search_queries = True
-                if search_context_size := total_usage.get("search_context_size"):
-                    generation_info["search_context_size"] = search_context_size
+                if not added_search_context_size:
+                    if search_context_size := total_usage.get("search_context_size"):
+                        generation_info["search_context_size"] = search_context_size
+                        added_search_context_size = True
 
             choices = chunk.get("choices") or []
             if len(choices) == 0:

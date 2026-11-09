@@ -174,6 +174,14 @@ class _TracerCore(ABC):
         self.order_map[run.id] = (run.trace_id, run.dotted_order)
         self.run_map[str(run.id)] = run
 
+    def _get_run_kwargs(
+        self,
+        parent_run_id: UUID | None,  # noqa: ARG002
+        extra: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Return construction arguments for a run."""
+        return {"extra": extra}
+
     def _get_run(self, run_id: UUID, run_type: str | set[str] | None = None) -> Run:
         try:
             run = self.run_map[str(run_id)]
@@ -226,7 +234,7 @@ class _TracerCore(ABC):
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"messages": [[dumpd(msg) for msg in batch] for batch in messages]},
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             # WARNING: This is valid ONLY for streaming_events.
@@ -258,7 +266,7 @@ class _TracerCore(ABC):
             serialized=serialized,
             # TODO: Figure out how to expose kwargs here
             inputs={"prompts": prompts},
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             run_type="llm",
@@ -356,6 +364,11 @@ class _TracerCore(ABC):
             return
         metadata = run.extra.setdefault("metadata", {})
         metadata[_GATEWAY_RUN_METADATA_KEY] = gateway_metadata
+        # The resolved gateway identity takes precedence over request-time metadata.
+        for source, target in (("model", "ls_model_name"), ("provider", "ls_provider")):
+            value = gateway_metadata.get(source)
+            if isinstance(value, str) and (value := value.strip()):
+                metadata[target] = value
 
     def _errored_llm_run(
         self, error: BaseException, run_id: UUID, response: LLMResult | None = None
@@ -403,7 +416,7 @@ class _TracerCore(ABC):
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs=self._get_chain_inputs(inputs),
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             child_runs=[],
@@ -499,7 +512,7 @@ class _TracerCore(ABC):
             serialized=serialized,
             # Wrapping in dict since Run requires a dict object.
             inputs=inputs,
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             child_runs=[],
@@ -556,7 +569,7 @@ class _TracerCore(ABC):
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"query": query},
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             tags=tags,

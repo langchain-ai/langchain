@@ -617,8 +617,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                     isinstance(block, dict)
                     and block.get("type")
                     in {"server_tool_call", "server_tool_call_chunk"}
-                    and (args_str := block.get("args"))
-                    and isinstance(args_str, str)
+                    and isinstance(args_str := block.get("args") or "{}", str)
                 ):
                     try:
                         args = json.loads(args_str)

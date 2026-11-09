@@ -2,18 +2,22 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
+from collections.abc import AsyncIterator, Iterator
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
 from fireworks import (
     APIConnectionError,
     APITimeoutError,
+    AsyncFireworks,
     AuthenticationError,
     BadRequestError,
+    Fireworks,
     FireworksError,
     InternalServerError,
     NotFoundError,
@@ -35,15 +39,18 @@ from langchain_core.exceptions import (
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    BaseMessage,
     ChatMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
 )
+from langchain_core.outputs import ChatGeneration
 
 from langchain_fireworks import ChatFireworks
 from langchain_fireworks.chat_models import (
     _ALLOWED_CONTENT_PART_KEYS,
+    _DROPPED_CONTENT_BLOCK_TYPES,
     FireworksContextOverflowError,
     _acompletion_with_retry,
     _completion_with_retry,
@@ -55,6 +62,7 @@ from langchain_fireworks.chat_models import (
     _update_token_usage,
     _usage_to_metadata,
 )
+from langchain_fireworks.data._profiles import _PROFILES
 
 MODEL_NAME = "accounts/fireworks/models/test-model"
 
@@ -101,6 +109,15 @@ def test_fireworks_model_param() -> None:
     llm = ChatFireworks(model_name="foo", api_key="fake-key")  # type: ignore[call-arg, arg-type]
     assert llm.model_name == "foo"
     assert llm.model == "foo"
+
+
+@pytest.mark.parametrize("model_name", _PROFILES)
+def test_model_profile_rejects_native_pdf_input(model_name: str) -> None:
+    profile = _make_model(model=model_name).profile
+
+    assert profile is not None
+    assert profile["pdf_inputs"] is False
+    assert profile["pdf_tool_message"] is False
 
 
 def test_convert_dict_to_message_with_reasoning_content() -> None:
@@ -204,10 +221,69 @@ def test_convert_v1_message_filters_invalid_tool_call_content() -> None:
             {
                 "type": "function",
                 "id": "call_invalid",
-                "function": {"name": "get_weather", "arguments": '{"city":'},
+                "function": {
+                    "name": "get_weather",
+                    "arguments": json.dumps(
+                        {"__invalid_tool_call_arguments": '{"city":'}
+                    ),
+                },
             }
         ],
     }
+
+
+@pytest.mark.parametrize("raw_history", [False, True])
+@pytest.mark.parametrize(
+    ("arguments", "wrapped"),
+    [
+        ('{"city":', True),
+        ("[]", True),
+        ("null", True),
+        (None, True),
+        ('{"x": NaN}', True),
+        ('{"city": "Paris"}', False),
+    ],
+)
+def test_replay_invalid_tool_call_arguments(
+    arguments: str | None, *, wrapped: bool, raw_history: bool
+) -> None:
+    message = AIMessage(
+        content="",
+        tool_calls=[{"name": "get_weather", "args": {"city": "Paris"}, "id": "valid"}],
+        invalid_tool_calls=[
+            {"name": "get_weather", "args": arguments, "id": "invalid", "error": "bad"}
+        ],
+    )
+    if raw_history:
+        message.additional_kwargs["tool_calls"] = [
+            {
+                "type": "function",
+                "id": "invalid",
+                "function": {"name": "get_weather", "arguments": arguments},
+            }
+        ]
+        message.tool_calls = []
+        message.invalid_tool_calls = []
+    original = message.model_dump()
+
+    result = _convert_message_to_dict(message)
+
+    assert message.model_dump() == original
+    invalid = result["tool_calls"][-1]
+    assert invalid["id"] == "invalid"
+    assert invalid["function"]["name"] == "get_weather"
+    if wrapped:
+        assert json.loads(invalid["function"]["arguments"]) == {
+            "__invalid_tool_call_arguments": arguments
+        }
+    else:
+        assert invalid["function"]["arguments"] == arguments
+    if not raw_history:
+        assert json.loads(result["tool_calls"][0]["function"]["arguments"]) == {
+            "city": "Paris"
+        }
+    tool_result = ToolMessage(content="Invalid JSON", tool_call_id="invalid")
+    assert _convert_message_to_dict(tool_result)["tool_call_id"] == invalid["id"]
 
 
 def test_sanitize_chat_completions_content_passthrough_non_text_block() -> None:
@@ -402,16 +478,23 @@ def test_format_message_content_passes_through_existing_image_url() -> None:
     assert formatted == blocks
 
 
-@pytest.mark.parametrize(
-    "btype",
-    [
+def test_dropped_content_block_types_membership() -> None:
+    """Pin the drop-list so a removal is a deliberate, visible change.
+
+    The parametrized test below derives its cases from the constant, so it
+    tracks additions for free but cannot catch a deletion.
+    """
+    assert {
         "tool_use",
         "thinking",
+        "reasoning",
         "reasoning_content",
         "function_call",
         "code_interpreter_call",
-    ],
-)
+    } == _DROPPED_CONTENT_BLOCK_TYPES
+
+
+@pytest.mark.parametrize("btype", sorted(_DROPPED_CONTENT_BLOCK_TYPES))
 def test_format_message_content_drops_unsupported_block_types(btype: str) -> None:
     """Block types not part of the OpenAI chat completions wire format are stripped."""
     blocks = [
@@ -763,7 +846,11 @@ def test_completion_with_retry_exhausts_and_raises() -> None:
     assert mock_client.create.call_count == 3
 
 
-def test_completion_with_retry_streaming_retries_on_setup() -> None:
+@pytest.mark.parametrize(
+    "error",
+    [_api_error(RateLimitError, "rate limited", 429), httpx.ReadTimeout("slow")],
+)
+def test_completion_with_retry_streaming_retries_on_setup(error: Exception) -> None:
     """Streaming errors raised during the first-chunk pull are retried."""
     llm = _make_llm(max_retries=1)
 
@@ -774,8 +861,7 @@ def test_completion_with_retry_streaming_retries_on_setup() -> None:
         if calls["n"] == 1:
 
             def _failing_gen() -> Any:
-                msg = "rate limited"
-                raise _api_error(RateLimitError, msg, 429)
+                raise error
                 yield  # pragma: no cover
 
             return _failing_gen()
@@ -916,7 +1002,13 @@ def test_chat_fireworks_invoke_routes_through_retry() -> None:
     assert mock_client.create.call_count == 2
 
 
-async def test_acompletion_with_retry_streaming_retries_on_setup() -> None:
+@pytest.mark.parametrize(
+    "error",
+    [_api_error(RateLimitError, "rate limited", 429), httpx.ReadTimeout("slow")],
+)
+async def test_acompletion_with_retry_streaming_retries_on_setup(
+    error: Exception,
+) -> None:
     """Async streaming errors during the first-chunk pull are retried."""
     llm = _make_llm(max_retries=1)
     calls = {"n": 0}
@@ -926,8 +1018,7 @@ async def test_acompletion_with_retry_streaming_retries_on_setup() -> None:
         if calls["n"] == 1:
 
             async def _failing_agen() -> Any:
-                msg = "rate limited"
-                raise _api_error(RateLimitError, msg, 429)
+                raise error
                 yield  # pragma: no cover
 
             return _failing_agen()
@@ -1272,6 +1363,19 @@ class TestCombineLLMOutputs:
         )
         assert result["token_usage"] == {"prompt_tokens_details": {"cached_tokens": 8}}
 
+    def test_uses_first_nonempty_response_model(self) -> None:
+        model = _make_model()
+        result = model._combine_llm_outputs(
+            [
+                None,
+                {"model_name": ""},
+                {"model_name": "returned-model"},
+                {"model_name": "another-model"},
+            ]
+        )
+        assert result["model_name"] == "returned-model"
+        assert result["token_usage"] == {}
+
     def test_skips_none_streaming_outputs(self) -> None:
         """`None` entries (produced during streaming) are skipped, not dereferenced."""
         model = _make_model()
@@ -1410,14 +1514,37 @@ class TestCreateChatResult:
 class TestExtraHeaders:
     """Tests for request-specific HTTP header plumbing."""
 
+    def test_mixed_case_headers_are_not_duplicated_on_the_wire(self) -> None:
+        requests: list[httpx.Request] = []
+
+        def respond(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            return httpx.Response(200, json=_success_response())
+
+        with Fireworks(
+            api_key="fake-key",
+            http_client=httpx.Client(transport=httpx.MockTransport(respond)),
+        ) as sdk:
+            model = _make_model(
+                client=sdk.chat.completions,
+                async_client=MagicMock(),
+                model_kwargs={"extra_headers": {"X-Session-Affinity": "model"}},
+            )
+            model.invoke("Hello", extra_headers={"x-session-affinity": "request"})
+
+        assert len(requests) == 1
+        assert requests[0].headers.get_list("x-session-affinity") == ["request"]
+
     def test_extra_headers_forwarded_to_sync_create(self) -> None:
-        model = _make_model()
+        model_headers = {"X-Model": "model", "x-shared": "model"}
+        model = _make_model(model_kwargs={"extra_headers": model_headers})
         model.client = MagicMock()
         model.client.create.return_value = {
             "choices": [{"message": {"role": "assistant", "content": "ok"}}],
             "usage": {},
         }
         headers = {
+            "X-Shared": "request",
             "x-session-affinity": "thread-123",
             "x-multi-turn-session-id": "thread-123",
         }
@@ -1425,15 +1552,19 @@ class TestExtraHeaders:
         model.invoke("Hello", extra_headers=headers)
 
         call_kwargs = model.client.create.call_args[1]
-        assert call_kwargs["extra_headers"] == headers
+        assert call_kwargs["extra_headers"] == {"X-Model": "model", **headers}
+        assert model.model_kwargs["extra_headers"] == model_headers
+        assert "X-Model" not in headers
         # `extra_headers` must reach the SDK at the top level, not be folded
         # into `extra_body` by `_prepare_sdk_kwargs`.
         assert "extra_headers" not in call_kwargs.get("extra_body", {})
 
     async def test_extra_headers_forwarded_to_async_create(self) -> None:
-        model = _make_model()
+        model_headers = {"X-Model": "model", "x-shared": "model"}
+        model = _make_model(model_kwargs={"extra_headers": model_headers})
         model.async_client = MagicMock()
         headers = {
+            "X-Shared": "request",
             "x-session-affinity": "thread-123",
             "x-multi-turn-session-id": "thread-123",
         }
@@ -1449,14 +1580,18 @@ class TestExtraHeaders:
         await model.ainvoke("Hello", extra_headers=headers)
 
         call_kwargs = model.async_client.create.call_args[1]
-        assert call_kwargs["extra_headers"] == headers
+        assert call_kwargs["extra_headers"] == {"X-Model": "model", **headers}
+        assert model.model_kwargs["extra_headers"] == model_headers
+        assert "X-Model" not in headers
 
     def test_extra_headers_forwarded_when_streaming(self) -> None:
         """`extra_headers` must also survive the separate streaming param path."""
-        model = _make_model()
+        model_headers = {"X-Model": "model", "x-shared": "model"}
+        model = _make_model(model_kwargs={"extra_headers": model_headers})
         model.client = MagicMock()
         model.client.create.return_value = iter(list(_STREAM_CHUNKS))
         headers = {
+            "X-Shared": "request",
             "x-session-affinity": "thread-123",
             "x-multi-turn-session-id": "thread-123",
         }
@@ -1464,8 +1599,100 @@ class TestExtraHeaders:
         list(model.stream("Hello", extra_headers=headers))
 
         call_kwargs = model.client.create.call_args[1]
-        assert call_kwargs["extra_headers"] == headers
+        assert call_kwargs["extra_headers"] == {"X-Model": "model", **headers}
+        assert model.model_kwargs["extra_headers"] == model_headers
+        assert "X-Model" not in headers
         assert "extra_headers" not in call_kwargs.get("extra_body", {})
+
+
+@pytest.mark.parametrize("with_request", [False, True])
+@pytest.mark.parametrize("async_mode", [False, True])
+@pytest.mark.parametrize("tool_call", [False, True])
+async def test_midstream_read_timeout_is_classified_without_replay(
+    *, with_request: bool, async_mode: bool, tool_call: bool
+) -> None:
+    request = httpx.Request("POST", "https://api.fireworks.ai/inference/v1")
+    error = httpx.ReadTimeout(
+        "Timeout on reading data from socket",
+        request=request if with_request else None,
+    )
+    delta: dict[str, object] = (
+        {
+            "tool_calls": [
+                {
+                    "index": 0,
+                    "id": "call_1",
+                    "type": "function",
+                    "function": {"name": "lookup", "arguments": '{"query":'},
+                }
+            ]
+        }
+        if tool_call
+        else {"content": "Hello"}
+    )
+    chunk: dict[str, object] = {"choices": [{"delta": delta, "index": 0}]}
+
+    def _stream() -> Iterator[dict[str, object]]:
+        yield chunk
+        raise error
+
+    async def _astream() -> AsyncIterator[dict[str, object]]:
+        yield chunk
+        raise error
+
+    model = _make_llm(max_retries=2)
+    received: list[AIMessageChunk] = []
+    with pytest.raises(httpx.ReadTimeout) as exc_info:
+        if async_mode:
+            model.async_client = MagicMock(create=AsyncMock(return_value=_astream()))
+            async for message in model.astream("Hello"):
+                received.append(message)  # noqa: PERF401
+        else:
+            model.client = MagicMock(create=MagicMock(return_value=_stream()))
+            received.extend(model.stream("Hello"))
+
+    classified = exc_info.value
+    assert isinstance(classified, ModelTimeoutError)
+    assert classified.is_retryable
+    assert classified.__cause__ is error
+    assert str(classified) == str(error)
+    if with_request:
+        assert classified.request is request
+    else:
+        with pytest.raises(RuntimeError, match="request"):
+            _ = classified.request
+    assert len(received) == 1
+    if tool_call:
+        assert received[0].tool_call_chunks[0]["args"] == '{"query":'
+    else:
+        assert received[0].content == "Hello"
+    client = model.async_client if async_mode else model.client
+    client.create.assert_called_once()
+
+
+@pytest.mark.parametrize("async_mode", [False, True])
+async def test_midstream_non_timeout_propagates_unchanged(*, async_mode: bool) -> None:
+    error = ValueError("invalid stream")
+
+    def _stream() -> Iterator[dict[str, object]]:
+        yield {"choices": [{"delta": {"content": "Hello"}}]}
+        raise error
+
+    async def _astream() -> AsyncIterator[dict[str, object]]:
+        for chunk in _stream():
+            yield chunk
+
+    model = _make_llm(max_retries=2)
+    with pytest.raises(ValueError) as exc_info:
+        if async_mode:
+            model.async_client = MagicMock(create=AsyncMock(return_value=_astream()))
+            _ = [chunk async for chunk in model.astream("Hello")]
+        else:
+            model.client = MagicMock(create=MagicMock(return_value=_stream()))
+            list(model.stream("Hello"))
+    assert exc_info.value is error
+    client = model.async_client if async_mode else model.client
+    client.create.assert_called_once()
 
 
 class TestStreamUsage:
@@ -2126,3 +2353,223 @@ def test_langsmith_gateway_api_key_overrides_provider_key(
     monkeypatch.setenv("FIREWORKS_API_KEY", "provider-key")
     llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
     assert llm.fireworks_api_key.get_secret_value() == "gateway-key"
+
+
+@pytest.mark.parametrize(
+    ("method", "streaming", "candidate_count"),
+    [
+        ("invoke", False, 1),
+        ("ainvoke", False, 1),
+        ("invoke", True, 1),
+        ("ainvoke", True, 1),
+        ("stream", True, 1),
+        ("astream", True, 1),
+        ("generate", False, 1),
+        ("agenerate", False, 1),
+        ("generate", False, 2),
+        ("agenerate", False, 2),
+    ],
+)
+@pytest.mark.parametrize("response_model", ["returned-model", None, ""])
+@pytest.mark.parametrize("include_usage", [False, True])
+async def test_response_model_metadata_through_sdk_http_transport(
+    method: str,
+    response_model: str | None,
+    candidate_count: int,
+    *,
+    streaming: bool,
+    include_usage: bool,
+) -> None:
+    """Report the served model, not the requested deployment, even without usage."""
+    requests: list[dict[str, Any]] = []
+    usage = {"prompt_tokens": 5, "completion_tokens": 2, "total_tokens": 7}
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        requests.append(body)
+        common = {"id": "completion_test", "created": 0}
+        # Omit the field entirely for the fallback case, as older APIs may do.
+        model_fields = {"model": response_model} if response_model is not None else {}
+        if body.get("stream"):
+            chunks: list[dict[str, Any]] = [
+                {
+                    **model_fields,
+                    "choices": [
+                        {"index": 0, "delta": {"role": "assistant", "content": "Hel"}}
+                    ],
+                },
+                {
+                    **model_fields,
+                    "choices": [{"index": 0, "delta": {"content": "lo"}}],
+                },
+                {"choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]},
+            ]
+            if include_usage:
+                chunks.append({"choices": [], "usage": usage})
+            events = [
+                "data: "
+                + json.dumps({**common, "object": "chat.completion.chunk", **chunk})
+                + "\n\n"
+                for chunk in chunks
+            ]
+            return httpx.Response(
+                200,
+                headers={"content-type": "text/event-stream"},
+                content="".join([*events, "data: [DONE]\n\n"]),
+            )
+        return httpx.Response(
+            200,
+            json={
+                **common,
+                **model_fields,
+                "object": "chat.completion",
+                "choices": [
+                    {
+                        "index": index,
+                        "finish_reason": "stop",
+                        "message": {"role": "assistant", "content": "Hello"},
+                    }
+                    for index in range(candidate_count)
+                ],
+                **({"usage": usage} if include_usage else {}),
+            },
+        )
+
+    transport = httpx.MockTransport(respond)
+    with Fireworks(
+        api_key="fake-key", http_client=httpx.Client(transport=transport), max_retries=0
+    ) as sdk:
+        async with AsyncFireworks(
+            api_key="fake-key",
+            http_client=httpx.AsyncClient(transport=transport),
+            max_retries=0,
+        ) as async_sdk:
+            model = _make_model(
+                client=sdk.chat.completions,
+                async_client=async_sdk.chat.completions,
+                streaming=streaming,
+            )
+            expected_model = response_model or MODEL_NAME
+            response: BaseMessage
+            if method == "stream":
+                chunks = list(model.stream("Hello"))
+                response = sum(chunks[1:], chunks[0])
+            elif method == "astream":
+                chunks = [chunk async for chunk in model.astream("Hello")]
+                response = sum(chunks[1:], chunks[0])
+            elif method in ("generate", "agenerate"):
+                messages: list[list[BaseMessage]] = [
+                    [HumanMessage(content="Hello")]
+                ] * 2
+                result = (
+                    await model.agenerate(messages)
+                    if method == "agenerate"
+                    else model.generate(messages)
+                )
+                assert result.llm_output is not None
+                assert result.llm_output["model_name"] == expected_model
+                assert result.llm_output["token_usage"] == (
+                    {key: value * 2 for key, value in usage.items()}
+                    if include_usage
+                    else {}
+                )
+                for generations in result.generations:
+                    assert len(generations) == candidate_count
+                    for candidate in generations:
+                        assert isinstance(candidate, ChatGeneration)
+                        assert (
+                            candidate.message.response_metadata["model_name"]
+                            == expected_model
+                        )
+                generation = result.generations[0][0]
+                assert isinstance(generation, ChatGeneration)
+                response = generation.message
+            elif method == "ainvoke":
+                response = await model.ainvoke("Hello")
+            else:
+                response = model.invoke("Hello")
+            assert response.content == "Hello"
+            assert response.response_metadata["model_name"] == expected_model
+            assert isinstance(response, (AIMessage, AIMessageChunk))
+            assert response.usage_metadata == (
+                {"input_tokens": 5, "output_tokens": 2, "total_tokens": 7}
+                if include_usage
+                else None
+            )
+    assert all(request["model"] == MODEL_NAME for request in requests)
+
+
+_DUPLICATE_USAGE = {"prompt_tokens": 5, "completion_tokens": 2, "total_tokens": 7}
+_DUPLICATE_USAGE_STREAM: list[dict[str, Any]] = [
+    {
+        "model": "m",
+        "choices": [{"index": 0, "delta": {"role": "assistant", "content": "hi"}}],
+    },
+    {
+        "model": "m",
+        "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+        "usage": _DUPLICATE_USAGE,
+    },
+    {"model": "m", "choices": [], "usage": _DUPLICATE_USAGE},
+]
+
+
+def _assert_usage_reported_once(chunks: list[AIMessageChunk]) -> None:
+    assert sum(1 for c in chunks if c.usage_metadata) == 1
+    full = chunks[0]
+    for c in chunks[1:]:
+        full = full + c
+    assert full.usage_metadata == {
+        "input_tokens": 5,
+        "output_tokens": 2,
+        "total_tokens": 7,
+    }
+
+
+def test_stream_reports_usage_once_when_sent_twice() -> None:
+    """Usage on both the finish chunk and a trailing chunk is not double counted."""
+    llm = _make_llm(max_retries=0)
+    llm.client = MagicMock(create=MagicMock(return_value=iter(_DUPLICATE_USAGE_STREAM)))
+
+    chunks = [c for c in llm.stream("hi") if isinstance(c, AIMessageChunk)]
+
+    _assert_usage_reported_once(chunks)
+
+
+async def test_astream_reports_usage_once_when_sent_twice() -> None:
+    """Async variant of `test_stream_reports_usage_once_when_sent_twice`."""
+
+    async def _astream() -> Any:
+        for chunk in _DUPLICATE_USAGE_STREAM:
+            yield chunk
+
+    llm = _make_llm(max_retries=0)
+    llm.async_client = MagicMock(create=AsyncMock(return_value=_astream()))
+
+    chunks = [c async for c in llm.astream("hi") if isinstance(c, AIMessageChunk)]
+
+    _assert_usage_reported_once(chunks)
+
+
+def test_stream_keeps_last_usage_when_reports_differ() -> None:
+    """A partial early report never wins over the final one."""
+    stream = [
+        {
+            "model": "m",
+            "choices": [{"index": 0, "delta": {"role": "assistant", "content": "a"}}],
+            "usage": {"prompt_tokens": 5, "completion_tokens": 1, "total_tokens": 6},
+        },
+        {
+            "model": "m",
+            "choices": [
+                {"index": 0, "delta": {"content": "b"}, "finish_reason": "stop"}
+            ],
+        },
+        {"model": "m", "choices": [], "usage": _DUPLICATE_USAGE},
+    ]
+    llm = _make_llm(max_retries=0)
+    llm.client = MagicMock(create=MagicMock(return_value=iter(stream)))
+
+    chunks = [c for c in llm.stream("hi") if isinstance(c, AIMessageChunk)]
+
+    _assert_usage_reported_once(chunks)

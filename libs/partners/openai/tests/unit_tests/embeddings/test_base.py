@@ -1,4 +1,3 @@
-import os
 from typing import Any
 from unittest.mock import Mock, patch
 
@@ -6,8 +5,6 @@ import pytest
 from pydantic import SecretStr
 
 from langchain_openai import OpenAIEmbeddings
-
-os.environ["OPENAI_API_KEY"] = "foo"
 
 
 def test_openai_invalid_model_kwargs() -> None:

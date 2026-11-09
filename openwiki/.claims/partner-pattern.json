@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:1d808635b61fceb8ac284a1de8f28867e374f725fb393a9ad56b26345d607f00",
+  "claims": [
+    {
+      "id": "claim_7c2a1600fd294471a122d693305b38f8",
+      "statement": "The _BUILTIN_PROVIDERS dictionary in init_chat_model maps provider names to module paths, class names, and instantiation functions, enabling dynamic import and instantiation of chat model integrations by name. Adding a provider requires registering a tuple of (module_path, class_name, creator_func) for each entry.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L56-L99",
+          "version": "repo-lines-v1:sha256:a0432456fbcc294961073b737c0871eb2e1444b6649f4f39c8fd5af7d29f8834:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0OWFmODNkYjQ4ODc5YTQyYjVjNTliMmEyYmY3NThiYWY4YjFkMmQwNTJmOGRmN2VlNWNkOTIyMjJkYTM4NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkNzA5NGEwOTBkZDkxYjgwMmJjZWIxYWNkYzMwYWMyNTc5MjU4YTFjNjkxNTk4YWVmNjYyMDAyMWQ1NWMzMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhYzk3OTRjOTIxODcwZGVjNjU0YWU5YjU2ZDBiMDk3YWU0NDlhODU4NzE5Y2Q3MjhkZDI5N2ZhNjMyN2VhOTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ede1719006f44fd88e9ed6a867a79850",
+      "statement": "All chat model providers must inherit from BaseChatModel and implement _generate method (required for sync generation) and optionally _stream method for streaming support. _agenerate and _astream are async variants. The _llm_type property identifies the provider.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L325-L2701",
+          "version": "repo-lines-v1:sha256:96946fca7202f3d00d3bdc0578746a6423f0c5236762ab7f46bc953b4e3e9c33:eyJzZWxlY3RlZExpbmVDb3VudCI6MjM3NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAwNTcxZDA4NTFjMTIyMTUzYTNiMDExNTE1NTI4ZjlhNDM3MGRmZWY3YTMxZGYzNTZlOGQ3OWNjMjA4NDE1MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTU2NWNmODYzMGNkNjlkYmRiMDQ4ODQ3MWYzMzYxZjc0MzM3NTQyMDI0MWVhMDUyM2U5MzA4MWQyZmM3MWZjMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDc1ZWM5Y2Y2ZDJmNGVjMDcwOWZmYzQ3NmZiMmVjNWRiNzI5Yzg4NGM2MjFkZjNiNGQwNzI5MjJmMGM4YzFjZiJ9"
+        },
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/chat_models.py#L1-L150",
+          "version": "repo-lines-v1:sha256:029b83ec3b02ad423217217e74b2d81d7fe59f641be07f5c6e78478ab074ca1e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxNTBhNDllZmI2N2JmMzZhNTk4OGExOGYwZTEzMDQ3NDBjMDY3NTRhYWIzMzMwNWIxZDE3ZTkxY2NiMWYyODhmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiYTJmOWYwYjU4YTM5Y2ZjMjcyNzliZDJjYjZkZTlmYzM2M2ViNDUwMTY0NTU4ZjJiMjAzMTkyOGI1MTkzMjdkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhYzU3YTBiYmU1N2UyMTY1NjMwNDk4ZjBkYTM3MWI2MGExY2QzMGVkMTcyZGZjNzNiZDI4NzU5MTc5OGUzZTVlIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_ec81f5b4f21b4f2480ccacc8d1fd3ce9",
+      "statement": "Provider implementations translate between LangChain's unified message format with content blocks (text, images, tool_calls, etc.) and provider-specific API schemas. This occurs in _generate/_stream before calling the provider API and when parsing responses into AIMessage/AIMessageChunk.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/messages/base.py#L93-L180",
+          "version": "repo-lines-v1:sha256:e6be22558dc63e5340eb68ee9c6fd5e038ce8e73a744032231edf160bf532c1f:eyJzZWxlY3RlZExpbmVDb3VudCI6ODgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YWFlYjBkNzJlNzU4NDhiYWVmMDliMGJiMzU0MDY4MjJhZmFmYTQ4YzEwMWU2NDc5OTE4Yjg3YWFiOTU2YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyOGVlZTRhYzUwYzgwY2I3ZTU5ZGUxNmEwZWM4MjllZGViYjRmNTJhZDkzMjk2NzNmN2JiMTA4NDBjODlkMTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiMTc0NWI5NTA3OTM2ZTRiMDAxNGUxZDg2ODJjYTEyNzZkZWM3NTVkMjgzNDI0MTE2MTM1ZDcyNzVhMjVjOTEifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L385-L473",
+          "version": "repo-lines-v1:sha256:f99dc25c09ce98a63bc71b6e1c28d2927c8cca74aee0f6b8b079f257b443ebd4:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwNTUwZDY1YWNhYjg5YmE1MWYwMjJlMGQ5MTg3Yjg2ZWI2ZGE1NWY4MGQzMzI4MzJhYWE4ZTYxMjJjZGU4ZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY2NWM0NDBiMjAxYjQzMGM1Y2VmYjRkNWZlNTRlMjg4YjQ2ZGE5YjE5ZGZlM2YyZjIzMDMzOWRkZTRiZWFhNDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjZGUxODBiYWZlMDUxZjUyMGMxMGJhZDdmODg1YzIxZjA4MWI5OGU3NjMyYWU0ODEyNWM5OTA4NzNmOTNhMTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1ODE4NGJmZDRhODYxZmNiNDgxNzgyY2VkNTg5OGU3YmFiOTY1Y2Y2NWRkZWJkMTkzYTg3ODViMTgyODgzOWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_abb3b526d5bf49b19dd0d5aaf8c8b6f0",
+      "statement": "Streaming _stream method yields ChatGenerationChunk objects containing AIMessageChunk with incremental content tokens. It enables streaming in the API request, iterates provider events, extracts deltas, and calls run_manager.on_llm_new_token for observability.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/chat_models.py#L2198-L2247",
+          "version": "repo-lines-v1:sha256:78280b18cf6ccd8477719750a53e51762f08042675f4b9c97bf992ac59e7d800:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzN2Q4Mzk0YzBjZjdhYWJiZTRhODg1YjA1NGE4ODI5YWQ3NGRhYmU1MGVmYzQ5NDg3NWJjZGVmNDQyMTA5YjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxODdkNTM4ZThhNDJlMzk2NmEzZDVhMGJmMjAxZGNiZDZkZGYwOTFkMzY3ZmY5OTJmMmNlMmQzZjMzOTU4NjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxOGMyMTFlYWFhZmI2MzU0NDM0NmJjZDEwN2VlYWVmNTQ3MDljOGYyNTliOTNiNjk1YTE2Yjg0MTdkMzFhOWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_85d21c6e76354f61b418661763d40524",
+      "statement": "Model profiles are generated from models.dev via the langchain-model-profiles CLI tool and stored in data/_profiles.py with provider-specific capability data (context window, modalities, tool calling, structured output). Profile augmentations can override or extend profiles via profile_augmentations.toml.",
+      "evidence": [
+        {
+          "resource": "repo://libs/model-profiles/README.md#L35-L43",
+          "version": "repo-lines-v1:sha256:3835ef638527b03dc367ea9a6a760b169e93f3070f7dbf5c990d5a5b029ece02:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWEyYmY4MjA3ODQzNjQ2ZDgwMWNlYWEyMjhiZWU3M2JiN2I2ZWFhYjI1YWQzOTIyMzcwMjRlNjNhMjA2YmNiMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYmI5NjYyOTcxMTkxZjNmN2QwZTg1YTcyOTU2ZmQ0OTRhZDc0MDBjNWU1M2I4NGQyMzQ2NWY3NjBhZTg2MjgyNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGY5NDZjYzUyMjJhZjMzMDY1ZDc5MzI0ZDZhYjc0NGMwOTRmYzA0MjhlZGIyMDVlMTk3YmJiNzgyZDQ5M2JiMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDgxZGM2NjAxYzdkNmZhNTM2MGEzNGMxOTY2NzBmNDU1ZDA0ZWNjODdhNmEwYmQwNTdmNTU3MWY0Mjc2ZDkwZSJ9"
+        },
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/data/_profiles.py#L18-L90",
+          "version": "repo-lines-v1:sha256:3b313441df72bb0b88a70710ef77234b6b24f82d37abebb8f917cfbf19af5ae7:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ2OGM2ZTA0MGZiZjAyMTliNGE2NzNmM2ZlNDZiMGRkNzExZTM5ZGYzYTI5OTNmNWRiOTNlODNlY2YxOTBkYWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0MzYwZTZmOTk2OGM3NmQ1MmEyYTZlYzkyYWFkZTExNmRhM2E3ZTg3NjYzOTY1ZDQzZWNiMjA4ZDA4MTE3ZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5YzNmZGMxOTJmNjhkY2U1ODliYmI3OTA2OGJkYWMzNGNjNzQzNGU4Nzc3ZDgyMzRmZWJmMWQ5NGIzZjU0Y2EifQ"
+        },
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/data/profile_augmentations.toml#L1-L60",
+          "version": "repo-lines-v1:sha256:35e6d323b6bcd12e33c612cf13c74628f27ba9553397e667c348b1478d63543f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmZDM5YTg2ZGFjNGIzYzEzYjk3MWY4YWE2ZDY5NGE0MWRjMzQxZmI3ZTBjNjEzMjMwYmRjNTVhNzIzNGY2MTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4MGVkZjAzNTQ3NjhkYTM1Mjc4OTk3ZjNjYTVmZjQ5NGExOTM3YTU0MDc0ZmNjOGVjYTY0NTljMTcyZTBkYjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4MzkxODAwMzc1MGEwOTIxOWY5N2FmZDIzOTc5MTlkNDI3MTc4YWEyMTc2YjYyNDY2NGEwNzE3MDJjZjhiOTMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e28b9a02283c4117bd1f26410f1d976d",
+      "statement": "Chat model providers must implement unit and integration tests by inheriting ChatModelUnitTests and ChatModelIntegrationTests from langchain-tests. The chat_model_class fixture provides the model class to test; additional configurable fixtures include chat_model_params, chat_model_has_tool_calling, and chat_model_has_structured_output.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/tests/unit_tests/chat_models/test_base_standard.py",
+          "version": "repo-file-v1:sha256:dbd3bcb89b9e62550e7f3882af864dcf4a259ba3079859623e0cc95803501c5b"
+        },
+        {
+          "resource": "repo://libs/standard-tests/README.md#L38-L83",
+          "version": "repo-lines-v1:sha256:6358c7d7376c7b54d0cc658f94b8bcf1153a79856fffa466d850d4a5176aee4e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMmJmODIwNzg0MzY0NmQ4MDFjZWFhMjI4YmVlNzNiYjdiNmVhYWIyNWFkMzkyMjM3MDI0ZTYzYTIwNmJjYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3Yzc1NTVmOTU2OTRkMmFhZjkzYTBkMmNjZmE3YmZlMTRmOGMyZTJmZTg0OTA0MDMyOTExZTAxYjY0NGQ4M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3N2ZkMTNjNGE2NmRhZGJiNTM4NTk1MTkzNjY3NzFmMjViODQ0MzY1YmVjYzdhNjU0NGM4OTM5MGQ4YTE4YWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a7fa4aec0f874ffaa86e9395f1870be7",
+      "statement": "Provider packages reside in /libs/partners/provider_name/ with a langchain_provider_name module containing chat_models/base.py (or chat_models.py at module root), data/ with profiles and augmentations, tests/ for unit and integration tests, and standard files: pyproject.toml, Makefile, README, LICENSE, uv.lock. The pyproject.toml specifies langchain-core>=1.7.5,<2.0.0, provider SDK dependencies with locked minimum versions (e.g., openai>=2.45.0, anthropic>=0.120.0), and test dependencies including langchain-tests>=1.1.9,<2.0.0 with version constraints. Local packages are referenced via [tool.uv.sources].",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/chat_models.py#L1-L100",
+          "version": "repo-lines-v1:sha256:502f993a9d1ac1ea937c1ce25d63c38881cddb2c93d12d3c9a2ced5efe626fa0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxNTBhNDllZmI2N2JmMzZhNTk4OGExOGYwZTEzMDQ3NDBjMDY3NTRhYWIzMzMwNWIxZDE3ZTkxY2NiMWYyODhmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkMzI4MzRhYWZiNmI4NTkzNmRhZjQwN2E2N2I4OTdkMzVhMzRjZDJkNTFiMmYxNzgyNWUzZjJkNWQ1NTJjNTRhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmODRkYWFlMzc5NzhjOThhODI2NTRjYWMyMzVmYjk2YjlhMmEwMDM1M2Q1ZDIzYjZlOWFjYTNmNjFhNDVlOWQzIn0"
+        },
+        {
+          "resource": "repo://libs/partners/anthropic/pyproject.toml#L23-L29",
+          "version": "repo-lines-v1:sha256:aad690f68fed8bd99fe8e697d0e5161f9f97ca93d36dc3ad7e3f10dc61b886c2:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQ2MDVhYzI4NGI0ZTU5NzkwNjNmZmYzMDhmNWFmZDQ3MGEzOGE2ZTJjYzM5NDU5YzUxODkxNjVhMjQyZDY3MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzBlM2JkZDc0YWJkOGViYjVjMDMyNTNkNGZmNTA2ZmNhZmNjYWExZDkyMDVlMWQxZmMzMzUzOGY2MTViMTI1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWI5NGZiMGMzNDIyZDFmMmRhYTgzYTNhMTNmMGY3NjA0NTc4M2RkNDE5NTk5NTdhZDdiNThmMjc4YTk4ODQ5MCJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/__init__.py#L1-L6",
+          "version": "repo-lines-v1:sha256:b69d77fd9aa09cdc548568ae5103af5800deaaf4e2742b2ca8516e99e9a3b4bb:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQ2YzllZmI2M2QyOWI5ZGViNDA4NDBiMDI0MGUxMmM0N2NlNDNmZWU0NmMwNGYxYWE4N2U1ZWVhODU0ODUwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjZkMjAyZmFmYmI0ZGEzYWU4OGFhYTkwMzcxNDgwODg5NDZhMzFkZDYzNzhlZjNjZmIzOGVhYWQ0MzE4NGE3MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/pyproject.toml#L23-L30",
+          "version": "repo-lines-v1:sha256:bc964446fa75f5b961992f40f6d754687de435fc6e9af490eea6cca3a9f9a5df:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTliMmNmNDg0ZWJjOTg3MzUwZjY4MTYyY2EyNDBjYTFmOWM0YmMzOWUyZDcyZTJmMzAzNTNiMzllN2FkNjZlNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzBlM2JkZDc0YWJkOGViYjVjMDMyNTNkNGZmNTA2ZmNhZmNjYWExZDkyMDVlMWQxZmMzMzUzOGY2MTViMTI1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWE1MWQ5N2ZmNTI1YzUxZDhmNWFhM2JjNzRkMmM2OGI5YThkOGFiNTZhMGFhZWM5YzE0ZGZlY2JhYTE0OTQzMyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ff627ba0a4984cd3a07a56562ca63b24",
+      "statement": "Provider implementations map provider-specific exceptions to LangChain's unified exception hierarchy: ModelAuthenticationError, ModelRateLimitError, ModelAPIError, ModelTimeoutError, ModelConnectionError. This ensures consistent error handling across all providers.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L54-L65",
+          "version": "repo-lines-v1:sha256:4ac853272aab29c7ebc3c7e3c3bf08e24c5744b49c8f4e0c52c4fc1ecbb12bf8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2N2I4NTExMGM4ZDYwZDRmZTBhMTFlYWI2NjUwZWNlZjQ0ZTc2ZTdlMTU3ZWY0MzY0ZmQ4NzQ1YjMxODJhZDAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE2NDcxNTMyNmUwZDYxNDlkYWE3YTYzZDFkMDE3MmVlMWM1Yjk1NzlkZTliOTQ0NDBjZGM4MjFiNzVhYmNjMWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5MzM1ZDEyMWJmMDg0ZjNkZDMzMzEzYTIzYjJkNzUzZmYzN2Q4YjRiZDdhMTgzNmVkNzAzMDE4YTQzOGIwZGQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_444b9ff37e5d45af9ce30bedd6042b17",
+      "statement": "Providers may optionally support advanced response APIs (e.g., OpenAI Responses API) alongside standard chat completions. These APIs enable streaming tool execution, reasoning outputs, and structured response formats. Implementation requires converting provider-specific response structures (content blocks with type/id/metadata) back to unified AIMessage format via provider-specific conversion functions (e.g., _convert_from_v1_to_responses). Responses API support is optional, configurable via provider-specific parameters (use_responses_api=True), and tested via dedicated test variants (test_responses_standard.py).",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/_compat.py#L1-L66",
+          "version": "repo-lines-v1:sha256:3ebe187dbd9c60e3c578b49557371974d467265f4d41cbf9b9815b27c0892186:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1MDk3Yjg4NTEwNzY5NjdiMDQ0Y2VjNGY5MDEzZmNkMzI0YTBjNmJlOWUzYjY3MGJjNWY0ZjY5MzE5MGFmNWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/_compat.py#L437-L543",
+          "version": "repo-lines-v1:sha256:1d230ed7ded075d0da7bb1543a568281072330d9dec77da16ecd1aaf48fac259:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2Nzg2NjIyMDMzOTdhMzZkOWEyNGQ3NjQzYmViZWQ0NTBkMjI4ZGFiNzhlN2ZmYmQ2YmU3Y2MzNzVmNzg3YjI2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkYjZiNGIxN2I2ODRlYWY3ZDhkZjFjNzJjZjM1YzFhY2ZkMGM4M2FmNDJiNzA2ODMxYjM5ZjgwNjhlNGQzNDZlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlNWUzNmYxYjA2YjEwNjVkMDBmZTJmYzE5ZjBmNjkzYTZhNjkwOTE4ODFhNTA3MzJjZDM5ZjljYmUxNDU0ZjQ4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1962-L1994",
+          "version": "repo-lines-v1:sha256:5e98447ac55d935df70ab27dc4230c2b8309fe8ae2aa07108676a7cc8ed97f77:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMmViZWRkOTYwZDhiNWQ5NjUzNDE3MDg1ODAzMmFkNGM3NmY0ZjcwMmMyMmU3MGYwYjc4MWRiMmYyNjhlYjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcwZDQ3MzFhNjM1NmVkZDhkNGQ2OTNhYjYwZTk3MzJlMTdmZDRkOTQzYTE2NDEzZDI1YWJjZWYxMGY2ZWUwYzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjMjhhMzIxODQxYTU2YWU0ZWVhYWI2MjU3NWEzMmFhNGU5ZjMyYzUzZDJhNDZiM2U3Yjc2YmJjMTI2NjEwYWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJkOTBjODI3ZjhiY2NiZWJlMjEwYjM1YWU4ODM3YTA2OTQzYzAxMzZjMDg4M2JiMTVkOTA4MDJlYmUyMGYyOTIifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_responses_api.py#L1-L99",
+          "version": "repo-lines-v1:sha256:1836fb91ceecbdfee262febece0da2ce428c7f944f5dc5448f67a666e6e5a6c9:eyJzZWxlY3RlZExpbmVDb3VudCI6OTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2MWViYzE4NDM2YzZjY2ZmYmFiYTQyNzg5YWNlY2U4YTMzZWJmOTc1ZDBlNGU2OTkxOThkYTQ2MWY4YjZmYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzM2NhZmYyMjFkNDZhZGZiNWVhNmExYTk4OWMwNjQ0ZjkyNjUyZjUyYWQ5MjgyZTRkNDFjMmJhNGYxYjkzZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM4OTlkYzllNTk2NGM3ZTQ1YjBiZGU2MzIxMzM2YjZiMmRjMzExNWQ5ZDFhNjRiNmE4YWYyNjcyY2ViNDhiOGMifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py#L1-L38",
+          "version": "repo-lines-v1:sha256:4520bf0c78fbf6a6791276c867203d5fb046f96b247d9a110fd3c859ceaedae7:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYwODY1MzAzZmE5Njc5ZDM3NWE2YTUxMzY2MjdmYTUwZTVlZjc4Yzg0MTIyYmU2ODNjYzNjNjY5MThmNWM0YTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b0af652f582b43798af20375ffc9de60",
+      "statement": "Provider implementations must convert provider-specific response formats back to unified AIMessage. The conversion process involves: parsing the provider response structure, mapping provider content types to unified blocks, extracting and normalizing tool calls into ToolCall objects, populating usage_metadata (input/output token counts), and storing provider-specific fields in response_metadata. This is the reverse of input message conversion and ensures consistent output regardless of underlying provider API format.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2066-L2161",
+          "version": "repo-lines-v1:sha256:0184c39ad03fce187dcd2bdef1036750be01cba60b837a049d34e408853c4486:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ1OTIxMjg3OTA4Y2FhN2ZhODg2OWFhNTNlNzM5OWUyOGEwNjRiMjgzYjdkYTUzYzg1ZTMyNTI1NTQzNWQxNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyOWM2MWZiZjNiMjc2MGJkZjM2OTQ0NWZhMDdiNjhjNjZiZWI2YmZjN2EyNDJmYjY4Zjc4MjAwZGQ1MTYyZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyNjhkYjE5ODY5NTBmNjg4NDBjODAyMWEzMjViYzI5MzQ4ZmRhNTcwNDc0ODlhM2YzMTZiNDVmZjQxNzJjZmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0MmNjNmEzMGZlNjE0NGYyZjAxMzdhNzk3YzU2N2IxMmJkNTgyNWZhN2ExNGVmOTc2MWQzMzc4MDljY2M0YmQifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L220-L286",
+          "version": "repo-lines-v1:sha256:c9a125a75811b102dac33b6eb29962f289fc544973d25d31c66fdaa067f41c22:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlOTRiYmJkZTFhNTc4ZTU0MDk3NjZmZjRhOTc3ODU2YzU4MmNkZDBiZDU5MzhkMDcxZDdkNjY2YTRkMzU2NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyNDJmZmEwNDkzOWY2ZGQ3NDdlMzc0ZTMyNjU0MDc4ZDBiZDA1ZWNlODYyMTg0N2EzNTMzZmY4ZTFkNTJiMzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlYzQyOTU5MTY5N2YyNDg0N2RkNWQ1Yzk2ZDM2ZDRiZDU2NzVmMzZhNDY3YWNhNjZkMjRiNzZiYzU0MDEyYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkMTJmNDFjMWY1ZGFhMmM1NWMyNzI5NDg1ZDAwN2ZjMTg4YzBiMjBjNmViZmMwMzdlM2MwMGRmZWJmNGUwNTcifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-11-05T08:18:41.280Z"
+  }
+}

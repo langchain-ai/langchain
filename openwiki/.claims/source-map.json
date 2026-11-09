@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:27410ef90f4f5230c6317251a6c6ab0d5b8648e38a9d142b496d8186f6b5ffa5",
+  "claims": [
+    {
+      "id": "claim_c71edae5b0f64c8fa79c17ef1aca0f6b",
+      "statement": "The Agent Factory is implemented in factory.py, which constructs compiled LangGraph state machines for agentic loops that orchestrate model invocation, tool execution, and middleware composition.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
+          "version": "repo-file-v1:sha256:cc4a7d9a620224558c4eddd4e13edc988a9ac9e328b7a67deeb71ed2c5ec5174"
+        }
+      ]
+    },
+    {
+      "id": "claim_0587839e54be45c8924d9154860a0345",
+      "statement": "Agent middleware system is implemented in the middleware directory, providing pluggable hooks for injecting logic at model, tool, and lifecycle boundaries.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py",
+          "version": "repo-file-v1:sha256:56688206dce0334e7ca82125d7b809c23427890c234dfd69123dad038a387f31"
+        }
+      ]
+    },
+    {
+      "id": "claim_3ca5cc3aa2d44f1aaa11eafd8fa56fb9",
+      "statement": "BaseChatModel abstract base class and unified provider interface are implemented in langchain_core/language_models/chat_models.py, handling streaming, batching, token counting, and structured output marshaling.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1-L100",
+          "version": "repo-lines-v1:sha256:4f1e3da37bc9fe8fe80f8f190e3d512dd39e16e5497af8e7136f3a6bf461e522:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhNWQxY2NlOTY4M2M0YjhhNDYyYTdkNDQwY2I5NmRhNzQ5N2FkNjQ2MDUxNGYzZGFiNDQ5ZmY4MzM5ZWI2OWY0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwOWQ1MTkyYzY4MGU4MTRlY2QwMDIwMzI3ZjNmMjE0Zjk5MDBhZDJiMmNmMGI3NTA1MzM4M2NjYTcwYzAzNGE4In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_f5a9f756fd1b4f3b843ef1551cfd2263",
+      "statement": "Message types (AIMessage, HumanMessage, SystemMessage, ToolMessage) and content blocks are defined in langchain_core/messages/, providing unified message representation across all provider integrations.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/messages/base.py",
+          "version": "repo-file-v1:sha256:b3c6a3e83cd3dcbf312461b2653a6e9a5db145962f6824ce49a3e63ca62f4045"
+        }
+      ]
+    },
+    {
+      "id": "claim_41da34bd04da40ffb6c3ac4c336123be",
+      "statement": "The Runnable protocol is the foundational abstraction for composable units, implemented in langchain_core/runnables/base.py, defining invoke(), stream(), batch(), and async variants, with composition operators for piping, branching, fallback, and retry.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1-L100",
+          "version": "repo-lines-v1:sha256:6bfa5b1b8c46244958d0abfe64da7d0539baca9fb18d50c799b5c371a3ec4182:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI2Y2NlMDE1OGMyNTZlOThlYjBlNjAxNmJkNDYxZjE2NTZkZDZjZjhjNDQ4NjFmMzBkNTc3ZTBlNDNkODhiYmMzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0Mjk0YTU2ODdiNGM1ZmM1MGE1Y2YxMDdhNjdhYjM2NWU4NzhjNzIyNzM5MTQ4YjBjYjkyNDgzMTc5YWMwYTc1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkNjhiN2FiMWZjNTJmNTMwODUyMDJmYThkYmM5OTc1OTQ0MWI3ZmE0NjIxYjFmMjJhNjFhZGExMzRlYTc3MDU4In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_de27d6d3996d46669d55a5294a6cb6a7",
+      "statement": "BaseTool abstraction and tool conversion utilities are implemented in langchain_core/tools/, supporting sync/async invocation, schema generation from docstrings and Pydantic models, and structured argument parsing.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L1-L100",
+          "version": "repo-lines-v1:sha256:165f906920edb1e8d1f7c923c078c1c7fcf580fca8971608295239e59bde5342:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMjFiYjA5Yzk5ODE0MDZkYTYyYjVkMmY2MTNiZWIwYWYwNGNmZTNiYTI4NTIxODZkNDQ3ZTRkYmNhZTFjZjgzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxN2FhZGY3NWFlMmQ1MGU3NmU2MDExZGEzYjcxNjdjODdkOTZiNzFkNmMyYTEzODg2ZmZjM2E3NDY5YTU0Y2E4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjZTE4MzYzYTI4MDg1MDI1MmEwNDA1YzRhM2M0Y2VlYjQwYWNlYmEwNjlhOWI1MzNhZGZkNTQ3MmZiZDJlMzE3In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_b6a938d67cf04329abc2cce336bd6a08",
+      "statement": "Prompt templates are implemented in langchain_core/prompts/, including chat prompts, few-shot examples, image prompts, and structured prompt abstractions.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/base.py",
+          "version": "repo-file-v1:sha256:f2f608fba240b0d596889a9ca96ca1f8f4f49690bc24abd094f1b87c776c7f30"
+        }
+      ]
+    },
+    {
+      "id": "claim_4a3cb18e1ffc46afbc05b276bc1dda11",
+      "statement": "Callback manager infrastructure for instrumentation and LangSmith integration is implemented in langchain_core/callbacks/, providing base handlers and streaming output callbacks.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py",
+          "version": "repo-file-v1:sha256:323e48901ebf1ecd2c1b197e8cc1d81298366b29ee89aa02ab729d725fbcfebc"
+        }
+      ]
+    },
+    {
+      "id": "claim_bb74dbecd28347a68d235dc352fd1fef",
+      "statement": "The init_chat_model() factory function for dynamic model discovery and instantiation by provider:model identifier is implemented in langchain/chat_models/base.py.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py",
+          "version": "repo-file-v1:sha256:757316423a5b1f95b14b1ebaac56e612af026bb50f06c1748e688e65a8a17b67"
+        }
+      ]
+    },
+    {
+      "id": "claim_27f57c927a0e4ae3964bc8a835fbec5e",
+      "statement": "Provider-specific implementations such as ChatOpenAI are located in libs/partners/<provider>/ directories, each implementing core abstractions and released independently.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1-L50",
+          "version": "repo-lines-v1:sha256:b972f9928545904dc248d138c943fc37ce04364c9f3ed8a4461915e774ca44b6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMWZkYTIxNjI4MGFjNjg0ZmI1ZGQ4NjIxYmE5NTJiMjU3YzhjZTVlMDExM2U2N2JjMTJkZDBlZGU1ZTg2MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyODFhMDEyZDkwNWU4YzQwNTdiNzJmNGY2NWQ5ODBjZWUyNTAxMmU2MTgzM2E2MDM1N2JiZjk2ODY5ODk1ZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2NDcxNTMyNmUwZDYxNDlkYWE3YTYzZDFkMDE3MmVlMWM1Yjk1NzlkZTliOTQ0NDBjZGM4MjFiNzVhYmNjMWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3b029c6ea6b141ea86e8c4f56420a82b",
+      "statement": "LLM behavior and capability profiles are implemented in libs/model-profiles/langchain_model_profiles/, providing metadata about model capabilities and configuration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/model-profiles/langchain_model_profiles/__init__.py",
+          "version": "repo-file-v1:sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    {
+      "id": "claim_00c705d2ed384205a4c87452106b2842",
+      "statement": "Model Context Protocol (MCP) adapter, tools, and elicitation are implemented in langchain/mcp/, providing MCP-based model integrations.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/mcp/adapter.py",
+          "version": "repo-file-v1:sha256:9a93363b3b18055d06778bf0508f63b85f382a829f9588b98257e014be45c88e"
+        }
+      ]
+    },
+    {
+      "id": "claim_4debd15d45c545a798d12cf25ccfa03a",
+      "statement": "Schema definition and response marshaling for typed agent outputs is implemented in langchain/agents/structured_output.py.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py",
+          "version": "repo-file-v1:sha256:74590175ef1042dd8bd97f5c88a988b3818ef1e450eefd8f0ec67d7c6324fd2f"
+        }
+      ]
+    },
+    {
+      "id": "claim_a663419859ee445c871c8b614e26dc85",
+      "statement": "Tests are organized as unit_tests/ and integration_tests/ within each package (core, langchain_v1, partners), with shared test contracts in libs/standard-tests/.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/test_tools.py",
+          "version": "repo-file-v1:sha256:0e2230293a8470812032df7c6db40fc1bef86fb254673cdf146fe7fb4a178627"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/test_imports.py",
+          "version": "repo-file-v1:sha256:1ac3e45f3bfc2b66ab87e2b6d5902cc90570f0f207ce067c40a7943a6fadebe4"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/base.py",
+          "version": "repo-file-v1:sha256:62a5d5e75b59be001165917da5164c60bbdb07394b364df2ea1b949916ba3cab"
+        }
+      ]
+    },
+    {
+      "id": "claim_691d6cb116a343ed92077ddb6a6078bd",
+      "statement": "Configuration files include pyproject.toml in each package for dependencies and metadata, pre-commit configuration at repo root for git hooks, and Makefile in libs/ for multi-package build coordination.",
+      "evidence": [
+        {
+          "resource": "repo://.pre-commit-config.yaml#L1-L50",
+          "version": "repo-lines-v1:sha256:d2f43d2ba832183c766c3e0d50807900f8d91e5e1ac18169034640a61dfe215e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMTEwZGI1YTkzNTdjZGExZDc4MjE2Y2RjMGJmOGIyNTVlMzM4Y2JjMWYzMjdlMGRmMDhjZmM3NzM5MWRkZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlOTQwZjY2OWI3MWVlZWVlZjc2NWYyYzEyMmJhNzdmNGU3OGQxMmUwMDNlZmVjODc3NDQzZTgyMTBmNzgxNzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhiZmFjNmY1YjU3ODQ4YzliMTNlODMxMjlkNWVjYzNmMmEwNTY2MDQ0NWFkN2NkY2NlOGViNTE0NDg1ZDVmZGUifQ"
+        },
+        {
+          "resource": "repo://libs/Makefile#L1-L20",
+          "version": "repo-lines-v1:sha256:b703a85cdfdb60e98c41ec8261d9b78f0e7137105ee9da36b8cb919b2d35858b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyOGQwZmRiYTcwNTRmMzNiZTZkYTQ3MjU4OTFjMDA0OTIwMGZkNDNmNTAyMWY5N2Y2MmI4N2U4ZmNjMjBhZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4OWEwZmIyMTcxZjliNTk0YmQyZjA5YzQwMmEwYjU1MmRiNjNiNTBlZDBhNzE1OGEzMWQzMGFlYWRhYjVjMzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://libs/core/pyproject.toml#L1-L30",
+          "version": "repo-lines-v1:sha256:4e3fa660f697d938d037b0840ead06c780e32d6c38b04ae22793e65671c039f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NTY5OTQ2YWM5YmJlN2NiMmNkZWMzZjhiZWNmMzQzNzUwYzU4YjliMzIxZWMyMTk1YmZiYWFiMmFhOGM0YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ODZmY2QxODljODI2ZTE3MGE2MmI0ZjljNjM1ZWJhMzBlNzFkNWIwOWRkMDdjNTkwODFlYTkwOTYwNzI5NWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3MWNkY2FlNWU4YTk1MmI2Nzc5NmUwZjI5ZDViNmE4N2I0OWQyZjViN2M5MmM1M2VhYjFiZjk2NmI2NWE5YTMifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/pyproject.toml#L1-L30",
+          "version": "repo-lines-v1:sha256:ba15ca6c1b7aa99ec265172e0e29ee92033421752b3763abac6bf074948a9716:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NTY5OTQ2YWM5YmJlN2NiMmNkZWMzZjhiZWNmMzQzNzUwYzU4YjliMzIxZWMyMTk1YmZiYWFiMmFhOGM0YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NDE2ZTA5Zjc4YmEzMTZjMDMyNTY4MjEzYjg1NWVlNzU2ZTQxNTY1ZDkxOGYwOTUxOWM4MWZkNjIwZjQwNjAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ0MmVmNTZmNGEyYzlkZjY0ZGQ5ZTNlZjAwY2ZmYWIyMTczN2YwNTFhYzU2YzczZDBjNmEwNzQ5NDQyNjhlYWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_458d709b604149fa8fb9639025882358",
+      "statement": "LangChain uses a multi-layer architecture: langchain-core (v1.7.6) for base abstractions, langchain (v1.4.9) for orchestration and agents, and partners for provider-specific implementations, enabling model interoperability and independent release cycles.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/pyproject.toml#L24-L24",
+          "version": "repo-lines-v1:sha256:112c2bc3a893133ee5935c3fc43439358a47431249eeb1221fb17be8d169b155:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTEyYzJiYzNhODkzMTMzZWU1OTM1YzNmYzQzNDM5MzU4YTQ3NDMxMjQ5ZWViMTIyMWZiMTdiZThkMTY5YjE1NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTEyYzJiYzNhODkzMTMzZWU1OTM1YzNmYzQzNDM5MzU4YTQ3NDMxMjQ5ZWViMTIyMWZiMTdiZThkMTY5YjE1NSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc0MzY5NGEzZTBkOGRiMDQ5ZDQ1ZGFlOGM4YTdiYmM2YTk0NjAwYjNjN2MxZjFhNTJkMzQ4YzlkMjIzMTFkOSJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/pyproject.toml#L24-L24",
+          "version": "repo-lines-v1:sha256:fb05feffdbfb2ef5e1f9ab65952c535e3f40402c957dea5357b98fd464010d93:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmIwNWZlZmZkYmZiMmVmNWUxZjlhYjY1OTUyYzUzNWUzZjQwNDAyYzk1N2RlYTUzNTdiOThmZDQ2NDAxMGQ5MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmIwNWZlZmZkYmZiMmVmNWUxZjlhYjY1OTUyYzUzNWUzZjQwNDAyYzk1N2RlYTUzNTdiOThmZDQ2NDAxMGQ5MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQ0YzI1MjVmYjIzZjI0NzgwNjYwMTkyYmI4ZDc0ZWVjMmNmMTJkMTkwMDA1YjQ5ODUwMGRmMTNiMzI5YzU4YiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ca180050b7ca46b7ae59de05eefc84b7",
+      "statement": "OpenAI Decisions API integration is implemented in libs/partners/openai/langchain_openai/decisions/, providing structured output marshaling and response routing for deterministic model outputs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/decisions/base.py#L1-L50",
+          "version": "repo-lines-v1:sha256:01f66adc147c6f14f590ebb882a22a3ff3f66745e18a0f0baa2fbe72b4ade091:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyNDdjY2I3YTlmOGU5MmY1YWVkZThhYTZjOThmMTA5MjRiM2FjZjY5OTFlYzVkNDMzNDNlMTIwYThhMTkzMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjNmY3NTkwYTNlYTgzYmVhOTVlYzg4NDZhYmYzZTg1ZDJjODUxNTAyODAzZjYyNTMxMTdlMGU0MjkzYjE3MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiZmRiYWU5ZDlhYzgwMzUzMGZjM2VjOTc0OWNkZWEzMzE0MGFjYjhlMDc5NTkwNjU4ZTRhNTkxNTI4Mzk1NzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_290a677dd7284dfb973a23cdbe7c1aa6",
+      "statement": "Notification metadata abstraction for marking agent-generated messages is exported from langchain_core/messages/notification.py as a public API, providing NotificationMetadata TypedDict and utilities (add_notification_metadata, get_notification_metadata) for source attribution.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/messages/__init__.py#L51-L56",
+          "version": "repo-lines-v1:sha256:1bcecd2b9aa4462493901356fafd5375471267bec09405eeea92003c86586787:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWFhZjE0ODA0MmJiZjM5MjNlMGMwOWZiMmVlOWIyMTEyY2IzNjQ4Mzc3OTUxOGQ0MDBjOTg0ZjliYzQ4ZjQxNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBjMWYxODhmMTQyZWQ3YTgyNDY4MGIyMDcxNzJjNTUxOWJjNjE0YTQ4ZmRhN2NmMTY3ZWRiOGRkZjc5OTU2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDdiMTQ5MWE1MTkyNGQ2M2E1NDBlZmJiNjcwYWJhMTgxMTk1MGZlM2M5NWVmYmM2ZjE0ZGEwZTQ2ZDA2Yjk5OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2Q5YzBmNGQyN2I4M2U2ZDQ1YmE2MDU4Njc1YTZkMWU2OTA2MzY1OTM4MzMyZTg1YzY1ODJmZmIxYWY5ZmIzMCJ9"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/notification.py#L1-L50",
+          "version": "repo-lines-v1:sha256:dfb0b963ddf420ba1e175dc5b7ed7a6b590ab8bf7ef5dc8dd2e7a144b122a477:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlOWNmNGE1NjYxNTQ1Mzg1MTMxZGJjNDYwYjMwM2ZjMGY4ZWNjYmUzZjQ0M2Y4OTMyNzI3YTlkZWZlNjZmZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1OWE0MDBjYTFlYWE4ZWNiMWZiOTczYjhlY2E0YzllMGU3YTNlMmEwZTFkMzk2ZjNiOWU5NGNjMDQ1YTcwMmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1aa1390c0c8f420595010fcb970f1757",
+      "statement": "Refusal handling uses standard RefusalContentBlock across all providers, with ModelRefusalError for unified exception handling, automatically detected by structured output parsers, and optional ModelRefusalMiddleware for agent-level opt-in error raising.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/exceptions.py#L140-L190",
+          "version": "repo-lines-v1:sha256:c1d06cb09d12b497a7e321f5367c41fb0a7bfe88ca9f8287e4708a5943c8edec:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1ZWYwNzI0OTlhNWE2YThiOGMxYzY4Yjg3MDE1NDkwZWIwMmZkOGU3OTY2OWMxNWUwOGY2ZDczNjZmZGY1NTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVkZWVmNDEwMzRjYzlhZGRiYWVlMDE3YTk0NjUyYzc4OWE2NWZkYjNhNjJmNzk4MzNhYTgwMDRmYWU4Y2IxMTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMwYzY5Mjc3ZTkzMDAxNjVmZjVkNmY0OTUxNTMwNmQyNTdlYWM3ZTA5MzRlZDYwYTE1NjA0YjZjNjQ3ZTYzYWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkZDJkMDQ2NTVhMGNmZjNiNTg0OTEyMTNhZWFhNjlmYTkwMTZiNDhhZjcyZTI2MWQ5MTY5YmQwZTFjMTdiMWUifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/content.py#L496-L530",
+          "version": "repo-lines-v1:sha256:db80287f3a262e7ad585b7cdb9b6ba8aacefa7f527dc165023903ed47b6dd0af:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImExY2YzOWZiNTFjYWQ2OTY5NDE3N2I4NWIwMGQzYzUxMDQ2ZGQ1ZTYzNWI5MzI1NDk5N2RmNjRkMzIyZmM0OWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2MTc4NmE1ODIzNzI5YWUzMTU4NTRiYWMyOGQzZmU2MTFlZmQxYTgzYTBmYmZhZTAwMDBiYmEyNmJlMTg1NGEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQwODlhYjgyYjZkMjk3NDAzZjE3ZDE1ZTA4MWEyZTAzZWE5MDcwZjk0ZGZkMmRjZjdjZTcwZmM2OWZkYjNiNDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFmZjRkZDQ0ZmNmZWI2NGI3NGVmZmFlZWEwNzNjNDY0MjI1Nzk4NjY0M2U0ODgwMDlmZDNhNjE3NjFlZTcyNjEifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/_refusal.py",
+          "version": "repo-file-v1:sha256:cdcd0646e3cbe180dc8a56d2ce9a3ef08edb3393037107559beed56127768bcc"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/model_refusal.py#L1-L50",
+          "version": "repo-lines-v1:sha256:38882eb0f15fc1facaf7df4e9cb8539c7caf0449f65bb48e5967572819b73bed:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5MTc5MzZmNzg2YTE5MjUyZGUxM2I4OTA0YTYzMDdjZmNkZmZjMTYwZWM5MDFjN2Q3ZjcwZTgyZmY4NTcxNjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1ZTcxNDY0MDNhMmJlZmU0ZDBjMGUyYjY4OWY1NjU1NTA3OWNhMGZlY2UxNGE0MWQ4ZjNiMmIxNWU4YTVmMzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_88c11dceed97409ea1d4c2dab4891bbf",
+      "statement": "Unified exception hierarchy in langchain_core/exceptions.py includes LangChainException, ModelRefusalError, OutputParserException, and other domain-specific errors for provider-agnostic error handling across the ecosystem.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/exceptions.py#L1-L190",
+          "version": "repo-lines-v1:sha256:2e29fdac0d10a3b034334f3b7d33066841ba8c02afc19f5beebe40814a94a632:eyJzZWxlY3RlZExpbmVDb3VudCI6MTkwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhYTY1NmIxOGYwNDQ1YjZmNzFkN2M5ZTZmYjMzNzljOWVlZTk4ZWFkNTg3OTM2YzM3ODk5NWNjNGNkOWYwOWRmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlZGVlZjQxMDM0Y2M5YWRkYmFlZTAxN2E5NDY1MmM3ODlhNjVmZGIzYTYyZjc5ODMzYWE4MDA0ZmFlOGNiMTE1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwZGQyZDA0NjU1YTBjZmYzYjU4NDkxMjEzYWVhYTY5ZmE5MDE2YjQ4YWY3MmUyNjFkOTE2OWJkMGUxYzE3YjFlIn0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-11-06T08:17:28.425Z"
+  }
+}

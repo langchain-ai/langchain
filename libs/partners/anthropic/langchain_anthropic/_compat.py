@@ -6,6 +6,16 @@ from typing import Any, cast
 from langchain_core.messages import content as types
 
 
+def _unwrap_non_standard(block: dict) -> dict:
+    """Unwrap a provider-native dictionary from a standard content block."""
+    if block.get("type") == "non_standard" and isinstance(
+        value := block.get("value"),
+        dict,
+    ):
+        return value
+    return block
+
+
 def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
     """Convert LangChain annotation format to Anthropic's native citation format."""
     if annotation["type"] == "non_standard_annotation":
@@ -112,6 +122,10 @@ def _convert_from_v1_to_anthropic(
                 new_block = {"text": block.get("text", ""), "type": "text"}
             new_content.append(new_block)
 
+        elif block["type"] == "refusal":
+            # The Messages API has no refusal input block.
+            continue
+
         elif block["type"] == "tool_call":
             tool_use_block = {
                 "type": "tool_use",
@@ -119,8 +133,9 @@ def _convert_from_v1_to_anthropic(
                 "input": block.get("args", {}),
                 "id": block.get("id", ""),
             }
-            if "caller" in block.get("extras", {}):
-                tool_use_block["caller"] = block["extras"]["caller"]
+            for key in ("caller", "toolset_name"):
+                if key in block.get("extras", {}):
+                    tool_use_block[key] = block["extras"][key]
             new_content.append(tool_use_block)
 
         elif block["type"] == "tool_call_chunk":
@@ -137,11 +152,32 @@ def _convert_from_v1_to_anthropic(
                     "name": block.get("name", ""),
                     "input": input_,
                     "id": block.get("id", ""),
+                    **{
+                        key: block["extras"][key]
+                        for key in ("caller", "toolset_name")
+                        if key in block.get("extras", {})
+                    },
                 }
             )
 
         elif block["type"] == "invalid_tool_call":
-            continue
+            tool_call_id = block.get("id")
+            tool_name = block.get("name")
+            if (
+                model_provider == "anthropic"
+                and isinstance(tool_call_id, str)
+                and tool_call_id
+                and isinstance(tool_name, str)
+                and tool_name
+            ):
+                new_content.append(
+                    {
+                        "type": "tool_use",
+                        "name": tool_name,
+                        "input": {},
+                        "id": tool_call_id,
+                    }
+                )
 
         elif block["type"] == "reasoning" and model_provider == "anthropic":
             new_block = {}
@@ -172,6 +208,8 @@ def _convert_from_v1_to_anthropic(
                     new_block["server_name"] = block["extras"]["server_name"]
             else:
                 new_block["name"] = block.get("name", "")
+            if "caller" in block.get("extras", {}):
+                new_block["caller"] = block["extras"]["caller"]
             if block.get("name") == "remote_mcp":
                 new_block["type"] = "mcp_tool_use"
             else:
@@ -188,6 +226,8 @@ def _convert_from_v1_to_anthropic(
             if "tool_call_id" in block:
                 new_block["tool_use_id"] = block["tool_call_id"]
             new_block["type"] = server_tool_result_type
+            if "caller" in block.get("extras", {}):
+                new_block["caller"] = block["extras"]["caller"]
             new_content.append(new_block)
 
         elif (

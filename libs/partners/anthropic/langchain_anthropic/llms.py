@@ -21,6 +21,8 @@ from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_fro
 from pydantic import ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
+from langchain_anthropic._sdk_compat import _route_unsupported_sampling_params
+
 
 class _AnthropicCommon(BaseLanguageModel):
     client: Any = None
@@ -276,6 +278,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
         # Remove parameters not supported by Messages API
         params = {k: v for k, v in params.items() if k != "max_tokens_to_sample"}
+        params = _route_unsupported_sampling_params(params)
 
         response = self.client.messages.create(
             messages=self._format_messages(prompt),
@@ -312,6 +315,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
         # Remove parameters not supported by Messages API
         params = {k: v for k, v in params.items() if k != "max_tokens_to_sample"}
+        params = _route_unsupported_sampling_params(params)
 
         response = await self.async_client.messages.create(
             messages=self._format_messages(prompt),
@@ -352,6 +356,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
         # Remove parameters not supported by Messages API
         params = {k: v for k, v in params.items() if k != "max_tokens_to_sample"}
+        params = _route_unsupported_sampling_params(params)
 
         with self.client.messages.stream(
             messages=self._format_messages(prompt),
@@ -397,6 +402,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
         # Remove parameters not supported by Messages API
         params = {k: v for k, v in params.items() if k != "max_tokens_to_sample"}
+        params = _route_unsupported_sampling_params(params)
 
         async with self.async_client.messages.stream(
             messages=self._format_messages(prompt),

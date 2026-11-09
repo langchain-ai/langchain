@@ -24,6 +24,7 @@ from langchain_core.runnables.utils import (
     Output,
     get_unique_config_specs,
 )
+from langchain_core.utils._signature import _signature_parameters
 from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
@@ -136,7 +137,7 @@ class RunnableWithMessageHistory(RunnableBindingBase[Any, Any]):  # type: ignore
             ]
         )
 
-        chain = prompt | ChatAnthropic(model="claude-2")
+        chain = prompt | ChatAnthropic(model="claude-sonnet-5")
 
         chain_with_history = RunnableWithMessageHistory(
             chain,
@@ -189,7 +190,7 @@ class RunnableWithMessageHistory(RunnableBindingBase[Any, Any]):  # type: ignore
             ]
         )
 
-        chain = prompt | ChatAnthropic(model="claude-2")
+        chain = prompt | ChatAnthropic(model="claude-sonnet-5")
 
         with_message_history = RunnableWithMessageHistory(
             chain,
@@ -627,5 +628,4 @@ class RunnableWithMessageHistory(RunnableBindingBase[Any, Any]):  # type: ignore
 
 def _get_parameter_names(callable_: GetSessionHistoryCallable) -> list[str]:
     """Get the parameter names of the `Callable`."""
-    sig = inspect.signature(callable_)
-    return list(sig.parameters.keys())
+    return list(_signature_parameters(callable_))

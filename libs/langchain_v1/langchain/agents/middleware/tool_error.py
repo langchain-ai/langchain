@@ -7,7 +7,14 @@ from typing import TYPE_CHECKING, Any, cast
 from langchain_core.messages import ToolMessage
 from langgraph.errors import GraphBubbleUp
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ContextT,
+    ResponseT,
+    TracePolicy,
+    omit_payload,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -71,6 +78,8 @@ class ToolErrorMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respo
         agent = create_agent(model, tools=[...], middleware=[ToolErrorMiddleware(on_error)])
         ```
     """
+
+    trace_policy = TracePolicy(process_inputs=omit_payload)
 
     def __init__(
         self,

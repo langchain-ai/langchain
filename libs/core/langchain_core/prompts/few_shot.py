@@ -369,9 +369,9 @@ class FewShotChatMessagePromptTemplate(
         print(final_prompt.format_messages(input="What's 3+3?"))  # noqa: T201
 
         # Use within an LLM
-        from langchain_core.chat_models import ChatAnthropic
+        from langchain_anthropic import ChatAnthropic
 
-        chain = final_prompt | ChatAnthropic(model="claude-3-haiku-20240307")
+        chain = final_prompt | ChatAnthropic(model="claude-sonnet-5")
         chain.invoke({"input": "What's 3+3?"})
         ```
     """

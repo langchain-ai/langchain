@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:97475861bc89497ade34906008e15de726598966ea5262ccbb3ac874c4058013",
+  "claims": [
+    {
+      "id": "claim_66e7360938c14fb8a42c8e282f9fcdcf",
+      "statement": "Middleware composes into a stack where the first registered middleware becomes the outermost layer, wrapping all subsequent middleware and the model execution.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L281-L370",
+          "version": "repo-lines-v1:sha256:272c0933c5414b8cecc2e64643c365fa65e76088a91d385cdab443f37076f035:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1Y2IwNmM0MzdmOTk3ODhiZDVjOGM4MDY5MjU0MTI5YmVlN2ExNGYzMzc2ZTFjZWY2MTczYWUyMGE3Y2YyZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViZjVlNjBjNjUyNDc1YjVjNzhmMzdlYmI2OTJjNWIxM2NhZDMwMjI4NmM3MDFlYzBhZTAxODVhMWZiMzVjZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4YjE2YTdhZjFkZDFlYzI4OTY3MWRhMWU5MmExY2UzN2I4MTA0YWFlYjZlYjU3MzY1NmU4NWVhMzU0YTNhY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5YTcwM2FiYzE5MWZjZWUxOWIwMzM5NTc3MjEzZWQ2OTMyMGRlOTFmZWMwNDdjZjAzYTY0NTUyYzNiYTY1NjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0413d040eb03431b9d684b5cca4fabec",
+      "statement": "Each middleware receives a handler callback (the next layer) and must invoke it to continue execution; handlers can be called multiple times for retry logic or skipped entirely to short-circuit execution.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L503-L550",
+          "version": "repo-lines-v1:sha256:67fa691dce671b60b38599285f21ba33b5683e819697c583e028bb9addb23292:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkyNzFhMGExMzM4YjZlODZjZGFiNjVjNjliODU0NzgxNzIxNWJkYjA0M2MxMDY3ZGM0MTU4MmUwMjE1ZWVmZTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczZDNiOTg2ZjBlNzA4NzUxNGEwYmQ4YmRhOTdhNjY2OTBjYjUyZWFhMWIxNDNiYjY1MzEyZWM4MDQyOTA1NzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRmMTYyMTFiOGZmOTg3NDZjYjdjYjVkNmQ0NWU0NTEzODJjZmYxNDU2NzA2YzZiZGMzMGFjMzhkNTY2YjA5ZWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5ZmRlMWJmNTFmZTQ0NjRmZTc5YzM1YmE3MWU4MzU1YjQxMzQ1YjE0ZWFjMjM3NDkwMzk0YzU4MWQ5NGMzNWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_932936b646f04614862ff8639d153ee1",
+      "statement": "Agent execution invokes lifecycle hooks in order: before_agent (once at start), before_model (each iteration), wrap_model_call (interception), after_model (each iteration), wrap_tool_call (per tool), and after_agent (once at end).",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1600-L1750",
+          "version": "repo-lines-v1:sha256:1492493e020b52af8328c858713b68af6af632c069529590b4ac91dc870efdd4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1NTAzMmU5NjRkMDkzMjM1MWU1ZDE4NTI2OTI4MWIxNzFhM2EwOWIwOGIyODZlNjYxZWE0NzAzMjNjODJlYjRkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkYjk0MjZmODEyZDI1ODZiNjU4Y2Y1Njk4OTVmMTU0NzQ5NDNjY2NhYjE2YmU4YzQzOTMwODc5MzMyZjIwYWVjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiZWYxMWRjMmI2Y2VmZWJlMjYyZWM2MTYwMjkwOWVhNjU5MWQxN2FkNmNlNzcwODBiOThlZTA5OTczMDM2ZTExIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0NWFmMmE0Njg2NTM3Y2JiNDY5MTU0MDUyMTQ1NDNkNTRjNTJjMTUzY2U2OGIwMjg4ZDFhNWY3ZTkyN2Q4M2FhIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_5b0a4344f2be4d208edfc705526375fc",
+      "statement": "ModelRequest provides an override() method that creates a new request with specified attributes replaced (model, tools, system_message, etc.), enabling middleware to modify the request before passing it to the handler.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L203-L269",
+          "version": "repo-lines-v1:sha256:3520f1a6407e8d83c81bea4d581ee001e23d77d2ee4924010e0be9f88a273643:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmODUyNWFiYmM5NzAyMDI3NmMxM2VjM2FhMWUxZGZlOTg4OWM0MDNiODEzMDY3N2JkMzNkMzE0ZDdmZmYyOWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3NmExNGNhZWI0NjcxMmQ3MGM2YmY5YTJjOGQ1Y2JlNjg3N2M5MmYxYzdiYWQ0ZDYyMDdlM2JmZTBjM2Q3YWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjOGIzYTI0ZGU3ZGQ4NmUzMWQ2MjY3NTRiYzVlNDZiMTdhNjBhMGRmYmFhMjBiMWY3YWQ0MzgyODIyZmFjYWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMWYwMmZkN2VjMWQ0NjJjMGNiODE4Yjk0OGZmZTRmNzE1YjJjMmM0MzI2MzBjMjMyZGZlMzRkNDI3NDNmYTkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8f9011e2f3394acb9c8b16045e8e12e7",
+      "statement": "When a model calls multiple tools, the graph returns a list of Send commands to the tools node, each with a single tool call, enabling parallel execution where all tools run concurrently and results are added to state.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L2020-L2042",
+          "version": "repo-lines-v1:sha256:e20ba463ae13fc709d6937741d919beb3e059d944e1e7b4207abe39269dbad2a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2MGIxYjRhOGUzZDA5NTFjMjljOGQ5ZWIxMDA1YmI4ZjJlNTRlMWQyMmJmNWJjNzkzYzdiNWVkODk0NzJkZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjN2MxMzU1YjYwNDYwOWQ1MGY2ZDYyMTVjYzI2ZTZhYjE0MmFmMDVkNGM3ZjExOWZhZTMwNzJjOTE2ODU5ZmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg1YzliZTg2ODgxZmU3ODAyNTYwNGNjZDUxZjUzMTk5OTIwYTc1ODFkZjE4ZDBiMTJkM2JhZTFkYmJlM2ZmMzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1321e38d30b347869ed3955911285699",
+      "statement": "SubagentTransformer detects subagent boundaries when a nested run's lc_agent_name (set by create_agent(name=...)) differs from its parent's name, and surfaces typed SubagentRunStream handles on run.subagents with cause metadata linking to the triggering tool call.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L120-L195",
+          "version": "repo-lines-v1:sha256:c871566dc1a1a630ebd27fdd9d23437044f3360ad6bc0ccafcde71967cb6d6c4:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmYzhhZWMyZTU5MjZkYmExMTg0M2RmOTk2NjAzM2Q2MjgxN2UzNDAyYzMxYTcxYmY1YzQxNTBjYzg0MmFlZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkNjllNTZhZDNhM2FmYTlhZjkxMTYxMmRhOWI1ZDVkMjM5NzJhZDIwNGE2YTg5MmYzNzNiZTc5YjE3NjZkZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkNmFjODUxNTFhYzQyZmVlZDVjM2FkMjA2ZDdhMTBmN2IzM2ZkMTkzMzk1YTYwMDY1OTYxOWNjYTc3ZjY2NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1YTM5YjBiYmFlYjc0YjE4NTZlYmMyMGQ2ZWQ3MmRlY2FjOGEyYzBjMTczOWE3YWM2NzdhYmEwZjI5NmNjMjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_bb46fb0505054b04bb880d5fea63a859",
+      "statement": "SubagentTransformer recovers the originating tool call via the base's _pending_cause instance state and exposes it as a LifecycleCause dict with type 'toolCall' and tool_call_id on the subagent handle.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L158-L195",
+          "version": "repo-lines-v1:sha256:b9b59cdefa763e2c972272f5992624a7d858dad02e6172d01ec8c0ec7b620056:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4M2Y5MjczYjRhODg2YzE3OTNkODgxMGNmMTI2OTE1OWRmYjU4NmExMGY3YjZhZmY1NTA2ZmNjOTIwMWQ1NTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkNjllNTZhZDNhM2FmYTlhZjkxMTYxMmRhOWI1ZDVkMjM5NzJhZDIwNGE2YTg5MmYzNzNiZTc5YjE3NjZkZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3NDBjZWM3ZmQ2MzI4YTU5MzBkNDdjNmM5ZTJkMjJhZmZhMjQ4ZjUzNjk3MmVkMDBlNTBiMTFlMDgzNzI4ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1YTM5YjBiYmFlYjc0YjE4NTZlYmMyMGQ2ZWQ3MmRlY2FjOGEyYzBjMTczOWE3YWM2NzdhYmEwZjI5NmNjMjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f98cd84cf6964a68ba62307f66b057c2",
+      "statement": "LLMToolSelectorMiddleware uses a smaller LLM to select relevant tools from a large set before calling the main model, reducing token usage and improving focus through structured output selection.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/tool_selection.py#L123-L150",
+          "version": "repo-lines-v1:sha256:4024f7362e39f6a4f7f701fd5edad45358830e3df782b4e2ea60d80866bc6276:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzMGM2NGYzZjUyZWJiNDdkMWQxMDU1NTA5M2RiMTZiYTQ1M2RkNzM1N2M2ODVhZTJmOWY2MzBiYWY2NDJhMTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4MzE2YzliZDYyNGMyZGZlNDY0YWM0OWRmMTc1NGJhMmUwYmZmNDExMWUxNjJiYTBlZTNmYTA2YmUxZjI5YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY1MzAyNWUyNGM4MWQzYTg1NmI3OTdhZDA1ZTgyNGQ5YzRmZTIyYjA0MjI2ODZjNDFmY2RlYzkyNmM5YzBmZmIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_88fb051e28664e61aa973b27d2052376",
+      "statement": "ProviderToolSearchMiddleware marks tools as deferred via extras['defer_loading'] and injects the provider's server-side tool search tool (Anthropic, OpenAI), allowing the provider to retrieve full tool schemas on-demand when the model needs them.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/provider_tool_search.py#L57-L150",
+          "version": "repo-lines-v1:sha256:14c5625a8fb07f71552bb2967c11a12628d5fbb2e2d46203185403ee43cbda11:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlMmRhODQ0NWI2NjkyNjM2YTgyMDYxZjdlYzA0NDJkODNkNDRmMDFlZjFkZjk2NzA3MTVlYzQ2ZmI5ZWFmNWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjkzMDgzYzE5NzEyMWI5ODI3MDBiYThhZmFiZDE3MjJjZjFkM2U3NDA0NTA5ZTgwZWZhMjcyNDdmNjJmMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI3OTYwMTU2YTY4MmJiZjQxMDgwMDZiZTgzOGRhNDY0NmE5NTgwZWU2NjQyMGJjZTU4ZmI5MDk1MTBkZGE3YmEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_473a4136c0a04dffa01ba9f91891567c",
+      "statement": "Tool call wrappers compose into a stack (first = outermost), with each wrapper receiving a request and execute callback; wrappers can intercept, reorder, retry, or short-circuit tool execution.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L710-L756",
+          "version": "repo-lines-v1:sha256:56c852c89a9b24b60c74e45a6b56253651cc33d730c2657532c1f4edd848348f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ODdkYjg2YjJiMmZlNjQ1ODFlZGExMWIxNTExNDQzZTAxZjgxMjgzMzhiYWU4ODY5NDQ1ZGE4ZDM4OGVmZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRhOGY1MmIzN2FjYjEwZWVjNzc0NzlmMzJjZTBmMGM2OWIwZGEzODhhMWZkYTJlNjMxYjRiOTU5ZTYwM2I2NmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkNjNjNGQ0NGMzY2QyNzU2YjVmZThiYmRmZDNhNjQwMzU2NzNlZDhhZGY3NGFmMmIzZDYzN2Q5YmE5YzI1MzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_15bcfbcecfb94f5c8a1b65b337f12d95",
+      "statement": "Middleware can declare a custom state_schema extending AgentState; create_agent merges all middleware schemas left-to-right (first middleware overrides later conflicts), respecting OmitFromSchema annotations for input/output filtering.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L470-L524",
+          "version": "repo-lines-v1:sha256:153d997320fe740d99c810085479142edca654cc31fb26d9e04ac0f4d056aeed:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjMzliNTU0NjBlOTk3Y2YxYzM0NTIzYjY2ZjgxYzhmODNmZjg2YzRiNDhlNWE4MmRjMTYwNjk5NzQzOTk2ZTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjNWI4NzFjNWZhNDJkMDViMWZjMDc5ZjY3MDg1OWM4YzFjMTZhOWU3NjRiNWI0OTYwYTM1MWE4NzBlNmIzYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4M2M2YjE4NWUzZWZiOGMxYjYzYTYyMjI2OGJmNTYxZjViN2ZmOGIwYWQ5NDJkMTk5MDUxMmMyOTJlMmQ2MDEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_16d25dcd257e4d29bae4111b5fd8df53",
+      "statement": "The runtime parameter injected into middleware and delegating tools provides access to checkpointer, store, and user context (Runtime[ContextT]), enabling subagents to coordinate state via the LangGraph store.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L104-L105",
+          "version": "repo-lines-v1:sha256:875a3037232baccff6f7e9cd6900d1394ba58b13de4e41f8f88754e78725ec7d:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTQ4ZGMwZTRkYTUyOTI5YzU4MzhmZGIzZjQxNDVlMGYxYmViNGM1Mjc4N2Y3NmEwOWI0YTcwMGE1YzQ4YTZmOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODg4YTliM2Y5NWE3MmJjZDBmODMwMmY1N2MzZGMxMTU2Nzk4YWRlYzdjMmRiMTRhY2I1MThhNjQ4YjZiNzUyOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODA2OTM5ZGU2NDhlNmQ5Mjg1MDIwNDJkYzY2MTY1NWZjOTFhODc5ZjU5MmZlZDg4OWQ3ZWFkNTRjZDZjMmRhMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDMzMTA5NWQ1ZmQ5NDk3ZjQzZGQ2OTAxYTkzZjc0M2JiNjU1NTA2YTA1MGUxNWMyODE1YmYxYzlkNGYxMzI5OCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_5453dc8149164b7b8368d5c69fa6af1f",
+      "statement": "wrap_model_call middleware can return ExtendedModelResponse with a Command to control graph flow, enabling middleware to redirect execution (e.g., skip tool execution, loop back to model, or exit early).",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L222-L278",
+          "version": "repo-lines-v1:sha256:6bb49e7a7e6403834213953a9111549f15c00024566792a43dc06e6452e013b7:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3YzgzN2QxZjhjOGZmMTQ2ZGFkODY5ZTlhZDhkMGNjYzY2YTA0Y2JhNjVkNzBhYTM5ZDUxMDAwNTQzMzFiNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyNmQ2OGQ5YjUyMjFlYjU5NGVmOGJjN2JmZTNhYzVhNjM2ZjA2MjlmNmU1ZGNmNmE5NWEyMGZmMThhZDdmMzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MjIzMTA2ZmQ4NzQyYjcwZWEyMzNmOWRjMzU5ZjRiMDJiYmIwNjliNzI4M2VlZjc2MjQ5OTUxNmJkN2I5YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRiN2UyMTk1NWE5MGNjNjVhNmY1YmQxNTE2ODEyYThmYTQzYmNmZDhiZWJiMzMwNDJiMzg4NDZjMmUzNzYwNzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fa44080900eb4caab753052c9b127f6f",
+      "statement": "The jump_to field in AgentState is ephemeral (not persisted) and set by middleware to override default routing: 'tools' skips model, 'model' loops back, 'end' exits early.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L349-L354",
+          "version": "repo-lines-v1:sha256:c995df23d29c623277091b5c9a18504b94c75d83702467cccbe504b1ac99b777:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGFjZWQyZjg0ZWIyYWYyZTEwM2QyMGNiMDBjY2ZmYzlmNzI3NmJlMWU3ZTc3ZDdlNzQ2M2U4ZjVjN2RhNjMxNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIzOTE4NzQ3OTQ1N2E1YjMzYjc0ZWU2Yjk2YjM4OWFmYWUwYTYyZmRjMDkzMjljZjhhZTgyMWQzNDc3MmE1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDU1MDllNzI0MjBmNWM3NGRkY2MyYmE2YmY5NzI2Y2Y4Mjc4MDYzOWIzMTdlNTIzMDY4ODNiN2YyNDkyNjJlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWE2ZDczZWY1MTNjNDcwNmU4YzA5MDNhOWI4OTdmZmQxZDdlYTU1NjNhMDYzZWQ5NTJlNThjMDM3NmQ4NWZjNiJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-20T08:25:57.412Z"
+  }
+}

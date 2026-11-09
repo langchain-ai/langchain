@@ -271,6 +271,7 @@ def test_configurable_with_default() -> None:
             "anthropic_api_url": "https://api.anthropic.com",
             "anthropic_proxy": None,
             "context_management": None,
+            "container": None,
             "anthropic_api_key": SecretStr("bar"),
             "betas": None,
             "default_headers": None,

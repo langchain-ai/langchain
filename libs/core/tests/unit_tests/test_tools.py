@@ -1,5 +1,6 @@
 """Test the base tool implementation."""
 
+import asyncio
 import inspect
 import json
 import logging
@@ -31,6 +32,7 @@ from pydantic import (
     Field,
     RootModel,
     ValidationError,
+    field_serializer,
 )
 from pydantic.errors import PydanticUndefinedAnnotation
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -40,6 +42,7 @@ from typing_extensions import TypedDict, override
 from langchain_core import tools
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
+    BaseCallbackHandler,
     CallbackManagerForToolRun,
 )
 from langchain_core.callbacks.manager import (
@@ -1217,6 +1220,62 @@ async def test_async_validation_error_handling_non_validation_error(
     tool_ = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
         await tool_.arun({})
+
+
+class _ToolErrorCaptureHandler(BaseCallbackHandler):
+    """Callback handler that captures errors passed to `on_tool_error`."""
+
+    def __init__(self) -> None:
+        self.tool_errors: list[BaseException] = []
+
+    @override
+    def on_tool_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: Any,
+        parent_run_id: Any | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        self.tool_errors.append(error)
+
+
+def test_tool_base_exception_calls_on_tool_error() -> None:
+    """A `BaseException` raised by a sync tool ends the tool run with an error."""
+
+    @tool
+    def cancelled_tool() -> str:
+        """Raise `CancelledError`."""
+        raise asyncio.CancelledError
+
+    handler = _ToolErrorCaptureHandler()
+    with pytest.raises(asyncio.CancelledError):
+        cancelled_tool.invoke({}, config={"callbacks": [handler]})
+
+    assert len(handler.tool_errors) == 1
+    assert isinstance(handler.tool_errors[0], asyncio.CancelledError)
+
+
+async def test_async_tool_cancellation_calls_on_tool_error() -> None:
+    """Cancelling an async tool ends the tool run and still cancels the caller."""
+    started = asyncio.Event()
+
+    @tool
+    async def slow_tool() -> str:
+        """Wait until cancelled."""
+        started.set()
+        await asyncio.Event().wait()
+        return "unreachable"
+
+    handler = _ToolErrorCaptureHandler()
+    task = asyncio.create_task(slow_tool.ainvoke({}, config={"callbacks": [handler]}))
+    await started.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert len(handler.tool_errors) == 1
+    assert isinstance(handler.tool_errors[0], asyncio.CancelledError)
 
 
 def test_optional_subset_model_rewrite() -> None:
@@ -4734,3 +4793,145 @@ def test_tool_call_schema_json_schema_cache_invalidated_on_reassignment() -> Non
     new_schema = new_cls.model_json_schema()
     assert new_schema is not old_schema
     assert new_schema["description"] == "New description for cache test."
+
+
+def test_structured_tool_json_dump() -> None:
+    """`mode="json"` dumps must not raise on the callable / schema-class fields."""
+
+    @tool
+    def write_file(file_path: str, content: str) -> str:
+        """Write content to the given path."""
+        return "ok"
+
+    dumped = write_file.model_dump(mode="json")
+    # Round-trips through the stdlib encoder, i.e. it really is JSON-native.
+    json.dumps(dumped)
+    schema = cast("type[BaseModel]", write_file.args_schema)
+    assert dumped["args_schema"] == schema.model_json_schema()
+    assert set(dumped["args_schema"]["properties"]) == {"file_path", "content"}
+    assert "write_file" in dumped["func"]
+    json.loads(write_file.model_dump_json())
+
+    # Python-mode dumps still hand out the live objects.
+    native = write_file.model_dump()
+    assert callable(native["func"])
+    assert isinstance(native["args_schema"], type)
+
+
+def test_structured_tool_json_dump_respects_options() -> None:
+    """The field serializers compose with the usual `model_dump` options."""
+
+    @tool
+    def write_file(file_path: str, content: str) -> str:
+        """Write content to the given path."""
+        return "ok"
+
+    assert "description" not in write_file.model_dump(
+        mode="json", exclude={"description"}
+    )
+    assert set(write_file.model_dump(mode="json", include={"name", "func"})) == {
+        "name",
+        "func",
+    }
+    # `coroutine` is None here, so `exclude_none` must still drop it.
+    assert "coroutine" not in write_file.model_dump(mode="json", exclude_none=True)
+
+
+def test_structured_tool_json_dump_keeps_dict_args_schema() -> None:
+    """A dict schema is already JSON-native and must be passed through as-is."""
+    schema = {"type": "object", "properties": {"a": {"type": "string"}}}
+    dict_tool = StructuredTool(
+        name="d",
+        description="d",
+        func=lambda **kwargs: "x",
+        args_schema=schema,
+    )
+    assert dict_tool.model_dump(mode="json")["args_schema"] == schema
+
+
+def test_structured_tool_json_dump_uses_v1_schema_method() -> None:
+    """A `pydantic.v1` schema class is a supported `args_schema` form too."""
+
+    class V1Schema(BaseModelV1):
+        a: str
+
+    v1_tool = StructuredTool(
+        name="v", description="d", func=lambda a: "x", args_schema=V1Schema
+    )
+    assert v1_tool.model_dump(mode="json")["args_schema"] == V1Schema.schema()
+
+
+def test_structured_tool_json_dump_falls_back_for_arbitrary_types() -> None:
+    """A schema with no JSON schema form must still dump instead of raising."""
+
+    class NotJsonSchemable:
+        pass
+
+    @tool
+    def uses_injected(
+        a: int, conn: Annotated[NotJsonSchemable, InjectedToolArg]
+    ) -> str:
+        """Doc."""
+        return "ok"
+
+    assert uses_injected.model_dump(mode="json")["args_schema"].startswith("<class ")
+    # The injected arg never reaches the model, so the tool is still usable.
+    assert set(uses_injected.args) == {"a"}
+
+
+def test_structured_tool_json_dump_follows_model_rebuild() -> None:
+    """A rebuilt schema must not keep serving its pre-rebuild JSON schema."""
+
+    class Renamable(BaseModel):
+        a: str
+
+    renamable = StructuredTool(
+        name="r", description="d", func=lambda a: "x", args_schema=Renamable
+    )
+    assert renamable.model_dump(mode="json")["args_schema"]["title"] == "Renamable"
+
+    Renamable.model_config["title"] = "Renamed"
+    Renamable.model_rebuild(force=True)
+    assert renamable.model_dump(mode="json")["args_schema"]["title"] == "Renamed"
+
+    class Deferred(BaseModel):
+        a: "Resolved"
+
+    deferred = StructuredTool(
+        name="f", description="d", func=lambda a: "x", args_schema=Deferred
+    )
+    # Unresolvable so far, so it dumps as a repr like any other schema-less type.
+    assert deferred.model_dump(mode="json")["args_schema"].startswith("<class ")
+
+    class Resolved(BaseModel):
+        z: int
+
+    Deferred.model_rebuild(force=True)
+    assert deferred.model_dump(mode="json")["args_schema"]["properties"] == {
+        "a": {"$ref": "#/$defs/Resolved"}
+    }
+
+
+def test_structured_tool_subclass_can_override_json_serializers() -> None:
+    """The JSON fallbacks must not occupy the fields' single serializer slot.
+
+    A subclass declaring its own `@field_serializer` for the same fields used to
+    fail at class creation with `PydanticUserError: Multiple field serializer
+    functions were defined`.
+    """
+
+    class MyTool(StructuredTool):
+        @field_serializer("func", when_used="json-unless-none")
+        def _my_func_repr(self, func: Any) -> str:
+            return "custom-func"
+
+        @field_serializer("args_schema", when_used="json-unless-none")
+        def _my_schema_repr(self, args_schema: Any) -> Any:
+            return {"custom": "schema"}
+
+    my_tool = MyTool.from_function(
+        func=lambda file_path, content: "ok", name="w", description="d"
+    )
+    dumped = my_tool.model_dump(mode="json")
+    assert dumped["func"] == "custom-func"
+    assert dumped["args_schema"] == {"custom": "schema"}

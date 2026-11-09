@@ -88,6 +88,7 @@ _K8S_SUFFIX = ".svc.cluster.local"
 
 _LOOPBACK_IPV4 = ipaddress.IPv4Network("127.0.0.0/8")
 _LOOPBACK_IPV6 = ipaddress.IPv6Address("::1")
+_IPV4_COMPATIBLE_PREFIX = ipaddress.IPv6Network("::/96")
 
 # NAT64 well-known prefixes
 _NAT64_PREFIX = ipaddress.IPv6Network("64:ff9b::/96")
@@ -125,7 +126,7 @@ DEFAULT_SSRF_POLICY = SSRFPolicy()
 def _extract_embedded_ipv4(
     addr: ipaddress.IPv6Address,
 ) -> ipaddress.IPv4Address | None:
-    """Extract an embedded IPv4 from IPv4-mapped or NAT64 IPv6 addresses."""
+    """Extract IPv4 from mapped, compatible, or NAT64 IPv6 addresses."""
     # Check ipv4_mapped first (covers ::ffff:x.x.x.x)
     if addr.ipv4_mapped is not None:
         return addr.ipv4_mapped
@@ -134,6 +135,9 @@ def _extract_embedded_ipv4(
     if addr in _NAT64_PREFIX or addr in _NAT64_DISCOVERY_PREFIX:
         raw = addr.packed
         return ipaddress.IPv4Address(raw[-4:])
+
+    if addr in _IPV4_COMPATIBLE_PREFIX and int(addr) > 1:
+        return ipaddress.IPv4Address(int(addr))
 
     return None
 
@@ -203,6 +207,7 @@ def validate_resolved_ip(ip_str: str, policy: SSRFPolicy) -> None:
         raise SSRFBlockedError(msg) from exc
 
     if isinstance(addr, ipaddress.IPv6Address):
+        addr = ipaddress.IPv6Address(int(addr))
         inner = _extract_embedded_ipv4(addr)
         if inner is not None:
             addr = inner

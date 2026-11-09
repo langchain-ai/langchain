@@ -61,9 +61,9 @@ def _make_spacy_pipeline_for_splitting(
         msg = "Spacy is not installed, please install it with `pip install spacy`."
         raise ImportError(msg) from err
     if pipeline == "sentencizer":
-        sentencizer: Language = english_cls()
+        sentencizer = cast("Language", english_cls())
         sentencizer.add_pipe("sentencizer")
     else:
-        sentencizer = spacy.load(pipeline, exclude=["ner", "tagger"])
+        sentencizer = cast("Language", spacy.load(pipeline, exclude=["ner", "tagger"]))
         sentencizer.max_length = max_length
     return sentencizer

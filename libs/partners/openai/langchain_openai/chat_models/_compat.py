@@ -74,6 +74,17 @@ from typing import Any, cast
 from langchain_core.messages import AIMessage, is_data_content_block
 from langchain_core.messages import content as types
 
+
+def _unwrap_non_standard(block: dict) -> dict:
+    """Unwrap a provider-native dictionary from a standard content block."""
+    if block.get("type") == "non_standard" and isinstance(
+        value := block.get("value"),
+        dict,
+    ):
+        return value
+    return block
+
+
 _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 
 
@@ -165,6 +176,12 @@ def _convert_from_v1_to_chat_completions(message: AIMessage) -> AIMessage:
                 if block_type == "text":
                     # Strip annotations
                     new_content.append({"type": "text", "text": block["text"]})
+                elif block_type == "refusal":
+                    # Refusals without text, e.g. from Anthropic, have nothing to send.
+                    if block.get("refusal"):
+                        new_content.append(
+                            {"type": "refusal", "refusal": block["refusal"]}
+                        )
                 elif block_type in ("reasoning", "tool_call", "invalid_tool_call"):
                     pass
                 else:
@@ -431,6 +448,18 @@ def _convert_from_v1_to_responses(
                 _convert_annotation_from_v1(a) for a in block["annotations"]
             ]
             new_content.append(new_block)
+        elif block["type"] == "refusal":
+            # Refusals without text, e.g. from Anthropic, have nothing to send.
+            if not block.get("refusal"):
+                continue
+            new_block = {"type": "refusal", "refusal": block["refusal"]}
+            if "id" in block:
+                new_block["id"] = block["id"]
+            if "phase" in block:
+                new_block["phase"] = block.get("phase")
+            elif "phase" in block.get("extras", {}):
+                new_block["phase"] = block["extras"]["phase"]
+            new_content.append(new_block)
         elif block["type"] == "tool_call":
             new_block = {"type": "function_call", "call_id": block["id"]}
             if "extras" in block and "item_id" in block["extras"]:
@@ -452,7 +481,7 @@ def _convert_from_v1_to_responses(
                             tool_call["args"], separators=(",", ":")
                         )
             if "extras" in block:
-                for extra_key in ("status", "namespace"):
+                for extra_key in ("status", "namespace", "async"):
                     if extra_key in block["extras"]:
                         new_block[extra_key] = block["extras"][extra_key]
             new_content.append(new_block)

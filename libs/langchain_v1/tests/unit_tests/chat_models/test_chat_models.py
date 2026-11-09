@@ -155,6 +155,18 @@ def test_supported_providers_is_sorted() -> None:
     assert list(_BUILTIN_PROVIDERS) == sorted(_BUILTIN_PROVIDERS.keys())
 
 
+def test_bedrock_mantle_providers_registered() -> None:
+    """Mantle providers map to the `langchain_aws` Mantle chat model classes."""
+    assert _BUILTIN_PROVIDERS["bedrock_mantle_openai"][:2] == (
+        "langchain_aws",
+        "ChatOpenAIMantle",
+    )
+    assert _BUILTIN_PROVIDERS["bedrock_mantle_anthropic"][:2] == (
+        "langchain_aws",
+        "ChatAnthropicMantle",
+    )
+
+
 @pytest.mark.parametrize(
     ("model_name", "expected_provider"),
     [
@@ -397,6 +409,7 @@ def test_configurable_with_default() -> None:
             "anthropic_api_url": "https://api.anthropic.com",
             "anthropic_proxy": None,
             "context_management": None,
+            "container": None,
             "anthropic_api_key": SecretStr("bar"),
             "betas": None,
             "default_headers": None,

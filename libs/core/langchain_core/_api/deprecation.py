@@ -36,10 +36,9 @@ if TYPE_CHECKING:
 def _is_pydantic_v1_field_info(obj: Any) -> TypeGuard["FieldInfoV1"]:
     """Check if `obj` is a `pydantic.v1.fields.FieldInfo` without forcing import.
 
-    Importing `pydantic.v1` emits a `UserWarning` on Python 3.14+. Skipping the
-    import entirely when no caller has constructed a v1 `FieldInfo` keeps that
-    warning out of `langchain_core`'s import path. If a caller did construct one,
-    `pydantic.v1.fields` is already in `sys.modules` and isinstance is safe.
+    Avoids importing `pydantic.v1`, which emits a `UserWarning` on Python 3.14+
+    with Pydantic 2.12. A v1 `FieldInfo` can only exist once a caller has imported
+    `pydantic.v1.fields`, so this check consults it only if it is already loaded.
     """
     mod = sys.modules.get("pydantic.v1.fields")
     if mod is None:
