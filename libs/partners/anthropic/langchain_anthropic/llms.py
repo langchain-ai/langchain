@@ -95,12 +95,14 @@ class _AnthropicCommon(BaseLanguageModel):
             api_key=self.anthropic_api_key.get_secret_value(),
             timeout=self.default_request_timeout,
             max_retries=self.max_retries,
+            default_headers={"anthropic-version": "2023-06-01"},
         )
         self.async_client = anthropic.AsyncAnthropic(
             base_url=self.anthropic_api_url,
             api_key=self.anthropic_api_key.get_secret_value(),
             timeout=self.default_request_timeout,
             max_retries=self.max_retries,
+            default_headers={"anthropic-version": "2023-06-01"},
         )
         # Keep for backward compatibility but not used in Messages API
         self.HUMAN_PROMPT = getattr(anthropic, "HUMAN_PROMPT", None)
