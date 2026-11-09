@@ -2866,7 +2866,9 @@ class TestOpenRouterSpecificParams:
             call_kwargs = mock_cls.call_args[1]
             assert call_kwargs["server_url"] == "https://custom.openrouter.ai/api/v1"
 
-    @pytest.mark.parametrize(("timeout", "timeout_ms"), [(30, 30_000), (0.1, 100)])
+    @pytest.mark.parametrize(
+        ("timeout", "timeout_ms"), [(30, 30_000), (0.1, 100), (1.001, 1001)]
+    )
     def test_timeout_passed_to_client(self, timeout: float, timeout_ms: int) -> None:
         """Test that timeout seconds are converted for the SDK client."""
         with patch("openrouter.OpenRouter") as mock_cls:

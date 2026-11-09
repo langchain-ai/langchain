@@ -453,7 +453,7 @@ class ChatOpenRouter(BaseChatModel):
                 headers=extra_headers, follow_redirects=True
             )
         if self.request_timeout is not None:
-            client_kwargs["timeout_ms"] = int(self.request_timeout * 1000)
+            client_kwargs["timeout_ms"] = round(self.request_timeout * 1000)
         if self.max_retries > 0:
             client_kwargs["retry_config"] = RetryConfig(
                 strategy="backoff",
