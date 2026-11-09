@@ -152,6 +152,18 @@ class TestValidateSafeUrl:
         result = validate_safe_url(url)
         assert result == url
 
+    def test_test_lookalike_hosts_not_bypassed(self, monkeypatch: Any) -> None:
+        """Hostnames that only look like test servers must not bypass SSRF checks."""
+        monkeypatch.setenv("LANGCHAIN_ENV", "local_test")
+        # `.invalid` is guaranteed not to resolve (RFC 2606), so validation must
+        # fail at DNS resolution instead of being skipped by the test bypass.
+        for url in (
+            "http://testserver.internal.invalid/webhook",
+            "http://test-server.internal.invalid/webhook",
+            "http://testing.myserver.internal.invalid/webhook",
+        ):
+            assert is_safe_url(url) is False
+
 
 class TestIsSafeUrl:
     """Tests for is_safe_url function (non-throwing version)."""

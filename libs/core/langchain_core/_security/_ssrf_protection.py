@@ -26,6 +26,9 @@ from langchain_core._security._policy import (
 )
 
 
+_LOCAL_TEST_HOSTS = frozenset({"testserver", "localhost", "127.0.0.1", "::1"})
+
+
 def _policy_for(*, allow_private: bool, allow_http: bool) -> SSRFPolicy:
     """Build an `SSRFPolicy` from the legacy flag interface."""
     schemes = frozenset({"http", "https"}) if allow_http else frozenset({"https"})
@@ -65,11 +68,13 @@ def validate_safe_url(
     parsed = urlparse(url_str)
     hostname = parsed.hostname or ""
 
-    # Test-environment bypass (preserved from original implementation)
+    # Test-environment bypass: only allow the explicit loopback hostnames used by
+    # local test servers (e.g. Starlette's `testserver`). Never allow arbitrary
+    # hosts that merely look like test hosts, since that would bypass every SSRF
+    # check below (including cloud metadata blocking).
     if (
         os.environ.get("LANGCHAIN_ENV") == "local_test"
-        and hostname.startswith("test")
-        and "server" in hostname
+        and hostname in _LOCAL_TEST_HOSTS
     ):
         return url_str
 
