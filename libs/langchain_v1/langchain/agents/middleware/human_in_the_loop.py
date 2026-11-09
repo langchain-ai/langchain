@@ -285,6 +285,19 @@ def _answer_message(tool_call: ToolCall, decision: RejectDecision | RespondDecis
     )
 
 
+def _in_model_message(request: ToolCallRequest) -> bool:
+    """Whether the call's ID and tool name match a tool call in the model's latest message."""
+    messages = request.state.get("messages", [])
+    last_ai_msg = next((msg for msg in reversed(messages) if isinstance(msg, AIMessage)), None)
+    if last_ai_msg is None:
+        return False
+    tool_call = request.tool_call
+    return any(
+        call.get("id") == tool_call.get("id") and call["name"] == tool_call["name"]
+        for call in last_ai_msg.tool_calls
+    )
+
+
 class HITLResponse(TypedDict):
     """Response payload for a HITLRequest."""
 
@@ -368,7 +381,10 @@ class InterruptOnConfig(TypedDict):
     so it uses its default empty list.
 
     In `per_call` mode the predicate runs in `wrap_tool_call` and receives the real
-    `ToolCallRequest`, with `tool` and the tool's `ToolRuntime` set.
+    `ToolCallRequest`, with `tool` and the tool's `ToolRuntime` set. In `batched` mode it
+    also runs there, with the real request, for a call that isn't in the model's latest
+    message. If it returns `True`, that call returns an error `ToolMessage` instead of
+    running.
 
     In both modes the predicate runs again when the run resumes, so it must return the
     same answer for the same call. If it returns `False` on resume, the reviewer's
@@ -405,7 +421,10 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
 
     - `"batched"` (default): one interrupt per model turn. Its value is a `HITLRequest`
         listing every gated call, answered with a `HITLResponse` whose decisions match
-        the calls by position.
+        the calls by position. A gated call that isn't in the model's latest message,
+        such as one made by middleware that runs code, returns an error `ToolMessage`
+        instead of running, because there is no interrupt for it. This middleware sees
+        such a call only if it's listed after the middleware that makes the call.
     - `"per_call"`: one interrupt per gated tool call, as the call starts. Its value is
         a `ToolApprovalRequest` and its `response_schema` lists the decisions that tool
         allows. Each is answered with a single `Decision` keyed by interrupt ID, and
@@ -725,6 +744,16 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
             description=action_request.get("description", ""),
         )
 
+    def _review_config(self, request: ToolCallRequest) -> InterruptOnConfig | None:
+        """The tool's config if this call needs a reviewer's decision, else `None`."""
+        config = self.interrupt_on.get(request.tool_call["name"])
+        if config is None:
+            return None
+        when = config.get("when")
+        if when is not None and not when(request):
+            return None
+        return config
+
     def _resolve_per_call(
         self, request: ToolCallRequest
     ) -> tuple[ToolCallRequest, Action | None] | ToolMessage:
@@ -734,11 +763,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         message to return instead of running the tool.
         """
         tool_call = request.tool_call
-        config = self.interrupt_on.get(tool_call["name"])
+        config = self._review_config(request)
         if config is None:
-            return request, None
-        when = config.get("when")
-        if when is not None and not when(request):
             return request, None
 
         value = self._tool_approval_request(request, config)
@@ -873,6 +899,23 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
         """
         return self.after_model(state, runtime)
 
+    def _refuse_unreviewed(self, request: ToolCallRequest) -> ToolMessage | None:
+        """The error for a gated call that isn't in the model's latest message, else `None`."""
+        if _in_model_message(request) or self._review_config(request) is None:
+            return None
+        tool_call = request.tool_call
+        name = tool_call["name"]
+        return ToolMessage(
+            content=(
+                f"Tool call `{name}` did not run. It needs human approval, and only the "
+                f"tool calls you make directly can be reviewed. To run it, call `{name}` "
+                "directly."
+            ),
+            name=name,
+            tool_call_id=tool_call["id"] or "",
+            status="error",
+        )
+
     def _reviewer_edit(self, request: ToolCallRequest) -> Action | None:
         """The reviewer's replacement for this call, if an `edit` decision replaced it."""
         tool_call_id = request.tool_call.get("id")
@@ -984,14 +1027,17 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     ) -> ToolMessage | Command[Any]:
         """Prepend reviewer-edit guidance to the result of an edited tool call.
 
-        In `per_call` mode this is also where the interrupt is raised.
+        In `per_call` mode this is also where the interrupt is raised. In `batched`
+        mode, a gated call that isn't in the model's latest message doesn't run.
 
         Args:
             request: The tool call request being executed.
             handler: Callable that executes the tool.
 
         Returns:
-            The tool result, with a note prepended when a reviewer edited the call.
+            The tool result, with a note prepended when a reviewer edited the call, or
+                an error `ToolMessage` for a gated call that isn't in the model's latest
+                message.
 
         Raises:
             ValidationError: In `per_call` mode, if the reviewer's answer doesn't match
@@ -1005,6 +1051,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 return resolved
             to_run, executed = resolved
             return self._annotate_edited_result(handler(to_run), to_run, executed)
+        if (refusal := self._refuse_unreviewed(request)) is not None:
+            return refusal
         executed = self._reviewer_edit(request)
         if executed is not None:
             request = self._apply_edit(request, executed)
@@ -1017,14 +1065,17 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
     ) -> ToolMessage | Command[Any]:
         """Async variant of `wrap_tool_call`.
 
-        In `per_call` mode this is also where the interrupt is raised.
+        In `per_call` mode this is also where the interrupt is raised. In `batched`
+        mode, a gated call that isn't in the model's latest message doesn't run.
 
         Args:
             request: The tool call request being executed.
             handler: Awaitable callable that executes the tool.
 
         Returns:
-            The tool result, with a note prepended when a reviewer edited the call.
+            The tool result, with a note prepended when a reviewer edited the call, or
+                an error `ToolMessage` for a gated call that isn't in the model's latest
+                message.
 
         Raises:
             ValidationError: In `per_call` mode, if the reviewer's answer doesn't match
@@ -1038,6 +1089,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                 return resolved
             to_run, executed = resolved
             return self._annotate_edited_result(await handler(to_run), to_run, executed)
+        if (refusal := self._refuse_unreviewed(request)) is not None:
+            return refusal
         executed = self._reviewer_edit(request)
         if executed is not None:
             request = self._apply_edit(request, executed)
