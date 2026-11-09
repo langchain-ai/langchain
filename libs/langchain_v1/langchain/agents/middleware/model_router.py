@@ -139,10 +139,16 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
 
     @staticmethod
     def _latest_human_message(state: _ModelRouterState) -> HumanMessage:
-        """Return the latest human message from agent state."""
-        return next(
-            message for message in reversed(state["messages"]) if isinstance(message, HumanMessage)
-        )
+        """Return the latest human message from agent state.
+
+        Raises:
+            ValueError: If the agent state contains no human message.
+        """
+        for message in reversed(state["messages"]):
+            if isinstance(message, HumanMessage):
+                return message
+        msg = "ModelRouterMiddleware requires a HumanMessage in the agent state to route on."
+        raise ValueError(msg)
 
     @override
     def before_agent(

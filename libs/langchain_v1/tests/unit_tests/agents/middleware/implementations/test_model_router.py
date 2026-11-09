@@ -119,6 +119,18 @@ async def test_classifier_failure_terminates_agent_run(*, async_: bool) -> None:
         await _run_agent(middleware, models["fast"], inputs, async_=async_)
 
 
+@pytest.mark.parametrize("async_", [False, True])
+async def test_missing_human_message_is_rejected(*, async_: bool) -> None:
+    classifier = _RouteClassifier()
+    middleware, models = _router(classifier)
+    inputs: InputAgentState = {"messages": [AIMessage("Ready")]}
+
+    with pytest.raises(ValueError, match="requires a HumanMessage"):
+        await _run_agent(middleware, models["fast"], inputs, async_=async_)
+
+    assert classifier.requests == []
+
+
 @pytest.mark.parametrize(
     "kwargs",
     [
