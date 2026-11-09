@@ -1,5 +1,6 @@
 import re
 import sys
+from collections.abc import Awaitable, Callable
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Annotated, Any, cast
 from unittest.mock import patch
@@ -2268,3 +2269,194 @@ def test_per_call_retried_tool_is_not_reviewed_again_when_hitl_wraps_retry() -> 
     assert attempts == ["alice", "alice"]
     [message] = [m for m in final["messages"] if isinstance(m, ToolMessage)]
     assert message.content == "sent to alice"
+
+
+class _RunsCode(AgentMiddleware):
+    """Stand-in for a code interpreter whose code makes the `nested` tool call."""
+
+    def __init__(self, nested: ToolCall) -> None:
+        super().__init__()
+        self.nested = nested
+
+    def _nested_request(self, request: ToolCallRequest) -> ToolCallRequest:
+        tool = next(t for t in request.runtime.tools if t.name == self.nested["name"])
+        return request.override(tool_call=self.nested, tool=tool)
+
+    @staticmethod
+    def _result(request: ToolCallRequest, nested: ToolMessage | Command[Any]) -> ToolMessage:
+        assert isinstance(nested, ToolMessage)
+        return ToolMessage(
+            content=nested.content,
+            tool_call_id=request.tool_call["id"],
+            name="run_code",
+            status=nested.status,
+        )
+
+    def wrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
+        if request.tool_call["name"] != "run_code":
+            return handler(request)
+        return self._result(request, handler(self._nested_request(request)))
+
+    async def awrap_tool_call(
+        self,
+        request: ToolCallRequest,
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+    ) -> ToolMessage | Command[Any]:
+        if request.tool_call["name"] != "run_code":
+            return await handler(request)
+        return self._result(request, await handler(self._nested_request(request)))
+
+
+_RUN_CODE = ToolCall(name="run_code", args={}, id="call_code")
+_NESTED_EMAIL = ToolCall(name="send_email", args={"to": "alice"}, id="call_code.0")
+
+
+def _code_agent(
+    sent: list[str],
+    interrupt_on: dict[str, bool | InterruptOnConfig],
+    *,
+    nested: ToolCall = _NESTED_EMAIL,
+    model_calls: tuple[ToolCall, ...] = (_RUN_CODE,),
+    interrupt_mode: InterruptMode = "batched",
+) -> CompiledStateGraph[AgentState[Any], None, InputAgentState, OutputAgentState[Any]]:
+    """An agent whose model makes `model_calls`; a `run_code` call makes `nested`."""
+
+    @tool
+    def send_email(to: str) -> str:
+        """Send an email."""
+        sent.append(to)
+        return f"sent to {to}"
+
+    @tool
+    def run_code() -> str:
+        """Run code."""
+        return "unused"
+
+    return create_agent(
+        model=FakeToolCallingModel(tool_calls=[list(model_calls), []]),
+        tools=[send_email, run_code],
+        middleware=[
+            _RunsCode(nested),
+            HumanInTheLoopMiddleware(interrupt_on, interrupt_mode=interrupt_mode),
+        ],
+        checkpointer=InMemorySaver(),
+    )
+
+
+def _run_code_result(state: dict[str, Any]) -> ToolMessage:
+    [message] = [
+        m for m in state["messages"] if isinstance(m, ToolMessage) and m.name == "run_code"
+    ]
+    return message
+
+
+@pytest.mark.parametrize(
+    "nested",
+    [_NESTED_EMAIL, ToolCall(name="send_email", args={"to": "alice"}, id="call_code")],
+    ids=["new-id", "id-of-a-call-the-model-made"],
+)
+def test_batched_refuses_a_gated_call_the_model_did_not_make(nested: ToolCall) -> None:
+    sent: list[str] = []
+    agent = _code_agent(sent, {"send_email": True}, nested=nested)
+
+    final = agent.invoke({"messages": [HumanMessage("go")]}, {"configurable": {"thread_id": "t"}})
+
+    assert "__interrupt__" not in final
+    assert sent == []
+    result = _run_code_result(final)
+    assert result.status == "error"
+    assert "`send_email`" in str(result.content)
+    assert "human approval" in str(result.content)
+
+
+@pytest.mark.parametrize(
+    "interrupt_on",
+    [
+        {"delete_file": True},
+        {"send_email": {"allowed_decisions": ["approve"], "when": lambda _: False}},
+    ],
+    ids=["not-gated", "when-declines"],
+)
+def test_batched_runs_a_nested_call_that_needs_no_review(
+    interrupt_on: dict[str, bool | InterruptOnConfig],
+) -> None:
+    sent: list[str] = []
+    agent = _code_agent(sent, interrupt_on)
+
+    final = agent.invoke({"messages": [HumanMessage("go")]}, {"configurable": {"thread_id": "t"}})
+
+    assert "__interrupt__" not in final
+    assert sent == ["alice"]
+    result = _run_code_result(final)
+    assert (result.status, result.content) == ("success", "sent to alice")
+
+
+@pytest.mark.parametrize(
+    ("interrupt_on", "sent_after", "status"),
+    [({"send_email": True}, [], "error"), ({"delete_file": True}, ["alice"], "success")],
+    ids=["gated", "not-gated"],
+)
+async def test_batched_nested_calls_with_ainvoke(
+    interrupt_on: dict[str, bool | InterruptOnConfig], sent_after: list[str], status: str
+) -> None:
+    sent: list[str] = []
+    agent = _code_agent(sent, interrupt_on)
+
+    final = await agent.ainvoke(
+        {"messages": [HumanMessage("go")]}, {"configurable": {"thread_id": "t"}}
+    )
+
+    assert "__interrupt__" not in final
+    assert sent == sent_after
+    assert _run_code_result(final).status == status
+
+
+@pytest.mark.parametrize(
+    ("answer", "sent_after", "content"),
+    [
+        ({"type": "approve"}, ["bob"], "sent to bob"),
+        (
+            {"type": "edit", "edited_action": {"name": "send_email", "args": {"to": "carol"}}},
+            ["carol"],
+            "sent to carol",
+        ),
+        ({"type": "reject", "message": "not now"}, [], "not now"),
+    ],
+    ids=["approve", "edit", "reject"],
+)
+def test_batched_still_reviews_and_runs_the_models_own_gated_call(
+    answer: Decision, sent_after: list[str], content: str
+) -> None:
+    sent: list[str] = []
+    model_email = ToolCall(name="send_email", args={"to": "bob"}, id="call_email")
+    agent = _code_agent(sent, {"send_email": True}, model_calls=(model_email, _RUN_CODE))
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+
+    [intr] = agent.invoke({"messages": [HumanMessage("go")]}, config)["__interrupt__"]
+    assert [(a["name"], a["args"]) for a in intr.value["action_requests"]] == [
+        ("send_email", {"to": "bob"})
+    ]
+    final = agent.invoke(Command(resume={"decisions": [answer]}), config)
+
+    assert "__interrupt__" not in final
+    assert sent == sent_after
+    messages = {m.tool_call_id: m for m in final["messages"] if isinstance(m, ToolMessage)}
+    assert content in str(messages["call_email"].content)
+    assert messages["call_code"].status == "error"
+
+
+def test_per_call_still_asks_about_a_nested_gated_call() -> None:
+    sent: list[str] = []
+    agent = _code_agent(sent, {"send_email": True}, interrupt_mode="per_call")
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+
+    [intr] = agent.invoke({"messages": [HumanMessage("go")]}, config)["__interrupt__"]
+    assert (intr.value["name"], intr.value["args"]) == ("send_email", {"to": "alice"})
+    final = agent.invoke(Command(resume={intr.id: {"type": "approve"}}), config)
+
+    assert sent == ["alice"]
+    assert _run_code_result(final).content == "sent to alice"
