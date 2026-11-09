@@ -31,6 +31,19 @@ As an open-source project in a rapidly developing field, we are extremely open t
 
 For detailed information on how to contribute, see the [Contributing Guide](https://docs.langchain.com/oss/python/contributing/overview).
 
+## Claude Fable 5.2 and Mythos 5.2
+
+Use `model="claude-fable-5-2"` or `model="claude-mythos-5-2"`. Both profiles support a 1M-token context, 128k output tokens, native structured output, and mid-conversation system and tool changes.
+
+- Thinking is always adaptive. Omit `thinking` or use `thinking={"type": "adaptive"}`; `disabled` and budgeted `enabled` are unsupported
+- Omit sampling settings. Use `reasoning_effort="low"`, `"medium"`, `"high"` (default), `"xhigh"`, or `"max"` instead
+- Use `with_structured_output(schema, method="json_schema")`. Forced tool choice is unsupported; function-calling structured output cannot guarantee a tool call
+- Preserve signed thinking, including empty blocks, and keep the conversation prefix unchanged. Use `{"type": "computer_toolset_20260801"}` for computer use
+
+The integration retains API version `2023-06-01` when upgrading to Anthropic SDK 2.7 to preserve existing sampling and message behavior on older models. Set `default_headers={"anthropic-version": "2026-10-21"}` to opt into the newer API contract.
+
+Mythos requires verified organization access. Retention, CMEK restrictions on native structured output, and compatible advisor pairings are enforced by Anthropic; see the [migration guide](https://platform.claude.com/docs/en/models/fable-5-2/migration-guide).
+
 ## Migrating to Claude Sonnet 5.5
 
 ```python

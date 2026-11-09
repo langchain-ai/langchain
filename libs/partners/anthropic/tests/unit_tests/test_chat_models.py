@@ -3153,7 +3153,15 @@ _ANTHROPIC_TOOL_SCHEMA = {
 }
 
 
-@pytest.mark.parametrize("model", ["claude-opus-5-5", "claude-fable-5-1"])
+@pytest.mark.parametrize(
+    "model",
+    [
+        "claude-opus-5-5",
+        "claude-fable-5-1",
+        "claude-fable-5-2",
+        "claude-mythos-5-2",
+    ],
+)
 @pytest.mark.parametrize("schema", [_Person, _ANTHROPIC_TOOL_SCHEMA])
 @pytest.mark.parametrize("thinking", [None, {"type": "adaptive"}])
 def test_with_structured_output_skips_forced_tool_choice_when_unsupported(
