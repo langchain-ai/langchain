@@ -1844,6 +1844,59 @@ def test_chat_completions_payload_includes_stop() -> None:
     assert payload["stop"] == ["END"]
 
 
+@pytest.mark.parametrize("via_invoke", [False, True])
+def test_responses_api_payload_excludes_chat_penalties(via_invoke: bool) -> None:
+    """The Responses API rejects chat-completions penalties, so they are dropped.
+
+    Covers penalties supplied both at construction time and at invoke time, since
+    they reach the payload through different code paths.
+    """
+    if via_invoke:
+        llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+        payload = llm._get_request_payload(
+            [HumanMessage(content="Hello")],
+            presence_penalty=0.0,
+            frequency_penalty=0.2,
+        )
+    else:
+        llm = ChatOpenAI(
+            model=OPENAI_TEST_MODEL,
+            presence_penalty=0.0,
+            frequency_penalty=0.2,
+            use_responses_api=True,
+        )
+        payload = llm._get_request_payload([HumanMessage(content="Hello")])
+
+    assert "presence_penalty" not in payload
+    assert "frequency_penalty" not in payload
+
+
+def test_responses_api_payload_excludes_penalties_from_model_kwargs() -> None:
+    """Penalties saved in ``model_kwargs`` are merged into the same payload."""
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        model_kwargs={"presence_penalty": 0.1, "frequency_penalty": 0.2},
+        use_responses_api=True,
+    )
+
+    payload = llm._get_request_payload([HumanMessage(content="Hello")])
+
+    assert "presence_penalty" not in payload
+    assert "frequency_penalty" not in payload
+
+
+def test_chat_completions_payload_includes_chat_penalties() -> None:
+    """Penalties must be preserved for the Chat Completions API, which supports them."""
+    llm = ChatOpenAI(
+        model=OPENAI_TEST_MODEL, presence_penalty=0.0, frequency_penalty=0.2
+    )
+
+    payload = llm._get_request_payload([HumanMessage(content="Hello")])
+
+    assert payload["presence_penalty"] == 0.0
+    assert payload["frequency_penalty"] == 0.2
+
+
 def test_output_version_compat() -> None:
     llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
     assert llm._use_responses_api({}) is True
