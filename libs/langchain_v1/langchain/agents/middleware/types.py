@@ -48,6 +48,8 @@ __all__ = [
     "ModelCallResult",
     "ModelRequest",
     "ModelResponse",
+    "ModelSelection",
+    "ModelSpec",
     "OmitFromSchema",
     "OutputAgentState",
     "ResponseT",
@@ -346,12 +348,83 @@ PrivateStateAttr = OmitFromSchema(input=True, output=True)
 """Annotation used to mark state attributes as purely internal for a given middleware."""
 
 
+class ModelSpec(TypedDict, total=False):
+    """Serializable description of a chat model, safe to store in agent state.
+
+    Holds only plain JSON values, so it round-trips through LangGraph checkpoint
+    serializers without an allow list. Never holds clients, API keys, headers or
+    endpoints.
+
+    Build one with
+    [`model_spec_from_model`][langchain.agents.middleware.model_selection.model_spec_from_model].
+    """
+
+    provider: Required[str]
+    """Provider key accepted by `init_chat_model` (e.g. `'openai'`).
+
+    Falls back to the model's LangSmith provider name when its class is not one of
+    `init_chat_model`'s built-in providers.
+    """
+
+    model: Required[str]
+    """Model name, as reported to LangSmith (`ls_model_name`)."""
+
+    max_input_tokens: int
+    """Context window from the model's profile, when known."""
+
+    init_kwargs: dict[str, str | int | float | bool]
+    """Safe init args of the model (sampling settings and output limits)."""
+
+
+class ModelSelection(TypedDict, total=False):
+    """Record of the agent's selected model, stored in state as `model_selection`.
+
+    The agent records the model each call actually went to after every model call.
+    Anything that chooses the model (a `/model` command, a router, a fallback) may
+    also record its choice ahead of the next call, e.g. with
+    `Command(update={"model_selection": {"current": spec}})`.
+
+    This is a record only: writing it does not change which model a call goes to,
+    and middleware should take the model for a call from `ModelRequest.model`.
+
+    Updates are merged: when `current` changes, the replaced value moves to
+    `previous`, so a switch from a large-context model to a smaller one can be
+    detected.
+    """
+
+    current: ModelSpec
+    """The model used by the last call, or recorded as chosen for the next one."""
+
+    previous: ModelSpec | None
+    """The model `current` replaced, if any."""
+
+
+def _merge_model_selection(
+    left: ModelSelection | None, right: ModelSelection | None
+) -> ModelSelection:
+    """Reducer for `model_selection`: move a replaced `current` to `previous`."""
+    if not right:
+        return left or {}
+    if not left:
+        return cast("ModelSelection", dict(right))
+    merged = cast("ModelSelection", {**left, **right})
+    replaced = left.get("current")
+    current = right.get("current")
+    if "previous" not in right and current is not None and replaced not in (None, current):
+        merged["previous"] = replaced
+    return merged
+
+
 class AgentState(TypedDict, Generic[ResponseT]):
     """State schema for the agent."""
 
     messages: Required[Annotated[list[AnyMessage], add_messages]]
     jump_to: NotRequired[Annotated[JumpTo | None, EphemeralValue, PrivateStateAttr]]
     structured_response: NotRequired[Annotated[ResponseT, OmitFromInput]]
+    model_selection: NotRequired[
+        Annotated[ModelSelection, PrivateStateAttr, _merge_model_selection]
+    ]
+    """The model selected for the agent; see `ModelSelection`."""
 
 
 class InputAgentState(TypedDict):
