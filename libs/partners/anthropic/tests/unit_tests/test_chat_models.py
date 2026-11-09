@@ -4035,33 +4035,49 @@ def test_streaming_cache_token_reporting() -> None:
     assert delta_chunk.usage_metadata["total_tokens"] == 185
 
 
+_START_CACHE_DETAILS = {
+    "cache_read": 25,
+    "cache_creation": 0,
+    "ephemeral_5m_input_tokens": 10,
+    "ephemeral_1h_input_tokens": 0,
+}
+
+
 @pytest.mark.parametrize(
     ("delta_usage", "expected"),
     [
         # Output-only delta keeps message_start input and cache counts.
-        ({"output_tokens": 50}, (100 + 25 + 10, 50, 25, 10)),
+        ({"output_tokens": 50}, (100 + 25 + 10, _START_CACHE_DETAILS)),
         # Delta with input_tokens but no cache fields (e.g. Bedrock) keeps
         # message_start cache counts.
-        ({"output_tokens": 50, "input_tokens": 100}, (100 + 25 + 10, 50, 25, 10)),
-        # Full cumulative delta (e.g. after server tools) wins.
+        (
+            {"output_tokens": 50, "input_tokens": 100},
+            (100 + 25 + 10, _START_CACHE_DETAILS),
+        ),
+        # Full cumulative delta (e.g. after server tools) wins, and drops the
+        # now-stale message_start TTL breakdown.
         (
             {
                 "output_tokens": 50,
                 "input_tokens": 300,
                 "cache_read_input_tokens": 40,
-                "cache_creation_input_tokens": 0,
+                "cache_creation_input_tokens": 30,
             },
-            (300 + 40, 50, 40, 0),
+            (300 + 40 + 30, {"cache_read": 40, "cache_creation": 30}),
         ),
     ],
 )
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_streaming_usage_falls_back_to_message_start(
     delta_usage: dict[str, int],
-    expected: tuple[int, int, int, int],
+    expected: tuple[int, dict[str, int]],
     use_async: bool,  # noqa: FBT001
 ) -> None:
-    from anthropic.types import RawMessageDeltaEvent, RawMessageStartEvent
+    from anthropic.types import (
+        CacheCreation,
+        RawMessageDeltaEvent,
+        RawMessageStartEvent,
+    )
     from anthropic.types.raw_message_delta_event import Delta, MessageDeltaUsage
 
     msg = Message(
@@ -4076,6 +4092,9 @@ async def test_streaming_usage_falls_back_to_message_start(
             output_tokens=1,
             cache_read_input_tokens=25,
             cache_creation_input_tokens=10,
+            cache_creation=CacheCreation(
+                ephemeral_5m_input_tokens=10, ephemeral_1h_input_tokens=0
+            ),
         ),
         type="message",
     )
@@ -4108,13 +4127,10 @@ async def test_streaming_usage_falls_back_to_message_start(
     usage = [cast("AIMessageChunk", c.message).usage_metadata for c in chunks]
     assert usage[0] is None
     assert usage[1] is not None
-    input_tokens, output_tokens, cache_read, cache_creation = expected
+    input_tokens, input_token_details = expected
     assert usage[1]["input_tokens"] == input_tokens
-    assert usage[1]["output_tokens"] == output_tokens
-    assert usage[1]["input_token_details"] == {
-        "cache_read": cache_read,
-        "cache_creation": cache_creation,
-    }
+    assert usage[1]["output_tokens"] == 50
+    assert usage[1]["input_token_details"] == input_token_details
 
 
 def _aggregate_anthropic_events(

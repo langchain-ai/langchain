@@ -2515,9 +2515,11 @@ class ChatAnthropic(BaseChatModel):
             if message_start_usage is not None:
                 # Some providers (e.g. Bedrock) omit input/cache fields from
                 # `message_delta`; fall back to `message_start` for those.
-                usage = message_start_usage.model_copy(
-                    update={k: v for k, v in event.usage if v is not None}
-                )
+                update = {k: v for k, v in event.usage if v is not None}
+                if "cache_creation_input_tokens" in update:
+                    # The delta's total supersedes message_start's TTL breakdown.
+                    update.setdefault("cache_creation", None)
+                usage = message_start_usage.model_copy(update=update)
             usage_metadata = _create_usage_metadata(usage) if stream_usage else None
             response_metadata = {
                 "stop_reason": event.delta.stop_reason,
