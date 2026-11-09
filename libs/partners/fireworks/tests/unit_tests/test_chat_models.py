@@ -120,6 +120,55 @@ def test_model_profile_rejects_native_pdf_input(model_name: str) -> None:
     assert profile["pdf_tool_message"] is False
 
 
+@pytest.mark.parametrize("model_name", [*_PROFILES, MODEL_NAME])
+def test_max_tokens_from_model_profile(model_name: str) -> None:
+    model = _make_model(model=model_name)
+    expected = _PROFILES.get(model_name, {}).get("max_output_tokens")
+
+    assert model.max_tokens == expected
+    if expected is None:
+        assert "max_tokens" not in model._default_params
+    else:
+        assert model._default_params["max_tokens"] == expected
+
+
+@pytest.mark.parametrize("max_tokens", [None, 0, 100])
+@pytest.mark.parametrize("model_field", ["model", "model_name"])
+def test_max_tokens_with_custom_profile(
+    max_tokens: int | None, model_field: str
+) -> None:
+    model = _make_model(
+        **{model_field: MODEL_NAME},
+        profile={"max_output_tokens": 8192},
+        max_tokens=max_tokens,
+    )
+    expected = 8192 if max_tokens is None else max_tokens
+
+    assert model.max_tokens == expected
+    assert model._default_params["max_tokens"] == expected
+
+
+def test_max_tokens_with_empty_profile() -> None:
+    model_name = next(name for name, p in _PROFILES.items() if "max_output_tokens" in p)
+    model = _make_model(model=model_name, profile={})
+
+    assert model.max_tokens is None
+    assert "max_tokens" not in model._default_params
+
+
+def test_max_tokens_runtime_override() -> None:
+    model = _make_model(profile={"max_output_tokens": 8192})
+    model.client = MagicMock()
+    model.client.create.return_value = {
+        "choices": [{"message": {"role": "assistant", "content": "Hello"}}],
+    }
+
+    model.invoke("Hello", max_tokens=100)
+
+    assert model.client.create.call_args.kwargs["max_tokens"] == 100
+    assert model.max_tokens == 8192
+
+
 def test_convert_dict_to_message_with_reasoning_content() -> None:
     """Test that reasoning_content is correctly extracted from API response."""
     response_dict = {

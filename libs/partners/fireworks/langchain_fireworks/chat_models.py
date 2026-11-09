@@ -1145,7 +1145,7 @@ class ChatFireworks(BaseChatModel):
     """Number of chat completions to generate for each prompt."""
 
     max_tokens: int | None = None
-    """Maximum number of tokens to generate."""
+    """Maximum tokens to generate; defaults to `max_output_tokens` in the profile."""
 
     max_retries: int | None = 2
     """Maximum number of retries after the initial attempt when generating.
@@ -1293,6 +1293,13 @@ class ChatFireworks(BaseChatModel):
 
     def _resolve_model_profile(self) -> ModelProfile | None:
         return _get_default_model_profile(self.model_name) or None
+
+    @model_validator(mode="after")
+    def _set_default_max_tokens(self) -> Self:
+        """Set default `max_tokens` from the model profile when available."""
+        if self.max_tokens is None and self.profile:
+            self.max_tokens = self.profile.get("max_output_tokens")
+        return self
 
     @property
     def _default_params(self) -> dict[str, Any]:
