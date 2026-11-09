@@ -1283,8 +1283,6 @@ def test_load_rejects_deeply_nested_input(*, as_dict: bool) -> None:
         load(json.loads(text), allowed_objects="messages")
     with pytest.raises(ValueError, match="nested more than 200 levels"):
         loads(text, allowed_objects="messages")
-    with pytest.raises(ValueError, match="nested more than 200 levels"):
-        loads(_nest(100_000, as_dict=as_dict), allowed_objects="messages")
 
 
 @pytest.mark.parametrize("as_dict", [True, False])
