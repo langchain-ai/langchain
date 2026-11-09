@@ -327,7 +327,9 @@ def _is_field_useful(inst: Serializable, key: str, value: Any) -> bool:
     """
     field = type(inst).model_fields.get(key)
     if not field:
-        return False
+        # Extra fields (on models that allow them, like messages) were passed to the
+        # constructor explicitly, so they round-trip.
+        return key in (inst.model_extra or {})
 
     if field.is_required():
         return True
