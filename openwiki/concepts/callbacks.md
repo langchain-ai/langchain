@@ -1,10 +1,11 @@
 ---
-type: "Reference"
-title: "Create an LLM run"
-openwiki_generated: true
+type: Concept
+title: "Callbacks: Instrumentation & Observability"
+description: "Callbacks are an event-driven instrumentation system that enables monitoring, tracing, and custom logic in LangChain applications. Handler classes respond to component lifecycle events (start/end/error), managers coordinate dispatch and context propagation (tags, metadata, run IDs), and built-in handlers integrate with LangSmith for production tracing."
+tags: [callbacks, observability, tracing, langsmith, run_id, instrumentation]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
+    at: 2026-11-06T08:17:28.425Z
 sources:
   - id: openwiki-source-96c73d2c05223b0b46abdbe9
     resource: repo://libs/core/langchain_core/callbacks/__init__.py
@@ -20,9 +21,8 @@ sources:
     resource: repo://libs/core/langchain_core/tracers/context.py
   - id: openwiki-source-79eb321fa44e679f85ad5c48
     resource: repo://libs/core/langchain_core/tracers/langchain.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
 ---
-
 
 ## Overview
 
@@ -469,6 +469,54 @@ async def fetch_context(x: str, config: RunnableConfig):
     return x.upper()
 ```
 
+## Callback Integration with Runnables
+
+### Config Threading Through _call_with_config
+
+Callbacks flow through runnables via `_call_with_config`, which:
+
+1. **Extracts the callback manager** from the RunnableConfig via `get_callback_manager_for_config(config)`
+2. **Fires on_chain_start** to notify all handlers of the execution beginning
+3. **Creates a child config** with `patch_config(config, callbacks=run_manager.get_child())` to inherit tags and handlers
+4. **Passes the child config** to nested runnables so they inherit observability context
+5. **Fires on_chain_end or on_chain_error** to close the run and propagate results
+
+```python
+def _call_with_config(
+    self,
+    func: Callable[[Input], Output],
+    input_: Input,
+    config: RunnableConfig | None,
+) -> Output:
+    config = ensure_config(config)
+    callback_manager = get_callback_manager_for_config(config)
+    run_manager = callback_manager.on_chain_start(...)
+    
+    try:
+        child_config = patch_config(config, callbacks=run_manager.get_child())
+        # Call function with child_config (handlers inherited by children)
+        output = func(input_, config=child_config)
+    except BaseException as e:
+        run_manager.on_chain_error(e)
+        raise
+    else:
+        run_manager.on_chain_end(output)
+        return output
+```
+
+**Key insight**: Every child runnable gets a fresh CallbackManager configured from the child config, enabling automatic context propagation without explicit handler passing.
+
+### Streaming Config Integration
+
+For streaming operations, `_transform_stream_with_config` follows the same pattern:
+
+1. Creates a callback manager from the config
+2. Fires on_chain_start
+3. Iterates over the stream, yielding chunks
+4. Fires on_chain_end with the accumulated output
+
+This ensures streaming operations participate fully in the callback system and produce complete traces in LangSmith.
+
 ## Event Dispatch Mechanics
 
 ### Synchronous Dispatch
@@ -695,21 +743,3 @@ def test_custom_handler():
     
     assert handler.was_called
 ```
-
-## Best Practices
-
-1. **Use inheritable handlers for cross-cutting concerns** (tracing, error reporting) and non-inheritable handlers for run-specific logic (debugging a single chain).
-
-2. **Set `run_inline=True` for handlers that must execute synchronously** (e.g., collecting metrics), and leave `False` for fire-and-forget handlers (e.g., remote logging).
-
-3. **Filter by `ignore_*` properties** rather than checking event types in handlers to reduce noise and improve performance.
-
-4. **Propagate tags and metadata** through your application for hierarchical filtering: `config={"tags": ["user:alice"], "metadata": {"request_id": "req-123"}}`.
-
-5. **Use `collect_runs()` in tests** and `tracing_v2_enabled()` in development for local debugging without LangSmith setup.
-
-6. **Catch exceptions in handlers gracefully**; set `raise_error=True` only for critical handlers that must fail fast.
-
-7. **Use custom events sparingly**; reserve for application-specific milestones (user interactions, business events) rather than component-level instrumentation (which callbacks already provide).
-
-8. **Configure verbose mode in development** to surface chain execution flow via `StdOutCallbackHandler`, but disable in production to avoid log noise.

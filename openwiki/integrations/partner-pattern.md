@@ -3,9 +3,6 @@ type: "Integration Pattern"
 title: "Partner Pattern: Provider Integration Framework"
 description: "Architecture and implementation patterns for adding new provider integrations to LangChain. Covers ChatModel subclassing, message conversion, tool calling, and structured output support."
 tags: [partner, integration, chat-model, tool-calling, structured-output, message-conversion, package-structure]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
 sources:
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
@@ -19,7 +16,10 @@ sources:
     resource: repo://libs/partners/openai/pyproject.toml
   - id: openwiki-source-86b6689572ac828885d7d4b0
     resource: repo://libs/partners/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-06T08:17:28.425Z
 ---
 
 # Partner Pattern: Provider Integration Framework
@@ -65,13 +65,16 @@ Example (from langchain-openai):
 [project]
 name = "langchain-openai"
 dependencies = [
-    "langchain-core>=1.6.10,<2.0.0",
+    "langchain-core>=1.7.0,<2.0.0",
     "openai>=2.45.0",
     "tiktoken>=0.7.0",
 ]
 
 [project.optional-dependencies]
-azure-identity = ["azure-identity>=1.25.0"]
+azure-identity = [
+    "azure-identity>=1.25.0",
+    "aiohttp>=3.11.0",
+]
 ```
 
 ### Public API (_\_init\_\_.py)
@@ -448,6 +451,91 @@ Partners are the extension point for:
 The core framework abstractions (BaseChatModel, BaseMessage, Runnable) remain stable; partners handle diversity at the integration boundary.
 
 ---
+
+## Standard Tests Usage
+
+Partner packages integrate with `langchain-tests` to validate conformance to the core contract. Two test classes are typically implemented:
+
+### Unit Tests
+
+Created in `tests/unit_tests/test_standard.py`:
+
+```python
+from typing import Type
+import pytest
+from langchain_core.language_models import BaseChatModel
+from langchain_tests.unit_tests import ChatModelUnitTests
+from langchain_openai import ChatOpenAI
+
+class TestChatOpenAIStandard(ChatModelUnitTests):
+    @pytest.fixture
+    def chat_model_class(self) -> Type[BaseChatModel]:
+        return ChatOpenAI
+```
+
+These tests verify:
+- Model instantiation with standard parameters
+- Serialization/deserialization (`to_dict()`/`from_dict()`)
+- Tool calling and structured output method signatures (without requiring live API calls)
+
+### Integration Tests
+
+Created in `tests/integration_tests/test_standard.py`:
+
+```python
+from typing import Type
+import pytest
+from langchain_core.language_models import BaseChatModel
+from langchain_tests.integration_tests import ChatModelIntegrationTests
+from langchain_openai import ChatOpenAI
+
+class TestChatOpenAIStandard(ChatModelIntegrationTests):
+    @pytest.fixture
+    def chat_model_class(self) -> Type[BaseChatModel]:
+        return ChatOpenAI
+    
+    @pytest.fixture
+    def chat_model_params(self) -> dict[str, Any]:
+        return {"model": "gpt-4o-mini"}
+```
+
+These test full workflows:
+- `invoke`, `stream`, `batch`, and async variants (with real or mocked API)
+- Tool calling end-to-end
+- Structured output parsing and validation
+- Callback firing during streaming
+- Error handling with expected exception types
+
+### Test Fixtures
+
+- **`chat_model_class`** (required): The ChatModel subclass to test
+- **`chat_model_params`**: Kwargs for constructor (e.g., model name, optional API key override)
+- **`chat_model_has_tool_calling`** (auto-detected): Whether the model supports `bind_tools()`
+- **`chat_model_has_structured_output`** (auto-detected): Whether the model supports `with_structured_output()`
+
+## Handling Async API Keys
+
+Partners supporting callable API keys enable runtime refresh and secrets management:
+
+```python
+# Sync callable
+model = ChatOpenAI(
+    model="gpt-4o-mini",
+    api_key=lambda: os.environ.get("OPENAI_API_KEY")
+)
+
+# Async callable
+async def get_api_key() -> str:
+    # Fetch from secrets service, database, etc.
+    return await secrets_client.get("openai_key")
+
+model = ChatOpenAI(
+    model="gpt-4o-mini",
+    api_key=get_api_key
+)
+```
+
+OpenAI's implementation extracts the key at invocation time, supporting both sync and async contexts.
 
 ## See Also
 

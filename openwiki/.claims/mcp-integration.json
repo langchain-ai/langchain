@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4774281caf07d43ca8482b32d368fa17bb8d55b57aa1123ef43d83b3f1998cdd",
+  "pageVersion": "sha256:7d89ca54ee051d95f018c29ae419d0f25c1e17c81c43129e7e531dd76022ca44",
   "claims": [
     {
       "id": "claim_a20f2f32ba21436d869cf463fc4e93f6",
@@ -169,24 +169,6 @@
       ]
     },
     {
-      "id": "claim_01872efc598d43bbb13c355a6c5fcd17",
-      "statement": "MCPAdapter supports bearer token and OAuth 2.1 authentication via fastmcp.Client auth parameter. OAuth supports dynamic client registration with browser redirect and token exchange. Multi-server configs specify auth per server.",
-      "evidence": [
-        {
-          "resource": "repo://libs/langchain_v1/examples/mcp/auth_bearer.py#L43-L58",
-          "version": "repo-lines-v1:sha256:a642187463c514634c6b791940307a975bc17210f0464f459078384f8936cc86:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1MzcxZDhiMGU2OWQ2ZGZhMWYwODcxMzhjM2MyNDFkMmVlMGY0NjlkY2Y1NGFiODY5MmQyMGRkNWRjYzY1YjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmMjU0ZDljMjkzNzE2ZjVkNjM1MGY2OTk1ZWZkZTg3MjhkZGMyYmI2ZTliY2Q4YzQxNjcyMGUxMmNmNGU2NmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhNzI4ZmFmNzQ4NGNlMThkOTZmOGVkNjc2OTU2YjRjM2I3OTk2YzNiNTlmZTU1Y2FkNTg3OGQyM2NjNDdlZTcifQ"
-        },
-        {
-          "resource": "repo://libs/langchain_v1/examples/mcp/auth_oauth.py#L37-L74",
-          "version": "repo-lines-v1:sha256:d33b5305621fa2b038ad6f8932501a20c2b6e6aac29345072efd9f514e2589e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4OWRmOTgyNjA5NjBiNjVmMTEyNjNlZGY4YTBiNWY1MDY5NjU4ODFlNDQ2ZDhlNDI3YzMyMzI5NTMyODUyMDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY3ZTNlMzg5MGY3ZWFjMWU2OTc2NWQ5MDhlMWU4OWUzMjJhNjBkYzYxYWIyZDNlZGQzOTIzYTAzNzEwNTMzZWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhNzI4ZmFmNzQ4NGNlMThkOTZmOGVkNjc2OTU2YjRjM2I3OTk2YzNiNTlmZTU1Y2FkNTg3OGQyM2NjNDdlZTcifQ"
-        },
-        {
-          "resource": "repo://libs/langchain_v1/examples/mcp/graph_factory.py#L44-L59",
-          "version": "repo-lines-v1:sha256:4d19289aaf3fa5d7b6e959cd6d473f01613aca9ee04d7f604f68a0601def8f61:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzOGJkZTExMzU5ODIwYjY2OTNlN2I5NmNjYTEzNWQzMGUzNWMzNzk0ZTIyN2U2ZWJiNDM2NjlhYzQzNDE4NGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NDhmNzZlYjA1NDdkYjJjMWVmMDU0ZmE5ZTEyMTYyMGI5Y2ViYzkyOWNlY2JmYmIzMjNmM2RmNWI2YmY3MzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0YThjMjZkODNjZmU0YzA2ODNjZjBkNTNhOWU0ODQ5MTNhMjRiNmZhY2I4MDI3OTdkMjBlMjRkY2RhMWU1M2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
-        }
-      ]
-    },
-    {
       "id": "claim_23605e2a533241bb977a93b7b293c090",
       "statement": "Elicitation handler _declare_elicitation_capability() exists only to advertise the capability on modern servers (2026-07-28+). Legacy servers initiate elicitation the old way and raise NotImplementedError, requiring mode='legacy' or a pre-built client.",
       "evidence": [
@@ -205,52 +187,10 @@
           "version": "repo-lines-v1:sha256:b7f51d5ac0943b1555424e9c8a3c9ad78035e348b9da14b35ec46cb8b1a87692:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmNDIxMmNmZmNkNzMxMzFlZTc4MWRlM2RmY2M2OWMwMWM2YmZlZjY2NGM1OWE0YTMwMGY0MWQ1ZTgzM2FhNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNiODkyYzA3NDQ2ODI0YjdmMjVmNWU2MmQxZjc2Njc0YjNlMzc4ZDE0NWYyYjgxMmNhZWRlOWQ0MGUyNWFiMGQifQ"
         }
       ]
-    },
-    {
-      "id": "claim_52108e3465454669951d2272538b3103",
-      "statement": "StructuredTool metadata field carries MCP context: mcp.tool holds annotations and _meta from the tool definition, mcp.server holds server_info (name, version). Clients read metadata to gate destructive tools or apply other policies.",
-      "evidence": [
-        {
-          "resource": "repo://libs/langchain_v1/examples/mcp/destructive_interrupt.py#L34-L38",
-          "version": "repo-lines-v1:sha256:886f2d79d74f941771c5057d3254e360bf8cccc4b267e60c0e78901f8cafb6e5:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTgxMzdkOGJiZjJhMGZjZGY4NmQ5YTllMWE0MTNkMjMxZTRiYjJkMzk0ZTU5MGM5N2FiYjMzMzQyZWJjNmZiNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjhiODVjYjJmYzlhYWNhNzQwMTdmZTgzMzllMjMyYjVjZjFlNTU3NmMyNjFhZWQ5ZmE1ZDgzMjUwYTJlYTE3NiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjM2Y2JkMTZhMTg0ZmJlMWU5Y2ZjOTMyMGUxNzRlYzQ0ZjgwNDc5MTIxMTAyNzFhMmZmZTQwMTc5MGYyNDdjZCJ9"
-        },
-        {
-          "resource": "repo://libs/langchain_v1/examples/mcp/destructive_interrupt.py#L50-L55",
-          "version": "repo-lines-v1:sha256:4487ff9fb838c1a738db1fac8bd5aa9591f0f8e94c7ac59476733e1fd8d170d1:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYzNhZTY5ZTUwYjM1MjQ4NWRkNzcwNzQ3OGU5ODFmYjk1YzlmNGY1MDUzMWUxZDJjZDNjMThiMGI3NzczMWQxNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg5M2Y0MGUzNzgxZWI4OTZjODJkMDQ2YTA4MDY3YTExZTM1Y2RmMmYxZGZhZjI2ZmVhOTBiOGRiNjY3NjQxMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDVhNjBmZTFkZmI2NTZkMjY4ZGQ5YTkyYjIxN2JmYmJiYTUxMTA3M2Q3NTg5NGM4MDI4OGRjM2QyZTM4ODFiOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWQ3M2QwZTU3ZGMyMTM1NjI3OGMzYTQwNzVhYjMwZWUyOTZkN2RlNTQ1YTJhNTg0Yzc1ZmQzNWU1YjhiMzY1YyJ9"
-        }
-      ]
-    },
-    {
-      "id": "claim_13952fd61c864c79b99d768082ca1346",
-      "statement": "Graph factory pattern instantiates adapter inside factory for per-request setup (user auth, client creation). Long-lived resources (HTTP pool, response cache, partitioned per user) live outside factory and are reused across runs.",
-      "evidence": [
-        {
-          "resource": "repo://libs/langchain_v1/examples/mcp/graph_factory.py#L29-L59",
-          "version": "repo-lines-v1:sha256:55c0a7c27ba8f1b67e34dbc8571e8960aff6a860fb4ed0e5295054438e1e32e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI1ZTEzZDMwOTQ0NDNhMjkyNWMxYzcyYzhkNzMzMDM0OTVmNjg1MjUzYWRmMGQyMDY0MzA4YWNlMmYyNzUyOTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM3NDhmNzZlYjA1NDdkYjJjMWVmMDU0ZmE5ZTEyMTYyMGI5Y2ViYzkyOWNlY2JmYmIzMjNmM2RmNWI2YmY3MzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFhZDI0NWI0ZGVkYWZjNzk4ZjY2NmViOTRkMTlmNDA4NGYwZjUxYTMwYTU0OTQ0NjE3NzIxMjM5OWQyY2Q5NWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
-        }
-      ]
-    },
-    {
-      "id": "claim_d8018824efb04f54849f9f85743234f4",
-      "statement": "Tool result format is content_and_artifact: content blocks (text, image, file) go to model, structured_content goes to separate artifact field. MCP errors become ToolMessage with status=error carrying server message; transport errors raise.",
-      "evidence": [
-        {
-          "resource": "repo://libs/langchain_v1/examples/mcp/tool_errors.py#L1-L45",
-          "version": "repo-lines-v1:sha256:997e5b2a848dffa58711f3e5a228edc751c66ee7aabcceb9fd5d5ae701583214:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM5MDFlMGNjMWU0MjFlZjhkNDYwZTcwNTQzMmEzYzBlNjY3YmY1N2M5NGM5ZDljZWJlZDk0MGRjMjZmZThhNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTI0YThmMTQ4ODQ1OTNjYmEyYThkZjBjNTVmMzdkZWRmMmUwYTAzNzNkZjViMmEyN2I2OTIxYmFjYWMwZTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
-        },
-        {
-          "resource": "repo://libs/langchain_v1/langchain/mcp/tools.py#L296-L304",
-          "version": "repo-lines-v1:sha256:6e90ddd50d0d124c954df55c0e2ecba75774c6b70e4f63c35d98ff5a69f13112:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmVjYjhlYmNlMzdmOWI1YTg5MTlhMDc4YTgzODhmNTE2YjJkOTFiZThiODdiODA5ZjdlNzQ1OWM3Zjc5ZWQzZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBjMWYxODhmMTQyZWQ3YTgyNDY4MGIyMDcxNzJjNTUxOWJjNjE0YTQ4ZmRhN2NmMTY3ZWRiOGRkZjc5OTU2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWFlOTNjM2JjZjMxYzY5MDdmNjRjODYwZDU2NWE5MzgxY2Y3ZWQwNmFkOGY0YmZjZTIyMTZkZGM2MDMyNTdjYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTFhNWQwZTdlY2MzNzRhMjE2YzllMDM3NmFkZmM0YTVhZTE5ZDNlNGFhMzA1MGY0MDg0OTM2NGI0MmQ3ZjU5YSJ9"
-        },
-        {
-          "resource": "repo://libs/langchain_v1/langchain/mcp/tools.py#L59-L69",
-          "version": "repo-lines-v1:sha256:f223e0ec29b02335881593acce9d16188ba6f3c334dd20664ac4021f14e1aff5:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgwZTI2MDMyZDFkMjAyM2I1YjQ0OTdmYTQzYzhlOTQwNTE1MzVlMjE4MzM0NzAwMTkxNmVhNjcwN2ViOWE0ZWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiZDMzZjE4ZGUxMzMzYzdhMGI5YTRjMWQyNjU1YWQ1MmYyZDE4Nzg1OWIxODNmYzZhMmE4MzIyNmNjODNhOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQxYmYyNTNkYjhlYmJiMzdkODY2YjA2MmJjZjEzNDY2MGM5MWY5MGRlYjkyMjRjNDNjMTNmNWY0NjlkZWYyNzQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxNmZmODcxNDZhZmNjMGQzNjM0MGNjZGNhMGI3YzkxNjk2MzQ5YzllZDJiYzNlZDIyZmI1NmU1ZGI1MjdlMTQifQ"
-        }
-      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-20T08:25:57.412Z"
+    "at": "2026-10-29T08:20:01.046Z"
   }
 }

@@ -3,15 +3,28 @@ type: "Reference"
 title: "Source Map: Repository File Organization"
 description: "Quick reference for locating code by topic, mapping LangChain concepts to their implementation paths across the monorepo including core abstractions, agents, middleware, partners, and configuration files."
 tags: [reference, file-organization, monorepo, codebase-map, pathfinding]
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-06T08:17:28.425Z
 sources:
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
   - id: openwiki-source-1c233fccf5a66b84d0045366
     resource: repo://libs/core/langchain_core/callbacks/manager.py
+  - id: openwiki-source-082de992161c42ff19186b3a
+    resource: repo://libs/core/langchain_core/exceptions.py
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
+  - id: openwiki-source-0f6ea1dd09fb4675ff4112b1
+    resource: repo://libs/core/langchain_core/messages/__init__.py
   - id: openwiki-source-b32b84365d17276620c41ebc
     resource: repo://libs/core/langchain_core/messages/base.py
+  - id: openwiki-source-fc874ddb29b9c5840565397f
+    resource: repo://libs/core/langchain_core/messages/content.py
+  - id: openwiki-source-56c6ea6a11f04b5c0e01aa7b
+    resource: repo://libs/core/langchain_core/messages/notification.py
+  - id: openwiki-source-f0a68285e23ae059d7a243b1
+    resource: repo://libs/core/langchain_core/output_parsers/_refusal.py
   - id: openwiki-source-03d7415879ed05a392edd62d
     resource: repo://libs/core/langchain_core/prompts/base.py
   - id: openwiki-source-a1981e868973f6fd7f71e12e
@@ -24,6 +37,8 @@ sources:
     resource: repo://libs/core/tests/unit_tests/test_tools.py
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
+  - id: openwiki-source-1fd6c3891c02cc1f1554eb81
+    resource: repo://libs/langchain_v1/langchain/agents/middleware/model_refusal.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
   - id: openwiki-source-ec30ab6256dd50cc670919f6
@@ -46,22 +61,19 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
   - id: openwiki-source-bd29e79613d5f366a00068f5
     resource: repo://libs/standard-tests/langchain_tests/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
+generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
 ---
 
 ## Overview
 
 This page provides a quick reference for locating code by topic in the LangChain monorepo. The repository is organized as a multi-package workspace with a three-layer architecture:
 
-- **langchain-core** (v1.7.0): Base abstractions for messages, runnables, tools, prompts, language models, and callbacks
-- **langchain** (v1.4.7): Orchestration, agent factory, middleware composition, and model initialization
+- **langchain-core** (v1.7.6): Base abstractions for messages, runnables, tools, prompts, language models, callbacks, and refusal handling
+- **langchain** (v1.4.9): Orchestration, agent factory, middleware composition, and model initialization
 - **langchain-classic** (v1.0.8): Legacy chains, memory, retrieval abstractions, and backward compatibility
 - **partners** (`langchain-*` packages): Provider-specific implementations (OpenAI, Anthropic, Ollama, etc.)
 - **text-splitters** (v1.x): Text splitting and chunking utilities
-- **model-profiles** (v0.0.6): LLM metadata and capability profiles
+- **model-profiles**: LLM metadata and capability profiles
 - **standard-tests** (shared): Ecosystem test contracts and conformance suites
 
 Use this map to navigate directly to the code responsible for a given concept, understand architectural layering, and locate integration points.
@@ -81,13 +93,16 @@ Use this map to navigate directly to the code responsible for a given concept, u
 | **Document Loaders** | `repo://libs/core/langchain_core/document_loaders/` | Base loaders for ingesting documents from files, URLs, LangSmith, and blob storage |
 | **Documents & Metadata** | `repo://libs/core/langchain_core/documents/base.py` | Document type, compression, and transformation utilities |
 | **Embeddings** | `repo://libs/core/langchain_core/embeddings/embeddings.py` | Base embedding interface and fake embeddings for testing |
+| **Exceptions & Error Handling** | `repo://libs/core/langchain_core/exceptions.py` | Unified exception hierarchy (LangChainException, ModelRefusalError, OutputParserException, etc.) for provider-agnostic error handling |
 | **Example Selectors** | `repo://libs/core/langchain_core/example_selectors/` | Selection strategies for few-shot examples (LLM, max marginal relevance, etc.) |
 | **Messages** | `repo://libs/core/langchain_core/messages/` | Message types (AIMessage, HumanMessage, SystemMessage, ToolMessage) and content blocks (text, images, tool use, etc.) |
+| **Notification Metadata** | `repo://libs/core/langchain_core/messages/notification.py` | TypedDict and utilities for marking agent-generated messages with source attribution and metadata (add_notification_metadata, get_notification_metadata) |
 | **Model Profiles** | `repo://libs/model-profiles/langchain_model_profiles/` | Metadata registry and CLI tools for LLM behavior, capabilities, and configuration |
 | **MCP (Model Context Protocol)** | `repo://libs/langchain_v1/langchain/mcp/` | Adapter and tools for MCP-based model integrations and protocol compatibility |
 | **Output Parsers** | `repo://libs/core/langchain_core/output_parsers/` | Structured output parsing (JSON, XML, Pydantic, OpenAI tools), format instructions, and validation |
 | **Prompts** | `repo://libs/core/langchain_core/prompts/` | Chat and string prompt templates, few-shot examples, image prompts, and prompt composition |
 | **Rate Limiters** | `repo://libs/core/langchain_core/rate_limiters.py` | Base rate limiter interface and in-memory rate limiting implementations |
+| **Refusal Handling** | `repo://libs/core/langchain_core/output_parsers/_refusal.py` and `repo://libs/langchain_v1/langchain/agents/middleware/model_refusal.py` | Standard refusal blocks (RefusalContentBlock) across providers; ModelRefusalError for unified error handling; optional ModelRefusalMiddleware for opt-in error raising |
 | **Retrievers** | `repo://libs/core/langchain_core/retrievers.py` | Retriever abstraction for document retrieval, vector store integration, and composition |
 | **Runnables (LCEL)** | `repo://libs/core/langchain_core/runnables/` | Foundational `Runnable[Input, Output]` protocol, composition operators (piping, branching, fallback, retry), and execution utilities |
 | **Structured Output** | `repo://libs/langchain_v1/langchain/agents/structured_output.py` | Schema definition and response marshaling for typed agent outputs (Pydantic, dataclass, TypedDict, JSON schema) |
@@ -114,7 +129,7 @@ Use this map to navigate directly to the code responsible for a given concept, u
 
 ```
 /libs/
-├── core/                           # langchain-core: Base abstractions (v1.7.0)
+├── core/                           # langchain-core: Base abstractions (v1.7.6)
 │   ├── langchain_core/
 │   │   ├── language_models/        # BaseChatModel and language model abstractions
 │   │   │   ├── chat_models.py      # Core chat model interface
@@ -122,9 +137,10 @@ Use this map to navigate directly to the code responsible for a given concept, u
 │   │   │   └── model_profile.py    # Profile metadata integration
 │   │   ├── messages/               # Message types and content blocks
 │   │   │   ├── base.py             # BaseMessage and AIMessage
-│   │   │   ├── content.py          # Content block types (text, images, tool use)
+│   │   │   ├── content.py          # Content block types (text, images, tool use, refusals)
 │   │   │   ├── ai.py               # AIMessage, AIMessageChunk
 │   │   │   ├── tool.py             # ToolMessage, ToolCall handling
+│   │   │   ├── notification.py     # Notification metadata (source attribution)
 │   │   │   └── utils.py            # Message utilities and converters
 │   │   ├── runnables/              # Runnable protocol and composition
 │   │   │   ├── base.py             # Runnable[Input, Output] protocol
@@ -146,12 +162,14 @@ Use this map to navigate directly to the code responsible for a given concept, u
 │   │   │   ├── pydantic.py         # Pydantic model parsing
 │   │   │   ├── openai_tools.py     # OpenAI tool/function call parsing
 │   │   │   ├── json.py             # JSON output parsing
-│   │   │   └── xml.py              # XML structured output parsing
+│   │   │   ├── xml.py              # XML structured output parsing
+│   │   │   └── _refusal.py         # Refusal detection and error raising
 │   │   ├── callbacks/              # Callback manager and handlers
 │   │   │   ├── manager.py          # CallbackManager, async variants, event coordination
 │   │   │   ├── base.py             # BaseCallbackHandler interface
 │   │   │   ├── streaming_stdout.py # Streaming output callback
 │   │   │   └── file.py             # File-based logging
+│   │   ├── exceptions.py           # Unified exception hierarchy (ModelRefusalError, etc.)
 │   │   ├── language_models/        # Additional model utilities
 │   │   ├── caches.py               # Cache interface for LLM results
 │   │   ├── rate_limiters.py        # Rate limiter base and in-memory impl
@@ -169,7 +187,7 @@ Use this map to navigate directly to the code responsible for a given concept, u
 │   ├── Makefile
 │   └── pyproject.toml
 │
-├── langchain_v1/                   # langchain: Orchestration and agents (v1.4.7)
+├── langchain_v1/                   # langchain: Orchestration and agents (v1.4.9)
 │   ├── langchain/
 │   │   ├── agents/
 │   │   │   ├── factory.py          # Agent factory: graph construction, node orchestration
@@ -178,6 +196,7 @@ Use this map to navigate directly to the code responsible for a given concept, u
 │   │   │   │   ├── _retry.py       # Retry coordination
 │   │   │   │   ├── _execution.py   # Execution lifecycle
 │   │   │   │   ├── model_retry.py  # Model invocation retry
+│   │   │   │   ├── model_refusal.py # Refusal error handling (opt-in)
 │   │   │   │   ├── tool_retry.py   # Tool call retry
 │   │   │   │   ├── tool_call_limit.py # Tool invocation limits
 │   │   │   │   ├── model_fallback.py # Model fallback chains
@@ -188,6 +207,9 @@ Use this map to navigate directly to the code responsible for a given concept, u
 │   │   │   │   ├── tool_selection.py # LLM-based tool selection
 │   │   │   │   ├── context_editing.py # Message context manipulation
 │   │   │   │   ├── summarization.py # Conversation summarization
+│   │   │   │   ├── todo.py         # TODO list management
+│   │   │   │   ├── tool_emulator.py # Tool behavior emulation
+│   │   │   │   ├── tool_error.py   # Tool error handling
 │   │   │   │   └── ... (other middleware)
 │   │   │   ├── structured_output.py # Response schema marshaling
 │   │   │   └── _subagent_transformer.py # Sub-agent graph composition
@@ -291,16 +313,17 @@ Use this map to navigate directly to the code responsible for a given concept, u
 
 ## Architecture Layers
 
-### Layer 1: langchain-core (Base Abstractions, v1.7.0)
+### Layer 1: langchain-core (Base Abstractions, v1.7.6)
 Core interfaces and implementations used by all other packages:
-- **Message protocol**: AIMessage, HumanMessage, SystemMessage, ToolMessage with rich content blocks
+- **Message protocol**: AIMessage, HumanMessage, SystemMessage, ToolMessage with rich content blocks, including standard refusal blocks
 - **Runnable protocol**: Composable units with `invoke()`, `stream()`, `batch()` and async variants
-- **LLM interface**: BaseChatModel for unified provider integration
+- **LLM interface**: BaseChatModel for unified provider integration with structured output and refusal handling
 - **Tool system**: BaseTool with schema generation and conversion utilities
 - **Prompt templates**: ChatPromptTemplate and PromptTemplate for composition
-- **Output parsing**: Structured output extraction (JSON, XML, Pydantic, OpenAI tools)
+- **Output parsing**: Structured output extraction (JSON, XML, Pydantic, OpenAI tools) with ModelRefusalError handling
 - **Callbacks**: Event instrumentation and LangSmith integration
 - **Retrieval**: Document loaders, vectorstores, retrievers
+- **Exceptions**: Unified exception hierarchy including ModelRefusalError for provider-agnostic refusal handling
 - **Utilities**: Embeddings, caches, rate limiters, example selectors
 
 ### Layer 2: langchain (Orchestration & Agents)
@@ -507,12 +530,37 @@ model.bind_tools([tool1, tool2])  # Binds tools via provider API
 - **OpenAI tool/function parsers**: Handle tool call and function call formats
 - **Custom parsers**: User-defined parsing logic
 
+### Refusal Handling
+Refusals are now handled uniformly across providers using standard content blocks and exceptions:
+
+**Standard Refusal Block** (`RefusalContentBlock`):
+- Defined in `langchain_core/messages/content.py`
+- Exported from `langchain_core/messages/__init__.py`
+- Fields: `type: "refusal"`, `refusal: str` (text), `extras: dict` (provider-specific metadata)
+- Unified representation across OpenAI, Anthropic, Google, and other providers
+
+**Refusal Detection & Error Raising**:
+- `raise_if_refused()` in `langchain_core/output_parsers/_refusal.py` checks for refusal blocks
+- Raises `ModelRefusalError` with context about the refusal
+- Used automatically by structured output parsers (JSON, Pydantic, etc.)
+
+**Opt-In Error Handling via Middleware**:
+- `ModelRefusalMiddleware` in `langchain_v1/langchain/agents/middleware/model_refusal.py`
+- By default, refusals pass through as message content (no error raised in invoke)
+- Add middleware to `create_agent()` to treat refusals as errors
+- Streaming may emit content before refusal is known
+
+**Provider Refusal Mapping**:
+- OpenAI: `refusal` field + `content: []` → RefusalContentBlock
+- Anthropic: `stop_reason: "refusal"` + `stop_details` → RefusalContentBlock
+- Google: `finish_reason: "STOP"` + `finish_message` → RefusalContentBlock
+
 ## Dependency Flow
 
 ```
 User Applications
-  ├─→ langchain (v1.4.7)
-  │    ├─→ langchain-core (v1.7.0)
+  ├─→ langchain (v1.4.9)
+  │    ├─→ langchain-core (v1.7.6)
   │    └─→ LangGraph (state machines, runtime)
   │
   ├─→ langchain-core (direct use)
@@ -522,7 +570,7 @@ User Applications
   │    └─→ langchain-core, SQLAlchemy, LangSmith
   │
   └─→ Partner Packages (langchain-openai, langchain-anthropic, etc.)
-       ├─→ langchain-core (pinned versions)
+       ├─→ langchain-core (pinned versions ≥1.7.5)
        └─→ Provider SDKs (openai, anthropic, etc.)
 ```
 

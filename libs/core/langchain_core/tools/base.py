@@ -1084,7 +1084,7 @@ class ChildTool(BaseTool):
         content = None
         artifact = None
         status = "success"
-        error_to_raise: Exception | KeyboardInterrupt | None = None
+        error_to_raise: BaseException | None = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             with set_config_context(child_config) as context:
@@ -1124,7 +1124,7 @@ class ChildTool(BaseTool):
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
                 status = "error"
-        except (Exception, KeyboardInterrupt) as e:
+        except BaseException as e:
             error_to_raise = e
 
         if error_to_raise:
@@ -1211,7 +1211,7 @@ class ChildTool(BaseTool):
         content = None
         artifact = None
         status = "success"
-        error_to_raise: Exception | KeyboardInterrupt | None = None
+        error_to_raise: BaseException | None = None
         try:
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -1254,7 +1254,7 @@ class ChildTool(BaseTool):
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
                 status = "error"
-        except (Exception, KeyboardInterrupt) as e:
+        except BaseException as e:
             error_to_raise = e
 
         if error_to_raise:

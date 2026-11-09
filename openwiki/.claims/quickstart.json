@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2fbfbb4a36356165c090250873f1356ac8d5c6b0e080103f1a57e92a700673de",
+  "pageVersion": "sha256:a07d7954642bff5f05f77a4be458d596e6b5dde117d5ef1de2e8c393d1581215",
   "claims": [
     {
       "id": "claim_7425c73f5e4c4667b8babba66c3663a0",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/__init__.py",
-          "version": "repo-file-v1:sha256:4c0bfc2064c9f105a308ff966211a42e52dea5a4d0e5ab437e3f516f7e120da7"
+          "version": "repo-file-v1:sha256:a90090256fe0c2e9ae065fc311bbcd3dd344e98b639cd6f17cb8b066256ab9e9"
         },
         {
           "resource": "repo://libs/partners/openai/langchain_openai/__init__.py",
@@ -30,11 +30,11 @@
         },
         {
           "resource": "repo://libs/core/langchain_core/language_models/chat_models.py",
-          "version": "repo-file-v1:sha256:7377a3e0d534d6fe9835cb35e39fc2bf7614ae2be26eb5664a0767dfb002cb03"
+          "version": "repo-file-v1:sha256:8718437fafd6c5d9f2a646c6127dcafa8fa2d41ad39bd15616df83f761e3f130"
         },
         {
           "resource": "repo://libs/core/langchain_core/messages/__init__.py",
-          "version": "repo-file-v1:sha256:86bb3118ed302c422bf35829bb670bf3d915e8f7a25b5c98f86d2b86a6185e6b"
+          "version": "repo-file-v1:sha256:57e9822046dd2c6a4342cab4b362322e9c53b2d4ce31f106b288da947ad27d63"
         },
         {
           "resource": "repo://libs/core/langchain_core/output_parsers/__init__.py",
@@ -64,7 +64,7 @@
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py",
-          "version": "repo-file-v1:sha256:51b55618fb209bce1e69f2911b367963da549d930f5eef1b1125cd19a26586ae"
+          "version": "repo-file-v1:sha256:2ed2639dea637ba04a59441b1698bf8e005b8c0f6e0be7fbaa97fc55827e3f17"
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/chat_models/__init__.py",
@@ -92,7 +92,7 @@
         },
         {
           "resource": "repo://libs/core/pyproject.toml#L49-L81",
-          "version": "repo-lines-v1:sha256:6b661cca8f2c4785c3b625d33b91229c79776ee21f199a6e59e2e34f27354985:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYjc0OTliMWNlMWM0ZjRiMjUyN2YzYTMyODRjYWM2YjZhMWUzYmY0OTg4YjU2Nzk4MmMzZGM4ZTlhMTdmMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1MDVjOTY3ZWE1MDEyYWZmNTM0NjFmNzQ3ZDJlMzJhNjViOTQxN2MwNmEzMzc1YWRlYWMzY2FkOWI0N2NhZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkYTg3ZjA2MTI4NjQwZjdkMTc0MDAyYTJhNmE2MTAzMmE4NjMxMmIyYWMzZWRkZTljZjI2YTc0ODhiZTI1ODQifQ"
+          "version": "repo-lines-v1:sha256:92fc214ffe1ae9940a1fdb2ba564750631b393adfd06288fb08ec507eb817ae1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRiYjc0OTliMWNlMWM0ZjRiMjUyN2YzYTMyODRjYWM2YjZhMWUzYmY0OTg4YjU2Nzk4MmMzZGM4ZTlhMTdmMjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1MDVjOTY3ZWE1MDEyYWZmNTM0NjFmNzQ3ZDJlMzJhNjViOTQxN2MwNmEzMzc1YWRlYWMzY2FkOWI0N2NhZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkYTg3ZjA2MTI4NjQwZjdkMTc0MDAyYTJhNmE2MTAzMmE4NjMxMmIyYWMzZWRkZTljZjI2YTc0ODhiZTI1ODQifQ"
         }
       ]
     },
@@ -183,6 +183,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-11-06T08:17:28.425Z"
   }
 }

@@ -1,35 +1,46 @@
 ---
 type: "Workflow"
-title: "Agent Execution: Building Agentic Workflows"
-description: "End-to-end agent execution patterns using the Agent Factory and middleware composition. Covers agent definition, tool binding, middleware ordering, and common control flow patterns."
-tags: ["agents", "middleware", "tool-calling", "agentic-loop", "create_agent"]
+title: "Agent Execution: Agentic Loops and State Management"
+description: "Detailed walkthrough of agent lifecycle, execution loops, state management, tool calling, error handling, and observability in LangChain agents."
+tags: ["agents", "agentic-loop", "middleware", "tool-calling", "state-management", "observability"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
+    at: 2026-11-06T08:17:28.425Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
 ---
 
-# Agent Execution: Building Agentic Workflows
+# Agent Execution: Agentic Loops and State Management
 
 Agent execution in LangChain is built on a composable architecture where language models repeatedly plan, invoke tools, and interpret results in a structured loop. The [`create_agent`][langchain.agents.create_agent] factory function constructs this agentic loop by orchestrating:
 
-1. **Model binding** (tools + system prompt)
-2. **Middleware composition** (pre/post hooks and wrapper handlers)
-3. **Tool execution** (ToolNode with middleware wrapping)
-4. **Conditional state routing** (planning vs. tool use vs. termination)
+1. **Model invocation** with bound tools and system prompt
+2. **Middleware composition** (ordered request/response interception)
+3. **Tool execution and routing** (looping, termination, or state jumps)
+4. **Observability** (tracing, callbacks, state transitions)
 
-This document explains the patterns, control flow, and extension points for building production agents.
+This document explains the agent lifecycle, loop control, state management, middleware patterns, error handling, and real-world patterns for production agents.
 
-## Architecture: Model + Tools + Middleware
+## Agent Lifecycle: From Initialization to Termination
 
-### Agent State and Lifecycle
+### Initialization Phase
 
-Every agent operates over an `AgentState` that persists messages, tracks routing decisions, and holds optional structured outputs:
+When `create_agent()` is called, the factory:
+
+1. **Resolves the model**: Converts string identifiers (e.g., `"openai:gpt-4o"`) to `BaseChatModel` instances via `init_chat_model()`.
+2. **Normalizes tools**: Converts callables to `BaseTool` instances, preserves `BaseTool` and dict-based tools.
+3. **Sets up structured output**: Creates pseudo-tools if `response_format` is provided (for `ToolStrategy`).
+4. **Composes middleware**: Chains `wrap_model_call` and `wrap_tool_call` handlers, merges state schemas, registers node hooks.
+5. **Constructs the graph**: Builds a LangGraph `StateGraph` with model, tools, and middleware nodes.
+6. **Compiles**: Returns a `CompiledStateGraph` ready for execution.
+
+### Agent State and State Schema
+
+Every agent operates over an `AgentState` that persists across the execution loop:
 
 ```python
 class AgentState(TypedDict, Generic[ResponseT]):
@@ -39,25 +50,85 @@ class AgentState(TypedDict, Generic[ResponseT]):
     structured_response: NotRequired[Annotated[ResponseT, OmitFromOutput]]
 ```
 
-- **messages**: The conversation history, merged using `add_messages` reducer (new messages append).
-- **jump_to**: An ephemeral routing hint set by middleware to direct flow ("tools", "model", or "end").
-- **structured_response**: Parsed output (when `response_format` is configured).
+**State fields:**
+- **`messages`**: Conversation history, merged via `add_messages` reducer (new messages append, not replace).
+- **`jump_to`**: Ephemeral routing hint set by middleware to override default flow ("tools", "model", or "end").
+- **`structured_response`**: Parsed output when `response_format` is configured (omitted from input schema).
 
-### Agent Loop Phases
+Middleware can extend `AgentState` via `state_schema` parameter. When multiple middleware extend state, schemas are merged in order with user-provided `state_schema` winning conflicts.
 
-The agent loop has three core phases:
+## The Agentic Loop
 
-1. **Model Node**: Calls the language model with current messages + tools. Returns an `AIMessage` with optional `tool_calls`.
-2. **Tools Node**: Executes tool calls, returning `ToolMessage` results.
-3. **Routing**: Decides whether to loop back (more tools needed), skip tools (structured output), or terminate (no tool calls).
+The core loop iterates through three main phases until a stopping condition is met:
 
-Middleware hooks intercept at each phase:
-- `before_agent`, `after_agent`: Wrap the entire agent execution (once at start/end).
-- `before_model`, `after_model`: Wrap each model invocation (multiple times in a loop).
-- `wrap_model_call`: Intercept model execution (retry, caching, fallback).
-- `wrap_tool_call`: Intercept tool execution (validation, retry, monitoring).
+### Phase 1: Model Invocation
 
-## Creating an Agent with `create_agent`
+The model node calls the language model with the current message history and bound tools. Returns an `AIMessage` with optional `tool_calls`.
+
+**Flow:**
+1. `before_model` middleware hooks execute (state updates applied).
+2. Model is invoked with system prompt, messages, and bound tools.
+3. `after_model` middleware hooks execute (state updates applied).
+4. Response is handled (structured output parsing, invalid tool repair).
+
+### Phase 2: Conditional Routing
+
+After the model produces a response, the agent decides what to do next:
+
+- **If `AIMessage.tool_calls` is present**: Route to tools node.
+- **If `state["jump_to"] == "model"`**: Loop back to `before_model`.
+- **If `state["jump_to"] == "end"`**: Skip to termination.
+- **If no tool calls and no structured output**: Terminate.
+
+### Phase 3: Tool Execution
+
+If routing to tools, the agent:
+
+1. Matches each tool call to a registered tool.
+2. Executes the tool (wrapped by middleware `wrap_tool_call` handlers).
+3. Returns `ToolMessage` with result.
+4. Determines routing: loop back to model, or exit if `return_direct=True` or structured output was produced.
+
+### Loop Termination
+
+The agent stops when:
+
+- The model produces an `AIMessage` with no tool calls.
+- A tool has `return_direct=True` and produces output.
+- A structured output tool completes (automatic termination with `ToolStrategy`).
+- `state["jump_to"] == "end"` is set by middleware.
+
+**Termination phase:**
+1. `after_agent` middleware hooks execute once (cleanup, logging, state finalization).
+2. Graph returns final state (messages + optional structured response).
+
+### Control Flow Diagram
+
+```mermaid
+graph TD
+    START["START"] --> BEFORE_AGENT["before_agent hooks<br/>(run once)"]
+    BEFORE_AGENT --> BEFORE_MODEL["before_model hooks<br/>(before each model call)"]
+    BEFORE_MODEL --> MODEL["Model Node<br/>(invoke LLM)"]
+    MODEL --> AFTER_MODEL["after_model hooks<br/>(after each model call)"]
+    
+    AFTER_MODEL --> ROUTE{jump_to set?}
+    ROUTE -->|jump_to=='end'| AFTER_AGENT["after_agent hooks<br/>(run once)"]
+    ROUTE -->|jump_to=='model'| BEFORE_MODEL
+    ROUTE -->|no jump_to| ROUTE2{Tool calls?}
+    
+    ROUTE2 -->|No| ROUTE3{Structured<br/>output?}
+    ROUTE3 -->|Yes| TOOLS["Tools Node<br/>(structured tools)"]
+    ROUTE3 -->|No| AFTER_AGENT
+    
+    ROUTE2 -->|Yes| TOOLS
+    TOOLS --> ROUTE4{return_direct<br/>or structured?}
+    ROUTE4 -->|Yes| AFTER_AGENT
+    ROUTE4 -->|No| BEFORE_MODEL
+    
+    AFTER_AGENT --> END["END"]
+```
+
+## Creating an Agent with `create_agent()`
 
 ### Minimal Example
 
@@ -65,6 +136,7 @@ Middleware hooks intercept at each phase:
 from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 
+@tool
 def search(query: str) -> str:
     """Search for information."""
     return f"Results for {query}"
@@ -75,7 +147,6 @@ agent = create_agent(
     system_prompt="You are a helpful assistant"
 )
 
-# Run the agent
 result = agent.invoke({"messages": [{"role": "user", "content": "Search for AI news"}]})
 print(result["messages"][-1].content)
 ```
@@ -109,7 +180,7 @@ def create_agent(
 |-----------|---------|-------|
 | `model` | Language model | String (e.g., `"openai:gpt-4o"`) or `BaseChatModel` instance |
 | `tools` | Tool functions/schemas | `BaseTool`, callables, or dict schemas; can be empty |
-| `system_prompt` | Instructions for the model | String or `SystemMessage`; prefixed to every model call |
+| `system_prompt` | System instructions | String or `SystemMessage`; prefixed to every model call |
 | `middleware` | Pre/post hooks and wrappers | Ordered list; first = outermost layer |
 | `response_format` | Structured output schema | `ToolStrategy`, `ProviderStrategy`, or Pydantic class |
 | `state_schema` | Custom state fields | Extends `AgentState` with application state |
@@ -117,6 +188,8 @@ def create_agent(
 | `store` | Cross-thread persistence | Retrieve context across conversations |
 | `interrupt_before/after` | Human-in-the-loop | Pause before/after named nodes |
 | `debug` | Verbose logging | Prints execution trace |
+| `name` | Graph name | Used for subagent identification in multi-agent systems |
+| `cache` | Graph-level caching | Cache entire graph outputs |
 | `transformers` | Stream output formatters | Custom `StreamTransformer` factories |
 
 ## Tool Binding and Execution
@@ -158,24 +231,26 @@ Tools are bound to the model during agent creation. The factory accepts three fo
    agent = create_agent(model="anthropic:claude-opus", tools=tools)
    ```
 
-### Tool Node and Execution
+### Tool Node and Execution Flow
 
 When tools are provided, `create_agent` constructs a `ToolNode` that:
 
-1. Receives the model's `AIMessage` with `tool_calls`.
-2. Matches each call to a registered tool.
-3. Executes the tool (sync or async).
-4. Returns `ToolMessage` with the result.
-5. Applies middleware wrappers (`wrap_tool_call`, `awrap_tool_call`).
+1. **Receives**: Model's `AIMessage` with `tool_calls`.
+2. **Matches**: Each call to a registered tool by name.
+3. **Executes**: Tool (sync or async, error handling included).
+4. **Wraps**: Result in `ToolMessage` with tool call ID and name.
+5. **Applies middleware**: `wrap_tool_call` handlers intercept execution.
 
 The ToolNode validates that:
 - All tool names referenced by the model are registered.
 - Tools return proper result strings/structured data.
 - Exceptions are caught and returned as error `ToolMessage` objects.
 
+If a tool call fails during execution, the framework automatically generates an error `ToolMessage` and loops back to the model for recovery.
+
 ### Model Binding and Structured Output
 
-Before calling the model, `create_agent` binds tools using `model.bind_tools()`:
+Before calling the model, `create_agent` binds tools via `model.bind_tools()`:
 
 ```python
 bound_model = model.bind_tools(
@@ -185,9 +260,9 @@ bound_model = model.bind_tools(
 )
 ```
 
-**Structured output** (when `response_format` is configured) adds special tools:
+**Structured output** (when `response_format` is configured) adds special behavior:
 
-- **ProviderStrategy**: Uses the model's native structured output API (e.g., OpenAI's `response_format`).
+- **ProviderStrategy**: Uses the model's native structured output API (e.g., OpenAI's response_format).
 - **ToolStrategy**: Creates pseudo-tools for each schema; model calls the tool to return structured data.
 - **AutoStrategy**: Auto-detects the best strategy based on model capabilities.
 
@@ -203,7 +278,7 @@ Middleware instances allow customization at every stage of agent execution. They
 
 ### Hook-Based Middleware (Node Hooks)
 
-Node hooks are called once per agent node invocation, returning state updates:
+Node hooks are called at specific points in the execution flow, returning state updates:
 
 ```python
 class MyMiddleware(AgentMiddleware):
@@ -228,14 +303,15 @@ class MyMiddleware(AgentMiddleware):
         return None
 ```
 
-Hooks can set `state["jump_to"]` to alter routing:
+**Routing via `jump_to`:**
+Hooks can set `state["jump_to"]` to alter the execution flow:
 - `"model"`: Jump to model node (skip tools, loop back).
 - `"tools"`: Jump to tools node (execute tools).
 - `"end"`: Skip to agent termination.
 
 ### Wrapper-Based Middleware (Handler Wraps)
 
-Wrappers intercept and control core operations by wrapping handler callbacks:
+Wrappers intercept and control core operations by wrapping handler callbacks. Each wrapper receives a `handler` callable that executes the next layer.
 
 #### `wrap_model_call` – Model Retry and Caching
 
@@ -256,13 +332,14 @@ class RetryMiddleware(AgentMiddleware):
 ```
 
 `wrap_model_call` can:
-- **Retry** on transient errors.
+- **Retry** on transient errors (exponential backoff).
 - **Cache** responses by request hash.
 - **Fallback** to a different model.
 - **Modify request** (tools, system message, model settings).
 - **Rewrite response** (transform AI message content).
+- **Short-circuit** by not calling the handler (return cached result).
 
-Returns:
+**Return types:**
 - `ModelResponse`: Full response with messages and optional structured output.
 - `AIMessage`: Simplified response (auto-converted to `ModelResponse`).
 - `ExtendedModelResponse`: Response + `Command` for additional state updates.
@@ -271,7 +348,7 @@ Returns:
 
 ```python
 class ToolRetryMiddleware(AgentMiddleware):
-    def wrap_tool_call(self, request: ToolCallRequest, handler):
+    def wrap_tool_call(self, request, handler):
         """Retry tool execution if result is invalid."""
         for attempt in range(2):
             result = handler(request)  # Execute the tool
@@ -291,7 +368,7 @@ class ToolRetryMiddleware(AgentMiddleware):
 - **Modify calls** (transform arguments, inject context).
 - **Mock** tools for testing.
 
-Returns:
+**Return types:**
 - `ToolMessage`: Tool execution result.
 - `Command`: Route to a different node or update state.
 
@@ -304,18 +381,18 @@ middleware = [CacheMiddleware(), RetryMiddleware(), LoggingMiddleware()]
 agent = create_agent(model="openai:gpt-4o", tools=[...], middleware=middleware)
 ```
 
-**Execution order:**
-- Model call: `CacheMiddleware` → `RetryMiddleware` → `LoggingMiddleware` → actual model
+**Execution order for `wrap_model_call`:**
+- Request: `CacheMiddleware` → `RetryMiddleware` → `LoggingMiddleware` → actual model
 - Response: actual model → `LoggingMiddleware` → `RetryMiddleware` → `CacheMiddleware`
 
 **State schema composition:**
-Middleware state schemas are merged in order, with later schemas overriding earlier fields. The agent's `state_schema` parameter (if provided) always wins conflicts.
+Middleware state schemas are merged in order: `middleware[0].state_schema`, `middleware[1].state_schema`, ..., then `agent.state_schema` (if provided). The agent's explicit `state_schema` always wins field conflicts, allowing users to override middleware annotations.
 
 ## Agent Execution Flow
 
 ### Synchronous vs. Asynchronous
 
-`create_agent` returns a compiled graph that supports both sync and async:
+`create_agent` returns a compiled graph that supports both sync and async execution:
 
 ```python
 # Synchronous
@@ -335,28 +412,6 @@ async for chunk in agent.astream({"messages": [...]}):
 
 The graph automatically chooses sync or async based on the execution context. If a middleware implements only async (`awrap_model_call`) and is invoked synchronously, it raises `NotImplementedError`. Provide both implementations for maximum compatibility.
 
-### Control Flow Diagram
-
-```mermaid
-graph TD
-    START["START"] --> BEFORE_AGENT["before_agent hooks"]
-    BEFORE_AGENT --> BEFORE_MODEL["before_model hooks"]
-    BEFORE_MODEL --> MODEL["Model Node\n(generate AI response)"]
-    MODEL --> AFTER_MODEL["after_model hooks"]
-    
-    AFTER_MODEL --> ROUTE{Has tool calls?}
-    ROUTE -->|No| STRUCTURED{Structured output?}
-    STRUCTURED -->|Yes, structured tools| TOOLS["Tools Node\n(execute tools)"]
-    STRUCTURED -->|No| AFTER_AGENT["after_agent hooks"]
-    
-    ROUTE -->|Yes, regular tools| TOOLS
-    TOOLS --> TOOL_ROUTE{Tool return_direct or\nstructured output?}
-    TOOL_ROUTE -->|Yes| AFTER_AGENT
-    TOOL_ROUTE -->|No| BEFORE_MODEL
-    
-    AFTER_AGENT --> END["END"]
-```
-
 ### Detailed Execution Steps
 
 1. **Initialization** (`before_agent`):
@@ -369,21 +424,104 @@ graph TD
    - **after_model**: Hooks run for logging, validation, or routing overrides.
 
 3. **Routing decision**:
-   - If `AIMessage` has `tool_calls`: Route to tools node.
-   - If `state["jump_to"] == "model"`: Loop back to `before_model`.
-   - If `state["jump_to"] == "end"`: Skip to termination.
-   - If no tool calls and no structured output: Route to termination.
+   - If `state["jump_to"]` is set: Use it to route to target node.
+   - Else if `AIMessage` has `tool_calls`: Route to tools node.
+   - Else if no tool calls and no structured output: Route to termination.
 
-4. **Tool execution**:
+4. **Tool execution** (if routed to tools):
    - Each tool call is matched to a registered tool.
    - `wrap_tool_call` middleware intercepts execution.
    - Tool result is wrapped in a `ToolMessage`.
-   - If any tool has `return_direct=True` or structured output was produced: Skip tools loop, go to termination.
+   - Routing: If any tool has `return_direct=True` or structured output was produced: skip tools loop, go to termination.
    - Otherwise: Loop back to `before_model`.
 
 5. **Termination** (`after_agent`):
    - Middleware `after_agent` hooks run once for cleanup, logging, or final state updates.
    - Graph returns the final state (messages + optional structured response).
+
+## Loop Control: Max Iterations and Stopping Criteria
+
+### Max Iterations
+
+The agent loop has a default recursion limit of 9,999 iterations to prevent infinite loops. You can configure this per invocation:
+
+```python
+result = agent.invoke(
+    {"messages": [...]},
+    config={"recursion_limit": 100}  # Custom limit
+)
+```
+
+### Stopping Criteria
+
+The agent stops under these conditions:
+
+1. **No tool calls**: Model returns `AIMessage` with empty `tool_calls` list.
+2. **Structured output complete**: A `ToolStrategy` structured tool was executed.
+3. **return_direct flag**: A tool with `return_direct=True` completes.
+4. **jump_to == "end"**: Middleware explicitly routes to termination.
+5. **Recursion limit exceeded**: Graph hits configured recursion limit.
+
+## Observability: Tracing and Callbacks
+
+### LangSmith Integration
+
+All agent execution is automatically traced to LangSmith (if configured). Traces capture:
+
+- **Model node invocations** (with tool bindings and system prompt).
+- **Middleware hooks** (before/after execution points).
+- **wrap_model_call and wrap_tool_call** interceptions (request/response details).
+- **Tool executions** (with arguments, results, and errors).
+- **State transitions** (messages, structured response, routing decisions).
+
+Traces are scoped hierarchically: outer middleware wraps inner, showing composition visually.
+
+### Trace Policy and Privacy
+
+Middleware can configure trace privacy via `trace_policy`:
+
+```python
+from langgraph.types import TracePolicy, omit_payload
+
+class MyMiddleware(AgentMiddleware):
+    trace_policy = TracePolicy(process_inputs=omit_payload)  # Hide sensitive inputs
+```
+
+This allows middleware to drop message payloads while keeping timing and span structure.
+
+### Debug Mode
+
+Enable verbose logging to stdout:
+
+```python
+agent = create_agent(
+    model="openai:gpt-4o",
+    tools=[...],
+    debug=True
+)
+
+result = agent.invoke({"messages": [...]})
+# Prints: node transitions, state updates, execution trace
+```
+
+Debug output shows:
+- Each node invocation.
+- State updates at each step.
+- Tool calls and results.
+- Routing decisions.
+
+### State Inspection
+
+Access the runtime context in middleware hooks:
+
+```python
+class ObservableMiddleware(AgentMiddleware):
+    def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        # runtime.config contains execution configuration
+        # runtime.step_number shows iteration count
+        print(f"Step {runtime.step_number}: {len(state['messages'])} messages")
+        return None
+```
 
 ## Common Middleware Patterns
 
@@ -485,31 +623,7 @@ class ToolErrorHandlerMiddleware(AgentMiddleware):
             )
 ```
 
-## Advanced Patterns
-
-### Pattern 5: Multi-Step Planning with Middleware
-
-Use middleware to implement explicit planning phases:
-
-```python
-from langchain.agents import AgentMiddleware, ModelRequest
-from langchain_core.messages import HumanMessage, SystemMessage
-
-class PlanningMiddleware(AgentMiddleware):
-    def before_agent(self, state, runtime):
-        # Inject planning request at the start
-        plan_message = HumanMessage(content="What is your plan?")
-        return {"messages": [plan_message]}
-    
-    def before_model(self, state, runtime):
-        # On first iteration, use planning system prompt
-        if len(state["messages"]) == 1:
-            # Plan has been received; now execute
-            pass
-        return None
-```
-
-### Pattern 6: Dynamic Tool Registration
+### Pattern 5: Dynamic Tool Registration
 
 Register tools at runtime based on context:
 
@@ -533,7 +647,7 @@ class DynamicToolMiddleware(AgentMiddleware):
         return handler(request)
 ```
 
-### Pattern 7: Structured Output with Fallback
+### Pattern 6: Structured Output with Fallback
 
 Handle both provider-native and tool-based structured output:
 
@@ -593,6 +707,10 @@ NotImplementedError: Asynchronous implementation of awrap_model_call is not avai
 2. Use decorators: `@wrap_model_call` for sync, then adapt for async.
 3. Invoke the agent asynchronously: `agent.ainvoke()` or `agent.astream()`.
 
+### Tool Execution Errors
+
+Tool execution errors are caught and returned as `ToolMessage` with `status="error"`. The agent loops back to the model with the error message, allowing it to recover or try a different tool.
+
 ## Practical Example: Multi-Tool Planner Agent
 
 ```python
@@ -642,7 +760,7 @@ print(result["messages"][-1].content)
 
 ### Checkpointing for Resumption
 
-Store agent state per conversation thread:
+Store agent state per conversation thread to enable pausing and resuming:
 
 ```python
 from langgraph.checkpoint.memory import MemorySaver
@@ -770,10 +888,22 @@ def test_retry_middleware():
     assert "Success" in result.result[0].content
 ```
 
+## Integration with LangGraph
+
+Agents created by `create_agent()` are LangGraph `StateGraph` instances that can:
+
+1. **Be subgraphs**: Added to larger agent networks for multi-agent systems.
+2. **Use interrupts**: Pause execution for human review or intervention.
+3. **Stream outputs**: Real-time token-by-token responses.
+4. **Support nested graphs**: Hierarchical agentic structures.
+
+The `name` parameter helps identify subagents in trace logs and error messages.
+
 ## Related Concepts
 
 - **Chat Models**: Language models that accept messages and return responses (see `/openwiki/concepts/chat-models.md`)
 - **Tools**: Schema-driven functions that agents can invoke (see `/openwiki/concepts/tools.md`)
-- **Middleware Framework**: Base classes and decorators for custom extensions (covered in this document)
-- **Streaming**: Real-time output via `stream()` and `astream()` (see `/openwiki/workflows/streaming.md`)
-- **Model and Provider Integration**: Specific model bindings and configurations (see `/openwiki/integrations/mcp-integration.md`)
+- **Middleware Framework**: Base classes and decorators for custom extensions (see `/openwiki/workflows/middleware.md`)
+- **Streaming**: Real-time output via `stream()` and `astream()`
+- **Structured Output**: Type-safe results from language models
+- **Composability**: Building complex workflows from agents and tools (see `/openwiki/workflows/composability.md`)

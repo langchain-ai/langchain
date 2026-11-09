@@ -113,6 +113,9 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
         instructions: Risk-classification instructions sent to TypeSafe.
         criteria: Optional descriptions of what should count as risky and safe. Pass
             `None` to classify without outcome criteria.
+        classifier: Optional `TypeSafeClassifier` used for risk classification, for
+            example one configured with a custom `base_url`, `client`, or
+            `async_client`. If omitted, a default `TypeSafeClassifier` is created.
 
     ??? example "Customize the risk criteria"
 
@@ -145,6 +148,7 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
         tools: Sequence[str | BaseTool],
         instructions: str = _DEFAULT_INSTRUCTIONS,
         criteria: NoulCriteria | None = None,
+        classifier: TypeSafeClassifier | None = None,
     ) -> None:
         """Initialize the tool-risk middleware.
 
@@ -152,6 +156,7 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
             tools: Tool names or instances to classify before execution.
             instructions: Risk-classification instructions sent to TypeSafe.
             criteria: Descriptions of the risky and safe outcomes.
+            classifier: `TypeSafeClassifier` to use instead of the default.
 
         Raises:
             pydantic.ValidationError: If tool names or threshold configuration is
@@ -164,7 +169,7 @@ class AutoModeMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, Respon
                 "criteria": criteria,
             }
         )
-        self.classifier = TypeSafeClassifier()
+        self.classifier = classifier if classifier is not None else TypeSafeClassifier()
 
     @staticmethod
     def _classification_state(request: ToolCallRequest) -> dict[str, Any]:

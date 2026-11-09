@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -28,12 +30,18 @@ from langchain_core.language_models.fake_chat_models import FakeListChatModel
 from langchain_core.messages import AIMessageChunk
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
+from langchain_core.utils._gateway import (
+    GATEWAY_METADATA_HEADER,
+    GATEWAY_METADATA_RESPONSE_KEY,
+)
+from tests.unit_tests.tracers.test_base_tracer import FakeTracer
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
     from langchain_core.callbacks import CallbackManagerForLLMRun
     from langchain_core.messages import BaseMessage
+    from langchain_core.runnables import RunnableConfig
 
 
 class _MalformedToolCallModel(BaseChatModel):
@@ -1562,3 +1570,136 @@ class TestUsageTokenDetails:
                 break
             await asyncio.sleep(0)
         assert end_usages == [_EXPECTED_CACHED_USAGE]
+
+
+class _GatewayModel(_MalformedToolCallModel):
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="", response_metadata={"model_name": "test"}
+            ),
+            generation_info={
+                GATEWAY_METADATA_RESPONSE_KEY: {
+                    "provider": "openai",
+                    "model": "resolved",
+                }
+            },
+        )
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(content="OK"),
+            generation_info={"finish_reason": "stop"},
+        )
+
+
+def _assert_gateway_trace(tracer: FakeTracer) -> None:
+    metadata = tracer.runs[0].extra["metadata"]
+    assert metadata["ls_gateway_info"] == {"provider": "openai", "model": "resolved"}
+    assert metadata["ls_model_name"] == "resolved"
+    assert metadata["ls_provider"] == "openai"
+
+
+@pytest.mark.parametrize("invoke", [False, True])
+def test_v3_gateway_metadata_is_tracing_only(*, invoke: bool) -> None:
+    tracer = FakeTracer()
+    handler = _V2RecordingHandler()
+    model = _GatewayModel()
+    config: RunnableConfig = {"callbacks": [tracer, handler]}
+    if invoke:
+        message = model.invoke("hi", config=config)
+        events = handler.events
+    else:
+        stream = model.stream_events("hi", config=config, version="v3")
+        events = list(stream)
+        message = stream.output
+    assert GATEWAY_METADATA_RESPONSE_KEY not in message.response_metadata
+    assert message.response_metadata["finish_reason"] == "stop"
+    assert GATEWAY_METADATA_RESPONSE_KEY not in str(events)
+    _assert_gateway_trace(tracer)
+
+
+@pytest.mark.parametrize("invoke", [False, True])
+async def test_v3_gateway_metadata_is_tracing_only_async(*, invoke: bool) -> None:
+    tracer = FakeTracer()
+    handler = _AsyncV2RecordingHandler()
+    model = _GatewayModel()
+    config: RunnableConfig = {"callbacks": [tracer, handler]}
+    if invoke:
+        message = await model.ainvoke("hi", config=config)
+        events = handler.events
+    else:
+        stream = await model.astream_events("hi", config=config, version="v3")
+        events = [event async for event in stream]
+        message = await stream
+    assert GATEWAY_METADATA_RESPONSE_KEY not in message.response_metadata
+    assert message.response_metadata["finish_reason"] == "stop"
+    assert GATEWAY_METADATA_RESPONSE_KEY not in str(events)
+    _assert_gateway_trace(tracer)
+
+
+_GATEWAY_INFO = {"provider": "openai", "model": "resolved"}
+
+
+class _GatewayHTTPError(Exception):
+    """Provider error whose HTTP response carries gateway metadata."""
+
+    def __init__(self) -> None:
+        super().__init__("upstream 401")
+        self.response = SimpleNamespace(
+            headers={GATEWAY_METADATA_HEADER: json.dumps(_GATEWAY_INFO)},
+            status_code=401,
+        )
+
+
+class _FailingGatewayModel(_GatewayModel):
+    fail_mid_stream: bool = False
+
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        if not self.fail_mid_stream:
+            raise _GatewayHTTPError
+        # Gateway metadata arrives on the first chunk, then the stream drops.
+        yield next(super()._stream(messages, stop, run_manager, **kwargs))
+        msg = "stream dropped"
+        raise RuntimeError(msg)
+
+
+@pytest.mark.parametrize("fail_mid_stream", [False, True])
+def test_v3_gateway_metadata_traced_on_error(*, fail_mid_stream: bool) -> None:
+    tracer = FakeTracer()
+    model = _FailingGatewayModel(fail_mid_stream=fail_mid_stream)
+    stream = model.stream_events("hi", config={"callbacks": [tracer]}, version="v3")
+    with pytest.raises((_GatewayHTTPError, RuntimeError)):
+        list(stream)
+    assert tracer.runs[0].error
+    _assert_gateway_trace(tracer)
+
+
+@pytest.mark.parametrize("fail_mid_stream", [False, True])
+async def test_v3_gateway_metadata_traced_on_error_async(
+    *, fail_mid_stream: bool
+) -> None:
+    tracer = FakeTracer()
+    model = _FailingGatewayModel(fail_mid_stream=fail_mid_stream)
+    stream = await model.astream_events(
+        "hi", config={"callbacks": [tracer]}, version="v3"
+    )
+    with pytest.raises((_GatewayHTTPError, RuntimeError)):
+        async for _event in stream:
+            pass
+    # The consumer sees the error before the producer fires `on_llm_error`.
+    assert stream._producer_task is not None
+    await stream._producer_task
+    assert tracer.runs[0].error
+    _assert_gateway_trace(tracer)

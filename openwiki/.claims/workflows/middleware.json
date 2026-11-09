@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1a4fdf9d4a0763396ba3036350b72efbd18b055e4820082848b5a9df2eeeb1fa",
+  "pageVersion": "sha256:075f9655cb0e8bc136c6331090340fdeed0e01850f116b0bf9b8f753337d350d",
   "claims": [
     {
       "id": "claim_fc612ca95e764c84b4bd1c6e12a8536a",
@@ -104,11 +104,11 @@
     },
     {
       "id": "claim_512212713cf943b092ca5b8d081534b6",
-      "statement": "LangChain provides production middleware including ModelRetryMiddleware, ToolRetryMiddleware, ToolErrorMiddleware, ModelCallLimitMiddleware, ToolCallLimitMiddleware, HumanInTheLoopMiddleware, LLMToolSelectorMiddleware, ModelFallbackMiddleware, PIIMiddleware, ShellToolMiddleware, and SummarizationMiddleware for common agent customization needs.",
+      "statement": "LangChain provides production-ready middleware including ModelRetryMiddleware, ToolRetryMiddleware, ToolErrorMiddleware, ModelCallLimitMiddleware, ToolCallLimitMiddleware, ModelFallbackMiddleware, HumanInTheLoopMiddleware, LLMToolSelectorMiddleware, PIIMiddleware, ShellToolMiddleware, SummarizationMiddleware, ModelRefusalMiddleware, ContextEditingMiddleware, FilesystemFileSearchMiddleware, ProviderToolSearchMiddleware, TodoListMiddleware, and LLMToolEmulator for common agent customization needs.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py#L1-L100",
-          "version": "repo-lines-v1:sha256:51b55618fb209bce1e69f2911b367963da549d930f5eef1b1125cd19a26586ae:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNDA5OTU2YzRjNTg2NDc3MzNhYTU3Mjc0OTdhYmU0ZWFlZDY2NDdiMjkyNDk0MmI2NWUxYjJmOWM3OWQ1Y2Y1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmOTQxNmUwOWY3OGJhMzE2YzAzMjU2ODIxM2I4NTVlZTc1NmU0MTU2NWQ5MThmMDk1MTljODFmZDYyMGY0MDYwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py#L1-L102",
+          "version": "repo-lines-v1:sha256:2ed2639dea637ba04a59441b1698bf8e005b8c0f6e0be7fbaa97fc55827e3f17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNDA5OTU2YzRjNTg2NDc3MzNhYTU3Mjc0OTdhYmU0ZWFlZDY2NDdiMjkyNDk0MmI2NWUxYjJmOWM3OWQ1Y2Y1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmOTQxNmUwOWY3OGJhMzE2YzAzMjU2ODIxM2I4NTVlZTc1NmU0MTU2NWQ5MThmMDk1MTljODFmZDYyMGY0MDYwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -151,10 +151,66 @@
           "version": "repo-lines-v1:sha256:6341ae8ca446ca57aee55bd0032315147777efbe4703f1942fb216a34a7534dd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhY2VkMmY4NGViMmFmMmUxMDNkMjBjYjAwY2NmZmM5ZjcyNzZiZTFlN2U3N2Q3ZTc0NjNlOGY1YzdkYTYzMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1NTA5ZTcyNDIwZjVjNzRkZGNjMmJhNmJmOTcyNmNmODI3ODA2MzliMzE3ZTUyMzA2ODgzYjdmMjQ5MjYyZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM5YTEyNTZkMDkxOGM3ZWJkYWYzNjhjNTczN2NjMjY4MTVhYmVhNWUwNmVmYTRlMzllNmM3NTc2N2Q4ZDQ4ZDYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_e37d2a78529b4f478f44b532dac90c46",
+      "statement": "Anthropic-specific middleware includes AnthropicPromptCachingMiddleware for caching conversation prefixes to reduce API latency and cost, ClaudeBashToolMiddleware for exposing native bash tool (bash_20250124) with sandboxing, and StateFileSearchMiddleware providing Glob and Grep search tools over state-based files.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/middleware/__init__.py",
+          "version": "repo-file-v1:sha256:0dc62ec44fed335cf594ed243d8e887731e07441b13a70386be0176fac3641a0"
+        },
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/middleware/bash.py#L19-L82",
+          "version": "repo-lines-v1:sha256:3ddbe1c648ea87febb7bd74b891d4c532dc08fee918c099265a5545b274c04a2:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0M2ExMTIwNDVkYTAyMDVjMDk0YzNiNzRhOThlM2M5MTZmZDc2MTljOWZjMzUzMzM1ZWE0MmI2MTllZDczN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4OTVjNDM0MzRjNWY2ODQzY2Q3YjJlYzNkNTZkMTUxYjhmYTMwYmExYTIwNzg3YzNmMDJjMDYyYmNlYjc1YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhNjE0MzJkZDRlZDg3ZTliNDUxODg4NTA5OTE2MDhiYjYyYmE0ZmRhZjk0ZWJlMjdhNThkMWE4NmYxY2U3NGMifQ"
+        },
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/middleware/file_search.py#L89-L115",
+          "version": "repo-lines-v1:sha256:08889c002c3ac381c46a33e05ca3081431a4eaa94ebaf8fb7844d44b072839c9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyOTk3ZjYwNTQ2ZDE1MzY2Y2NiZTlhMzVmOWI4ZDI3ZDE3NGJkODBjMzNmMzFhYjBhYjUzMWVlMGM0MGY5ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkYzk0NWE2N2EyNzE1Zjc0Y2Q3Mjk0Yzk1NDJkMzg2NWVlMzAxY2YzNTFmNzEwODg5Njg3ZDNkMmE3MzFlMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwZTIyM2QzNzA5ZGVkMTdkY2I4YTZiZmEzNjYxNmFlMzZiYmQ4ZTExNmFjNDgyYjU4ZGMzMTQ5NDZjM2ZiMGEifQ"
+        },
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/middleware/prompt_caching.py#L47-L150",
+          "version": "repo-lines-v1:sha256:915fb0e727efdd5ed9bb99c27318b412b148fb36b40f85f97be1e46a2cb4ce90:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmYWQ1ODkyZmI0Y2VhZjdkZjI1ZTA5MTFhOWJiNDZjMjQ2Y2I4NTQ0OGJkOWRlY2UyZTY4OGUzYzIyNTMyMTExIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3ZWNiNDY1ZjE3Mjc0NzQxNDVlMWNlODZlZTJkM2I0YTNjNjQ3OTE5OTlhNWM0MzVlODkxOTQ3YTEzZTg3MTE3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5MmYxMGNlYjExNGM4Y2Y2NTMyYzJlMDU4YjI0YzIyMWIxOGI4ZTBlNGQ5YjliYWUyNjlmMjI4ODU3MjUzYmY3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyMzhiMjdjZTliMDQ3NWI2MGQ1NzQyOThlMTcyYTUzZDlmYTZlZjU0OGEyY2ZjYzI0Yzc2OWVmZjgxZWEwZjY3In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_bf8a90e439c34ad5aff898107814df66",
+      "statement": "AnthropicPromptCachingMiddleware tags system message and tool definitions with cache_control directives and passes them through model_settings to the Anthropic API; supports ephemeral cache with configurable TTL (5m or 1h) and minimum message threshold.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/middleware/prompt_caching.py#L72-L150",
+          "version": "repo-lines-v1:sha256:06e9cbf8ff342f14fd79fb75e6a8b2b4b82309109d88fc3bfebd3858996a8cd0:eyJzZWxlY3RlZExpbmVDb3VudCI6NzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmZDdhMDdhODNkZDE5OTZmYjUxNjg0YjQyYWVjYWY0ZTkwZmI3OGJhNzIzMGU1NDJlZDdiZDAxZDQyMzAxYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlY2I0NjVmMTcyNzQ3NDE0NWUxY2U4NmVlMmQzYjRhM2M2NDc5MTk5OWE1YzQzNWU4OTE5NDdhMTNlODcxMTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQzNzZkZWNlNWY5Y2JlNWY1ZDgzMzJjOTNiMTM3NDkyOWFhZTUyODE1NzlkN2I0NDNmZjU2ZTZlYWNjOWNjNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIzOGIyN2NlOWIwNDc1YjYwZDU3NDI5OGUxNzJhNTNkOWZhNmVmNTQ4YTJjZmNjMjRjNzY5ZWZmODFlYTBmNjcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b189d4aa3764d4998025d5698ff74d9",
+      "statement": "ClaudeBashToolMiddleware extends ShellToolMiddleware and replaces parent's shell tool descriptor with Anthropic's native bash tool type (bash_20250124) in request overrides; supports workspace root, execution policies, redaction rules, and startup/shutdown commands.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/middleware/bash.py#L19-L82",
+          "version": "repo-lines-v1:sha256:3ddbe1c648ea87febb7bd74b891d4c532dc08fee918c099265a5545b274c04a2:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0M2ExMTIwNDVkYTAyMDVjMDk0YzNiNzRhOThlM2M5MTZmZDc2MTljOWZjMzUzMzM1ZWE0MmI2MTllZDczN2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4OTVjNDM0MzRjNWY2ODQzY2Q3YjJlYzNkNTZkMTUxYjhmYTMwYmExYTIwNzg3YzNmMDJjMDYyYmNlYjc1YzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoyLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhNjE0MzJkZDRlZDg3ZTliNDUxODg4NTA5OTE2MDhiYjYyYmE0ZmRhZjk0ZWJlMjdhNThkMWE4NmYxY2U3NGMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5a358461ef9646678a6620e50a1dc7aa",
+      "statement": "StateFileSearchMiddleware and text editor tools (StateClaudeTextEditorMiddleware, StateClaudeMemoryMiddleware) use AnthropicToolsState schema to manage virtual files and memories in agent state, enabling multi-turn file management and context persistence for coding and data analysis tasks.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/middleware/anthropic_tools.py",
+          "version": "repo-file-v1:sha256:e749ff42b7e20d880f624c29587ff5344bac02566e1fa3cd2d5326e93ee1bc82"
+        },
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/middleware/file_search.py#L89-L120",
+          "version": "repo-lines-v1:sha256:5f45bc1571439f6dbdbf2df3a73e438300396b15692a46f4d8101da3029e7256:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyOTk3ZjYwNTQ2ZDE1MzY2Y2NiZTlhMzVmOWI4ZDI3ZDE3NGJkODBjMzNmMzFhYjBhYjUzMWVlMGM0MGY5ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjODcyYzgzMmZhZjQ1N2UwMGVjODYyODZkOWI2OTU3OWZiMDc5ZWU0N2I3ZmU2Mjg0ZTNjNTI2YjA2OTRjYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkYzk0NWE2N2EyNzE1Zjc0Y2Q3Mjk0Yzk1NDJkMzg2NWVlMzAxY2YzNTFmNzEwODg5Njg3ZDNkMmE3MzFlMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwZWM4OTU5ZGM0YTdiNDM1NzM3MDNjOWY1MGFlZDczZWNhNDY2NTgyNWM5NDA2N2Y0NTliYTU3NzRiMjQwZmIifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-11-06T08:17:28.425Z"
   }
 }

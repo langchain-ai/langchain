@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:30f7076a57707ee9b99d576412ebd6ab8fd33cc101b67ac8a996c24d2ca4c7d2",
+  "pageVersion": "sha256:6f65fa7b440cf2df1fef89747de12b59eb8a34fe9ecb2d9ccde03f69f9417d84",
   "claims": [
     {
       "id": "claim_bdde90f4e5f6413f8214fe7e80b66a9a",
@@ -131,8 +131,16 @@
       "statement": "Syrupy snapshot testing captures complex output (traces, serialized objects, nested structures) and compares against baseline snapshots, with snapshots stored in __snapshots__/ directories and updated via pytest --snapshot-update or make test_watch.",
       "evidence": [
         {
-          "resource": "repo://libs/core/tests/unit_tests/runnables/test_runnable.py#L1-L50",
-          "version": "repo-lines-v1:sha256:28f44b5941f0ec19fc995d7f3313b8eb55ecae1b3a6d383f4d96d598f5620f16:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzNGM5Y2RkNDJmOGQ4OGMwNDQyNTM3M2E3MzM2MjA5ZjZiMmEyZGNlYmVjMzJiNGQ0MDU5M2Y5MGJlMmJiMjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MTUyOWViMzIyNzY4NTdiMjVmNmVkMzYzNWJjOGE3YjU2ODI1NzA4YmY0OWZiNTFlMWY3YThhNWZlMjQyMTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxYTc5Y2ZkNWJhMzg1ZTcyZDI1YTRjMWUzNDBlMjk5M2FhZmFhNTcyMmIyYmQ5Y2ZiOTgxMDdmNmYxNjQ2NDMifQ"
+          "resource": "repo://libs/core/tests/unit_tests/runnables/__snapshots__/test_runnable.ambr#L1-L50",
+          "version": "repo-lines-v1:sha256:4ef54c8fbabae1619acf550ad6174198022c979daaa0277a7d597576d64a5c0d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEzZjBiYzNhN2MxYWJjODM4NjdjMjViODZlNzhiZmQ1YmJiMzIzY2IxMzA4MTkxY2Y1YzA0MDVlMzE3YjllNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkMWEzZjc1YTczY2ViNWUzZGQxMjI0OTdjYzhmOTI0ODI5MGM3MTA4ZDNmOGY0OWVjODUxNzUxYzI3OGQ4NTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwZDIxNWUwOTVlNjkzZDM4MTY1MTE0YjhiM2I0YmFkY2E3MDU4MjllNzUyOTM2OWI5MDEzN2FmM2VlNGNmOWEifQ"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/test_runnable.py#L1812-L1834",
+          "version": "repo-lines-v1:sha256:4e56d2c64ccfb380902f1343e4e7cb539630bb7fdc2a97d743c758121b335445:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ5YTg1NDE1NTM2MjEzNDMzMTU3MjQ2OWNlNTU0MzFkYTJhZjg0OWUwZDRjNWU2MGE3NTcxODhjNDNiYmVhZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmYjQ0ZDdlNTQyZTI4YTc2ODBhOTA4NGJmNmFiMzA2ZDA3M2E3NWUxODk4N2FhOWFkMWNiOGUxZGEwYjQ0OTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNkZDQ0N2E0NTk5N2RmMDEwOTU5NTRkZTZkMzUxYTlkMTA5ZTA1Y2MzODIwOTNmNTkwOGM5NDBhMGIyMWI4YmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhjOWQyMzE5MDAxZDY0NjRhNDkzMmViYzYwZDllMDcyOTBmMzVmNWQ4Y2QzZjBhOWQ5MTVhNjVkMGNlMDEyMjcifQ"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/test_runnable.py#L393-L402",
+          "version": "repo-lines-v1:sha256:22d3b5764e19804bd27822aa697a59d377da857dce8c1e140124b643268acc43:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwM2Q2MzI5Y2M1YzY1NDliMDJkNjBlNjU4MWIwODI3NDg4YTVlMTgxMzE5Njg5NTc3MTQxMWI1MTcxYTE2NmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyMjBkMmQxYzU2NTMxYTZkNjQwNGZlZWZkYjFhYjE1Nzg4NDYwYTc5N2FmMjM1MmIxYzgyZTcxMDUwYjZiNzMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwNTBjMzhlMjdiMzgxZjlmNTEyMDE0YWQzY2UzYjIzNzFkNDhmOTg3ZDg1YWRiYWExMjViZjlmYzQzNTQ3NzciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVlNzFjNmQ0NzYzMzgwZWM0MjA0NGQ2YjFlNzFiMWFhOGI4NDMyMTYyYTExOTEyMGFjNWUyMDZiOGQxNTVmMzUifQ"
         }
       ]
     },
@@ -253,6 +261,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-20T08:25:57.412Z"
+    "at": "2026-10-29T08:20:01.046Z"
   }
 }

@@ -1,7 +1,12 @@
 """Custom **exceptions** for LangChain."""
 
+from __future__ import annotations
+
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from langchain_core.messages import BaseMessage, RefusalContentBlock
 
 
 class LangChainException(Exception):  # noqa: N818
@@ -69,11 +74,12 @@ class ModelError(LangChainException):
     """Base exception for failures related to model invocation.
 
     Subclasses correspond to conditions that model providers report consistently,
-    keyed to the HTTP status they surface it with, so the same condition maps to
-    the same exception type regardless of provider.
+    so the same condition maps to the same exception type regardless of provider.
+    Most are keyed to the HTTP status they surface it with; `ModelRefusalError`
+    covers successful responses in which the model refused.
 
-    Provider integrations raise subclasses that also inherit from the provider
-    SDK's own exception type, so code catching either continues to work.
+    Provider integrations raise HTTP error subclasses that also inherit from the
+    provider SDK's own exception type, so code catching either continues to work.
     """
 
     is_retryable = False
@@ -126,6 +132,59 @@ class ContextOverflowError(ModelError):
     This exception is raised by chat models when the input tokens exceed
     the maximum context window supported by the model.
     """
+
+
+class ModelRefusalError(ModelError):
+    """Exception raised when a model declines to produce the requested output.
+
+    Providers report a refusal as a successful response rather than an HTTP error
+    (for example Anthropic's `stop_reason="refusal"`, or the `refusal` field in
+    OpenAI Structured Outputs), so a plain model call returns the message as-is.
+    Integrations raise this exception from paths that need the content the model
+    withheld, such as `with_structured_output`, so callers can handle refusals the
+    same way across providers instead of receiving a parsing error.
+
+    Retrying the same request is unlikely to succeed.
+
+    !!! version-added "Added in `langchain-core` 1.7.5"
+    """
+
+    def __init__(
+        self,
+        message: str = "Model refused to produce the requested output",
+        *,
+        raw_message: BaseMessage | None = None,
+    ) -> None:
+        """Create a `ModelRefusalError`.
+
+        Args:
+            message: Error message.
+            raw_message: The model response that contained the refusal. Its
+                `content_blocks` hold the refusal block, including any
+                provider-specific details in `extras`.
+        """
+        self.raw_message = raw_message
+        super().__init__(message)
+
+    @classmethod
+    def from_refusal(
+        cls, refusal: RefusalContentBlock, *, raw_message: BaseMessage
+    ) -> ModelRefusalError:
+        """Create a `ModelRefusalError` from a standard refusal block.
+
+        Args:
+            refusal: The refusal block from the response's `content_blocks`.
+            raw_message: The model response that contained the refusal.
+
+        Returns:
+            An error whose message includes the refusal's category and text.
+        """
+        message = "Model refused to produce the requested output"
+        if category := refusal.get("extras", {}).get("category"):
+            message += f" (category={category!r})"
+        if text := refusal.get("refusal"):
+            message += f": {text}"
+        return cls(message, raw_message=raw_message)
 
 
 class ErrorCode(Enum):

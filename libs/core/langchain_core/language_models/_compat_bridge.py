@@ -55,6 +55,7 @@ from langchain_protocol.protocol import (
 )
 
 from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 from langchain_core.utils._merge import merge_dicts
 
 if TYPE_CHECKING:
@@ -586,6 +587,7 @@ def chunks_to_events(
     chunks: Iterator[ChatGenerationChunk],
     *,
     message_id: str | None = None,
+    generation_info: dict[str, Any] | None = None,
 ) -> Iterator[MessagesData]:
     """Convert a stream of `ChatGenerationChunk` to protocol events.
 
@@ -599,6 +601,7 @@ def chunks_to_events(
     Args:
         chunks: Iterator of `ChatGenerationChunk` from `_stream()`.
         message_id: Optional stable message ID.
+        generation_info: Optional accumulator for tracing-only gateway metadata.
 
     Yields:
         `MessagesData` lifecycle events.
@@ -628,6 +631,9 @@ def chunks_to_events(
             **(chunk.generation_info or {}),
             **(msg.response_metadata or {}),
         }
+        gateway_metadata = merged_rm.pop(GATEWAY_METADATA_RESPONSE_KEY, None)
+        if generation_info is not None and isinstance(gateway_metadata, dict):
+            generation_info[GATEWAY_METADATA_RESPONSE_KEY] = gateway_metadata
         if merged_rm:
             response_metadata.update(merged_rm)
 
@@ -687,6 +693,7 @@ async def achunks_to_events(
     chunks: AsyncIterator[ChatGenerationChunk],
     *,
     message_id: str | None = None,
+    generation_info: dict[str, Any] | None = None,
 ) -> AsyncIterator[MessagesData]:
     """Async variant of `chunks_to_events`."""
     started = False
@@ -708,6 +715,9 @@ async def achunks_to_events(
             **(chunk.generation_info or {}),
             **(msg.response_metadata or {}),
         }
+        gateway_metadata = merged_rm.pop(GATEWAY_METADATA_RESPONSE_KEY, None)
+        if generation_info is not None and isinstance(gateway_metadata, dict):
+            generation_info[GATEWAY_METADATA_RESPONSE_KEY] = gateway_metadata
         if merged_rm:
             response_metadata.update(merged_rm)
 

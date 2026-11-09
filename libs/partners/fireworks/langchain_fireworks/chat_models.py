@@ -656,6 +656,18 @@ def _format_chunk_for_v1(message_chunk: AIMessageChunk) -> AIMessageChunk:
     )
 
 
+def _record_usage(previous: UsageMetadata | None, new: UsageMetadata) -> UsageMetadata:
+    """Return the newest usage report, logging when it disagrees with an earlier one."""
+    if previous is not None and previous != new:
+        logger.debug(
+            "Fireworks reported differing usage within one stream; using the "
+            "latest. Previous: %s, latest: %s",
+            previous,
+            new,
+        )
+    return new
+
+
 def _finalize_stream(
     stream: Iterator[ChatGenerationChunk],
 ) -> Iterator[ChatGenerationChunk]:
@@ -1322,6 +1334,7 @@ class ChatFireworks(BaseChatModel):
     def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:
         overall_token_usage: dict = {}
         system_fingerprint = None
+        model_name = None
         for output in llm_outputs:
             if output is None:
                 # Happens in streaming
@@ -1339,10 +1352,26 @@ class ChatFireworks(BaseChatModel):
                         overall_token_usage[k] = v
             if system_fingerprint is None:
                 system_fingerprint = output.get("system_fingerprint")
-        combined = {"token_usage": overall_token_usage, "model_name": self.model_name}
+            if model_name is None:
+                model_name = output.get("model_name") or None
+        combined = {
+            "token_usage": overall_token_usage,
+            "model_name": model_name or self.model_name,
+        }
         if system_fingerprint:
             combined["system_fingerprint"] = system_fingerprint
         return combined
+
+    def _usage_generation_chunk(self, usage: UsageMetadata) -> ChatGenerationChunk:
+        """Build the single chunk that carries a stream's token usage."""
+        message_chunk = AIMessageChunk(
+            content="",
+            usage_metadata=usage,
+            response_metadata={"model_provider": "fireworks"},
+        )
+        if self.output_version == "v1":
+            message_chunk = _format_chunk_for_v1(message_chunk)
+        return ChatGenerationChunk(message=message_chunk)
 
     def _stream(
         self,
@@ -1365,21 +1394,36 @@ class ChatFireworks(BaseChatModel):
             _handle_fireworks_invalid_request(e)
         except APIError as e:
             _handle_fireworks_api_error(e)
+        response_model = None
+        last_usage: UsageMetadata | None = None
         for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
+            response_model = chunk.get("model") or response_model
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             if self.output_version == "v1" and isinstance(
                 message_chunk, AIMessageChunk
             ):
                 message_chunk = _format_chunk_for_v1(message_chunk)
+            if (
+                isinstance(message_chunk, AIMessageChunk)
+                and message_chunk.usage_metadata
+            ):
+                # Fireworks can report usage on more than one chunk (e.g. the
+                # `finish_reason` chunk and a trailing usage-only chunk). Merging
+                # chunks sums usage, so hold it back and emit the last report once.
+                last_usage = _record_usage(last_usage, message_chunk.usage_metadata)
+                message_chunk.usage_metadata = None
+                if not chunk.get("choices"):
+                    continue
             generation_info: dict[str, Any] = {}
             logprobs = None
             if choices := chunk.get("choices"):
                 choice = choices[0]
                 if finish_reason := choice.get("finish_reason"):
                     generation_info["finish_reason"] = finish_reason
-                    generation_info["model_name"] = self.model_name
+                    # Emit once: repeated model names concatenate when chunks merge.
+                    generation_info["model_name"] = response_model or self.model_name
                     if service_tier := chunk.get("service_tier"):
                         generation_info["service_tier"] = service_tier
                 logprobs = choice.get("logprobs")
@@ -1394,6 +1438,11 @@ class ChatFireworks(BaseChatModel):
                     generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
                 )
             yield generation_chunk
+        if last_usage:
+            usage_chunk = self._usage_generation_chunk(last_usage)
+            if run_manager:
+                run_manager.on_llm_new_token("", chunk=usage_chunk)
+            yield usage_chunk
 
     def _generate(
         self,
@@ -1441,14 +1490,15 @@ class ChatFireworks(BaseChatModel):
         if not isinstance(response, dict):
             response = response.model_dump()
         token_usage = response.get("usage", {})
+        model_name = response.get("model") or self.model_name
         service_tier = response.get("service_tier")
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
             if isinstance(message, AIMessage):
+                message.response_metadata["model_name"] = model_name
                 if token_usage:
                     message.usage_metadata = _usage_to_metadata(token_usage)
                     message.response_metadata["model_provider"] = "fireworks"
-                    message.response_metadata["model_name"] = self.model_name
                 if service_tier:
                     message.response_metadata["service_tier"] = service_tier
             generation_info = {"finish_reason": res.get("finish_reason")}
@@ -1461,6 +1511,7 @@ class ChatFireworks(BaseChatModel):
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
+            "model_name": model_name,
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         if service_tier:
@@ -1488,21 +1539,36 @@ class ChatFireworks(BaseChatModel):
             _handle_fireworks_invalid_request(e)
         except APIError as e:
             _handle_fireworks_api_error(e)
+        response_model = None
+        last_usage: UsageMetadata | None = None
         async for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
+            response_model = chunk.get("model") or response_model
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
             if self.output_version == "v1" and isinstance(
                 message_chunk, AIMessageChunk
             ):
                 message_chunk = _format_chunk_for_v1(message_chunk)
+            if (
+                isinstance(message_chunk, AIMessageChunk)
+                and message_chunk.usage_metadata
+            ):
+                # Fireworks can report usage on more than one chunk (e.g. the
+                # `finish_reason` chunk and a trailing usage-only chunk). Merging
+                # chunks sums usage, so hold it back and emit the last report once.
+                last_usage = _record_usage(last_usage, message_chunk.usage_metadata)
+                message_chunk.usage_metadata = None
+                if not chunk.get("choices"):
+                    continue
             generation_info: dict[str, Any] = {}
             logprobs = None
             if choices := chunk.get("choices"):
                 choice = choices[0]
                 if finish_reason := choice.get("finish_reason"):
                     generation_info["finish_reason"] = finish_reason
-                    generation_info["model_name"] = self.model_name
+                    # Emit once: repeated model names concatenate when chunks merge.
+                    generation_info["model_name"] = response_model or self.model_name
                     if service_tier := chunk.get("service_tier"):
                         generation_info["service_tier"] = service_tier
                 logprobs = choice.get("logprobs")
@@ -1519,6 +1585,11 @@ class ChatFireworks(BaseChatModel):
                     logprobs=logprobs,
                 )
             yield generation_chunk
+        if last_usage:
+            usage_chunk = self._usage_generation_chunk(last_usage)
+            if run_manager:
+                await run_manager.on_llm_new_token("", chunk=usage_chunk)
+            yield usage_chunk
 
     async def _agenerate(
         self,

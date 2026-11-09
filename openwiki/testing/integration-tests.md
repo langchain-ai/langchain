@@ -1,11 +1,8 @@
 ---
 type: "Reference"
 title: "Integration Testing: System-Level Validation"
-description: "Integration testing patterns for multi-component workflows, API interactions, and provider integrations. Covers VCR recording, live API testing, and cross-package validation."
-tags: ["integration-testing", "vcr", "api-testing", "standard-tests", "mocking"]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
+description: "Integration testing patterns for multi-component workflows, API interactions, and provider integrations. Covers VCR recording, live API testing, model capability matrices, and standard conformance."
+tags: ["integration-testing", "vcr", "api-testing", "standard-tests", "mocking", "provider-testing"]
 sources:
   - id: openwiki-source-d8a8900818f4abab719bd1b7
     resource: repo://.github/workflows/_test_vcr.yml
@@ -13,6 +10,16 @@ sources:
     resource: repo://.github/workflows/integration_tests.yml
   - id: openwiki-source-c2966498bbc4d18ea148ee58
     resource: repo://libs/core/extended_testing_deps.txt
+  - id: openwiki-source-e0f2b69cae9ae41e40fcab63
+    resource: repo://libs/partners/anthropic/tests/conftest.py
+  - id: openwiki-source-e7d6e1ee0b0824454f881bbc
+    resource: repo://libs/partners/anthropic/tests/integration_tests/test_chat_models.py
+  - id: openwiki-source-12e499b44558eebb5fa3e43a
+    resource: repo://libs/partners/anthropic/tests/integration_tests/test_compile.py
+  - id: openwiki-source-847380977511db729e977a7d
+    resource: repo://libs/partners/anthropic/tests/integration_tests/test_llms.py
+  - id: openwiki-source-42a276f7d2eff4c61d1ef89c
+    resource: repo://libs/partners/anthropic/tests/integration_tests/test_standard.py
   - id: openwiki-source-9a9f29414e5bd045f28c0081
     resource: repo://libs/partners/openai/Makefile
   - id: openwiki-source-df762860acfcc6abf0ce804b
@@ -25,7 +32,10 @@ sources:
     resource: repo://libs/standard-tests/langchain_tests/conftest.py
   - id: openwiki-source-025cad4ae99967890152b7e0
     resource: repo://libs/standard-tests/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-06T08:17:28.425Z
 ---
 
 ## Overview
@@ -100,7 +110,8 @@ VCR configuration is set per-package in a `vcr_config` pytest fixture (e.g., `/l
 | `allow_playback_repeats` | `True` | Replay the same cassette response for duplicate requests |
 | `decode_compressed_response` | `True` | Decompress gzipped API responses before matching |
 | `cassette_library_dir` | `tests/cassettes` | Where cassettes are stored |
-| `path_transformer` | `VCR.ensure_suffix(".yaml.gz")` | Auto-append filename suffix to cassette name |
+| `path_transformer` | `VCR.ensure_suffix(".yaml")` | Auto-append filename suffix; partners override with `.yaml.gz` |
+| `serializer` | `CustomSerializer` | Uses YAML + gzip compression (registered per-package via `pytest_recording_configure`) |
 
 **Custom matchers** (e.g., OpenAI's `_json_body_matcher`) normalize JSON bodies to ignore key order and docstring formatting changes across Python versions.
 
@@ -139,7 +150,32 @@ Daily (1 PM UTC) and on-demand integration tests run against **live partner APIs
 - **Credentials**: GitHub organization secrets (scoped to "Scheduled testing" environment)
 - **Tracing**: Routes traces to LangSmith project with GitHub run metadata for debugging
 - **Concurrency**: Serialized per package to avoid racing credential usage
-- **Python versions**: 3.10, 3.14 (some packages require ≥3.11)
+- **Python versions**: 3.10, 3.14 (OpenAI and Perplexity packages require 3.11, 3.14)
+
+### Python Version Matrix: Special Handling for OpenAI and Perplexity
+
+The integration test matrix generation applies different Python version sets based on package type:
+
+- **Default packages** (Anthropic, Groq, Google, etc.): Python 3.10, 3.14
+- **OpenAI and Perplexity packages**: Python 3.11, 3.14 (due to SDK compatibility constraints)
+
+This distinction is implemented in the `compute-matrix` job's matrix generation logic:
+
+```bash
+# Default versions for most packages
+python_version='["3.10", "3.14"]'
+# Minimum 3.11 versions for packages with SDK constraints
+python_version_min_3_11='["3.11", "3.14"]'
+
+# Apply version set based on package directory
+matrix="$(jq -nc ... \
+  '{include: [$directories[] as $dir |
+    (if ($dir == "libs/partners/openai" or $dir == "libs/partners/perplexity")
+     then $integration_versions else $versions end)[] |
+    {"working-directory": $dir, "python-version": .}]}')"
+```
+
+This ensures OpenAI and Perplexity SDKs are tested only against Python versions they officially support, while other packages test a broader version range.
 
 ### Test Dependency Groups: `test_integration`
 
@@ -165,7 +201,7 @@ uv sync --group test --group test_integration
 
 This ensures integration tests have specialized dependencies without bloating unit test installations.
 
-### Credential Management: GitHub Secrets
+### Credential Management: GitHub Secrets and Environment Scoping
 
 Credentials are GitHub organization secrets, injected at runtime:
 
@@ -243,6 +279,66 @@ class TestOpenAIStandard(ChatModelUnitTests):
 
 The test framework automatically generates ~30 test methods covering invoke, stream, batch, async variants, tool calling, structured output, and edge cases.
 
+### Model Capability Matrices
+
+Partner test classes declare supported model features via properties. These form a **capability matrix** controlling which standard tests run and which xfail:
+
+```python
+class TestAnthropicStandard(ChatModelIntegrationTests):
+    @property
+    def chat_model_class(self) -> type[BaseChatModel]:
+        return ChatAnthropic
+
+    @property
+    def chat_model_params(self) -> dict:
+        return {"model": "claude-haiku-4-5-20251001"}
+
+    @property
+    def supports_image_inputs(self) -> bool:
+        return True
+
+    @property
+    def supports_image_urls(self) -> bool:
+        return True
+
+    @property
+    def supports_pdf_inputs(self) -> bool:
+        return True
+
+    @property
+    def supports_image_tool_message(self) -> bool:
+        return True
+
+    @property
+    def supports_pdf_tool_message(self) -> bool:
+        return True
+
+    @property
+    def supports_anthropic_inputs(self) -> bool:
+        return True
+
+    @property
+    def enable_vcr_tests(self) -> bool:
+        return True
+
+    @property
+    def supported_usage_metadata_details(self) -> dict[Literal["invoke", "stream"], list[str]]:
+        return {
+            "invoke": ["cache_read_input", "cache_creation_input"],
+            "stream": ["cache_read_input", "cache_creation_input"],
+        }
+```
+
+**Key capability flags:**
+- `supports_image_inputs`, `supports_image_urls` — Vision capability
+- `supports_pdf_inputs` — Document processing
+- `supports_image_tool_message` / `supports_pdf_tool_message` — Multi-modal tool results
+- `supports_structured_output` — Structured (JSON-schema) output
+- `chat_model_has_tool_calling` — Function/tool calling capability
+- `enable_vcr_tests` — Whether to record/replay cassettes
+- `supported_usage_metadata_details` — Cost tracking (input/output tokens, cache operations)
+- Provider-specific flags (e.g., `supports_anthropic_inputs` for Claude-specific features)
+
 ### Standard Test Override Rules
 
 Partners may **skip or xfail** tests with justification, but **cannot modify test logic**. The `test_no_overrides_DO_NOT_OVERRIDE` check enforces this:
@@ -267,6 +363,141 @@ If a test cannot pass, the partner must use `@pytest.mark.xfail(reason="...")` t
 | **Integration** | `tests/integration_tests/test_standard.py` | Full package | Yes (VCR) | Optional (cassettes work) | ~2-5s per test |
 
 Both inherit from the same standard test class hierarchy; integrations add API calls and assert realistic behavior.
+
+---
+
+## Test Markers for Selective Execution
+
+LangChain defines pytest markers to control when and how integration tests run:
+
+### Markers for Recording and Playback
+
+| Mark | Usage | Scope |
+|------|-------|-------|
+| `@pytest.mark.vcr` | Enables cassette recording/playback for this test | Test function |
+| `@pytest.mark.default_cassette("file.yaml.gz")` | Override cassette name (for parameterized tests with multiple cassettes) | Test function |
+
+### Markers for Environment and Scheduling
+
+| Mark | Usage | Scope |
+|------|-------|-------|
+| `@pytest.mark.scheduled` | Runs only in daily scheduled tests (e.g., `integration_tests.yml`); skipped in PR checks | Test function |
+| `@pytest.mark.requires("package")` | Skip test if optional dependency not installed | Test function |
+
+### Markers for Reliability and Debugging
+
+| Mark | Usage | Scope |
+|------|-------|-------|
+| `@pytest.mark.retry(count=3, delay=1)` | Retry test up to 3 times with 1-second delay on failure; catches transient network/rate-limit errors | Test function |
+| `@pytest.mark.compile` | Placeholder test that compiles code without running it (validates syntax without API calls) | Test function |
+| `@pytest.mark.xfail(reason="...")` | Expected failure with required justification; enforced by conformance check | Test function |
+| `@pytest.mark.parametrize(...)` | Run test with multiple inputs; combine with `pytest.param(..., marks=[...])` for per-case xfail | Test function |
+| `@pytest.mark.benchmark` | Performance test using pytest-benchmark plugin | Test function |
+
+**Example: Parameterized test with per-case xfail:**
+```python
+@pytest.mark.parametrize(
+    "schema_type",
+    [
+        "pydantic",
+        pytest.param("typeddict", marks=[pytest.mark.xfail(reason="TypedDict not supported on this version")]),
+        "json_schema",
+    ]
+)
+def test_structured_output(self, schema_type):
+    # test logic
+```
+
+---
+
+## Provider-Specific Test Patterns
+
+### OpenAI
+
+OpenAI's conftest applies specialized VCR matching to handle cross-Python compatibility:
+
+```python
+def _json_body_matcher(r1, r2):
+    """Match JSON bodies, normalizing tool descriptions for Python version differences.
+    
+    Python 3.13+ runs inspect.cleandoc on docstrings at compile time, but
+    cassettes recorded on earlier versions preserve raw indentation. Normalize
+    so cassettes recorded on any Python version match requests from any other.
+    """
+    # Strip leading whitespace from tool descriptions to normalize across versions
+    j1 = _normalize_tool_descriptions(json.loads(r1.body))
+    j2 = _normalize_tool_descriptions(json.loads(r2.body))
+    assert j1 == j2
+```
+
+**VCR configuration specializations:**
+- Match on `json_body` instead of raw `body` to ignore JSON key order
+- Drop `uri` from matching to handle routing changes
+- Register custom JSON matcher and custom serializer (yaml.gz format)
+- Redact OAuth tokens, JWTs, all headers, and request URIs
+
+### Anthropic
+
+Anthropic's conftest redacts headers and URIs to maintain cassette host-agnostic behavior (direct API vs. LangSmith gateway):
+
+```python
+config["match_on"] = [m for m in config.get("match_on", []) if m != "uri"]
+config["ignore_hosts"] = [..., "api.smith.langchain.com"]
+```
+
+**Specializations:**
+- Remove `uri` from request matching so cassettes replay through either direct API or gateway
+- Register custom serializer (yaml.gz format) for consistency
+- Redact all request/response headers
+
+### Multi-Model Testing
+
+Packages with multiple model variants (e.g., OpenAI's GPT-4, GPT-3.5, etc.) often:
+
+1. Use `@pytest.mark.default_cassette()` to share cassettes across similar models
+2. Use `@pytest.mark.parametrize()` to test multiple models with one test
+3. Declare parameterized `chat_model_params` in standard test classes
+
+---
+
+## Error Condition Testing
+
+### Transient Failures and Rate Limits
+
+Integration tests may encounter transient network errors or API rate limits. Use `@pytest.mark.retry()` to auto-retry:
+
+```python
+@pytest.mark.retry(count=3, delay=1)
+@pytest.mark.vcr
+def test_streaming_long_context(self):
+    # Retries up to 3 times on failure; useful for flaky live API tests
+    pass
+```
+
+**When to use retries:**
+- Rate limit errors (HTTP 429)
+- Temporary connection issues (socket timeouts)
+- Service unavailability (HTTP 503)
+
+### API Changes and Deprecations
+
+When a provider's API changes:
+
+1. **Cassette stale**: Delete cassette and re-record with new API behavior
+2. **Test expectations change**: Update test assertions to match new API contract
+3. **Feature removed**: Mark test `@pytest.mark.xfail(reason="Feature deprecated in API v2.0")`
+
+### Authentication Failures
+
+Tests fail if:
+- API key is invalid or expired
+- Credential scopes insufficient (e.g., missing permissions)
+- Account quotas exceeded
+
+**Debug flow:**
+1. Check LangSmith traces (linked in Actions output) to see exact API request/response
+2. Verify credentials in GitHub Secrets are up-to-date
+3. Contact provider if account issues are suspected
 
 ---
 
@@ -456,14 +687,50 @@ The `_test_vcr.yml` reusable workflow runs in PR CI (called from `check_diffs.ym
 | `libs/partners/<name>/tests/conftest.py:vcr_config()` | Package-specific overrides (extra headers, serializer, matchers) |
 | `libs/partners/<name>/tests/integration_tests/conftest.py` | Test-level fixtures (auth bypasses, env cleanup) |
 
-### Pytest Marks for Integration Tests
+### Standard Test Properties and Capabilities
 
-| Mark | Usage | Scope |
-|------|-------|-------|
-| `@pytest.mark.vcr` | Enables cassette recording/playback for this test | Test function |
-| `@pytest.mark.scheduled` | Runs only in daily scheduled tests, skip in check_diffs.yml | Test function |
-| `@pytest.mark.flaky(retries=3, delay=1)` | Retry on transient failures (network, rate limits) | Test function |
-| `@pytest.mark.default_cassette("file.yaml.gz")` | Override cassette name (for parameterized tests) | Test function |
+When implementing partner standard tests, declare capabilities via properties:
+
+```python
+class TestPartnerStandard(ChatModelIntegrationTests):
+    # Basic properties
+    @property
+    def chat_model_class(self) -> type[BaseChatModel]: ...
+    
+    @property
+    def chat_model_params(self) -> dict: ...
+    
+    # Vision and document capabilities
+    @property
+    def supports_image_inputs(self) -> bool: ...
+    
+    @property
+    def supports_image_urls(self) -> bool: ...
+    
+    @property
+    def supports_pdf_inputs(self) -> bool: ...
+    
+    @property
+    def supports_image_tool_message(self) -> bool: ...
+    
+    @property
+    def supports_pdf_tool_message(self) -> bool: ...
+    
+    # Structured output and tool calling
+    @property
+    def chat_model_has_tool_calling(self) -> bool: ...
+    
+    @property
+    def chat_model_has_structured_output(self) -> bool: ...
+    
+    # Testing configuration
+    @property
+    def enable_vcr_tests(self) -> bool: ...
+    
+    # Usage tracking (cost/token counters)
+    @property
+    def supported_usage_metadata_details(self) -> dict[str, list[str]]: ...
+```
 
 ---
 
@@ -471,3 +738,4 @@ The `_test_vcr.yml` reusable workflow runs in PR CI (called from `check_diffs.ym
 
 - **CI Workflows**: `/openwiki/operations/ci-workflows.md` — Details on `check_diffs.yml`, `integration_tests.yml`, change detection
 - **Dev Commands**: `/openwiki/operations/dev-commands.md` — Local `make` targets (`make test_vcr`, `make integration_tests`)
+- **Unit Tests**: `/openwiki/testing/unit-tests.md` — Isolated component testing with fixtures and markers

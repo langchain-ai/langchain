@@ -100,6 +100,9 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
             string and the criterion for selecting it.
         instructions: Additional instructions TypeSafe should follow when selecting a
             route.
+        classifier: Optional `TypeSafeClassifier` used for routing, for example one
+            configured with a custom `base_url`, `client`, or `async_client`. If
+            omitted, a default `TypeSafeClassifier` is created.
 
     Raises:
         pydantic.ValidationError: If no model choices are provided.
@@ -138,6 +141,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         *,
         choices: Mapping[str, ModelChoice],
         instructions: _QuestionContent,
+        classifier: TypeSafeClassifier | None = None,
     ) -> None:
         """Initialize the model router."""
         self.config = _ModelRouterConfig.model_validate(
@@ -149,7 +153,7 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
             else choice.model
             for route, choice in self.config.choices.items()
         }
-        self.classifier = TypeSafeClassifier()
+        self.classifier = classifier if classifier is not None else TypeSafeClassifier()
 
     @staticmethod
     def _latest_human_message(state: _ModelRouterState) -> HumanMessage:

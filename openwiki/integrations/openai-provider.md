@@ -1,17 +1,17 @@
 ---
 type: "Reference"
-title: "OpenAI Provider Implementation"
-description: "Reference implementation of the partner pattern using OpenAI. Covers ChatModel implementation, message conversion, tool calling, structured output, vision support, and streaming."
-tags: ["chat-model", "openai", "tool-calling", "structured-output", "vision", "streaming", "partner-pattern"]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
+title: "OpenAI Provider: ChatOpenAI Implementation"
+description: "Deep dive into the ChatOpenAI implementation: API client setup, message translation, tool handling, structured output, streaming, and Azure support."
+tags: ["chat-model", "openai", "tool-calling", "structured-output", "vision", "streaming", "partner-pattern", "azure"]
 sources:
   - id: openwiki-source-738512768ef81ae009b097ac
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
   - id: openwiki-source-b65307f1d05bd74532af2eee
     resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-06T08:17:28.425Z
 ---
 
 # OpenAI Provider Implementation
@@ -30,6 +30,40 @@ The chat model hierarchy is:
 - `BaseChatOpenAI`: Abstract base supporting both Chat Completions and Responses APIs
 - `ChatOpenAI`: Concrete subclass routing between APIs based on model and parameters
 - `AzureChatOpenAI`: Azure-specific variant with authentication and deployment handling
+
+## Azure OpenAI Support
+
+`AzureChatOpenAI` extends `BaseChatOpenAI` with Azure-specific authentication and deployment handling:
+
+```python
+from langchain_openai import AzureChatOpenAI
+
+model = AzureChatOpenAI(
+    azure_deployment="your-deployment",  # Required: Azure deployment name
+    api_version="2024-05-01-preview",    # Azure API version
+    temperature=0,
+    max_tokens=None,
+    timeout=None,
+    max_retries=2,
+    # model="gpt-4",  # Underlying model name (for tracing/tokens)
+    # model_version="0125",  # Model version
+)
+
+response = model.invoke([
+    ("system", "Translate to French"),
+    ("human", "Hello world")
+])
+```
+
+**Azure-specific configuration:**
+- **`azure_deployment`** (required): Name of the Azure OpenAI deployment.
+- **`api_version`**: Azure REST API version (distinct from model version); defaults to `AZURE_OPENAI_API_VERSION`.
+- **`azure_endpoint`**: Azure endpoint URL; defaults to `AZURE_OPENAI_ENDPOINT` env var.
+- **`api_key`**: Azure API key; defaults to `AZURE_OPENAI_API_KEY` env var.
+- **Authentication**: Supports API key, AD token provider, or workload identity (via `azure-identity` module).
+- **Response metadata**: Includes Azure content filter results (hate, self-harm, sexual, violence) in `response_metadata`.
+
+All other parameters (`temperature`, `max_tokens`, `tool_choice`, `streaming`, etc.) inherit from `BaseChatOpenAI` and work identically.
 
 ## Chat Model Inheritance and Required Methods
 
@@ -521,7 +555,7 @@ The `with_structured_output()` method returns a wrapped model that parses respon
 def with_structured_output(
     self,
     schema: dict | type | None = None,
-    method: Literal["function_calling", "json_mode", "json_schema"] = "json_schema",
+    method: Literal["function_calling", "json_mode", "json_schema"] = "function_calling",
     include_raw: bool = False,
     strict: bool | None = None,
     tools: list | None = None,
@@ -531,9 +565,9 @@ def with_structured_output(
 
 ### Method Comparison
 
-**1. JSON Schema (Default, Recommended)**
+**1. Function Calling (Default)**
 
-Uses OpenAI's Structured Output API for guaranteed schema conformance:
+Uses tool-calling API; schema is treated as a function to "call":
 
 ```python
 from pydantic import BaseModel, Field
@@ -545,7 +579,26 @@ class Joke(BaseModel):
     rating: int = Field(ge=1, le=10, description="Rating 1-10")
 
 model = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
-structured_model = model.with_structured_output(Joke, method="json_schema")
+structured_model = model.with_structured_output(Joke)
+
+joke = structured_model.invoke("Tell me a joke about cats")
+```
+
+**Characteristics:**
+- Works with older models (GPT-3.5+).
+- Less strict; schema is guidance, not a guarantee.
+- Uses `bind_tools()` internally, then parses the tool call.
+- Supports Pydantic V1 and V2.
+
+**2. JSON Schema (Recommended for Structured Output)**
+
+Uses OpenAI's Structured Output API for guaranteed schema conformance:
+
+```python
+structured_model = model.with_structured_output(
+    Joke,
+    method="json_schema"
+)
 
 joke = structured_model.invoke("Tell me a joke about cats")
 print(joke.setup)  # Returns Pydantic instance
@@ -558,28 +611,9 @@ print(joke.setup)  # Returns Pydantic instance
 - Can include `strict=True` for additional validation.
 - Supports `tools` parameter to allow tool invocation alongside structured output.
 
-**2. Function Calling**
-
-Uses tool-calling API; schema is treated as a function to "call":
-
-```python
-structured_model = model.with_structured_output(
-    Joke,
-    method="function_calling"
-)
-
-joke = structured_model.invoke("Tell me a joke")
-```
-
-**Characteristics:**
-- Works with older models (GPT-3.5+).
-- Less strict; schema is guidance, not a guarantee.
-- Uses `bind_tools()` internally, then parses the tool call.
-- Supports Pydantic V1 and V2.
-
 **3. JSON Mode**
 
-Tells the model to output valid JSON:
+Tells the model to output valid JSON without schema validation:
 
 ```python
 structured_model = model.with_structured_output(

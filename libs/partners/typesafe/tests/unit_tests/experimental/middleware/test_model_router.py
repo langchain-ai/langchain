@@ -87,6 +87,27 @@ def test_middleware_constructs_classifier_from_routing_configuration() -> None:
     assert set(middleware.config.choices) == {"fast", "powerful"}
 
 
+def test_supplied_classifier_is_used() -> None:
+    """Use a caller-supplied classifier instead of constructing a default one."""
+    classifier = MagicMock(spec=TypeSafeClassifier)
+    with patch(
+        "langchain_typesafe.experimental.middleware.model_router.TypeSafeClassifier",
+    ) as classifier_class:
+        middleware = ModelRouterMiddleware(
+            choices={
+                "fast": ModelChoice(
+                    model=GenericFakeChatModel(messages=iter([])),
+                    criteria="Simple tasks.",
+                ),
+            },
+            instructions="Choose a model.",
+            classifier=classifier,
+        )
+
+    classifier_class.assert_not_called()
+    assert middleware.classifier is classifier
+
+
 @pytest.mark.parametrize("asynchronous", [False, True])
 @pytest.mark.asyncio
 async def test_agent_routes_using_latest_human_message(*, asynchronous: bool) -> None:

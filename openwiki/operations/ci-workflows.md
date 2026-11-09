@@ -1,11 +1,11 @@
 ---
-type: "Reference"
-title: "Ci workflows"
-openwiki_generated: true
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-25T08:23:03.589Z
+type: "Operations Reference"
+title: "CI/CD Operations and Release Management"
+description: "Operational runbook for CI/CD workflows, troubleshooting, and release procedures."
+tags: [ci, cd, release, automation, github-actions, pypi]
 sources:
+  - id: openwiki-source-6445599f26c9a35886c1c46e
+    resource: repo://.github/PULL_REQUEST_TEMPLATE.md
   - id: openwiki-source-34e57b5a3a0c875639ab72a7
     resource: repo://.github/scripts/check_diff.py
   - id: openwiki-source-c92cc62695c6def991956428
@@ -18,7 +18,12 @@ sources:
     resource: repo://.github/workflows/openwiki-update.yml
   - id: openwiki-source-f8781d847f6481a966a44a68
     resource: repo://.github/workflows/pr_labeler.yml
-generated: { by: "openwiki/0.5.0", at: "2026-10-25T08:23:03.589Z" }
+  - id: openwiki-source-12805fbf767dc2a3e238645e
+    resource: repo://.github/workflows/pr_lint.yml
+generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-06T08:17:28.425Z
 ---
 
 
@@ -89,6 +94,7 @@ Each configuration includes `working-directory` and `python-version` (or `pydant
 The script generates different Python version matrices per package type:
 
 - **libs/core**: Tests on Python 3.10, 3.11, 3.12, 3.13, 3.14
+- **openai and perplexity packages**: Tests on Python 3.11, 3.14 for lint and compile-integration-tests jobs (special SDK compatibility handling)
 - **Other packages**: Tests on Python 3.10, 3.14 (reduced to save CI time)
 
 ### Pydantic Compatibility Testing
@@ -137,6 +143,7 @@ Once the `build` job outputs the matrices, seven jobs run in parallel (if not em
 - Only for packages with VCR cassettes: `libs/partners/openai`
 - Runs integration tests in playback-only mode (uses cached HTTP responses, no API keys)
 - Detects stale cassettes that don't match actual API responses
+- Note: While only openai has VCR cassettes, perplexity still receives special Python version handling (3.11, 3.14) in integration test jobs due to SDK compatibility requirements
 
 #### 7. Release Option Validation
 - `check-release-options` job validates that `_release.yml` dropdown options match actual package directories
@@ -195,6 +202,67 @@ Uses concurrency group per PR number with separate handling:
 
 ---
 
+## PR Requirements & Conventional Commits
+
+### PR Title Format (Conventional Commits 1.0.0)
+
+All PRs must use the format: `<type>[optional scope]: <description>`
+
+**Allowed Types:**
+- `feat` — new feature (MINOR bump)
+- `fix` — bug fix (PATCH bump)
+- `docs` — documentation only
+- `style` — formatting/linting (no code change)
+- `refactor` — code change (no feature/fix)
+- `perf` — performance improvement
+- `test` — add/fix tests
+- `build` — build system changes
+- `ci` — CI/CD configuration changes
+- `chore` — other changes
+- `revert` — revert previous commit
+- `release` — version release
+- `hotfix` — urgent fix
+
+**Allowed Scopes (optional but recommended):**
+Core packages: `core`, `langchain`, `langchain-classic`, `model-profiles`, `standard-tests`, `text-splitters`
+Partner packages: `anthropic`, `chroma`, `deepseek`, `exa`, `fireworks`, `groq`, `huggingface`, `mistralai`, `nomic`, `ollama`, `openai`, `openrouter`, `perplexity`, `qdrant`, `typesafe`, `xai`
+Infrastructure: `infra`, `deps`, `partners`, `docs`
+
+**Breaking Changes:**
+- Append `!` after type/scope: `feat(core)!: remove deprecated API`
+- Requires major version bump (MAJOR)
+
+### PR Description Requirements
+
+1. **Issue linking** (required for external contributors)
+   - Start with `Fixes #<issue-number>` — auto-closes issue on merge
+   - Link to approved solution before working
+
+2. **Concise description**
+   - 1-2 sentences explaining who benefits, what problem it solves
+   - Prefer user story over lengthy summary
+   - Note any breaking changes clearly
+   - Document dependencies on other PRs
+
+3. **Release notes** (required for features/breaking bugfixes)
+   - Provide user-visible change in release-note-ready language
+   - Omit for chores, refactors, test-only changes
+
+### PR Validation Checklist
+
+1. **Local testing required**
+   - Run `make format`, `make lint`, `make test` before pushing
+   - PR fails CI review unless these three pass in CI
+
+2. **Scope limits**
+   - Avoid touching multiple packages unless necessary
+   - Keep PRs focused for faster review and clearer CI output
+
+3. **No dependency changes without approval**
+   - Don't update `uv.lock` files or `pyproject.toml` dependencies without explicit maintainer permission
+
+---
+
 ## Scheduled Integration Tests
 
 ### Workflow: `integration_tests.yml`
@@ -225,6 +293,10 @@ Default libraries tested daily:
 - `libs/partners/aws`
 
 **Python versions (default):** 3.10, 3.14
+
+**Special Python version handling:**
+- **openai and perplexity packages**: Use Python 3.11 and 3.14 instead of 3.10 and 3.14 due to SDK compatibility requirements
+- Other packages: Use default 3.10 and 3.14
 
 **Manual run options:**
 - Run all libraries or select one
@@ -262,21 +334,28 @@ Manually triggered workflow that builds, tests, and publishes LangChain packages
 
 **Role:** Construct distribution package and validate version
 
-**Security:** Runs in isolated environment with read-only permissions; release job has separate permissions to prevent credential sharing
+**Security:** Runs in isolated Release environment with read-only permissions; release job has separate permissions to prevent credential sharing
 
 **Steps:**
-1. Check Python: must be master branch (or `dangerous-nonmaster-release` bypassed)
+1. Check branch: must be `master` (or `dangerous-nonmaster-release` bypassed)
 2. Validate version against `pyproject.toml`
-3. Check PyPI: version must not already exist (fails if duplicate)
+3. Check PyPI: version must not already exist (fails if duplicate or unreachable)
 4. Build distribution with `uv build` (creates `.whl` and `.tar.gz`)
-5. Upload artifact for downstream jobs
+5. Compute SHA256 checksums for artifact verification
+6. Upload artifact for downstream jobs
 
-**Outputs:** `pkg-name` (e.g., `langchain-openai`), `version` (e.g., `0.1.5`)
+**Outputs:** `pkg-name` (e.g., `langchain-openai`), `version` (e.g., `0.1.5`), `dist-sha256sums`
 
 **Safety Gates:**
-- Fails if requested release version doesn't match pyproject.toml
+- Fails if requested release version doesn't match `pyproject.toml`
 - Fails if version already published on PyPI (prevents re-publishing)
-- Fails if PyPI is unreachable (fail-closed: assumes version might exist)
+- **Fails closed** if PyPI is unreachable: aborts rather than assuming version is free
+
+**Version Format (PEP 440):**
+- Standard releases: `1.0.0`, `2.1.3`
+- Pre-releases: `1.0.0a1`, `1.0.0b2`, `1.0.0rc1`
+- Post-releases: `1.0.0.post1`
+- Dev releases: `1.0.0.dev0`
 
 #### 2. Release Notes Job (`release-notes`)
 
@@ -302,84 +381,99 @@ Manually triggered workflow that builds, tests, and publishes LangChain packages
 
 **Timeout:** 20 minutes
 
-**No Caching:** Intentionally disables dependency cache to catch missing dependencies
+**No Caching:** Intentionally disables dependency cache to catch missing dependencies that would silently pass with cache
 
 **Steps:**
 
-1. **Install package from wheel**
+1. **Install and import package from wheel**
    - Download built wheel from artifact
-   - Install with optional `--prerelease=allow` flag (for alpha releases with prerelease deps)
-   - Import package: `import <package>` and verify exports
+   - Create venv and install wheel with optional `--prerelease=allow` flag (for alpha releases with prerelease deps)
+   - Import package to verify it loads: `import <package>` and list exports
 
-2. **Run unit tests against installed package**
-   - `make tests`
+2. **Sync test dependencies**
+   - Install unit test dependencies: `uv sync --group test`
 
-3. **Check prerelease dependencies**
-   - Runs script `check_prerelease_dependencies.py`
-   - Blocks release if any dependencies allow prerelease versions (unless this release is also a prerelease)
+3. **Re-install package to ensure built wheel is used**
+   - Re-install the built wheel to overwrite any local development version
 
-4. **Test minimum dependency versions**
-   - Extracts minimum versions from `pyproject.toml`
-   - Uses script `get_min_versions.py`
-   - Installs minimum versions: `pip install --force-reinstall <min-versions>`
-   - Runs `make tests` with `--prerelease=allow` if enabled
-   - Excludes `test_serdes` tests (serialization tests may differ across versions)
+4. **Check for prerelease dependency versions**
+   - Runs `check_prerelease_dependencies.py` script
+   - Blocks stable releases if any dependencies allow prerelease versions
+   - Allows prerelease dependencies only for prerelease versions of the package itself
 
-5. **Run integration tests** (partner packages only)
-   - Only if `EFFECTIVE_WORKING_DIR` starts with `libs/partners/`
-   - Installs integration test dependencies: `uv sync --group test --group test_integration`
-   - Injects all partner API secrets
+5. **Run unit tests**
+   - Execute `make tests` against the installed package
+
+6. **Test against minimum supported dependency versions**
+   - Extracts minimum versions from `pyproject.toml` using `get_min_versions.py`
+   - Force-reinstalls dependencies at minimum supported versions
+   - Runs tests again: `make tests PYTEST_EXTRA="-q -k 'not test_serdes'"`
+   - Skips `test_serdes` (serialization behavior may differ across versions)
+
+7. **Run integration tests** (partner packages only)
+   - Only runs if `EFFECTIVE_WORKING_DIR` starts with `libs/partners/`
+   - Syncs integration test dependencies: `uv sync --group test --group test_integration`
+   - Injects live API credentials from repository secrets
    - Executes `make integration_tests`
 
-**API Keys Injected (for partner integration tests):**
-- LangSmith credentials
-- OpenAI, Azure OpenAI (multiple deployments)
-- Anthropic
-- Google Cloud (Vertex AI, Search)
-- Mistral, Groq, Huggingface, EXA, Nomic, WatsonX, Astra DB, Elasticsearch, MongoDB Atlas, Upstage, Fireworks, XAI, DeepSeek, Ollama, OpenRouter
+**API Credentials Injected (for partner packages):**
+LangSmith, OpenAI (with Azure deployments), Anthropic, Google Cloud (Vertex AI, Search), Mistral, Groq, Huggingface, EXA, Nomic, WatsonX, Astra DB, Elasticsearch, MongoDB Atlas, Upstage, Fireworks, XAI, DeepSeek, Ollama, OpenRouter
 
 #### 4. TestPyPI Publish Job (`test-pypi-publish`)
 
-**Role:** Publish to staging PyPI for final validation before real release
+**Role:** Publish to staging PyPI (`test.pypi.org`) for final validation before production release
 
 **Dependency:** Requires build, release-notes, pre-release-checks
 
-**Security:** Uses trusted publishing (OIDC token, no API keys)
+**Security:** Uses trusted publishing via OIDC token (no hardcoded API keys)
 
 **Steps:**
-1. Download built wheel from artifact
-2. Publish to `test.pypi.org` with `--skip-existing` (allows re-runs without failure)
-3. Prints hash and verbose output for audit trail
-4. Disables attestations (workaround for gh-action-pypi-publish v1.11.0+)
+1. Download wheel artifact
+2. Verify artifact checksums match build job output
+3. Publish to `test.pypi.org/legacy/` with:
+   - `--skip-existing`: allows re-runs without failure (idempotent)
+   - `--verbose` and `--print-hash`: audit trail
+   - `attestations: false`: workaround for gh-action-pypi-publish v1.11.0+ default enablement
 
 #### 5. Test Prior Published Packages Against New Core
 
-**Role:** Validates new core doesn't break existing partner packages
+**Role:** Validates new core release maintains backward compatibility with published partners
 
 **Trigger:** Only runs for `libs/core` releases
 
 **Dependency:** Requires build, release-notes, test-pypi-publish, pre-release-checks
 
-**Matrix:** Tests `anthropic` and `openai` partners (partners with most integration surface)
+**Matrix:** Tests `anthropic` and `openai` partners (highest integration surface with core)
 
 **Process per partner:**
-1. Fetch latest non-yanked published version from PyPI (e.g., `langchain-openai==0.1.4`)
-2. Verify source tag exists in git: `git ls-remote --exit-code --tags origin <TAG>`
-3. Fetch that tag with shallow clone
-4. Check out published partner package at that tag
-5. Install new unreleased core wheel: `pip install ../../core/dist/*.whl`
-6. Run unit tests against old partner code + new core
-7. Run integration tests (with live API keys)
+
+1. **Identify latest published partner version**
+   - Query PyPI JSON API for non-yanked final releases (PEP 440 normalized)
+   - Fail closed if PyPI unreachable
+
+2. **Verify git tag exists**
+   - Ensures PyPI release has a corresponding git tag: `git ls-remote --exit-code --tags origin <TAG>`
+
+3. **Fetch and check out published partner code**
+   - Shallow-fetch just that tag
+   - Remove current partner code and `standard-tests/`
+   - Check out partner at published tag
+
+4. **Install and test against new core**
+   - Sync partner's test dependencies: `uv sync --group test --group test_integration`
+   - Install newly-built core wheel: `uv pip install ../../core/dist/*.whl`
+   - Run partner unit tests: `make test`
+   - Run partner integration tests: `make integration_tests` (with live API keys)
 
 **Skip options:**
-- `skip-prior-published-package-checks` input allows skipping specific partners:
-  - `none` (default) — run all checks
-  - `anthropic` or `openai` — skip that partner
-  - `all` — skip all checks
+- `skip-prior-published-package-checks` input allows skipping checks:
+  - `none` (default) — run all partner checks
+  - `anthropic` or `openai` — skip that partner check
+  - `all` — skip all backward-compatibility checks
 
 #### 6. Test Dependents Job (`test-dependents`)
 
-**Role:** Validates new core/langchain_v1 doesn't break external projects
+**Role:** Validates new core/langchain_v1 release doesn't break external projects that depend on them
 
 **Trigger:** Only runs for `libs/core` and `libs/langchain_v1` releases
 
@@ -390,43 +484,100 @@ Manually triggered workflow that builds, tests, and publishes LangChain packages
 
 **Matrix:** Python 3.11, 3.13
 
-**Process:**
-1. Check out both LangChain repo and external project repo
-2. Install new unreleased core/langchain_v1 wheel
-3. Run tests in external project: `make test`
+**Process per external project:**
+1. Check out LangChain repository
+2. Check out external project repository in parallel
+3. Set up Python and uv in LangChain context
+4. Download built core/langchain_v1 wheel
+5. Navigate to external project's working directory
+6. Sync its test dependencies: `uv sync --group test`
+7. Override with newly-built wheel: `uv pip install $GITHUB_WORKSPACE/dist/*.whl`
+8. Run tests: `make test`
 
-**Extensible:** Add more external projects to matrix when dependencies are identified
+**Extensible:** Add more external projects to the matrix when new dependencies are identified
 
 #### 7. Publish to PyPI Job (`publish`)
 
-**Role:** Final publication to production PyPI
+**Role:** Final production publication to `pypi.org`
 
-**Dependency:** Requires all prior jobs (build, release-notes, test-pypi-publish, pre-release-checks, and others)
+**Dependency:** Requires all upstream jobs to pass or skip (build, release-notes, test-pypi-publish, pre-release-checks, test-dependents, test-prior-published-packages-against-new-core)
 
 **Security:** 
-- Uses trusted publishing (OIDC token, no API keys in workflow)
+- Uses trusted publishing via OIDC token (no hardcoded API keys)
 - PyPI trusts GitHub OIDC identity to verify package ownership
-- No credentials stored or transmitted
+- No credentials stored or transmitted in workflow
 
 **Steps:**
-1. Download wheel artifact
+1. Download and verify wheel artifact checksums
 2. Publish to `pypi.org` using `pypa/gh-action-pypi-publish` action
-3. Prints hash and verbose output
+3. Logs verbose output and file hashes for audit trail
 
 #### 8. Mark Release Job (`mark-release`)
 
-**Role:** Create git tag and GitHub release
+**Role:** Create git tag and GitHub release after successful production publish
 
 **Dependency:** Requires publish job completion
 
-**Git Operations:**
-1. Create annotated git tag: `<package-name>==<version>`
-2. Push tag to repository
+**Steps:**
 
-**GitHub Release:**
-1. Create GitHub release from tag
-2. Include changelog body from release-notes job
-3. Attach distribution files (wheel, source tarball)
+1. **Create git tag and push**
+   - Tag format: `<package-name>==<version>` (e.g., `langchain-core==0.1.5`)
+   - Used by release notes job to compute changelogs
+
+2. **Create GitHub release**
+   - Uses git tag as release ID
+   - Includes changelog body (computed by release-notes job from `git log`)
+   - Attaches distribution files: `.whl` and `.tar.gz` from artifact
+   - Sets `makeLatest: true` only for `langchain-core` releases (primary package)
+
+---
+
+## Hotfixes: Emergency Release Process
+
+### When to Use Hotfixes
+
+Hotfixes are **critical patches** that must be released immediately to production to fix:
+- Security vulnerabilities
+- Breaking bugs affecting production usage
+- Data corruption issues
+- High-impact API problems
+
+Do **not** use hotfixes for:
+- Normal feature development
+- Non-critical bug fixes
+- Dependency updates
+- Performance improvements
+
+### Hotfix Release Process
+
+1. **Create hotfix branch from master**
+   ```bash
+   git checkout -b hotfix/issue-description
+   ```
+
+2. **Implement fix** with appropriate test coverage
+   - Keep changes minimal and focused
+   - Run `make format`, `make lint`, `make test` locally
+   - Create PR with `hotfix(scope): description` title
+
+3. **Bump patch version** in `pyproject.toml`
+   - Change `version = "1.2.3"` to `version = "1.2.4"`
+   - Use only PATCH bumps for hotfixes (never MINOR/MAJOR)
+
+4. **Merge to master** after PR approval
+
+5. **Trigger release workflow** with `dangerous-nonmaster-release=false`
+   - Use standard release flow if merging to master first
+   - If releasing from hotfix branch: set `dangerous-nonmaster-release=true` and **create follow-up PR to master** to merge hotfix back
+
+6. **Document reason** in release notes
+   - Add context about urgency and impact
+   - Include security advisory if applicable
+
+### Hotfix Naming Convention
+
+PR titles should use: `hotfix(scope): brief description`
+- Examples: `hotfix(openai): fix token counting`, `hotfix(core): prevent memory leak`
 
 ---
 
@@ -448,6 +599,7 @@ The release workflow uses **layered safety gates**:
 1. **Version verification** (build job)
    - Validates version matches pyproject.toml
    - Prevents duplicate publishes
+   - Fails closed if PyPI is unreachable
 
 2. **Pre-release checks** (pre-release-checks job)
    - Runs unit tests, integration tests
@@ -472,6 +624,47 @@ The release workflow uses **layered safety gates**:
 
 ---
 
+## Versioning Policy
+
+### Version Scheme
+
+LangChain uses **Semantic Versioning** with **PEP 440** normalization:
+
+- **MAJOR.MINOR.PATCH** — `1.5.3`
+- **Pre-release** — `1.5.0a1` (alpha), `1.5.0b2` (beta), `1.5.0rc3` (release candidate)
+- **Post-release** — `1.5.0.post1` (hotfix for already-released version)
+
+### Independent Versioning
+
+**Core packages are independently versioned:**
+- `langchain-core` — Core abstractions and interfaces
+- `langchain` — Main orchestration package
+- `langchain-text-splitters` — Text splitting utilities
+- `langchain_v1` — Legacy LangChain v0.x compatibility
+- `langchain-model-profiles` — Model configuration profiles
+- Partner packages — Each partner (openai, anthropic, etc.) versions independently
+
+**Version bumping rules:**
+- `feat:` → MINOR bump (new feature, backward-compatible)
+- `fix:` → PATCH bump (bug fix, backward-compatible)
+- `feat!:` or `fix!:` → MAJOR bump (breaking change)
+- `hotfix` → PATCH bump (emergency fix)
+
+### Breaking Changes
+
+**Breaking changes require MAJOR bump:**
+- API removals or renames
+- Behavior changes in existing APIs
+- Dependency version changes that affect end users
+- Signature changes in public functions
+
+**Document breaking changes:**
+- Note in PR description: "Breaking change: ..."
+- Include migration path for users
+- Add to release notes explicitly
+
+---
+
 ## Matrix Testing & Performance Benchmarks
 
 ### CodSpeed Benchmarks
@@ -484,6 +677,59 @@ For performance-critical packages, the `build` job includes CodSpeed benchmark c
 - Other packages: CPU simulation mode
 
 Each package runs benchmarks on Python 3.13 with `uv run pytest --benchmark-compare ...`.
+
+---
+
+## Documentation Automation: OpenWiki Update Workflow
+
+### Workflow: `openwiki-update.yml`
+
+Automatically updates repository documentation from source code using OpenWiki agent.
+
+**Trigger:**
+- Daily at 8:00 AM UTC via cron schedule
+- Manual trigger via `workflow_dispatch`
+
+**Permissions:** `contents: write`, `pull-requests: write`
+
+**Process:**
+
+1. **Check out full repository history**
+   - Fetches full git history (`fetch-depth: 0`)
+   - Persists credentials: false for security
+   - Required for OpenWiki to diff HEAD against last documented commit
+
+2. **Install dependencies**
+   - Set up Node.js 22
+   - Install OpenWiki 0.5.0 globally
+   - Installs optional Mermaid 11.16.0 and jsdom 29.1.1 for diagram validation
+
+3. **Run OpenWiki update**
+   - Executes `openwiki code --update --print`
+   - Uses Anthropic Claude Haiku 4.5 via `ANTHROPIC_API_KEY`
+   - Authenticates to LangSmith for connector pulls via `OPENWIKI_LANGSMITH_API_KEY`
+   - Optionally traces workflow run to LangSmith (for debugging)
+   - Continues even on error (`continue-on-error: true`)
+
+4. **Clean transient state**
+   - Removes `openwiki/.run.json` (temporary runtime state)
+   - Runs regardless of workflow outcome
+
+5. **Create pull request**
+   - Uses `peter-evans/create-pull-request` action
+   - Branch: `openwiki/update`
+   - Includes: `openwiki/`, `AGENTS.md`, `.github/workflows/openwiki-update.yml`
+   - Title/message: "docs: update OpenWiki"
+   - PR body includes OpenWiki outcome for visibility
+
+6. **Propagate failures**
+   - If OpenWiki fails, exits with code 1
+   - Preserves any partial progress from completed pages in the PR
+
+**Key Design:**
+- Preserves documentation from before failure (partial progress is valuable)
+- Next scheduled run uses updated baseline to avoid re-documenting unchanged code
+- Relies on full git history for accurate change detection
 
 ---
 
@@ -546,6 +792,7 @@ Each package runs benchmarks on Python 3.13 with `uv run pytest --benchmark-comp
 3. **Test locally** — Run `make tests` and `make lint` before pushing
 4. **Check extended test status** — Extended tests catch integration issues early
 5. **Review integration test results** — Scheduled integration tests run daily; check results before merging
+6. **Use Conventional Commits** — Follow `type(scope): description` format for all PR titles
 
 ### For CI Maintainers
 
@@ -589,3 +836,30 @@ Each package runs benchmarks on Python 3.13 with `uv run pytest --benchmark-comp
 ### Can I release from a branch other than master?
 
 **Yes, but dangerous:** Use `dangerous-nonmaster-release=true`. This should only be used for critical hotfixes. Always create a PR to master afterward to merge your hotfix back to main.
+
+### Why did OpenWiki documentation update fail?
+
+**Cause:** OpenWiki agent encountered an error during code analysis or synthesis.
+
+**Debug:**
+- Check the workflow run logs for the error message
+- OpenWiki creates a partial PR with completed pages (preserve this progress)
+- Next scheduled run will use the updated baseline to avoid re-documenting unchanged code
+
+**Fix:**
+- Review the error in logs
+- Fix the issue in the code or OpenWiki configuration
+- Re-run workflow manually or wait for next scheduled run
+
+### How do I refresh VCR cassettes for integration tests?
+
+**Cause:** Live API responses changed, and cassettes need updating.
+
+**Process:**
+1. In your local environment, set `VCR_RECORD_MODE=once` (or `new_episodes`)
+2. Set all required API keys (e.g., `OPENAI_API_KEY`)
+3. Run `make vcr_tests` to record new cassettes
+4. Commit updated cassette files (YAML in `tests/cassettes/`)
+5. CI will detect the cassette updates and include them in the PR
+
+**Note:** VCR cassettes are only used in playback-only mode in CI (no real API calls), so cassette updates require local recording.
