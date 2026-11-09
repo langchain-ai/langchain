@@ -124,9 +124,14 @@ def extract_sub_links(
                 continue
 
             # Will take care of verifying rest of path after netloc
-            # if it's more specific
+            # if it's more specific. Require a path boundary so a base
+            # like /docs does not also match siblings like /docsite.
             if not path.startswith(base_url_to_use):
                 continue
+            if len(path) > len(base_url_to_use):
+                next_char = path[len(base_url_to_use)]
+                if next_char not in {"/", "?", "#"}:
+                    continue
 
         results.append(path)
     return results

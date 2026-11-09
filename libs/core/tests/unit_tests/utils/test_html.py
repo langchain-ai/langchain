@@ -185,6 +185,32 @@ def test_prevent_outside() -> None:
     assert actual == expected
 
 
+def test_prevent_outside_path_boundary() -> None:
+    """A base path like /docs must not match sibling paths like /docsite."""
+    html = (
+        '<a href="/docs/intro">ok</a>'
+        '<a href="/docsite/secret">sibling</a>'
+        '<a href="/docs-internal/x">sibling</a>'
+        '<a href="/docs.old">sibling</a>'
+        '<a href="/docs">exact</a>'
+        '<a href="/docs?q=1">query</a>'
+    )
+    expected = [
+        "https://example.com/docs",
+        "https://example.com/docs/intro",
+        "https://example.com/docs?q=1",
+    ]
+    actual = sorted(
+        extract_sub_links(
+            html,
+            "https://example.com/docs",
+            base_url="https://example.com/docs",
+            prevent_outside=True,
+        )
+    )
+    assert actual == expected
+
+
 def test_extract_sub_links_with_query() -> None:
     html = (
         '<a href="https://foobar.com?query=123">one</a>'
