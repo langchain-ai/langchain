@@ -3,6 +3,11 @@ from __future__ import annotations
 from typing import Any
 
 
+def _is_number(value: Any) -> bool:
+    """Whether `value` is a number, excluding `bool` (a subclass of `int`)."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
 def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]:
     r"""Merge dictionaries.
 
@@ -36,7 +41,9 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 merged[right_k] = right_v
             elif right_v is None:
                 continue
-            elif type(merged[right_k]) is not type(right_v):
+            elif type(merged[right_k]) is not type(right_v) and not (
+                _is_number(merged[right_k]) and _is_number(right_v)
+            ):
                 msg = (
                     f'additional_kwargs["{right_k}"] already exists in this message,'
                     " but with a different type."
@@ -77,7 +84,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                     f"value has unsupported type {type(merged[right_k])}."
                 )
                 raise TypeError(msg)
-            elif isinstance(merged[right_k], int):
+            elif _is_number(merged[right_k]):
                 # Preserve identification and temporal fields using last-wins strategy
                 # instead of summing:
                 # - index: identifies which tool call a chunk belongs to

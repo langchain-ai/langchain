@@ -63,6 +63,10 @@ def test_check_package_version(
         # Merge equal values.
         ({"a": 1}, {"a": 1}, {"a": 1}),
         ({"a": 1.5}, {"a": 1.5}, {"a": 1.5}),
+        # Merge unequal floats (e.g. provider scores/logprobs during streaming).
+        ({"score": 0.5}, {"score": 0.3}, {"score": 0.8}),
+        # Merge int and float values of the same key.
+        ({"a": 1}, {"a": 1.5}, {"a": 2.5}),
         ({"a": True}, {"a": True}, {"a": True}),
         ({"a": False}, {"a": False}, {"a": False}),
         ({"a": "txt"}, {"a": "txt"}, {"a": "txttxt"}),
