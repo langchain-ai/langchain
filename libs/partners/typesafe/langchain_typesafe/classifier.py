@@ -66,6 +66,9 @@ class TypeSafeClassifier(BaseDecisionModel):
     or in question instructions and criteria, are sent as TypeSafe image assets. PNG
     and JPEG images are supported. Images are not downloaded from other URLs.
 
+    `Choice` and `Score` confidence describes how concentrated the probability
+    distribution is; it is not the selected label's probability.
+
     Requests raise `TypeSafeAPIError` subclasses for unsuccessful HTTP responses,
     `TypeSafeAPIConnectionError` or `TypeSafeAPITimeoutError` when no response is
     received, and `TypeSafeAPIResponseValidationError` for malformed responses.

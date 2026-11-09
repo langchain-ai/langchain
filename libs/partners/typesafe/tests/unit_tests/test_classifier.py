@@ -101,33 +101,20 @@ def _request(state: Any = "hello") -> ClassifierRequest:
     return {"state": state, "questions": _questions()}
 
 
-def test_questions_without_instructions_omit_them() -> None:
-    """Optional instructions are left out of the wire payload."""
-    observed_questions: Any = None
+def test_questions_require_instructions() -> None:
+    """Every TypeSafe question requires an explicit instruction."""
+    with pytest.raises(ValidationError, match="instructions"):
+        Noul.model_validate({})
+    with pytest.raises(ValidationError, match="instructions"):
+        Choice.model_validate({"criteria": {"billing": None}})
+    with pytest.raises(ValidationError, match="instructions"):
+        Score.model_validate({"criteria": ["low", "high"]})
 
-    def handler(request: httpx2.Request) -> httpx2.Response:
-        nonlocal observed_questions
-        observed_questions = json.loads(request.content)["questions"]
-        return httpx2.Response(200, json=_response_payload())
 
-    client = httpx2.Client(transport=httpx2.MockTransport(handler))
-    classifier = TypeSafeClassifier(api_key=API_KEY, client=client)
-
-    classifier.invoke(
-        {
-            "state": "hello",
-            "questions": {
-                "department": Choice(criteria={"billing": None}),
-                "frustration": Score(criteria=["angry"]),
-            },
-        }
-    )
-    client.close()
-
-    assert observed_questions == {
-        "department": {"type": "choice", "criteria": {"billing": None}},
-        "frustration": {"type": "score", "criteria": ["angry"]},
-    }
+def test_score_requires_two_levels() -> None:
+    """A Score rubric must define at least two ordered levels."""
+    with pytest.raises(ValidationError, match="at least 2"):
+        Score(instructions="How urgent is this?", criteria=["low"])
 
 
 @pytest.mark.parametrize("model", ["", "   "])
@@ -877,15 +864,13 @@ def test_box_question_is_sent_and_answer_parsed() -> None:
     )
 
 
-def test_unknown_answer_types_are_skipped(caplog: pytest.LogCaptureFixture) -> None:
-    """Answers of a newer type are dropped rather than failing the request."""
+def test_unknown_answer_types_are_rejected() -> None:
+    """Answers of an unrecognized type fail response validation."""
     payload = _response_payload()
     payload["answers"]["future"] = {"type": "UNKNOWN"}
     client = _capture_payloads([], payload)
     classifier = TypeSafeClassifier(api_key=API_KEY, client=client)
 
-    result = classifier.invoke(_request())
+    with pytest.raises(TypeSafeAPIResponseValidationError):
+        classifier.invoke(_request())
     client.close()
-
-    assert "future" not in result.answers
-    assert "unsupported type 'UNKNOWN'" in caplog.text
