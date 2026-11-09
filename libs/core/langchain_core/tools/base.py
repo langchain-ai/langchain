@@ -1477,8 +1477,15 @@ def _stringify(content: Any) -> str:
     Returns:
         String representation of the content.
     """
+    def default(value: Any) -> Any:
+        if isinstance(value, BaseModel):
+            return value.model_dump(mode="json")
+        if isinstance(value, BaseModelV1):
+            return json.loads(value.json())
+        return str(value)
+
     try:
-        return json.dumps(content, ensure_ascii=False)
+        return json.dumps(content, ensure_ascii=False, default=default)
     except Exception:
         return str(content)
 

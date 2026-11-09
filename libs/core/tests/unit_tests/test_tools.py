@@ -1740,6 +1740,23 @@ def test_tool_call_input_tool_message_output() -> None:
         tool.invoke(tool_call)
 
 
+def test_tool_call_pydantic_model_output() -> None:
+    class Item(BaseModel):
+        text: str
+
+    @tool
+    def get_item() -> Item:
+        """Return an item."""
+        return Item(text="a\tb")
+
+    result = get_item.invoke(
+        {"type": "tool_call", "name": "get_item", "args": {}, "id": "1"}
+    )
+
+    assert isinstance(result, ToolMessage)
+    assert json.loads(result.content) == {"text": "a\tb"}
+
+
 @pytest.mark.parametrize("block_type", [*TOOL_MESSAGE_BLOCK_TYPES, "bad"])
 def test_tool_content_block_output(block_type: str) -> None:
     @tool
