@@ -5,7 +5,7 @@ description: "Detailed walkthrough of agent lifecycle, execution loops, state ma
 tags: ["agents", "agentic-loop", "middleware", "tool-calling", "state-management", "observability"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
+    at: 2026-11-10T08:17:41.265Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
