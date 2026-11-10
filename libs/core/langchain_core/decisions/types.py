@@ -11,7 +11,12 @@ from typing_extensions import TypedDict
 from langchain_core.messages import BaseMessage, UsageMetadata
 
 Content: TypeAlias = str | dict[str, JsonValue] | list[JsonValue]
-"""Text, a JSON object, or a JSON array used in question instructions."""
+"""Text, a JSON object, or a JSON array used in question instructions.
+
+As in `State`, LangChain standard media blocks may appear anywhere in instructions and
+criteria. Providers send them as media, or raise an error if their API does not accept
+that media in questions.
+"""
 
 _StateValue: TypeAlias = (
     str
