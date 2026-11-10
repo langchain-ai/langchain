@@ -10,6 +10,7 @@ from langchain_core.language_models._compat_bridge import (
     CompatBlock,
     _finalize_block,
     _isolate_usage,
+    _iter_protocol_blocks,
     achunks_to_events,
     amessage_to_events,
     chunks_to_events,
@@ -909,6 +910,59 @@ def test_chunks_to_events_no_provider_text_plus_tool_call() -> None:
     types = [b.get("type") for b in finish_blocks]
     assert "text" in types
     assert "tool_call" in types
+
+
+@pytest.mark.parametrize("block_type", ["tool_call", "server_tool_call"])
+async def test_parallel_complete_tool_calls_without_indices(block_type: str) -> None:
+    """Separate complete calls at the same position retain both call payloads."""
+    blocks = [
+        {"type": block_type, "id": "a", "name": "search", "args": {"q": "test"}},
+        {"type": block_type, "id": "b", "name": "read", "args": {"path": "a.py"}},
+    ]
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[block], response_metadata={"output_version": "v1"}
+            )
+        )
+        for block in blocks
+    ]
+    sync_events = list(chunks_to_events(iter(chunks)))
+    async_events = [event async for event in achunks_to_events(_aiter_chunks(chunks))]
+
+    for events in (sync_events, async_events):
+        assert_valid_event_stream(events)
+        finishes = [
+            event for event in events if event["event"] == "content-block-finish"
+        ]
+        assert [event["index"] for event in finishes] == [0, 1]
+        assert [event["content"] for event in finishes] == blocks
+
+
+@pytest.mark.parametrize("block_type", ["tool_call", "server_tool_call"])
+@pytest.mark.parametrize("index", [0, "provider-index"])
+def test_complete_tool_call_explicit_index_takes_precedence(
+    block_type: str, index: int | str
+) -> None:
+    """An explicit provider index remains the identity even when IDs differ."""
+    keys = [
+        _iter_protocol_blocks(
+            AIMessageChunk(
+                content=[
+                    {
+                        "type": block_type,
+                        "index": index,
+                        "id": call_id,
+                        "name": "search",
+                        "args": {},
+                    }
+                ],
+                response_metadata={"output_version": "v1"},
+            )
+        )[0][0]
+        for call_id in ("a", "b")
+    ]
+    assert keys == [index, index]
 
 
 def test_chunks_to_events_reasoning_then_tool_call_no_index() -> None:

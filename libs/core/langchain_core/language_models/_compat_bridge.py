@@ -121,32 +121,20 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
     Returns `(key, block)` pairs.  The key is the block's stable identifier
     across the stream: the block's `index` field when present (can be an
     int or a string — some providers use string identifiers like
-    `"lc_rs_305f30"`), or the positional index within the message as a
-    fallback.  Callers are responsible for allocating wire-level `uint`
+    `"lc_rs_305f30"`), a namespaced call ID for complete tool calls without
+    an index, or a namespaced block type and position as a fallback.
+    Callers are responsible for allocating wire-level `uint`
     indices; this helper only surfaces the source-side identity.
 
     For finalized `AIMessage`, also surfaces `invalid_tool_calls`
     — which `AIMessage.content_blocks` currently omits from its return
     value even though they are a defined protocol block type.
 
-    The positional fallback is a known fragility: when a provider emits
-    blocks without an `index` field (e.g. Anthropic's `_stream` with
-    `coerce_content_to_string=True`, where text chunks lose their
-    source-side index), every such chunk gets positional key 0 and
-    successive chunks merge into one block. This works correctly for
-    single-type streams (pure-text responses merge cleanly) because all
-    chunks share the same key and the open-block logic collapses them.
-    It would miscategorise a stream that mixed indexed structured
-    blocks with non-indexed coerced-text blocks, since an indexed
-    block with `index == 0` would collide with the anonymous text
-    block's positional-0 key.  In the anthropic integration this
-    cannot currently occur: coerce-to-string mode is only selected
-    when no tools, thinking, or documents are present, and any of
-    those flips the stream to structured mode where every block
-    carries an integer index.  A native `_stream_chat_model_events`
-    hook per provider (or a bridge-level "continue the open block when
-    the source has no identity" rule) would close the gap if another
-    integration ever emits mixed content.
+    Without an index or a complete tool call's ID, identity is inferred
+    from block type and position. This merges successive text or reasoning
+    slices, but cannot distinguish separate same-type blocks at the same
+    position. Partial tool-call chunks still need a stable provider index:
+    their IDs may be absent from later deltas.
     """
     try:
         raw = msg.content_blocks
@@ -158,7 +146,17 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
         if not isinstance(block, dict):
             continue  # type: ignore[unreachable]
         explicit_idx = block.get("index")
-        if explicit_idx is None:
+        call_id = block.get("id")
+        if explicit_idx is not None:
+            key: Any = explicit_idx
+        elif (
+            block.get("type") in {"tool_call", "server_tool_call"}
+            and call_id is not None
+        ):
+            # Complete calls can arrive at the same position in separate
+            # chunks. Their IDs distinguish calls without a provider index.
+            key = ("__lc_call_id__", block["type"], call_id)
+        else:
             # No source-side identity. Bucket by (sentinel, block type,
             # positional `i`) so two blocks of different types at the
             # same position across chunks (e.g. Gemini emitting a
@@ -169,9 +167,7 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
             # `else` branch and clobbers the first. Same-type chunks
             # still share the bucket and merge cleanly, which is what
             # streaming text / reasoning relies on.
-            key: Any = ("__lc_no_index__", block.get("type"), i)
-        else:
-            key = explicit_idx
+            key = ("__lc_no_index__", block.get("type"), i)
         result.append((key, dict(block)))
 
     if not isinstance(msg, AIMessageChunk):
