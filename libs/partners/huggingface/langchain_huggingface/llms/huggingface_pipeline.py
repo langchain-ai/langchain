@@ -273,6 +273,15 @@ class HuggingFacePipeline(BaseLLM):
             _model_kwargs = {
                 k: v for k, v in _model_kwargs.items() if k != "trust_remote_code"
             }
+        if (
+            device is None
+            and _model_kwargs.get("device_map") is not None
+            and getattr(model, "hf_device_map", None) is None
+            and backend == "default"
+        ):
+            # `transformers.pipeline` moves the model to device 0 when both
+            # `hf_device_map` and `device` are `None`.
+            device = model.device
         _pipeline_kwargs = pipeline_kwargs or {}
         pipeline = hf_pipeline(  # type: ignore[call-overload]
             task=task,

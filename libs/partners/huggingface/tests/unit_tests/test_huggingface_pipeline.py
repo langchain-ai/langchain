@@ -161,3 +161,80 @@ def test_from_model_id_raises_for_out_of_range_device(
         else:
             msg = "Expected ValueError to be raised for out-of-range device"
             raise AssertionError(msg)
+
+
+@pytest.mark.parametrize(
+    ("device_map", "model_kwargs"),
+    [
+        ("cuda:1", None),
+        (None, {"device_map": "cuda:1"}),
+    ],
+)
+@patch("transformers.AutoTokenizer.from_pretrained")
+@patch("transformers.AutoModelForCausalLM.from_pretrained")
+@patch("transformers.pipeline")
+def test_from_model_id_keeps_single_device_map_placement(
+    mock_pipeline: MagicMock,
+    mock_model: MagicMock,
+    mock_tokenizer: MagicMock,
+    device_map: str | None,
+    model_kwargs: dict | None,
+) -> None:
+    """Test a single-device `device_map` keeps the model on its device.
+
+    `transformers` only sets `hf_device_map` for multi-device maps, so the model's
+    own device must be passed to the pipeline to stop it moving to device 0.
+    """
+    mock_tokenizer.return_value = MagicMock(pad_token_id=0)
+    mock_model.return_value = MagicMock(hf_device_map=None, device="cuda:1")
+
+    mock_pipe = MagicMock()
+    mock_pipe.task = "text-generation"
+    mock_pipe.model = mock_model.return_value
+    mock_pipeline.return_value = mock_pipe
+
+    HuggingFacePipeline.from_model_id(
+        model_id="mock-model-id",
+        task="text-generation",
+        device_map=device_map,
+        model_kwargs=model_kwargs,
+    )
+
+    assert mock_pipeline.call_args.kwargs["device"] == "cuda:1"
+
+
+@pytest.mark.parametrize(
+    ("device_map", "hf_device_map"),
+    [
+        # Multi-device map: the pipeline already respects `hf_device_map`.
+        ("auto", {"transformer.h.0": 0, "transformer.h.1": 1}),
+        # No `device_map`: the default placement is unchanged.
+        (None, None),
+    ],
+)
+@patch("transformers.AutoTokenizer.from_pretrained")
+@patch("transformers.AutoModelForCausalLM.from_pretrained")
+@patch("transformers.pipeline")
+def test_from_model_id_leaves_device_unset(
+    mock_pipeline: MagicMock,
+    mock_model: MagicMock,
+    mock_tokenizer: MagicMock,
+    device_map: str | None,
+    hf_device_map: dict | None,
+) -> None:
+    """Test `device` stays unset when the model's placement needs no fixing."""
+    mock_tokenizer.return_value = MagicMock(pad_token_id=0)
+    mock_model.return_value = MagicMock(hf_device_map=hf_device_map, device="cuda:0")
+
+    mock_pipe = MagicMock()
+    mock_pipe.task = "text-generation"
+    mock_pipe.model = mock_model.return_value
+    mock_pipeline.return_value = mock_pipe
+
+    HuggingFacePipeline.from_model_id(
+        model_id="mock-model-id",
+        task="text-generation",
+        device_map=device_map,
+    )
+
+    assert mock_pipeline.call_args.kwargs["device"] is None
