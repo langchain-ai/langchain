@@ -43,6 +43,9 @@ mistralai = ["langchain-mistralai"]
 huggingface = ["langchain-huggingface"]
 groq = ["langchain-groq"]
 aws = ["langchain-aws"]
+# Require the ChatBaseten rewrite based on langchain-openai's BaseChatOpenAI,
+# rather than the legacy hand-rolled tool-calling and streaming implementation.
+# https://github.com/basetenlabs/langchain-baseten/pull/1
 baseten = ["langchain-baseten>=0.2.0"]
 deepseek = ["langchain-deepseek"]
 xai = ["langchain-xai"]
