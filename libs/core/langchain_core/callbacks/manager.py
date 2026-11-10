@@ -1094,6 +1094,7 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
             **kwargs,
         )
 
+    @shielded
     async def on_agent_action(self, action: AgentAction, **kwargs: Any) -> None:
         """Run when agent action is received.
 
@@ -1114,6 +1115,7 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
             **kwargs,
         )
 
+    @shielded
     async def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent finish is received.
 

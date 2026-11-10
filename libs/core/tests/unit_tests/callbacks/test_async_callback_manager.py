@@ -5,16 +5,20 @@ that generate traces based on the callbacks. The traces are all verified
 via snapshot testing (e.g., see unit tests for runnables).
 """
 
+import asyncio
 import contextvars
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
+import anyio
 from typing_extensions import override
 
+from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.callbacks import (
     AsyncCallbackHandler,
     AsyncCallbackManager,
+    AsyncCallbackManagerForChainRun,
     BaseCallbackHandler,
 )
 
@@ -210,3 +214,56 @@ async def test_shielded_callback_context_preservation() -> None:
         f"but got {handler.context_values}. "
         f"This indicates the shielded decorator is not preserving context variables."
     )
+
+
+class AgentRecordingHandler(AsyncCallbackHandler):
+    """Handler that records agent events at an actual suspension point."""
+
+    def __init__(self) -> None:
+        self.events: list[str] = []
+
+    @override
+    async def on_agent_action(self, action: Any, **kwargs: Any) -> None:
+        await asyncio.sleep(0)
+        self.events.append("action")
+
+    @override
+    async def on_agent_finish(self, finish: Any, **kwargs: Any) -> None:
+        await asyncio.sleep(0)
+        self.events.append("finish")
+
+
+def test_agent_callbacks_survive_anyio_cancel_scope() -> None:
+    """`on_agent_action`/`on_agent_finish` complete inside a cancelled anyio scope.
+
+    Cancellation from an anyio cancel scope (as used by Starlette/FastAPI when a
+    client disconnects) is level-triggered: every `await` inside the scope
+    re-raises `CancelledError`, so a callback dies at its first suspension point
+    unless it runs in its own shielded task. Unshielded agent callbacks left
+    agent runs open in traces with no terminal event.
+
+    See https://github.com/langchain-ai/langchain/issues/41750.
+    """
+
+    async def main() -> None:
+        for callback_name in ("on_agent_action", "on_agent_finish"):
+            handler = AgentRecordingHandler()
+            manager = AsyncCallbackManagerForChainRun(
+                run_id=uuid4(),
+                handlers=[handler],
+                inheritable_handlers=[handler],
+            )
+            with anyio.CancelScope() as scope:
+                scope.cancel()
+                with suppress(asyncio.CancelledError):
+                    await getattr(manager, callback_name)(
+                        AgentFinish(return_values={"o": "x"}, log="")
+                        if callback_name == "on_agent_finish"
+                        else AgentAction(tool="t", tool_input={}, log="")
+                    )
+            # Yield so the shielded task can finish recording its event.
+            for _ in range(10):
+                await asyncio.sleep(0)
+            assert handler.events == [callback_name.removeprefix("on_agent_")]
+
+    anyio.run(main)
