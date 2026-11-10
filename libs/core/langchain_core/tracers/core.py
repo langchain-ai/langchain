@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import sys
 import traceback
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
@@ -42,6 +43,9 @@ SCHEMA_FORMAT_TYPE = Literal["original", "streaming_events"]
 _GATEWAY_RUN_METADATA_KEY = "ls_gateway_info"
 
 
+_CANCEL_MSG_DROPPED = sys.version_info < (3, 11)
+
+
 def _run_status_from_error(error: BaseException | None) -> str | None:
     """Return the explicit run status an error asks to be traced with.
 
@@ -59,7 +63,10 @@ def _run_status_from_error(error: BaseException | None) -> str | None:
         if error.args and isinstance(error.args[0], ExpectedCancellation):
             return "cancelled"
         # Python < 3.11 drops the cancel message at each task boundary but keeps
-        # the previous error on `__context__`.
+        # the previous error on `__context__`. On 3.11+ the message is kept, so a
+        # bare cancel raised during a marked cancel's cleanup is a separate cancel.
+        if not _CANCEL_MSG_DROPPED:
+            return None
         error = error.__context__
     return None
 

@@ -1,6 +1,7 @@
 """Tests for the explicit run status `LangChainTracer` sends with an error."""
 
 import asyncio
+import sys
 import unittest.mock
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -98,6 +99,17 @@ async def test_unmarked_errors_have_no_status(
     _tracer()._record_error(run, await make_error())
     assert run.status is None
     assert run.error
+
+
+def test_bare_cancel_during_marked_cancel_cleanup() -> None:
+    marked = asyncio.CancelledError(ExpectedCancellation("user"))
+    bare = asyncio.CancelledError()
+    bare.__context__ = marked
+    run = _new_run()
+    _tracer()._record_error(run, bare)
+    # On 3.11+ the message survives task boundaries, so the bare cancel is a
+    # separate (unmarked) cancel; before 3.11 the context is the only trace.
+    assert run.status == ("cancelled" if sys.version_info < (3, 11) else None)
 
 
 async def test_status_follows_the_last_error() -> None:
