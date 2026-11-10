@@ -1,12 +1,14 @@
 """Module tests interaction of chat model with caching abstraction.."""
 
 from typing import Any
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from typing_extensions import override
 
 from langchain_core.caches import RETURN_VAL_TYPE, BaseCache
 from langchain_core.globals import set_llm_cache
+from langchain_core.language_models import chat_models
 from langchain_core.language_models.chat_models import _cleanup_llm_representation
 from langchain_core.language_models.fake_chat_models import (
     FakeListChatModel,
@@ -297,6 +299,21 @@ async def test_can_swap_caches() -> None:
     chat_model = CustomChat(cache=new_cache, messages=iter(["goodbye"]))
     result = await chat_model.ainvoke("foo")
     assert result.content == "hello"
+
+
+async def test_async_stream_generation_runs_in_executor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Keep merging streamed chunks from blocking the event loop."""
+    run_in_executor = AsyncMock(wraps=chat_models.run_in_executor)
+    monkeypatch.setattr(chat_models, "run_in_executor", run_in_executor)
+    model = FakeListChatModel(responses=["hello"])
+    monkeypatch.setattr(model, "_should_stream", Mock(return_value=True))
+
+    result = await model._agenerate_with_cache([HumanMessage(content="test")])
+
+    assert result.generations[0].text == "hello"
+    run_in_executor.assert_awaited_once()
 
 
 def test_llm_representation_for_serializable() -> None:
