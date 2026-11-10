@@ -12,6 +12,7 @@ from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.tools import BaseTool, tool
+from langgraph.constants import TAG_NOSTREAM
 from pydantic import BaseModel, Field
 from pytest_mock import MockerFixture
 from typing_extensions import override
@@ -22,7 +23,7 @@ from langchain.agents.middleware.internal_call_transformer import (
     INTERNAL_CALL_METADATA_KEY,
     internal_call_metadata,
 )
-from langchain.messages import AIMessage
+from langchain.messages import AIMessage, ToolMessage
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -733,6 +734,7 @@ class TestLLMToolEmulatorInternalCallMetadata:
             config["metadata"][INTERNAL_CALL_METADATA_KEY]
             == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
         )
+        assert TAG_NOSTREAM in config["tags"]
 
     async def test_awrap_tool_call_marks_internal_call(self) -> None:
         """`awrap_tool_call` should tag its model call as internal to middleware."""
@@ -763,6 +765,7 @@ class TestLLMToolEmulatorInternalCallMetadata:
             config["metadata"][INTERNAL_CALL_METADATA_KEY]
             == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
         )
+        assert TAG_NOSTREAM in config["tags"]
 
 
 class TestLLMToolEmulatorStreamingEndToEnd:
@@ -800,3 +803,32 @@ class TestLLMToolEmulatorStreamingEndToEnd:
         # emulator's own call, and its content is never on its own.
         assert len(texts) == 2
         assert "XEMULATEDX" not in texts
+
+
+def test_emulation_call_stays_off_the_messages_stream() -> None:
+    weather_call = {
+        "id": "tc1",
+        "type": "function",
+        "function": {"name": "get_weather", "arguments": '{"location": "NYC"}'},
+    }
+    agent_model = FakeModel(
+        messages=iter(
+            [
+                AIMessage(content="", additional_kwargs={"tool_calls": [weather_call]}),
+                AIMessage(content="Done."),
+            ]
+        )
+    )
+    emulator_model = GenericFakeChatModel(messages=iter([AIMessage(content="EMULATED-WEATHER")]))
+    emulator = LLMToolEmulator(tools=["get_weather"], model=emulator_model)
+    agent = create_agent(model=agent_model, tools=[get_weather], middleware=[emulator])
+
+    parts = [
+        part
+        for part, _ in agent.stream(
+            {"messages": [HumanMessage("Weather in NYC?")]}, stream_mode="messages"
+        )
+    ]
+
+    assert [part.text for part in parts if isinstance(part, ToolMessage)] == ["EMULATED-WEATHER"]
+    assert "".join(part.text for part in parts if isinstance(part, AIMessage)) == "Done."
