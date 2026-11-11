@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import sys
 import traceback
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
@@ -13,7 +15,7 @@ from typing import (
     cast,
 )
 
-from langchain_core.exceptions import TracerException
+from langchain_core.exceptions import ExpectedCancellation, TracerException
 from langchain_core.load import dumpd
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
@@ -39,6 +41,44 @@ SCHEMA_FORMAT_TYPE = Literal["original", "streaming_events"]
 
 # Key under which gateway metadata is attached to a run's metadata for tracing.
 _GATEWAY_RUN_METADATA_KEY = "ls_gateway_info"
+
+
+_CANCEL_MSG_DROPPED = sys.version_info < (3, 11)
+
+
+def _run_status_from_error(error: BaseException | None) -> str | None:
+    """Return the explicit run status an error asks to be traced with.
+
+    - `cancelled`: a `CancelledError` cancelled with an `ExpectedCancellation`.
+    - `interrupted`: a langgraph `GraphBubbleUp` subclass (`GraphInterrupt`,
+        `NodeInterrupt`, `ParentCommand`, ...), matched by class name so core
+        does not depend on langgraph.
+    - `None` otherwise: a bare `CancelledError` or a timeout stays a plain error.
+    """
+    if error is None:
+        return None
+    if any(c.__name__ == "GraphBubbleUp" for c in type(error).__mro__):
+        return "interrupted"
+    while isinstance(error, asyncio.CancelledError):
+        if error.args and isinstance(error.args[0], ExpectedCancellation):
+            return "cancelled"
+        # Python < 3.11 drops the cancel message at each task boundary but keeps
+        # the previous error on `__context__`. On 3.11+ the message is kept, so a
+        # bare cancel raised during a marked cancel's cleanup is a separate cancel.
+        if not _CANCEL_MSG_DROPPED:
+            return None
+        error = error.__context__
+    return None
+
+
+def _set_run_status(run: Run, status: str | None) -> None:
+    """Set the explicit status on the run if the installed langsmith supports it.
+
+    Older `langsmith` versions have no `status` field on `RunTree`: the run then
+    keeps only its error text and the server derives the status from it.
+    """
+    if "status" in getattr(type(run), "model_fields", {}):
+        run.status = status
 
 
 def _extract_gateway_metadata(response: LLMResult) -> dict[str, Any] | None:
@@ -146,6 +186,16 @@ class _TracerCore(ABC):
             return (msg + "\n\n".join(tb)).strip()
         except Exception:
             return msg
+
+    def _record_error(self, run: Run, error: BaseException) -> None:
+        """Record `error` on the run, with an explicit status when it has one.
+
+        The status describes the error the run ends with: a later error replaces
+        both, so a cancel after a real error (or the reverse) cannot leave a
+        stale status behind.
+        """
+        run.error = self._get_stacktrace(error)
+        _set_run_status(run, _run_status_from_error(error))
 
     def _start_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:  # type: ignore[return]
         current_dotted_order = run.start_time.strftime("%Y%m%dT%H%M%S%fZ") + str(run.id)
@@ -374,7 +424,7 @@ class _TracerCore(ABC):
         self, error: BaseException, run_id: UUID, response: LLMResult | None = None
     ) -> Run:
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
-        llm_run.error = self._get_stacktrace(error)
+        self._record_error(llm_run, error)
         if response:
             if getattr(llm_run, "outputs", None) is None:
                 llm_run.outputs = {}
@@ -474,7 +524,7 @@ class _TracerCore(ABC):
         run_id: UUID,
     ) -> Run:
         chain_run = self._get_run(run_id)
-        chain_run.error = self._get_stacktrace(error)
+        self._record_error(chain_run, error)
         chain_run.end_time = datetime.now(timezone.utc)
         chain_run.events.append({"name": "error", "time": chain_run.end_time})
         if inputs is not None:
@@ -543,7 +593,7 @@ class _TracerCore(ABC):
     ) -> Run:
         """Update a tool run with error and end time."""
         tool_run = self._get_run(run_id, run_type="tool")
-        tool_run.error = self._get_stacktrace(error)
+        self._record_error(tool_run, error)
         tool_run.end_time = datetime.now(timezone.utc)
         tool_run.events.append({"name": "error", "time": tool_run.end_time})
         return tool_run
@@ -600,7 +650,7 @@ class _TracerCore(ABC):
         run_id: UUID,
     ) -> Run:
         retrieval_run = self._get_run(run_id, run_type="retriever")
-        retrieval_run.error = self._get_stacktrace(error)
+        self._record_error(retrieval_run, error)
         retrieval_run.end_time = datetime.now(timezone.utc)
         retrieval_run.events.append({"name": "error", "time": retrieval_run.end_time})
         return retrieval_run
