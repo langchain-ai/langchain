@@ -23,6 +23,7 @@ from langchain_core.language_models import (
     BaseChatModel,
     FakeListChatModel,
     ParrotFakeChatModel,
+    chat_models,
 )
 from langchain_core.language_models._utils import (
     _filter_invocation_params_for_tracing,
@@ -641,6 +642,27 @@ async def test_disable_streaming_no_streaming_model_async(
     async for c in model.astream([], tools=[{}]):
         assert c.content == "invoke"
         break
+
+
+async def test_agenerate_with_cache_runs_generate_from_stream_in_executor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """_agenerate_with_cache must run generate_from_stream in an executor."""
+    executor_calls: list[Any] = []
+    real_run_in_executor: Any = getattr(chat_models, "run_in_executor")
+
+    async def mock_run_in_executor(
+        executor_or_config: Any, func: Any, *args: Any, **kwargs: Any
+    ) -> Any:
+        executor_calls.append((func, args))
+        return await real_run_in_executor(executor_or_config, func, *args, **kwargs)
+
+    monkeypatch.setattr(chat_models, "run_in_executor", mock_run_in_executor)
+
+    model = StreamingModel(streaming=True)
+    res = await model.ainvoke([])
+    assert res.content == "stream"
+    assert any(call[0] == chat_models.generate_from_stream for call in executor_calls)
 
 
 class FakeChatModelStartTracer(FakeTracer):
