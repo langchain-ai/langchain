@@ -7,11 +7,9 @@ from typing import TYPE_CHECKING, Any, Generic
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, ToolMessage
+from langgraph.constants import TAG_NOSTREAM
 
-from langchain.agents.middleware.internal_call_transformer import (
-    InternalCallTransformer,
-    internal_call_metadata,
-)
+from langchain.agents.middleware.internal_call_transformer import internal_call_metadata
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT
 from langchain.chat_models.base import init_chat_model
 
@@ -68,13 +66,6 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
             ```python
             middleware = LLMToolEmulator(tools=[get_weather, get_user_location])
             ```
-    """
-
-    transformers = (InternalCallTransformer,)
-    """Keeps the emulation model call's tokens out of `run.messages`.
-
-    Registered only when this middleware is used — see
-    `InternalCallTransformer` for why the call needs tagging and filtering.
     """
 
     def __init__(
@@ -185,7 +176,10 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
         # Get emulated response from LLM
         response = self.model.invoke(
             [HumanMessage(prompt)],
-            config={"metadata": {"lc_source": "tool_emulation", **internal_call_metadata()}},
+            config={
+                "metadata": {"lc_source": "tool_emulation", **internal_call_metadata()},
+                "tags": [TAG_NOSTREAM],
+            },
         )
 
         # Short-circuit: return emulated result without executing real tool
@@ -240,7 +234,10 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
         # Get emulated response from LLM (using async invoke)
         response = await self.model.ainvoke(
             [HumanMessage(prompt)],
-            config={"metadata": {"lc_source": "tool_emulation", **internal_call_metadata()}},
+            config={
+                "metadata": {"lc_source": "tool_emulation", **internal_call_metadata()},
+                "tags": [TAG_NOSTREAM],
+            },
         )
 
         # Short-circuit: return emulated result without executing real tool

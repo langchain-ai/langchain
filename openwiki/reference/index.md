@@ -1,7 +1,7 @@
 # Files
 
-- [Agent Execution (Deprecated Reference)](agent-execution.md) - This page has been superseded. See the primary Agent Execution Flow and Loop Control documentation for current content.
-- [Agent Factory (Deprecated Reference)](agent-factory.md) - This page has been moved. For the authoritative documentation on the agent factory and create_agent function, see the Agent Execution Flow documentation.
+- [Agent Execution](agent-execution.md) - The agent execution model orchestrates a structured state-driven loop built on LangGraph StateGraph, with initialization, model invocation, tool dispatch, and middleware hooks for controlling flow and behavior.
+- [Agent Factory (create_agent) Reference](agent-factory.md) - Complete reference documentation for the create_agent function signature, all overloads, parameters, return types, and exception types for building LangChain agents.
 - [Callbacks (Deprecated Reference)](callbacks.md) - Deprecated reference page. See /openwiki/concepts/callbacks.md for current documentation on LangChain's callback system.
 - [Chat Models API Reference](chat-models.md) - Complete API reference for BaseChatModel, covering all methods, parameters, return types, and protocol implementation contracts for chat model integration in LangChain.
 - [GitHub Actions CI Workflows Reference](ci-workflows.md) - Complete technical reference for LangChain's GitHub Actions workflows, job configurations, triggers, matrix testing, and environment variables.
@@ -10,7 +10,7 @@
 - [Integration Tests](integration-tests.md) - LangChain's integration testing framework for partner libraries and chat models, including VCR cassette recording, pytest markers for test classification, and scheduled CI/CD execution against live APIs.
 - [MCP Integration (Old Page Reference)](mcp-integration.md) - Deprecated reference page. See /openwiki/integrations/mcp-integration.md for the current MCP integration documentation.
 - [Messages API Reference](messages.md) - Complete API reference for LangChain message types, serialization utilities, content blocks, and notification metadata functions for marking system-generated messages in conversations.
-- [Middleware (Deprecated Reference)](middleware.md) - Deprecated reference page. See /openwiki/middleware.md for comprehensive documentation on agent middleware, lifecycle hooks, and composition patterns.
+- [Agent Middleware System](middleware.md) - Reference guide to agent middleware hooks, composition semantics, request/response types, and handler lifecycle in LangChain agents.
 - [Model Initialization (Deprecated Reference)](model-initialization.md) - Deprecated reference page. See /openwiki/model-initialization.md for comprehensive documentation on model initialization, the init_chat_model factory, provider configuration, and runtime model switching.
 - [OpenAI Provider (Old Page Reference)](openai-provider.md) - Deprecated: See /openwiki/integrations/openai-provider.md instead.
 - [Partner Pattern (Deprecated Reference)](partner-pattern.md) - This page has been moved. See /openwiki/integrations/partner-pattern.md for current documentation on LangChain's partner integration framework.
