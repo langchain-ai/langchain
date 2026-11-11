@@ -2203,11 +2203,15 @@ class Qdrant(VectorStore):
     ) -> Generator[tuple[list[str], list[models.PointStruct]], None, None]:
         texts_iterator = iter(texts)
         metadatas_iterator = iter(metadatas or [])
-        ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
+        ids_iterator = iter(ids) if ids else None
         while batch_texts := list(islice(texts_iterator, batch_size)):
             # Take the corresponding metadata and id for each text in a batch
             batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
-            batch_ids = list(islice(ids_iterator, batch_size))
+            batch_ids = (
+                list(islice(ids_iterator, batch_size))
+                if ids_iterator is not None
+                else [uuid.uuid4().hex for _ in batch_texts]
+            )
 
             # Generate the embeddings for all the texts in a batch
             batch_embeddings = self._embed_texts(batch_texts)
@@ -2244,11 +2248,15 @@ class Qdrant(VectorStore):
     ) -> AsyncGenerator[tuple[list[str], list[models.PointStruct]], None]:
         texts_iterator = iter(texts)
         metadatas_iterator = iter(metadatas or [])
-        ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
+        ids_iterator = iter(ids) if ids else None
         while batch_texts := list(islice(texts_iterator, batch_size)):
             # Take the corresponding metadata and id for each text in a batch
             batch_metadatas = list(islice(metadatas_iterator, batch_size)) or None
-            batch_ids = list(islice(ids_iterator, batch_size))
+            batch_ids = (
+                list(islice(ids_iterator, batch_size))
+                if ids_iterator is not None
+                else [uuid.uuid4().hex for _ in batch_texts]
+            )
 
             # Generate the embeddings for all the texts in a batch
             batch_embeddings = await self._aembed_texts(batch_texts)

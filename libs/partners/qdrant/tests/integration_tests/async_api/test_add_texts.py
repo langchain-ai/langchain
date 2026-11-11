@@ -124,3 +124,22 @@ async def test_qdrant_aadd_texts_stores_embeddings_as_named_vectors(
         vector_name in point.vector  # type: ignore[operator]
         for point in client.scroll(collection_name, with_vectors=True)[0]
     )
+
+
+@pytest.mark.parametrize("batch_size", [1, 64])
+@pytest.mark.parametrize("qdrant_location", qdrant_locations())
+async def test_qdrant_aadd_texts_stores_texts_from_generator(
+    batch_size: int, qdrant_location: str
+) -> None:
+    """Test end to end Qdrant.aadd_texts stores texts passed as a generator (#41790)."""
+    docsearch: Qdrant = Qdrant.from_texts(
+        ["foobar"],
+        ConsistentFakeEmbeddings(),
+        batch_size=batch_size,
+        location=qdrant_location,
+    )
+
+    ids = await docsearch.aadd_texts(text for text in ["foo", "bar", "baz"])
+
+    assert len(ids) == 3
+    assert len(set(ids)) == 3
