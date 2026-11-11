@@ -9,11 +9,11 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping
 from functools import cached_property
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar, cast
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_core._api import deprecated, suppress_langchain_deprecation_warning
 from langchain_core.exceptions import ErrorCode, create_message

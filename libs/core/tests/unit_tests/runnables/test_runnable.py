@@ -5133,11 +5133,6 @@ def test_runnable_gen_context_config() -> None:
     assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="Python 3.10 and below don't support running "
-    "async tasks in a specific context",
-)
 async def test_runnable_gen_context_config_async() -> None:
     """Test generator runnable config propagation.
 
@@ -5264,11 +5259,6 @@ def test_runnable_iter_context_config() -> None:
     assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="Python 3.10 and below don't support running "
-    "async tasks in a specific context",
-)
 async def test_runnable_iter_context_config_async() -> None:
     """Test generator runnable config propagation.
 
@@ -5391,11 +5381,6 @@ def test_runnable_lambda_context_config() -> None:
     assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="Python 3.10 and below don't support running "
-    "async tasks in a specific context",
-)
 async def test_runnable_lambda_context_config_async() -> None:
     """Test function runnable config propagation.
 
