@@ -59,6 +59,8 @@ def _gateway_or_provider_key() -> str:
 def test_chat_openai() -> None:
     """Test ChatOpenAI wrapper."""
     chat = ChatOpenAI(
+        model="gpt-6-luna",
+        reasoning_effort="none",
         temperature=0.7,
         base_url=None,
         organization=None,
@@ -141,7 +143,12 @@ async def test_callable_api_key_async(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.mark.parametrize("use_responses_api", [False, True])
 def test_chat_openai_system_message(use_responses_api: bool) -> None:
     """Test ChatOpenAI wrapper with system message."""
-    chat = ChatOpenAI(use_responses_api=use_responses_api, max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
+    chat = ChatOpenAI(
+        model="gpt-6-luna",
+        reasoning_effort="none",
+        use_responses_api=use_responses_api,
+        max_tokens=MAX_TOKEN_COUNT,
+    )  # type: ignore[call-arg]
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
     response = chat.invoke([system_message, human_message])
@@ -152,7 +159,9 @@ def test_chat_openai_system_message(use_responses_api: bool) -> None:
 @pytest.mark.scheduled
 def test_chat_openai_generate() -> None:
     """Test ChatOpenAI wrapper with generate."""
-    chat = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT, n=2)  # type: ignore[call-arg]
+    chat = ChatOpenAI(
+        model="gpt-6-luna", reasoning_effort="none", max_tokens=MAX_TOKEN_COUNT, n=2
+    )  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -169,7 +178,9 @@ def test_chat_openai_generate() -> None:
 @pytest.mark.scheduled
 def test_chat_openai_multiple_completions() -> None:
     """Test ChatOpenAI wrapper with multiple completions."""
-    chat = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT, n=5)  # type: ignore[call-arg]
+    chat = ChatOpenAI(
+        model="gpt-6-luna", reasoning_effort="none", max_tokens=MAX_TOKEN_COUNT, n=5
+    )  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     response = chat._generate([message])
     assert isinstance(response, ChatResult)
@@ -186,6 +197,8 @@ def test_chat_openai_streaming(use_responses_api: bool) -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     chat = ChatOpenAI(
+        model="gpt-6-luna",
+        reasoning_effort="none",
         max_tokens=MAX_TOKEN_COUNT,  # type: ignore[call-arg]
         streaming=True,
         temperature=0,
@@ -212,16 +225,24 @@ def test_chat_openai_streaming_generation_info() -> None:
 
     callback = _FakeCallback()
     callback_manager = CallbackManager([callback])
-    chat = ChatOpenAI(max_tokens=2, temperature=0, callbacks=callback_manager)  # type: ignore[call-arg]
-    list(chat.stream("hi"))
+    chat = ChatOpenAI(
+        model="gpt-6-luna",
+        reasoning_effort="none",
+        max_tokens=MAX_TOKEN_COUNT,
+        temperature=0,
+        callbacks=callback_manager,
+    )  # type: ignore[call-arg]
+    chunks = list(chat.stream("hi"))
     generation = callback.saved_things["generation"]
-    # `Hello!` is two tokens, assert that is what is returned
-    assert generation.generations[0][0].text == "Hello!"
+    assert generation.generations[0][0].text
+    assert generation.generations[0][0].text == "".join(chunk.text for chunk in chunks)
 
 
 def test_chat_openai_llm_output_contains_model_name() -> None:
     """Test llm_output contains model_name."""
-    chat = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
+    chat = ChatOpenAI(
+        model="gpt-6-luna", reasoning_effort="none", max_tokens=MAX_TOKEN_COUNT
+    )  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     llm_result = chat.generate([[message]])
     assert llm_result.llm_output is not None
@@ -230,7 +251,12 @@ def test_chat_openai_llm_output_contains_model_name() -> None:
 
 def test_chat_openai_streaming_llm_output_contains_model_name() -> None:
     """Test llm_output contains model_name."""
-    chat = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT, streaming=True)  # type: ignore[call-arg]
+    chat = ChatOpenAI(
+        model="gpt-6-luna",
+        reasoning_effort="none",
+        max_tokens=MAX_TOKEN_COUNT,
+        streaming=True,
+    )  # type: ignore[call-arg]
     message = HumanMessage(content="Hello")
     llm_result = chat.generate([[message]])
     assert llm_result.llm_output is not None
@@ -247,7 +273,12 @@ def test_chat_openai_invalid_streaming_params() -> None:
 @pytest.mark.parametrize("use_responses_api", [False, True])
 async def test_openai_abatch_tags(use_responses_api: bool) -> None:
     """Test batch tokens from ChatOpenAI."""
-    llm = ChatOpenAI(max_tokens=MAX_TOKEN_COUNT, use_responses_api=use_responses_api)  # type: ignore[call-arg]
+    llm = ChatOpenAI(
+        model="gpt-6-luna",
+        reasoning_effort="none",
+        max_tokens=MAX_TOKEN_COUNT,
+        use_responses_api=use_responses_api,
+    )  # type: ignore[call-arg]
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -444,7 +475,7 @@ def test_flex_usage_responses(streaming: bool) -> None:
 
 async def test_abatch_tags() -> None:
     """Test batch tokens from ChatOpenAI."""
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model="gpt-6-luna", reasoning_effort="none")
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
@@ -454,7 +485,7 @@ async def test_abatch_tags() -> None:
 
 
 def test_response_metadata() -> None:
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model="gpt-6-luna", reasoning_effort="none")
     result = llm.invoke([HumanMessage(content="I'm PickleRick")], logprobs=True)
     assert result.response_metadata
     assert all(
@@ -472,7 +503,7 @@ def test_response_metadata() -> None:
 
 
 async def test_async_response_metadata() -> None:
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model="gpt-6-luna", reasoning_effort="none")
     result = await llm.ainvoke([HumanMessage(content="I'm PickleRick")], logprobs=True)
     assert result.response_metadata
     assert all(
@@ -490,7 +521,7 @@ async def test_async_response_metadata() -> None:
 
 
 def test_response_metadata_streaming() -> None:
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model="gpt-6-luna", reasoning_effort="none")
     full: BaseMessageChunk | None = None
     for chunk in llm.stream("I'm Pickle Rick", logprobs=True):
         assert isinstance(chunk.content, str)
@@ -503,7 +534,7 @@ def test_response_metadata_streaming() -> None:
 
 
 async def test_async_response_metadata_streaming() -> None:
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(model="gpt-6-luna", reasoning_effort="none")
     full: BaseMessageChunk | None = None
     async for chunk in llm.astream("I'm Pickle Rick", logprobs=True):
         assert isinstance(chunk.content, str)
@@ -688,7 +719,10 @@ def test_openai_proxy() -> None:
 def test_openai_response_headers(use_responses_api: bool) -> None:
     """Test ChatOpenAI response headers."""
     chat_openai = ChatOpenAI(
-        include_response_headers=True, use_responses_api=use_responses_api
+        model="gpt-6-luna",
+        reasoning_effort="none",
+        include_response_headers=True,
+        use_responses_api=use_responses_api,
     )
     query = "I'm Pickle Rick"
     result = chat_openai.invoke(query, max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]
@@ -712,7 +746,10 @@ def test_openai_response_headers(use_responses_api: bool) -> None:
 async def test_openai_response_headers_async(use_responses_api: bool) -> None:
     """Test ChatOpenAI response headers."""
     chat_openai = ChatOpenAI(
-        include_response_headers=True, use_responses_api=use_responses_api
+        model="gpt-6-luna",
+        reasoning_effort="none",
+        include_response_headers=True,
+        use_responses_api=use_responses_api,
     )
     query = "I'm Pickle Rick"
     result = await chat_openai.ainvoke(query, max_tokens=MAX_TOKEN_COUNT)  # type: ignore[call-arg]

@@ -361,8 +361,8 @@ def test_compat_responses_v03() -> None:
             "id": "msg_123",
         },
         {
-            "type": "non_standard",
-            "value": {"type": "refusal", "refusal": "I cannot assist with that."},
+            "type": "refusal",
+            "refusal": "I cannot assist with that.",
         },
         {
             "type": "tool_call",

@@ -175,6 +175,8 @@ def _convert_to_v1_from_chat_completions(
             }
         )
 
+    if refusal := message.additional_kwargs.get("refusal"):
+        content_blocks.append({"type": "refusal", "refusal": refusal})
     return content_blocks
 
 
@@ -260,6 +262,8 @@ def _convert_to_v1_from_chat_completions_chunk(
                 tc["index"] = idx
             content_blocks.append(tc)
 
+    if refusal := chunk.additional_kwargs.get("refusal"):
+        content_blocks.append({"type": "refusal", "refusal": refusal})
     return content_blocks
 
 
@@ -673,6 +677,25 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 if "index" in block:
                     block["index"] = f"lc_txt_{block['index']}"
                 yield cast("types.TextContentBlock", block)
+
+            elif block_type == "refusal":
+                refusal_block: types.RefusalContentBlock = {
+                    "type": "refusal",
+                    "refusal": block.get("refusal", ""),
+                }
+                for key in ("id", "index"):
+                    if key in block:
+                        refusal_block[key] = block[key]
+                refusal_extras = {
+                    k: v
+                    for k, v in block.items()
+                    if k not in {"type", "refusal", "id", "index", "extras"}
+                }
+                if block.get("extras"):
+                    refusal_extras = {**block["extras"], **refusal_extras}
+                if refusal_extras:
+                    refusal_block["extras"] = refusal_extras
+                yield refusal_block
 
             elif block_type == "reasoning":
                 yield from _explode_reasoning(block)

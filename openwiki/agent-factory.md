@@ -12,10 +12,10 @@ sources:
     resource: repo://libs/langchain_v1/langchain/agents/middleware/_trace_policy.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-21T08:30:16.745Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-10T08:17:41.265Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-09-28T08:35:20.640Z
+    at: 2026-11-10T08:17:41.265Z
 ---
 
 ## Overview
@@ -590,6 +590,87 @@ agent = create_agent(
 | `interrupt_after` | `list[str]` | `None` | Pause after these nodes |
 | `debug` | `bool` | `False` | Verbose logging |
 | `name` | `str` | `None` | Graph identifier |
+
+## Graph Node Construction
+
+### Model Node
+
+The model node executes the language model with proper middleware composition. It:
+
+1. Patches invalid tool calls from previous execution
+2. Creates a `ModelRequest` with current state and model configuration
+3. If middleware `wrap_model_call` hooks exist, composes them into a stack where the outermost middleware is called first
+4. Executes the composed handler chain, with each layer wrapping the inner execution
+5. Returns a `list[Command]` where each command applies state updates via LangGraph's reducers
+
+The model node supports both synchronous and asynchronous execution via `RunnableCallable`, automatically selecting the appropriate variant at runtime.
+
+### Tools Node
+
+The tools node (added only if tools are defined) executes pending tool calls:
+
+1. Receives an `AIMessage` with `tool_calls` from the model
+2. Batches pending calls and executes them in parallel (or sequentially based on configuration)
+3. If middleware `wrap_tool_call` hooks exist, composes them similarly to `wrap_model_call`
+4. Returns tool execution results as `ToolMessage`s added to state via reducers
+
+### Middleware Nodes
+
+For each middleware with implemented hooks, the factory creates dedicated nodes:
+
+- **`{name}.before_agent`**: Runs once at start (not in the loop)
+- **`{name}.before_model`**: Runs before each model call (in the loop)
+- **`{name}.after_model`**: Runs after each model call (in the loop)
+- **`{name}.after_agent`**: Runs once at end (not in the loop)
+
+These nodes return optional dicts with state updates. They support conditional routing via `jump_to` when declared with `@before_model(can_jump_to=["end"])`.
+
+## Edge Construction and Routing Logic
+
+After nodes are added, the factory builds conditional edges that handle:
+
+1. **Model-to-tools routing**: If the model returns tool calls, route to the tools node; otherwise exit
+2. **Tools-to-model looping**: After tool execution, loop back unless:
+   - All executed tools have `return_direct=True`
+   - A structured output tool was called
+   - No pending tool calls remain
+3. **Middleware chaining**: Each middleware hook type is chained sequentially (outermost first)
+
+The factory derives routing destinations based on:
+- Whether tools are defined
+- Whether structured output is enabled
+- Which middleware hooks are implemented
+- Whether `jump_to` overrides are used
+
+This allows complex flows: tools can loop back to `before_model` (for context-aware re-prompting), skip to `end` (for early exit), or proceed to the next middleware layer.
+
+## Compilation and Execution
+
+Once the graph topology is constructed, the factory compiles it via `StateGraph.compile()` with:
+
+- **Checkpointer**: For state persistence and resumability (optional)
+- **Store**: For cross-thread persistence (optional)
+- **Interrupt points**: Nodes where execution can be paused for user intervention (optional)
+- **Transformers**: Stream transformers for event filtering and projection (ToolCallTransformer is always added)
+
+The compiled graph returns a `CompiledStateGraph` ready for:
+
+```python
+# Streaming with updates
+for chunk in agent.stream({"messages": [...]}, stream_mode="updates"):
+    print(chunk)
+
+# Async streaming
+async for chunk in agent.astream({"messages": [...]}):
+    print(chunk)
+
+# Blocking invocation
+result = agent.invoke({"messages": [...]})
+
+# Streaming with events (v3 API)
+for event in agent.stream_events({"messages": [...]}, version="v3"):
+    print(event)
+```
 
 ## See Also
 

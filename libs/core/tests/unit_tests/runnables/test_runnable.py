@@ -1,4 +1,5 @@
 import asyncio
+import json
 import re
 import sys
 import time
@@ -13,7 +14,7 @@ from collections.abc import (
 )
 from functools import partial
 from operator import itemgetter
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 import pytest
@@ -30,12 +31,14 @@ from typing_extensions import TypedDict, override
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForLLMRun,
     CallbackManagerForRetrieverRun,
     atrace_as_chain_group,
     trace_as_chain_group,
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import (
+    BaseChatModel,
     FakeListChatModel,
     FakeListLLM,
     FakeStreamingListLLM,
@@ -45,12 +48,14 @@ from langchain_core.load import dumpd, dumps
 from langchain_core.load.load import loads
 from langchain_core.messages import AIMessageChunk, HumanMessage, SystemMessage
 from langchain_core.messages.base import BaseMessage
+from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import (
     BaseOutputParser,
     CommaSeparatedListOutputParser,
     StrOutputParser,
 )
-from langchain_core.outputs.chat_generation import ChatGeneration
+from langchain_core.outputs.chat_generation import ChatGeneration, ChatGenerationChunk
+from langchain_core.outputs.chat_result import ChatResult
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 from langchain_core.prompts import (
@@ -81,7 +86,11 @@ from langchain_core.runnables import (
     add,
     chain,
 )
-from langchain_core.runnables.base import RunnableMap, RunnableSerializable
+from langchain_core.runnables.base import (
+    RunnableMap,
+    RunnableSerializable,
+    _ChunkAccumulator,
+)
 from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
@@ -93,6 +102,7 @@ from langchain_core.tracers import (
 )
 from langchain_core.tracers._compat import pydantic_copy
 from langchain_core.tracers.context import collect_runs
+from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.pydantic import (
     PYDANTIC_VERSION,
     TypeBaseModel,
@@ -105,6 +115,9 @@ from tests.unit_tests.pydantic_utils import (
     skip_if_no_pydantic_v1,
 )
 from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
+
+if TYPE_CHECKING:
+    from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
 
 # Several tests assert the legacy `RunLog` / `RunLogPatch` output produced by
 # `astream_log`, which cannot be replaced by `astream` without losing coverage.
@@ -5120,11 +5133,6 @@ def test_runnable_gen_context_config() -> None:
     assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="Python 3.10 and below don't support running "
-    "async tasks in a specific context",
-)
 async def test_runnable_gen_context_config_async() -> None:
     """Test generator runnable config propagation.
 
@@ -5251,11 +5259,6 @@ def test_runnable_iter_context_config() -> None:
     assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="Python 3.10 and below don't support running "
-    "async tasks in a specific context",
-)
 async def test_runnable_iter_context_config_async() -> None:
     """Test generator runnable config propagation.
 
@@ -5378,11 +5381,6 @@ def test_runnable_lambda_context_config() -> None:
     assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="Python 3.10 and below don't support running "
-    "async tasks in a specific context",
-)
 async def test_runnable_lambda_context_config_async() -> None:
     """Test function runnable config propagation.
 
@@ -6064,3 +6062,425 @@ def test_runnable_sequence_v1_output_schema_with_pick() -> None:
     schema = sequence.get_output_jsonschema()
     assert set(schema["properties"]) == {"a"}
     assert "a" in schema["required"]
+
+
+class _RootRunOutput(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.output: Any = None
+
+    @override
+    def on_chain_end(
+        self,
+        outputs: Any,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        if parent_run_id is None:
+            self.output = outputs
+
+
+def test_stream_gives_callbacks_the_chunks_added_up() -> None:
+    chunks = [
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                tool_call_chunk(name="search", args="", id="call_a", index=0)
+            ],
+            usage_metadata={"input_tokens": 3, "output_tokens": 1, "total_tokens": 4},
+        ),
+        AIMessageChunk(
+            content="Hello ",
+            tool_call_chunks=[
+                tool_call_chunk(name="fetch", args='{"url": ', id="call_b", index=1)
+            ],
+        ),
+        AIMessageChunk(
+            content="world",
+            tool_call_chunks=[
+                tool_call_chunk(name=None, args='{"q": "x"}', id=None, index=0),
+                tool_call_chunk(name=None, args='"a"}', id=None, index=1),
+            ],
+            usage_metadata={"input_tokens": 0, "output_tokens": 2, "total_tokens": 2},
+        ),
+    ]
+    added_up = chunks[0]
+    for chunk in chunks[1:]:
+        added_up += chunk
+
+    def model(_: Iterator[Any]) -> Iterator[AIMessageChunk]:
+        yield from chunks
+
+    root_output = _RootRunOutput()
+    list(RunnableGenerator(model).stream("hi", {"callbacks": [root_output]}))
+
+    assert root_output.output == added_up
+
+
+class _InvokeOnly(Runnable[Any, Any]):
+    @override
+    def invoke(
+        self, input: Any, config: RunnableConfig | None = None, **kwargs: Any
+    ) -> Any:
+        return input
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+@pytest.mark.parametrize(
+    "next_step", ["generator", "lambda", "generator lambda", "invoke only"]
+)
+async def test_streaming_a_long_tool_call_parses_its_args_in_linear_time(
+    monkeypatch: pytest.MonkeyPatch, *, use_async: bool, next_step: str
+) -> None:
+    args = json.dumps({"content": "x" * 5_000})
+    chunks = [
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                tool_call_chunk(
+                    name="write_file" if i == 0 else None,
+                    args=args[i : i + 10],
+                    id="call_1" if i == 0 else None,
+                    index=0,
+                )
+            ],
+        )
+        for i in range(0, len(args), 10)
+    ]
+    parsed_chars = 0
+
+    def counting_parse_partial_json(s: str, *, strict: bool = False) -> Any:
+        nonlocal parsed_chars
+        parsed_chars += len(s)
+        return parse_partial_json(s, strict=strict)
+
+    monkeypatch.setattr(
+        "langchain_core.messages.ai.parse_partial_json", counting_parse_partial_json
+    )
+
+    def model(_: Iterator[Any]) -> Iterator[AIMessageChunk]:
+        yield from chunks
+
+    async def amodel(_: AsyncIterator[Any]) -> AsyncIterator[AIMessageChunk]:
+        for chunk in chunks:
+            yield chunk
+
+    def passthrough(
+        messages: Iterator[AIMessageChunk],
+    ) -> Iterator[AIMessageChunk]:
+        yield from messages
+
+    async def apassthrough(
+        messages: AsyncIterator[AIMessageChunk],
+    ) -> AsyncIterator[AIMessageChunk]:
+        async for message in messages:
+            yield message
+
+    def regenerate(_: AIMessageChunk) -> Iterator[AIMessageChunk]:
+        yield from chunks
+
+    async def aregenerate(_: AIMessageChunk) -> AsyncIterator[AIMessageChunk]:
+        for chunk in chunks:
+            yield chunk
+
+    next_steps: dict[str, Runnable[Any, Any]] = {
+        "generator": RunnableGenerator(passthrough, apassthrough),
+        "lambda": RunnableLambda(lambda message: message),
+        "generator lambda": RunnableLambda(regenerate, aregenerate),
+        "invoke only": _InvokeOnly(),
+    }
+    chain = RunnableGenerator(model, amodel) | next_steps[next_step]
+    root_output = _RootRunOutput()
+    config: RunnableConfig = {"callbacks": [root_output]}
+    if use_async:
+        streamed = [chunk async for chunk in chain.astream("hi", config)]
+    else:
+        streamed = list(chain.stream("hi", config))
+
+    assert streamed
+    assert root_output.output.tool_calls == [
+        {
+            "name": "write_file",
+            "args": {"content": "x" * 5_000},
+            "id": "call_1",
+            "type": "tool_call",
+        }
+    ]
+    assert parsed_chars < 10 * len(args), (
+        f"parsed {parsed_chars} characters for {len(args)} characters of arguments"
+    )
+
+
+def _add_one_at_a_time(chunks: list[Any], *, stop_after_unaddable: bool) -> Any:
+    value = None
+    addable = True
+    for chunk in chunks:
+        if value is None or not addable:
+            value = chunk
+            continue
+        try:
+            value = value + chunk
+        except TypeError:
+            value = chunk
+            addable = not stop_after_unaddable
+    return value
+
+
+# Chunk sequences whose sum differs between merging leading AIMessageChunks at
+# once and adding one at a time, if the merge ever falls short.
+@pytest.mark.parametrize(
+    "chunks",
+    [
+        pytest.param([], id="empty"),
+        pytest.param(
+            [AIMessageChunk(content="a"), AIMessageChunk(content="b")], id="messages"
+        ),
+        pytest.param(
+            [
+                AIMessageChunk(content="a", response_metadata={"t": 1.5}),
+                AIMessageChunk(content="b", response_metadata={"t": 2.5}),
+                AIMessageChunk(content="c"),
+            ],
+            id="messages that can't be added",
+        ),
+        pytest.param(
+            [
+                AIMessageChunk(content="x"),
+                None,
+                AIMessageChunk(content="y"),
+                AIMessageChunk(content="z"),
+            ],
+            id="a None between messages",
+        ),
+        pytest.param(
+            [AIMessageChunk(content="x"), "s", AIMessageChunk(content="y")],
+            id="a string between messages",
+        ),
+        pytest.param(["a", "b", 1, "c"], id="strings and an int"),
+        pytest.param([{"a": 1}, {"b": 2}], id="plain dicts"),
+    ],
+)
+@pytest.mark.parametrize("stop_after_unaddable", [True, False])
+def test_chunk_accumulator_sums_like_adding_one_at_a_time(
+    chunks: list[Any], *, stop_after_unaddable: bool
+) -> None:
+    accumulated = _ChunkAccumulator(stop_after_unaddable=stop_after_unaddable)
+    for chunk in chunks:
+        accumulated.add(chunk)
+
+    assert accumulated.value == _add_one_at_a_time(
+        chunks, stop_after_unaddable=stop_after_unaddable
+    )
+
+
+class _RootRunError(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.error: BaseException | None = None
+
+    @override
+    def on_chain_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        if parent_run_id is None:
+            self.error = error
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_a_merge_that_raises_after_the_stream_still_ends_the_run(
+    *, use_async: bool
+) -> None:
+    usage: UsageMetadata = {
+        "input_tokens": 1,
+        "output_tokens": 1,
+        "total_tokens": 2,
+        "input_token_details": cast("InputTokenDetails", {"unknown": 0.5}),
+    }
+    chunks = [AIMessageChunk(content="x", usage_metadata=usage) for _ in range(2)]
+
+    def model(_: Iterator[Any]) -> Iterator[AIMessageChunk]:
+        yield from chunks
+
+    async def amodel(_: AsyncIterator[Any]) -> AsyncIterator[AIMessageChunk]:
+        for chunk in chunks:
+            yield chunk
+
+    root_error = _RootRunError()
+    generator = RunnableGenerator(model, amodel)
+    config: RunnableConfig = {"callbacks": [root_error]}
+
+    async def consume() -> None:
+        if use_async:
+            _ = [chunk async for chunk in generator.astream("hi", config)]
+        else:
+            _ = list(generator.stream("hi", config))
+
+    with pytest.raises(ValueError, match="Unknown value types"):
+        await consume()
+
+    assert isinstance(root_error.error, ValueError)
+
+
+class _ChainErrors(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.errors: list[BaseException] = []
+
+    @override
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
+        self.errors.append(error)
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_an_unmergeable_input_does_not_replace_an_upstream_error(
+    *, use_async: bool
+) -> None:
+    usage: UsageMetadata = {
+        "input_tokens": 1,
+        "output_tokens": 1,
+        "total_tokens": 2,
+        "input_token_details": cast("InputTokenDetails", {"unknown": 0.5}),
+    }
+    chunks = [AIMessageChunk(content="x", usage_metadata=usage) for _ in range(2)]
+
+    class UpstreamError(Exception):
+        pass
+
+    def up(_: Iterator[Any]) -> Iterator[AIMessageChunk]:
+        yield from chunks
+        raise UpstreamError
+
+    async def aup(_: AsyncIterator[Any]) -> AsyncIterator[AIMessageChunk]:
+        for chunk in chunks:
+            yield chunk
+        raise UpstreamError
+
+    def down(it: Iterator[Any]) -> Iterator[Any]:
+        yield next(it)
+
+    async def adown(it: AsyncIterator[Any]) -> AsyncIterator[Any]:
+        yield await anext(it)
+
+    errors = _ChainErrors()
+    chain = RunnableGenerator(up, aup) | RunnableGenerator(down, adown)
+    config: RunnableConfig = {"callbacks": [errors]}
+
+    async def consume() -> None:
+        if use_async:
+            _ = [chunk async for chunk in chain.astream("hi", config)]
+        else:
+            _ = list(chain.stream("hi", config))
+
+    with pytest.raises(UpstreamError):
+        await consume()
+
+    # Every run that saw the error ended with it, not with the merge error.
+    assert errors.errors
+    assert all(isinstance(error, UpstreamError) for error in errors.errors)
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_tracing_and_a_lambda_handle_a_none_between_messages_as_before(
+    *, use_async: bool
+) -> None:
+    chunks = [
+        AIMessageChunk(content="x"),
+        None,
+        AIMessageChunk(content="y"),
+        AIMessageChunk(content="z"),
+    ]
+
+    def model(_: Iterator[Any]) -> Iterator[Any]:
+        yield from chunks
+
+    async def amodel(_: AsyncIterator[Any]) -> AsyncIterator[Any]:
+        for chunk in chunks:
+            yield chunk
+
+    received: list[Any] = []
+
+    def record(message: Any) -> Any:
+        received.append(message.content)
+        return message
+
+    root_output = _RootRunOutput()
+    generator = RunnableGenerator(model, amodel)
+    chain = generator | RunnableLambda(record)
+    config: RunnableConfig = {"callbacks": [root_output]}
+    if use_async:
+        _ = [chunk async for chunk in generator.astream("hi", config)]
+        _ = [chunk async for chunk in chain.astream("hi")]
+    else:
+        _ = list(generator.stream("hi", config))
+        _ = list(chain.stream("hi"))
+
+    assert root_output.output.content == "z"
+    assert received == ["yz"]
+
+
+class _ReasonsThenAnswers(BaseChatModel):
+    @property
+    def _llm_type(self) -> str:
+        return "reasons-then-answers"
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        raise NotImplementedError
+
+    @override
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(content=[{"type": "thinking", "thinking": "hmm"}])
+        )
+        for text in ["Hel", "lo", " world"]:
+            yield ChatGenerationChunk(message=AIMessageChunk(content=text))
+
+
+class _ModelOutput(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.content: Any = None
+
+    @override
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+        generation = response.generations[0][0]
+        assert isinstance(generation, ChatGeneration)
+        self.content = generation.message.content
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_streaming_a_reasoning_block_then_text_adds_the_text_once(
+    *, use_async: bool
+) -> None:
+    received: list[Any] = []
+
+    def record(message: BaseMessage) -> BaseMessage:
+        received.append(message.content)
+        return message
+
+    chain = _ReasonsThenAnswers() | RunnableLambda(record)
+    model_output = _ModelOutput()
+    config: RunnableConfig = {"callbacks": [model_output]}
+    if use_async:
+        _ = [chunk async for chunk in chain.astream("hi", config)]
+    else:
+        _ = list(chain.stream("hi", config))
+
+    content = [{"type": "thinking", "thinking": "hmm"}, "Hello world"]
+    assert received == [content]
+    assert model_output.content == content

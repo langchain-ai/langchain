@@ -19,7 +19,7 @@ auth = Auth()
 
 
 @auth.authenticate
-async def authenticate(headers: dict) -> Auth.types.MinimalUserDict:
+async def authenticate(headers: dict[bytes, bytes]) -> Auth.types.MinimalUserDict:
     """Resolve the caller from `x-user-id`, rejecting requests without one."""
     user_id = headers.get(b"x-user-id")
     if not user_id:

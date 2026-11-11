@@ -8,12 +8,13 @@ import logging
 from typing import (
     TYPE_CHECKING,
     Any,
+    NotRequired,
     TypedDict,
     TypeVar,
     cast,
 )
 
-from typing_extensions import NotRequired, override
+from typing_extensions import override
 
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackManager
 from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk

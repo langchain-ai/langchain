@@ -12,9 +12,9 @@ from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
 
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_core.callbacks.base import (
     BaseCallbackHandler,
@@ -248,18 +248,9 @@ def shielded(func: Func) -> Func:
         # Create the coroutine
         coro = func(*args, **kwargs)
 
-        # For Python 3.11+, create task with explicit context
-        # For older versions, fallback to original behavior
-        try:
-            # Create a task with the captured context to preserve context variables
-            task = asyncio.create_task(coro, context=ctx)  # type: ignore[call-arg, unused-ignore]
-            # `call-arg` used to not fail 3.9 or 3.10 tests
-            return await asyncio.shield(task)
-        except TypeError:
-            # Python < 3.11 fallback - create task normally then shield
-            # This won't preserve context perfectly but is better than nothing
-            task = asyncio.create_task(coro)
-            return await asyncio.shield(task)
+        # Create a task with the captured context to preserve context variables
+        task = asyncio.create_task(coro, context=ctx)
+        return await asyncio.shield(task)
 
     return cast("Func", wrapped)
 
@@ -384,32 +375,17 @@ def _run_coros(coros: list[Coroutine[Any, Any, Any]]) -> None:
     # driven through sync `handle_event` therefore never propagate, unlike errors
     # from sync handlers (which honor `raise_error`). This is a pre-existing
     # asymmetry between the sync and async callback paths.
-    if hasattr(asyncio, "Runner"):
-        # Python 3.11+
-        # Run the coroutines in a new event loop, taking care to
-        # - install signal handlers
-        # - run pending tasks scheduled by `coros`
-        # - close asyncgens and executors
-        # - close the loop
-        with asyncio.Runner() as runner:
-            # Run the coroutine, get the result
-            for coro in coros:
-                try:
-                    runner.run(coro)
-                except Exception as e:
-                    logger.warning("Error in callback coroutine: %s", repr(e))
-
-            # Run pending tasks scheduled by coros until they are all done
-            while pending := asyncio.all_tasks(runner.get_loop()):
-                runner.run(asyncio.wait(pending))
-    else:
-        # Before Python 3.11 we need to run each coroutine in a new event loop
-        # as the Runner api is not available.
+    with asyncio.Runner() as runner:
+        # Run the coroutine, get the result
         for coro in coros:
             try:
-                asyncio.run(coro)
+                runner.run(coro)
             except Exception as e:
                 logger.warning("Error in callback coroutine: %s", repr(e))
+
+        # Run pending tasks scheduled by coros until they are all done
+        while pending := asyncio.all_tasks(runner.get_loop()):
+            runner.run(asyncio.wait(pending))
 
 
 async def _ahandle_event_for_handler(
@@ -2701,12 +2677,6 @@ async def adispatch_custom_event(
             print(event)
         ```
 
-    !!! warning
-
-        If using python 3.10 and async, you MUST specify the `config` parameter or the
-        function will raise an error. This is due to a limitation in asyncio for python
-        3.10 that prevents LangChain from automatically propagating the config object on
-        the user's behalf.
     """
     # Import locally to prevent circular imports.
     from langchain_core.runnables.config import (  # noqa: PLC0415

@@ -1,11 +1,11 @@
 """Messages for tools."""
 
 import json
-from typing import Any, Literal, cast, overload
+from typing import Any, Literal, NotRequired, cast, overload
 from uuid import UUID
 
 from pydantic import Field, model_validator
-from typing_extensions import NotRequired, TypedDict, override
+from typing_extensions import TypedDict, override
 
 from langchain_core.messages import content as types
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content

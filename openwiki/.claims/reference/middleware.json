@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:e27f2e51a9e0e04fe9a039f16b224bc861e95e85085a331ee4e2ebea9d8e3acc",
+  "claims": [
+    {
+      "id": "claim_37a46b11c73844ac8d4d5ee6f2f737c6",
+      "statement": "Agent middleware provides a composable, layered approach to intercepting and modifying agent behavior at well-defined execution points without changing core agent logic, with handlers registered for lifecycle hooks spanning initialization (before_agent), per-iteration model invocation (before_model, wrap_model_call, after_model), tool execution (wrap_tool_call), and completion (after_agent), composing by wrapping handlers in registration order to enable cross-cutting concerns such as automatic retries, error handling, human-in-the-loop approval, and request/response transformation.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
+          "version": "repo-file-v1:sha256:b70e7cffd19d840505b034d036926064d1a07e834aae4a35da2e0a47e0423438"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py",
+          "version": "repo-file-v1:sha256:56688206dce0334e7ca82125d7b809c23427890c234dfd69123dad038a387f31"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-11-10T08:17:41.265Z"
+  }
+}

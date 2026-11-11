@@ -413,10 +413,17 @@ def _convert_responses_to_chat_result(response: Any) -> ChatResult:
     content = _extract_responses_text(response)
 
     tool_calls: list[dict[str, Any]] = []
+    additional_kwargs: dict[str, Any] = {}
     output = _get_attr(response, "output", None) or []
     for item in output:
         item_type = _get_attr(item, "type", None)
-        if item_type == "function_call":
+        if item_type == "search_results":
+            if results := _get_attr(item, "results", None):
+                additional_kwargs.setdefault("search_results", []).extend(
+                    result.model_dump() if isinstance(result, BaseModel) else result
+                    for result in results
+                )
+        elif item_type == "function_call":
             raw_args = _get_attr(item, "arguments", "") or ""
             try:
                 parsed_args = json.loads(raw_args) if raw_args else {}
@@ -442,7 +449,6 @@ def _convert_responses_to_chat_result(response: Any) -> ChatResult:
 
     usage_metadata = _convert_responses_usage(_get_attr(response, "usage", None))
 
-    additional_kwargs: dict[str, Any] = {}
     for key in (
         "citations",
         "images",
@@ -453,7 +459,7 @@ def _convert_responses_to_chat_result(response: Any) -> ChatResult:
     ):
         value = _get_attr(response, key, None)
         if value:
-            additional_kwargs[key] = value
+            additional_kwargs.setdefault(key, value)
 
     response_metadata: dict[str, Any] = {}
     for key in ("id", "model", "status", "object"):
@@ -504,7 +510,8 @@ def _convert_responses_stream_event_to_chunk(
 ) -> ChatGenerationChunk | None:
     """Convert a Responses API streaming event to a `ChatGenerationChunk`.
 
-    Handles `response.output_text.delta` (text chunk), `response.output_item.done`
+    Handles `response.reasoning.search_results` (source metadata),
+    `response.output_text.delta` (text chunk), `response.output_item.done`
     carrying a `function_call` (surfaced as a tool-call chunk), `response.completed`
     (final usage + metadata), and `response.failed` / `response.error`
     (raises `PerplexityResponsesStreamError`). Returns `None` for any other
@@ -512,6 +519,22 @@ def _convert_responses_stream_event_to_chunk(
     diagnosable without flooding logs.
     """
     event_type = _get_attr(event, "type", None)
+    if event_type == "response.reasoning.search_results":
+        if results := _get_attr(event, "results", None):
+            return ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content="",
+                    additional_kwargs={
+                        "search_results": [
+                            result.model_dump()
+                            if isinstance(result, BaseModel)
+                            else result
+                            for result in results
+                        ]
+                    },
+                )
+            )
+        return None
     if event_type == "response.output_text.delta":
         delta = _get_attr(event, "delta", "") or ""
         return ChatGenerationChunk(message=AIMessageChunk(content=delta))

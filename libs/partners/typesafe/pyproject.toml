@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "langchain-typesafe"
-version = "0.0.1a3"
+version = "0.0.2"
 description = "A LangChain integration for TypeSafe classifiers"
 license = { text = "MIT" }
 readme = "README.md"
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -22,7 +22,7 @@ classifiers = [
 ]
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "httpx2>=2.0.0,<3.0.0",
+    "httpx2>=2.0.0",
     "langchain-core>=1.6.2,<2.0.0",
 ]
 
