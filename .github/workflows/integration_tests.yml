@@ -84,6 +84,7 @@ jobs:
     name: "📋 Compute Test Matrix"
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      python-versions: ${{ steps.set-matrix.outputs.python-versions }}
     steps:
       - name: "🔢 Generate Python & Library Matrix"
         id: set-matrix
@@ -139,14 +140,12 @@ jobs:
           fi
           matrix="$(jq -nc \
             --argjson versions "$python_version" \
-            --argjson integration_versions "$python_version_min_3_11" \
             --argjson directories "$working_directory" \
-            '{include: [$directories[] as $dir |
-              (if ($dir == "libs/partners/openai" or $dir == "libs/partners/perplexity")
-               then $integration_versions else $versions end)[] |
+            '{include: [$directories[] as $dir | $versions[] |
               {"working-directory": $dir, "python-version": .}]}')"
           echo "$matrix"
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
+          echo "python-versions=$python_version" >> $GITHUB_OUTPUT
 
   # Run integration tests against partner libraries with live API credentials
   integration-tests:
@@ -363,7 +362,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ${{ fromJSON(needs.compute-matrix.outputs.matrix).python-version }}
+        python-version: ${{ fromJSON(needs.compute-matrix.outputs.python-versions) }}
         package:
           - name: deepagents
             repo: langchain-ai/deepagents
