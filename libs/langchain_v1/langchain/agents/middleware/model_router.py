@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, NotRequired
 
+from langchain_core._api import beta
 from langchain_core.decisions import BaseDecisionModel, Choice, ChoiceAnswer, Content, Question
 from langchain_core.language_models import BaseChatModel  # noqa: TC002  # used by pydantic
 from langchain_core.messages import HumanMessage
@@ -67,6 +68,7 @@ class _ModelRouterState(AgentState):
     model_route: NotRequired[ChoiceAnswer]
 
 
+@beta(obj_type="middleware")
 class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
     """Select an agent's model with a decision model's `Choice` answer.
 
