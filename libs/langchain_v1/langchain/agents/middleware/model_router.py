@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NotRequired
 
 from langchain_core.decisions import BaseDecisionModel, Choice, ChoiceAnswer, Content, Question
 from langchain_core.language_models import BaseChatModel  # noqa: TC002  # used by pydantic
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field, JsonValue
-from typing_extensions import NotRequired, override
+from typing_extensions import override
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
