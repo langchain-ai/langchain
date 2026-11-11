@@ -50,7 +50,10 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             raise ImportError(msg) from err
 
         self.model_name = model_name
-        self._model = sentence_transformer_cls(self.model_name, **(model_kwargs or {}))
+        # Only the tokenizer and `max_seq_length` are used, so keep the weights on
+        # CPU unless the caller explicitly sets a device.
+        model_kwargs = {"device": "cpu", **(model_kwargs or {})}
+        self._model = sentence_transformer_cls(self.model_name, **model_kwargs)
         self.tokenizer = self._model.tokenizer
         self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
 
