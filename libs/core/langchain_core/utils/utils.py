@@ -1,7 +1,7 @@
 """Generic utility functions."""
 
 import contextlib
-import datetime
+import datetime as dt
 import functools
 import importlib
 import os
@@ -71,7 +71,7 @@ def raise_for_status_with_text(response: Response) -> None:
 
 
 @contextlib.contextmanager
-def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
+def mock_now(dt_value: dt.datetime) -> Iterator[type]:
     """Context manager for mocking out datetime.now() in unit tests.
 
     Args:
@@ -87,12 +87,12 @@ def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
         ```
     """
 
-    class MockDateTime(datetime.datetime):
+    class MockDateTime(dt.datetime):
         """Mock datetime.datetime.now() with a fixed datetime."""
 
         @classmethod
         @override
-        def now(cls, tz: datetime.tzinfo | None = None) -> "MockDateTime":
+        def now(cls, tz: dt.tzinfo | None = None) -> "MockDateTime":
             # Create a copy of dt_value.
             return MockDateTime(
                 dt_value.year,
@@ -105,12 +105,12 @@ def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
                 dt_value.tzinfo,
             )
 
-    real_datetime = datetime.datetime
-    datetime.datetime = MockDateTime  # type: ignore[misc]
+    real_datetime = dt.datetime
+    dt.datetime = MockDateTime  # type: ignore[misc]
     try:
-        yield datetime.datetime
+        yield dt.datetime
     finally:
-        datetime.datetime = real_datetime  # type: ignore[misc]
+        dt.datetime = real_datetime  # type: ignore[misc]
 
 
 def guard_import(

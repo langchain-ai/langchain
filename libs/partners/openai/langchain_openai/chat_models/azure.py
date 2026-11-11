@@ -954,6 +954,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+
+                If the model refuses, `ModelRefusalError` is raised, or returned as
+                `'parsing_error'` when `include_raw` is `True`.
             strict:
 
                 - True:

@@ -376,6 +376,8 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     block["annotations"] = cast("list[types.Annotation]", citations)
                     break
 
+        if refusal := _refusal_from_metadata(message.response_metadata):
+            string_blocks.append(refusal)
         return string_blocks
 
     if not isinstance(message.content, list):
@@ -568,7 +570,42 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                 missing_tool_call_block["index"] = index
             converted_blocks.append(missing_tool_call_block)
 
+    if refusal := _refusal_from_metadata(message.response_metadata):
+        converted_blocks.append(refusal)
     return converted_blocks
+
+
+_REFUSAL_FINISH_REASONS = frozenset({"SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST"})
+"""Candidate finish reasons that mean Gemini blocked the response."""
+
+
+def _reason_name(reason: object) -> str | None:
+    """Return the enum member name of a Gemini finish or block reason."""
+    if not reason:
+        return None
+    return str(getattr(reason, "name", reason)).rsplit(".", 1)[-1]
+
+
+def _refusal_from_metadata(
+    response_metadata: dict[str, Any],
+) -> types.RefusalContentBlock | None:
+    """Build a refusal block from Gemini's finish or prompt block reason."""
+    extras: dict[str, Any] = {}
+    finish_reason = _reason_name(response_metadata.get("finish_reason"))
+    if finish_reason in _REFUSAL_FINISH_REASONS:
+        extras["finish_reason"] = finish_reason
+    feedback = response_metadata.get("prompt_feedback")
+    if isinstance(feedback, dict):
+        block_reason = _reason_name(feedback.get("block_reason"))
+        if block_reason and block_reason != "BLOCKED_REASON_UNSPECIFIED":
+            extras["block_reason"] = block_reason
+    if not extras:
+        return None
+    return {
+        "type": "refusal",
+        "refusal": response_metadata.get("finish_message") or "",
+        "extras": extras,
+    }
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:

@@ -34,11 +34,12 @@ if TYPE_CHECKING:
 def _is_destructive(tool: BaseTool) -> bool:
     """Read the MCP destructive hint off the adapter's tool metadata."""
     annotations = (tool.metadata or {}).get("mcp", {}).get("tool", {}).get("annotations", {})
-    return annotations.get("destructive_hint", False)
+    return bool(annotations.get("destructive_hint", False))
 
 
-def _describe(tool_call: Any, _state: Any, _runtime: Any) -> str:
+def _describe(tool_call: Any, state: Any, runtime: Any) -> str:
     """Format the approval prompt from the pending tool call."""
+    del state, runtime
     return f"Approve destructive call {tool_call['name']}({tool_call['args']})?"
 
 

@@ -2,17 +2,20 @@
 
 from __future__ import annotations
 
+import importlib
 import json
 import os
 from collections.abc import AsyncIterator, Sequence
 from contextlib import asynccontextmanager
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import httpx2
 import pytest
 from langchain.agents import create_agent
+from langchain.agents.middleware.auto_mode import _risk_questions
 from langchain.agents.middleware.types import InputAgentState, omit_payload
+from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import BaseTool, tool
@@ -21,14 +24,22 @@ from typing_extensions import Self, override
 
 import langchain_typesafe
 from langchain_typesafe import NoulCriteria, experimental
+from langchain_typesafe.classifier import TypeSafeClassifier
 from langchain_typesafe.client import TypeSafeInternalServerError
 from langchain_typesafe.experimental.middleware import AutoModeMiddleware
 from langchain_typesafe.experimental.middleware import __all__ as middleware_all
-from langchain_typesafe.experimental.middleware.auto_mode import _risk_questions
+from langchain_typesafe.experimental.middleware import (
+    auto_mode as experimental_auto_mode,
+)
 from langchain_typesafe.types import Noul
 
 API_KEY = "test-api-key"
-pytestmark = pytest.mark.asyncio
+pytestmark = [
+    pytest.mark.asyncio,
+    pytest.mark.filterwarnings(
+        "ignore::langchain_core._api.LangChainDeprecationWarning"
+    ),
+]
 
 
 class _ToolCallingModel(GenericFakeChatModel):
@@ -183,11 +194,40 @@ async def test_middleware_constructs_configurable_risk_classifier() -> None:
         )
 
 
+@pytest.mark.filterwarnings("default::langchain_core._api.LangChainDeprecationWarning")
+async def test_middleware_is_deprecated() -> None:
+    """Constructing the middleware points to the LangChain class."""
+    # The warning is emitted once per class, so construct a freshly loaded one.
+    module = importlib.reload(experimental_auto_mode)
+    with pytest.warns(
+        LangChainDeprecationWarning,
+        match=r"Use `langchain\.agents\.middleware\.AutoModeMiddleware` with "
+        r"`classifier=TypeSafeClassifier\(\)` instead\.",
+    ):
+        module.AutoModeMiddleware(
+            tools=["delete_file"], classifier=MagicMock(spec=TypeSafeClassifier)
+        )
+
+
+async def test_supplied_classifier_is_used() -> None:
+    """Use a caller-supplied classifier instead of constructing a default one."""
+    classifier = MagicMock(spec=TypeSafeClassifier)
+    with patch(
+        "langchain_typesafe.experimental.middleware.auto_mode.TypeSafeClassifier",
+    ) as classifier_class:
+        middleware = AutoModeMiddleware(tools=["delete_file"], classifier=classifier)
+
+    classifier_class.assert_not_called()
+    assert middleware.classifier is classifier
+
+
 async def test_none_criteria_is_supported() -> None:
     """Allow callers to classify without outcome criteria."""
     async with _middleware(0.2, tools=["delete_file"]) as middleware:
         assert middleware.config.criteria is None
-        assert _risk_questions(middleware.config)["is_risky"].criteria is None
+        question = _risk_questions(middleware.config)["is_risky"]
+        assert isinstance(question, Noul)
+        assert question.criteria is None
 
 
 async def test_base_tool_name_is_inferred() -> None:

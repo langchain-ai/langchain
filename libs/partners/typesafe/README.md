@@ -13,7 +13,7 @@ Set the `TYPESAFE_API_KEY` environment variable before making requests.
 
 ## Usage
 
-`TypeSafeClassifier` is a LangChain `Runnable` for probabilistic classification and scoring with TypeSafe.
+`TypeSafeClassifier` is a LangChain decision model (`langchain_core.decisions.BaseDecisionModel`) for probabilistic classification, scoring, and localization with TypeSafe. It supports `Noul`, `Choice`, `Score`, and `Box` questions.
 
 ```python
 from langchain_typesafe import Choice, Noul, Score, TypeSafeClassifier
@@ -59,25 +59,36 @@ request: ClassifierRequest = {
 result = classifier.invoke(request)
 ```
 
-### Experimental middleware
+### Images
 
-Install the experimental extra to use TypeSafe-powered agent middleware. APIs under `langchain_typesafe.experimental` may change without notice.
+Image content blocks with inline base64 data or a base64 `data:` URL can appear anywhere in `state` or in question `instructions` and `criteria`, including inside messages. They are sent to TypeSafe as request assets. PNG and JPEG images are supported; images are not downloaded from remote URLs.
 
-```bash
-uv add "langchain-typesafe[experimental]"
+```python
+from langchain_typesafe import Box
+
+result = classifier.invoke(
+    {
+        "state": {"type": "image", "base64": image_data, "mime_type": "image/png"},
+        "questions": {"dog": Box(instructions="Where is the dog?")},
+    }
+)
+print(result.boxes["dog"].box)
 ```
+
+### Agent middleware
+
+LangChain's `ModelRouterMiddleware` and `AutoModeMiddleware` accept any decision model as their `classifier`. Pass a `TypeSafeClassifier` to use TypeSafe.
+
+> **Deprecated:** `langchain_typesafe.experimental.middleware` is deprecated since 0.1.0 and will be removed in 0.2.0. Import the middleware from `langchain.agents.middleware` and pass `classifier=TypeSafeClassifier()` instead.
 
 #### `ModelRouterMiddleware`
 
-`ModelRouterMiddleware` routes an agent to a model selected by a TypeSafe `Choice` question:
-
+`ModelRouterMiddleware` routes an agent to a model selected by a `Choice` question:
 
 ```python
 from langchain.agents import create_agent
-from langchain_typesafe.experimental.middleware import (
-    ModelChoice,
-    ModelRouterMiddleware,
-)
+from langchain.agents.middleware import ModelChoice, ModelRouterMiddleware
+from langchain_typesafe import TypeSafeClassifier
 
 router = ModelRouterMiddleware(
     choices={
@@ -91,6 +102,7 @@ router = ModelRouterMiddleware(
         ),
     },
     instructions="Choose the least costly model suited to the task.",
+    classifier=TypeSafeClassifier(),
 )
 agent = create_agent("openai:gpt-5-mini", middleware=[router])
 ```
@@ -102,8 +114,8 @@ The model router classifies the latest human message once per agent run and stor
 `AutoModeMiddleware` classifies calls to explicitly configured tools and blocks risky calls before execution:
 
 ```python
-from langchain_typesafe import NoulCriteria
-from langchain_typesafe.experimental.middleware import AutoModeMiddleware
+from langchain.agents.middleware import AutoModeMiddleware
+from langchain_typesafe import NoulCriteria, TypeSafeClassifier
 
 auto_mode = AutoModeMiddleware(
     tools=[delete_file],
@@ -111,6 +123,7 @@ auto_mode = AutoModeMiddleware(
         true="The call writes, deletes, publishes, or changes access.",
         false="The call only reads public or user-provided data.",
     ),
+    classifier=TypeSafeClassifier(),
 )
 agent = create_agent(
     model,

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:4dc24f89ea9b3d894889f0a1354739830c889e1934274cd9d0f94f5cb7b3abbb",
+  "claims": [
+    {
+      "id": "claim_c5bc4bfccc6949a6b4fdab357d92d652",
+      "statement": "BaseTool is the abstract base class for all LangChain tools, defining the interface that all tools must implement, and tools are components that can be called by agents to perform specific actions with properties including name (unique identifier), description (for guiding model selection), args_schema (for input validation), and error handling configuration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L433-L545",
+          "version": "repo-lines-v1:sha256:1baff1696d54f472b07478f09e2d3c824d266964fc2bc141df2b483b0830d0c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNzEwZmFhMmY2NGI5MzZiNTFmMjNlMjU2OWYwZjM4ZWNkODJiYmM5NjI3MjdmYjQyZTEyMmM3YzhmM2M1ZmRjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlMzFmODU1ZTE2NTJlZWE5NmFmYTNjN2NiZTc1MGM4ZDMzZjM4MzM3N2ExYzMxOGUyOGU0ZTYxZDFmNTUzMmFiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3YzkyOGZhZWFhMWMxZjhjZDJmODQ4ZWMwYWU1ZGJlMTcxZGEzNjZiYjcyMjViMTMzZDJmZjZhYmZiZjAxZTg0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1MmE1ZjkzMmMxYmM1YzU4ZDJiMjhjODVjODk4ZjFmNDY5Zjc1MTQ3YWI1NjU1Y2IzZWQ5ZDQ0NDAxYWY1MDk0In0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

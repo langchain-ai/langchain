@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:8ea2b9339de8391b844afb22b1092337a57e30f5d98443055a07a67b7610f6bb",
+  "claims": [
+    {
+      "id": "claim_6ed03c3da42e493bb141460b032fc3d8",
+      "statement": "The /openwiki/reference/openai-provider.md page is a deprecated redirect marker; current OpenAI Provider documentation covering chat models (ChatOpenAI, BaseChatOpenAI, AzureChatOpenAI), message conversion, tool calling, streaming, and vision support is maintained in /openwiki/integrations/openai-provider.md.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/azure.py",
+          "version": "repo-file-v1:sha256:584af2fb8cb007c56d1a4a101860e999b242df08c6c294ab44986e2cfa52406a"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py",
+          "version": "repo-file-v1:sha256:1311fb3487aa309c8b649440ae07a3c1c472e6bdf913408fb979549877579e30"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-11-05T08:18:41.280Z"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:f58b109c60f07f1bc5a6b9cc6cd4351dce2318f7123c7337213b20415a6865aa",
+  "claims": [
+    {
+      "id": "claim_22e1af2a8d934d20bb1c8c530bf54dd2",
+      "statement": "/openwiki/reference/unit-tests.md is a deprecated redirect page that directs readers to the primary Unit Testing and Mocking documentation for comprehensive coverage of test structure, standard test classes, fixtures, mocking strategies, agent testing patterns, assertions, async testing, callbacks, and integration patterns.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/conftest.py",
+          "version": "repo-file-v1:sha256:db4edbdb240f9a7e3c35fc6eab5dd5024c15e3a4efa8155295fdb30489a34b75"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/unit_tests/chat_models.py",
+          "version": "repo-file-v1:sha256:ac985614811c80fb63a3563c19699732cd394425fafe39e39ea2a67124ef1179"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}
