@@ -12,6 +12,7 @@ from langchain_core.language_models.model_profile import ModelProfile
 from langchain_model_profiles.cli import (
     _model_data_to_profile,
     _warn_undeclared_profile_keys,
+    _write_profiles_file,
     refresh,
 )
 
@@ -174,6 +175,34 @@ def test_refresh_aborts_when_user_declines_external_directory(
     # Verify _profiles.py was NOT created
     profiles_file = data_dir / "_profiles.py"
     assert not profiles_file.exists()
+
+
+def test_write_profiles_file_symlink_error_names_output_file(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The symlink error must name the real output file, not a misspelled one."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+
+    target = tmp_path / "elsewhere.py"
+    target.write_text("original")
+
+    output_file = data_dir / "_profiles.py"
+    try:
+        output_file.symlink_to(target)
+    except (OSError, NotImplementedError):
+        pytest.skip("symlinks are not supported on this platform")
+
+    with pytest.raises(SystemExit) as exc_info:
+        _write_profiles_file(output_file, "new contents")
+
+    assert exc_info.value.code == 1
+
+    stderr = capsys.readouterr().err
+    assert f"_profiles.py at {output_file} is a symlink" in stderr
+    # The symlink must not have been followed or replaced.
+    assert target.read_text() == "original"
+    assert output_file.is_symlink()
 
 
 def test_refresh_includes_models_defined_only_in_augmentations(

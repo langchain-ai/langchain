@@ -40,7 +40,7 @@ Update model profile data for a specific provider:
 langchain-profiles refresh --provider anthropic --data-dir ./langchain_anthropic/data
 ```
 
-This downloads the latest model data from models.dev, merges it with any augmentations defined in `profile_augmentations.toml`, and generates a `profiles.py` file.
+This downloads the latest model data from models.dev, merges it with any augmentations defined in `profile_augmentations.toml`, and generates a _profiles.py file.
 
 ## Resources
 
