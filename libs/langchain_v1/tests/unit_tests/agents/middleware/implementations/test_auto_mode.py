@@ -2,7 +2,7 @@
 
 import asyncio
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Self
 
 import pytest
 from langchain_core.decisions import (
@@ -18,7 +18,7 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import BaseTool, tool
 from pydantic import Field, ValidationError
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import AutoModeMiddleware
