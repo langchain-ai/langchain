@@ -1,6 +1,7 @@
 """Test Groq Chat API wrapper."""
 
 import json
+import logging
 import os
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -30,6 +31,7 @@ from langchain_groq.chat_models import (
     _create_usage_metadata,
     _format_message_content,
     _handle_groq_invalid_request,
+    _update_token_usage,
 )
 
 if "GROQ_API_KEY" not in os.environ:
@@ -1034,6 +1036,147 @@ def test_combine_llm_outputs_with_missing_details() -> None:
     assert result["token_usage"]["total_tokens"] == 450
     assert result["token_usage"]["output_tokens_details"]["reasoning_tokens"] == 40
     assert "input_tokens_details" not in result["token_usage"]
+
+
+@pytest.mark.parametrize(
+    ("llm_outputs", "expected_token_usage"),
+    [
+        pytest.param(
+            [
+                {
+                    "token_usage": {"queue_time": 0.5, "total_tokens": 30},
+                    "model_name": "test-model",
+                },
+                {
+                    "token_usage": {"queue_time": None, "total_tokens": 40},
+                    "model_name": "test-model",
+                },
+            ],
+            {"queue_time": 0.5, "total_tokens": 70},
+            id="later-none-does-not-clobber-accumulated-value",
+        ),
+        pytest.param(
+            [
+                {"token_usage": {"queue_time": None}, "model_name": "test-model"},
+                {"token_usage": {"queue_time": 0.5}, "model_name": "test-model"},
+            ],
+            {"queue_time": 0.5},
+            id="none-first-then-number-does-not-raise",
+        ),
+        pytest.param(
+            [
+                {
+                    "token_usage": {"queue_time": 0.25, "prompt_time": 0.125},
+                    "model_name": "test-model",
+                },
+                {
+                    "token_usage": {"queue_time": 0.5, "prompt_time": 0.25},
+                    "model_name": "test-model",
+                },
+            ],
+            {"queue_time": 0.75, "prompt_time": 0.375},
+            id="float-timings-accumulate",
+        ),
+    ],
+)
+def test_combine_llm_outputs_none_and_float_handling(
+    llm_outputs: list[dict[str, Any] | None],
+    expected_token_usage: dict[str, Any],
+) -> None:
+    """None values must be skipped, not clobber or crash the accumulation."""
+    llm = ChatGroq(model="test-model")
+
+    result = llm._combine_llm_outputs(llm_outputs)
+
+    assert result["token_usage"] == expected_token_usage
+
+
+def test_combine_llm_outputs_does_not_mutate_inputs() -> None:
+    """Merging nested details must not modify the per-generation llm_outputs.
+
+    `BaseChatModel.generate` calls `_combine_llm_outputs` before the
+    per-generation `llm_output` dicts are passed to `on_llm_end` callbacks,
+    so in-place mutation corrupts the first generation's reported usage.
+    """
+    llm = ChatGroq(model="test-model")
+    first_details = {"cached_tokens": 80}
+    llm_outputs: list[dict[str, Any] | None] = [
+        {
+            "token_usage": {
+                "prompt_tokens": 100,
+                "input_tokens_details": first_details,
+            },
+            "model_name": "test-model",
+        },
+        {
+            "token_usage": {
+                "prompt_tokens": 200,
+                "input_tokens_details": {"cached_tokens": 150},
+            },
+            "model_name": "test-model",
+        },
+    ]
+
+    result = llm._combine_llm_outputs(llm_outputs)
+
+    assert first_details == {"cached_tokens": 80}
+    assert result["token_usage"]["input_tokens_details"] is not first_details
+    assert result["token_usage"]["input_tokens_details"] == {"cached_tokens": 230}
+
+
+def test_combine_llm_outputs_preserves_prior_nested_keys() -> None:
+    """Nested keys absent from a later output survive the merge."""
+    llm = ChatGroq(model="test-model")
+    llm_outputs: list[dict[str, Any] | None] = [
+        {
+            "token_usage": {
+                "input_tokens_details": {"cached_tokens": 5, "audio_tokens": 2},
+            },
+            "model_name": "test-model",
+        },
+        {
+            "token_usage": {"input_tokens_details": {"cached_tokens": 3}},
+            "model_name": "test-model",
+        },
+    ]
+
+    result = llm._combine_llm_outputs(llm_outputs)
+
+    assert result["token_usage"]["input_tokens_details"] == {
+        "cached_tokens": 8,
+        "audio_tokens": 2,
+    }
+
+
+def test_update_token_usage_first_seen_nested_dict_merges() -> None:
+    """A first-seen nested `dict` node seeds as a dict instead of raising."""
+    result = _update_token_usage(
+        {"details": {"a": 1}},
+        {"details": {"a": 2, "nested": {"b": 3}}},
+    )
+    assert result == {"details": {"a": 3, "nested": {"b": 3}}}
+
+
+@pytest.mark.parametrize(
+    ("overall", "new"),
+    [
+        pytest.param(5, {"cached_tokens": 1}, id="number-accumulator-dict-value"),
+        pytest.param({"cached_tokens": 1}, 5, id="dict-accumulator-number-value"),
+    ],
+)
+def test_update_token_usage_mismatched_types_raise(overall: Any, new: Any) -> None:
+    with pytest.raises(TypeError, match="Got different types for token usage"):
+        _update_token_usage(overall, new)
+
+
+def test_update_token_usage_unexpected_leaf_warns_and_passes_through(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Floats are valid Groq leaves; a truly unexpected type logs, not crashes."""
+    with caplog.at_level(logging.WARNING):
+        result = _update_token_usage(0, "oops")  # type: ignore[arg-type]
+    assert result == "oops"
+    assert "Unexpected type for token usage" in caplog.text
 
 
 def test_profile() -> None:
