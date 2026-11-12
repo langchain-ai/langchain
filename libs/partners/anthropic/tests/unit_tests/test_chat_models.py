@@ -1076,6 +1076,38 @@ def test__format_messages_with_tool_calls() -> None:
         ]
 
 
+def test__format_messages_user_tool_results_precede_text() -> None:
+    """Test that tool_result blocks precede other user content blocks when merged.
+
+    Anthropic requires tool_result blocks immediately following the assistant tool_use turn.
+    If intervening HumanMessages and ToolMessages are merged, tool results must be placed
+    at the start of the resulting user message content.
+    """
+    ai = AIMessage(
+        "",
+        tool_calls=[{"name": "lookup", "id": "call_1", "args": {"q": "test"}}],
+    )
+    human_intervening = HumanMessage("Additional context")
+    tool = ToolMessage("Result 1", tool_call_id="call_1")
+    human_followup = HumanMessage("Follow-up text")
+
+    # Order: AI -> Human -> Tool -> Human
+    messages = [ai, human_intervening, tool, human_followup]
+    _, anthropic_messages = _format_messages(messages, model=MODEL_NAME)
+
+    assert len(anthropic_messages) == 2
+    assert anthropic_messages[0]["role"] == "assistant"
+    assert anthropic_messages[1]["role"] == "user"
+
+    user_content = anthropic_messages[1]["content"]
+    assert isinstance(user_content, list)
+    types = [block["type"] for block in user_content]
+    assert types == ["tool_result", "text", "text"]
+    assert user_content[0]["tool_use_id"] == "call_1"
+    assert user_content[1]["text"] == "Additional context"
+    assert user_content[2]["text"] == "Follow-up text"
+
+
 def test__normalize_tool_call_id() -> None:
     # Already-valid IDs (including native Anthropic and OpenAI styles) pass
     # through unchanged.

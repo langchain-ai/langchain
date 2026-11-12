@@ -665,6 +665,15 @@ def _is_server_tool_result_block(block: object) -> bool:
     )
 
 
+def _is_tool_result_block(block: object) -> bool:
+    """Return whether a content block is any tool result."""
+    return (
+        isinstance(block, dict)
+        and isinstance(block.get("type"), str)
+        and (block["type"] == "tool_result" or block["type"].endswith("_tool_result"))
+    )
+
+
 def _previous_turn_allows_system(previous_turn: dict | None) -> bool:
     """Return whether a system message may follow the formatted turn."""
     if previous_turn is None:
@@ -1064,6 +1073,16 @@ def _format_messages(
                     _warn_system_message_hoisted(model)
             pending_system = []
         if isinstance(content, list):
+            if role == "user":
+                tool_result_blocks = [
+                    block for block in content if _is_tool_result_block(block)
+                ]
+                other_blocks = [
+                    block for block in content if not _is_tool_result_block(block)
+                ]
+                if tool_result_blocks and other_blocks:
+                    content = tool_result_blocks + other_blocks
+
             for block in content:
                 if not isinstance(block, dict):
                     continue
