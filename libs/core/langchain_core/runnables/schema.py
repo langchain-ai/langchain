@@ -100,7 +100,7 @@ class BaseStreamEvent(TypedDict):
     """
 
     event: str
-    """Event names are of the format: `on_[runnable_type]_(start|stream|end)`.
+    """Event names are of the format: `on_[runnable_type]_(start|stream|end|error)`.
 
     Runnable types are one of:
 
