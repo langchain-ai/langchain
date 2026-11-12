@@ -777,8 +777,11 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
                 msg_type = msg_kwargs.pop("role")
             except KeyError:
                 msg_type = msg_kwargs.pop("type")
-            # None msg content is not allowed
-            msg_content = msg_kwargs.pop("content") or ""
+            # None msg content is not allowed. A remove message has no content.
+            if msg_type == "remove":
+                msg_content = msg_kwargs.pop("content", None) or ""
+            else:
+                msg_content = msg_kwargs.pop("content") or ""
         except KeyError as e:
             msg = f"Message dict must contain 'role' and 'content' keys, got {message}"
             msg = create_message(
