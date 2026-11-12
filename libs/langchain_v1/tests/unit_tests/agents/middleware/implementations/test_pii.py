@@ -857,6 +857,19 @@ def lookup_user_command(
 
 
 @tool
+def lookup_user_command_dict(
+    user_id: str, tool_call_id: Annotated[str, InjectedToolCallId]
+) -> Command[Any]:
+    """Look up a user."""
+    message = {
+        "role": "tool",
+        "content": f"User {user_id}: {_RAW_EMAIL}",
+        "tool_call_id": tool_call_id,
+    }
+    return Command(update={"messages": [message]})
+
+
+@tool
 def lookup_user_list(
     user_id: str, tool_call_id: Annotated[str, InjectedToolCallId]
 ) -> list[ToolMessage]:
@@ -924,11 +937,12 @@ _LOOKUP_TOOLS = pytest.mark.parametrize(
     [
         lookup_user,
         lookup_user_command,
+        lookup_user_command_dict,
         lookup_user_list,
         lookup_user_command_list,
         lookup_user_mixed_list,
     ],
-    ids=["text", "command", "list", "command_list", "mixed_list"],
+    ids=["text", "command", "command_dict", "list", "command_list", "mixed_list"],
 )
 
 

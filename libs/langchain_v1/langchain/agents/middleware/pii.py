@@ -8,7 +8,13 @@ from functools import partial
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeVar
 
 from langchain_core.callbacks import CallbackManager
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    ToolMessage,
+    convert_to_messages,
+)
 from langchain_core.runnables.config import (
     ensure_config,
     patch_config,
@@ -781,7 +787,7 @@ class PIIMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT])
             return result
         messages = [
             self._redact_message(message) if isinstance(message, ToolMessage) else message
-            for message in update["messages"]
+            for message in convert_to_messages(update["messages"])
         ]
         return replace(result, update={**update, "messages": messages})
 
