@@ -2119,6 +2119,19 @@ class BaseChatOpenAI(BaseChatModel):
             )
             raise TypeError(msg)
 
+        if len(choices) == 0:
+            # A non-streaming response with an empty `choices` list carries no
+            # completion. Without this guard it would surface later as a bare
+            # `IndexError` when the empty result is unpacked. (Empty choices are
+            # valid for streaming usage-only chunks, which take a different path.)
+            msg = (
+                "Received response with an empty 'choices' list. "
+                "This can happen when using OpenAI-compatible APIs that return a "
+                "response without generating any completion. "
+                f"Full response keys: {list(response_dict.keys())}"
+            )
+            raise ValueError(msg)
+
         token_usage = response_dict.get("usage")
         service_tier = response_dict.get("service_tier")
 

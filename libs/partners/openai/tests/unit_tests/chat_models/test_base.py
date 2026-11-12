@@ -2190,6 +2190,24 @@ def test_create_chat_result_truncates_unexpected_response_body() -> None:
     assert message.endswith("...")
 
 
+def test_create_chat_result_raises_on_empty_choices() -> None:
+    """A non-streaming response with an empty 'choices' list must raise a clear error.
+
+    Previously this surfaced as a bare `IndexError` when the empty result was unpacked.
+    """
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    response = {
+        "id": "chatcmpl-1",
+        "object": "chat.completion",
+        "created": 0,
+        "model": "gpt-4o",
+        "choices": [],
+        "usage": {"prompt_tokens": 5, "completion_tokens": 0, "total_tokens": 5},
+    }
+    with pytest.raises(ValueError, match="empty 'choices'"):
+        llm._create_chat_result(response)
+
+
 @pytest.mark.skipif(
     (PYDANTIC_VERSION.major, PYDANTIC_VERSION.minor) < (2, 8),
     reason=(
