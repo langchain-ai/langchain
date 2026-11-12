@@ -12,23 +12,34 @@ from typing import (
     Annotated,
     Any,
     Generic,
+    NotRequired,
+    Required,
     cast,
     get_args,
     get_origin,
     get_type_hints,
+    overload,
 )
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    AnyMessage,
+    BaseMessage,
+    RemoveMessage,
+    SystemMessage,
+    ToolMessage,
+)
 from langchain_core.tools import BaseTool
 from langgraph._internal._runnable import RunnableCallable
 from langgraph.constants import END, START
+from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt import ToolCallTransformer
 from langgraph.prebuilt.tool_node import ToolNode
 from langgraph.types import Command, Send
 from langsmith import traceable
-from typing_extensions import NotRequired, Required, TypedDict, overload
+from typing_extensions import TypedDict
 
 from langchain.agents._subagent_transformer import SubagentTransformer
 from langchain.agents.middleware._trace_policy import (
@@ -83,6 +94,7 @@ class _ComposedExtendedModelResponse(Generic[ResponseT]):
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Iterable, Sequence
 
+    from langchain_core.messages import InvalidToolCall
     from langchain_core.runnables import Runnable, RunnableConfig
     from langgraph.cache.base import BaseCache
     from langgraph.graph.state import CompiledStateGraph
@@ -142,6 +154,12 @@ Option 2: Handle dynamic tools in middleware (for tools created at runtime)
             return handler(request)
 """.strip()
 
+UNAVAILABLE_TOOL_ERROR_TEMPLATE = (
+    "Error: {requested_tool} is not a valid tool for this request. "
+    "It was not included in the tools provided to the model, "
+    "try one of [{available_tools}]."
+)
+
 
 def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
     """Remove `runtime` and `handler` from trace inputs before sending to LangSmith."""
@@ -185,6 +203,7 @@ FALLBACK_MODELS_WITH_STRUCTURED_OUTPUT = [
     r"(^|[/:.])gpt-5\.4(-\d{4}-\d{2}-\d{2})?($|[/:])",
     r"(^|[/:.])gpt-5\.4-(mini|nano)($|[-/:])",
     r"(^|[/:.])gpt-5\.5($|[-/:])",
+    r"(^|[/:.])gpt-6-(astra|luna|sol)($|[-/:])",
     r"(^|[/:.])claude-(fable|mythos)-5(?:-\d{8})?(?:-v\d(?::\d)?)?($|[/:])",
     r"(^|[/:.])claude-haiku-4-5(?:-\d{8})?(?:-v\d(?::\d)?)?($|[/:])",
     r"(^|[/:.])claude-opus-4-(5|6|7|8)(?:-\d{8})?(?:-v\d(?::\d)?)?($|[/:])",
@@ -215,6 +234,7 @@ def _build_commands(
     middleware_commands: list[Command[Any]] | None = None,
     *,
     has_structured_output: bool = False,
+    repaired_messages: list[AnyMessage] | None = None,
 ) -> list[Command[Any]]:
     """Build a list of Commands from a model response and middleware commands.
 
@@ -230,11 +250,19 @@ def _build_commands(
             `response_format`. When `True` and no structured response was
             produced, `structured_response` is explicitly cleared to avoid a
             stale value from a previous checkpointed turn.
+        repaired_messages: Complete message history after repairing invalid tool calls.
 
     Returns:
         List of `Command` objects ready to be returned from a model node.
     """
-    state: dict[str, Any] = {"messages": model_response.result}
+    messages = model_response.result
+    if repaired_messages is not None:
+        messages = [
+            RemoveMessage(id=REMOVE_ALL_MESSAGES),
+            *repaired_messages,
+            *model_response.result,
+        ]
+    state: dict[str, Any] = {"messages": messages}
 
     if model_response.structured_response is not None:
         state["structured_response"] = model_response.structured_response
@@ -653,6 +681,40 @@ def _handle_structured_output_error(
             return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
         return False, ""
     return True, handle_errors(exception)
+
+
+def _invalid_tool_call_message(tool_call: InvalidToolCall) -> ToolMessage | None:
+    tool_call_id = tool_call.get("id")
+    if tool_call_id is None:
+        return None
+    name = tool_call.get("name") or "unknown"
+    return ToolMessage(
+        content=(
+            f"Tool call {name} with id {tool_call_id} could not be executed - "
+            "arguments were malformed or truncated."
+        ),
+        name=name,
+        tool_call_id=tool_call_id,
+        status="error",
+    )
+
+
+def _patch_invalid_tool_calls(messages: Sequence[AnyMessage]) -> list[AnyMessage]:
+    answered_ids = {
+        message.tool_call_id for message in messages if isinstance(message, ToolMessage)
+    }
+    patched_messages: list[AnyMessage] = []
+    for message in messages:
+        patched_messages.append(message)
+        if not isinstance(message, AIMessage):
+            continue
+        for tool_call in message.invalid_tool_calls:
+            if tool_call.get("id") in answered_ids:
+                continue
+            if tool_message := _invalid_tool_call_message(tool_call):
+                patched_messages.append(tool_message)
+                answered_ids.add(tool_message.tool_call_id)
+    return patched_messages
 
 
 def _chain_tool_call_wrappers(
@@ -1438,6 +1500,56 @@ def create_agent(
             )
         return request.model.bind(**request.model_settings), None
 
+    def _reject_unoffered_tool_calls(
+        request: ModelRequest[ContextT],
+        output: AIMessage,
+        messages_list: list[BaseMessage],
+    ) -> list[BaseMessage]:
+        """Answer calls to registered tools that were not offered to the model.
+
+        `wrap_model_call` middleware may narrow `request.tools` (e.g. filtering
+        tools per user role). The model can still emit a call to a removed tool,
+        and without this check the tool node would execute it, since it only
+        checks the name against all tools registered on the agent. Answer such
+        calls with an error `ToolMessage` instead, mirroring how the tool node
+        rejects calls to unregistered tools: the routing edge then treats the
+        call as answered, so it is never executed, while allowed calls in the
+        same reply still run.
+
+        Calls already answered (e.g. structured output calls handled by
+        `_handle_model_output`) are left alone. Enforcement is skipped when
+        `wrap_tool_call` middleware is defined, since it may legitimately handle
+        tools added at runtime that were never offered to the model.
+        """
+        if tool_node is None or wrap_tool_call_wrapper or awrap_tool_call_wrapper:
+            return messages_list
+        if not output.tool_calls:
+            return messages_list
+
+        allowed_tool_names = {t.name for t in request.tools if isinstance(t, BaseTool)}
+        answered_ids = {
+            message.tool_call_id for message in messages_list if isinstance(message, ToolMessage)
+        }
+        rejected = [
+            ToolMessage(
+                content=UNAVAILABLE_TOOL_ERROR_TEMPLATE.format(
+                    requested_tool=tool_call["name"],
+                    available_tools=", ".join(sorted(allowed_tool_names)),
+                ),
+                tool_call_id=tool_call["id"],
+                name=tool_call["name"],
+                status="error",
+            )
+            for tool_call in output.tool_calls
+            if tool_call["name"] in tool_node.tools_by_name
+            and tool_call["name"] not in allowed_tool_names
+            and tool_call.get("id")
+            and tool_call["id"] not in answered_ids
+        ]
+        if not rejected:
+            return messages_list
+        return [*messages_list, *rejected]
+
     def _execute_model_sync(request: ModelRequest[ContextT]) -> ModelResponse:
         """Execute model and return response.
 
@@ -1458,6 +1570,7 @@ def create_agent(
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)
         messages_list = handled_output["messages"]
+        messages_list = _reject_unoffered_tool_calls(request, output, messages_list)
         structured_response = handled_output.get("structured_response")
 
         return ModelResponse(
@@ -1467,12 +1580,13 @@ def create_agent(
 
     def model_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command[Any]]:
         """Sync model request handler with sequential middleware processing."""
+        messages = _patch_invalid_tool_calls(state["messages"])
         request = ModelRequest(
             model=model,
             tools=default_tools,
             system_message=system_message,
             response_format=initial_response_format,
-            messages=state["messages"],
+            messages=messages,
             tool_choice=None,
             state=state,
             runtime=runtime,
@@ -1481,11 +1595,18 @@ def create_agent(
         has_structured_output = initial_response_format is not None
         if wrap_model_call_handler is None:
             model_response = _execute_model_sync(request)
-            return _build_commands(model_response, has_structured_output=has_structured_output)
+            return _build_commands(
+                model_response,
+                has_structured_output=has_structured_output,
+                repaired_messages=messages if messages != state["messages"] else None,
+            )
 
         result = wrap_model_call_handler(request, _execute_model_sync)
         return _build_commands(
-            result.model_response, result.commands, has_structured_output=has_structured_output
+            result.model_response,
+            result.commands,
+            has_structured_output=has_structured_output,
+            repaired_messages=messages if messages != state["messages"] else None,
         )
 
     async def _execute_model_async(request: ModelRequest[ContextT]) -> ModelResponse:
@@ -1509,6 +1630,7 @@ def create_agent(
         # Handle model output to get messages and structured_response
         handled_output = _handle_model_output(output, effective_response_format)
         messages_list = handled_output["messages"]
+        messages_list = _reject_unoffered_tool_calls(request, output, messages_list)
         structured_response = handled_output.get("structured_response")
 
         return ModelResponse(
@@ -1518,12 +1640,13 @@ def create_agent(
 
     async def amodel_node(state: AgentState[Any], runtime: Runtime[ContextT]) -> list[Command[Any]]:
         """Async model request handler with sequential middleware processing."""
+        messages = _patch_invalid_tool_calls(state["messages"])
         request = ModelRequest(
             model=model,
             tools=default_tools,
             system_message=system_message,
             response_format=initial_response_format,
-            messages=state["messages"],
+            messages=messages,
             tool_choice=None,
             state=state,
             runtime=runtime,
@@ -1532,11 +1655,18 @@ def create_agent(
         has_structured_output = initial_response_format is not None
         if awrap_model_call_handler is None:
             model_response = await _execute_model_async(request)
-            return _build_commands(model_response, has_structured_output=has_structured_output)
+            return _build_commands(
+                model_response,
+                has_structured_output=has_structured_output,
+                repaired_messages=messages if messages != state["messages"] else None,
+            )
 
         result = await awrap_model_call_handler(request, _execute_model_async)
         return _build_commands(
-            result.model_response, result.commands, has_structured_output=has_structured_output
+            result.model_response,
+            result.commands,
+            has_structured_output=has_structured_output,
+            repaired_messages=messages if messages != state["messages"] else None,
         )
 
     # Use sync or async based on model capabilities
@@ -1833,9 +1963,6 @@ def create_agent(
     if name:
         config["metadata"]["lc_agent_name"] = name
 
-    # Middleware that makes internal model calls (e.g. `SummarizationMiddleware`)
-    # each declare `InternalCallTransformer` on their own `transformers` tuple so
-    # it's only registered when one of them is actually in use.
     middleware_transformers = [t for m in middleware for t in getattr(m, "transformers", ())]
 
     return graph.compile(
@@ -2032,7 +2159,7 @@ def _make_tools_to_model_edge(
             return end_destination
 
         # 3. Exit condition: A structured output tool was executed
-        if any(t.name in structured_output_tools for t in tool_messages):
+        if any(t.name in structured_output_tools and t.status != "error" for t in tool_messages):
             return end_destination
 
         # 4. Default: Continue the loop
