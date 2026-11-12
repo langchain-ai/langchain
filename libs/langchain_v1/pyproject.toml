@@ -52,6 +52,7 @@ xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
 meta = ["langchain-meta"]
 mcp = ["fastmcp>=4.0.11"]
+a2a = ["a2a-sdk[http-server]>=1.0.0"]
 
 [project.urls]
 Homepage = "https://docs.langchain.com/"
@@ -79,6 +80,7 @@ test = [
     "langchain-tests>=1.1.9,<2.0.0",
     "langchain-openai",
     "fastmcp>=4.0.11,<5.0.0",
+    "a2a-sdk[http-server]>=1.0.0,<2.0.0",
 ]
 lint = [
     "ruff>=0.15.0,<0.18.0",
@@ -87,6 +89,7 @@ typing = [
     "mypy>=2.1.0,<2.5.0",
     "types-toml>=0.10.8.20240310,<1.0.0.0",
     "fastmcp>=4.0.11,<5.0.0",
+    "a2a-sdk[http-server]>=1.0.0,<2.0.0",
 ]
 
 test_integration = [
