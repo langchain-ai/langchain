@@ -2217,7 +2217,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 if run_manager:
                     await run_manager.on_llm_new_token("", chunk=chunk)
                 chunks.append(chunk)
-            result = generate_from_stream(iter(chunks))
+            result = await run_in_executor(None, generate_from_stream, iter(chunks))
         elif _signature_parameters(self._agenerate).get("run_manager"):
             result = await self._agenerate(
                 messages, stop=stop, run_manager=run_manager, **kwargs
