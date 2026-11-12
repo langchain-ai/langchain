@@ -25,6 +25,31 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Known keys in langsmith's FeedbackConfig TypedDict.
+# See: https://github.com/langchain-ai/langsmith-sdk/blob/main/python/langsmith/evaluation/evaluator.py
+_KNOWN_FEEDBACK_CONFIG_KEYS: set[str] = {"type", "min", "max", "categories"}
+
+
+def _warn_unknown_feedback_config_keys(result: EvaluationResult) -> None:
+    """Warn if an EvaluationResult's feedback_config contains unknown keys.
+
+    When users pass a plain dict like ``{"threshold": 1.0}`` to
+    ``EvaluationResult.feedback_config``, pydantic's TypedDict validation
+    silently drops the unknown keys. This helper detects that case and logs
+    a warning so the data loss is visible during development.
+    """
+    fc = result.feedback_config
+    if isinstance(fc, dict):
+        unknown = set(fc.keys()) - _KNOWN_FEEDBACK_CONFIG_KEYS
+        if unknown:
+            logger.warning(
+                "EvaluationResult.feedback_config contains unknown keys which "
+                "will be silently dropped by TypedDict validation: "
+                f"{sorted(unknown)}. Known keys are: "
+                f"{sorted(_KNOWN_FEEDBACK_CONFIG_KEYS)}. Consider using the "
+                "`metadata` field for arbitrary configuration."
+            )
+
 _TRACERS: weakref.WeakSet[EvaluatorCallbackHandler] = weakref.WeakSet()
 
 
@@ -173,6 +198,8 @@ class EvaluatorCallbackHandler(BaseTracer):
                 " Expected EvaluationResult or EvaluationResults."
             )
             raise TypeError(msg)
+        for r in results_:
+            _warn_unknown_feedback_config_keys(r)
         return results_
 
     def _log_evaluation_feedback(
