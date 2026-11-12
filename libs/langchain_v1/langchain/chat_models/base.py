@@ -57,6 +57,7 @@ _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
     "anthropic": ("langchain_anthropic", "ChatAnthropic", _call),
     "anthropic_bedrock": ("langchain_aws", "ChatAnthropicBedrock", _call),
     "azure_ai": ("langchain_azure_ai.chat_models", "AzureAIOpenAIApiChatModel", _call),
+    "azure_ai_anthropic": ("langchain_azure_ai.chat_models", "AzureAIAnthropicChatModel", _call),
     "azure_openai": ("langchain_openai", "AzureChatOpenAI", _call),
     "baseten": ("langchain_baseten", "ChatBaseten", _call),
     "bedrock": ("langchain_aws", "ChatBedrock", _call),
@@ -307,6 +308,7 @@ def init_chat_model(
             - `anthropic`               -> [`langchain-anthropic`](https://docs.langchain.com/oss/python/integrations/providers/anthropic)
             - `azure_openai`            -> [`langchain-openai`](https://docs.langchain.com/oss/python/integrations/providers/openai)
             - `azure_ai`                -> [`langchain-azure-ai`](https://docs.langchain.com/oss/python/integrations/providers/microsoft)
+            - `azure_ai_anthropic`      -> [`langchain-azure-ai`](https://docs.langchain.com/oss/python/integrations/providers/microsoft)
             - `google_vertexai`         -> [`langchain-google-vertexai`](https://docs.langchain.com/oss/python/integrations/providers/google)
             - `google_genai`            -> [`langchain-google-genai`](https://docs.langchain.com/oss/python/integrations/providers/google)
             - `anthropic_bedrock`       -> [`langchain-aws`](https://docs.langchain.com/oss/python/integrations/providers/aws)

@@ -9,7 +9,11 @@ from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
 
 from langchain.chat_models import __all__, init_chat_model
-from langchain.chat_models.base import _BUILTIN_PROVIDERS, _attempt_infer_model_provider
+from langchain.chat_models.base import (
+    _BUILTIN_PROVIDERS,
+    _attempt_infer_model_provider,
+    _get_chat_model_creator,
+)
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
@@ -54,6 +58,53 @@ def test_init_chat_model(model_name: str, model_provider: str | None) -> None:
         api_key="foo",
     )
     assert llm1.dict() == llm2.dict()
+
+
+@pytest.mark.parametrize(
+    ("model_name", "model_provider", "config"),
+    [
+        ("azure_ai_anthropic:deployment-name", None, None),
+        ("deployment-name", "azure_ai_anthropic", None),
+        (
+            None,
+            None,
+            {"configurable": {"model": "deployment-name", "model_provider": "azure_ai_anthropic"}},
+        ),
+    ],
+    ids=["prefix", "explicit-provider", "runtime-config"],
+)
+def test_init_chat_model_azure_ai_anthropic(
+    model_name: str | None,
+    model_provider: str | None,
+    config: RunnableConfig | None,
+) -> None:
+    constructor = mock.Mock(return_value=FakeChatModel())
+    module = mock.Mock(AzureAIAnthropicChatModel=constructor)
+    _get_chat_model_creator.cache_clear()
+    try:
+        with mock.patch(
+            "langchain.chat_models.base._import_module", return_value=module
+        ) as import_module:
+            model = init_chat_model(
+                model_name,
+                model_provider=model_provider,
+                project_endpoint="https://resource.services.ai.azure.com/api/projects/project",
+                credential=mock.sentinel.credential,
+                temperature=0.1,
+            )
+            assert model.invoke("hello", config=config).content == "fake response"
+
+        import_module.assert_called_once_with(
+            "langchain_azure_ai.chat_models", "AzureAIAnthropicChatModel"
+        )
+        constructor.assert_called_once_with(
+            model="deployment-name",
+            project_endpoint="https://resource.services.ai.azure.com/api/projects/project",
+            credential=mock.sentinel.credential,
+            temperature=0.1,
+        )
+    finally:
+        _get_chat_model_creator.cache_clear()
 
 
 @pytest.mark.requires("langchain_openai")
