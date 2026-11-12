@@ -475,6 +475,8 @@ def render(
     scopes: Scopes | None = None,
     warn: bool = False,  # noqa: FBT001,FBT002
     keep: bool = False,  # noqa: FBT001,FBT002
+    *,
+    html_escape: bool = True,
 ) -> str:
     """Render a mustache template.
 
@@ -499,6 +501,11 @@ def render(
         scopes: The list of scopes that `get_key` will look through.
         warn: Log a warning when a template substitution isn't found in the data
         keep: Keep unreplaced tags when a substitution isn't found in the data.
+        html_escape: Whether `{{var}}` values are HTML-escaped. Defaults to
+            `True`, per the mustache spec. Pass `False` when the rendered
+            output is not HTML (e.g. prompt templates), so values containing
+            `<`, `>`, `&` or `"` are inserted unchanged. `{{{var}}}` and
+            `{{&var}}` are never escaped regardless of this setting.
 
     Returns:
         A string containing the rendered template.
@@ -542,7 +549,7 @@ def render(
 
         # If we're a variable tag
         elif tag == "variable":
-            # Add the html escaped key to the output
+            # Add the key to the output, HTML-escaped unless disabled
             thing = _get_key(
                 key, scopes, warn=warn, keep=keep, def_ldel=def_ldel, def_rdel=def_rdel
             )
@@ -553,7 +560,7 @@ def render(
                 thing = scopes[1]
             if not isinstance(thing, str):
                 thing = str(thing)
-            output += _html_escape(thing)
+            output += _html_escape(thing) if html_escape else thing
 
         # If we're a no html escape tag
         elif tag == "no escape":
@@ -619,6 +626,7 @@ def render(
                         scopes=(data and [data, *scopes]) or scopes,
                         warn=warn,
                         keep=keep,
+                        html_escape=html_escape,
                     ),
                 )
 
@@ -656,6 +664,7 @@ def render(
                         def_rdel=def_rdel,
                         warn=warn,
                         keep=keep,
+                        html_escape=html_escape,
                     )
 
                     output += rend
@@ -693,6 +702,7 @@ def render(
                 scopes=scopes,
                 warn=warn,
                 keep=keep,
+                html_escape=html_escape,
             )
 
             # If the partial was indented

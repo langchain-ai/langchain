@@ -119,7 +119,10 @@ def mustache_formatter(template: str, /, **kwargs: Any) -> str:
     Returns:
         The formatted string.
     """
-    return mustache.render(template, kwargs)
+    # Prompts are not HTML, so values are inserted unescaped (matching
+    # langchainjs). Direct `mustache.render` callers keep the spec default
+    # of HTML-escaping `{{var}}` values.
+    return mustache.render(template, kwargs, html_escape=False)
 
 
 def mustache_template_vars(

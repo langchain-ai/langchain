@@ -12,9 +12,11 @@ from packaging import version
 from syrupy.assertion import SnapshotAssertion
 
 from langchain_core._api import LangChainDeprecationWarning
+from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
+from langchain_core.utils import mustache
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
@@ -259,6 +261,50 @@ def test_mustache_prompt_with_non_dict_mapping() -> None:
     assert prompt.format(user=ChainMap({"name": "Alice"})) == "Hello Alice"
     assert prompt.format(user=UserDict({"name": "Alice"})) == "Hello Alice"
     assert prompt.format(user=MappingProxyType({"name": "Alice"})) == "Hello Alice"
+
+
+def test_mustache_prompt_does_not_html_escape_values() -> None:
+    """Test mustache prompt templates insert values unescaped (#41818)."""
+    code = "if a < b && name == \"x\": print('ok')"
+
+    # Plain variable.
+    prompt = PromptTemplate.from_template(
+        "Review this code:\n{{code}}", template_format="mustache"
+    )
+    assert prompt.format(code=code) == f"Review this code:\n{code}"
+
+    # Chat prompt.
+    chat = ChatPromptTemplate.from_messages(
+        [("human", "<document>{{doc}}</document>")], template_format="mustache"
+    )
+    assert chat.invoke({"doc": '<b>AT&T</b> said "hi"'}).to_messages()[0].content == (
+        '<document><b>AT&T</b> said "hi"</document>'
+    )
+
+    # Values in list sections.
+    prompt = PromptTemplate.from_template(
+        "{{#items}}{{value}};{{/items}}", template_format="mustache"
+    )
+    assert prompt.format(items=[{"value": "a < b"}, {"value": "x & y"}]) == (
+        "a < b;x & y;"
+    )
+
+    # Values in inverted sections.
+    prompt = PromptTemplate.from_template(
+        "{{^items}}none: {{missing}}{{/items}}", template_format="mustache"
+    )
+    assert prompt.format(items=[]) == "none: "
+
+    # Triple-mustache still renders unescaped, as before.
+    prompt = PromptTemplate.from_template("{{{code}}}", template_format="mustache")
+    assert prompt.format(code=code) == code
+
+    # Direct `mustache.render` still HTML-escapes by default...
+    assert mustache.render("{{code}}", {"code": code}) == (
+        "if a &lt; b &amp;&amp; name == &quot;x&quot;: print('ok')"
+    )
+    # ...unless escaping is disabled.
+    assert mustache.render("{{code}}", {"code": code}, html_escape=False) == code
 
 
 def test_prompt_from_template_with_partial_variables() -> None:
