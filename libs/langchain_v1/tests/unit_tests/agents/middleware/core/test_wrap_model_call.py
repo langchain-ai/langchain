@@ -7,6 +7,7 @@ This module tests the wrap_model_call functionality in three forms:
 """
 
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from typing import Any
 
 import pytest
@@ -16,9 +17,9 @@ from langchain_core.callbacks import (
 )
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.outputs import ChatResult
-from langchain_core.tools import tool
+from langchain_core.tools import BaseTool, tool
 from langgraph.runtime import Runtime
 from typing_extensions import TypedDict, override
 
@@ -1598,3 +1599,194 @@ class TestEdgeCases:
 
         assert attempts == ["first-attempt", "retry-attempt"]
         assert result["messages"][1].content == "Success"
+
+
+class TestFilteredToolsNotExecuted:
+    """Regression tests for langchain-ai/langchain#41801.
+
+    Tools removed from `request.tools` by `wrap_model_call` middleware must
+    never execute, even if the model calls them anyway.
+    """
+
+    def test_viewer_role_never_executes_removed_tool(self) -> None:
+        """A viewer-role run must never execute a tool filtered for viewers."""
+        deleted: list[str] = []
+
+        @tool
+        def read_data(record_id: str) -> str:
+            """Read a record."""
+            return f"contents of {record_id}"
+
+        @tool
+        def delete_data(record_id: str) -> str:
+            """Delete a record permanently."""
+            deleted.append(record_id)
+            return f"deleted {record_id}"
+
+        @dataclass
+        class Context:
+            user_role: str
+
+        @wrap_model_call
+        def context_based_tools(
+            request: ModelRequest[Context],
+            handler: Callable[[ModelRequest[Context]], ModelResponse[Any]],
+        ) -> ModelCallResult:
+            if request.runtime.context.user_role != "admin":
+                request = request.override(
+                    tools=[
+                        t
+                        for t in request.tools
+                        if isinstance(t, BaseTool) and t.name.startswith("read_")
+                    ]
+                )
+            return handler(request)
+
+        model = FakeToolCallingModel(
+            tool_calls=[
+                [{"name": "delete_data", "args": {"record_id": "r2"}, "id": "call_1"}],
+                [],
+            ]
+        )
+        agent = create_agent(
+            model,
+            tools=[read_data, delete_data],
+            middleware=[context_based_tools],
+            context_schema=Context,
+        )
+
+        result = agent.invoke(
+            {"messages": [HumanMessage("Delete record r2.")]},
+            context=Context(user_role="viewer"),
+        )
+
+        assert deleted == []
+        tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+        assert len(tool_messages) == 1
+        assert tool_messages[0].name == "delete_data"
+        assert tool_messages[0].status == "error"
+        assert "delete_data is not a valid tool for this request" in tool_messages[0].content
+
+    async def test_viewer_role_never_executes_removed_tool_async(self) -> None:
+        """Async variant: a viewer-role run must never execute a filtered tool."""
+        deleted: list[str] = []
+
+        @tool
+        def read_data(record_id: str) -> str:
+            """Read a record."""
+            return f"contents of {record_id}"
+
+        @tool
+        def delete_data(record_id: str) -> str:
+            """Delete a record permanently."""
+            deleted.append(record_id)
+            return f"deleted {record_id}"
+
+        @dataclass
+        class Context:
+            user_role: str
+
+        @wrap_model_call
+        async def context_based_tools(
+            request: ModelRequest[Context],
+            handler: Callable[[ModelRequest[Context]], Awaitable[ModelResponse[Any]]],
+        ) -> ModelCallResult:
+            if request.runtime.context.user_role != "admin":
+                request = request.override(
+                    tools=[
+                        t
+                        for t in request.tools
+                        if isinstance(t, BaseTool) and t.name.startswith("read_")
+                    ]
+                )
+            return await handler(request)
+
+        model = FakeToolCallingModel(
+            tool_calls=[
+                [{"name": "delete_data", "args": {"record_id": "r2"}, "id": "call_1"}],
+                [],
+            ]
+        )
+        agent = create_agent(
+            model,
+            tools=[read_data, delete_data],
+            middleware=[context_based_tools],
+            context_schema=Context,
+        )
+
+        result = await agent.ainvoke(
+            {"messages": [HumanMessage("Delete record r2.")]},
+            context=Context(user_role="viewer"),
+        )
+
+        assert deleted == []
+        tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+        assert len(tool_messages) == 1
+        assert tool_messages[0].name == "delete_data"
+        assert tool_messages[0].status == "error"
+
+    def test_allowed_tool_in_same_reply_still_runs(self) -> None:
+        """Allowed calls in the same reply still run when one call is rejected."""
+        deleted: list[str] = []
+        read: list[str] = []
+
+        @tool
+        def read_data(record_id: str) -> str:
+            """Read a record."""
+            read.append(record_id)
+            return f"contents of {record_id}"
+
+        @tool
+        def delete_data(record_id: str) -> str:
+            """Delete a record permanently."""
+            deleted.append(record_id)
+            return f"deleted {record_id}"
+
+        @dataclass
+        class Context:
+            user_role: str
+
+        @wrap_model_call
+        def context_based_tools(
+            request: ModelRequest[Context],
+            handler: Callable[[ModelRequest[Context]], ModelResponse[Any]],
+        ) -> ModelCallResult:
+            if request.runtime.context.user_role != "admin":
+                request = request.override(
+                    tools=[
+                        t
+                        for t in request.tools
+                        if isinstance(t, BaseTool) and t.name.startswith("read_")
+                    ]
+                )
+            return handler(request)
+
+        model = FakeToolCallingModel(
+            tool_calls=[
+                [
+                    {"name": "read_data", "args": {"record_id": "r1"}, "id": "call_1"},
+                    {"name": "delete_data", "args": {"record_id": "r2"}, "id": "call_2"},
+                ],
+                [],
+            ]
+        )
+        agent = create_agent(
+            model,
+            tools=[read_data, delete_data],
+            middleware=[context_based_tools],
+            context_schema=Context,
+        )
+
+        result = agent.invoke(
+            {"messages": [HumanMessage("Read r1 and delete r2.")]},
+            context=Context(user_role="viewer"),
+        )
+
+        assert read == ["r1"]
+        assert deleted == []
+        tool_messages = [m for m in result["messages"] if isinstance(m, ToolMessage)]
+        assert len(tool_messages) == 2
+        by_name = {m.name: m for m in tool_messages}
+        assert by_name["read_data"].content == "contents of r1"
+        assert by_name["read_data"].status == "success"
+        assert by_name["delete_data"].status == "error"
