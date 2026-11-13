@@ -23,7 +23,12 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.documents import Document
-from langchain_core.language_models import FakeStreamingListLLM, GenericFakeChatModel
+from langchain_core.language_models import (
+    FakeListChatModel,
+    FakeStreamingListLLM,
+    GenericFakeChatModel,
+)
+from langchain_core.language_models.fake_chat_models import FakeListChatModelError
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -1611,10 +1616,11 @@ async def test_event_stream_with_retry() -> None:
     def success(_: str) -> str:
         return "success"
 
+    error = ValueError("fail")
+
     def fail(_: str) -> None:
         """Simple func."""
-        msg = "fail"
-        raise ValueError(msg)
+        raise error
 
     chain = RunnableLambda(success) | RunnableLambda(fail).with_retry(
         stop_after_attempt=1,
@@ -1681,6 +1687,24 @@ async def test_event_stream_with_retry() -> None:
                 "run_id": "",
                 "parent_ids": [],
                 "tags": ["seq:step:1"],
+            },
+            {
+                "data": {"error": error, "input": "success"},
+                "event": "on_chain_error",
+                "metadata": {},
+                "name": "fail",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": ["seq:step:2"],
+            },
+            {
+                "data": {"error": error, "input": "q"},
+                "event": "on_chain_error",
+                "metadata": {},
+                "name": "RunnableSequence",
+                "run_id": "",
+                "parent_ids": [],
+                "tags": [],
             },
         ],
     )
@@ -2911,3 +2935,69 @@ async def test_tool_error_event_tool_call_id_is_none_when_not_provided() -> None
     assert error_event["name"] == "failing_tool_no_id"
     assert "tool_call_id" in error_event["data"]
     assert error_event["data"]["tool_call_id"] is None
+
+
+def _fail(_: str) -> str:
+    msg = "chain failed"
+    raise ValueError(msg)
+
+
+def _echo(value: str) -> str:
+    return value
+
+
+class _FailingRetriever(BaseRetriever):
+    @override
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> list[Document]:
+        msg = "retriever failed"
+        raise ValueError(msg)
+
+
+@pytest.mark.parametrize(
+    ("runnable", "error_type", "run_type", "error_input"),
+    [
+        (RunnableLambda(_fail), ValueError, "chain", "hi"),
+        (
+            FakeListChatModel(responses=["hi"], error_on_chunk_number=1),
+            FakeListChatModelError,
+            "chat_model",
+            {"messages": [[HumanMessage(content="hi")]]},
+        ),
+        (_FailingRetriever(), ValueError, "retriever", {"query": "hi"}),
+    ],
+)
+async def test_run_that_raises_ends_with_error_event(
+    runnable: Runnable[str, Any],
+    error_type: type[Exception],
+    run_type: str,
+    error_input: Any,
+) -> None:
+    events: list[StreamEvent] = []
+
+    async def collect_events() -> None:
+        async for event in runnable.astream_events("hi", version="v2"):
+            events.append(event)  # noqa: PERF401
+
+    with pytest.raises(error_type):
+        await collect_events()
+
+    assert [e["event"] for e in events if not e["event"].endswith("_stream")] == [
+        f"on_{run_type}_start",
+        f"on_{run_type}_error",
+    ]
+    assert events[-1]["run_id"] == events[0]["run_id"]
+    assert isinstance(events[-1]["data"]["error"], error_type)
+    assert events[-1]["data"]["input"] == error_input
+
+
+async def test_failed_child_of_a_run_that_recovers_still_ends() -> None:
+    recovering = RunnableLambda(_fail).with_fallbacks([RunnableLambda(_echo)])
+
+    events = [event async for event in recovering.astream_events("hi", version="v2")]
+
+    starts = [e["run_id"] for e in events if e["event"].endswith("_start")]
+    ends = [e["run_id"] for e in events if e["event"].endswith(("_end", "_error"))]
+    assert sorted(ends) == sorted(starts)
+    assert [e["name"] for e in events if e["event"] == "on_chain_error"] == ["_fail"]
