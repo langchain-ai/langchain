@@ -705,7 +705,7 @@ class ChildTool(BaseTool):
         # Accommodates a condition where forward references were not resolved
         # during model construction. At introspection time, we fail fast if
         # the model schema is not complete so the underlying serialized schema
-        # doesn't narrow the propreties in the tool json schema to an empty dict
+        # doesn't narrow the properties in the tool json schema to an empty dict
         if (
             is_pydantic_v2_subclass(full_schema)
             and not full_schema.__pydantic_complete__
@@ -1820,7 +1820,7 @@ def _is_injected_arg_type(
         injected_type = InjectedToolArg
 
     # if the type is an Annotated type, check if annotated metadata
-    # is an intance or subclass of the injected type
+    # is an instance or subclass of the injected type
     return any(
         isinstance(arg, injected_type)
         or (isinstance(arg, type) and issubclass(arg, injected_type))
