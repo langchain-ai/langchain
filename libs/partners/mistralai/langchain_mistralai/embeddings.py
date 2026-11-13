@@ -18,7 +18,7 @@ from pydantic import (
     model_validator,
 )
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_fixed
-from tokenizers import Tokenizer
+from tokenizers import Tokenizer  # type: ignore[import]
 
 logger = logging.getLogger(__name__)
 
