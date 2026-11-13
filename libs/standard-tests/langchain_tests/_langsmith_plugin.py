@@ -27,7 +27,7 @@ import pytest
 from langsmith.run_helpers import tracing_context
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Generator, Iterator
 
 
 def _is_github_actions() -> bool:
@@ -60,7 +60,7 @@ def _warn_loud(message: str) -> None:
 
 
 @contextlib.contextmanager
-def _langsmith_ci_cm() -> Iterator[None]:
+def _langsmith_ci_cm() -> Generator[None]:
     """Yield with tracing context applied from current env vars.
 
     No-op when neither env var is set or when not running on GitHub Actions.
@@ -72,7 +72,7 @@ def _langsmith_ci_cm() -> Iterator[None]:
     tags = _parse_tags(os.environ.get("LANGSMITH_TAGS", ""))
     metadata = _parse_metadata(os.environ.get("LANGSMITH_METADATA", ""))
 
-    if not tags and not metadata:
+    if not tags and not bool(metadata):
         yield
         return
 
