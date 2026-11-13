@@ -22,7 +22,7 @@ classifiers = [
 version = "1.7.4"
 requires-python = ">=3.11.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.7.5,<2.0.0",
+    "langchain-core>=1.8.0,<2.0.0",
     "certifi>=2024.6.2",
     "openai>=2.45.0",
     "tiktoken>=0.7.0",
