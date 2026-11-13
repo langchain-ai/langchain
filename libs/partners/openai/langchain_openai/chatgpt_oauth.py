@@ -41,7 +41,7 @@ import time
 import urllib.parse
 import webbrowser
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Protocol, runtime_checkable
 
@@ -105,7 +105,7 @@ class _ChatGPTToken:
 
     def is_expired(self, *, skew: timedelta = DEFAULT_REFRESH_SKEW) -> bool:
         """Return `True` if the token is past (or within `skew` of) expiry."""
-        return datetime.now(timezone.utc) >= (self.expires_at - skew)
+        return datetime.now(UTC) >= (self.expires_at - skew)
 
 
 class _ChatGPTOAuthRefreshError(RuntimeError):
@@ -210,7 +210,7 @@ def _expires_at_from_response(payload: dict[str, Any]) -> datetime:
             "refusing to store an immediately-expired token."
         )
         raise _ChatGPTOAuthRefreshError(msg)
-    return datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+    return datetime.now(UTC) + timedelta(seconds=expires_in)
 
 
 def _token_from_response(
@@ -246,7 +246,7 @@ def _serialize_token(token: _ChatGPTToken) -> dict[str, Any]:
     return {
         "access_token": token.access_token,
         "refresh_token": token.refresh_token,
-        "expires_at": token.expires_at.astimezone(timezone.utc).isoformat(),
+        "expires_at": token.expires_at.astimezone(UTC).isoformat(),
         "account_id": token.account_id,
         "plan_type": token.plan_type,
         "user_id": token.user_id,
@@ -259,9 +259,9 @@ def _deserialize_token(data: dict[str, Any]) -> _ChatGPTToken:
     if isinstance(expires_at_raw, str):
         expires_at = datetime.fromisoformat(expires_at_raw)
         if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=timezone.utc)
+            expires_at = expires_at.replace(tzinfo=UTC)
     elif isinstance(expires_at_raw, (int, float)):
-        expires_at = datetime.fromtimestamp(expires_at_raw, tz=timezone.utc)
+        expires_at = datetime.fromtimestamp(expires_at_raw, tz=UTC)
     else:
         msg = "Stored token is missing `expires_at`."
         raise ValueError(msg)
@@ -432,23 +432,6 @@ def _post_device_poll_form(
     error_code, _ = _parse_oauth_error(resp)
     if error_code in _DEVICE_POLL_PENDING_ERRORS:
         return resp.json()
-    _raise_for_oauth_response(url, resp)
-    return resp.json()
-
-
-async def _apost_form(
-    url: str,
-    data: dict[str, str],
-    *,
-    timeout: float = 30.0,
-) -> dict[str, Any]:
-    """POST a form payload asynchronously and return the parsed JSON body."""
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.post(
-            url,
-            data=data,
-            headers={"Accept": "application/json"},
-        )
     _raise_for_oauth_response(url, resp)
     return resp.json()
 

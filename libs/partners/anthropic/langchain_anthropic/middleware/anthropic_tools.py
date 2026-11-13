@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import os
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, cast
+from typing import TYPE_CHECKING, Annotated, Any, NotRequired, cast
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -22,7 +22,7 @@ from langchain.agents.middleware.types import (
 from langchain.tools import ToolRuntime, tool
 from langchain_core.messages import SystemMessage, ToolMessage
 from langgraph.types import Command
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
@@ -408,7 +408,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         existing = files.get(normalized_path)
 
         # Create file data
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         created_at = existing["created_at"] if existing else now
 
         content_lines = file_text.split("\n")
@@ -461,7 +461,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         new_lines = new_content.split("\n")
 
         # Update file
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         return Command(
             update={
@@ -508,7 +508,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         )
 
         # Update file
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         return Command(
             update={
@@ -575,7 +575,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
             raise ValueError(msg)
 
         # Update timestamp
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         file_data_copy = file_data.copy()
         file_data_copy["modified_at"] = now
 

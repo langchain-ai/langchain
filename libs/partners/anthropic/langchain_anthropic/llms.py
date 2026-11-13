@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping
-from typing import Any
+from typing import Any, Self
 
 import anthropic
 from langchain_core._api.deprecation import deprecated
@@ -19,7 +19,6 @@ from langchain_core.prompt_values import PromptValue
 from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
 from pydantic import ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
 
 from langchain_anthropic._sdk_compat import _route_unsupported_sampling_params
 
