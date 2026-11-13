@@ -10,6 +10,7 @@ serving server's identity under `mcp.server`.
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Protocol, TypedDict
+from weakref import WeakKeyDictionary
 
 from fastmcp.client.group import ClientGroup
 from langchain_core.messages.content import (
@@ -36,6 +37,7 @@ from langchain.mcp.elicitation import _call_tool_with_interrupts, _drives_interr
 
 if TYPE_CHECKING:
     from fastmcp.client import Client
+    from mcp.client.session import ClientSession
     from mcp.types import Tool
 
 
@@ -54,6 +56,9 @@ class _ToolCallResult(Protocol):
 
 ToolMessageContentBlock = TextContentBlock | ImageContentBlock | FileContentBlock
 """LangChain content blocks an MCP tool result can convert into."""
+
+_LISTED_TOOL_NAMES: WeakKeyDictionary[ClientSession, frozenset[str]] = WeakKeyDictionary()
+"""Tool names a converted tool last listed on each session."""
 
 
 class MCPToolArtifact(TypedDict):
@@ -276,8 +281,10 @@ async def as_langchain_tool(
     if isinstance(client, ClientGroup):
         tool_route = await client.resolve_tool(tool.name)
         requesting_client = tool_route.client
+        upstream_name = tool_route.upstream_name
     else:
         requesting_client = client
+        upstream_name = tool.name
     drives_interrupts = _drives_interrupts(requesting_client)
 
     async def call_tool(
@@ -286,6 +293,13 @@ async def as_langchain_tool(
         """Call the captured MCP tool and convert its result."""
         result: _ToolCallResult
         async with client:
+            session = requesting_client.session
+            if upstream_name not in _LISTED_TOOL_NAMES.get(session, frozenset()):
+                # The SDK mirrors `x-mcp-header` arguments into request headers
+                # only for tools listed on the calling session, and a reconnect
+                # starts a fresh one. It would otherwise list after the call.
+                listed = await requesting_client.list_tools(cache_mode="use")
+                _LISTED_TOOL_NAMES[session] = frozenset(listed_tool.name for listed_tool in listed)
             if drives_interrupts:
                 result = await _call_tool_with_interrupts(client, tool.name, arguments)
             else:
