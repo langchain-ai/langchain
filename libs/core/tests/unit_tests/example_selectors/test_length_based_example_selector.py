@@ -74,3 +74,25 @@ def test_selector_empty_example(
     )
     output = empty_selector.select_examples({"question": "empty question"})
     assert output == []
+
+
+def test_selector_state_consistent_after_failed_add_example(
+    selector: LengthBasedExampleSelector,
+) -> None:
+    """Test that a failed add_example leaves the selector usable."""
+    with pytest.raises(KeyError):
+        selector.add_example({})
+    assert len(selector.examples) == len(selector.example_text_lengths)
+    output = selector.select_examples({"question": "Short question?"})
+    assert output == EXAMPLES
+
+
+async def test_selector_state_consistent_after_failed_aadd_example(
+    selector: LengthBasedExampleSelector,
+) -> None:
+    """Test that a failed aadd_example leaves the selector usable."""
+    with pytest.raises(KeyError):
+        await selector.aadd_example({})
+    assert len(selector.examples) == len(selector.example_text_lengths)
+    output = await selector.aselect_examples({"question": "Short question?"})
+    assert output == EXAMPLES
