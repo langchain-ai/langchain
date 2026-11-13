@@ -949,6 +949,35 @@ def test_exception_handling_callable_invalid_blocks_stringified() -> None:
     assert actual.tool_call_id == "call_1"
 
 
+def test_exception_handling_keeps_artifact() -> None:
+    tool_ = _FakeExceptionTool(
+        exception=ToolException("rate limited", artifact={"retry_after": 30}),
+        handle_tool_error=True,
+    )
+    actual = tool_.invoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.content == "rate limited"
+    assert actual.status == "error"
+    assert actual.artifact == {"retry_after": 30}
+
+
+async def test_async_exception_handling_keeps_artifact() -> None:
+    tool_ = _FakeExceptionTool(
+        exception=ToolException("rate limited", artifact={"retry_after": 30}),
+        handle_tool_error=True,
+    )
+    actual = await tool_.ainvoke(
+        {"type": "tool_call", "args": {}, "name": "exception", "id": "call_1"}
+    )
+
+    assert isinstance(actual, ToolMessage)
+    assert actual.status == "error"
+    assert actual.artifact == {"retry_after": 30}
+
+
 def test_exception_handling_non_tool_exception() -> None:
     tool_ = _FakeExceptionTool(exception=ValueError("some error"))
     with pytest.raises(ValueError, match="some error"):
