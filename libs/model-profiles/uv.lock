@@ -674,7 +674,6 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.23.0" },
-    { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.0.0" },
     { name = "typing-extensions", specifier = ">=4.7.0" },
 ]
 
