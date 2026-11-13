@@ -9,7 +9,6 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
-from langchain_core.utils._gateway import langsmith_gateway
 from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
@@ -421,7 +420,10 @@ def test_langsmith_gateway_provider_env_base_url_wins(
 
 @pytest.mark.usefixtures("_gateway_env")
 def test_langsmith_gateway_context_overrides_explicit_values() -> None:
-    with langsmith_gateway(api_key="service-key"):
+    gateway = pytest.importorskip("langchain_core.utils._gateway")
+    if not hasattr(gateway, "langsmith_gateway"):
+        pytest.skip("Requires a langchain-core release with `langsmith_gateway`.")
+    with gateway.langsmith_gateway(api_key="service-key"):
         llm = ChatXAI(
             model="grok-4",
             base_url="https://other.example.com/v1",
