@@ -2339,7 +2339,7 @@ class ChatAnthropic(BaseChatModel):
         message_chunk: AIMessageChunk | None = None
         # Reference: Anthropic SDK streaming implementation
         # https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
-        if event.type == "message_start" and stream_usage:
+        if event.type == "message_start":
             # Capture model name, but don't include usage_metadata yet
             # as it will be properly reported in message_delta with complete info
             if hasattr(event.message, "model"):
