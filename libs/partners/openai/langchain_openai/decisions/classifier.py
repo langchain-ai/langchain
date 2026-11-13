@@ -44,6 +44,10 @@ class OpenAIClassifier(BaseDecisionModel):
     Messages are sent as native Decisions API input items, so tool calls and tool
     results keep their roles. Other structured state is sent as JSON.
 
+    This is a best-effort integration with the TypeSafe-compatible
+    `BaseDecisionModel` interface. For an integration with the native OpenAI
+    Decisions API, use `OpenAIDecisions`.
+
     !!! warning "Unsupported features"
 
         - `Box` questions raise `ValueError`.
