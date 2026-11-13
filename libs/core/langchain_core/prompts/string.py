@@ -112,6 +112,11 @@ def _get_jinja2_variables_from_template(template: str) -> set[str]:
 def mustache_formatter(template: str, /, **kwargs: Any) -> str:
     """Format a template using mustache.
 
+    Values are inserted without HTML-escaping, matching LangChain JS
+    (`MUSTACHE_RENDER_OPTIONS = { escape: (text) => text }`) and the
+    `f-string` and `jinja2` formatters. This keeps code, XML/HTML, and
+    quoted text intact in prompts.
+
     Args:
         template: The template string.
         **kwargs: The variables to format the template with.
@@ -119,7 +124,7 @@ def mustache_formatter(template: str, /, **kwargs: Any) -> str:
     Returns:
         The formatted string.
     """
-    return mustache.render(template, kwargs)
+    return mustache.render(template, kwargs, html_escape=False)
 
 
 def mustache_template_vars(

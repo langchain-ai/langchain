@@ -12,9 +12,11 @@ from packaging import version
 from syrupy.assertion import SnapshotAssertion
 
 from langchain_core._api import LangChainDeprecationWarning
+from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
+from langchain_core.utils import mustache
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
@@ -259,6 +261,55 @@ def test_mustache_prompt_with_non_dict_mapping() -> None:
     assert prompt.format(user=ChainMap({"name": "Alice"})) == "Hello Alice"
     assert prompt.format(user=UserDict({"name": "Alice"})) == "Hello Alice"
     assert prompt.format(user=MappingProxyType({"name": "Alice"})) == "Hello Alice"
+
+
+def test_mustache_prompt_does_not_html_escape_values() -> None:
+    """Test mustache prompt templates insert values without HTML-escaping.
+
+    `{{var}}` values containing `<`, `>`, `&`, or `"` must reach the model
+    unchanged, matching the `f-string` and `jinja2` formatters and LangChain JS.
+    """
+    # Plain variable with code-like content (issue reproduction).
+    code = "if a < b && name == \"x\": print('ok')"
+    prompt = PromptTemplate.from_template(
+        "Review this code:\n{{code}}", template_format="mustache"
+    )
+    assert prompt.format(code=code) == f"Review this code:\n{code}"
+
+    # Same value via f-string renders identically.
+    fstring = PromptTemplate.from_template("Review this code:\n{code}")
+    assert prompt.format(code=code) == fstring.format(code=code)
+
+    # Section and inverted section values are not escaped either.
+    template = "{{#show}}{{value}}{{/show}}{{^show}}hidden{{/show}}"
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    assert prompt.format(show=True, value="<a&b>") == "<a&b>"
+    assert prompt.format(show=False, value="<a&b>") == "hidden"
+
+    # Chat prompt with the common <document> pattern.
+    chat = ChatPromptTemplate.from_messages(
+        [("human", "<document>{{doc}}</document>")],
+        template_format="mustache",
+    )
+    messages = chat.invoke({"doc": '<b>AT&T</b> said "hi"'}).to_messages()
+    assert messages[0].content == '<document><b>AT&T</b> said "hi"</document>'
+
+
+def test_mustache_render_escapes_by_default() -> None:
+    """Test direct `mustache.render` still HTML-escapes `{{var}}` by default."""
+    assert mustache.render("{{x}}", {"x": '<b>&"'}) == "&lt;b&gt;&amp;&quot;"
+    # Opting out inserts the value unchanged.
+    assert mustache.render("{{x}}", {"x": '<b>&"'}, html_escape=False) == '<b>&"'
+    # The opt-out applies inside sections too.
+    template = "{{#s}}{{v}}{{/s}}{{^s}}none{{/s}}"
+    assert (
+        mustache.render(template, {"s": True, "v": "<a&b>"}, html_escape=False)
+        == "<a&b>"
+    )
+    assert (
+        mustache.render(template, {"s": False, "v": "<a&b>"}, html_escape=False)
+        == "none"
+    )
 
 
 def test_prompt_from_template_with_partial_variables() -> None:
