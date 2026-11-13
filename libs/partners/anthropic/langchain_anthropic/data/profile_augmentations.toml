@@ -100,3 +100,19 @@ mid_conversation_tools = true
 [overrides."claude-mythos-5-1"]
 mid_conversation_system_messages = true
 mid_conversation_tools = true
+
+[overrides."claude-fable-5-2"]
+structured_output = true
+tool_choice = false
+reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
+reasoning_effort_default = "high"
+mid_conversation_system_messages = true
+mid_conversation_tools = true
+
+[overrides."claude-mythos-5-2"]
+structured_output = true
+tool_choice = false
+reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
+reasoning_effort_default = "high"
+mid_conversation_system_messages = true
+mid_conversation_tools = true

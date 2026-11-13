@@ -36,3 +36,11 @@ def test_anthropic_model_params() -> None:
         "ls_max_tokens": 1024,
         "ls_temperature": 0.1,
     }
+
+
+def test_sdk_upgrade_preserves_api_version() -> None:
+    llm = AnthropicLLM(model_name="foo", temperature=0.2)
+
+    assert llm.client.default_headers["anthropic-version"] == "2023-06-01"
+    assert llm.async_client.default_headers["anthropic-version"] == "2023-06-01"
+    assert llm._default_params["temperature"] == 0.2
