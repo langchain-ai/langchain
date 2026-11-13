@@ -98,6 +98,22 @@ def langsmith_gateway(
         _GATEWAY_OVERRIDE.reset(token)
 
 
+def _override_base_url(
+    override: _GatewayOverride, base_url: str | None, provider_path: str
+) -> str:
+    """Return the base URL to use while a `langsmith_gateway` context is active.
+
+    An explicit `base_url` is kept only when it is already under the context's
+    gateway host, so a caller that resolved a different gateway path (e.g.
+    `init_chat_model`'s `langsmith` provider uses `/v1`) keeps it. Anything else
+    is replaced with the provider path on the gateway, so a model cannot send
+    the gateway key to another host.
+    """
+    if isinstance(base_url, str) and base_url.startswith(f"{override.base_url}/"):
+        return base_url
+    return f"{override.base_url}/{provider_path}"
+
+
 _TRUE_VALUES = ("true", "1", "yes")
 _FALSE_VALUES = ("false", "0", "no")
 
@@ -155,7 +171,7 @@ def _resolve_gateway_base_url(provider_path: str) -> str | None:
     """
     override = _GATEWAY_OVERRIDE.get()
     if override is not None:
-        return f"{override.base_url}/{provider_path}"
+        return _override_base_url(override, None, provider_path)
     raw = os.getenv(_LANGSMITH_GATEWAY_ENV)
     if not raw or raw.lower() in _FALSE_VALUES:
         return None
@@ -178,8 +194,10 @@ def _resolve_gateway_config(
 ) -> GatewayConfig:
     """Resolve a provider's base URL and API key, applying gateway settings.
 
-    Inside `langsmith_gateway`, the context's gateway URL and key are returned
-    and everything below is ignored. Otherwise, precedence is:
+    Inside `langsmith_gateway`, the context's gateway key is returned, and the
+    base URL is the provider path on the gateway host (an explicit `base_url`
+    already on that host is kept). Everything below is ignored. Otherwise,
+    precedence is:
 
     - **base_url:** explicit ``base_url`` > ``base_url_env`` > LangSmith gateway
       > ``default_base_url``.
@@ -213,7 +231,7 @@ def _resolve_gateway_config(
     override = _GATEWAY_OVERRIDE.get()
     if override is not None:
         return GatewayConfig(
-            base_url=f"{override.base_url}/{provider_path}",
+            base_url=_override_base_url(override, base_url, provider_path),
             api_key=override.api_key,
             base_url_from_gateway=True,
         )

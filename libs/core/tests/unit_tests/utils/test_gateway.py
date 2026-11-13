@@ -430,3 +430,26 @@ def test_context_applies_to_model_fields() -> None:
     assert model.api_base == _DEFAULT_GATEWAY
     assert model.api_key is not None
     assert model.api_key.get_secret_value() == "ctx-key"
+
+
+def test_context_keeps_explicit_url_on_gateway_host() -> None:
+    """A base URL already on the gateway host keeps its path (e.g. `/v1`)."""
+    gateway_v1 = "https://gateway.smith.langchain.com/v1"
+    with langsmith_gateway(api_key="ctx-key"):
+        config = _config(base_url=gateway_v1, api_key="user-key")
+    assert config.base_url == gateway_v1
+    assert config.api_key.get_secret_value() == "ctx-key"
+
+
+@pytest.mark.parametrize(
+    "base_url",
+    [
+        "https://gateway.smith.langchain.com.evil.com/v1",
+        "https://gateway.smith.langchain.com@evil.com/v1",
+        "https://gateway.smith.langchain.com",
+    ],
+)
+def test_context_replaces_lookalike_gateway_url(base_url: str) -> None:
+    with langsmith_gateway(api_key="ctx-key"):
+        config = _config(base_url=base_url)
+    assert config.base_url == _DEFAULT_GATEWAY
