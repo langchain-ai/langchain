@@ -7,7 +7,6 @@ from unittest.mock import MagicMock
 
 import pytest
 from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
-from langchain_core.utils._gateway import langsmith_gateway
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types import CompletionUsage
@@ -779,7 +778,10 @@ def test_langsmith_gateway_provider_env_base_url_wins(
 @pytest.mark.usefixtures("_gateway_env")
 def test_langsmith_gateway_context_overrides_explicit_values() -> None:
     """`langsmith_gateway` overrides an explicit base URL and API key."""
-    with langsmith_gateway(api_key="service-key"):
+    gateway = pytest.importorskip("langchain_core.utils._gateway")
+    if not hasattr(gateway, "langsmith_gateway"):
+        pytest.skip("Requires a langchain-core release with `langsmith_gateway`.")
+    with gateway.langsmith_gateway(api_key="service-key"):
         llm = ChatDeepSeek(
             model="deepseek-chat",
             base_url="https://other.example.com/v1",
