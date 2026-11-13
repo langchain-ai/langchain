@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from typing import cast
+from typing import Self, cast
 
 import openai
 from langchain_core.utils import from_env, secret_from_env
 from pydantic import Field, SecretStr, model_validator
-from typing_extensions import Self
 
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 

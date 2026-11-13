@@ -13,17 +13,16 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-requires-python = ">=3.10.0,<4.0.0"
+requires-python = ">=3.11.0,<4.0.0"
 dependencies = [
-    "qdrant-client>=1.15.1,<2.0.0",
-    "pydantic>=2.7.4,<3.0.0",
+    "qdrant-client>=1.15.1,<1.16.0",
+    "pydantic>=2.7.4",
     "langchain-core>=1.4.7,<2.0.0",
 ]
 
@@ -39,7 +38,7 @@ Reddit = "https://www.reddit.com/r/LangChain/"
 
 [project.optional-dependencies]
 fastembed = [
-    "fastembed>=0.8.0,<1.0.0; python_version < \"3.13\" and python_version >= \"3.9\"",
+    "fastembed>=0.8.0; python_version < \"3.13\" and python_version >= \"3.9\"",
 ]
 
 [dependency-groups]
@@ -65,7 +64,13 @@ typing = [
 ]
 
 [tool.uv]
-constraint-dependencies = ["pygments>=2.20.0"]  # CVE-2026-4539
+constraint-dependencies = [
+    "pygments>=2.20.0",  # CVE-2026-4539
+    # Patched releases require Python 3.11; Python 3.10 retains affected fallbacks.
+    "filelock==3.20.3; python_version < '3.11'",
+    "filelock>=4.2.1; python_version >= '3.11'",
+    "pillow>=13.0.0; python_version >= '3.11'",
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

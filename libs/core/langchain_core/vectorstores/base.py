@@ -16,11 +16,12 @@ from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
+    Self,
     TypeVar,
 )
 
 from pydantic import ConfigDict, Field, model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings

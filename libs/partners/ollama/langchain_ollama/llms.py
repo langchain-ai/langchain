@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Iterator, Mapping
-from typing import Any, Literal
+from typing import Any, Literal, Self
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -13,7 +13,6 @@ from langchain_core.language_models import BaseLLM, LangSmithParams
 from langchain_core.outputs import GenerationChunk, LLMResult
 from ollama import AsyncClient, Client, Options
 from pydantic import PrivateAttr, model_validator
-from typing_extensions import Self
 
 from langchain_ollama._utils import (
     merge_auth_headers,

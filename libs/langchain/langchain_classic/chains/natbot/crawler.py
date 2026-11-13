@@ -170,10 +170,6 @@ class Crawler:
         win_right_bound: float = win_left_bound + win_width
         win_lower_bound: float = win_upper_bound + win_height
 
-        # 	percentage_progress_start = (win_upper_bound / document_scroll_height) * 100
-        # 	percentage_progress_end = (
-        # 		(win_height + win_upper_bound) / document_scroll_height
-        # 	) * 100
         percentage_progress_start = 1
         percentage_progress_end = 2
 

@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TextIO, cast
+from typing import TYPE_CHECKING, Any, Self, TextIO, cast
 
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_core._api import warn_deprecated
 from langchain_core.callbacks import BaseCallbackHandler

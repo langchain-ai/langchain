@@ -446,6 +446,361 @@ def _assert_interleaved_parallel_tool_call_events(events: list[Any]) -> None:
     }
 
 
+def _tool_call_chunk(
+    args: str,
+    *,
+    id_: str | None = None,
+    name: str | None = None,
+    index: int = 0,
+) -> ChatGenerationChunk:
+    return ChatGenerationChunk(
+        message=AIMessageChunk(
+            content="",
+            id="msg-1",
+            tool_call_chunks=[
+                {
+                    "type": "tool_call_chunk",
+                    "index": index,
+                    "id": id_,
+                    "name": name,
+                    "args": args,
+                }
+            ],
+        )
+    )
+
+
+def _sliced_tool_call_chunks() -> list[ChatGenerationChunk]:
+    # Like OpenAI, the opener has the `id` and `name` but no args.
+    return [
+        _tool_call_chunk("", id_="call_1", name="write_file"),
+        _tool_call_chunk('{"path": '),
+        _tool_call_chunk('"a.py"}'),
+    ]
+
+
+def test_chunks_to_events_tool_call_streams_args_as_slices() -> None:
+    """Each chunk's new args go out as a `tool-call-delta` carrying only them.
+
+    The call's `id`, `name` and provider `index` go on its start. An
+    opener with no args sends no delta.
+    """
+    events = list(
+        chunks_to_events(iter(_sliced_tool_call_chunks()), message_id="msg-1")
+    )
+
+    _assert_tool_call_streamed_as_slices(events)
+
+
+@pytest.mark.asyncio
+async def test_achunks_to_events_tool_call_streams_args_as_slices() -> None:
+    """Async bridge streams tool-call args as slices too."""
+    events = [
+        event
+        async for event in achunks_to_events(
+            _aiter_chunks(_sliced_tool_call_chunks()), message_id="msg-1"
+        )
+    ]
+
+    _assert_tool_call_streamed_as_slices(events)
+
+
+def _assert_tool_call_streamed_as_slices(events: list[Any]) -> None:
+    assert_valid_event_stream(events)
+    assert events[1:-1] == [
+        {
+            "event": "content-block-start",
+            "index": 0,
+            "content": {
+                "type": "tool_call_chunk",
+                "id": "call_1",
+                "name": "write_file",
+                "args": "",
+                "index": 0,
+            },
+        },
+        {
+            "event": "content-block-delta",
+            "index": 0,
+            "delta": {"type": "tool-call-delta", "args": '{"path": '},
+        },
+        {
+            "event": "content-block-delta",
+            "index": 0,
+            "delta": {"type": "tool-call-delta", "args": '"a.py"}'},
+        },
+        {
+            "event": "content-block-finish",
+            "index": 0,
+            "content": {
+                "type": "tool_call",
+                "id": "call_1",
+                "name": "write_file",
+                "args": {"path": "a.py"},
+            },
+        },
+    ]
+
+
+def _anthropic_server_tool_call_chunks() -> list[ChatGenerationChunk]:
+    blocks: list[dict[str, Any]] = [
+        {
+            "type": "server_tool_use",
+            "id": "srvtoolu_1",
+            "name": "web_search",
+            "input": {},
+        },
+        {"type": "input_json_delta", "partial_json": '{"query": '},
+        {"type": "input_json_delta", "partial_json": '"weather"}'},
+    ]
+    return [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[{"index": 0, **block}],
+                id="msg-1",
+                response_metadata={"model_provider": "anthropic"},
+            )
+        )
+        for block in blocks
+    ]
+
+
+def test_chunks_to_events_server_tool_call_streams_args_as_slices() -> None:
+    """Anthropic server-tool `partial_json` streams as `tool-call-delta` too."""
+    events = list(
+        chunks_to_events(iter(_anthropic_server_tool_call_chunks()), message_id="msg-1")
+    )
+
+    _assert_server_tool_call_streamed_as_slices(events)
+
+
+@pytest.mark.asyncio
+async def test_achunks_to_events_server_tool_call_streams_args_as_slices() -> None:
+    """Async bridge streams server-tool args as slices too."""
+    events = [
+        event
+        async for event in achunks_to_events(
+            _aiter_chunks(_anthropic_server_tool_call_chunks()), message_id="msg-1"
+        )
+    ]
+
+    _assert_server_tool_call_streamed_as_slices(events)
+
+
+def _assert_server_tool_call_streamed_as_slices(events: list[Any]) -> None:
+    assert_valid_event_stream(events)
+    assert events[1:-1] == [
+        {
+            "event": "content-block-start",
+            "index": 0,
+            "content": {
+                "type": "server_tool_call_chunk",
+                "id": "srvtoolu_1",
+                "name": "web_search",
+                "args": "",
+                "index": 0,
+            },
+        },
+        {
+            "event": "content-block-delta",
+            "index": 0,
+            "delta": {"type": "tool-call-delta", "args": '{"query": '},
+        },
+        {
+            "event": "content-block-delta",
+            "index": 0,
+            "delta": {"type": "tool-call-delta", "args": '"weather"}'},
+        },
+        {
+            "event": "content-block-finish",
+            "index": 0,
+            "content": {
+                "type": "server_tool_call",
+                "id": "srvtoolu_1",
+                "name": "web_search",
+                "args": {"query": "weather"},
+                "index": 0,
+            },
+        },
+    ]
+
+
+def test_chunks_to_events_late_tool_call_id_and_name_arrive_on_finish() -> None:
+    """A call's `id` and `name` aren't updated after its start.
+
+    `tool-call-delta` carries only args. An `id` or `name` the start
+    didn't have reaches consumers on `content-block-finish`.
+    """
+    chunks = [
+        _tool_call_chunk('{"q": '),
+        _tool_call_chunk('"x"}', id_="c1", name="search"),
+    ]
+
+    events = list(chunks_to_events(iter(chunks), message_id="msg-1"))
+
+    assert_valid_event_stream(events)
+    assert events[1:-1] == [
+        {
+            "event": "content-block-start",
+            "index": 0,
+            "content": {
+                "type": "tool_call_chunk",
+                "id": None,
+                "name": None,
+                "args": "",
+                "index": 0,
+            },
+        },
+        {
+            "event": "content-block-delta",
+            "index": 0,
+            "delta": {"type": "tool-call-delta", "args": '{"q": '},
+        },
+        {
+            "event": "content-block-delta",
+            "index": 0,
+            "delta": {"type": "tool-call-delta", "args": '"x"}'},
+        },
+        {
+            "event": "content-block-finish",
+            "index": 0,
+            "content": {
+                "type": "tool_call",
+                "id": "c1",
+                "name": "search",
+                "args": {"q": "x"},
+            },
+        },
+    ]
+
+
+def test_chunks_to_events_tool_call_extras_only_on_finish() -> None:
+    """Provider `extras` are for round-tripping, which reads the finished block."""
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "tool_call_chunk",
+                        "id": "c1",
+                        "name": "search",
+                        "args": '{"q": "x"}',
+                        "index": 0,
+                        "extras": {"item_id": "fc_1"},
+                    }
+                ],
+                response_metadata={"output_version": "v1"},
+            )
+        )
+    ]
+
+    events: list[Any] = list(chunks_to_events(iter(chunks), message_id="msg-1"))
+
+    start, delta, finish = events[1:-1]
+    assert start["content"] == {
+        "type": "tool_call_chunk",
+        "id": "c1",
+        "name": "search",
+        "args": "",
+        "index": 0,
+    }
+    assert delta["delta"] == {"type": "tool-call-delta", "args": '{"q": "x"}'}
+    assert finish["content"] == {
+        "type": "tool_call",
+        "id": "c1",
+        "name": "search",
+        "args": {"q": "x"},
+        "extras": {"item_id": "fc_1"},
+    }
+
+
+def _blank_args(event: Any) -> Any:
+    """Blank a delta's args in place, as a stream transformer might."""
+    if event["event"] == "content-block-delta":
+        # Also reaches `block-delta` snapshots, whose `fields` were the
+        # bridge's own running copy of the args, so going back to them
+        # fails these tests.
+        delta = event["delta"]
+        delta.get("fields", delta)["args"] = ""
+    return event
+
+
+def test_chunks_to_events_tool_call_deltas_are_independent_of_the_call() -> None:
+    """Editing a delta in place can't corrupt the call.
+
+    Each delta is a new object, not the bridge's running copy of the
+    args, so the finished call doesn't see the edit.
+    """
+    events = [
+        _blank_args(event)
+        for event in chunks_to_events(iter(_sliced_tool_call_chunks()))
+    ]
+
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    assert finishes[0]["content"]["args"] == {"path": "a.py"}
+
+
+@pytest.mark.asyncio
+async def test_achunks_to_events_tool_call_deltas_are_independent_of_the_call() -> None:
+    """Editing a delta in place can't corrupt the call in the async bridge either."""
+    events = [
+        _blank_args(event)
+        async for event in achunks_to_events(_aiter_chunks(_sliced_tool_call_chunks()))
+    ]
+
+    finishes = [e for e in events if e["event"] == "content-block-finish"]
+    assert finishes[0]["content"]["args"] == {"path": "a.py"}
+
+
+def test_message_to_events_tool_call_chunk_sends_its_args_as_one_slice() -> None:
+    """Replaying an unfinished chunk sends its args as a single `tool-call-delta`."""
+    msg = AIMessageChunk(
+        content="",
+        id="msg-1",
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "index": 0,
+                "id": "c1",
+                "name": "search",
+                "args": '{"q": "x"}',
+            }
+        ],
+    )
+
+    events = list(message_to_events(msg))
+
+    assert_valid_event_stream(events)
+    assert events[1:-1] == [
+        {
+            "event": "content-block-start",
+            "index": 0,
+            "content": {
+                "type": "tool_call_chunk",
+                "id": "c1",
+                "name": "search",
+                "args": "",
+                "index": 0,
+            },
+        },
+        {
+            "event": "content-block-delta",
+            "index": 0,
+            "delta": {"type": "tool-call-delta", "args": '{"q": "x"}'},
+        },
+        {
+            "event": "content-block-finish",
+            "index": 0,
+            "content": {
+                "type": "tool_call",
+                "id": "c1",
+                "name": "search",
+                "args": {"q": "x"},
+            },
+        },
+    ]
+
+
 def test_chunks_to_events_invalid_tool_call_keeps_stop_reason() -> None:
     """Malformed tool-args become invalid_tool_call; finish_reason stays `stop`."""
     chunks = [

@@ -4,10 +4,14 @@ from langchain_typesafe._version import __version__
 from langchain_typesafe.classifier import TypeSafeClassifier
 from langchain_typesafe.types import (
     Answer,
+    Box,
+    BoxAnswer,
+    BoxCoordinates,
     Choice,
     ChoiceAnswer,
     ClassifierRequest,
     ClassifierResponse,
+    Content,
     Noul,
     NoulAnswer,
     NoulCriteria,
@@ -15,15 +19,18 @@ from langchain_typesafe.types import (
     Score,
     ScoreAnswer,
     State,
-    Usage,
 )
 
 __all__ = [
     "Answer",
+    "Box",
+    "BoxAnswer",
+    "BoxCoordinates",
     "Choice",
     "ChoiceAnswer",
     "ClassifierRequest",
     "ClassifierResponse",
+    "Content",
     "Noul",
     "NoulAnswer",
     "NoulCriteria",
@@ -32,6 +39,5 @@ __all__ = [
     "ScoreAnswer",
     "State",
     "TypeSafeClassifier",
-    "Usage",
     "__version__",
 ]

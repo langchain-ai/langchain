@@ -6,6 +6,7 @@ from abc import ABC
 from typing import (
     Any,
     Literal,
+    NotRequired,
     TypedDict,
     cast,
 )
@@ -13,7 +14,7 @@ from typing import (
 from pydantic import BaseModel, ConfigDict
 from pydantic.fields import FieldInfo
 from pydantic_core import PydanticUndefined
-from typing_extensions import NotRequired, override
+from typing_extensions import override
 
 logger = logging.getLogger(__name__)
 

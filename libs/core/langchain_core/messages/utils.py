@@ -1952,6 +1952,11 @@ def convert_to_openai_messages(
                             },
                         }
                     )
+                elif block.get("type") == "refusal":
+                    # Refusals without text, e.g. from Anthropic, have nothing to
+                    # send.
+                    if block.get("refusal"):
+                        content.append({"type": "refusal", "refusal": block["refusal"]})
                 elif (
                     block.get("type") in {"thinking", "reasoning"}
                     or pass_through_unknown_blocks

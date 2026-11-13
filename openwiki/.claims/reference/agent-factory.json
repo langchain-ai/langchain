@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:4bcb96966288d2bbcde6f10b563175f526c1883e0a7bacc60f05a7a7bb35c062",
+  "claims": [
+    {
+      "id": "claim_1a89444c2e6c4c13858f4d31797f2302",
+      "statement": "The create_agent function provides three overloaded signatures for type-safe agent construction: one for no structured output (ResponseT=Any), one for raw dict schemas (ResponseT=dict[str, Any]), and one for typed schemas with proper type inference. It constructs a compiled LangGraph state machine orchestrating conversation flow between model, tools, and middleware while automatically handling tool binding, structured output strategy selection, state schema resolution, and middleware composition.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L822-L889",
+          "version": "repo-lines-v1:sha256:3dee09535ef113d04edc01ac3c421e497ee3717f0228ef5000a7d6d48d8e2e9f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmNDkyYTRiZjI0MTViZWQ3NjU2NzBkOWQzYWQ3YjczNzdkNjZiMzc5YmU1MDkxOTkzMjA2MDU5NjU0NDE2YWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMjhiZDExOTA0YTVmNjBjY2VkNDRmMDg5ZWEyNjQ4MmFmMjczMzRhZTJkY2ExYWExY2YyMmM4NDcwMTNiYjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MjIzMTA2ZmQ4NzQyYjcwZWEyMzNmOWRjMzU5ZjRiMDJiYmIwNjliNzI4M2VlZjc2MjQ5OTUxNmJkN2I5YzgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxYWVhYmUxNWM4YmZiYTc1YTU0ZWMxYmJhMmFjYTA3YTEzMWJkZTM4MjkyNzgzZDQ3M2E3MGU2ODQyZGMwMWEifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L892-L1025",
+          "version": "repo-lines-v1:sha256:d7362d974959326958a49f1e04b5d96e8f2e7ed92350b6e538e728e178ae995e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNjg5OTkzM2ZhODgwYTBlZjI2YzJhOGI0OTAwZTM3MTc0Nzg4YWRiNWFlYjA3YmVkNTczMjY0MmIwNDU1ZTBlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkNjBmZTg2NTMxMGRlMzMwZjE2YzQyZTY4ZjMwMWMzODNhZjg3MDk2NzVhYjYyN2E0OTcxNmY0YzQ2OWFiOGU0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmY2Q4YTU5ZDMzNmFkM2ZhNjlmNmU4ZmFiOGE3ZjA2ZTlmMmViNWFmNDUyZDQwNWI0OWFhNTU1MjQ3NjZjYzFlIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_6fe16597a50543668485749822e23bfe",
+      "statement": "create_agent accepts model as either a string identifier (e.g., 'openai:gpt-4o') resolved via init_chat_model or a direct BaseChatModel instance, with optional tools in three formats: BaseTool instances, raw callables automatically wrapped as tools, or dict-based provider tools executed externally.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1046-L1074",
+          "version": "repo-lines-v1:sha256:c8cbabfa91681b411b48819509d62445982d510d0fb84242f26079e6cb4d1990:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwNDM5M2Q0YjM0Mzk5ZDdhZjhjZDM0ZjU3NTEzYWNmNDliNWEzOWMzZjMzNDMyMzIzZDYwZjg4YzFiM2FiYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ODdkYzYyYjNiZDQwM2RlZTg0OTBlZmQyNDdhM2I4YzljZDg3MDkxZWM2YjFhOWZkN2U1NzU3Yjc2Zjc4MmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxZmZmOTY3YmIxODY2ZjRjYWEwMmIzZDdiY2JlZjdlZThhNjE3YzRkMjI1MjdmZDAxYWViYmE5MmVhMGY3NGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ1NDExNDQyZWM0YmMzYjhmMjA5ZGExMTQxZWRiNDFmMTY3MzE3N2NiMGNhYTIwMThmM2NjYTFhZjc5ZGY5OGUifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L918-L940",
+          "version": "repo-lines-v1:sha256:ee1547c2c70cdc4330e2aa6c49a51f84ec2db7fd4be8157647b03ad339149ffa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUyMzZmMWI1ZjhlOGMwNjYzNzBhMDQ2NmNjM2Y2M2U5NDMyMThhMjYwZjIxMTIxMmU3YmFiM2U0ODk2NjhiNDIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2MTM2ZWY5MDY5ZDY0OTVmNDJiNDk0MGFlZTk2MDljYTNmMjE2YzYxZTZjZWU5YjM4NGJjMTVhOTkwMmM3NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2NWNiYWVkNTk3NDFjMWI3MTI4MjdlNWM0YzU2YzI0MmViYzU1YmExMDZiZmUwYzZmZDY3Mjk0MmExMTkzYWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5OTY2ZWUwNWEzMjU4NGVmODY3MWNkNzRjOGFlYWViNzE4YzlmZjFhZWRjNWY0YjEyYzNkYzRkMGUzZWQzNTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_40e1dc2a8ae743de8eabae28ff92229e",
+      "statement": "The factory raises AssertionError when duplicate middleware instances are detected, validates that middleware-referenced tools are registered upfront or handled via wrap_tool_call, and raises ValueError if ToolStrategy specifies tools not declared during agent creation.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1159-L1162",
+          "version": "repo-lines-v1:sha256:80199bfc9941df294fe7483670f0470ee20a9e8c5a438b5fd95ae4d80f81e4fd:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTRhMjk0Y2U1ODJhZjhjZTg3ZTViYzZhN2E3ODU1M2JhODg1N2QyOGY0YTU5NjQ4MDliZDRmZTg5NmY0NGQ0MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODU1MmQ0MGJjNTY5NTExOGE0N2FlNTNhMTFmYzcyN2JjOWMwODdmODNjOGZlNDFkMjI3YTQxYjY3MDBlYTk2ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjExNTIwMTI0NjJhMGYyMzA2ZGJmNzkxNWE3NDY2MmNiZWZlMjY1YjA5NzE4YjAyMzM1Zjc2YWQ1ODJmN2Y5NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDQ4MTU5MTQzNjFlZGY3MGEwZThkMTNiZjI1YTBiMzY5NGE1OTFmNTdlMmI4ZTc3OTRiMmVjMWFlNDBlMzJjMyJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1382-L1397",
+          "version": "repo-lines-v1:sha256:ee51b92aa9e2184d973bd4ec693a0c201a92ef591bea41e0cc968824c538f157:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM2ZjJlOWRjYjNkN2ExMDkyN2EzZjJjNWQ2YTRhMzI5N2U4MjQ2NmQ2ZmU4NmM3ZDc3NzU0MzNkNWZjYzM3ZGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1ZTZiMzJjODVmYjBmN2VhMTA1NTFjYTA2Y2VjOTI4MjlkYjE5N2M2NGZhM2U4ZGYyZjc4MGNmODczMTU4YjgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcxNmVlNDlhYjY3OWVjMjI3ODQzY2FmMjQ4NTQwNzYyMzJkNzFlODQxZWNhZGUyMzU4NDgxNDRkMTFkMDgyNTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI2OGE4NzE3MzViZjA1MGQ3MjMyYWI4MjIyYTc5MTIxM2MwNmEyZjFhOTNlNGY0MGUxYWMxMGVkMDVhYjY5MmMifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1464-L1472",
+          "version": "repo-lines-v1:sha256:783eb852a56d6035c5874a9d013a83594fd026640309bf7b878cdb1d6296e149:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTM1Yzk2YmRlY2QzMDg3YzI3YTk4MDExOTRmMTlhYjU5NGNhY2E0ZjE2NDZkYjE5ZThkZGQ2OWY1ZjBmNWY0YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjlhZWU1YTNjNjliMDlmYmIwY2FhMGQwNDgyMGZlNTllYTEzZjU0MDY5NzI4YTQ5YzViMWI1OGQ0NDFlYWM0ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjBkY2M0YjRhODYzMTlhYTVmNTEwMjkxYjVjYzZkYmI2YmJhOTBkNGIxYjAxZTYwMGIwMDlmMWUwMWJkYjljNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNjNWEwNjg2YWQxNjg3ZTE2NzkyNmViZjFiZTg2N2UzYzE4Y2M3ZmIzMjY3OTNjYzUxOTQwOGEzN2YxNjgyYSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_50bc223b067e4355a9fa5f1672a0e9b4",
+      "statement": "Structured output errors (StructuredOutputValidationError, MultipleStructuredOutputsError) are raised when schema parsing fails or multiple structured responses are returned; the factory's _handle_structured_output_error function determines retry behavior based on response_format.handle_errors configuration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1262-L1270",
+          "version": "repo-lines-v1:sha256:53dbc8716377849f893eced5c546cf101c7088cc8a90fe38d925a477d97ccb77:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDczYTkwNjhmN2FiYzQ1NjU2YjlmNDVhOGUxNGIxOTEwMmE4YjBmMjE5YmUwYjY1NjUxNjdlMzk4NTNmYTI0MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAwY2NlMjI4MzU3ZDE2MzYwNGEzOWVhMzQxMWE2NjM0YmIyYjQyZmM1MWRhYzZiYzIwNDVmZDIwZGM4YWNmYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzE4YmU3YzllMTE4NTgwYjM2YjBlOGQ5YmExNGEzNDI0ODUxZTEwYWE3NmU4OTY3MDVlMjU2MDYyOGEzMmE1YyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWJhODc1ZTBhM2U3OWRhOTBmN2JjZmFjNjE5ZTVmNTgxYzgyYTBiNTZjNTIxMjdjYTdhN2ZhYzk3MmI0MjEwNiJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1284-L1336",
+          "version": "repo-lines-v1:sha256:b899c800f181b56cda0eec6d3627245912a9d3a25877f318a7b29c872c7c557f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlZDZmZjFmZjU5MWY3ZGQ3NTM1YTQzNzk5MWVmYTc0YzE0M2U3NWY1Yjk5NDM3NmVhYjA1NTFjOTVlZWQwMjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ2Mzg4Yzc4MjdlZTI3ZTkwOTVjOGY0OWY4NmQ0Y2FiMDMzNWE1MTM0NTFkOTM0YTYwNzA5ZDU3NDVmOWRjYjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1NWNmNmI1YWY5OGI5MTBhZWZlMjc5M2I4ZDEyOWI0ZGJjMDBmMjJmMzZkZjM2ZDJiYzBkYmFjYWFhZjJjMGYifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L646-L673",
+          "version": "repo-lines-v1:sha256:f0ec55534f15a3317d0e70bd07bb84f080ba5ee41a94f5b05d08e74261f015aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmM2JjYWUzMzhlZjQxNGQ2NmFhM2Q4MTUxNjA5MmE2MWMxNGZhNTllZGExMTMxMmVlMzgwM2UwNDNjZDAyMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NmI5OTA3N2JhZDllYzg0YmJmYzMzMzBkNWRiNDdjOTkyMDJhZjUxMjMzM2Q5OWZlODM3ZTA2NTQyOWVmMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjViNTk4NTM5MWU3MTAyMWY1ZDZiYjczZTE1YzgzZDYwNmJmNTNhMTVhYzM1NGRhMGI0OWM3YzZjYWZlM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyMDYwZGJmNWM4NDQ2YmUzZTYzN2U3NzcxMzZiNTJmMzlhMWZjYmQ1YjIwMzgwNTZiZDEwZTE4NjUwNzZiNDcifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L36-L76",
+          "version": "repo-lines-v1:sha256:a2bf4a871ace64be067a760bc8e146b3d70258e22e7e520cda7efd6ffad87876:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxMDMxYTdmMWVlMzQwZjU3N2FmMGJiOGU5NjBmNmFiODFhNGQyYmI0ZWViZmM1Mzg3MmNmNDNmYjFhNzliNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNhYWJhYzAxYTBiNDQwZDU2NzA4Y2RkOTBiOTljYzg4OGNmZTgyNWQ1ZTQ4M2Q2ZDQ2OWUyZDU2MmFkOWViZTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY5NTMxNDczZjMyM2I3NjQ2ZDU3MTIzYTZhMGViZTIwMTFmZjc2MTMzNmMwZjFkN2U3OWYxNWUwMDdjZDc2YzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_28f6f38ae00f405baec4e2765649b19a",
+      "statement": "create_agent returns CompiledStateGraph with four type parameters: AgentState[ResponseT] for internal state, ContextT for runtime context, InputAgentState for input schema, and OutputAgentState[ResponseT] for output schema, enabling type-safe agent execution with .stream(), .invoke(), or .astream().",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1236-L1244",
+          "version": "repo-lines-v1:sha256:e1e5b640f933c9eed12b1dc48675089e352d8c003b5d2e7d70c0863dc5941b70:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzhkYTFjYzZhMjhlM2U1YjY3NTFhMWIzODNhY2ZiNTRjZjk5OGNmMDU0YmRiNWNhYWZiZmM0MWU4ZWU5ZTBiOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBjMWYxODhmMTQyZWQ3YTgyNDY4MGIyMDcxNzJjNTUxOWJjNjE0YTQ4ZmRhN2NmMTY3ZWRiOGRkZjc5OTU2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2Y2ODMzMzdiNGMzZjU0ZWJkYWJlM2IyNjYyZTk1YzU5NDQ2YmFmODg2NjZiMjc5OTk2ODUyYzFjYTc1YTVhZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjcxZTY1ZGNiOTY1MDA2YWI1ZjliZDk5MmY5NmY1Mzc5MzUyODNkOWEzZTBmODkyMjIzZTZjZDVhZGRhNGFjNiJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L823-L841",
+          "version": "repo-lines-v1:sha256:50e293369de40bcefcd968b94285dffbf4eb540216b11c2d8eae69d7261d9e47:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmODJlNmUxZDU5Nzc1ZWM0ZWViY2E3N2I5ODcyYWY2ZmE4NzExODBhNjI0YTQ5OTYxMTY2Y2Y1NzU1N2E0YTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhYjFiZjNmZWRkNTA0NjEyMjE5NzBlMzBkZTIxYjgyNjY2ZmFlOGZhYjNjM2Q3Yzg3M2QxMzk0MDk5MmI2YWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhYjVmNjE5ZWNiODQ4ODkyMThkMDFlYjFkMmMyYWQ5ZjRkNDlkZTM3ZTI1ZTU2ZGYwZmUyNWQzOGJlYjYwMjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5OGY1YzA2YTA2ZTUzYTI1NDNlOTczYjI0MjllNzA5MzI4N2Y4OThjNDEyNGYzM2M2NzRlOTRkMzgxYTkxZDEifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L909-L911",
+          "version": "repo-lines-v1:sha256:4f3f2b06cdb47760f07e4dc1365c44e361cdff0e345bc2699d11a1a11110b2fe:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdmZjg0MDNlMzcwNTljZWQzMzAzZWFiNGUxMzVkMTA3MzJhMDJiZTg3ZTc2OWU5ZTc5ODYwN2NhMDdhNWQ5MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWRmYThiZTIxOTQ3NDIwOGJkZWM2MzkwODg1YmYxMjNiZjE2MDkwNWRjZTU0YWFjNDhlMWY1NWZhNWNkZjRhOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTM5MmU5Mzc5MWMwOWI3ZTM5OTM1NjM2ODFhMDg4YjE3ZjFjNzM2Mzk3YWM5ZmM5MTcxY2EwMGY0MmViYzdjZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTZmOWQxOGZhNDEzODFjMTczNGQ4OWU4OTAxOTgzZmU4YjcxNTU2Y2M2MjkxOWY2NTUzODA0Y2ZlZTE4NTI1MiJ9"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-11-10T08:17:41.265Z"
+  }
+}
