@@ -20,7 +20,6 @@ from langchain_core.messages import (
     ToolCall,
 )
 from langchain_core.runnables import RunnableBinding, RunnableSequence
-from langchain_core.utils._gateway import langsmith_gateway
 from pydantic import BaseModel, SecretStr
 
 from langchain_groq.chat_models import (
@@ -1383,7 +1382,10 @@ def test_langsmith_gateway_provider_env_base_url_wins(
 
 @pytest.mark.usefixtures("_gateway_env")
 def test_langsmith_gateway_context_overrides_explicit_values() -> None:
-    with langsmith_gateway(api_key="service-key"):
+    gateway = pytest.importorskip("langchain_core.utils._gateway")
+    if not hasattr(gateway, "langsmith_gateway"):
+        pytest.skip("Requires a langchain-core release with `langsmith_gateway`.")
+    with gateway.langsmith_gateway(api_key="service-key"):
         llm = ChatGroq(
             model="llama-3.3-70b-versatile",
             base_url="https://other.example.com/v1",
