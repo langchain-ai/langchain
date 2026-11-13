@@ -198,7 +198,7 @@ def _ensure_safe_output_path(base_dir: Path, output_file: Path) -> None:
 
     if output_file.exists() and output_file.is_symlink():
         msg = (
-            f"profiles.py at {output_file} is a symlink; refusing to overwrite it.\n"
+            f"_profiles.py at {output_file} is a symlink; refusing to overwrite it.\n"
             "Delete the symlink or point --data-dir to a safe location."
         )
         print(f"❌ {msg}", file=sys.stderr)
@@ -264,7 +264,7 @@ def refresh(provider: str, data_dir: Path) -> None:  # noqa: C901, PLR0915
     Args:
         provider: Provider ID from models.dev (e.g., `'anthropic'`, `'openai'`).
         data_dir: Directory containing `profile_augmentations.toml` and where
-            `profiles.py` will be written.
+            `_profiles.py` will be written.
     """
     # Validate and canonicalize data directory path
     data_dir = _validate_data_dir(data_dir)
