@@ -70,6 +70,7 @@ class _TracerCore(ABC):
     """
 
     log_missing_parent: bool = True
+    retain_child_runs: bool | None = True
 
     def __init__(
         self,
@@ -137,6 +138,9 @@ class _TracerCore(ABC):
         """Add child run to a chain run or tool run."""
         parent_run.child_runs.append(child_run)
 
+    def _should_retain_child_runs(self) -> bool:
+        return self.retain_child_runs is not False
+
     @staticmethod
     def _get_stacktrace(error: BaseException) -> str:
         """Get the stacktrace of the parent error."""
@@ -154,7 +158,8 @@ class _TracerCore(ABC):
                 run.trace_id, run.dotted_order = parent
                 run.dotted_order += "." + current_dotted_order
                 if parent_run := self.run_map.get(str(run.parent_run_id)):
-                    self._add_child_run(parent_run, run)
+                    if self._should_retain_child_runs():
+                        self._add_child_run(parent_run, run)
                     parent_key = str(run.parent_run_id)
                     if parent_key in self._external_run_ids:
                         self._external_run_ids[parent_key] += 1
