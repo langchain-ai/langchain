@@ -1,5 +1,5 @@
 from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import (
     Any,
 )
@@ -168,7 +168,7 @@ def test_index_simple_delete_full(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 1, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -186,7 +186,7 @@ def test_index_simple_delete_full(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 1, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -215,7 +215,7 @@ def test_index_simple_delete_full(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         indexing_result = index(
             loader,
@@ -243,7 +243,7 @@ def test_index_simple_delete_full(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -277,7 +277,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 1, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader,
@@ -295,7 +295,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 1, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader,
@@ -324,7 +324,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader,
@@ -350,7 +350,7 @@ async def test_aindex_simple_delete_full(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader,
@@ -384,7 +384,7 @@ def test_index_delete_full_recovery_after_deletion_failure(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 1, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -414,7 +414,7 @@ def test_index_delete_full_recovery_after_deletion_failure(
         patch.object(
             record_manager,
             "get_time",
-            return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+            return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
         ),
         patch.object(vector_store, "delete", return_value=False),
         pytest.raises(IndexingException),
@@ -443,7 +443,7 @@ def test_index_delete_full_recovery_after_deletion_failure(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 3, tzinfo=UTC).timestamp(),
     ):
         indexing_result = index(
             loader,
@@ -485,7 +485,7 @@ async def test_aindex_delete_full_recovery_after_deletion_failure(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 1, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader,
@@ -515,7 +515,7 @@ async def test_aindex_delete_full_recovery_after_deletion_failure(
         patch.object(
             arecord_manager,
             "get_time",
-            return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+            return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
         ),
         patch.object(vector_store, "adelete", return_value=False),
         pytest.raises(IndexingException),
@@ -544,7 +544,7 @@ async def test_aindex_delete_full_recovery_after_deletion_failure(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 3, tzinfo=UTC).timestamp(),
     ):
         indexing_result = await aindex(
             loader,
@@ -696,7 +696,7 @@ def test_index_simple_delete_scoped_full(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 1, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -715,7 +715,7 @@ def test_index_simple_delete_scoped_full(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -747,7 +747,7 @@ def test_index_simple_delete_scoped_full(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 3, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -777,7 +777,7 @@ def test_index_simple_delete_scoped_full(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 4, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 4, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -822,7 +822,7 @@ async def test_aindex_simple_delete_scoped_full(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 1, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader,
@@ -841,7 +841,7 @@ async def test_aindex_simple_delete_scoped_full(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader,
@@ -873,7 +873,7 @@ async def test_aindex_simple_delete_scoped_full(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 3, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader,
@@ -903,7 +903,7 @@ async def test_aindex_simple_delete_scoped_full(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 4, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 4, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader,
@@ -1048,7 +1048,7 @@ def test_index_empty_doc_scoped_full(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 1, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -1067,7 +1067,7 @@ def test_index_empty_doc_scoped_full(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -1088,7 +1088,7 @@ def test_index_empty_doc_scoped_full(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 3, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -1133,7 +1133,7 @@ async def test_aindex_empty_doc_scoped_full(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 1, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader,
@@ -1152,7 +1152,7 @@ async def test_aindex_empty_doc_scoped_full(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader,
@@ -1173,7 +1173,7 @@ async def test_aindex_empty_doc_scoped_full(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 3, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader,
@@ -1210,7 +1210,7 @@ def test_no_delete(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -1230,7 +1230,7 @@ def test_no_delete(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -1263,7 +1263,7 @@ def test_no_delete(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -1300,7 +1300,7 @@ async def test_ano_delete(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader,
@@ -1320,7 +1320,7 @@ async def test_ano_delete(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader,
@@ -1353,7 +1353,7 @@ async def test_ano_delete(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader,
@@ -1390,7 +1390,7 @@ def test_incremental_delete(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 1, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -1417,7 +1417,7 @@ def test_incremental_delete(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -1455,7 +1455,7 @@ def test_incremental_delete(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 3, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -1503,7 +1503,7 @@ def test_incremental_delete_with_same_source(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 1, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -1539,7 +1539,7 @@ def test_incremental_delete_with_same_source(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -1593,7 +1593,7 @@ def test_incremental_indexing_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 1, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -1620,7 +1620,7 @@ def test_incremental_indexing_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -1673,7 +1673,7 @@ def test_incremental_delete_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 1, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -1701,7 +1701,7 @@ def test_incremental_delete_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -1729,7 +1729,7 @@ def test_incremental_delete_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2022, 1, 3, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2022, 1, 3, tzinfo=UTC).timestamp(),
     ):
         # Docs with same content
         docs = [
@@ -1768,7 +1768,7 @@ def test_incremental_delete_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2023, 1, 4, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2023, 1, 4, tzinfo=UTC).timestamp(),
     ):
         # Docs with same content
         docs = [
@@ -1807,7 +1807,7 @@ def test_incremental_delete_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2024, 1, 5, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2024, 1, 5, tzinfo=UTC).timestamp(),
     ):
         # Docs with same content
         docs = [
@@ -1862,7 +1862,7 @@ async def test_aincremental_delete(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader.lazy_load(),
@@ -1889,7 +1889,7 @@ async def test_aincremental_delete(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 2, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader.lazy_load(),
@@ -1927,7 +1927,7 @@ async def test_aincremental_delete(
     with patch.object(
         arecord_manager,
         "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 3, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader.lazy_load(),

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 import httpx2
 from langchain_core.decisions import BaseDecisionModel
@@ -15,7 +15,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_typesafe._assets import ImageAssets
 from langchain_typesafe._state import serialize_state

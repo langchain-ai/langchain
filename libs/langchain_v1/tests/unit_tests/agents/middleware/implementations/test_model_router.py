@@ -1,10 +1,14 @@
 """Tests for `ModelRouterMiddleware`."""
 
 import asyncio
+import inspect
+import runpy
+import warnings
 from typing import Any
 from unittest.mock import patch
 
 import pytest
+from langchain_core._api import LangChainBetaWarning
 from langchain_core.decisions import (
     BaseDecisionModel,
     Choice,
@@ -78,6 +82,28 @@ async def _run_agent(
     if async_:
         return await agent.ainvoke(inputs)
     return await asyncio.to_thread(agent.invoke, inputs)
+
+
+def test_beta_warning_is_emitted_once() -> None:
+    namespace = runpy.run_path(inspect.getfile(ModelRouterMiddleware))
+    router_class = namespace["ModelRouterMiddleware"]
+    model_choice = namespace["ModelChoice"]
+    model = GenericFakeChatModel(messages=iter([AIMessage("response")]))
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", LangChainBetaWarning)
+        for _ in range(2):
+            router_class(
+                choices={"fast": model_choice(model=model, criteria="Simple tasks.")},
+                instructions="Choose a route.",
+                classifier=_RouteClassifier(),
+            )
+
+    beta_warnings = [warning for warning in caught if warning.category is LangChainBetaWarning]
+    assert len(beta_warnings) == 1
+    assert str(beta_warnings[0].message) == (
+        "The middleware `ModelRouterMiddleware` is in beta. "
+        "It is actively being worked on, so the API may change."
+    )
 
 
 def test_routing_question_is_built_from_choices() -> None:

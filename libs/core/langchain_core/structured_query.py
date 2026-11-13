@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
@@ -96,7 +96,7 @@ class Expr(BaseModel):
         )
 
 
-class Operator(str, Enum):
+class Operator(StrEnum):
     """Enumerator of the operations."""
 
     AND = "and"
@@ -104,7 +104,7 @@ class Operator(str, Enum):
     NOT = "not"
 
 
-class Comparator(str, Enum):
+class Comparator(StrEnum):
     """Enumerator of the comparison operators."""
 
     EQ = "eq"

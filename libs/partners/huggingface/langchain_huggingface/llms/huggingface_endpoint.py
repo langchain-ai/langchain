@@ -4,7 +4,7 @@ import inspect
 import logging
 import os
 from collections.abc import AsyncIterator, Iterator, Mapping
-from typing import Any
+from typing import Any, Self
 from urllib.parse import urlparse
 
 from langchain_core.callbacks import (
@@ -15,7 +15,6 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.outputs import GenerationChunk
 from langchain_core.utils import from_env, get_pydantic_field_names
 from pydantic import ConfigDict, Field, model_validator
-from typing_extensions import Self
 
 from langchain_huggingface._version import __version__
 

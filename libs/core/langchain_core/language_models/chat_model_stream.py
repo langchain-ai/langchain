@@ -25,6 +25,7 @@ from langchain_core.messages import AIMessage
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Generator, Iterator, Mapping
+    from typing import Self
 
     from langchain_protocol.protocol import (
         ContentBlockDeltaData,
@@ -43,7 +44,6 @@ if TYPE_CHECKING:
         ToolCallChunk,
         UsageInfo,
     )
-    from typing_extensions import Self
 
 
 # ---------------------------------------------------------------------------

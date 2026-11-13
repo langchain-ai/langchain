@@ -6,7 +6,7 @@ import json
 import logging
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Literal, TypeAlias, cast
+from typing import Any, Literal, Self, TypeAlias, cast
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -55,7 +55,6 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from perplexity import AsyncPerplexity, Perplexity
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
 
 from langchain_perplexity._version import __version__
 from langchain_perplexity.data._profiles import _PROFILES
