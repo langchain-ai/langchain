@@ -70,6 +70,7 @@ updates:
       - "/libs/partners/openrouter/"
       - "/libs/partners/perplexity/"
       - "/libs/partners/qdrant/"
+      - "/libs/partners/sincor/"
       - "/libs/partners/typesafe/"
       - "/libs/partners/xai/"
     schedule:
