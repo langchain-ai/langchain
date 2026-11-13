@@ -11,10 +11,9 @@ resolution-markers = [
 
 [manifest]
 constraints = [
-    { name = "filelock", marker = "python_full_version < '3.11'", specifier = "==3.20.3" },
-    { name = "filelock", marker = "python_full_version >= '3.11'", specifier = ">=4.2.1" },
+    { name = "filelock", specifier = ">=4.2.1" },
     { name = "pygments", specifier = ">=2.20.0" },
-    { name = "tornado", marker = "python_full_version >= '3.11'", specifier = ">=6.6" },
+    { name = "tornado", specifier = ">=6.6" },
     { name = "urllib3", specifier = ">=2.6.3" },
 ]
 
@@ -2633,7 +2632,6 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "async-timeout", marker = "python_full_version < '3.11'", specifier = ">=4.0.0" },
     { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
     { name = "langchain-aws", marker = "extra == 'aws'" },
     { name = "langchain-azure-ai", marker = "extra == 'azure-ai'" },

@@ -30,7 +30,6 @@ dependencies = [
     "SQLAlchemy>=1.4.0",
     "requests>=2.0.0",
     "PyYAML>=5.3.0",
-    "async-timeout>=4.0.0; python_version < \"3.11\"",
 ]
 
 [project.optional-dependencies]
@@ -124,10 +123,8 @@ langchain-openai = { path = "../partners/openai", editable = true }
 constraint-dependencies = [
     "urllib3>=2.6.3",
     "pygments>=2.20.0",
-    # Patched releases require Python 3.11; Python 3.10 retains affected fallbacks.
-    "filelock==3.20.3; python_version < '3.11'",
-    "filelock>=4.2.1; python_version >= '3.11'",
-    "tornado>=6.6; python_version >= '3.11'",
+    "filelock>=4.2.1",
+    "tornado>=6.6",
 ]
 
 [tool.ruff]
