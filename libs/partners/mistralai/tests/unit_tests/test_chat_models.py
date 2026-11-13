@@ -28,6 +28,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.utils._gateway import langsmith_gateway
 from pydantic import SecretStr
 
 if TYPE_CHECKING:
@@ -1162,3 +1163,68 @@ def test_unclassified_status_stays_a_plain_status_error() -> None:
 def test_success_response_does_not_raise() -> None:
     """A non-error response is left alone."""
     _raise_on_error(_error_response(200))
+
+
+# --- LangSmith gateway ---
+
+
+@pytest.fixture
+def _gateway_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for var in (
+        "LANGSMITH_GATEWAY",
+        "LANGSMITH_GATEWAY_API_KEY",
+        "LANGSMITH_API_KEY",
+        "MISTRAL_BASE_URL",
+        "MISTRAL_API_KEY",
+    ):
+        monkeypatch.delenv(var, raising=False)
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`LANGSMITH_GATEWAY` routes to the gateway with the gateway key."""
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    llm = ChatMistralAI(model_name="mistral-small")
+    assert llm.endpoint == "https://gateway.smith.langchain.com/mistral/v1"
+    assert llm.mistral_api_key is not None
+    assert llm.mistral_api_key.get_secret_value() == "gateway-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Without the gateway, the provider key and default URL are used."""
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("MISTRAL_API_KEY", "provider-key")
+    llm = ChatMistralAI(model_name="mistral-small")
+    assert llm.endpoint == "https://api.mistral.ai/v1"
+    assert llm.mistral_api_key is not None
+    assert llm.mistral_api_key.get_secret_value() == "provider-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_provider_env_base_url_wins(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A provider base URL env var wins over `LANGSMITH_GATEWAY`."""
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("MISTRAL_BASE_URL", "https://proxy.example.com/v1")
+    monkeypatch.setenv("MISTRAL_API_KEY", "provider-key")
+    llm = ChatMistralAI(model_name="mistral-small")
+    assert llm.endpoint == "https://proxy.example.com/v1"
+    assert llm.mistral_api_key is not None
+    assert llm.mistral_api_key.get_secret_value() == "provider-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_context_overrides_explicit_values() -> None:
+    """`langsmith_gateway` overrides an explicit base URL and API key."""
+    with langsmith_gateway(api_key="service-key"):
+        llm = ChatMistralAI(
+            model_name="mistral-small",
+            base_url="https://other.example.com/v1",
+            api_key=SecretStr("user-key"),
+        )
+    assert llm.endpoint == "https://gateway.smith.langchain.com/mistral/v1"
+    assert llm.mistral_api_key is not None
+    assert llm.mistral_api_key.get_secret_value() == "service-key"
