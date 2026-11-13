@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Mapping
 from functools import cached_property
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Self, cast
 
 import openai
 from langchain_core._api import beta
@@ -13,7 +13,7 @@ from langchain_core.exceptions import ModelRefusalError
 from langchain_core.utils import from_env
 from langchain_core.utils._gateway import _resolve_gateway_config
 from pydantic import ConfigDict, Field, SecretStr, ValidationError, model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_openai._compat import httpx
 from langchain_openai.chat_models._client_utils import (
