@@ -8,6 +8,7 @@ from time import sleep
 from typing import (
     TYPE_CHECKING,
     Any,
+    Self,
 )
 
 from langchain_core.agents import AgentAction, AgentFinish
@@ -17,7 +18,7 @@ from langchain_core.runnables import RunnableConfig, RunnableSerializable, ensur
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel, Field, model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 if TYPE_CHECKING:
     import openai

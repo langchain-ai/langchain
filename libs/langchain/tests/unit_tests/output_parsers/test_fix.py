@@ -1,5 +1,5 @@
+from datetime import UTC
 from datetime import datetime as dt
-from datetime import timezone
 from typing import Any, TypeVar
 
 import pytest
@@ -156,7 +156,7 @@ def test_output_fixing_parser_output_type(
             "2024/07/08",
             DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_FIX_PROMPT | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8, tzinfo=timezone.utc),
+            dt(2024, 7, 8, tzinfo=UTC),
         ),
         (
             # Case: retry_chain.InputType does not have 'instructions' key
@@ -164,7 +164,7 @@ def test_output_fixing_parser_output_type(
             DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             PromptTemplate.from_template("{completion}\n{error}")
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8, tzinfo=timezone.utc),
+            dt(2024, 7, 8, tzinfo=UTC),
         ),
     ],
 )
@@ -193,7 +193,7 @@ def test_output_fixing_parser_parse_with_retry_chain(
             "2024/07/08",
             DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_FIX_PROMPT | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8, tzinfo=timezone.utc),
+            dt(2024, 7, 8, tzinfo=UTC),
         ),
         (
             # Case: retry_chain.InputType does not have 'instructions' key
@@ -201,7 +201,7 @@ def test_output_fixing_parser_parse_with_retry_chain(
             DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             PromptTemplate.from_template("{completion}\n{error}")
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8, tzinfo=timezone.utc),
+            dt(2024, 7, 8, tzinfo=UTC),
         ),
     ],
 )

@@ -13,6 +13,7 @@ from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from pathlib import Path
 from typing import (
     Any,
+    Self,
     cast,
 )
 
@@ -39,7 +40,7 @@ from langchain_core.runnables.utils import AddableDict
 from langchain_core.tools import BaseTool
 from langchain_core.utils.input import get_color_mapping
 from pydantic import BaseModel, ConfigDict, model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_classic._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain_classic.agents.agent_iterator import AgentExecutorIterator
@@ -47,7 +48,6 @@ from langchain_classic.agents.agent_types import AgentType
 from langchain_classic.agents.tools import InvalidTool
 from langchain_classic.chains.base import Chain
 from langchain_classic.chains.llm import LLMChain
-from langchain_classic.utilities.asyncio import asyncio_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -1641,7 +1641,7 @@ class AgentExecutor(Chain):
         start_time = time.time()
         # We now enter the agent loop (until it returns something).
         try:
-            async with asyncio_timeout(self.max_execution_time):
+            async with asyncio.timeout(self.max_execution_time):
                 while self._should_continue(iterations, time_elapsed):
                     next_step_output = await self._atake_next_step(
                         name_to_tool_map,
@@ -1681,7 +1681,7 @@ class AgentExecutor(Chain):
                     intermediate_steps,
                     run_manager=run_manager,
                 )
-        except (TimeoutError, asyncio.TimeoutError):
+        except TimeoutError:
             # stop early when interrupted by the async timeout
             output = self._action_agent.return_stopped_response(
                 self.early_stopping_method,

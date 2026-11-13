@@ -3,7 +3,7 @@
 import json
 from collections.abc import Sequence
 from json import JSONDecodeError
-from typing import Any
+from typing import Any, Self
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
@@ -24,7 +24,6 @@ from langchain_core.prompts.chat import (
 from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.tools import BaseTool
 from pydantic import model_validator
-from typing_extensions import Self
 
 from langchain_classic.agents import BaseMultiActionAgent
 from langchain_classic.agents.format_scratchpad.openai_functions import (

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
@@ -11,7 +11,6 @@ from langchain_core.output_parsers.json import SimpleJsonOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable
 from pydantic import ConfigDict, model_validator
-from typing_extensions import Self
 
 from langchain_classic.chains.base import Chain
 from langchain_classic.chains.elasticsearch_database.prompts import (
