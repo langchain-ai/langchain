@@ -2229,13 +2229,17 @@ class ChatAnthropic(BaseChatModel):
                 and not _compact_in_params(payload)
             )
             block_start_event = None
+            message_start_usage = None
             is_first_chunk = True
             for event in stream:
+                if event.type == "message_start":
+                    message_start_usage = event.message.usage
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
                     coerce_content_to_string=coerce_content_to_string,
                     block_start_event=block_start_event,
+                    message_start_usage=message_start_usage,
                 )
                 if msg is not None:
                     chunk = ChatGenerationChunk(
@@ -2279,13 +2283,17 @@ class ChatAnthropic(BaseChatModel):
                 and not _compact_in_params(payload)
             )
             block_start_event = None
+            message_start_usage = None
             is_first_chunk = True
             async for event in stream:
+                if event.type == "message_start":
+                    message_start_usage = event.message.usage
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
                     coerce_content_to_string=coerce_content_to_string,
                     block_start_event=block_start_event,
+                    message_start_usage=message_start_usage,
                 )
                 if msg is not None:
                     chunk = ChatGenerationChunk(
@@ -2310,6 +2318,7 @@ class ChatAnthropic(BaseChatModel):
         stream_usage: bool = True,
         coerce_content_to_string: bool,
         block_start_event: anthropic.types.RawMessageStreamEvent | None = None,
+        message_start_usage: anthropic.types.Usage | None = None,
     ) -> tuple[AIMessageChunk | None, anthropic.types.RawMessageStreamEvent | None]:
         """Convert Anthropic streaming event to `AIMessageChunk`.
 
@@ -2323,6 +2332,8 @@ class ChatAnthropic(BaseChatModel):
                 content like tool calls and citations are maintained.
             block_start_event: Previous content block start event, used for tracking
                 tool use blocks and maintaining context across related events.
+            message_start_usage: Usage from this stream's `message_start` event,
+                used for any usage fields the `message_delta` event omits.
 
         Returns:
             Tuple with
@@ -2500,9 +2511,16 @@ class ChatAnthropic(BaseChatModel):
 
         # Process final usage metadata and completion info
         elif event.type == "message_delta":
-            usage_metadata = (
-                _create_usage_metadata(event.usage) if stream_usage else None
-            )
+            usage: BaseModel = event.usage
+            if message_start_usage is not None:
+                # Some providers (e.g. Bedrock) omit input/cache fields from
+                # `message_delta`; fall back to `message_start` for those.
+                update = {k: v for k, v in event.usage if v is not None}
+                if "cache_creation_input_tokens" in update:
+                    # The delta's total supersedes message_start's TTL breakdown.
+                    update.setdefault("cache_creation", None)
+                usage = message_start_usage.model_copy(update=update)
+            usage_metadata = _create_usage_metadata(usage) if stream_usage else None
             response_metadata = {
                 "stop_reason": event.delta.stop_reason,
                 "stop_sequence": event.delta.stop_sequence,
