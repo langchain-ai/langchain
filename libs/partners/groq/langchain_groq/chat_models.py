@@ -64,6 +64,7 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
+from langchain_core.utils._gateway import _apply_gateway_config
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -531,6 +532,27 @@ class ChatGroq(BaseChatModel):
             raise ValueError(msg)
 
         values["model_kwargs"] = extra
+        return values
+
+    @model_validator(mode="before")
+    @classmethod
+    def _apply_groq_gateway_config(cls, values: Any) -> Any:
+        """Resolve the base URL and API key, applying LangSmith gateway settings.
+
+        Routes through the gateway when `LANGSMITH_GATEWAY` is set or the model is
+        built inside `langsmith_gateway`. See `langchain_core.utils._gateway` for
+        precedence.
+        """
+        if isinstance(values, dict):
+            _apply_gateway_config(
+                values,
+                cls,
+                base_url_field="groq_api_base",
+                api_key_field="groq_api_key",
+                provider_path="groq",
+                base_url_env="GROQ_API_BASE",
+                api_key_env="GROQ_API_KEY",
+            )
         return values
 
     @model_validator(mode="after")
