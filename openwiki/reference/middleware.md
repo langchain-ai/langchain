@@ -3,15 +3,15 @@ type: Reference
 title: "Agent Middleware System"
 description: "Reference guide to agent middleware hooks, composition semantics, request/response types, and handler lifecycle in LangChain agents."
 tags: [agent-middleware, lifecycle-hooks, request-interception, composition]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-11-10T08:17:41.265Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
 generated: { by: "openwiki/0.5.0", at: "2026-11-10T08:17:41.265Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-13T08:16:35.902Z
 ---
 
 ## Overview

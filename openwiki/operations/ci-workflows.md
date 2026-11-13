@@ -20,10 +20,10 @@ sources:
     resource: repo://.github/workflows/pr_labeler.yml
   - id: openwiki-source-12805fbf767dc2a3e238645e
     resource: repo://.github/workflows/pr_lint.yml
-generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
+    at: 2026-11-13T08:16:35.902Z
 ---
 
 
@@ -93,9 +93,8 @@ Each configuration includes `working-directory` and `python-version` (or `pydant
 
 The script generates different Python version matrices per package type:
 
-- **libs/core**: Tests on Python 3.10, 3.11, 3.12, 3.13, 3.14
-- **openai and perplexity packages**: Tests on Python 3.11, 3.14 for lint and compile-integration-tests jobs (special SDK compatibility handling)
-- **Other packages**: Tests on Python 3.10, 3.14 (reduced to save CI time)
+- **libs/core**: Tests on Python 3.11, 3.12, 3.13, 3.14 (full matrix for foundational stability)
+- **All other packages** (including openai and perplexity): Tests on Python 3.11, 3.14 (reduced matrix to save CI time)
 
 ### Pydantic Compatibility Testing
 
@@ -143,7 +142,6 @@ Once the `build` job outputs the matrices, seven jobs run in parallel (if not em
 - Only for packages with VCR cassettes: `libs/partners/openai`
 - Runs integration tests in playback-only mode (uses cached HTTP responses, no API keys)
 - Detects stale cassettes that don't match actual API responses
-- Note: While only openai has VCR cassettes, perplexity still receives special Python version handling (3.11, 3.14) in integration test jobs due to SDK compatibility requirements
 
 #### 7. Release Option Validation
 - `check-release-options` job validates that `_release.yml` dropdown options match actual package directories
@@ -292,11 +290,7 @@ Default libraries tested daily:
 - `libs/partners/google-genai`
 - `libs/partners/aws`
 
-**Python versions (default):** 3.10, 3.14
-
-**Special Python version handling:**
-- **openai and perplexity packages**: Use Python 3.11 and 3.14 instead of 3.10 and 3.14 due to SDK compatibility requirements
-- Other packages: Use default 3.10 and 3.14
+**Python versions (default):** 3.11, 3.14
 
 **Manual run options:**
 - Run all libraries or select one

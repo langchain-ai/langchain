@@ -20,16 +20,18 @@ sources:
     resource: repo://libs/core/langchain_core/messages/content.py
   - id: openwiki-source-8bb392f5dbc1fe7faaf52430
     resource: repo://libs/core/langchain_core/messages/human.py
+  - id: openwiki-source-56c6ea6a11f04b5c0e01aa7b
+    resource: repo://libs/core/langchain_core/messages/notification.py
   - id: openwiki-source-dad8cfeb38a829e03e165986
     resource: repo://libs/core/langchain_core/messages/system.py
   - id: openwiki-source-9861ba5cf0c42c142cf732f9
     resource: repo://libs/core/langchain_core/messages/tool.py
   - id: openwiki-source-498a9586e021b126ab8a8b42
     resource: repo://libs/core/langchain_core/messages/utils.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-05T08:18:41.280Z
+    at: 2026-11-13T08:16:35.902Z
 ---
 
 ## Overview
@@ -88,6 +90,12 @@ Legacy/specialized message types. `ChatMessage` is generic with a `role` field; 
 
 **`RemoveMessage`** (`repo://libs/core/langchain_core/messages/modifier.py#L8-L33`)  
 A special message type for deleting other messages from conversation history. Takes only an `id` parameter (the message ID to remove) and no content. Used in agentic workflows to prune previous turns.
+
+**Notification Metadata** (`repo://libs/core/langchain_core/messages/notification.py`)  
+Functions to mark and retrieve metadata for messages added by the agent harness (background tasks, summaries, etc.):
+- **`add_notification_metadata(message, source, data=None)`**: Marks a `HumanMessage` as added by a feature, storing source and optional feature-specific data in `additional_kwargs["lc_source"]` and `additional_kwargs["lc_data"]`. Chat model integrations omit these keys when sending to the model.
+- **`get_notification_metadata(message)`**: Retrieves the metadata, returning a `NotificationMetadata` dict with `source` (string) and optional `data` (dict if present in `additional_kwargs["lc_data"]`), or `None` if no metadata exists.
+- **`NotificationMetadata`**: TypedDict with `source` (required, e.g., `"async_subagent"`) and optional `data` dict.
 
 ### Message Chunks and Streaming
 

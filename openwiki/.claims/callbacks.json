@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:319adc32e1b28ab8cf2f77a73f1d0e1f42b3f8f444674c03d3ec61e4a833fd63",
+  "pageVersion": "sha256:a1af5773ec526e6877bd58783021477316cadad037621d792d4e7daaf6c1f81c",
   "claims": [
     {
       "id": "claim_1870ae33ffdb41fa87eaee4125620240",
@@ -66,7 +66,7 @@
       "evidence": [
         {
           "resource": "repo://libs/core/langchain_core/callbacks/file.py",
-          "version": "repo-file-v1:sha256:aced5ab810aae9826873ba93ac74e7925e4c6446641820c2fff2054d5054a6b2"
+          "version": "repo-file-v1:sha256:4acc3355b59187137795d147cc61c40b7755d7c11c9ba640641cf5a97594b41d"
         }
       ]
     },
@@ -126,7 +126,7 @@
       "evidence": [
         {
           "resource": "repo://libs/core/langchain_core/callbacks/manager.py#L221-L254",
-          "version": "repo-lines-v1:sha256:c3789553697c59a07711fda8e0514f21464486fa2ccbdb49b310429e34fcad18:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2OTc4YjhmNzZjYTM3OGMxODBiZDQyYTVlYzM5MzljODY3NDU2NGVjNTlmYzEwZjMxOGYzNzUyMDc3NDgyYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMGNmMmQ1MTNmY2U0MGVjN2QyMjY1NTA3M2VlMmEyZWQ2ZjEzNmM1ZDZlZGNkNmFkZWU5ZmZjYzc0NmEyM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxNmFhYTU0OGU5OGE5M2EyMDI4YzA5M2U2ZTM5ZDY1MGViZDNhZjYwNWExODIzN2Y5Y2RiOWFmNTRjMTJjNDMifQ"
+          "version": "repo-lines-v1:sha256:de8dbf2cc40fdb302b3187ce19c73e8f495a9772a04d0bd3bb6afb5ae17ffb8e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2OTc4YjhmNzZjYTM3OGMxODBiZDQyYTVlYzM5MzljODY3NDU2NGVjNTlmYzEwZjMxOGYzNzUyMDc3NDgyYTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlkMGNmMmQ1MTNmY2U0MGVjN2QyMjY1NTA3M2VlMmEyZWQ2ZjEzNmM1ZDZlZGNkNmFkZWU5ZmZjYzc0NmEyM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxNmFhYTU0OGU5OGE5M2EyMDI4YzA5M2U2ZTM5ZDY1MGViZDNhZjYwNWExODIzN2Y5Y2RiOWFmNTRjMTJjNDMifQ"
         }
       ]
     },
@@ -207,6 +207,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-20T08:25:57.412Z"
+    "at": "2026-11-13T08:16:35.902Z"
   }
 }

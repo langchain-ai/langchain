@@ -5,7 +5,7 @@ description: Complete reference documentation for the create_agent function sign
 tags: [agents, factory, api-reference, create_agent, state-machine]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-10T08:17:41.265Z
+    at: 2026-11-13T08:16:35.902Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py

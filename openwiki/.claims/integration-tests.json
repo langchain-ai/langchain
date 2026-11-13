@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3fcb354c76903e3c36e3b7e1451368d508e30c7e4e9d3b1a3f7135e94971c505",
+  "pageVersion": "sha256:b8dd1d3194b86c39fee03631f2cf46d6d99b7db9db39f888b334abdec3d57612",
   "claims": [
     {
       "id": "claim_2b394255185b4645a1dcf0e8c628a197",
@@ -195,24 +195,6 @@
       ]
     },
     {
-      "id": "claim_7fb967225d9e4e33a19b95e5bf26276b",
-      "statement": "LangChain integration tests use three pytest markers to classify test types: @pytest.mark.vcr marks cassette-backed tests that replay recorded interactions (run in PR checks with --record-mode=none); @pytest.mark.scheduled marks live-API-only tests that are skipped in regular CI but run in scheduled daily workflows with real credentials; unmarked tests are offline and don't require credentials.",
-      "evidence": [
-        {
-          "resource": "repo://.github/workflows/integration_tests.yml#L148-L159",
-          "version": "repo-lines-v1:sha256:49fb649da06060de3d6f5c3adb77c6e57341b724e0a1d272930a8be7e6ebed79:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4ODE2NjY2YWQwYmVkYTE2ZWU4MDc5MGQwMzM3MjU0YTE0ZTRhNWI2OWQ4ZWIyNWNmNDMxZThhNWNjMGY1ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjZTMzYTc3ZDQzYmI4OWZiMTY1NDU5M2FhYWQ0OTNiMjRmN2UxYzE3NDcyZGU1YzhmNjRlOTQzODdiMzZmZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmNjliZjAyYWZlNDJlOGMyZjBjYzIxYjFhYjhjNjZiZmFmMDc0YTc2Y2UyNzk0YjI2MTk5MGFmMWMwNGIxZWYifQ"
-        },
-        {
-          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_base.py#L1339-L1372",
-          "version": "repo-lines-v1:sha256:51a0668bec2e5905d3be245b9517551b033b79b49cea749ea5aa78afa4b9e7c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NTMyNDc0MGJmZmMzYjk1Zjk0ZGIyZDdiM2Q1MGU1ZDkxMDEyNmUzNTllOTYzOGU3Y2I1NTIzZjFjMjQwM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNlZWViNDdlZDQyNTVjOTIzYmY0OTdmYmI2YjcyODI0M2FmZjBhZGZmZTU0MDQzYTY5MzY5Mzg4NTA2YTAzMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIzN2QxNTZiMTY5Mjc4OWQ1YjhiZDk3NDZhODgxM2Y3ZGI0MDBkZmI0MGFhODQ5OTI0MDkwYjdlZmFmMWNmNTEifQ"
-        },
-        {
-          "resource": "repo://libs/partners/openai/tests/integration_tests/embeddings/test_base.py#L38-L65",
-          "version": "repo-lines-v1:sha256:1742e07119bcb09e5aa43e3f10728a3b7029f7e0ce6267274eef8fabac5c0ddc:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0NTMyNDc0MGJmZmMzYjk1Zjk0ZGIyZDdiM2Q1MGU1ZDkxMDEyNmUzNTllOTYzOGU3Y2I1NTIzZjFjMjQwM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4ODFjYjgwMGJhOTI5YzcwYmY5OWY5YjRiZTYyMmZjYThhNDY1NTkyNTkwMzVmNDJkMGMyZjA4ZjBhY2RhOTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBmY2Y2ZDYxNzNhNTA3NTQwMjNjYjFjOTVjZDBhYTU0YjQxNGYwY2M0ZGY1NGExNDQ4MGI3NjI3MWZiNzE5ODEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQxOTNlNmJiZjNkNWE0ZTY5MTM4NzBhMGUzNjUyNjAxYzkxMDAzOWVjYjZkYjI4MWM0NDNmZjA5YTE4N2M3NmEifQ"
-        }
-      ]
-    },
-    {
       "id": "claim_09427430956f4c3d8c39687af0212d84",
       "statement": "VCR (Video Cassette Recorder) records HTTP interactions during test execution: in recording phase, the test runs with a valid API key and --record-mode=once/new_episodes, VCR intercepts HTTP calls, scrubbing functions redact sensitive headers (authorization, cookies, organization) and OAuth secret fields in request/response bodies, then the cassette is saved as compressed YAML (.yaml.gz) and committed to git. In playback phase, VCR loads the cassette and replays pre-recorded responses without making live calls or requiring credentials.",
       "evidence": [
@@ -305,20 +287,6 @@
       ]
     },
     {
-      "id": "claim_4d402e0507a74fd78fba4f99cfa62d03",
-      "statement": "Scheduled integration tests (integration_tests.yml) run daily or on-demand with live API credentials from GitHub secrets. Only tests marked @pytest.mark.scheduled run in these workflows; VCR-marked tests are skipped. The workflow computes a dynamic test matrix for affected partner packages: OpenAI and Perplexity receive Python 3.11, 3.14, while other packages receive 3.10, 3.14. The `make integration_tests` command smoke-tests each supported SDK major version.",
-      "evidence": [
-        {
-          "resource": "repo://.github/workflows/integration_tests.yml#L148-L159",
-          "version": "repo-lines-v1:sha256:49fb649da06060de3d6f5c3adb77c6e57341b724e0a1d272930a8be7e6ebed79:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4ODE2NjY2YWQwYmVkYTE2ZWU4MDc5MGQwMzM3MjU0YTE0ZTRhNWI2OWQ4ZWIyNWNmNDMxZThhNWNjMGY1ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjZTMzYTc3ZDQzYmI4OWZiMTY1NDU5M2FhYWQ0OTNiMjRmN2UxYzE3NDcyZGU1YzhmNjRlOTQzODdiMzZmZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmNjliZjAyYWZlNDJlOGMyZjBjYzIxYjFhYjhjNjZiZmFmMDc0YTc2Y2UyNzk0YjI2MTk5MGFmMWMwNGIxZWYifQ"
-        },
-        {
-          "resource": "repo://libs/partners/openai/Makefile#L31-L43",
-          "version": "repo-lines-v1:sha256:6083e0b2111881dfbb431ced5c66772498fb631c78814961d1284c65e4cbbbbe:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlMjg0MTUwYzAzNWI1YTA0NmRhNzc5ODlkYjA5MmRlZjA0ZTE5MDdkMWRkMDRkMjI5YTlhMGY1MzcxZTMwNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4YmU0MDEyZGM2ZTgwZjBkYWEwMDVjMGFiOTAwZDg2NDNlMjFhOTU1ZDQ2YmE5ZGRiYmQ5NmQ1ZjQzOWY4NWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAwM2RiMWVhZGQ3OGI4NDBjMDFjNzY0MTU1NmZhNzE1NDNkMmZiY2ViZTIwZjcxMmFhMmQ0MzlkMTM5ZDE0OTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjZTRlZWIyZWRjOTlhYjcyMWEyZjUyYThmYTg3OWIzNDg2NTM1MzVlYmUwOGU1MTQ3ZmZhNjM5MDNiMWY0ZDUifQ"
-        }
-      ]
-    },
-    {
       "id": "claim_57dfd38045d2447787c3108068a0caa0",
       "statement": "Cassettes are stored in module-specific subdirectories like tests/integration_tests/chat_models/cassettes/test_base/ or tests/cassettes/ at the package root. The vcr_cassette_dir fixture computes the correct directory per test module. For parameterized tests, cassette names include parameter identifiers (e.g., test_invoke[model0].yaml.gz, test_invoke[model1].yaml.gz).",
       "evidence": [
@@ -369,6 +337,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-29T08:20:01.046Z"
+    "at": "2026-11-13T08:16:35.902Z"
   }
 }

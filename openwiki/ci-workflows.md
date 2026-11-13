@@ -30,10 +30,10 @@ sources:
     resource: repo://.github/workflows/pr_lint.yml
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
-generated: { by: "openwiki/0.5.0", at: "2026-10-26T08:33:32.568Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-05T08:18:41.280Z
+    at: 2026-11-13T08:16:35.902Z
 ---
 
 # CI/CD Workflows: GitHub Actions and Release Process
@@ -68,9 +68,8 @@ This detection ensures only affected packages are tested, optimizing CI runtime.
 
 Runs on affected packages with Python versions determined by package type:
 
-- **libs/core**: Python 3.10, 3.11, 3.12, 3.13, 3.14
-- **openai and perplexity packages**: Python 3.11, 3.14 (special handling due to SDK compatibility)
-- **All other packages**: Python 3.10, 3.14
+- **libs/core**: Python 3.11, 3.12, 3.13, 3.14
+- **All other packages**: Python 3.11, 3.14
 
 Linting checks include:
 
@@ -85,9 +84,8 @@ Tools are sourced from dependency groups: `lint` and `typing`. The workflow inst
 Runs matrix tests across Python versions with dependency constraint verification:
 
 **Matrix dimensions**:
-- Python 3.10, 3.11, 3.12, 3.13, 3.14 for `libs/core`
-- Python 3.10 and 3.14 for most packages
-- Python 3.11 and 3.14 for openai and perplexity packages (special handling for API compatibility)
+- Python 3.11, 3.12, 3.13, 3.14 for `libs/core`
+- Python 3.11 and 3.14 for all other packages
 - Current locked dependencies (from `uv.lock`)
 - Minimum supported dependency versions
 
@@ -116,7 +114,7 @@ Validates integration tests backed by recorded HTTP cassettes:
 - Executes `make test_vcr` target
 - Enables fast, repeatable integration test feedback
 
-Only triggered for packages with VCR cassettes (currently `libs/partners/openai`), as tracked in the `VCR_PACKAGES` set within `check_diff.py`. This package receives special Python version handling (3.11, 3.14) in VCR and integration test jobs due to SDK compatibility requirements.
+Only triggered for packages with VCR cassettes (currently `libs/partners/openai`), as tracked in the `VCR_PACKAGES` set within `check_diff.py`.
 
 ### Integration Test Compilation (`_compile_integration_test.yml`)
 
@@ -128,9 +126,8 @@ Performs shallow integration test validation:
 - Installs both test and integration test dependency groups
 
 **Python version matrix**:
-- **openai and perplexity packages**: Python 3.11, 3.14 (special handling for SDK compatibility)
-- **All other packages**: Python 3.10, 3.14
-- **libs/core**: Python 3.10, 3.11, 3.12, 3.13, 3.14
+- **libs/core**: Python 3.11, 3.12, 3.13, 3.14
+- **All other packages**: Python 3.11, 3.14
 
 ### Extended Test Suites
 
@@ -232,8 +229,7 @@ Scheduled daily (1 PM UTC) with manual dispatch override capability.
 **Job: `compute-matrix`**:
 
 - **Default scope**: Tests 9 partner libraries (OpenAI, Anthropic, Fireworks, Groq, MistralAI, XAI, Google VertexAI, Google GenAI, AWS)
-- **Python versions**: 3.10 and 3.14 by default; overridable via input
-  - **Special handling**: OpenAI and Perplexity packages use Python 3.11 and 3.14 instead of 3.10 and 3.14 due to SDK compatibility requirements
+- **Python versions**: 3.11 and 3.14 by default; overridable via input
 - **Selective testing**: Can select single library, exclude libraries, or override Python versions
 - **Scope security**: Only runs on main repository; manual dispatch allowed from forks
 

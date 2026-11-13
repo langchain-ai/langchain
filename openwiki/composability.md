@@ -5,7 +5,7 @@ description: "Patterns for composing agents through middleware layers, subagent 
 tags: ["composability", "agents", "middleware", "subagents", "tool-delegation", "context-management"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
+    at: 2026-11-13T08:16:35.902Z
 sources:
   - id: openwiki-source-2bb5c49861e72a9099b51970
     resource: repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py

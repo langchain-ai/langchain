@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f4efb6a0c737be717d157cee285e30ea64b08a7edebf163cc503fd23902ea057",
+  "pageVersion": "sha256:5db507fa68ee66de19c22862a105d2cb25fb9774521f9c6fb89a81e3db355797",
   "claims": [
     {
       "id": "claim_5633cbdae03d43a7a2eb0f1ba252f3e3",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://libs/core/langchain_core/language_models/chat_models.py",
-          "version": "repo-file-v1:sha256:8718437fafd6c5d9f2a646c6127dcafa8fa2d41ad39bd15616df83f761e3f130"
+          "version": "repo-file-v1:sha256:6b37dd84a34a49b932983ec92e5dc826fefdd1a047424a014a251a0ed0e2d507"
         }
       ]
     },
@@ -175,6 +175,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-05T08:18:41.280Z"
+    "at": "2026-11-13T08:16:35.902Z"
   }
 }

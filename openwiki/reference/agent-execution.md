@@ -3,15 +3,15 @@ type: Architecture
 title: Agent Execution
 description: The agent execution model orchestrates a structured state-driven loop built on LangGraph StateGraph, with initialization, model invocation, tool dispatch, and middleware hooks for controlling flow and behavior.
 tags: [agent-execution, control-flow, middleware]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-11-10T08:17:41.265Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
 generated: { by: "openwiki/0.5.0", at: "2026-11-10T08:17:41.265Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-13T08:16:35.902Z
 ---
 
 ## Overview

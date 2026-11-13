@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e27f2e51a9e0e04fe9a039f16b224bc861e95e85085a331ee4e2ebea9d8e3acc",
+  "pageVersion": "sha256:c491c1a7a68c52ccbc1d2a0fc979953903f5d1d5f6c00b6fbc3bb80cb4f0f90c",
   "claims": [
     {
       "id": "claim_37a46b11c73844ac8d4d5ee6f2f737c6",
@@ -8,17 +8,17 @@
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
-          "version": "repo-file-v1:sha256:b70e7cffd19d840505b034d036926064d1a07e834aae4a35da2e0a47e0423438"
+          "version": "repo-file-v1:sha256:22c48a3478de99dabb06b413085e0e388e74ddb3681bd9892a373faa757cf8fe"
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py",
-          "version": "repo-file-v1:sha256:56688206dce0334e7ca82125d7b809c23427890c234dfd69123dad038a387f31"
+          "version": "repo-file-v1:sha256:d9a5ae88cc2dd6bcdc3030ce2e1b55f876d2af88c02c27f5b630dadad350fb75"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-10T08:17:41.265Z"
+    "at": "2026-11-13T08:16:35.902Z"
   }
 }

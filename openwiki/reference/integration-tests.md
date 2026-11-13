@@ -3,15 +3,15 @@ type: Integration Testing Framework
 title: Integration Tests
 description: LangChain's integration testing framework for partner libraries and chat models, including VCR cassette recording, pytest markers for test classification, and scheduled CI/CD execution against live APIs.
 tags: [integration-tests, testing, vcr-cassettes, pytest, ci-cd, chat-models]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-26T08:33:32.568Z
 sources:
   - id: openwiki-source-9069a5dd5fbb579fbd5470ce
     resource: repo://.github/workflows/integration_tests.yml
   - id: openwiki-source-711811fb8df6b32329091d23
     resource: repo://libs/partners/openai/tests/integration_tests/chat_models/test_base_standard.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-26T08:33:32.568Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-13T08:16:35.902Z
 ---
 
 ## Overview
@@ -58,8 +58,8 @@ The integration testing framework uses VCR (Video Cassette Recorder) to record a
 ### Cassette Storage and Format
 
 - Cassettes are stored in `tests/cassettes/` directories within each partner library
-- Files are compressed YAML (gzip) format with `.yaml` extension
-- Custom `CustomSerializer` and `CustomPersister` classes in `langchain_tests.conftest` handle serialization, ensuring cassettes are human-inspectable after decompression
+- Files are compressed YAML format (gzip-compressed `.yaml.gz` files)
+- Custom `CustomSerializer` and `CustomPersister` classes in `langchain_tests.conftest` handle serialization using `yaml.safe_dump()` and gzip compression, ensuring cassettes are human-inspectable after decompression
 - Cassette naming corresponds to test module and function paths for easy tracking
 
 ### Recording and Playback Configuration
@@ -123,7 +123,7 @@ The GitHub Actions workflow `/.github/workflows/integration_tests.yml` uses dyna
 - **Manual targeting** via dropdown selection of specific partner libraries (openai, anthropic, groq, etc.)
 - **Scheduled execution** (daily at 1 PM UTC) against a default set of libraries
 - **Exclusion filtering** for the "all" run (e.g., `exclude=openai,anthropic`)
-- **Python version selection** with optional overrides (defaults to 3.10 and 3.14; some packages require ≥3.11)
+- **Python version selection** with optional overrides (defaults to 3.11 and 3.14; some packages may require ≥3.11)
 
 The `compute-matrix` job:
 

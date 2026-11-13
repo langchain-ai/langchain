@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:410fc335a923b5ee12516e7829d0b8ab4269db9c9a090ce4513421a5ccaee006",
+  "pageVersion": "sha256:f71079c7c5f15c8bd4a719f0a03a9f461e06268fde8f82bc3c707e3a45e46f4d",
   "claims": [
     {
       "id": "claim_7425c73f5e4c4667b8babba66c3663a0",
@@ -12,7 +12,7 @@
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/__init__.py",
-          "version": "repo-file-v1:sha256:a90090256fe0c2e9ae065fc311bbcd3dd344e98b639cd6f17cb8b066256ab9e9"
+          "version": "repo-file-v1:sha256:967c2251a9f74d669107ca76ddd6e8a93006c9cf42f034d7a8cebe94f2044938"
         },
         {
           "resource": "repo://libs/partners/openai/langchain_openai/__init__.py",
@@ -30,7 +30,7 @@
         },
         {
           "resource": "repo://libs/core/langchain_core/language_models/chat_models.py",
-          "version": "repo-file-v1:sha256:8718437fafd6c5d9f2a646c6127dcafa8fa2d41ad39bd15616df83f761e3f130"
+          "version": "repo-file-v1:sha256:6b37dd84a34a49b932983ec92e5dc826fefdd1a047424a014a251a0ed0e2d507"
         },
         {
           "resource": "repo://libs/core/langchain_core/messages/__init__.py",
@@ -60,11 +60,11 @@
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
-          "version": "repo-file-v1:sha256:b70e7cffd19d840505b034d036926064d1a07e834aae4a35da2e0a47e0423438"
+          "version": "repo-file-v1:sha256:22c48a3478de99dabb06b413085e0e388e74ddb3681bd9892a373faa757cf8fe"
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py",
-          "version": "repo-file-v1:sha256:2ed2639dea637ba04a59441b1698bf8e005b8c0f6e0be7fbaa97fc55827e3f17"
+          "version": "repo-file-v1:sha256:b442784cecad802b1e49de0766e8a4ed4d230b7e22abde800dc02d063b5231e6"
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/chat_models/__init__.py",
@@ -152,7 +152,7 @@
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
-          "version": "repo-file-v1:sha256:b70e7cffd19d840505b034d036926064d1a07e834aae4a35da2e0a47e0423438"
+          "version": "repo-file-v1:sha256:22c48a3478de99dabb06b413085e0e388e74ddb3681bd9892a373faa757cf8fe"
         }
       ]
     },
@@ -183,6 +183,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-10T08:17:41.265Z"
+    "at": "2026-11-13T08:16:35.902Z"
   }
 }
