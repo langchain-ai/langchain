@@ -16,21 +16,32 @@ configurations.
 
 from __future__ import annotations
 
+import asyncio
 from typing import TYPE_CHECKING, Annotated, Any
 
+import pytest
 from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.prebuilt import InjectedStore
 from langgraph.store.memory import InMemoryStore
+from langgraph.types import Command
 from typing_extensions import override
 
 from langchain.agents import create_agent
+from langchain.agents.middleware import HumanInTheLoopMiddleware
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, InputAgentState
-from langchain.tools import InjectedState, ToolRuntime
+from langchain.tools import InjectedState, ToolRuntime, get_tool_executor
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from langchain_core.runnables import RunnableConfig
+    from langgraph.graph.state import CompiledStateGraph
     from langgraph.runtime import Runtime
+
+    from langchain.agents.middleware.types import OutputAgentState, ToolCallRequest
 
 
 def test_tool_runtime_basic_injection() -> None:
@@ -857,3 +868,170 @@ async def test_combined_injected_state_runtime_store_async() -> None:
     # Verify store was injected and writable
     assert injected_data["store"] is not None
     assert injected_data["store_write_success"] is True
+
+
+@pytest.mark.parametrize("decision", ["approve", "reject", "edit"])
+@pytest.mark.parametrize("asynchronous", [False, True])
+async def test_nested_executor_approval_replay(decision: str, *, asynchronous: bool) -> None:
+    """Completed nested effects survive approval and rebuilt-agent resume."""
+    effects: list[str] = []
+    nested_results: list[object] = []
+    saver = InMemorySaver()
+
+    @tool
+    def write(value: str) -> str:
+        """Record an observable write."""
+        effects.append(value)
+        return value
+
+    @tool
+    def gated(value: str) -> str:
+        """Record an approval-gated write."""
+        effects.append(value)
+        return value
+
+    @tool
+    def execute() -> str:
+        """Execute two nested calls."""
+        executor = get_tool_executor()
+        executor.invoke(
+            {"name": "write", "args": {"value": "first"}, "id": "first", "type": "tool_call"}
+        )
+        result = executor.invoke(
+            {"name": "gated", "args": {"value": "second"}, "id": "second", "type": "tool_call"}
+        )
+        nested_results.append(result.content)
+        return "done"
+
+    @tool
+    async def aexecute() -> str:
+        """Execute two nested calls asynchronously."""
+        executor = get_tool_executor()
+        await executor.ainvoke(
+            {"name": "write", "args": {"value": "first"}, "id": "first", "type": "tool_call"}
+        )
+        result = await executor.ainvoke(
+            {"name": "gated", "args": {"value": "second"}, "id": "second", "type": "tool_call"}
+        )
+        nested_results.append(result.content)
+        return "done"
+
+    def build() -> CompiledStateGraph[
+        AgentState[object], None, InputAgentState, OutputAgentState[object]
+    ]:
+        outer = aexecute if asynchronous else execute
+        return create_agent(
+            FakeToolCallingModel(
+                tool_calls=[[{"name": outer.name, "args": {}, "id": "outer"}], []]
+            ),
+            tools=[outer, write, gated],
+            middleware=[
+                HumanInTheLoopMiddleware(interrupt_on={"gated": True}, interrupt_mode="per_call")
+            ],
+            checkpointer=saver,
+        )
+
+    config: RunnableConfig = {"configurable": {"thread_id": "nested"}}
+    agent = build()
+    initial: InputAgentState = {"messages": [HumanMessage("Run")]}
+    result = (
+        await agent.ainvoke(initial, config)
+        if asynchronous
+        else await asyncio.to_thread(agent.invoke, initial, config)
+    )
+    assert result["__interrupt__"]
+    assert effects == ["first"]
+    response: dict[str, object] = {"type": decision}
+    if decision == "edit":
+        response["edited_action"] = {"name": "gated", "args": {"value": "edited"}}
+    if decision == "reject":
+        response["message"] = "No"
+    agent = build()
+    command: Command[object] = Command(resume=response)
+    result = (
+        await agent.ainvoke(command, config)
+        if asynchronous
+        else await asyncio.to_thread(agent.invoke, command, config)
+    )
+    assert "__interrupt__" not in result
+    assert effects == (
+        ["first"]
+        if decision == "reject"
+        else ["first", "edited" if decision == "edit" else "second"]
+    )
+    assert len(nested_results) == 1
+
+
+def test_nested_executor_rejects_batched_approval() -> None:
+    """Batched approval must not silently authorize programmatic calls."""
+    effects: list[str] = []
+
+    @tool
+    def gated() -> str:
+        """Record an effect."""
+        effects.append("ran")
+        return "done"
+
+    @tool
+    def execute() -> str:
+        """Try a nested call."""
+        get_tool_executor().invoke(
+            {"name": "gated", "args": {}, "id": "nested", "type": "tool_call"}
+        )
+        return "done"
+
+    agent = create_agent(
+        FakeToolCallingModel(tool_calls=[[{"name": "execute", "args": {}, "id": "outer"}], []]),
+        tools=[execute, gated],
+        middleware=[HumanInTheLoopMiddleware(interrupt_on={"gated": True})],
+        checkpointer=InMemorySaver(),
+    )
+    with pytest.raises(ValueError, match="per-call HITL"):
+        agent.invoke(
+            {"messages": [HumanMessage("Run")]}, {"configurable": {"thread_id": "batched"}}
+        )
+    assert effects == []
+
+
+def test_nested_executor_scope_and_runtime() -> None:
+    """Nested execution preserves runtime and full middleware and cleans up scope."""
+    with pytest.raises(RuntimeError, match="inside a create_agent"):
+        get_tool_executor()
+    calls: list[str] = []
+
+    class Observe(AgentMiddleware):
+        def wrap_tool_call(
+            self,
+            request: ToolCallRequest,
+            handler: Callable[[ToolCallRequest], ToolMessage | Command[object]],
+        ) -> ToolMessage | Command[object]:
+            calls.append(request.tool_call["name"])
+            return handler(request)
+
+    @tool
+    def inner(runtime: ToolRuntime) -> str:
+        """Read injected context and state."""
+        assert runtime.tool_call_id == "nested"
+        assert runtime.store is not None
+        assert runtime.state["messages"]
+        return "injected"
+
+    @tool
+    def outer() -> str:
+        """Read the nested tool's result."""
+        result = get_tool_executor().invoke(
+            {"name": "inner", "args": {}, "id": "nested", "type": "tool_call"}
+        )
+        assert result.content == "injected"
+        return "done"
+
+    agent = create_agent(
+        FakeToolCallingModel(tool_calls=[[{"name": "outer", "args": {}, "id": "outer"}], []]),
+        tools=[outer, inner],
+        middleware=[Observe()],
+        store=InMemoryStore(),
+    )
+    agent.invoke({"messages": [HumanMessage("Run")]})
+    assert calls == ["outer", "inner"]
+    with pytest.raises(RuntimeError, match="inside a create_agent"):
+        get_tool_executor()

@@ -45,6 +45,7 @@ from langchain.agents.middleware._trace_policy import (
     _node_trace_policy,
     _resolved_transform,
 )
+from langchain.agents.middleware.human_in_the_loop import HumanInTheLoopMiddleware
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -72,6 +73,7 @@ from langchain.agents.structured_output import (
     ToolStrategy,
 )
 from langchain.chat_models import init_chat_model
+from langchain.tools._execution import ToolExecutor, _tool_executor
 
 
 @dataclass
@@ -1149,6 +1151,50 @@ def create_agent(
         if available_tools or wrap_tool_call_wrapper or awrap_tool_call_wrapper
         else None
     )
+
+    if tool_node is not None:
+        batched_approval = any(
+            isinstance(m, HumanInTheLoopMiddleware) and m.interrupt_mode == "batched"
+            for m in middleware
+        )
+        executor_node = tool_node
+        original_wrapper = wrap_tool_call_wrapper
+        original_async_wrapper = awrap_tool_call_wrapper
+
+        def with_executor(
+            request: ToolCallRequest,
+            handler: Callable[[ToolCallRequest], ToolMessage | Command[object]],
+        ) -> ToolMessage | Command[object]:
+            token = _tool_executor.set(
+                ToolExecutor(executor_node, request.runtime, batched_approval)
+            )
+            try:
+                if original_wrapper is not None:
+                    return original_wrapper(request, handler)
+                return handler(request)
+            finally:
+                _tool_executor.reset(token)
+
+        async def awith_executor(
+            request: ToolCallRequest,
+            handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[object]]],
+        ) -> ToolMessage | Command[object]:
+            token = _tool_executor.set(
+                ToolExecutor(executor_node, request.runtime, batched_approval)
+            )
+            try:
+                if original_async_wrapper is not None:
+                    return await original_async_wrapper(request, handler)
+                return await handler(request)
+            finally:
+                _tool_executor.reset(token)
+
+        tool_node = ToolNode(
+            tools=available_tools,
+            wrap_tool_call=with_executor,
+            awrap_tool_call=awith_executor,
+        )
+        executor_node = tool_node
 
     # Default tools for ModelRequest initialization
     # Use converted BaseTool instances from ToolNode (not raw callables)
