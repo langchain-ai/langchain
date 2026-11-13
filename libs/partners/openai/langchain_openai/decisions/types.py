@@ -7,7 +7,34 @@ from typing import Annotated, Any, Literal, TypeAlias
 
 from langchain_core.messages import BaseMessage
 from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import TypedDict
+from typing_extensions import NotRequired, TypedDict
+
+
+class _QuestionInputText(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["input_text"]
+    text: str
+
+
+class _QuestionInputImage(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["input_image"]
+    image_url: str
+    detail: Literal["low", "high", "auto", "original"] | None = None
+
+
+_QuestionInstructions: TypeAlias = str | list[_QuestionInputText | _QuestionInputImage]
+
+
+def _instructions_to_api(
+    instructions: _QuestionInstructions,
+) -> str | list[dict[str, Any]]:
+    if isinstance(instructions, str):
+        return instructions
+    return [part.model_dump(exclude_unset=True) for part in instructions]
+
 
 _StateValue: TypeAlias = (
     str
@@ -23,11 +50,8 @@ _StateValue: TypeAlias = (
 State: TypeAlias = str | BaseMessage | Sequence[_StateValue] | dict[str, _StateValue]
 """Input accepted by `OpenAIDecisions`.
 
-The Decisions API natively accepts a string or user messages containing text and
-base64 images. Strings and `HumanMessage` objects (alone or in a sequence) are sent
-natively. Any other state, such as conversations with system or AI messages, or JSON
-objects, is sent as JSON text in a single user message, with base64 images kept in
-place as image parts.
+Text, supported conversations, and JSON objects are sent natively; other state is
+serialized as text with images preserved as image parts.
 """
 
 
@@ -56,11 +80,15 @@ class Predicate(BaseModel):
     type: Literal["predicate"] = "predicate"
     """Wire discriminator for a predicate question."""
 
-    instructions: str = Field(min_length=1)
-    """Condition to evaluate against the input."""
+    instructions: _QuestionInstructions = Field(min_length=1)
+    """Condition as text or a nonempty list of `input_text`/`input_image` parts."""
 
     def _to_api(self, name: str) -> dict[str, Any]:
-        return {"type": self.type, "name": name, "instructions": self.instructions}
+        return {
+            "type": self.type,
+            "name": name,
+            "instructions": _instructions_to_api(self.instructions),
+        }
 
 
 class Choice(BaseModel):
@@ -96,8 +124,8 @@ class Choice(BaseModel):
     type: Literal["choice"] = "choice"
     """Wire discriminator for a choice question."""
 
-    instructions: str = Field(min_length=1)
-    """Judgment to make about the input."""
+    instructions: _QuestionInstructions = Field(min_length=1)
+    """Judgment as text or a nonempty list of `input_text`/`input_image` parts."""
 
     choices: dict[str | bool, str | None] = Field(min_length=1)
     """Candidate values mapped to optional descriptions of when each applies.
@@ -109,7 +137,7 @@ class Choice(BaseModel):
         return {
             "type": self.type,
             "name": name,
-            "instructions": self.instructions,
+            "instructions": _instructions_to_api(self.instructions),
             "choices": [
                 {"value": value}
                 if description is None
@@ -163,8 +191,8 @@ class Score(BaseModel):
     type: Literal["score"] = "score"
     """Wire discriminator for a score question."""
 
-    instructions: str = Field(min_length=1)
-    """Judgment to make about the input."""
+    instructions: _QuestionInstructions = Field(min_length=1)
+    """Judgment as text or a nonempty list of `input_text`/`input_image` parts."""
 
     levels: list[str | Level] = Field(min_length=2)
     """Two or more levels ordered from lowest to highest.
@@ -180,13 +208,18 @@ class Score(BaseModel):
         return {
             "type": self.type,
             "name": name,
-            "instructions": self.instructions,
+            "instructions": _instructions_to_api(self.instructions),
             "levels": [level.model_dump(exclude_none=True) for level in levels],
         }
 
 
 Question = Annotated[Predicate | Choice | Score, Field(discriminator="type")]
 """A discriminated union of question types accepted by `OpenAIDecisions`."""
+
+
+class _PromptCacheOptions(TypedDict, total=False):
+    mode: Literal["implicit", "explicit"]
+    ttl: Literal["30m"]
 
 
 class DecisionRequest(TypedDict):
@@ -201,6 +234,12 @@ class DecisionRequest(TypedDict):
 
     questions: dict[str, Question]
     """Mapping of question names to questions. Names key the returned answers."""
+
+    prompt_cache_key: NotRequired[str | None]
+    """Caller-provided key partitioning cache reuse."""
+
+    prompt_cache_options: NotRequired[_PromptCacheOptions | None]
+    """Cache mode and lifetime for shared input prefixes."""
 
 
 class PredicateAnswer(BaseModel):
@@ -268,6 +307,11 @@ Answer = Annotated[
 """A discriminated union of answers returned by `OpenAIDecisions`."""
 
 
+class _InputTokenDetails(BaseModel):
+    cached_tokens: int | None = None
+    cache_write_tokens: int | None = None
+
+
 class Usage(BaseModel):
     """Token usage reported for a Decisions request."""
 
@@ -276,6 +320,9 @@ class Usage(BaseModel):
 
     output_tokens: int | None = None
     """Number of output tokens produced, or `None` when not reported."""
+
+    input_tokens_details: _InputTokenDetails | None = None
+    """Cache reads and writes, already included in `input_tokens`."""
 
 
 class DecisionResponse(BaseModel):
