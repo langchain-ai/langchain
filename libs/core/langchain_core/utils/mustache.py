@@ -475,6 +475,7 @@ def render(
     scopes: Scopes | None = None,
     warn: bool = False,  # noqa: FBT001,FBT002
     keep: bool = False,  # noqa: FBT001,FBT002
+    html_escape: bool = True,  # noqa: FBT001,FBT002
 ) -> str:
     """Render a mustache template.
 
@@ -499,6 +500,11 @@ def render(
         scopes: The list of scopes that `get_key` will look through.
         warn: Log a warning when a template substitution isn't found in the data
         keep: Keep unreplaced tags when a substitution isn't found in the data.
+        html_escape: Escape HTML characters (`" & < >`) in variable output.
+            Defaults to `True` (spec-compliant mustache behavior). Prompt
+            renderers pass `False` so variable values such as code, XML/HTML
+            fragments, or quoted text reach the model unchanged, matching
+            LangChain's f-string and jinja2 templates and LangChain.js.
 
     Returns:
         A string containing the rendered template.
@@ -553,7 +559,7 @@ def render(
                 thing = scopes[1]
             if not isinstance(thing, str):
                 thing = str(thing)
-            output += _html_escape(thing)
+            output += _html_escape(thing) if html_escape else thing
 
         # If we're a no html escape tag
         elif tag == "no escape":
@@ -619,6 +625,7 @@ def render(
                         scopes=(data and [data, *scopes]) or scopes,
                         warn=warn,
                         keep=keep,
+                        html_escape=html_escape,
                     ),
                 )
 
@@ -656,6 +663,7 @@ def render(
                         def_rdel=def_rdel,
                         warn=warn,
                         keep=keep,
+                        html_escape=html_escape,
                     )
 
                     output += rend
@@ -693,6 +701,7 @@ def render(
                 scopes=scopes,
                 warn=warn,
                 keep=keep,
+                html_escape=html_escape,
             )
 
             # If the partial was indented

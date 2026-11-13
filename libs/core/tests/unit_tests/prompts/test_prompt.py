@@ -12,9 +12,11 @@ from packaging import version
 from syrupy.assertion import SnapshotAssertion
 
 from langchain_core._api import LangChainDeprecationWarning
+from langchain_core.prompts.chat import ChatPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import PromptTemplateFormat
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
+from langchain_core.utils import mustache as mustache_utils
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
@@ -743,4 +745,60 @@ def test_prompt_template_add(
     ) == prompt_of_concated.format(
         variable="template",
         another_variable="other_template",
+    )
+
+
+def test_mustache_prompt_does_not_html_escape_variables() -> None:
+    """Mustache prompt variables are inserted without HTML escaping.
+
+    The f-string and jinja2 template formats insert variable values unchanged,
+    and LangChain.js renders mustache prompts without escaping as well. Code,
+    XML/HTML fragments, and quoted text must reach the model verbatim.
+    """
+    template = "Review this code:\n{{code}}"
+    prompt = PromptTemplate.from_template(template, template_format="mustache")
+    code = "if a < b && name == \"x\": print('ok')"
+    assert prompt.format(code=code) == f"Review this code:\n{code}"
+
+    chat = ChatPromptTemplate.from_messages(
+        [("human", "<document>{{doc}}</document>")],
+        template_format="mustache",
+    )
+    doc = '<b>AT&T</b> said "hi"'
+    message = chat.invoke({"doc": doc}).to_messages()[0]
+    assert message.content == f"<document>{doc}</document>"
+
+
+def test_mustache_render_keeps_spec_escaping_by_default() -> None:
+    """Direct mustache.render calls keep spec-compliant HTML escaping."""
+    assert mustache_utils.render("{{x}}", {"x": "<a&b>"}) == "&lt;a&amp;b&gt;"
+    assert mustache_utils.render("{{x}}", {"x": "<a&b>"}, html_escape=False) == "<a&b>"
+    # Triple-mustache still bypasses escaping regardless of the flag.
+    assert mustache_utils.render("{{{x}}}", {"x": "<a&b>"}) == "<a&b>"
+
+
+def test_mustache_escaping_flag_applies_inside_sections_and_partials() -> None:
+    """The html_escape flag propagates through sections and partials.
+
+    Only variable output is escaped (mustache spec); template literal text
+    such as the ``<`` brackets around the tag is emitted unchanged either way.
+    """
+    template = "{{#items}}<{{name}}>{{/items}}"
+    data = {"items": [{"name": "<a>"}, {"name": "b&c"}]}
+    assert mustache_utils.render(template, data) == "<&lt;a&gt;><b&amp;c>"
+    assert mustache_utils.render(template, data, html_escape=False) == "<<a>><b&c>"
+
+    partials = {"frag": "{{value}}"}
+    assert (
+        mustache_utils.render("{{>frag}}", {"value": "<x>"}, partials_dict=partials)
+        == "&lt;x&gt;"
+    )
+    assert (
+        mustache_utils.render(
+            "{{>frag}}",
+            {"value": "<x>"},
+            partials_dict=partials,
+            html_escape=False,
+        )
+        == "<x>"
     )
