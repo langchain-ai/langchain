@@ -5,11 +5,11 @@ description: "Complete API reference for LangChain message types, serialization 
 tags: ["messages", "api", "serialization", "notification-metadata", "content-blocks"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-30T08:19:17.669Z
+    at: 2026-11-13T08:16:35.902Z
 sources:
   - id: openwiki-source-85004ebd4eba7aec1e145503
     resource: repo://libs/langchain/langchain_classic/schema/messages.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-30T08:19:17.669Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 ---
 
 # Messages API Reference
@@ -22,7 +22,7 @@ Messages are the fundamental I/O abstraction for language model interactions. Th
 
 - **Message types**: `BaseMessage`, `HumanMessage`, `AIMessage`, `SystemMessage`, `ToolMessage`, `ChatMessage`, `FunctionMessage`, `RemoveMessage`, and streaming variants
 - **Serialization**: `message_to_dict()`, `messages_to_dict()`, `messages_from_dict()`, `_message_from_dict()`
-- **Content blocks**: Standardized multimodal content (text, images, audio, video, files, tool calls, reasoning)
+- **Content blocks**: Standardized multimodal content (text, images, audio, video, files, tool calls, reasoning, refusals)
 - **Utilities**: `filter_messages()`, `merge_message_runs()`, `message_chunk_to_message()`, `trim_messages()`, `get_buffer_string()`
 - **Notification metadata**: `NotificationMetadata`, `add_notification_metadata()`, `get_notification_metadata()` for marking agent-added messages
 
@@ -42,9 +42,11 @@ from langchain_core.messages import (
     message_to_dict, messages_to_dict, messages_from_dict,
     # Content blocks
     ContentBlock, TextContentBlock, ImageContentBlock, AudioContentBlock,
-    VideoContentBlock, FileContentBlock, DataContentBlock,
+    VideoContentBlock, FileContentBlock, PlainTextContentBlock,
+    ReasoningContentBlock, RefusalContentBlock,
     # Tool calling
     ToolCall, ToolCallChunk, InvalidToolCall,
+    ServerToolCall, ServerToolCallChunk, ServerToolResult,
     # Notification metadata
     NotificationMetadata, add_notification_metadata, get_notification_metadata,
     # Utilities
@@ -146,7 +148,7 @@ msg = AIMessage(
 **Unique fields**:
 - **`tool_calls`**: `list[ToolCall]` — Tool invocations requested by the model
 - **`invalid_tool_calls`**: `list[InvalidToolCall]` — Tool calls with parsing errors
-- **`usage_metadata`**: `UsageMetadata | None` — Token usage with optional breakdown fields
+- **`usage_metadata`**: `UsageMetadata | None` — Token usage with optional breakdown fields (`input_token_details`, `output_token_details`)
 
 **Streaming variant**: `AIMessageChunk` — carries partial content and tool call chunks. Chunks merge intelligently: string content concatenates, tool call chunks with matching `index` merge their `args` strings, and usage counts sum.
 
@@ -192,6 +194,8 @@ msg = ToolMessage(
 - **`artifact`**: `Any` — Optional data not sent to the model
 - **`status`**: `Literal["success", "error"]` — Tool execution status
 
+**Streaming variant**: `ToolMessageChunk`
+
 ### ChatMessage
 
 Arbitrary role message for custom participants.
@@ -214,6 +218,8 @@ from langchain_core.messages import FunctionMessage
 
 msg = FunctionMessage(name="my_function", content="result")
 ```
+
+**Streaming variant**: `FunctionMessageChunk`
 
 ### RemoveMessage
 
@@ -327,7 +333,7 @@ block: TextContentBlock = {
 
 ### ImageContentBlock
 
-Image content (URL or base64 data).
+Image content (URL, base64, or file reference).
 
 ```python
 from langchain_core.messages.content import ImageContentBlock
@@ -335,7 +341,8 @@ from langchain_core.messages.content import ImageContentBlock
 block: ImageContentBlock = {
     "type": "image",
     "url": "https://example.com/image.png",
-    # or: "data": "iVBORw0KGgoAAAANS...", (base64)
+    # or: "base64": "iVBORw0KGgoAAAANS...",
+    # or: "file_id": "file-123",
     "mime_type": "image/png",  # Optional
 }
 ```
@@ -350,6 +357,8 @@ from langchain_core.messages.content import AudioContentBlock
 block: AudioContentBlock = {
     "type": "audio",
     "url": "https://example.com/audio.wav",
+    # or: "base64": "...",
+    # or: "file_id": "file-456",
     "mime_type": "audio/wav",  # Optional
 }
 ```
@@ -364,13 +373,33 @@ from langchain_core.messages.content import VideoContentBlock
 block: VideoContentBlock = {
     "type": "video",
     "url": "https://example.com/video.mp4",
+    # or: "base64": "...",
+    # or: "file_id": "file-789",
     "mime_type": "video/mp4",  # Optional
+}
+```
+
+### PlainTextContentBlock
+
+Plaintext document content (for `.txt`, `.md`, etc.).
+
+```python
+from langchain_core.messages.content import PlainTextContentBlock
+
+block: PlainTextContentBlock = {
+    "type": "text-plain",
+    "text": "Document content here...",
+    # or: "base64": "...",
+    # or: "url": "https://example.com/doc.txt",
+    "mime_type": "text/plain",
+    "title": "Document Title",  # Optional
+    "context": "Document summary...",  # Optional
 }
 ```
 
 ### FileContentBlock
 
-Generic file content.
+Generic file content (PDFs, Word documents, etc.).
 
 ```python
 from langchain_core.messages.content import FileContentBlock
@@ -378,27 +407,15 @@ from langchain_core.messages.content import FileContentBlock
 block: FileContentBlock = {
     "type": "file",
     "url": "https://example.com/document.pdf",
+    # or: "base64": "...",
+    # or: "file_id": "file-abc",
     "mime_type": "application/pdf",
-}
-```
-
-### DataContentBlock
-
-Arbitrary data (structured, binary, etc.).
-
-```python
-from langchain_core.messages.content import DataContentBlock
-
-block: DataContentBlock = {
-    "type": "data",
-    "data": b"binary content",  # or dict, list, etc.
-    "mime_type": "application/octet-stream",  # Optional
 }
 ```
 
 ### ReasoningContentBlock
 
-Reasoning/thinking content from models.
+Reasoning/thinking content from models (chain-of-thought).
 
 ```python
 from langchain_core.messages.content import ReasoningContentBlock
@@ -406,6 +423,19 @@ from langchain_core.messages.content import ReasoningContentBlock
 block: ReasoningContentBlock = {
     "type": "reasoning",
     "reasoning": "Let me think about this step by step...",
+}
+```
+
+### RefusalContentBlock
+
+Explicit refusal reported by the model provider.
+
+```python
+from langchain_core.messages.content import RefusalContentBlock
+
+block: RefusalContentBlock = {
+    "type": "refusal",
+    "refusal": "I can't help with that request.",
 }
 ```
 
@@ -418,7 +448,7 @@ from langchain_core.messages.content import NonStandardContentBlock
 
 block: NonStandardContentBlock = {
     "type": "custom_provider_type",
-    "data": {...},  # Provider-specific structure
+    "value": {...},  # Provider-specific structure
 }
 ```
 
@@ -492,6 +522,65 @@ invalid: InvalidToolCall = {
 - `name`: `str` — Attempted tool name
 - `args`: `str` — Raw argument string
 - `error`: `str | None` — Error description
+
+### ServerToolCall
+
+Tool call executed on the server (code execution, web search, etc.).
+
+```python
+from langchain_core.messages import ServerToolCall
+
+call: ServerToolCall = {
+    "type": "server_tool_call",
+    "id": "server_call_123",
+    "name": "code_executor",
+    "args": {"code": "print('hello')"}
+}
+```
+
+**Fields**:
+- `type`: Always `"server_tool_call"`
+- `id`: `str` — Unique identifier (required)
+- `name`: `str` — Tool name
+- `args`: `dict[str, Any]` — Parsed arguments
+
+### ServerToolCallChunk
+
+A chunk of a server-side tool call during streaming.
+
+```python
+from langchain_core.messages import ServerToolCallChunk
+
+chunk: ServerToolCallChunk = {
+    "type": "server_tool_call_chunk",
+    "id": "server_call_123",
+    "name": "code_executor",
+    "args": '{"code": "prin',  # JSON string fragment
+    "index": 0,
+}
+```
+
+### ServerToolResult
+
+Result of a server-side tool call.
+
+```python
+from langchain_core.messages import ServerToolResult
+
+result: ServerToolResult = {
+    "type": "server_tool_result",
+    "tool_call_id": "server_call_123",
+    "status": "success",  # or "error"
+    "output": "hello",
+}
+```
+
+**Fields**:
+- `type`: Always `"server_tool_result"`
+- `tool_call_id`: `str` — ID of the corresponding server tool call
+- `status`: `Literal["success", "error"]` — Execution status
+- `output`: Any — Optional tool output
+- `id`: `str | None` — Optional content block identifier
 
 ## Notification Metadata API
 

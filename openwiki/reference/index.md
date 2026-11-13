@@ -2,21 +2,21 @@
 
 - [Agent Execution](agent-execution.md) - The agent execution model orchestrates a structured state-driven loop built on LangGraph StateGraph, with initialization, model invocation, tool dispatch, and middleware hooks for controlling flow and behavior.
 - [Agent Factory (create_agent) Reference](agent-factory.md) - Complete reference documentation for the create_agent function signature, all overloads, parameters, return types, and exception types for building LangChain agents.
-- [Callbacks (Deprecated Reference)](callbacks.md) - Deprecated reference page. See /openwiki/concepts/callbacks.md for current documentation on LangChain's callback system.
+- [Callbacks API Reference](callbacks.md) - Complete API reference for callback handlers, managers, and run managers in LangChain's instrumentation system.
 - [Chat Models API Reference](chat-models.md) - Complete API reference for BaseChatModel, covering all methods, parameters, return types, and protocol implementation contracts for chat model integration in LangChain.
 - [GitHub Actions CI Workflows Reference](ci-workflows.md) - Complete technical reference for LangChain's GitHub Actions workflows, job configurations, triggers, matrix testing, and environment variables.
-- [Composability (Deprecated Reference)](composability.md) - This page has been moved. For the authoritative documentation on agent composability, middleware composition, and subagent delegation patterns, see the Agent Composability documentation.
-- [Dev Commands (Old Page Reference)](dev-commands.md) - Deprecated: See /openwiki/operations/dev-commands.md instead.
+- [Agent Composability API Reference](composability.md) - Complete reference documentation for agent composition APIs including middleware, subagents, and hook patterns in LangChain agents.
+- [Development Commands Reference](dev-commands.md) - Complete reference for make targets and uv package management commands used in the LangChain Python monorepo for testing, linting, formatting, and type checking.
 - [Integration Tests](integration-tests.md) - LangChain's integration testing framework for partner libraries and chat models, including VCR cassette recording, pytest markers for test classification, and scheduled CI/CD execution against live APIs.
-- [MCP Integration (Old Page Reference)](mcp-integration.md) - Deprecated reference page. See /openwiki/integrations/mcp-integration.md for the current MCP integration documentation.
+- [MCPAdapter API Reference](mcp-integration.md) - API reference documentation for MCPAdapter, the main entry point for integrating MCP (Model Context Protocol) servers with LangChain agents, covering target types, method signatures, and lifecycle management.
 - [Messages API Reference](messages.md) - Complete API reference for LangChain message types, serialization utilities, content blocks, and notification metadata functions for marking system-generated messages in conversations.
 - [Agent Middleware System](middleware.md) - Reference guide to agent middleware hooks, composition semantics, request/response types, and handler lifecycle in LangChain agents.
-- [Model Initialization (Deprecated Reference)](model-initialization.md) - Deprecated reference page. See /openwiki/model-initialization.md for comprehensive documentation on model initialization, the init_chat_model factory, provider configuration, and runtime model switching.
-- [OpenAI Provider (Old Page Reference)](openai-provider.md) - Deprecated: See /openwiki/integrations/openai-provider.md instead.
-- [Partner Pattern (Deprecated Reference)](partner-pattern.md) - This page has been moved. See /openwiki/integrations/partner-pattern.md for current documentation on LangChain's partner integration framework.
-- [Prompts (Deprecated Reference)](prompts.md) - This page has been consolidated. See /openwiki/concepts/prompts.md for current documentation on prompt templates, templating, and composability.
-- [Runnables (Old Reference)](runnables.md) - Deprecated reference page. Runnables documentation has been consolidated into /openwiki/concepts/runnables.md.
+- [Model Initialization API Reference](model-initialization.md) - Complete API reference for init_chat_model factory function, covering function signature, provider registry, model parsing, configuration, and runtime behavior.
+- [ChatOpenAI API Reference](openai-provider.md) - Reference documentation for ChatOpenAI and BaseChatOpenAI class signatures, configuration parameters, and core behaviors for OpenAI chat model integration.
+- [Partner Pattern Reference](partner-pattern.md) - Quick reference documentation for partner integration package structure, ChatModel implementation requirements, and integration checklist templates for LangChain provider packages.
+- [Prompt Template APIs](prompts.md) - API reference for LangChain prompt template classes, including BasePromptTemplate, PromptTemplate, ChatPromptTemplate, and FewShotPromptTemplate with their signatures and methods.
+- [Runnable Protocol: Method Reference](runnables.md) - Complete reference for Runnable protocol methods, lifecycle, and configuration. Documents synchronous and asynchronous execution, batching, streaming, composition operators, and configuration threading.
 - [Streaming API Reference](streaming.md) - Core streaming APIs for incremental output delivery via BaseChatModel.stream() and astream(), message chunk composition, ChatModelStream projections, and callback integration.
 - [Structured Output API Reference](structured-output.md) - Complete API reference for structured output classes, error types, and validation mechanisms used by agents to enforce JSON schema compliance on language model responses.
-- [Tools (Deprecated Reference)](tools.md) - Deprecated reference page. See /openwiki/concepts/tools.md for current documentation on LangChain's tools system.
-- [Unit Testing and Mocking (Deprecated Reference)](unit-tests.md) - This page has been superseded. See the primary Unit Testing and Mocking documentation for current content.
+- [BaseTool API and Schema Generation](tools.md) - Reference documentation for BaseTool class, schema generation, input validation, and execution lifecycle in LangChain's tool system.
+- [Unit Tests Reference](unit-tests.md) - API reference for pytest fixtures, mock implementations, and test utilities provided by LangChain's test infrastructure.

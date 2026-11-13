@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d57d9296eba5dba0ab55b6a13e84db62cc5ba41e5b3054b74e9f85050cc5b9e6",
+  "pageVersion": "sha256:b4cb13426ff56d69c153b83bd6e178b3a7cf16a8ab47eb1c6231ee0a38461c5b",
   "claims": [
     {
       "id": "claim_c1ceff5d6c5d4e22aa8b16a8ce787305",
@@ -105,10 +105,68 @@
           "version": "repo-lines-v1:sha256:def5c5af24438aa68655c3dd7c5616745bc16d1e92d9f85b281622790264a60d:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0NDE1ZGIxNWIwNDQyZjJiMWY1ZjNmZDNlMGVhMzIwOGVhYTQxNjRlOTJkMTU5Mjg1ZTNjOWQyZGM2OTEyZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0NmVhN2E5YWU3NmIzNTI0YTM4NWUzMmEwN2E1NmQwYTUyNjI1NTU0ZDAzNmI0ZjFiM2JkOTJlYzc3ODcxMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0ODY1YWQ4MzExYTZlNGE5ODNmZjNhMjk0Mzk4NTIzNDNjYTkzNjhjNmExNTU1ODIzMThmMWI3NTBmMDJhOWIifQ"
         }
       ]
+    },
+    {
+      "id": "claim_fbbb3b3174e64269bf54641648c86584",
+      "statement": "SubagentTransformer detects hierarchical agent boundaries when a tool function invokes create_agent(name=...) that differs from the parent's lc_agent_name. On boundary detection, it creates a typed SubagentRunStream or AsyncSubagentRunStream handle on run.subagents, tracks the originating tool call as a causation edge via the cause property, and forwards child events into an isolated mux for independent consumption.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L1-L82",
+          "version": "repo-lines-v1:sha256:7a22ce25db41f0ca1e8e362100824869d2c1d4892d860c8c4654f40b29abd170:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MDNjNjdlMmM3Mjk0OTc1NWFhOWFhOTNiMTY5YjNiYjBlNzY0OGY4YjBiOTFlMmQ5NTgxYTdiYzQ1ODAyNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlOWE4NmNmN2Y2NmRmMWRjNTU5ODgxNzE4Yjk3MzYyZDQwNjU0NDg3MTc2NGUxODIzODNjZGZjYmE4ZGI5Y2YifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L120-L195",
+          "version": "repo-lines-v1:sha256:c871566dc1a1a630ebd27fdd9d23437044f3360ad6bc0ccafcde71967cb6d6c4:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmYzhhZWMyZTU5MjZkYmExMTg0M2RmOTk2NjAzM2Q2MjgxN2UzNDAyYzMxYTcxYmY1YzQxNTBjYzg0MmFlZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkNjllNTZhZDNhM2FmYTlhZjkxMTYxMmRhOWI1ZDVkMjM5NzJhZDIwNGE2YTg5MmYzNzNiZTc5YjE3NjZkZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkNmFjODUxNTFhYzQyZmVlZDVjM2FkMjA2ZDdhMTBmN2IzM2ZkMTkzMzk1YTYwMDY1OTYxOWNjYTc3ZjY2NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1YTM5YjBiYmFlYjc0YjE4NTZlYmMyMGQ2ZWQ3MmRlY2FjOGEyYzBjMTczOWE3YWM2NzdhYmEwZjI5NmNjMjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4c077e41b68b4c9f9d0eeaeef1f39a6e",
+      "statement": "Hierarchical agent systems in LangChain compose through tool-based delegation: specialist agents (leaf nodes) implement domain-specific logic; coordinator agents (middle nodes) route queries via tool invocation; supervisor agents (root) maintain user context. Each agent has an isolated middleware stack; behavior propagation across levels requires explicit handling via tool wrappers, context passing, or runtime.context.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L44-L118",
+          "version": "repo-lines-v1:sha256:fefaebe537c1019b6bae92e7c5c0f41edeccee836c15a394d38166badace9e7c:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwNGY4ZGQ0MTI4NDljYzJjZWQ5ZTczODM3YTFkYjZiOTZlOTllN2ZkNmI2MTliNDJjNjBkMDhkZmRjZTVhZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyMDA5N2U0YWE1MDA2OGJhMTU3ZjlhMjczOWZhZDg2OTk1ZTFlMGNkY2NkYWRjNTg5N2MyMDM0Yzc0ZDNlZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmOWUxYmI2OWRlMGNiZWVlOWY1MTJjMzdjODYzOThlMGIzNzNjY2YwMTM1YWFmNzYyOTIzZDExZjMwMmQ0MGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1cfd944083d7476082bff65f3d60a5dd",
+      "statement": "Subagent events can be streamed independently via stream_events(version=\"v3\"). SubagentRunStream exposes name (the nested agent's lc_agent_name), cause (the tool call that triggered it as {\"type\": \"toolCall\", \"tool_call_id\": ...}), status (success/failed/timeout), and error (failure message). This enables end-to-end tracing and causation tracking across hierarchies.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L44-L82",
+          "version": "repo-lines-v1:sha256:00f094b6ca965e53536d72288f1c813f1242473aeb4759adf4f25cbb1b7acb94:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwNGY4ZGQ0MTI4NDljYzJjZWQ5ZTczODM3YTFkYjZiOTZlOTllN2ZkNmI2MTliNDJjNjBkMDhkZmRjZTVhZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyMDA5N2U0YWE1MDA2OGJhMTU3ZjlhMjczOWZhZDg2OTk1ZTFlMGNkY2NkYWRjNTg5N2MyMDM0Yzc0ZDNlZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlOWE4NmNmN2Y2NmRmMWRjNTU5ODgxNzE4Yjk3MzYyZDQwNjU0NDg3MTc2NGUxODIzODNjZGZjYmE4ZGI5Y2YifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L84-L118",
+          "version": "repo-lines-v1:sha256:1701e229b7791d8499564f4176d923f5f42f0c062c3983d2a1bbbd6828f80f52:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmYWY0ZDJlZDIwMDQ2ZWUwMDgzMjM1OTg0N2E4NTM2M2M3OWJmOGFiZTU1MTgwMTIyZjI4Mzg0ZmEzMWM0N2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkNmFjODUxNTFhYzQyZmVlZDVjM2FkMjA2ZDdhMTBmN2IzM2ZkMTkzMzk1YTYwMDY1OTYxOWNjYTc3ZjY2NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmOWUxYmI2OWRlMGNiZWVlOWY1MTJjMzdjODYzOThlMGIzNzNjY2YwMTM1YWFmNzYyOTIzZDExZjMwMmQ0MGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9bda2ead2c7f45a3b99cdaafcd6173c2",
+      "statement": "Middleware registered on an agent forms an independent stack where first-in becomes outermost layer. Middleware does not automatically propagate across agent boundaries; to share behavior across coordinator and specialist agents, wrap tool functions with error handling, use context-aware middleware that reads runtime.context, or implement per-level middleware aligned with agent responsibilities.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L158-L196",
+          "version": "repo-lines-v1:sha256:4afaa6ff7a5caba1f848a15f6bded7f8eea19b03411a6549bca2fae7c2dafe54:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4M2Y5MjczYjRhODg2YzE3OTNkODgxMGNmMTI2OTE1OWRmYjU4NmExMGY3YjZhZmY1NTA2ZmNjOTIwMWQ1NTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3NDBjZWM3ZmQ2MzI4YTU5MzBkNDdjNmM5ZTJkMjJhZmZhMjQ4ZjUzNjk3MmVkMDBlNTBiMTFlMDgzNzI4ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjOTcwNTM5MWExNjgxYjQ2ZTRlN2UyNjAzZmFiYTAwOTc3MzIyMzg0OGZiMTU1NDI0ZjI1ZTY4OTM5MzRiMTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_02fd606ec145401094f412537792acb3",
+      "statement": "Each agent maintains its own isolated AgentState (messages, jump_to, custom fields). State does not automatically flow between parent and child agents. To share context across hierarchy levels, pass relevant state through tool function inputs, include context in system prompts, or use runtime.context (if provided by the application). Persistent shared state requires Store integration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L1-L30",
+          "version": "repo-lines-v1:sha256:ef669de86cae8ca4c6e2bb1152366a4fb1710a8dd4ff9c3e6f2321873c73caaa:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MDNjNjdlMmM3Mjk0OTc1NWFhOWFhOTNiMTY5YjNiYjBlNzY0OGY4YjBiOTFlMmQ5NTgxYTdiYzQ1ODAyNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhMmZhNDgyNjA2ZWVmNDBkZmIxYzc0YzI1ZDhjNTc2ZmVkZDQ1ZmNiM2M1ZTBhYzVlYzUwZjc2MDhkYjFiYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiYTI1ODljMzVjMGNhMThjYTY5NjM3NTI2ZjAzZmY3MmU0OTM5Zjk4MTRmMmM0M2I1MzJmMzA5YjEzNjk2OWYifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-06T08:17:28.425Z"
+    "at": "2026-11-13T08:16:35.902Z"
   }
 }

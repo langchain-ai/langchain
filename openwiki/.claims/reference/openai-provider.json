@@ -1,24 +1,138 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8ea2b9339de8391b844afb22b1092337a57e30f5d98443055a07a67b7610f6bb",
+  "pageVersion": "sha256:9b4901c1a429b043a4a1efc6c72d85667394cf4c6d47d13187b92e234dd48bed",
   "claims": [
     {
       "id": "claim_6ed03c3da42e493bb141460b032fc3d8",
-      "statement": "The /openwiki/reference/openai-provider.md page is a deprecated redirect marker; current OpenAI Provider documentation covering chat models (ChatOpenAI, BaseChatOpenAI, AzureChatOpenAI), message conversion, tool calling, streaming, and vision support is maintained in /openwiki/integrations/openai-provider.md.",
+      "statement": "ChatOpenAI is a LangChain wrapper around OpenAI's Chat Completions and Responses APIs that targets official OpenAI API specifications only. It does not extract or preserve non-standard response fields added by third-party providers (e.g., reasoning_content, reasoning_details). For endpoints using custom provider fields, provider-specific LangChain packages (e.g., ChatDeepSeek, ChatOpenRouter) should be used instead.",
       "evidence": [
         {
-          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/azure.py",
-          "version": "repo-file-v1:sha256:584af2fb8cb007c56d1a4a101860e999b242df08c6c294ab44986e2cfa52406a"
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1-L12",
+          "version": "repo-lines-v1:sha256:14ebffc7bca9e6fda843b3932b482d6ffbf0487c1f74f9bfbb871bb591a6cbc1:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMWZkYTIxNjI4MGFjNjg0ZmI1ZGQ4NjIxYmE5NTJiMjU3YzhjZTVlMDExM2U2N2JjMTJkZDBlZGU1ZTg2MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
         },
         {
-          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py",
-          "version": "repo-file-v1:sha256:1311fb3487aa309c8b649440ae07a3c1c472e6bdf913408fb979549877579e30"
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2929-L2940",
+          "version": "repo-lines-v1:sha256:0f19bf46e3f6eba47bb09bcaf736fd464d54cb439977bb5226e88cfd09ad61b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2ZGQ0OTVmY2Y2Y2VlZDZmMmZiNWY0ZDZlODBhZmYxZTM0ZmQ1ZjBmOWIyZGY4ZjkyYWUzNGVmOWQzNDM0NWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMyZjk1Yzg3MzgzOTQ3ZjMzYmU3MzgxNDQyZTg5YTY5YTg0ODVmNjhmNDFmM2E0NjhjNjFmMDg1YTA2ZDgwOWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY4OGQ2YWNlMDY5OThmMDI0N2Y3MzAzZTEyNDllMjkxOWJkYTdhNDk0YmRlNjliNzVkNDE2MThjOGI2NTFkMzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fe4f384d5f9c4d08982048bfd7ebcad7",
+      "statement": "BaseChatOpenAI provides shared OpenAI integration implementation extending BaseChatModel from langchain_core; ChatOpenAI extends BaseChatOpenAI and is the standard entry point for OpenAI's official APIs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2928-L2928",
+          "version": "repo-lines-v1:sha256:d90da8713e755f552d5bb35f7b2f8e00e7b04365c76ab82a744f0e595e206062:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDkwZGE4NzEzZTc1NWY1NTJkNWJiMzVmN2IyZjhlMDBlN2IwNDM2NWM3NmFiODJhNzQ0ZjBlNTk1ZTIwNjA2MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDkwZGE4NzEzZTc1NWY1NTJkNWJiMzVmN2IyZjhlMDBlN2IwNDM2NWM3NmFiODJhNzQ0ZjBlNTk1ZTIwNjA2MiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjNkZjJhY2YwNmU4YzNmMDNjNzEzNWM2ZThhYzVhOWNhNTQzMmFiZTA2YTc0YWNhMGZkZDlhNTNhMDA4Zjk4NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDNmYWY0ODFjNTk4MjA0Yjg5Y2NmODljOGRlMTA2ZTc3ODMzNjkwZGU4ZDdjMWI1ODA4NmE1Nzc4YzA2MTU3MSJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L787-L795",
+          "version": "repo-lines-v1:sha256:f5e6c650ddf584e5e12d61f2141dcdeaf7a0cc1a4045e96e63b3686ad8b9b9bb:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjBhYjI2NDA2MDhhNmVkYmFkYTgwMmVhN2VjMDU2NjEzYmE5MWFjZDllN2E4YjBmNzE4ZGY4NDViODhjMGUwMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZhNzE1MjU3MmVlODRmMTA5MDZjNzRiOWYyYTkyNDM0ZGRhYjBlM2M0MjgxM2IwNGU1OTdlZmNlYzk1MWIyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWJjYWRjNGUyOWMyYzQ1ZTI5Mjk2NzBmZmI0YmI0NmJjYmM0NGVhYjM1MDI3MDM1YmY0NWZiMWIxN2JjNTVkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjkyNjZkY2FmNjZlOWFiZGY4ZmEwYTIwOGRlMGY4NTI3ZTQ5NmViY2EwYThjZmM3MGNmYmYyMjhmODY4NGQzNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_334f7fa44a9f46429a54ec80043a1212",
+      "statement": "ChatOpenAI resolves authentication credentials in precedence order: explicit parameters override environment variables. For API keys: explicit api_key > OPENAI_API_KEY env var. For base URLs: explicit base_url > OPENAI_API_BASE > OPENAI_BASE_URL. API keys can be strings or sync/async callables; LangSmith gateway keys (prefix lsv2_) are detected for gateway routing.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1308-L1319",
+          "version": "repo-lines-v1:sha256:f818c55d61a29e27a735e2886c9c8a076dd9f71f7a0b3497380cb1cfdcd6fc1f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZDAwY2YyNzA5NjRkNDRhMTNkZmFjODc1MmIwOWZjYzQzNWIwZjE5YjMxNmFiY2Y4MWE3YWE2NGJiMTIyZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5N2M3MTI0N2FmM2NkMWVkZjU1NWE3ZDEwNzU5MzE1N2Y2ZGMyYTIyYWYwZGU4MmU3Nzc0YWJmMTBmOGFkZTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2NDQyMDIxZjNkNDJmMjU0MTVjZDJlOGNjMGIwNmRjYzQyMDZmYjFkZmE1ODY0NzJlNWUxNTYxZDZmZTQyNzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwOTAzMmM3YWI0NzNjOTU0ODE0NjkxMGJjZmFkMGM1NWJmYzk3YzZjOThjY2Q2ZjgwMmMwOTVkNjhjMDRhMzYifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L814-L878",
+          "version": "repo-lines-v1:sha256:788f5f2aedcfc06b24faf19692b3b570057e17a320cc920acad350aa29489cde:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NWZkNDk1ZWU5OWQ1OWFkN2VlNWNlNjc3NzY4NTA2OWZlYzJiMzFlN2VlOWI0ZjlhMjA2M2RlMWRkNjFhNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhMjIxODk1NWJjM2M2MzdmNGU5ZTQwNWQyY2JmNWU4Yjg4NTBkYTAyYWQxODEzM2I1NDMxNTllMDljZjQ3M2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4YzBjYzA4MjViNjY2MWI1ZmM0YWE1MjQ5NmJhOGM5ODIxNTY3MzFiNTM2NTBlYjhiYTYxYmRmNjI2ZmNlNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YTY2YzhhYmZjZmNmYTM5ZTc4YjUyZWQ2ZDEyNWYyOWIzZjExNGYxZGZjODBiZGI3MzFhZWY0ZmIyNGQ5MmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a26478abb57e48f68730448ebee03fd7",
+      "statement": "ChatOpenAI handles bidirectional message conversion: LangChain HumanMessage/AIMessage/SystemMessage/ToolMessage/FunctionMessage types map to OpenAI role formats (user/assistant/developer/tool/function). For o-series models, system messages are automatically converted to developer role. Tool calls in AIMessage are parsed from OpenAI's tool_calls field; invalid tool calls are collected separately.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1858-L1862",
+          "version": "repo-lines-v1:sha256:216b588d7c6982cc9730275ce77bfc83ea5aa01af17b3622e86279e04ad61ed9:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlMzUwOWJlNmYzNDcyNTZmYWY5M2RmYzBiYzdkYzBjMjA4YzZmYjZmNDUyYmJmOTVkNTU3ZTQ3ZGVkNWM5ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTc2MWQ1OWZhZWU5ZjRiNWVlYWYyNjRjNmQ5YmFjNmZmMmE5ZGM5YjAxOWY3YzA0ZmI4NGQxNGQ0YzU0Zjc4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDlmZTA5NTgzMmFmMDdjNmE4NDhjZWZjYWVhMjI5OWUyM2RhOTg0NTFkNGYwYTZlZjA4Yzk4NTc3ODk2ZTk0MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMThkNTk4NjI0MjZjYTE0Yzg5ZjcyOWEwMjI5ZTEzY2RlZjEzZWMxNWI5OTA1YjViOTExNjIzODA4ZDA4ZTEzMCJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L220-L286",
+          "version": "repo-lines-v1:sha256:c9a125a75811b102dac33b6eb29962f289fc544973d25d31c66fdaa067f41c22:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlOTRiYmJkZTFhNTc4ZTU0MDk3NjZmZjRhOTc3ODU2YzU4MmNkZDBiZDU5MzhkMDcxZDdkNjY2YTRkMzU2NjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQyNDJmZmEwNDkzOWY2ZGQ3NDdlMzc0ZTMyNjU0MDc4ZDBiZDA1ZWNlODYyMTg0N2EzNTMzZmY4ZTFkNTJiMzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlYzQyOTU5MTY5N2YyNDg0N2RkNWQ1Yzk2ZDM2ZDRiZDU2NzVmMzZhNDY3YWNhNjZkMjRiNzZiYzU0MDEyYjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZkMTJmNDFjMWY1ZGFhMmM1NWMyNzI5NDg1ZDAwN2ZjMTg4YzBiMjBjNmViZmMwMzdlM2MwMGRmZWJmNGUwNTcifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L476-L500",
+          "version": "repo-lines-v1:sha256:62c8f4c66cd480479a2157257c373b0628c0bea0e02a082d090042a813449bb7:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM1MGQ3ZDFiOWU4Mjk2ZjUxMGRkN2U3NGUyMjFlYWYzMzFmNzU5YjQ1ZGFmMGJlYjg0NDhkY2I2MWZjYThhOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3ZjIzNDI0N2I3OThhOTE3ZjI4MmM5YWU4NjU2MWYxMTAwYmJhYWNhYWQ5MzdjOWYyY2VmOGUwNzdlYzA3NzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVlMWZhYjNmYzQwYmE5YTFkMWRhNWZhOGIyZTU0ZTU5YWI4YTZjNjFjYzBmYWFjMmE4ZDEyZDVmYTg3MWJhMDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0ODVjMGQzY2NmMWU3Y2I4NmIxOTA4NjdmNmQzODMyOTQ3NTBjNzEwN2ZiNWJlZjE4NDM1MmFmNjFhYmI3YzMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_6fd3e98a1d2949a6969c170fd86e866e",
+      "statement": "ChatOpenAI automatically routes between Chat Completions and Responses APIs based on model name and configuration. When use_responses_api is None, routing is inferred from model prefix patterns and settings like reasoning, verbosity, and use_previous_response_id. Explicit use_responses_api parameter can override automatic inference.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1278-L1284",
+          "version": "repo-lines-v1:sha256:8f9aad44e33b597e98b6dbc0065c56ba797f74d352e2d57c41c0e636fb14ca88:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDliZDI5MzM3MGRlZTJjOTc0YWJkMzZmZGMyZTAzYjA2ODE1MjMxZGVmZjUzMTQxYTNmMjYzYWFjNjZjZTI4YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTZhNzE1MjU3MmVlODRmMTA5MDZjNzRiOWYyYTkyNDM0ZGRhYjBlM2M0MjgxM2IwNGU1OTdlZmNlYzk1MWIyNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTBjMDU1Nzg5NTA3MjU4NzI5ZTA3MDEzOGRlNzY0OTU2ZWRkYWJkNTM3OGYwZDJjYmQwN2I5ZTdjYmExYzRmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmZkNjZlODQ0MzAzNGFlNjU2Y2U0ZmMzMzBjYTU1MzM2NWM4NmNjZDRmNGVkMmY3YTE0ZTAwNGU2OTY0YmRlNSJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1400-L1405",
+          "version": "repo-lines-v1:sha256:ee5f361110bfa51f8584ba94ad70f5715b53dd01114042df3d271e13d657ac71:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMWVmMWNkZDBmNTc0MzNjZTUwNzc5MDcyMmUyZjUxZDk3MzU2Y2JmZmE3YjI0ZGQ3Y2ExMzQ0ODMyZDRlNTI0OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTJhYjA5MGJjZDE2MjBmYTYyZWFlZTE1N2E3NGZjYTYzNWFhMjllMTJjYmZmZDYxOGI1NzkyZDg3YmMwM2EzZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTc5ZTliNmY1NzJmNmFmYzFiMzIwMzM4ODI5Zjc4OGVjY2ZkNWNhYzUzNDRlNjA4NDJiNWFhMWU3YTBiZDk3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjJlZWUxMjRjNzYzMWIxYjgxM2QyMjY3ODA3ZTNkNzE3OGI2MTcxYjc0ZGNjY2NjYjU0YTM1MTBkNGFlMDBmMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7176e927342f4eee9e8e84f84232922d",
+      "statement": "ChatOpenAI streaming via stream() and astream() yields AIMessageChunk instances with partial content. stream_usage parameter controls whether usage metadata is included in final chunk; defaults to True for default base URL and OpenAI clients but is disabled when openai_api_base or custom http_client is set. Async streaming has configurable per-chunk timeout (stream_chunk_timeout, default 120s) via env var LANGCHAIN_OPENAI_STREAM_CHUNK_TIMEOUT_S.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1105-L1145",
+          "version": "repo-lines-v1:sha256:dfa0b175a318de71dd884ca5a2fd1d06c12bf1856ac21d6a05bf7f74e67b35d7:eyJzZWxlY3RlZExpbmVDb3VudCI6NDEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYwMDdhMDQwOWU5Yzk3NGE2ZWJhZTkwYjE4YjM2ZWU4MDFlY2E3MmEzNzA2NzI4MjcxM2YzNDkzMjg1YmE2M2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1MzAxMDNlZDY0YjNmMmU4MGE0N2IyN2U3NjY4OTAzNDdlNDk5MDQwZTA5N2NjZWY0YzgxYzYyZTYzMmI5MTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2ODc0NWVhMWI1MzViMDAwMDMwMDNkMGUyYTZlOWJmMjQ1NzBhOTBlZTE2NDFjYTE2Mjc1MzA1NTI3MDg0MDgifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L896-L911",
+          "version": "repo-lines-v1:sha256:3810f01c423c020d0bad92e92a774d7abf76b18d1697e8cc1597db106a802fad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5M2JlYmQwY2RhNzliNmZiNmJkYzU3YzgxMjVjZjRlOWRlM2U2ZGZmYmMzZTMyZjEzZmQ5NDBiYzk0MDMxZDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlZDhmMzZiNjY1ZGZhNGNiMGI2Mzc3N2IxODJhYjNlMmFhNWU0ZDhhNjI2ZTlmODM5ZmQ4ZjZhZDRlZTM3OTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdlOWU3YWFlZWNlOWY5Mzg0NjQ3MDhjMjAyNDJmYTM3ZmJiMmI0Y2FjYTI5MmM1NjQzOThjN2RhYjQxMjViNDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b62937b31f604544a62b8e9a850c6798",
+      "statement": "ChatOpenAI distinguishes between model_kwargs and extra_body: model_kwargs holds standard OpenAI API parameters (e.g., stream_options, max_completion_tokens, modalities) that are merged into the top-level request payload; extra_body holds custom parameters for OpenAI-compatible providers (vLLM, LM Studio) that are nested under the extra_body key. Using model_kwargs for non-OpenAI parameters causes API errors.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1150-L1169",
+          "version": "repo-lines-v1:sha256:80082402cbabb980e06ddc23f0d280a10d2a35d2b9fce6ce36ed6df1bef1e0ff:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZlNWE5ZGU5ZDU4ODRjMDI2Y2IxNGYxOGFlYjFkZjA5Yjg3OGNkOTljMTEyNTFmYzU2N2M2ZThmMjZhOTRhMjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA1NjYxNjRmNGYwNGI4OGE3NmNmNmZjMjQ0MzMzNjU1ZTlhY2E1Nzg2ODMzMDk5OWQxZWZmZmFmZTBlMDljZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYxZWI5OWVkYTQwNzU3MTlhMDMyOTE2MDRlMDBjNDhkMzVlNWNkYTE0MjI2MjgzNDBiYTBlNWE4NDA4OTg5MjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_005acdd0a9894b929bfdf7c918429fdd",
+      "statement": "ChatOpenAI enforces temperature constraints: o1 models default to temperature=1 if unset and require it; gpt-5 non-chat models only allow temperature=1 unless reasoning_effort='none' or reasoning={'effort': 'none'}. The validate_temperature model validator handles these constraints at initialization.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1354-L1384",
+          "version": "repo-lines-v1:sha256:53b1aa5bdcce24d6da13312962e7b34db97824829e860c929ee90188dfc876be:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1NWQzZjRmNmJlNzRjOTY4MjViZmUxZTVkZGZjMTk2MjI1ZWRlZTBiM2FkZDU4YzYzMjhjMTQ4YWNiNmUyMTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhYWEzNzA3NGNkY2ZmMmU2MzY0ZWQ3MDhhZjk4MDBlMjI0YmQzMDUxMzc0ZmNmMTI4YzZlNDg3MjM3ODc0YzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQxZjliNjc5ZDFhZjI0N2FkMTRlNjQ1NGRlMDAxZDdhZTg1Y2NiMTllNzk5ZDJhMzE0Mjg5OWI2MDkxNjE4NTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdhYzdiOTg0YTIyZWFjMWViYTcyNmQyZTliNzI2ZGVlY2EwZjViN2ExZDBhYTM1MDY3M2ZkMDhiMGFmZGQwZjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_602db60212c649ab8c2146885c171af8",
+      "statement": "For o-series models (matching pattern ^o\\d), ChatOpenAI automatically converts system messages from role='system' to role='developer' in request payloads, as required by these models' API specifications.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1858-L1862",
+          "version": "repo-lines-v1:sha256:216b588d7c6982cc9730275ce77bfc83ea5aa01af17b3622e86279e04ad61ed9:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdlMzUwOWJlNmYzNDcyNTZmYWY5M2RmYzBiYzdkYzBjMjA4YzZmYjZmNDUyYmJmOTVkNTU3ZTQ3ZGVkNWM5ZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTc2MWQ1OWZhZWU5ZjRiNWVlYWYyNjRjNmQ5YmFjNmZmMmE5ZGM5YjAxOWY3YzA0ZmI4NGQxNGQ0YzU0Zjc4ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDlmZTA5NTgzMmFmMDdjNmE4NDhjZWZjYWVhMjI5OWUyM2RhOTg0NTFkNGYwYTZlZjA4Yzk4NTc3ODk2ZTk0MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMThkNTk4NjI0MjZjYTE0Yzg5ZjcyOWEwMjI5ZTEzY2RlZjEzZWMxNWI5OTA1YjViOTExNjIzODA4ZDA4ZTEzMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_be808d8d6c9e489db8924692d7ee9525",
+      "statement": "ChatOpenAI.with_structured_output() supports three methods for steering structured generation: 'json_schema' (OpenAI Structured Output API, most reliable), 'function_calling' (tool-calling API, legacy), and 'json_mode' (JSON mode, least reliable and requires prompt instructions). Strict mode ensures output matches schema exactly when supported.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L3882-L3925",
+          "version": "repo-lines-v1:sha256:55d542e5f57191c7ef596533bdfa7d01e29b0d4c86fc5b9db777e8eb465b3adc:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5OTc5OTM3ZDdkZTE5OTI3NmMzYjdjNWQxMmRlYzY4MmFlMGY5NWM1OWJmMDY5OWE0YjY5NGFkODVlZDExNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI3ZmI4MTQxYTAxM2MwNzAwMWU4NTI5MDliYzk1MWM0Zjg1NTVmOTM2ZDQ3NDcxMTliMGNmNzQwMTUxMjgzMDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5ZDc3NTgyZTI0MWJhNTBlZGIyNWI0MjFkZDBhYTZjMTZhZWFlODUwZTQxYWQyY2Q5OWRiZTZlYjgyMjA5ZDgifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-05T08:18:41.280Z"
+    "at": "2026-11-13T08:16:35.902Z"
   }
 }

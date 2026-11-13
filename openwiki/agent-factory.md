@@ -12,10 +12,10 @@ sources:
     resource: repo://libs/langchain_v1/langchain/agents/middleware/_trace_policy.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-10T08:17:41.265Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-10T08:17:41.265Z
+    at: 2026-11-13T08:16:35.902Z
 ---
 
 ## Overview
@@ -273,6 +273,8 @@ The factory ships with a comprehensive middleware library:
 ### Model Variants and Fallback
 
 - **ModelFallbackMiddleware**: Fallback to alternate models on failure. Useful for resilience (e.g., try GPT-4o, fall back to Claude).
+- **ModelRouterMiddleware**: Route between multiple models based on custom criteria.
+- **ModelRefusalMiddleware**: Handle model refusals and safety guardrails.
 
 ### Tool-Related
 
@@ -293,6 +295,7 @@ The factory ships with a comprehensive middleware library:
 
 - **HumanInTheLoopMiddleware**: Pause execution to collect human feedback or approval before critical actions.
 - **SummarizationMiddleware**: Automatically summarize long conversation histories to manage context length.
+- **AutoModeMiddleware**: Automatically switch agent mode based on the conversation context.
 
 ### Data Protection
 

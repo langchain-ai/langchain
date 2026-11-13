@@ -34,10 +34,10 @@ sources:
     resource: repo://libs/partners/README.md
   - id: openwiki-source-7da6afe7fe64c6589cf1fed0
     resource: repo://libs/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-11-10T08:17:41.265Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-10T08:17:41.265Z
+    at: 2026-11-13T08:16:35.902Z
 ---
 
 ## Overview
@@ -60,8 +60,8 @@ Users typically import from `langchain` (the actively maintained package) to acc
 graph TB
     User["User Applications"]
     
-    User -->|imports from| LangChain["langchain<br/>(Orchestration & Agents)<br/>v1.4.9"]
-    User -->|may use directly| Core["langchain-core<br/>(Base Abstractions)<br/>v1.7.7"]
+    User -->|imports from| LangChain["langchain<br/>(Orchestration & Agents)<br/>v1.5.0"]
+    User -->|may use directly| Core["langchain-core<br/>(Base Abstractions)<br/>v1.8.0"]
     
     LangChain -->|depends on| Core
     LangChain -->|depends on| LangGraph["LangGraph<br/>(State Graph Engine)"]
@@ -292,9 +292,9 @@ The core layer (langchain-core) is intentionally minimal and stable. Orchestrati
 
 ## Versioning and Release Policy
 
-- **langchain-core** (`v1.7.7`): Stable base abstractions. Major version bumps are rare and announced in advance. Deprecations carry multiple minor versions of notice. This is the "least-moving" part of the ecosystem.
+- **langchain-core** (`v1.8.0`): Stable base abstractions. Major version bumps are rare and announced in advance. Deprecations carry multiple minor versions of notice. This is the "least-moving" part of the ecosystem.
 
-- **langchain** (`v1.4.9`): Main user-facing package. Minor versions may add new agent patterns, middleware types, or orchestration improvements. Patch versions fix bugs. Requires specific langchain-core version (e.g., `>=1.7.5,<2.0.0`).
+- **langchain** (`v1.5.0`): Main user-facing package. Minor versions may add new agent patterns, middleware types, or orchestration improvements. Patch versions fix bugs. Requires specific langchain-core version (e.g., `>=1.8.0,<2.0.0`).
 
 - **langchain-classic** (`v1.0.8`): Legacy package for backward compatibility. Provides old chains, `langchain-community` re-exports, and deprecated APIs. New projects should use `langchain` instead.
 

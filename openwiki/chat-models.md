@@ -14,10 +14,10 @@ sources:
     resource: repo://libs/core/langchain_core/language_models/model_profile.py
   - id: openwiki-source-c479d4fffee5cf62576699e4
     resource: repo://libs/langchain_v1/langchain/chat_models/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-22T08:26:56.662Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-05T08:18:41.280Z
+    at: 2026-11-13T08:16:35.902Z
 ---
 
 ## Overview
@@ -30,7 +30,7 @@ The `init_chat_model()` factory provides a unified interface to instantiate any 
 
 ## Core Interface: BaseChatModel
 
-**Location**: `repo://libs/core/langchain_core/language_models/chat_models.py#L284-L2400`
+**Location**: `repo://libs/core/langchain_core/language_models/chat_models.py#L325-L2610`
 
 `BaseChatModel` inherits from `BaseLanguageModel[AIMessage]` and is a `Runnable` that accepts `LanguageModelInput` and produces `AIMessage` outputs. It is designed for subclassing; implementations must override `_generate` (required) and optionally `_llm_type`, `_stream`, and `_agenerate`.
 
@@ -52,7 +52,7 @@ The `_convert_input` method normalizes all input forms to a `PromptValue` for do
 
 ### Synchronous Methods
 
-**`invoke`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L474-L499`) is the primary synchronous entrypoint:
+**`invoke`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L516-L540`) is the primary synchronous entrypoint:
 
 ```python
 def invoke(
@@ -70,7 +70,7 @@ def invoke(
 - Extracts and returns the first generation's message
 - Propagates `run_id`, callbacks, tags, and metadata from config
 
-**`stream`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L726-L856`) yields `AIMessageChunk` objects as they arrive:
+**`stream`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L770-L899`) yields `AIMessageChunk` objects as they arrive:
 
 ```python
 def stream(
@@ -93,7 +93,7 @@ def stream(
 
 ### Asynchronous Methods
 
-**`ainvoke`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L501-L523`) is the async variant:
+**`ainvoke`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L542-L564`) is the async variant:
 
 ```python
 async def ainvoke(
@@ -109,7 +109,7 @@ async def ainvoke(
 - Awaits `agenerate_prompt`
 - Otherwise mirrors `invoke` behavior
 
-**`astream`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L857-L990`) is the async streaming variant:
+**`astream`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L900-L1010`) is the async streaming variant:
 
 ```python
 async def astream(
@@ -129,7 +129,7 @@ async def astream(
 
 ### Stream Decision Logic
 
-**`_should_stream()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L549-L585`) determines whether to use the streaming code path:
+**`_should_stream()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L590-L627`) determines whether to use the streaming code path:
 
 ```python
 def _should_stream(
@@ -157,7 +157,7 @@ Returns `False` (fallback to non-streaming) if:
 
 ### Stream Implementation Methods
 
-**`_stream()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2255-L2273`) is the sync streaming hook (optional override):
+**`_stream()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2298-L2316`) is the sync streaming hook (optional override):
 
 ```python
 def _stream(
@@ -173,7 +173,7 @@ def _stream(
 - Default raises `NotImplementedError` (fallback to `_generate`)
 - Receives run_manager for per-token callbacks
 
-**`_astream()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2275-L2311`) is the async streaming hook (optional override):
+**`_astream()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2318-L2354`) is the async streaming hook (optional override):
 
 ```python
 async def _astream(
@@ -190,7 +190,7 @@ async def _astream(
 
 ### ChatModelStream and AsyncChatModelStream
 
-**Location**: `repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1189-L1338` (ChatModelStream), `#L1345-L1580` (AsyncChatModelStream)
+**Location**: `repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1190-L1338` (ChatModelStream), `#L1345-L1580` (AsyncChatModelStream)
 
 For the v3 event protocol (`stream_events(version="v3")`), models return a `ChatModelStream` (sync) or `AsyncChatModelStream` (async) that expose **typed projections** for incremental content accumulation:
 
@@ -218,7 +218,7 @@ Each projection can be iterated for deltas or awaited/drained for the final valu
 
 ### Core Generation Methods
 
-**`_generate()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2208-L2226`) is the **required abstract method** all subclasses must implement:
+**`_generate()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2251-L2269`) is the **required abstract method** all subclasses must implement:
 
 ```python
 @abstractmethod
@@ -236,7 +236,7 @@ def _generate(
 - Must handle errors internally or propagate them
 - Receives normalized messages and a run manager for callbacks
 
-**`_agenerate()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2228-L2253`) is the optional async override:
+**`_agenerate()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2271-L2296`) is the optional async override:
 
 ```python
 async def _agenerate(
@@ -249,7 +249,7 @@ async def _agenerate(
 ```
 
 - Default implementation runs `_generate` in an executor
-- Subclasses override for native async API support
+- Subclasses override to call native async provider APIs
 
 ### Cached Generation
 
@@ -326,7 +326,7 @@ Inheritable metadata and LangSmith params are extracted via `_get_invocation_par
 
 ### with_structured_output()
 
-**Location**: `repo://libs/core/langchain_core/language_models/chat_models.py#L2385-L2565`
+**Location**: `repo://libs/core/langchain_core/language_models/chat_models.py#L2428-L2611`
 
 `with_structured_output()` wraps a chat model to constrain output to a specified schema:
 
@@ -353,7 +353,7 @@ def with_structured_output(
 
 ### bind_tools()
 
-**Location**: `repo://libs/core/langchain_core/language_models/chat_models.py#L2366-L2383`
+**Location**: `repo://libs/core/langchain_core/language_models/chat_models.py#L2409-L2426`
 
 ```python
 def bind_tools(
@@ -423,7 +423,7 @@ Partner packages (e.g., `langchain-openai`) override `_resolve_model_profile()` 
 
 ## Model Initialization: init_chat_model()
 
-**Location**: `repo://libs/langchain_v1/langchain/chat_models/base.py#L197-L533`
+**Location**: `repo://libs/langchain_v1/langchain/chat_models/base.py#L232-L533`
 
 `init_chat_model()` is a unified factory function that instantiates any supported chat model by provider name, with automatic dependency management, provider inference, and fallback strategies.
 

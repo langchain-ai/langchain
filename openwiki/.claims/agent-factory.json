@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ce613ff58bd0e27d46967aba9681fa3162fef9c7ba199f251d76f97573735b2f",
+  "pageVersion": "sha256:3ec2a9d0e57400023d060ff4995102c0fd38bd1c09c8773e451eaedef734942c",
   "claims": [
     {
       "id": "claim_0d3a898647bd4d1d9c08eb386919394b",
@@ -158,11 +158,11 @@
     },
     {
       "id": "claim_4a3da71e41f94163825c83ce79fb8b84",
-      "statement": "The factory ships with middleware for: retry/errors (ModelRetryMiddleware, ToolRetryMiddleware, ToolErrorMiddleware), fallback (ModelFallbackMiddleware), tool filtering (LLMToolSelectorMiddleware, ToolCallLimitMiddleware, ProviderToolSearchMiddleware), execution (ShellToolMiddleware), search (FilesystemFileSearchMiddleware), interaction (HumanInTheLoopMiddleware, SummarizationMiddleware), state management (ContextEditingMiddleware, TodoListMiddleware), protection (PIIMiddleware), and call limiting (ModelCallLimitMiddleware, ModelRefusalMiddleware).",
+      "statement": "The factory ships with middleware for: retry/errors (ModelRetryMiddleware, ToolRetryMiddleware, ToolErrorMiddleware), fallback/routing (ModelFallbackMiddleware, ModelRouterMiddleware, ModelRefusalMiddleware), tool filtering (LLMToolSelectorMiddleware, ToolCallLimitMiddleware, ProviderToolSearchMiddleware, LLMToolEmulator), execution (ShellToolMiddleware), search (FilesystemFileSearchMiddleware), interaction (HumanInTheLoopMiddleware, SummarizationMiddleware, AutoModeMiddleware), state management (ContextEditingMiddleware, TodoListMiddleware), protection (PIIMiddleware), and call limiting (ModelCallLimitMiddleware).",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py#L5-L31",
-          "version": "repo-lines-v1:sha256:efa0b77a9141b80def9858c5dad5912315c3d76e5c9fe4551f476040b4db0cb9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YzM4NzFlYjlmMGVlYmUxODIyMTE3MmM5ODNiNDEwZDI4NDU2MzM4NDRmZGI3Y2RkNDBmOTQ0ZGY0MWYwMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMGYxYzljYjUyOGVkMjQ1OWJjNTliYjM4ZDQwYjdkMzExNjRmZDJkMGRmOTcyMjVmYmUwYjE4MmQxMzZiMzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZTdjMDdlMTM0MmE5YzI3MGJlMGVmZDY0ZmMxNzVjZWM4ZTI0NGJlNzMwYjEzMTZhZTIwNDdkNDRlMGIyMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxOWY2YjcwNmJmYjg0NTU5ODlmNTkwMjkyYmU4ODUzMDdmMjNlZDBiMmQ3ZGM1M2UyMDY2YzQ2NWVhNWFjYzAifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py#L5-L33",
+          "version": "repo-lines-v1:sha256:26bda65dc6d95035bb290d4d40c8499c9b2e07464fb583efdf1d89270b361680:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YzM4NzFlYjlmMGVlYmUxODIyMTE3MmM5ODNiNDEwZDI4NDU2MzM4NDRmZGI3Y2RkNDBmOTQ0ZGY0MWYwMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMGYxYzljYjUyOGVkMjQ1OWJjNTliYjM4ZDQwYjdkMzExNjRmZDJkMGRmOTcyMjVmYmUwYjE4MmQxMzZiMzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZTdjMDdlMTM0MmE5YzI3MGJlMGVmZDY0ZmMxNzVjZWM4ZTI0NGJlNzMwYjEzMTZhZTIwNDdkNDRlMGIyMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxOWY2YjcwNmJmYjg0NTU5ODlmNTkwMjkyYmU4ODUzMDdmMjNlZDBiMmQ3ZGM1M2UyMDY2YzQ2NWVhNWFjYzAifQ"
         }
       ]
     },
@@ -233,6 +233,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-10T08:17:41.265Z"
+    "at": "2026-11-13T08:16:35.902Z"
   }
 }

@@ -1,20 +1,66 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:eaf4bc02ac9b5476c02b183d7dfcf06a32616522de48f363fae7492c8305dd59",
+  "pageVersion": "sha256:350bf26838196910e583da9eeb7a912be71774c604a083f2f8a6b1276b31ddea",
   "claims": [
     {
-      "id": "claim_1f409f960edf4fbcb921c8bef2c2f424",
-      "statement": "Partner packages like langchain-openai follow a standardized structure where core abstractions are exported through a public __init__.py module, including ChatModel implementations (ChatOpenAI, AzureChatOpenAI), legacy completion models (OpenAI, AzureOpenAI), embeddings integrations (OpenAIEmbeddings), and provider-specific utilities.",
+      "id": "claim_3ad3740cfbd545d8ba64cdf277cd6364",
+      "statement": "Partner packages follow a standardized directory structure with Python package under langchain_provider_name/, chat_models/ containing base.py with ChatModel implementation, data/ containing auto-generated _profiles.py and provider-specific profile_augmentations.toml, and tests/ directory with unit_tests and integration_tests subdirectories following the same chat_models structure.",
       "evidence": [
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/__init__.py",
+          "version": "repo-file-v1:sha256:7b83f8aa2880e512d34253794519433b435e010bf59b0e6cf81e5ff7c49dc18b"
+        },
         {
           "resource": "repo://libs/partners/openai/langchain_openai/__init__.py",
           "version": "repo-file-v1:sha256:5673ccbe8f53267c2027dd390051424928a6e1e744c2f8c8a418960a29dccf4d"
+        }
+      ]
+    },
+    {
+      "id": "claim_c17a34f7609a4eb5b7450faa718d1f60",
+      "statement": "ChatModel implementations must inherit from BaseChatModel and provide: _llm_type property returning provider identifier, _generate() and _stream() synchronous methods returning ChatResult/ChatGenerationChunk, _agenerate() and _astream() async variants, plus model configuration attributes (model identifier, api_key, temperature, max_tokens).",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/chat_models.py",
+          "version": "repo-file-v1:sha256:5f785dfb8457197966c2bba1dbd1a97999110b0ae376cb3547ea122e4b2669b2"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/__init__.py",
+          "version": "repo-file-v1:sha256:b69d77fd9aa09cdc548568ae5103af5800deaaf4e2742b2ca8516e99e9a3b4bb"
+        }
+      ]
+    },
+    {
+      "id": "claim_fc6860ad00e7424cae88b7e93e271064",
+      "statement": "Partner packages must inherit from langchain_tests.unit_tests.ChatModelUnitTests and langchain_tests.integration_tests.ChatModelIntegrationTests for unit_tests/chat_models/test_standard.py and integration_tests/chat_models/test_standard.py respectively, providing chat_model_class property and chat_model_params fixture for test configuration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/tests/unit_tests/chat_models/test_base_standard.py",
+          "version": "repo-file-v1:sha256:dbd3bcb89b9e62550e7f3882af864dcf4a259ba3079859623e0cc95803501c5b"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py",
+          "version": "repo-file-v1:sha256:4520bf0c78fbf6a6791276c867203d5fb046f96b247d9a110fd3c859ceaedae7"
+        }
+      ]
+    },
+    {
+      "id": "claim_fb80374b41c24bf6957195aa5eb17e34",
+      "statement": "Model profiles are organized in data/_profiles.py (auto-generated from provider registry) and profile_augmentations.toml (provider-specific overrides) defining model capabilities including context_window, supports_vision, supports_tool_calling, supports_structured_output, and pricing information.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/data/_profiles.py",
+          "version": "repo-file-v1:sha256:c37c3c0c07172e5d14fa2fae6f0b742f69431948f8fb4b7911084588639236fb"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/data/profile_augmentations.toml",
+          "version": "repo-file-v1:sha256:11e868594704eee63f3564925fffe44d26e4f7a90dc70053905131475b1832d4"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-11-13T08:16:35.902Z"
   }
 }

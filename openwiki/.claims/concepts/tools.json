@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e42f44aa9555641a9998932bd24c921ff6b18b47fbaa4b1904c2b535a022ff32",
+  "pageVersion": "sha256:ed2a633a034e717e41c662ac159bb59a465f0bd86364a58221bc8c60c941fa89",
   "claims": [
     {
       "id": "claim_d0764a29684a4df1bcbf44f1ca35eda8",
@@ -275,12 +275,12 @@
       "statement": "handle_validation_error controls Pydantic ValidationError handling: False (re-raise), True (return error message), string (custom message), or callable (custom handler); errors wrapped in ToolMessage with status=error if tool_call_id is present",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/tools/base.py#L1115-L1120",
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L1116-L1121",
           "version": "repo-lines-v1:sha256:f509c3d6fce267b1acc76813759069acb3656555a3fcbd5c1ae0c635623ebe0c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGQwMmUyN2U1ZmZlNmNjMDVhNzdiNDIzZWVmNWZmODkzZjIzMDk2ZTNjYWQxYzFmN2Y4OTk3MTU4ZDIzNzIwZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGVjZmQ3NjJhYjM0NjdjYmI1YmMzNGQ4NmIxMmRkZDU1MDNhYzg1YWFiOTc1YzUzNjU1ODc0OWVhYjU0MmNlOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTllOWQwMTE5NjVkZGIyMjVjZjA0M2U0NjY1NGVkOGM5MGI0ZmU0MTAyYzcyMDAxYzNlMzA5NzhlY2RjNzVmNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2RhZTBmMzIyNTE5MGZkMGMyMGE3ODYzZDg4ZTUyNjE4NjM3ZGZiOGY4N2YzNTJlM2U0NWIxODFlYzQ5MjAyYyJ9"
         },
         {
           "resource": "repo://libs/core/langchain_core/tools/base.py#L542-L545",
-          "version": "repo-lines-v1:sha256:889cf30e7997c076103c80df92f2c764cde2c9a81f263fce5e9f3b22966528bb:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTUzOTQ3MzRkYTViNjhiZDM5YmU5NTdkMzI1NmY2ZGYzOGZiNDc0OWU3OGE1NmQ0ODFiMDk2M2Q2MDFjZWU0NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTMxZjg1NWUxNjUyZWVhOTZhZmEzYzdjYmU3NTBjOGQzM2YzODMzNzdhMWMzMThlMjhlNGU2MWQxZjU1MzJhYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2U2OWYzMDQzMTZjM2ZlMTVkNDk5OTEwNTA5ZWE5ZThkMWJkMTUwZDI1ZGEwMzcwZmQ1Y2UwZWVkZWQ4ZjdjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTJhNWY5MzJjMWJjNWM1OGQyYjI4Yzg1Yzg5OGYxZjQ2OWY3NTE0N2FiNTY1NWNiM2VkOWQ0NDQwMWFmNTA5NCJ9"
+          "version": "repo-lines-v1:sha256:a07fd66c9f5e91aec110e6c17e51281ebdc3066accba0478acfa4f49c4f2aaf1:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjBmODU3ZmUxYTgwOGNkZmI1MDhkYWQ5YjVkNWIwMmI0YWZlZDkxM2ZkY2MwZTc5OGYzMWQ5MDMzNWIwNzY5NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2I1NDAzZDJjNmE4M2RmOTVkOTRmOWZkZWUyNWYzN2M0ZGZhMmIwNjA1NWFkMzdjMDNiNTQ3ODk5YWVmNjc1YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTFkZjNkODkxMzRlZjMzMWQ1YjY1ZjlkMDljYWU3MjRhNWFhZjA2ZmJlMWE2MGYyNmU0NGExZjk5YWU4YzkwOSJ9"
         }
       ]
     },
@@ -311,6 +311,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-06T08:17:28.425Z"
+    "at": "2026-11-13T08:16:35.902Z"
   }
 }
