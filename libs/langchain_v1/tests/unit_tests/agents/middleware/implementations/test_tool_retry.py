@@ -14,6 +14,7 @@ from langgraph.types import Command, interrupt
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware._retry import calculate_delay
+from langchain.agents.middleware.pii import PIIDetectionError, PIIMiddleware
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
 from langchain.agents.middleware.types import wrap_tool_call
 from tests.unit_tests.agents.model import FakeToolCallingModel
@@ -1142,3 +1143,30 @@ def test_tool_retry_reraises_graph_bubble_up() -> None:
         middleware.wrap_tool_call(request, handler)
 
     assert calls == 1  # bubbled up on first raise, not retried
+
+
+def test_tool_retry_does_not_retry_a_pii_block() -> None:
+    calls: list[str] = []
+
+    @tool
+    def lookup_user(user_id: str) -> str:
+        """Look up a user."""
+        calls.append(user_id)
+        return f"User {user_id}: alice@example.com"
+
+    model = FakeToolCallingModel(
+        tool_calls=[[ToolCall(name="lookup_user", args={"user_id": "u1"}, id="1")], []]
+    )
+    agent = create_agent(
+        model,
+        [lookup_user],
+        middleware=[
+            ToolRetryMiddleware(initial_delay=0.01, jitter=False),
+            PIIMiddleware("email", strategy="block", apply_to_tool_results=True),
+        ],
+    )
+
+    with pytest.raises(PIIDetectionError):
+        agent.invoke({"messages": [HumanMessage("hi")]})
+
+    assert calls == ["u1"]
