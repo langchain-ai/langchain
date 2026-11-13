@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from typing import Any, Literal
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
+import pytest
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, ToolMessage
+from langchain_openai.chat_models.base import BaseChatOpenAI
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types import CompletionUsage
@@ -313,6 +315,25 @@ class TestChatDeepSeekCustomUnit:
         assert "reasoning_content" not in payload["messages"][2]
         assert "reasoning_content" not in payload["messages"][3]
         assert payload["messages"][4]["reasoning_content"] == "r3"
+
+    def test_get_request_payload_raises_when_base_drops_message(self) -> None:
+        """A shortened payload cannot be paired with the original messages."""
+        chat_model = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+        messages = [
+            HumanMessage(content="Hello!"),
+            AIMessage(
+                content="Hi!",
+                additional_kwargs={"reasoning_content": "thinking..."},
+            ),
+        ]
+        payload = BaseChatOpenAI._get_request_payload(chat_model, messages)
+        del payload["messages"][0]
+
+        with (
+            patch.object(BaseChatOpenAI, "_get_request_payload", return_value=payload),
+            pytest.raises(ValueError, match="longer than"),
+        ):
+            chat_model._get_request_payload(messages)
 
 
 class SampleTool(PydanticBaseModel):
