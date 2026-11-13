@@ -1,5 +1,7 @@
 """Standard refusal blocks and provider translations."""
 
+from typing import Any
+
 import pytest
 
 from langchain_core.exceptions import ModelRefusalError
@@ -60,6 +62,58 @@ def test_openai_responses_refusal() -> None:
             "extras": {"phase": "final_answer"},
         }
     ]
+
+
+@pytest.mark.parametrize("message_cls", [AIMessage, AIMessageChunk])
+@pytest.mark.parametrize("provider", [None, "openai"])
+def test_openai_refusal_backwards_compatibility(
+    message_cls: type[AIMessage], provider: str | None
+) -> None:
+    block = {"type": "refusal", "refusal": "blocked", "id": "msg_1"}
+    content: list[str | dict[Any, Any]] = [
+        {"type": "text", "text": "Here is"},
+        block,
+    ]
+    additional_kwargs = {"other": "value"}
+    message = message_cls(
+        content=content,
+        additional_kwargs=additional_kwargs,
+        response_metadata={"model_provider": provider},
+    )
+    assert message.additional_kwargs == {"other": "value", "refusal": "blocked"}
+    assert additional_kwargs == {"other": "value"}
+    assert message.content == content
+    assert message.content_blocks == content
+
+
+def test_openai_refusal_with_legacy_response_metadata() -> None:
+    block = {"type": "refusal", "refusal": "blocked", "id": "msg_1"}
+    message = AIMessage(
+        content=[block],
+        id="msg_1",
+        response_metadata={"model_provider": "openai", "id": "resp_1"},
+    )
+    assert message.content_blocks == [block]
+
+
+@pytest.mark.parametrize("message_cls", [AIMessage, AIMessageChunk])
+def test_refusal_preserves_explicit_additional_kwargs(
+    message_cls: type[AIMessage],
+) -> None:
+    message = message_cls(
+        content=[{"type": "refusal", "refusal": "blocked"}],
+        additional_kwargs={"refusal": "original"},
+    )
+    assert message.additional_kwargs["refusal"] == "original"
+
+
+@pytest.mark.parametrize("provider", ["anthropic", "google_genai"])
+def test_non_openai_refusal_does_not_add_openai_kwargs(provider: str) -> None:
+    message = AIMessage(
+        content=[{"type": "refusal", "refusal": "blocked"}],
+        response_metadata={"model_provider": provider},
+    )
+    assert message.additional_kwargs == {}
 
 
 def test_anthropic_refusal_from_stop_details() -> None:
