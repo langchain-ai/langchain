@@ -4,10 +4,14 @@ from langchain_typesafe import __all__
 
 EXPECTED_ALL = [
     "Answer",
+    "Box",
+    "BoxAnswer",
+    "BoxCoordinates",
     "Choice",
     "ChoiceAnswer",
     "ClassifierRequest",
     "ClassifierResponse",
+    "Content",
     "Noul",
     "NoulAnswer",
     "NoulCriteria",
@@ -16,7 +20,6 @@ EXPECTED_ALL = [
     "ScoreAnswer",
     "State",
     "TypeSafeClassifier",
-    "Usage",
     "__version__",
 ]
 

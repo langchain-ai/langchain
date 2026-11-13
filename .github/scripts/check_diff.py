@@ -148,7 +148,7 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
             }
         ]
     if dir_ == "libs/core":
-        py_versions = ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        py_versions = ["3.11", "3.12", "3.13", "3.14"]
     else:
         py_versions = ["3.11", "3.14"]
 

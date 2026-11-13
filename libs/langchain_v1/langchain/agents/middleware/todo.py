@@ -1,14 +1,14 @@
 """Planning and task management middleware for agents."""
 
 from collections.abc import Awaitable, Callable
-from typing import Annotated, Any, Literal, cast
+from typing import Annotated, Any, Literal, NotRequired, cast
 
 from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
 from langchain_core.tools import InjectedToolCallId, StructuredTool, tool
 from langgraph.runtime import Runtime
 from langgraph.types import Command
 from pydantic import BaseModel
-from typing_extensions import NotRequired, TypedDict, override
+from typing_extensions import TypedDict, override
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,

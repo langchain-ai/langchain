@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:03aa773aa584d8166689edd1dfeb27c67effa98bdb6e480a2c306c3b1ca9b207",
+  "claims": [
+    {
+      "id": "claim_2398118949694e65ab0528bfdd317817",
+      "statement": "The reference page /openwiki/reference/callbacks.md is deprecated in favor of the canonical documentation at /openwiki/concepts/callbacks.md for comprehensive coverage of LangChain's callback system, including callback handlers, callback managers, context propagation, and built-in handler integrations.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/base.py",
+          "version": "repo-file-v1:sha256:10d692bbd4cfccd82ad514649682f79306b9cd730235c3838bc3d1a96a455dea"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/callbacks/manager.py",
+          "version": "repo-file-v1:sha256:323e48901ebf1ecd2c1b197e8cc1d81298366b29ee89aa02ab729d725fbcfebc"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-10-25T08:23:03.589Z"
+  }
+}

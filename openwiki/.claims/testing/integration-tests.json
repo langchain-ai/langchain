@@ -1,0 +1,278 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:67c94e39f8f76fbb6b1b01e587fbe810a97ac7ea7c4a55402dfbe757dc0e685a",
+  "claims": [
+    {
+      "id": "claim_1d60970c94894e56b803c4a5dd29b5e1",
+      "statement": "VCR cassette-based integration tests record HTTP request/response pairs to YAML+gzip-compressed files and replay them in subsequent runs, with request matching on HTTP method, URI, and JSON-normalized request body by default.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_test_vcr.yml#L40-L54",
+          "version": "repo-lines-v1:sha256:fb372eb14fca4f500ce0da9768b51a21bbf2d878aca681e0397dd1b9adcb1e1e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1OTRjZTk0YTg5YTFmODI2ODYyNDc1MWIyNWMyOWEyN2NiMmRiN2U5MmFmNTU0NDAwN2QzYWFjMzBiNjVkZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMjhkMzQxMWRiMjQ1NWE4NTczYjkxMGE3Yzc5MmMxZTZkOWZkNTg5N2JmNDEwZTRlYmI3Yzg5ZTk2N2ZmMGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxYWYzOTBjZmY1MzYxNWQzMGI1OGEzOGMxNWIwMGFjMzYyYzkxMjE5ZmNkYmZkZmJkZjg2ODY3ZjU0N2U5ZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyNGNlY2QyNTk0NDkxMTM5ZThkMzk4YzgzOGJjMGM5MDI0OGQ0ZDk2OGJjMjdkYzJlZGFiOWY4NzhmZTRiYWEifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/conftest.py#L190-L204",
+          "version": "repo-lines-v1:sha256:e1eddc5a41b085268d3db96f1152e60ae2dd6b69320f898d3da34980bdfbbe5d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUzMDM2NWQxNGM3ZGFiM2Q2NWIyMGVlYjNhZmU3ZTVkNGUzMGU4Zjc5OGU3OWFkMDZlNTk0MjI4Nzc0YTc0ODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5MWU3YzkwZDY2ZTYzNjZmODcxM2EyZjkzMjE1OWY5ZjAxYTk0MzU2ZjIzNGNmODk4YTdjNDliYzdkOTlkMjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczMDMyNWY5ODBiNGFiZTBhNWJmZGViMmQzZWI5MzQ4NzZkM2EwNDMzMjU2NDQ0NzJjMTM2Y2NhMDJiOWE4MGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRjOGExOTM1MTY1NGUwMmMzY2E1NTBmOTFhYjRmZTkxMGNlN2Y2M2E2Y2YzYmY2MWJiYzY1MWIxZjI1ZjllOTUifQ"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/conftest.py#L130-L143",
+          "version": "repo-lines-v1:sha256:0144da3602191e08b1c7c3a3d0ea02abb6d35b5ffbf3a7e28f89554b904f1087:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNzhlNTQ1YjAyMTRlNDM2NDIxYTRiMzBiZDQ0NThjNDgxZGY5OTY5NWRkNjRmZjhkNmM1MDkxMTZjMmE5NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzZDE3MWRlNzU0MzFhMDIxYTBkOTRmYTc2ZmFiZjBkNzEzOWM4OThjMWEwYjQ0YjQzY2E2MDkwM2ZhMWI4NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMzc1ZjdjZDVkMWMzYWI1YzFlMjE1N2ViNjFhNjRhMDRlOTZiZDA1YTg1NThkYmY0MWRmZWUxMTE4YjcxMDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_30e43d456e30418b9dcf86cb4c90f0f9",
+      "statement": "Cassettes are stored in tests/cassettes/ with .yaml.gz suffix, use CustomSerializer for safe YAML parsing with gzip compression, and support playback repeats of the same response for duplicate requests.",
+      "evidence": [
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/conftest.py#L130-L143",
+          "version": "repo-lines-v1:sha256:0144da3602191e08b1c7c3a3d0ea02abb6d35b5ffbf3a7e28f89554b904f1087:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNzhlNTQ1YjAyMTRlNDM2NDIxYTRiMzBiZDQ0NThjNDgxZGY5OTY5NWRkNjRmZjhkNmM1MDkxMTZjMmE5NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzZDE3MWRlNzU0MzFhMDIxYTBkOTRmYTc2ZmFiZjBkNzEzOWM4OThjMWEwYjQ0YjQzY2E2MDkwM2ZhMWI4NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMzc1ZjdjZDVkMWMzYWI1YzFlMjE1N2ViNjFhNjRhMDRlOTZiZDA1YTg1NThkYmY0MWRmZWUxMTE4YjcxMDcifQ"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/conftest.py#L47-L82",
+          "version": "repo-lines-v1:sha256:df5c8cedc06db79e7f2b48dae77d72b15c3e1b4dc9663a7c5e076f731c40bfc2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMyOTQyMzQ1NjE1YzAwYjE1MzgxZTYyODg2YmRhM2ZmZmY4YTU1ZjljZTVmYTAzNjBjMmI1OGI1OTg4MWU5ZjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYzI5MmY2NTFiMGZmNzY3M2U1YTY5NWMyZjg4NGQ2MzJkMWIyMjY1YjQ5ZGQ1NmE1YzE0YmQxM2E5OGY2ZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI5ZWUxOTMyODRlODJmYjc2YWY0ZjRmNTgzZTQzZjA1MDdiNWYxMzJiMTY0ZTZkMzUyM2JhZmI5NGMwYzdiMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIxN2U3ODJhY2U3YzhmNTk2YjRlZmZiMTI5ZmQ0ZDljNjFlOTk4ZmRkMGZhNDdlN2EwNjY2ZjIyM2MzNTdlZDUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_914058bd1055405fbf2c665cc6ea5a4a",
+      "statement": "VCR credential redaction is applied both globally (authorization and api-key headers) and per-package (e.g., OpenAI redacts OAuth tokens, JWTs, all headers, and request URIs); binary content (PNG, JPEG, PDF, audio) is identified by magic byte prefixes and skipped to avoid unnecessary overhead.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/tests/conftest.py#L116-L164",
+          "version": "repo-lines-v1:sha256:2da8d60779eed3186ff3d907bb805d98774b531910726576b69cfb283511273e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY0MWFjNTYzMTEzYjVjNDliZTQxMWNlNzE0OGFmZDRiOGNjZTk3MmU2NDllZWQxMzk3ZmNhZDJkOWE3YTI2ZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMzNmZkZGU5ZWEzNmM4NmEwNTg0ZWMwMDc2ZDFlZDA1ZDY3YWI5NzFiYTc0MGE2YjFlN2IwMTQ0OTc1ZGQwYTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJkMzUwNDdmZmNiNDk4NmY0NjJiYzhiMDgzNmY0MjkyM2M2OTAwZGZhMjE5OGViNTdiYmZlOTZmOThhMzk2ZmEifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/conftest.py#L13-L56",
+          "version": "repo-lines-v1:sha256:a497f3b4659e1094f25bbeabe540ad46103790d33ea8d0ef4a02e83f0017df9d:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM1YmMyNWY5MGU2MjgxZDIxYjI5ZTJjYzliYmFjN2JjNDFhNTgzNGJmOGE1N2Q5NDMwMzIzOTYzZDFlNDdhOGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1YzFjNDYyZTJhMzlkNzQ3NTlmNWUxYjEyNmY3NjgzYTJiNzMwMTE4ZTE4ZjUxMjJiMDhjZWRlZWI2NTBlMjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUxNDhkYzk5YzliMDFlMzI0MTg1ZjZlM2VhZmVlYjVkMDg3MzcxNjAyYWIxYzA1MTRkMDU4YzQwZjVjZWY1OTcifQ"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/conftest.py#L120-L127",
+          "version": "repo-lines-v1:sha256:5d574a7dd47bbd31a647f0bc9cebe10925bc98c282f36bf3e95e7080fed0ec73:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjMzNDNjM2M0ZGY5YmE1M2UyYzMzMDdkMjA1Mzg0MTZlNDgyZTIxMTY3NzU1MmI4MzFjZWRlM2YxY2FhMmRhZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzY3ZTZmMDBkNmMyOWNiZDE2NDFkY2U3ZjZjYmExMTdjYTQ4ZjE3NDdhNGE3NzViZTFiM2ExNGIzYmM5Mjg3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTVlOTAxZmExNTk2MTU1NjQxOTlmODcyMTczZmU4ZmIyNTdhMTVmOWEwNTdhNGIwNjIwOWEyMjg2NTlkYjEyZCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_aa4dc7a668ba462bba5de0d7485aa0dd",
+      "statement": "CI workflow _test_vcr.yml runs VCR cassette tests in playback-only mode (--record-mode=none) with a fake API key to detect stale cassettes caused by test input changes without recording new interactions.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_test_vcr.yml#L40-L54",
+          "version": "repo-lines-v1:sha256:fb372eb14fca4f500ce0da9768b51a21bbf2d878aca681e0397dd1b9adcb1e1e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1OTRjZTk0YTg5YTFmODI2ODYyNDc1MWIyNWMyOWEyN2NiMmRiN2U5MmFmNTU0NDAwN2QzYWFjMzBiNjVkZTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdlMjhkMzQxMWRiMjQ1NWE4NTczYjkxMGE3Yzc5MmMxZTZkOWZkNTg5N2JmNDEwZTRlYmI3Yzg5ZTk2N2ZmMGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjMxYWYzOTBjZmY1MzYxNWQzMGI1OGEzOGMxNWIwMGFjMzYyYzkxMjE5ZmNkYmZkZmJkZjg2ODY3ZjU0N2U5ZTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYyNGNlY2QyNTk0NDkxMTM5ZThkMzk4YzgzOGJjMGM5MDI0OGQ0ZDk2OGJjMjdkYzJlZGFiOWY4NzhmZTRiYWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ea431d1aecf74e25b678fd28fe58248f",
+      "statement": "Scheduled integration tests (integration_tests.yml) run daily at 1 PM UTC against live partner APIs with real credentials from GitHub organization secrets, scoped to 'Scheduled testing' environment, and emit traces to LangSmith with GitHub run metadata.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L1-L8",
+          "version": "repo-lines-v1:sha256:37513b9ee9e7be7f2db866d60f0db6585f28d2b048611d4a9c04fe5f9b2623e9:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc3NmQ3NzIxNGVhOTRiYmQ3MmNlZDA2YzQ5Y2ViZDk1MWNjOTIyNjczYmZhNDVhMmNlMmU0MDZjNDJiZTJjMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGEyNWQzNDc0YWFhMTFkODQzOTk2YTQzZGUwMGMzNmJjM2IwNzhlYmVhMDE4OTM3MjJlMzc1MDk1YjE4YTdlYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmU0ZThjMDA4MTAzNTk2NGZhNzVjYWVhZDFiZjA1MTIxYzlhN2U3NmUxZjNmZWIyZmQ5MjBkNjI1OTJjMjZjYyJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L154-L159",
+          "version": "repo-lines-v1:sha256:ecb7a438ff34272ea55f9c7b47abb1f6a3d5295a335669bf6e436d56f4020b74:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTJjYzM4YTkwNTZkNGNhNjJkMjgzNGRkNWMzNzgyZjYxZjViYmQ5OTcxM2NkYzJjYTU3MzUyYjM1OGU2NTJlOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJlZjdmZGRmZGQ1YzU2OWY3NTcwMjRjMDExNzNjOWRjNDdmOWUwNDMyMjczM2JkN2JlYzVlMWFhYjZmYjEwZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjdiMzA0ZWEwNjdhY2I2ZGU1YWM1MjU4ZWRkMWI1NWM0YTJjMzlhNzgzYzkyNzA2MTYxM2ViMTg5ZDA0YTkzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmYwMTlmYWU2ZWE0Yzk5OGJmMmZjZDVjM2FhY2I1YzNkNjA0ZmU4MTQ5ZjhiNDJkNmM3ODRlYjgzMjliODc5ZiJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L279-L290",
+          "version": "repo-lines-v1:sha256:097af5d0e638fceef620f0acc4e15c170de1fc676dd0b0d186f7ed4fb3560b54:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjllMDY2NDMxMTYyMzNkODU2YzE1YTQzODYwZThiZjYwYzVhYjU2ZThiZGUyNDM2YWQ0YzIxOTc3ODMzNThiODYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMwYzRhZWJhYzNhYWNhZmUzNDhiYzVhMGUzYzM0NWMwZjgwOWJlZjAyMDY2ZmE0ZjVmYWQxNzFmNDFkNTVmODIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRhMjk2M2E3YjEwM2UwYmNlM2Y4OWQ0ZjVjM2YwODZkYmEwNDBkZjRmN2M1MWE0ODZhZjgxN2M4MDhlODcwZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMxYjY4ZThmNDRlMDkwMjFjNDJhNTIxOWFkZTE4MjViOWUyYWJiZjVlMjQ5MGQyMThkNDE5MWQ5Njk2OTE3YzAifQ"
+        },
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L57-L58",
+          "version": "repo-lines-v1:sha256:ab47ab3e252d067fdd623ce50ddd22f47d8817402b95858e47d0fbd3e8ec70ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTI4ODQwYTZiN2U2MDMwM2Q4N2JlNGQ0ZDgyYTUwYjMzMjg0MjkwZGVjNGUzNDI4ZDQ3ZDkzZmJlZmQxYzU5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODE2MDg1ZWI2NTcwYzllMTBlMTVjYjQxNzkxNGU1YTc3Y2YwZmYxZDYxZTFmMDY5YzNhYmNmM2E1Y2QwMmU2ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTNjODc0MDA4OTZlODM4OTY5NjNkYzNjN2YwZWQ1NWQ1YzkyZTRlMjcyNDNkMjA5NDVkOTY4ZDM3ZmVhMWQ5OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2UyNzQyMjRlOTgyODgxZDk4MWI4YWRkZmRkYzk4ODBiMmYxZDA3ODAzMTVkNzBkNWQ1MTkxYzc1Zjk1YTViMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_78a4068d548b4607a632ff89b446cf73",
+      "statement": "Integration tests require test_integration dependency group (installed with --group test_integration) which includes provider-specific extra dependencies like httpx, pillow, and VCR beyond base test dependencies.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L233-L233",
+          "version": "repo-lines-v1:sha256:2fb07d1a02acae0fd67639315ad3468db9b5c07e839124cb6b2c5933a4af9653:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmZiMDdkMWEwMmFjYWUwZmQ2NzYzOTMxNWFkMzQ2OGRiOWI1YzA3ZTgzOTEyNGNiNmIyYzU5MzNhNGFmOTY1MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmZiMDdkMWEwMmFjYWUwZmQ2NzYzOTMxNWFkMzQ2OGRiOWI1YzA3ZTgzOTEyNGNiNmIyYzU5MzNhNGFmOTY1MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDMxODc4MTdhYTg0NTJhYWM1MDA2ODg0NDY3ODQ0MmRhMTkyY2IwN2M1ODhhYTM3ZmNhYjVkODM5YzI0MDc4MiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzZkYjJkMzAxZTJjMWMxZDUxNzFiNjg2MTU1ZWY5Mjk0NmEwZjU4YzJkY2QzYzMyMGNmOWNkZjBjNTI2MjdhMiJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/pyproject.toml#L68-L73",
+          "version": "repo-lines-v1:sha256:a988f17b62c344d8aae4cce3ee31dd14e2fa57ed4385644846c391b8de501626:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjgzYTk4MzZkZjIyMjhiNWQ5MzhmMTE1Mjg2YTkxOWExZDkzNTFmOGUwMzc0M2M3YTdjYmI5ZTlkOTE4NjBhNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTZkNGI3M2YwOWE0NTBlYmY2NDEyNDBiOTM4ZmNjMjMwZWFkYzhjOTBlNjhlNTFkYTA4YmY5N2ViZTFhZTQ1OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODkwOTFiN2JiOTgxMDBiNTI4OGZkMjk2MTI1NzAxODU5OTQ3ZjljMzFhNzFmMDEwYTZkNDQyYjlmYmE1MzBhNiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_3d68f41abeb84969944d007cf807cdca",
+      "statement": "External partner packages (langchain-google, langchain-aws) live in separate GitHub repositories and are checked out and reorganized into libs/partners/ structure during integration_tests.yml, with local editable installs overlaid to test against the current branch's langchain code.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L180-L207",
+          "version": "repo-lines-v1:sha256:5b9aaeae8e8e4147295198397e709dfe42465c2d5367cb333e622ee4852257ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1NjM5ZDFjYzRlNzE2NmUyYzlhYjNhM2Y4YTllMmIwMzNjYjcxNDZiYWU2MWU1YzZkOWM4YjIwYzEzYTNlZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmNTRlMjI4NzhmYTFiNzg5MjAyZDA3NDkyOGM3ODBjN2I5MWJhNDIzODI1ZjI5MTJiZTI3YTZkN2YwOTRhODEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0NmZmMzU1ZGZmZDExNTNiMDQ2NzhiMGIzMDVjNDBhNmU0MDNmYjk1YzEzNDUxNzZlODRmNTEzZTQyZmFiNjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQyYjcxOWQ0ZDdiY2UyYzFkNTdjZjQ1NjhhYWY3ZjMxYjY3ZjhhMmFkZDEzYWUzMDQxODRiMjMwOTU5ZGE2ZGEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fd461425c7b4476d8266f9dc5ae0fa32",
+      "statement": "Standard test framework (langchain-tests package) provides base test classes (ChatModelIntegrationTests, EmbeddingsIntegrationTests, etc.) that partners inherit to enforce conformance contracts; partners can xfail tests with reasons but cannot modify test logic, enforced by test_no_overrides_DO_NOT_OVERRIDE check.",
+      "evidence": [
+        {
+          "resource": "repo://libs/standard-tests/README.md#L38-L83",
+          "version": "repo-lines-v1:sha256:6358c7d7376c7b54d0cc658f94b8bcf1153a79856fffa466d850d4a5176aee4e:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVhMmJmODIwNzg0MzY0NmQ4MDFjZWFhMjI4YmVlNzNiYjdiNmVhYWIyNWFkMzkyMjM3MDI0ZTYzYTIwNmJjYjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ3YzA2YzU2MWQ1YzMyNzM0MzY4NTI2OGE0NmIzMzkxZjM5OThlZWU4OTBkMmJlNTFmMGQyMWNjNGE1M2FlNmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3Yzc1NTVmOTU2OTRkMmFhZjkzYTBkMmNjZmE3YmZlMTRmOGMyZTJmZTg0OTA0MDMyOTExZTAxYjY0NGQ4M2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE3N2ZkMTNjNGE2NmRhZGJiNTM4NTk1MTkzNjY3NzFmMjViODQ0MzY1YmVjYzdhNjU0NGM4OTM5MGQ4YTE4YWIifQ"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/base.py#L1-L70",
+          "version": "repo-lines-v1:sha256:62a5d5e75b59be001165917da5164c60bbdb07394b364df2ea1b949916ba3cab:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgxNDg2YzAwNzk3MGFkYTM4NmM4ZmQ0MzliYmI4ZmIzNmU2YTRjYjIxYmUxNWM3MjM5MTJmN2EzN2ZjODMzODMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9d4b36b9ef764a2f9ecbe71d0a3943f1",
+      "statement": "VCR playback-only mode with --record-mode=none fails when test code changes cause request mismatch, allowing CI to catch stale cassettes; recording flow for live tests uses real credentials and record_mode='once' (record if cassette missing, reuse existing).",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/Makefile#L40-L43",
+          "version": "repo-lines-v1:sha256:11e8869cd9ad3d186371833270e57f6b9b33e6bfb1fb7b21204584ccecc8bddf:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWE5YjMxNjhmZmFkM2U1NDQwMzY3Y2Y1NTg2OTAyZTE1NGNlMWJmYWJmOGM5ODlhNjUzYWRiZGQ1ZDgxZTU3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZDhiZTQwMTJkYzZlODBmMGRhYTAwNWMwYWI5MDBkODY0M2UyMWE5NTVkNDZiYTlkZGJiZDk2ZDVmNDM5Zjg1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDgwZjAyNjdlOGNlNzQ5ZmY3YmVhMWQ0NGJmZTc4MmMzZWI1NjRlMDIxMDVlZGZkYjQ2MjNlMjU2ZjA5ZDQwYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmNlNGVlYjJlZGM5OWFiNzIxYTJmNTJhOGZhODc5YjM0ODY1MzUzNWViZTA4ZTUxNDdmZmE2MzkwM2IxZjRkNSJ9"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/conftest.py#L130-L143",
+          "version": "repo-lines-v1:sha256:0144da3602191e08b1c7c3a3d0ea02abb6d35b5ffbf3a7e28f89554b904f1087:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNzhlNTQ1YjAyMTRlNDM2NDIxYTRiMzBiZDQ0NThjNDgxZGY5OTY5NWRkNjRmZjhkNmM1MDkxMTZjMmE5NTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzZDE3MWRlNzU0MzFhMDIxYTBkOTRmYTc2ZmFiZjBkNzEzOWM4OThjMWEwYjQ0YjQzY2E2MDkwM2ZhMWI4NDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcyMzc1ZjdjZDVkMWMzYWI1YzFlMjE1N2ViNjFhNjRhMDRlOTZiZDA1YTg1NThkYmY0MWRmZWUxMTE4YjcxMDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5bbb0d1e6a05437295b306f28450cb5a",
+      "statement": "Concurrency control in integration_tests.yml serializes same-package test runs per (working-directory, python-version) tuple to prevent racing against shared live API credentials while allowing 3.10/3.14 matrix legs within one run to execute in parallel.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L162-L168",
+          "version": "repo-lines-v1:sha256:9fec6bfb5dbf70075d7ee5663ecabc29093a99fd9b8810e807590b9f477fe7ed:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODc0NDQ1NTZhMjc4YjM4Y2Y2NTU3NWYxZjE0ZDBkMjMyN2U1OWY3OTZiODU2OTBjZDNiYjM0OWZmYjJjOWE2OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzlhYjc4MmJhNTZhMzRjMjVjZTEyNWI3OGJjOGM3ZjQyZDE0YjBkMTViYzEyMzcxZjVhMWFlMWU0N2ZiMzBiNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjNhZmI4YTE3NDQzNmQ1OTUxNmMwYTA2OWJhN2Y3ZTIxMmUwMDIwOTRlY2U3MjVhYWM4MGI4OGUwN2U1MWVhNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTE5ODNmNGMyMTFhMWI0NmFmOTliOWQ2ZWIyYzJhMDU4OGM1MTI4YTBiZDIyY2JlMmEzNDU3ZDg4MWJmNjBiNCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_75f72926354d49fea7044197b3612db5",
+      "statement": "Extended testing installs additional dependencies from extended_testing_deps.txt and runs pytest with --only-extended marker for complex multi-package workflows; extended tests are triggered automatically for affected packages in check_diffs.yml and manually via make extended_tests.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/extended_testing_deps.txt",
+          "version": "repo-file-v1:sha256:57f239031cda372f4fb76bd1a27c2e0054ca593a32b6c3f6827802598437f2e7"
+        }
+      ]
+    },
+    {
+      "id": "claim_0be5313fea824858a521d154bf92047d",
+      "statement": "Test-dependent job tests external packages (deepagents) against local langchain packages by installing test dependencies then overlaying local editable installs (libs/core, libs/langchain_v1) to catch breaking changes in downstream users.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L357-L411",
+          "version": "repo-lines-v1:sha256:888c4565f00f6c9098ac9f85ec6117c17dc73dcdbc3f8870729ebe66ee5f74a5:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZDQxYTRiYmRmMGM1MTVjOGVjMzI0MWJlNTc4ODBmMDYzNjE5MWFhYjFmNThhOWI3NDYxMTVlZWY5OGFiMTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwY2ZkMjNkZTlmZWFmNjJmYzcwNGZmMWQyZGNiOTUwYzhmYWI2ZTExOTA0MzkzYTAzNGZjNDc5ZDE1NWIxMGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEyYjY1OWFkYTUxOGM2ODY1ZjI5ZTFmZWI1YWIxMDQ5NzQyNjRhOTIyOGU0ZGEyMmM3ZDdlNWE5M2M1MDg1ZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3846ee712b644ffdb491d6f400261cf1",
+      "statement": "Perplexity package receives special Python version handling in integration tests, using Python 3.11 and 3.14 like OpenAI rather than the default 3.10 and 3.14, due to SDK compatibility constraints enforced in matrix generation.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L148-L159",
+          "version": "repo-lines-v1:sha256:49fb649da06060de3d6f5c3adb77c6e57341b724e0a1d272930a8be7e6ebed79:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg4ODE2NjY2YWQwYmVkYTE2ZWU4MDc5MGQwMzM3MjU0YTE0ZTRhNWI2OWQ4ZWIyNWNmNDMxZThhNWNjMGY1ODIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjZTMzYTc3ZDQzYmI4OWZiMTY1NDU5M2FhYWQ0OTNiMjRmN2UxYzE3NDcyZGU1YzhmNjRlOTQzODdiMzZmZTQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVmNjliZjAyYWZlNDJlOGMyZjBjYzIxYjFhYjhjNjZiZmFmMDc0YTc2Y2UyNzk0YjI2MTk5MGFmMWMwNGIxZWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b3cbd41be45741659cf60f26412d0a35",
+      "statement": "API credentials for live integration tests are stored as GitHub organization secrets scoped to the 'Scheduled testing' environment; never logged or printed (GitHub masks secrets in output), and available only to trusted code in the monorepo.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L165-L166",
+          "version": "repo-lines-v1:sha256:3b59d4c1562dfd68482fda6d173c14ee011452ad6d15b0ab8698b53ac3564d0d:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTkwM2U5ZDI3MDlmZGNhMTJjYmE3NWFhOGE1NDQxMWNjODVjMmI0OTBmZGQ5ODFkYWU3YzRhMWUxMWU3NTcxMSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjJlZjdmZGRmZGQ1YzU2OWY3NTcwMjRjMDExNzNjOWRjNDdmOWUwNDMyMjczM2JkN2JlYzVlMWFhYjZmYjEwZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTU3ODZjYjg1ZjNlNzUyMzMzYTFjMTQ2MTc1MGRjNWJkZDIwM2QyZWY2ZTNhNzc3ODRmNWU3NzUzNzQ5MzA4MyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmYwMTlmYWU2ZWE0Yzk5OGJmMmZjZDVjM2FhY2I1YzNkNjA0ZmU4MTQ5ZjhiNDJkNmM3ODRlYjgzMjliODc5ZiJ9"
+        },
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L288-L339",
+          "version": "repo-lines-v1:sha256:d6152cd9c157eb2df6550eba61198b4a61da7349606fb9b973563c8067b14abb:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwMzJmYWVkNmZjNmE3ODE4MzZmMDUyMjQ2ODRjZTRkYjQyNjlkMWM1NWFjNTA1YTAxY2RjNDMyZDc3YTFlZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVjZThiODJlMzgwNWEzYTE4MDAzZjJmZTQ1ZDRmNWRiYjQ3YWZkZThjMmRkZjU1OWNlZDJiNGZkYzRmNDA2MzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU5NjRjMGUwNzg0OWNiOTM1NTg1M2FjMjIzZDYwMjBlMDM2NzI4OGJhNzc0NmI5Njk2ZDUzMWQyYTU2YmYzMTciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjhmNWIwMWU1NjAwYjJhNDc4N2IxZWU0NGYxNTViODA2MGZmMjJmODc3ZGI0MDhlMjJjZTFmNWYwMzYyZWM1YzEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_cffe79395bb3477498ec5d2039a3d267",
+      "statement": "@pytest.mark.vcr enables cassette recording/playback for integration tests; @pytest.mark.default_cassette() overrides cassette name for parameterized tests; @pytest.mark.retry(count=N, delay=D) auto-retries on transient failures.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/anthropic/tests/integration_tests/test_chat_models.py#L1296-L1296",
+          "version": "repo-lines-v1:sha256:882134651c1ec027569d2d5775c1d921a0bbd48fc9d51dc0795f949f5b37f820:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODgyMTM0NjUxYzFlYzAyNzU2OWQyZDU3NzVjMWQ5MjFhMGJiZDQ4ZmM5ZDUxZGMwNzk1Zjk0OWY1YjM3ZjgyMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODgyMTM0NjUxYzFlYzAyNzU2OWQyZDU3NzVjMWQ5MjFhMGJiZDQ4ZmM5ZDUxZGMwNzk1Zjk0OWY1YjM3ZjgyMCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2ViOTQxYjkyNTIzZDE1YjIzMTFlYWU4MWM2NzY2OGIzMzJjMjQxZWY4ZDEzMWQxMGIzM2U2NTE2NGIyOWMxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTkyMGNhNGI3MTM5MDc5MzJmYzJiNjYyYzRkYmU1MGJjNmYzY2UzYWY3MTkwY2Y4OGYzMDBjZmVjOWFiYmYyNSJ9"
+        },
+        {
+          "resource": "repo://libs/partners/anthropic/tests/integration_tests/test_chat_models.py#L736-L736",
+          "version": "repo-lines-v1:sha256:b45324740bffc3b95f94db2d7b3d50e5d910126e359e9638e7cb5523f1c2403b:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjQ1MzI0NzQwYmZmYzNiOTVmOTRkYjJkN2IzZDUwZTVkOTEwMTI2ZTM1OWU5NjM4ZTdjYjU1MjNmMWMyNDAzYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjQ1MzI0NzQwYmZmYzNiOTVmOTRkYjJkN2IzZDUwZTVkOTEwMTI2ZTM1OWU5NjM4ZTdjYjU1MjNmMWMyNDAzYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmFkZjdhN2Q0ZjhhYTMwNTgxMTg4MGU5Nzk2MWQ2MzZmNDQwZjg5NWRjY2I0MTM4NGJmZWIzMzI5NWI1MDQyMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODI1MDQ3NmQyMjRhZThjOGIzM2ZiMjc0OGQ1YjQzNzNlZGQ5YjBkOTU3MTY0MDVlMDI2ODkxMmEyOWNjMmI4NSJ9"
+        },
+        {
+          "resource": "repo://libs/partners/anthropic/tests/integration_tests/test_chat_models.py#L913-L913",
+          "version": "repo-lines-v1:sha256:097d3025c5021c09be82b57975d1b8fd1ae06302c007f37cdeb6381f7e583925:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDk3ZDMwMjVjNTAyMWMwOWJlODJiNTc5NzVkMWI4ZmQxYWUwNjMwMmMwMDdmMzdjZGViNjM4MWY3ZTU4MzkyNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDk3ZDMwMjVjNTAyMWMwOWJlODJiNTc5NzVkMWI4ZmQxYWUwNjMwMmMwMDdmMzdjZGViNjM4MWY3ZTU4MzkyNSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2U5NDBiMWYxYjUxZWY1NjFjYTYxYjljYmI2YTg3ZTg2NjMxZjkzY2ZiOTBlZGIyZjQ1MTgwNmM1ZjQ0M2YwZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWQzNjJkYzI4ZDVhNzgxYWI2OWZlMmUwNzExMDI1MzM3YTFhZjk3YTY5NWJmNDU1NDc3ODA1NTQzMTg5YWU4NyJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_821bd4e16f8a4530bdf5d450a419a2a9",
+      "statement": "Partner test classes declare supported model capabilities via properties (supports_image_inputs, supports_image_urls, supports_pdf_inputs, chat_model_has_tool_calling, chat_model_has_structured_output, enable_vcr_tests, supported_usage_metadata_details), forming a capability matrix that controls which standard tests run and which xfail.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/anthropic/tests/integration_tests/test_standard.py#L29-L75",
+          "version": "repo-lines-v1:sha256:2d97725b72e0c6f26e00533e8d7a75fc6e19b1d20840951e23f7f3e85a4b587f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZDAwY2YyNzA5NjRkNDRhMTNkZmFjODc1MmIwOWZjYzQzNWIwZjE5YjMxNmFiY2Y4MWE3YWE2NGJiMTIyZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2YjA0NDkxNDY5NzIyZTgzNjNhOTRlNDA0NDUzOGUwMTNhMmEyMTdlMzZiMWU1NjhiYTYwYWNiN2I0YzhmMmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIwOTUyMTAzZDk2NGE2NDlmMmE0ZjM5YmY3ZDFjZGRkYWVmY2FmNDVhOTE0NGIxODkyYjhmMzg2YWZlMTEyNTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBjNTZkMGNjODBlMGE3MDQzZWRkNWVmOWEyZTE3Y2I4NThkYjExYTIxNzExZDRjZTQyNzRmNGFjNDY3NGQ4ZTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0e4ea53059524e4a93f50600226e2272",
+      "statement": "OpenAI's _json_body_matcher normalizes JSON bodies by stripping tool description leading whitespace to handle Python 3.13+ compile-time docstring normalization, allowing cassettes recorded on any Python version to match requests from any other.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/tests/conftest.py#L207-L244",
+          "version": "repo-lines-v1:sha256:7d87673b48281e565ca616fd38ba2ad12721fbd350a63a1c5052c709d69eb6db:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4MDUyNmQ0ZjY5MmU2OThkYjBhNTM0MDVjMThhNDkwNWVjNzFkNDA2ZjY0NDAwMmVkZjlhNDhkNjdlOWZlZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVkNTM4Njg5MGIxZDc3YWMzNjI5Zjc4NWY0YTgwNDY1NjA4ODgyYzY3M2E2NTVkZjZiNDQzYThmYjliODI4YTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE0NzcwYmNjNzAyNjhhZjcxYzMwNDU4MWFiNjNkNGEyMTY2ZDY5ZWEzZGY2OGQzZTk4YTlhNTBmNmYzMTQ1YjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8df659087af646d29a7c0550828caa5c",
+      "statement": "Anthropic's VCR configuration drops uri from match_on and ignores api.smith.langchain.com hosts to keep cassettes host-agnostic, allowing replay through either direct API or LangSmith gateway without re-recording.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/anthropic/tests/conftest.py#L28-L38",
+          "version": "repo-lines-v1:sha256:dd03f8896d12fed152486353ae6230296817ec8af7fc09be30783c786cddbc6e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYyNDdkZDk4OWM5MzJlY2Y3OGRmOTczMjJiOWFhNjJmNmNhMjljNjc5YTZkNzk4OGQ0ZTNmMzhmMjA4ZDc1ZDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkZDI0NDU4MmI2ZmIwM2QyM2I4NDE1YWJlY2QzNDZiMGM5ZjQ2NmI2Zjc1MmIwNjgxODljZTdlOWEyZGMzNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM1ZDhiMzhlN2RiMGFhMjIyYjU5NmFlZDA5YTU2YjNkMTc1NGQyMzdkYzZhOTE3MzBjOGY4NzUyNmQwZGM2ODMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNjMzZkNTA4YzAzODJjMTMwZGU5ZWYzOGUyOGYyNjcwM2FiOGY3MDRiZmE1Mzg0MTYxMGNiMjVhMjEwN2M4N2IifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a1f16d06d71d403a9a3b85b570ebbf73",
+      "statement": "@pytest.mark.scheduled runs only in daily scheduled tests (skipped in PR checks); @pytest.mark.requires(package) skips if optional dependency missing; @pytest.mark.compile validates syntax without API calls.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L57-L58",
+          "version": "repo-lines-v1:sha256:ab47ab3e252d067fdd623ce50ddd22f47d8817402b95858e47d0fbd3e8ec70ec:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTI4ODQwYTZiN2U2MDMwM2Q4N2JlNGQ0ZDgyYTUwYjMzMjg0MjkwZGVjNGUzNDI4ZDQ3ZDkzZmJlZmQxYzU5MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODE2MDg1ZWI2NTcwYzllMTBlMTVjYjQxNzkxNGU1YTc3Y2YwZmYxZDYxZTFmMDY5YzNhYmNmM2E1Y2QwMmU2ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTNjODc0MDA4OTZlODM4OTY5NjNkYzNjN2YwZWQ1NWQ1YzkyZTRlMjcyNDNkMjA5NDVkOTY4ZDM3ZmVhMWQ5OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiN2UyNzQyMjRlOTgyODgxZDk4MWI4YWRkZmRkYzk4ODBiMmYxZDA3ODAzMTVkNzBkNWQ1MTkxYzc1Zjk1YTViMiJ9"
+        },
+        {
+          "resource": "repo://libs/partners/anthropic/tests/integration_tests/test_compile.py#L4-L4",
+          "version": "repo-lines-v1:sha256:7fd10d12872a816af1944c15b7da4262d46857a05ac714a78270c4082439b061:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ZkMTBkMTI4NzJhODE2YWYxOTQ0YzE1YjdkYTQyNjJkNDY4NTdhMDVhYzcxNGE3ODI3MGM0MDgyNDM5YjA2MSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2ZkMTBkMTI4NzJhODE2YWYxOTQ0YzE1YjdkYTQyNjJkNDY4NTdhMDVhYzcxNGE3ODI3MGM0MDgyNDM5YjA2MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDk3ZDUzYmE2YzEzMDEwN2ZhODlkOTdjYTQ1MTg2NTY1ZTQwYzMzNjAxY2RlZjM2YTQ3OWRkZDk2NWY4OTI2MCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjIsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTVjM2IyMTAzNTUyYTJhYTRmMGNhNWMwYzM0NmUzZDI0NDhiOTc5ZDE4OThkMmI1NjhjYzU3Zjc0YWIyNDkwYSJ9"
+        },
+        {
+          "resource": "repo://libs/partners/anthropic/tests/integration_tests/test_llms.py#L31-L37",
+          "version": "repo-lines-v1:sha256:b249a2ce005322cfcfb5ede43adc54c60955f026b0703895241181e77b1f499e:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTFiODhmNzEwZjhiMTlhNDI1ZDYwN2U5MDdhYTI2NDViMzRiNzUwNjM2Yjc5OWZjOTk4NWFkNmFiM2YwZDc4NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTFiODhmNzEwZjhiMTlhNDI1ZDYwN2U5MDdhYTI2NDViMzRiNzUwNjM2Yjc5OWZjOTk4NWFkNmFiM2YwZDc4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTk4YjA2M2Q5YjQ3ZTY1Mzc5NjI1NTcyY2NlMTk3NjY5ZDU3NjdlMTJjMThiZTA3NTY1MmI4Y2Q5ODFjZThkNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGVmZTFiZTQ5NGJjOWI3YTM0MTM0ZGNlNGNkZGExNzJlZGRkNGU0MGZiYmVlOGRhN2UzMDEyZTgwOTJlN2NkMiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_bf080525965244f9846fcbcbaec5cc50",
+      "statement": "Extended testing installs conditional dependencies from extended_testing_deps.txt and runs with --only-extended marker for complex multi-package workflows; test-dependents job in integration_tests.yml tests external packages like deepagents against local langchain to catch breaking changes.",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml#L357-L411",
+          "version": "repo-lines-v1:sha256:de782f5aa49b43ebdc89d859d7136bc3417a3a21bf829c1295f12ac41a93c3ba:eyJzZWxlY3RlZExpbmVDb3VudCI6NTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2YzM1ZTk4OWI1NjRiNGI2MjRjMmI4Y2NlZWI1ZjE4YzZkZjI4ZjJkZGViZDQyMzFhZmU3Yjc2M2ViYjlkOWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NzY2NjQyYjYyZWUwYWMxYjEyNzZhNzM2NDQ2MWQ0YWZjNjY2YjA5ZjI5N2M0ZTc5NWUxZjNjZGE2NTE2NzQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRjYmRiNGYzMWMwMzczN2NlOTExNmM5MGE2ZDU2MzNhYTVmMGVlODM0YzcxZjUxYTc4NTUwZWYzN2JiZDYwYmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwZjEwZjMxYWEyZGQ3ZDMyZWQxYTkzOGRlODE0ZjhlYWFiMzBhNGJhNTdiNzIzYTMxNzUxM2IyYTlkYjRlMTUifQ"
+        },
+        {
+          "resource": "repo://libs/core/extended_testing_deps.txt",
+          "version": "repo-file-v1:sha256:57f239031cda372f4fb76bd1a27c2e0054ca593a32b6c3f6827802598437f2e7"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-11-06T08:17:28.425Z"
+  }
+}

@@ -1272,7 +1272,7 @@ class _DatasetRunContainer:
             try:
                 agg_feedback = results.get_aggregate_feedback()
                 _display_aggregate_results(agg_feedback)
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 logger.debug("Failed to print aggregate feedback: %s", e, exc_info=True)
         try:
             # Closing the project permits name changing and metric optimizations
@@ -1280,7 +1280,7 @@ class _DatasetRunContainer:
                 self.project.id,
                 end_time=datetime.now(timezone.utc),
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             logger.debug("Failed to close project: %s", e, exc_info=True)
         return results
 

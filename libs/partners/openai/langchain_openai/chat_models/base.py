@@ -38,6 +38,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    Self,
     TypeAlias,
     TypeVar,
     cast,
@@ -60,6 +61,7 @@ from langchain_core.exceptions import (
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
+    ModelRefusalError,
     ModelTimeoutError,
 )
 from langchain_core.language_models import (
@@ -110,6 +112,7 @@ from langchain_core.output_parsers.openai_tools import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import (
     Runnable,
+    RunnableGenerator,
     RunnableLambda,
     RunnableMap,
     RunnablePassthrough,
@@ -143,7 +146,6 @@ from pydantic import (
     model_validator,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
-from typing_extensions import Self
 
 from langchain_openai._version import __version__
 from langchain_openai.chat_models._client_utils import (
@@ -248,6 +250,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     )
         if audio := _dict.get("audio"):
             additional_kwargs["audio"] = audio
+        if refusal := _dict.get("refusal"):
+            additional_kwargs["refusal"] = refusal
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -808,7 +812,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
     openai_api_key: (
-        SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]]
+        SecretStr | Callable[[], str] | Callable[[], Awaitable[str]] | None
     ) = Field(alias="api_key", default=None)
     """API key to use.
 
@@ -2669,6 +2673,9 @@ class BaseChatOpenAI(BaseChatModel):
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+
+                If the model refuses, `ModelRefusalError` is raised, or returned as
+                `'parsing_error'` when `include_raw` is `True`.
             strict:
 
                 - `True`:
@@ -2866,16 +2873,21 @@ class BaseChatOpenAI(BaseChatModel):
             )
             raise ValueError(msg)
 
+        # Checked per chunk so streamed structured output still streams.
+        checked_parser = (
+            RunnableGenerator(_check_refusal, _acheck_refusal) | output_parser
+        )
+
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
-                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+                parsed=itemgetter("raw") | checked_parser, parsing_error=lambda _: None
             )
             parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
             parser_with_fallback = parser_assign.with_fallbacks(
                 [parser_none], exception_key="parsing_error"
             )
             return RunnableMap(raw=llm) | parser_with_fallback
-        return llm | output_parser
+        return llm | checked_parser
 
     def _filter_disabled_params(self, **kwargs: Any) -> dict[str, Any]:
         if not self.disabled_params:
@@ -2900,8 +2912,7 @@ class BaseChatOpenAI(BaseChatModel):
         if isinstance(chat_message, AIMessage):
             usage_metadata = chat_message.usage_metadata
             # Skip tool_calls, already sent as chunks
-            if "tool_calls" in chat_message.additional_kwargs:
-                chat_message.additional_kwargs.pop("tool_calls")
+            chat_message.additional_kwargs.pop("tool_calls", None)
         else:
             usage_metadata = None
         message = AIMessageChunk(
@@ -3925,6 +3936,9 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+
+                If the model refuses, `ModelRefusalError` is raised, or returned as
+                `'parsing_error'` when `include_raw` is `True`.
             strict:
 
                 - `True`:
@@ -4453,22 +4467,7 @@ def _oai_structured_outputs_parser(
         if isinstance(parsed, dict):
             return schema(**parsed)
         return parsed
-    if ai_msg.additional_kwargs.get("refusal"):
-        raise OpenAIRefusalError(ai_msg.additional_kwargs["refusal"])
-    if any(
-        isinstance(block, dict)
-        and block.get("type") == "non_standard"
-        and "refusal" in block["value"]  # type: ignore[typeddict-item]
-        for block in ai_msg.content_blocks
-    ):
-        refusal = next(
-            block["value"]["refusal"]
-            for block in ai_msg.content_blocks
-            if isinstance(block, dict)
-            and block["type"] == "non_standard"
-            and "refusal" in block["value"]
-        )
-        raise OpenAIRefusalError(refusal)
+    _raise_on_refusal(ai_msg)
     if ai_msg.tool_calls:
         return None
     msg = (
@@ -4478,11 +4477,50 @@ def _oai_structured_outputs_parser(
     raise ValueError(msg)
 
 
-class OpenAIRefusalError(Exception):
-    """Error raised when OpenAI Structured Outputs API returns a refusal.
+def _raise_on_refusal(message: BaseMessage) -> None:
+    """Raise `OpenAIRefusalError` if the model refused or output was filtered."""
+    response_metadata = message.response_metadata
+    finish_reason = response_metadata.get("finish_reason")
+    for block in message.content_blocks:
+        if block["type"] == "refusal":
+            if text := block.get("refusal"):
+                raise OpenAIRefusalError(text, raw_message=message)
+            raise OpenAIRefusalError(raw_message=message)
+    incomplete_details = response_metadata.get("incomplete_details")
+    incomplete_reason = (
+        incomplete_details.get("reason")
+        if isinstance(incomplete_details, dict)
+        else None
+    )
+    if "content_filter" in (finish_reason, incomplete_reason):
+        msg = "Model output was stopped by a content filter"
+        raise OpenAIRefusalError(msg, raw_message=message)
+
+
+def _check_refusal(messages: Iterator[BaseMessage]) -> Iterator[BaseMessage]:
+    for message in messages:
+        _raise_on_refusal(message)
+        yield message
+
+
+async def _acheck_refusal(
+    messages: AsyncIterator[BaseMessage],
+) -> AsyncIterator[BaseMessage]:
+    async for message in messages:
+        _raise_on_refusal(message)
+        yield message
+
+
+class OpenAIRefusalError(ModelRefusalError):
+    """Error raised when an OpenAI model refuses a structured output request.
 
     When using OpenAI's Structured Outputs API with user-generated input, the model
-    may occasionally refuse to fulfill the request for safety reasons.
+    may occasionally refuse to fulfill the request for safety reasons. The same
+    error is raised when the response stops because of a content filter
+    (`finish_reason="content_filter"`).
+
+    Subclasses `ModelRefusalError`, so provider-agnostic code can catch that
+    instead.
 
     See [more on refusals](https://platform.openai.com/docs/guides/structured-outputs/refusals).
     """

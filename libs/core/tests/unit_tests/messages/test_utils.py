@@ -3,10 +3,10 @@ import json
 import math
 import re
 from collections.abc import Callable, Sequence
-from typing import Any, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 import pytest
-from typing_extensions import NotRequired, override
+from typing_extensions import override
 
 from langchain_core.language_models.fake_chat_models import FakeChatModel
 from langchain_core.messages import (

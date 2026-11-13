@@ -9,6 +9,8 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    commit-message:
+      prefix: "chore(deps)"
     groups:
       minor-and-patch:
         patterns:
@@ -29,6 +31,8 @@ updates:
       - "/libs/langchain_v1/"
     schedule:
       interval: "monthly"
+    commit-message:
+      prefix: "chore(deps)"
     versioning-strategy: increase
     ignore:
       - dependency-name: "langchain-core"
@@ -70,6 +74,8 @@ updates:
       - "/libs/partners/xai/"
     schedule:
       interval: "monthly"
+    commit-message:
+      prefix: "chore(deps)"
     versioning-strategy: increase
     ignore:
       - dependency-name: "langchain-core"
@@ -98,6 +104,8 @@ updates:
       - "/libs/model-profiles/"
     schedule:
       interval: "monthly"
+    commit-message:
+      prefix: "chore(deps)"
     versioning-strategy: increase
     ignore:
       - dependency-name: "langchain-core"
@@ -126,6 +134,8 @@ updates:
       - "/libs/langchain/"
     schedule:
       interval: "monthly"
+    commit-message:
+      prefix: "chore(deps)"
     groups:
       minor-and-patch:
         patterns:

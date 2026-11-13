@@ -12,7 +12,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -20,19 +19,19 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-version = "1.7.2"
-requires-python = ">=3.10.0,<4.0.0"
+version = "1.7.4"
+requires-python = ">=3.11.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.6.10,<2.0.0",
+    "langchain-core>=1.7.5,<2.0.0",
     "certifi>=2024.6.2",
-    "openai>=2.45.0,<4.0.0",
-    "tiktoken>=0.7.0,<1.0.0",
+    "openai>=2.45.0",
+    "tiktoken>=0.7.0",
 ]
 
 [project.optional-dependencies]
 azure-identity = [
-    "azure-identity>=1.25.0,<2.0.0",
-    "aiohttp>=3.11.0,<4.0.0",
+    "azure-identity>=1.25.0",
+    "aiohttp>=3.11.0",
 ]
 
 [project.urls]
@@ -67,7 +66,7 @@ lint = ["ruff>=0.13.1,<0.17.0"]
 dev = []
 test_integration = [
     "httpx>=0.27.0,<1.0.0",
-    "pillow>=12.1.1,<13.0.0",
+    "pillow>=13.0.0,<14.0.0",
     "numpy>=1.26.4; python_version < '3.13'",
     "numpy>=2.1.0; python_version >= '3.13'",
 ]
@@ -84,6 +83,9 @@ langchain = { path = "../../langchain_v1", editable = true }
 [tool.uv]
 constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 
+[tool.uv.dependency-groups]
+test_integration = { requires-python = ">=3.11" }
+
 [tool.mypy]
 disallow_untyped_defs = true
 [[tool.mypy.overrides]]
@@ -96,41 +98,39 @@ docstring-code-format = true
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
+    "C90",     # McCabe complexity
     "COM812",  # Messes with the formatter
+    "CPY",     # No copyright
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
     "SIM105",  # Rarely useful
     "FIX",     # TODOs
     "TD",      # TODOs
-    "C901",    # Complex functions
-    "PLR0912", # Too many branches
-    "PLR0913", # Too many arguments
-    "PLR0914", # Too many local variables
-    "PLR0915", # Too many statements
-    "ARG001",
-    "RUF001",
+    "PLR09",   # Too many something (arg, statements, etc)
     "ERA001",
-    "PLR0911",
     "FA100",  # from __future__ import annotations breaks some schema conversion logic
 
     # TODO
-    "PLR2004", # Comparison to magic number
+    "A001",
     "ANN401",
+    "ARG001",
     "ARG002",
+    "ASYNC109",
+    "B028",
+    "B904",
     "BLE001",
-    "TC",
+    "FBT",
     "PLC0415",
+    "PLE",
+    "PLR2004", # Comparison to magic number
+    "PLW",
     "PT011",
     "PT013",
-    "TRY",
-    "PLW",
-    "PLE",
-    "FBT",
-    "A001",
-    "B028",
-    "YTT203",
+    "RUF001",
     "RUF012",
-    "B904",
+    "TC",
+    "TRY",
+    "YTT203",
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 

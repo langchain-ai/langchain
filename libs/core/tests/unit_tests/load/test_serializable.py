@@ -16,7 +16,7 @@ from langchain_core.load.load import (
     _get_default_allowed_class_paths,
 )
 from langchain_core.load.serializable import _is_field_useful, _try_neq_default
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, RemoveMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.prompts import (
     ChatPromptTemplate,
@@ -1022,6 +1022,16 @@ class TestInitValidatorInLoad:
         assert len(init_validator_called) == 1
 
 
+def test_load_js_remove_message() -> None:
+    serialized = {
+        "lc": 1,
+        "type": "constructor",
+        "id": ["langchain_core", "messages", "RemoveMessage"],
+        "kwargs": {"id": "msg-1"},
+    }
+    assert load(serialized, allowed_objects="messages") == RemoveMessage(id="msg-1")
+
+
 class TestMessagesAllowlistTier:
     """Tests for the 'messages' allowlist tier."""
 
@@ -1258,3 +1268,26 @@ def test_chain_using_pick_roundtrips() -> None:
     revived = load(dumpd(chain))
 
     assert revived.invoke({"a": 1, "b": 2}) == {"a": 1}
+
+
+def _nest(depth: int, *, as_dict: bool) -> str:
+    open_, close = ('{"a": ', "}") if as_dict else ("[", "]")
+    return open_ * depth + '"leaf"' + close * depth
+
+
+@pytest.mark.parametrize("as_dict", [True, False])
+def test_load_rejects_deeply_nested_input(*, as_dict: bool) -> None:
+    text = _nest(500, as_dict=as_dict)
+
+    with pytest.raises(ValueError, match="nested more than 200 levels"):
+        load(json.loads(text), allowed_objects="messages")
+    with pytest.raises(ValueError, match="nested more than 200 levels"):
+        loads(text, allowed_objects="messages")
+
+
+@pytest.mark.parametrize("as_dict", [True, False])
+def test_load_accepts_nesting_up_to_limit(*, as_dict: bool) -> None:
+    text = _nest(200, as_dict=as_dict)
+
+    assert load(json.loads(text), allowed_objects="messages") == json.loads(text)
+    assert loads(text, allowed_objects="messages") == json.loads(text)

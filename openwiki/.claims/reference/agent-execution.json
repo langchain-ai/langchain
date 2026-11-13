@@ -1,0 +1,194 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:7fc41babbc7630a2c926e1584dd5a7d090c28b513f334b3cd57acdce0b96634d",
+  "claims": [
+    {
+      "id": "claim_bf4a816208b849fcbec8f49d366129d2",
+      "statement": "The /openwiki/reference/agent-execution.md page serves as a redirect to the primary Agent Execution documentation, which provides comprehensive coverage of the agent's structured, state-driven loop orchestrated by a LangGraph StateGraph, including initialization, model invocation, tool dispatch, result processing, termination logic, middleware hooks, and structured output handling.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
+          "version": "repo-file-v1:sha256:b70e7cffd19d840505b034d036926064d1a07e834aae4a35da2e0a47e0423438"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py",
+          "version": "repo-file-v1:sha256:56688206dce0334e7ca82125d7b809c23427890c234dfd69123dad038a387f31"
+        }
+      ]
+    },
+    {
+      "id": "claim_04b1a1a08c344d3cbb45e368f9226955",
+      "statement": "The agent state extends AgentState TypedDict with required 'messages' field (reduced via add_messages), optional 'structured_response' field (omitted from input schema, included in output), and ephemeral 'jump_to' field for middleware flow control. Middleware can extend the schema by defining state_schema; all schemas merge during agent creation with explicit state_schema winning conflicts.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1226-L1234",
+          "version": "repo-lines-v1:sha256:79c59a206dc67c41cff7e2895b104673b0bf154adb4e716a7f0eb051aa756b95:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2JkZjE5OGNiYzcwODIzNWMwMTEzMzdjZjY0MzZlNjE3MTc5MDAzODg4MjA4NzY2NTY2ZmFkMGU1MGY1M2FiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWU4OGFjNGI4NWI5N2FiYWUwZWRjYTg2MDcyM2U3ZDE2M2M5Yzc5NDQ1NDVhM2M3YzViNzNkOGZhZDdlYzg3YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmFhN2Q3ZTQ5YTE5ZTM4NjhlODE2OWY0ZDk3ODA5NzlkMjYwZTAxODkxYjk4MTJjODhiYjEzNzU1ZmMwZTEyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjJmMzA1NDI5M2U4OWU5ODE1NDRkYmNmMjdiNjY5YzhkNzA5YTNmOThhN2U1NDQxZDA1OWIyNmJkNjIyOWU1MSJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L349-L378",
+          "version": "repo-lines-v1:sha256:ca9157abeed12e9d5bf100e7647f22248ffa22b8eefd704c6d1ffe952c737f7b:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhY2VkMmY4NGViMmFmMmUxMDNkMjBjYjAwY2NmZmM5ZjcyNzZiZTFlN2U3N2Q3ZTc0NjNlOGY1YzdkYTYzMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzM2Y4OWU1YmRiMjFkYmY0ZTdmNTVjMGNlOWRlYjM3ZmIwNjY1OTY1MGZhODViNzc3ODk2YmIyNzE3NWNjZmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ1NTA5ZTcyNDIwZjVjNzRkZGNjMmJhNmJmOTcyNmNmODI3ODA2MzliMzE3ZTUyMzA2ODgzYjdmMjQ5MjYyZTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYyM2E5OGEwOTE3OTEyZTYzYmJhZDNlOWI5NWI1NzVmZGQzZTI4NTdmYWYyMzg5MGRlZjgwNDNhNDM0YmE5MDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_f91789f40dcd4e769c5df8d6d89de500",
+      "statement": "ModelRequest encapsulates all information for model invocation: model instance, messages, system_message, tools list, response_format, state, runtime context, and model_settings. Middleware uses immutable override() to create modified requests. ModelResponse contains result messages and optional structured_response; ExtendedModelResponse adds an optional Command for additional state updates.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1350-L1423",
+          "version": "repo-lines-v1:sha256:5b0754a81c637f2f8797ce56432a8c0f2a72cbd3a5f303a6994bf85246b0dc16:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmNTljMWIxOTg5YTgxYWI4YWU5ODU3MjkwMmZhN2U5MTc2NzIzZDdkMmY3MzMzYjhjNTNlZGE5MTlhZDMwMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmZWQ2MTVlZmExMWYwYTYyZTBiZmQ2MDZhZDE1NmM3NWU2NTYxNTBlMWYyZmNlODkwZjgxYjVlMjk1YWY5ODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0MzdhYTE2ZGIzNDFjYTYzODYyMDk3MjYwZTk1YmQyNjhiZjFmOTRlODEzNzY1MzA4OWUzYTIyMTMyOTQwODgifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L272-L325",
+          "version": "repo-lines-v1:sha256:c96042469fd0aa5d729a55088e83d397356f784c464237c8cbd7749d0dddc62e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZmJhZTBiOTFkNDRmYzBkNDlmNWRlNjkxZGE2ZmM0MzFmMjYwMTM0YmY3MzFlMGUyMWY3NjQ4MDk0MzM0Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllM2U3YTMyMjI2YmE0MjQ3MmYwMzZkYTU4ZDAzMjFjOTk2MTZmNDRjNGM3OTRmZDQ1YWMwMzQxMzk2OTlkYjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMWYwMmZkN2VjMWQ0NjJjMGNiODE4Yjk0OGZmZTRmNzE1YjJjMmM0MzI2MzBjMjMyZGZlMzRkNDI3NDNmYTkifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L87-L269",
+          "version": "repo-lines-v1:sha256:2e092d648db88d84598f61d1f81e0d629676c59f2cd9d2892492f2a466327fb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOWE0ZjBkOTIyOWRmY2E0YWM1MDllNDc0OWQyNGFiZGIxMzg2NGIwYWVmMmIxNWViYmQ5ODlkNTgyNjhjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NzZhMTRjYWViNDY3MTJkNzBjNmJmOWEyYzhkNWNiZTY4NzdjOTJmMWM3YmFkNGQ2MjA3ZTNiZmUwYzNkN2FiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjE2MTg3MTIxNzdiOGJkY2RmZTZmMWFkNTEzNzM1ZmQzMjBiZDAzZWQ2MGJkZTQzZmNiY2FkMjYzYmViZTVmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YzFmMDJmZDdlYzFkNDYyYzBjYjgxOGI5NDhmZmU0ZjcxNWIyYzJjNDMyNjMwYzIzMmRmZTM0ZDQyNzQzZmE5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_cafe47b6906146f5a64e06df95e1260b",
+      "statement": "Middleware hooks compose by registration order (first = outermost): before_agent/before_model chain forward, after_model/after_agent chain backward. wrap_model_call and wrap_tool_call handlers are composed into single middleware stacks with inner-first command accumulation. Each middleware instance is validated for uniqueness and can define state_schema extension, tools, transformers, and trace_policy.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1093-L1227",
+          "version": "repo-lines-v1:sha256:333038ef53544cd83ea0e93cb343b082fa488c5ad32bfbc120e0ec07b4ca3ed8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0YThmOWMwZWJlOTJlNjUxMWQ3NTA5NGQ2MDM5NmU5ZjI3ZjM2YTI2ZWJhMDI0Y2VjMWYzOWZkYTk2N2RjZGI4IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ZWJmNjY5ODUyYzcwMGRjMDAzYjU2YjhmNTliZmNlMjlkMGRjYTU1NTQ3ZDFlZDM1OWQ4MzkwNDVjMmY5MmFiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlZWIxMjdlZjlkNGY1MDNlZTUzM2U1YmU1ZjBlNzQ1NDM4ZmY0ZjAwYWFkZDkwNjc4NWNlNzRhMmMyZGFmMWZiIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiMGQyZTQ3MTE3YmM4MWRiMWMzMzgzNjY2MmMyZmUzMzNiMmY0MDI0NTI2NDQyMTMyMTIwN2M1ZjI4NjI3OTA3In0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1614-L1713",
+          "version": "repo-lines-v1:sha256:8c373fa00bbb91ef588626e88fc134d09a1bab23a3caa1531bf441870a222111:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4NDYyMWFhYzNjOTNmYTNjMWEwYTMzNDk5Mzk4YmNmZDVjY2FkMDhmMTc5MzViOTQ2NTk2ODdlNTI2NjkyZjRlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NTAzMmU5NjRkMDkzMjM1MWU1ZDE4NTI2OTI4MWIxNzFhM2EwOWIwOGIyODZlNjYxZWE0NzAzMjNjODJlYjRkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyMmNkMjE5ZjFiN2NhYWFmNGNmNjJmODQzMWFlYmFhOGViZTVkNDE3NmRiYjhiN2M1NDgzMjA5MjZkMjZhYWY5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmZjk5YWU1YTYxODdiN2Q5YTRlYjkzMDU0ZTIxODNmZjdiZGRlYmU4YTMyMzIxYmIxZGQ1ZDFiMWZjOGZkZTAxIn0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L281-L370",
+          "version": "repo-lines-v1:sha256:272c0933c5414b8cecc2e64643c365fa65e76088a91d385cdab443f37076f035:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1Y2IwNmM0MzdmOTk3ODhiZDVjOGM4MDY5MjU0MTI5YmVlN2ExNGYzMzc2ZTFjZWY2MTczYWUyMGE3Y2YyZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViZjVlNjBjNjUyNDc1YjVjNzhmMzdlYmI2OTJjNWIxM2NhZDMwMjI4NmM3MDFlYzBhZTAxODVhMWZiMzVjZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4YjE2YTdhZjFkZDFlYzI4OTY3MWRhMWU5MmExY2UzN2I4MTA0YWFlYjZlYjU3MzY1NmU4NWVhMzU0YTNhY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU5YTcwM2FiYzE5MWZjZWUxOWIwMzM5NTc3MjEzZWQ2OTMyMGRlOTFmZWMwNDdjZjAzYTY0NTUyYzNiYTY1NjQifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L385-L430",
+          "version": "repo-lines-v1:sha256:3b897bb85057b8c8b56769afa8471d9ff0f0df0769ec4d9d4e14d601038eca57:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRhNmJiNmZkMzc3ZWYwYTBkOWYwNmRmZjI0Y2NiM2EyYjU3NjVlMDkwNjk1MTE2ZTgzMGM5MDNhN2MyZDcyYzAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2YmFhOGFkY2RiYjQzYmIxN2I3NTVlMTgwODE0ZjkzMzY2MTJhOGQxMTAxN2YyZjUxNmUxZTJjMjM1MTFjNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYwMzg2ODA2ZDU1YjRhZTVhZWUxN2QzZjBiNWNiZGQ3NDQ3N2Y3NDA3ZTg0NWQzOGQzYTVhMGMxZDcxYmI4MmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a7883ecaf5de4844b49f99b6d2746863",
+      "statement": "Model invocation prepares a ModelRequest, applies wrap_model_call middleware composition, binds tools and response_format to the model (with auto-detection for provider vs tool strategy), invokes the model, and processes output: for ProviderStrategy parses structured response directly; for ToolStrategy checks for structured output tool calls; handles structured output validation with retryable errors; patches invalid tool calls before next iteration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1246-L1348",
+          "version": "repo-lines-v1:sha256:42ca8ea665535b713f1ff2651387e04941608ec55a949c4f1cf00b8febc38c66:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyYmRmNGQzMWNjY2QxYzBjYmY1ZWRkZjNlZWMxNDZlNDUwYjExMTdhNjJmZGExZDlhMzBkYTBjMzI2YTI2YTJiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyYzkyOTk3NTc2NmYwNzM5NTNlNTA5YzIyYjI0ODBiNjE0NjQzN2FhZmIzMmYyOWJkNTJjMGM4M2E1Y2ViZjU5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmZjc4ZDc2OWUzNzBlMjA1NmU3MmI2YTU1OTkzMWIzYzVhODNjMGE2YWI2YWFmYjhmZTkzOGE3NTY3Y2Y4ZDNkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5ZjgxNDM1OTIzMTAwNThkODUzZTY3NzM5YTExNzY2NTkyNjdhODM1MTIxYTc0OWI5Nzk1ODU2M2UyZWU3MmVlIn0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1350-L1491",
+          "version": "repo-lines-v1:sha256:b3944306c5c02406409ec4bcdc0e8e6251fa74bf22c8614be021cd19f431c28f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI4ZjU5YzFiMTk4OWE4MWFiOGFlOTg1NzI5MDJmYTdlOTE3NjcyM2Q3ZDJmNzMzM2I4YzUzZWRhOTE5YWQzMDIxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlNWE4MDU0MGMzM2NjNmY5NmNhMzJlNWZkNzQ4MjFjMmI2ZWMxMjNhMmY0ZGU3MTE2MmRkN2JhNzcwOGI5MmUxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIxZmVkNjE1ZWZhMTFmMGE2MmUwYmZkNjA2YWQxNTZjNzVlNjU2MTUwZTFmMmZjZTg5MGY4MWI1ZTI5NWFmOTg1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNmZkNDMwNjc2ZDEyODI3OGZkMTNhYTE3ZjQ5OGM3NDMxMTZjODhkZmZiMTRiODE3ZWU2Y2MzYTJlNjAxNTlmIn0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1493-L1518",
+          "version": "repo-lines-v1:sha256:d4137bcd41c48b1ebc9e2c9340f93d61fe3bb9343ee869b71e2451f7e5cc744b:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIzZjkwMmMxNDI4N2FhYzkwYjRjNGQwODJjOGI0OTgyMjA3MDQ3NmMyYzU0MjljMWQ1ZmQ1MWQ1NzAzYWE2N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIwYTc5MTEzOTgwODVmYzE5NzQyNjcwYzUyODg2YTY1ZjdjYmYzNDBhMDIzZWNkMzk5MmM1MzQwYTZkMDg4ZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5YTRlODM5OGY4MjNmNGUwODU2NDc2N2ZkMmU4ZWE4MjE2NDZiZGJkZWVhZDJiYWE0MGM0M2M2YzVjOTM1YWYifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L676-L707",
+          "version": "repo-lines-v1:sha256:2583ef073eb425fc3d8e3cf2bdababe0fe2a4c4cec826024762a9484f7c55262:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwYzYwMDE3ZWYzMjI4MTViNzM4ODQ3OTlmMGU0ZGVjNzI2ZDk1ZDU4OWQyNDcyNmY5ZTIwY2IzODZjMjA4YTIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlNjgwYjM5MmFkMDk1NmUxYWEyMjE1ODVlOTA4YmY1YWFjNzQ2MWNjNzgwN2QyMzgxZWFiODVmODQwNTQwZmUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlZTVkZWM0YzJlNzkwMGIzMWU5N2YwM2NiMGEyOWM0OWI5ZDNiZmY2NDZhN2E0NzYyYzI5NzQ3OWZiM2E5ZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyZWUyZjEzZjEwNjFjOTFjODE2Yzg3ZjhlZTMxZjc3MWE0N2I5OWUyMWVmMDcyYTFkMjlkMTg3NzQ4NDc3ZDkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0414d96f92fe4c2ba71c41cfa457711d",
+      "statement": "Conditional edges decide routing: model_to_tools checks for explicit jump_to, structured_response completion, pending tool calls, or synthetic tool messages to route to tools or end; tools_to_model checks return_direct on all executed tools or structured output tool execution to exit, otherwise loops back; model_to_model (with structured output only) checks jump_to or structured_response to route. Middleware before_model and after_model hooks can set jump_to to override defaults.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1755-L1812",
+          "version": "repo-lines-v1:sha256:50b3d15d0123dc91528899b3175e437f0b08d27a9853df7d3832062ebb57557c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJiNDllZjRiNjc1NzM5ZTc3ODVhMmJkYmE2OTc0OGIyZTBlMDZkNTY0Y2I2ODM3OGU4M2FlMDU4NDVkMTFiMGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmZjQxMDMzYWM4N2VmNjNmYzk1ODQ3N2E5M2ZjYWI5NDQ3ZjkyMTcxOWIxZjkwOWIwNDQwMDU0MWExYmZjMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlmMWYwY2IzNmI0YTI1OTYzYWVlMzBlOTNlYzQxMWI3NjFkNDI1MjAzMjEwZGY2MjRhNzNhYzZjZmU2YWJjYmMifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1988-L2108",
+          "version": "repo-lines-v1:sha256:1468f71b371171a442952aebbda8cac10d1f92863a1c74bdd6dd5dd3b3fb035e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxNTE5OTZmZDNiMjMzM2NiODYzNmQwNDg0YmYxOTNhYjEwZDNhMzAyMmExMzY1Y2I1MjFjNThlYmYwZWQ1OTVlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJjNDQ3OWNjZWQ2NmFmZmMzYzA5OTg4YjUwMzg2NTZjYTUyYTlmOWE0NDUyYzFhNGY2ZWU0NWQ1ZWM1YjQ1N2EzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI4ZWNhYTdiNzY3M2I5MzJlOWE0NTNlNmRiZTVhYjdhNjU0OGU5MGMxZDI3YmVkNDViNmQ1NjU1MDgzZmU4NTZmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxM2EwMTI5M2NiNzY5ODQyNTU5NDM1YmM0NmRmYzUxYWEwYWZjZTFhM2IwNDcxNGQzYjE3ZTMwNmM3YjI0MWUwIn0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L455-L502",
+          "version": "repo-lines-v1:sha256:7970e87053cdb3dad4599ea3476b0ae74420af23f030de54d9649bbafd28afb0:eyJzZWxlY3RlZExpbmVDb3VudCI6NDgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3OWIzYzEwYzYzMjk4MDEzNzY4YjY3OTA5OGU1Zjk4YTEzZGM1MjNkMWFiODg5YjUzZmQ2YzdhMGU5YzliZjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA4MDg1OGRkZTZlYjFhNzFkMGY3NWJhNDYzNDAyNGY5MDU1NzUyMzczMzYxNDZjODkxYzliYTJjN2I3N2JmYTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2NmI2NDg2YjVhYmE5MzcxYjgzMTdmOTk5YjllMDRiZTRjMTJhMTFkZDNkMzc1YjgyYzg3NmZkOWQ5ODEwZWMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1a1ab2cd977c45eaa4ea3dd8fc8237f0",
+      "statement": "Structured output via response_format uses ProviderStrategy for native model support (e.g., OpenAI response_format) or ToolStrategy for tool-call-based output. Auto-detection wraps raw schemas in AutoStrategy and detects best strategy at runtime based on model capabilities. Tool-based structured output creates OutputToolBinding instances; validation failures trigger error handling that retries if configured, else raises StructuredOutputValidationError.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1062-L1088",
+          "version": "repo-lines-v1:sha256:46ca7abe64408d9241323b742fd554652a4ee0181fe59e35bf62c09fb5599f2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ2ZTA0NTJmNzY0NWFhYjhiN2UxZDg5NTk5MTVmOTc4NDRkODIwOWVmOTJiZDVmZjQwNDE1Y2QwNjc4ODBmNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyMjZhNDMzM2Y3ZmRmODhhYmNiOTQ4Yzk2YmY4Mjc5ZWQ2NzE4ZDYxNTVlZjFmZDRiMzQ2MjdjNzMyYTEwZGMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIyNjM3MDgzNzA0N2VkYzNmOTZlNTY1MjI5NjZiZWFhYTExYjM5YTEyYTg0ZWZmZWZjYWNhMWFmN2ZmNWQ1ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwZDdkNjYyMDI4NTk1ODI5Y2RiM2U4OWZlZjI5ZDczMjYxY2ZkNTVlZmUxNTdjNDJmZmMxNWQ1ZTA2ZjQ0OWEifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1256-L1347",
+          "version": "repo-lines-v1:sha256:ceecba3e66c627848e3631898ed361bab5aca187476bcc30bebae4d323e02549:eyJzZWxlY3RlZExpbmVDb3VudCI6OTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4NzdiMWNlYTdjNDRkOGM0ODg2YWNkOWJlM2M3OTZkYjYxMGI5NTZhNjJkMGQ4YTExOGNlNzM2MThiY2U0NWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1MmI3MDMyYjJmMzdhNjgxMDZkMjUwYTM1MDBlZDE4NTliYjU3NDcyOTQzNjAzYWQ3NzhmMWRjODFhZjdhMWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmZDk4NGVlZDk1Mzc2NzE5NWQ2MWRmMDk5NTEwNmM2NGJjZmZhZDU0YzMwNjQxYWNhYzA5N2E4Mzk1YjI1MjAifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1407-L1422",
+          "version": "repo-lines-v1:sha256:2ee413931ca784b03ced527cb57321d2027b8e36617a253813b02d677108e26e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAyMmM0ZmQ2NWZjODc5NTRkZDRlNDVkY2E3ZDlhMDBiNjMwMDg2YjdlNGY5YzE3YTY5NjQzZGIyM2E0ZTA4YTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjkzNTA3YTg4OTliMzk3OGMzMWMxOGZmODliZWJkOTVjMmFhNzUzMGJkODI4ODg3MTk1YTA4MjJjYmUxODNjZmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIxNGYzZWNhZTQ0NmQyNzMwMWMwNzYwMmI3MDI2ZmZjNThiOWRmYjY0MmE0MmRmMzliNTc4N2EyMTgzNTI0ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3Nzc3MTZjNGZkZjczY2VlYjAyZmMzYmQ5ZDg4MDNlMjAyYTFkYzMwMmRhMmY4ZDQ4ZDQzZTQwMDI0MDM4MzYifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L646-L673",
+          "version": "repo-lines-v1:sha256:f0ec55534f15a3317d0e70bd07bb84f080ba5ee41a94f5b05d08e74261f015aa:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmM2JjYWUzMzhlZjQxNGQ2NmFhM2Q4MTUxNjA5MmE2MWMxNGZhNTllZGExMTMxMmVlMzgwM2UwNDNjZDAyMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5NmI5OTA3N2JhZDllYzg0YmJmYzMzMzBkNWRiNDdjOTkyMDJhZjUxMjMzM2Q5OWZlODM3ZTA2NTQyOWVmMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjViNTk4NTM5MWU3MTAyMWY1ZDZiYjczZTE1YzgzZDYwNmJmNTNhMTVhYzM1NGRhMGI0OWM3YzZjYWZlM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgyMDYwZGJmNWM4NDQ2YmUzZTYzN2U3NzcxMzZiNTJmMzlhMWZjYmQ1YjIwMzgwNTZiZDEwZTE4NjUwNzZiNDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ef6da7bbe51b472d9c6675f2f414a157",
+      "statement": "Tool execution runs when pending tool calls exist after model invocation. Tools are looked up in ToolNode, middleware wrap_tool_call handlers compose to create a wrapper stack (first = outermost), and each tool executes. Tools node returns ToolMessage or Command. Routing then checks return_direct and structured output completion to decide looping back or exiting.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1130-L1148",
+          "version": "repo-lines-v1:sha256:551cee9294f9305a3a7a7c9df2b9b8e501af2a288b6720d879c0f6e56a57b02c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5NmU1NTNmYjUxNmIyMjBjYzVkNTUzODNlNWQxNDYxY2EyODUzOTEyYTRjNWQwNjZiY2NlNjg3ZmYzNDI2MTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM0MDZiYjY2MjEzMDVlZGZmMDk1OGU4OWJiN2Y0NTM0ZDJiMTI3ZDIyYjJhYzkwNGU4ZDY1MzZmZjNjYzA5YjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE4YzM2ZmUxMTg0NTI5MDAyNThmZjEwNWEyY2M2NjNlZWJlOWFhN2YxN2YwYzM0NTI3ZWU5NWM0ODdmYTQ4YWQifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L2069-L2108",
+          "version": "repo-lines-v1:sha256:7f40311e71b8cf9998ebd15c56929ee7ea8180cb6fe725a7b4b4ebfb917603a1:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUxY2ZjMmJmMGMwNmFhZmMyOTNjNWE3MTkzYzc2MjFhMmQwYjIyOWZjNGE1MWZjZmRlOGUwYmRiYzUwNjUyMjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM0NDc5Y2NlZDY2YWZmYzNjMDk5ODhiNTAzODY1NmNhNTJhOWY5YTQ0NTJjMWE0ZjZlZTQ1ZDVlYzViNDU3YTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4ZTE2NjY1MDcwYTE2MzkwYzYyZjliN2NkNWE2ZWQ5ZmI2ODZhODE2ZGNkNjAwMjBlNTNkMzhmNjAxYzUxYjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEzYTAxMjkzY2I3Njk4NDI1NTk0MzViYzQ2ZGZjNTFhYTBhZmNlMWEzYjA0NzE0ZDNiMTdlMzA2YzdiMjQxZTAifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L710-L819",
+          "version": "repo-lines-v1:sha256:1677288ee20a0766e557ca59564e1c8af0dc7b6d2c6938d2e2eb36771f4833be:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlNjg3ZGI4NmIyYjJmZTY0NTgxZWRhMTFiMTUxMTQ0M2UwMWY4MTI4MzM4YmFlODg2OTQ0NWRhOGQzODhlZmQzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmYTExYzA1NjdkMGE1ZjllOWIxMzVmNjVjZDI1MzcyZGZkNjI4Nzc1ZjdjMWVkMjUzZjhiYWQ0MmRkMmQ2NjY5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0YThmNTJiMzdhY2IxMGVlYzc3NDc5ZjMyY2UwZjBjNjliMGRhMzg4YTFmZGEyZTYzMWI0Yjk1OWU2MDNiNjZkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5YWI1ZjYxOWVjYjg0ODg5MjE4ZDAxZWIxZDJjMmFkOWY0ZDQ5ZGUzN2UyNWU1NmRmMGZlMjVkMzhiZWI2MDIxIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_7a0c9f03430f459f8ddadad3c97a6dec",
+      "statement": "The compiled graph includes model and optional tools nodes, middleware nodes (one per hook per middleware), START and END nodes. Conditional edges route model to tools/exit based on pending calls and structured output; tools to model/exit based on return_direct. before_agent runs once at start, loop repeats between before_model and after_model (or model if no hooks), after_agent runs once at end. Recursion limit is 9,999.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1236-L1244",
+          "version": "repo-lines-v1:sha256:e1e5b640f933c9eed12b1dc48675089e352d8c003b5d2e7d70c0863dc5941b70:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzhkYTFjYzZhMjhlM2U1YjY3NTFhMWIzODNhY2ZiNTRjZjk5OGNmMDU0YmRiNWNhYWZiZmM0MWU4ZWU5ZTBiOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBjMWYxODhmMTQyZWQ3YTgyNDY4MGIyMDcxNzJjNTUxOWJjNjE0YTQ4ZmRhN2NmMTY3ZWRiOGRkZjc5OTU2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2Y2ODMzMzdiNGMzZjU0ZWJkYWJlM2IyNjYyZTk1YzU5NDQ2YmFmODg2NjZiMjc5OTk2ODUyYzFjYTc1YTVhZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjcxZTY1ZGNiOTY1MDA2YWI1ZjliZDk5MmY5NmY1Mzc5MzUyODNkOWEzZTBmODkyMjIzZTZjZDVhZGRhNGFjNiJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1611-L1812",
+          "version": "repo-lines-v1:sha256:aaf334fd50a4915b2bf3a4a8cf491a20d3460a4d8f1891168bcfe96c00bd9a91:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3MDcxOTNiYTU5NTMwN2Y0ZmM5NmE2OWU2ZWNjMjA3OWZlMDJjODk3ZTRlYzhlNzUyNGJkM2MxNzZlNDJhYWI2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0ZjQ2ZDg1N2I0ZDRjNTRiN2UyNzlkMWFiMmUwMGU3NmQ1Y2VmN2Y1ZTZkZjU0NWM2ZTU4Njc3ZGE1YzE2Yjc4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5ZjFmMGNiMzZiNGEyNTk2M2FlZTMwZTkzZWM0MTFiNzYxZDQyNTIwMzIxMGRmNjI0YTczYWM2Y2ZlNmFiY2JjIn0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1897-L1922",
+          "version": "repo-lines-v1:sha256:7f0e3f3f511378f8c0bcbb52023635ccebf55e147a9ec4ee24158ad7e58d4826:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYzI2MWNjMzliZmRmZDMwODQ4OTY5YjFhN2IzYTZmYWQ5OGY5MjMyMDM2OWIwYjk5YjRhOWEzYTY4OWYyMzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY3ODdmOWY0M2FkM2JlZGJhZWIyN2VhYjljOTAwNzg2MmFlOTNjNTEwZGM1ZTg2YTZkZDMzMWY4MDNiMzAwYzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1MDVkZWQxZTkxMTRhNzk3YWJhZWExMTYwMTlhN2FmNmJlMDU1ZTE0YzMwODg4ODUzODEwMDI4ZWJhNzYzNGYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxZjIxZWZmMTg3ZDdlZTVjODVmN2JmODJiOGViY2E1MGM5MjEzNWI1ODA3YWI1ZWNhMjljNTM4ZDliNmFiMjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e0046657282a430d99427f66f99835c9",
+      "statement": "The agent supports sync and async execution: sync uses model_node and sync middleware hooks (before_agent, after_model, etc.), async uses amodel_node and async hooks. The framework auto-selects based on which hooks are implemented; mixing sync-only with async invocation raises NotImplementedError with guidance. With no tools, the graph consists of model node and exit only.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1520-L1608",
+          "version": "repo-lines-v1:sha256:3671052586382011e014a6d60493d804ee6b77d3628034c4ba96e87301ce4b14:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNmM1NDhlYTczZDQ4MDYwYjczZTVkODUwYjE3MWRlNjVjZGZmNWUyYTdhMTg2ZTY0MmEwZWEzMWJmYmNhZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU3YWEzMjYzMTc0YzhiNjQ4ZTI4YmIxMWI5MmZkYTQ0MGUyMTlkZDIzNzU5ZjhmMTA4MTliZDk4MWQ0OWZhNzMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI0MDEyMzVhMzBlZTUwMjYyZjZkN2YxYmNlZWMyYjgzZGE4MDcxNzMyMmMzYjFlMzVkMWQyZmJiMzdmODczYTIifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1613-L1615",
+          "version": "repo-lines-v1:sha256:4027b258b1e61c41cad4ff1e1825339ff81be28feb3547d627d97aafc9d184c7:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODEzMTIxNmQ3M2YwNWYzMzc0NjU3OWQwMTFkNGJhNGJkNzEyN2Y2MWZjNDk3YTM5ZTJkNGY2NGI1NzIzODhmZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDUwODYwOTVmMjgzZWM5NDVkNzhjNDQxM2Y1NjYzOTIxNzUxMTAzOTQwNDAxNTYxN2U5YjBiMWNhOTZjMmVhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjhiOWQ1MDUyZjcwZTc2MjA0YTQ4NWU5MGIzZDQ0NTY5ODcwNmFkYzdjZTdmNjU3NDY3MTc3MGE4MGNmMmJjZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYThkNTZiYThjMjI1MWYyNzcyNmZjMzY2Y2Q3YzNiMzYyMDIyYmMwMjNjNTM4NWZkOGJmZjYzNGYxOWI4NGJhYSJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L503-L648",
+          "version": "repo-lines-v1:sha256:19fd6d26481b5851836ccce9443b0aa5fd6753668f644465cd87b9d45456f7af:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5MjcxYTBhMTMzOGI2ZTg2Y2RhYjY1YzY5Yjg1NDc4MTcyMTViZGIwNDNjMTA2N2RjNDE1ODJlMDIxNWVlZmU1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4MzNiMzY3OTY3ZTg3N2ViYTJkYTE2ZjQwZmI5YzA4MGMwMGYzNzJjZjgxNmZlNjdjMTY3MzFjZjMyZTdhYTRmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0ZjE2MjExYjhmZjk4NzQ2Y2I3Y2I1ZDZkNDVlNDUxMzgyY2ZmMTQ1NjcwNmM2YmRjMzBhYzM4ZDU2NmIwOWVjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0ZjkzOWMwYjA3YWYzOTc1NTM4OWE4NjY4NDAyOThlMmIxMDhkZjBkYTIxMGRlYjU1ODA0ODhkZDg3MjZiYWRmIn0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-11-10T08:17:41.265Z"
+  }
+}

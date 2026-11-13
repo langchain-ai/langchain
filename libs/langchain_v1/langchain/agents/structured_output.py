@@ -11,15 +11,17 @@ from typing import (
     Any,
     Generic,
     Literal,
+    Self,
     TypeVar,
     Union,
+    cast,
     get_args,
     get_origin,
 )
 
 from langchain_core.tools import BaseTool, StructuredTool
 from pydantic import BaseModel, TypeAdapter
-from typing_extensions import Self, is_typeddict
+from typing_extensions import is_typeddict
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -95,7 +97,7 @@ def _parse_with_schema(
         # Raw JSON schema has no corresponding Python type to instantiate.
         return data
     try:
-        adapter = TypeAdapter[SchemaT](schema)
+        adapter = TypeAdapter[SchemaT](cast("type[SchemaT]", schema))
         return adapter.validate_python(data)
     except Exception as e:
         schema_name = getattr(schema, "__name__", str(schema))

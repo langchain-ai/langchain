@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a8a8280c4ddd71ccbbf3677a87a94d5c31685d96a5bb5cccd3c5dc0aee89dd80",
+  "pageVersion": "sha256:0b29915139c6478cc0ba408b3b227c6b1aad602168c5d8478eca6516f25c431a",
   "claims": [
     {
       "id": "claim_d872799ce6874d76b63667fe912b7616",
@@ -26,7 +26,7 @@
     },
     {
       "id": "claim_bf4afec1395b4acbbf413fe2928daab6",
-      "statement": "langchain-core (v1.6.12) provides the stable base abstractions including Runnable protocol, BaseChatModel, message types, tools, prompts, and callbacks.",
+      "statement": "langchain-core (v1.7.7) provides the stable base abstractions including Runnable protocol, BaseChatModel, message types, tools, prompts, and callbacks.",
       "evidence": [
         {
           "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1-L80",
@@ -34,17 +34,17 @@
         },
         {
           "resource": "repo://libs/core/langchain_core/runnables/base.py#L1-L80",
-          "version": "repo-lines-v1:sha256:d49594cfb590cc026c40d913d290e5877978567c9a70f1c9f7cc0eb818fbbb30:eyJzZWxlY3RlZExpbmVDb3VudCI6ODAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjY2UwMTU4YzI1NmU5OGViMGU2MDE2YmQ0NjFmMTY1NmRkNmNmOGM0NDg2MWYzMGQ1NzdlMGU0M2Q4OGJiYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2NmI0NWIxYmRiODdjNWE5YmE0ZWVlMjNhNWFlY2RlYjYxMDVmZWM4ZGM4YTEwY2I3YWY3MWU1NzVlOTBhMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjZDY5MGU1NzI2MDE4MDhiMzdmYmU3YWFjYWU0NWQyZTNmYzczODMzNmMwNzUwYzgyYTYxOTg4NWRlMTdiZTEifQ"
+          "version": "repo-lines-v1:sha256:58e4649af7bf050cb4ff1216706fc52ea910073f93455c1b44f7da5c7bbb199b:eyJzZWxlY3RlZExpbmVDb3VudCI6ODEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjY2UwMTU4YzI1NmU5OGViMGU2MDE2YmQ0NjFmMTY1NmRkNmNmOGM0NDg2MWYzMGQ1NzdlMGU0M2Q4OGJiYzMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2NmI0NWIxYmRiODdjNWE5YmE0ZWVlMjNhNWFlY2RlYjYxMDVmZWM4ZGM4YTEwY2I3YWY3MWU1NzVlOTBhMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjZDY5MGU1NzI2MDE4MDhiMzdmYmU3YWFjYWU0NWQyZTNmYzczODMzNmMwNzUwYzgyYTYxOTg4NWRlMTdiZTEifQ"
         },
         {
           "resource": "repo://libs/core/pyproject.toml#L24-L24",
-          "version": "repo-lines-v1:sha256:83821d8f9e6c872dc1d449b47ea5a586199be5dcf3ced9724d66bf0081d384f6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODM4MjFkOGY5ZTZjODcyZGMxZDQ0OWI0N2VhNWE1ODYxOTliZTVkY2YzY2VkOTcyNGQ2NmJmMDA4MWQzODRmNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODM4MjFkOGY5ZTZjODcyZGMxZDQ0OWI0N2VhNWE1ODYxOTliZTVkY2YzY2VkOTcyNGQ2NmJmMDA4MWQzODRmNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc0MzY5NGEzZTBkOGRiMDQ5ZDQ1ZGFlOGM4YTdiYmM2YTk0NjAwYjNjN2MxZjFhNTJkMzQ4YzlkMjIzMTFkOSJ9"
+          "version": "repo-lines-v1:sha256:a44c63b5905ff62523225a03c3a7e7b1b7263640dffa4783870f5f830691db7f:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQ0YzYzYjU5MDVmZjYyNTIzMjI1YTAzYzNhN2U3YjFiNzI2MzY0MGRmZmE0NzgzODcwZjVmODMwNjkxZGI3ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTQ0YzYzYjU5MDVmZjYyNTIzMjI1YTAzYzNhN2U3YjFiNzI2MzY0MGRmZmE0NzgzODcwZjVmODMwNjkxZGI3ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzc0MzY5NGEzZTBkOGRiMDQ5ZDQ1ZGFlOGM4YTdiYmM2YTk0NjAwYjNjN2MxZjFhNTJkMzQ4YzlkMjIzMTFkOSJ9"
         }
       ]
     },
     {
       "id": "claim_54ce93defa3a454f9a4a03bc2d6ef614",
-      "statement": "langchain (v1.4.6) depends on langchain-core and LangGraph, and provides the Agent Factory, agent middleware system, and init_chat_model for high-level orchestration.",
+      "statement": "langchain (v1.4.9) depends on langchain-core and LangGraph, and provides the Agent Factory, agent middleware system, and init_chat_model for high-level orchestration.",
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1-L50",
@@ -55,8 +55,8 @@
           "version": "repo-lines-v1:sha256:44271de00756a09c617730cd73b2e21a5110c9868c7b19a8697ffa625920f216:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkYmQ1OGIwYTEwODJhNjFmZWU5NGY4MTMyNjYzNTZjOGU2YTllYTJjMjQzMDgyOGNhNjI5NTI2MWY3MWQwYzc0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2MTA5OWY0MjhjNjEwOTc4NDdmZjhmZDE3YzY0OTEwM2JjNzAzYTk4MTliOTlkMDkxM2VmYmQyNzBmYzYxNGM5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI0OGVhOTdjODRkZTcyNWIyYmJkNDkxOWYyNmU1NzY4YTczYjFiOWYyMzQ2ZDczNDg0NDIyYjVhMzVkMzBhMjNmIn0"
         },
         {
-          "resource": "repo://libs/langchain_v1/pyproject.toml#L24-L24",
-          "version": "repo-lines-v1:sha256:f4fc19d2e2bcf2437235c9d289a0f5be2e341a6e90916e43d033f51ad32fc297:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRmYzE5ZDJlMmJjZjI0MzcyMzVjOWQyODlhMGY1YmUyZTM0MWE2ZTkwOTE2ZTQzZDAzM2Y1MWFkMzJmYzI5NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjRmYzE5ZDJlMmJjZjI0MzcyMzVjOWQyODlhMGY1YmUyZTM0MWE2ZTkwOTE2ZTQzZDAzM2Y1MWFkMzJmYzI5NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNWEyNWQzNmY3ZGVjN2I5MTMxZDhkOGE1YTUxMDdlMzE3OTliMjgxMTc3ZmU2NWNkNzAzYjRkNzgyZDBlMzUxZSJ9"
+          "resource": "repo://libs/langchain_v1/pyproject.toml#L24-L30",
+          "version": "repo-lines-v1:sha256:b683cf52123f59ece0e22a46a8801cffc82ab36241d4c22ea9a18d2d273d7451:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZmIwNWZlZmZkYmZiMmVmNWUxZjlhYjY1OTUyYzUzNWUzZjQwNDAyYzk1N2RlYTUzNTdiOThmZDQ2NDAxMGQ5MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjk0MTZlMDlmNzhiYTMxNmMwMzI1NjgyMTNiODU1ZWU3NTZlNDE1NjVkOTE4ZjA5NTE5YzgxZmQ2MjBmNDA2MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDQyZWY1NmY0YTJjOWRmNjRkZDllM2VmMDBjZmZhYjIxNzM3ZjA1MWFjNTZjNzNkMGM2YTA3NDk0NDI2OGVhZSJ9"
         }
       ]
     },
@@ -123,12 +123,12 @@
       "statement": "langchain-classic (v1.0.8) is legacy and depends on langchain-core; new projects should use langchain instead.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain/README.md#L1-L30",
-          "version": "repo-lines-v1:sha256:44cb1bfcadf8fed46c15e030140879628d970b883ceaa268a8ed2a0eb91f0848:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkNDNjNTE1NzI0MDZkMTFiMWMxNjVlMzcyYTM3MjdmMjE3Y2ZlMjg5OWZiZTJiM2QyNzRiZjY5NDRmM2NhYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE5MDZjNjU1OTZhOGYwMjMzZDZlNzZkZmQ2ZDc0MWY1ZGE4ZjJiNDk0MTg0NmMwZDk0ZDlmMzFmNTk3ZDk5ODkifQ"
+          "resource": "repo://libs/langchain/README.md#L19-L23",
+          "version": "repo-lines-v1:sha256:a5e368e50a8cfcd43c241c6d67465e9e52d3801bdb082c82926a7b014e279734:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDU5ZTZiMzlmZDVjMDViOTNiODI1NTI2MTEzYWQ0NTM4ZTg1NTUxOGU5NzRhNWNjOTY4OGM5MDQ5ZDgyZmQ2OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTg1Njk5MDdhNGI1NmZjYmM4NThhMTZkNjhiOGE4NjUzNjcyZWRhNjU1YzkzOWY5MzBlNzU0NjdlYjUzN2QxOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmU3ZTdkNGU1OTM0Mjc5YzI0MTlmZjY2ZWRhMDZiMTEzYzQ3ZjcyZmJmODgzOWJhNmUwZTkxZDJlYjhhN2NiYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWFhNDM1ODFiZjg1MTc4NDRiN2ZiYTkwYmE1ZTE2NjU5MWJlZjJiMGRkOTU4MWMxZjY3NjAwODA5NDBlYWQ4MyJ9"
         },
         {
-          "resource": "repo://libs/langchain/pyproject.toml#L1-L30",
-          "version": "repo-lines-v1:sha256:b5ce41087a8dffec0079da15944fc19703b473283f4b117b3810fcb203693aef:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NTY5OTQ2YWM5YmJlN2NiMmNkZWMzZjhiZWNmMzQzNzUwYzU4YjliMzIxZWMyMTk1YmZiYWFiMmFhOGM0YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2ZDEwODE0MWExNDcyNzA1OGEzMDJmMDhlYzA1YzM3MzVkNGYzNjA4NjJjOGIzZmIyZWQ5YjdmMGFhMGVlZDUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZiZTY5MjM0ZGI0YjFmMmQ1NTgyMDZiMjBiOTQ2MGRjMjE5N2IyNmYyOWE0ZDVjNDlmMTQ1YzcwN2VlMGMxYWQifQ"
+          "resource": "repo://libs/langchain/pyproject.toml#L23-L23",
+          "version": "repo-lines-v1:sha256:a95aee6274dfdc3489653229ae20e21a82ba0ebcee4bae10cf627c9ef1ad50e3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTk1YWVlNjI3NGRmZGMzNDg5NjUzMjI5YWUyMGUyMWE4MmJhMGViY2VlNGJhZTEwY2Y2MjdjOWVmMWFkNTBlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTk1YWVlNjI3NGRmZGMzNDg5NjUzMjI5YWUyMGUyMWE4MmJhMGViY2VlNGJhZTEwY2Y2MjdjOWVmMWFkNTBlMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmU4NTk5ODVmYjNjYjZjNjdiOWI3ODlmMGE2YTJiOGQ0NGNmYmE4MzlhMDlmMWNlNGEwMzNmMWFlMmQ3Y2Y4MyJ9"
         }
       ]
     },
@@ -149,6 +149,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-19T08:31:23.057Z"
+    "at": "2026-11-10T08:17:41.265Z"
   }
 }

@@ -1,5 +1,6 @@
 """Test the base tool implementation."""
 
+import asyncio
 import inspect
 import json
 import logging
@@ -41,6 +42,7 @@ from typing_extensions import TypedDict, override
 from langchain_core import tools
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
+    BaseCallbackHandler,
     CallbackManagerForToolRun,
 )
 from langchain_core.callbacks.manager import (
@@ -1220,6 +1222,62 @@ async def test_async_validation_error_handling_non_validation_error(
         await tool_.arun({})
 
 
+class _ToolErrorCaptureHandler(BaseCallbackHandler):
+    """Callback handler that captures errors passed to `on_tool_error`."""
+
+    def __init__(self) -> None:
+        self.tool_errors: list[BaseException] = []
+
+    @override
+    def on_tool_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: Any,
+        parent_run_id: Any | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        self.tool_errors.append(error)
+
+
+def test_tool_base_exception_calls_on_tool_error() -> None:
+    """A `BaseException` raised by a sync tool ends the tool run with an error."""
+
+    @tool
+    def cancelled_tool() -> str:
+        """Raise `CancelledError`."""
+        raise asyncio.CancelledError
+
+    handler = _ToolErrorCaptureHandler()
+    with pytest.raises(asyncio.CancelledError):
+        cancelled_tool.invoke({}, config={"callbacks": [handler]})
+
+    assert len(handler.tool_errors) == 1
+    assert isinstance(handler.tool_errors[0], asyncio.CancelledError)
+
+
+async def test_async_tool_cancellation_calls_on_tool_error() -> None:
+    """Cancelling an async tool ends the tool run and still cancels the caller."""
+    started = asyncio.Event()
+
+    @tool
+    async def slow_tool() -> str:
+        """Wait until cancelled."""
+        started.set()
+        await asyncio.Event().wait()
+        return "unreachable"
+
+    handler = _ToolErrorCaptureHandler()
+    task = asyncio.create_task(slow_tool.ainvoke({}, config={"callbacks": [handler]}))
+    await started.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert len(handler.tool_errors) == 1
+    assert isinstance(handler.tool_errors[0], asyncio.CancelledError)
+
+
 def test_optional_subset_model_rewrite() -> None:
     class MyModel(BaseModel):
         a: str | None = None
@@ -1280,10 +1338,6 @@ def test_tool_pass_context() -> None:
     assert foo.invoke({"bar": "baz"}, {"configurable": {"foo": "not-bar"}}) == "baz"
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="requires python3.11 or higher",
-)
 async def test_async_tool_pass_context() -> None:
     @tool
     async def foo(bar: str) -> str:
