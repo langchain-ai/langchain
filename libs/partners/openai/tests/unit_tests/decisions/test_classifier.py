@@ -271,9 +271,40 @@ def test_refusal_raises_model_refusal_error() -> None:
         classifier.invoke({"state": "hi", "questions": _questions()})
 
 
-def test_mismatched_answer_count_is_invalid() -> None:
+def test_answers_are_matched_by_name() -> None:
     payload = _response_payload()
-    payload["answers"].pop()
+    expected = _classifier(_respond(payload)).invoke(
+        {"state": "hi", "questions": _questions()}
+    )
+    payload["answers"].reverse()
+    classifier = _classifier(_respond(payload))
+
+    response = classifier.invoke({"state": "hi", "questions": _questions()})
+
+    assert response.answers == expected.answers
+    assert list(response.answers) == list(_questions())
+
+
+def _missing_answer(answers: list[dict[str, Any]]) -> None:
+    answers.pop()
+
+
+def _unknown_answer_name(answers: list[dict[str, Any]]) -> None:
+    answers[0]["name"] = "unknown"
+
+
+def _duplicate_answer(answers: list[dict[str, Any]]) -> None:
+    answers.append(answers[0])
+
+
+@pytest.mark.parametrize(
+    "mutate", [_missing_answer, _unknown_answer_name, _duplicate_answer]
+)
+def test_mismatched_answer_names_are_invalid(
+    mutate: Callable[[list[dict[str, Any]]], None],
+) -> None:
+    payload = _response_payload()
+    mutate(payload["answers"])
     classifier = _classifier(_respond(payload))
 
     with pytest.raises(openai.APIResponseValidationError):

@@ -300,12 +300,11 @@ def _parse_response(
 ) -> ClassifierResponse:
     try:
         body = response.json()
-        answers = body["answers"]
-        if len(answers) != len(questions):
+        answers = {answer["name"]: answer for answer in body["answers"]}
+        if len(answers) != len(body["answers"]) or answers.keys() != questions.keys():
             msg = "Expected one answer per question."
             raise ValueError(msg)
-        pairs = list(zip(questions.items(), answers, strict=True))
-        refused = [name for (name, _), answer in pairs if answer["type"] == "refusal"]
+        refused = [name for name in questions if answers[name]["type"] == "refusal"]
         if refused:
             msg = f"The OpenAI Decisions API refused to answer: {', '.join(refused)}."
             raise ModelRefusalError(msg)
@@ -313,8 +312,8 @@ def _parse_response(
             {
                 "model": body["model"],
                 "answers": {
-                    name: _to_answer(question, answer)
-                    for (name, question), answer in pairs
+                    name: _to_answer(question, answers[name])
+                    for name, question in questions.items()
                 },
                 "usage": _to_usage(body.get("usage")),
                 "request_id": response.headers.get("x-request-id"),
