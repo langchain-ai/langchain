@@ -8,7 +8,6 @@ import io
 import pytest
 from langchain_core.decisions import Choice, Noul, NoulCriteria, Score
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from PIL import Image
 
 from langchain_openai.decisions import OpenAIClassifier
 
@@ -83,8 +82,9 @@ async def test_ainvoke_with_tool_conversation() -> None:
 
 
 def test_invoke_with_image() -> None:
+    image = pytest.importorskip("PIL.Image")
     buffer = io.BytesIO()
-    Image.new("RGB", (64, 64), (255, 0, 0)).save(buffer, format="PNG")
+    image.new("RGB", (64, 64), (255, 0, 0)).save(buffer, format="PNG")
     image_data = base64.b64encode(buffer.getvalue()).decode()
 
     response = OpenAIClassifier(model=MODEL).invoke(
