@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import functools
 import inspect
 import json
@@ -53,7 +54,6 @@ from langchain_core.runnables import (
     run_in_executor,
 )
 from langchain_core.runnables.config import set_config_context
-from langchain_core.runnables.utils import coro_with_context
 from langchain_core.utils._signature import _signature_parameters
 from langchain_core.utils.function_calling import (
     _parse_google_docstring,
@@ -1226,7 +1226,7 @@ class ChildTool(BaseTool):
                     tool_kwargs[config_param] = config
 
                 coro = self._arun(*tool_args, **tool_kwargs)
-                response = await coro_with_context(coro, context)
+                response = await asyncio.create_task(coro, context=context)
             if self.response_format == "content_and_artifact":
                 msg = (
                     "Since response_format='content_and_artifact' "
