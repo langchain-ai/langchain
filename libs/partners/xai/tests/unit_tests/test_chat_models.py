@@ -1,5 +1,6 @@
 import json
 
+import httpx
 import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
     AIMessage,
@@ -9,7 +10,10 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langchain_core.tracers.base import BaseTracer
+from langchain_core.tracers.schemas import Run
 from langchain_openai.chat_models.base import (
+    BaseChatOpenAI,
     _convert_dict_to_message,
     _convert_message_to_dict,
 )
@@ -432,3 +436,97 @@ def test_langsmith_gateway_context_overrides_explicit_values() -> None:
     assert llm.xai_api_base == "https://gateway.smith.langchain.com/xai/v1"
     assert llm.xai_api_key is not None
     assert llm.xai_api_key.get_secret_value() == "service-key"
+
+
+_GATEWAY_METADATA = {"provider": "xai", "model": MODEL_NAME}
+
+_requires_gateway_metadata = pytest.mark.skipif(
+    not hasattr(BaseChatOpenAI, "_uses_gateway"),
+    reason="Requires a langchain-openai release with `_uses_gateway`.",
+)
+
+
+def _gateway_stream(_request: httpx.Request) -> httpx.Response:
+    """Answer a streaming request the way the gateway does."""
+    chunk = {
+        "id": "1",
+        "object": "chat.completion.chunk",
+        "created": 1,
+        "model": MODEL_NAME,
+    }
+    events = [
+        {
+            **chunk,
+            "choices": [{"index": 0, "delta": {"role": "assistant", "content": "hi"}}],
+        },
+        {**chunk, "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]},
+    ]
+    body = "".join(f"data: {json.dumps(event)}\n\n" for event in events)
+    return httpx.Response(
+        200,
+        headers={
+            "content-type": "text/event-stream",
+            "x-langsmith-gateway-metadata": json.dumps(_GATEWAY_METADATA),
+        },
+        content=f"{body}data: [DONE]\n\n".encode(),
+    )
+
+
+class _GatewayMetadataTracer(BaseTracer):
+    """Captures gateway metadata promoted onto completed LLM runs."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.gateway_metadata: dict | None = None
+
+    def _persist_run(self, run: Run) -> None:
+        """No-op; runs are inspected as they complete."""
+
+    def _on_llm_end(self, run: Run) -> None:
+        metadata = run.extra.get("metadata", {})
+        if "ls_gateway_info" in metadata:
+            self.gateway_metadata = metadata["ls_gateway_info"]
+
+
+@_requires_gateway_metadata
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_stream_surfaces_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Gateway metadata reaches the tracer for a gateway-routed stream."""
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "lsv2_pt_example")
+    llm = ChatXAI(
+        model=MODEL_NAME,
+        http_client=httpx.Client(transport=httpx.MockTransport(_gateway_stream)),
+    )
+    tracer = _GatewayMetadataTracer()
+
+    chunks = list(llm.stream("hi", config={"callbacks": [tracer]}))
+
+    assert "".join(chunk.text for chunk in chunks) == "hi"
+    assert tracer.gateway_metadata == _GATEWAY_METADATA
+
+
+@_requires_gateway_metadata
+@pytest.mark.usefixtures("_gateway_env")
+async def test_langsmith_gateway_astream_surfaces_metadata(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Gateway metadata reaches the tracer for a gateway-routed async stream."""
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "lsv2_pt_example")
+    llm = ChatXAI(
+        model=MODEL_NAME,
+        http_async_client=httpx.AsyncClient(
+            transport=httpx.MockTransport(_gateway_stream)
+        ),
+    )
+    tracer = _GatewayMetadataTracer()
+
+    chunks = [
+        chunk async for chunk in llm.astream("hi", config={"callbacks": [tracer]})
+    ]
+
+    assert "".join(chunk.text for chunk in chunks) == "hi"
+    assert tracer.gateway_metadata == _GATEWAY_METADATA

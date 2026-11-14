@@ -477,6 +477,18 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         """Return type of chat model."""
         return "xai-chat"
 
+    @property
+    def _uses_gateway(self) -> bool:
+        """Whether requests are routed through the LangSmith gateway.
+
+        The base class inspects `openai_api_key`, which is unset here: the resolved
+        key is in `xai_api_key`.
+        """
+        api_key = self.xai_api_key
+        if isinstance(api_key, SecretStr):
+            return api_key.get_secret_value().startswith("lsv2_")
+        return False
+
     def _get_ls_params(
         self,
         stop: list[str] | None = None,
