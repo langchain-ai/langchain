@@ -3,13 +3,13 @@ type: "API Reference"
 title: "ChatOpenAI API Reference"
 description: "Reference documentation for ChatOpenAI and BaseChatOpenAI class signatures, configuration parameters, and core behaviors for OpenAI chat model integration."
 tags: ["openai", "chat-models", "api-reference", "langchain-openai"]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
 sources:
   - id: openwiki-source-738512768ef81ae009b097ac
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
 generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-14T08:14:57.553Z
 ---
 
 # ChatOpenAI API Reference

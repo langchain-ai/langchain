@@ -3,6 +3,9 @@ type: "Developer Tools & Commands"
 title: "Development Commands and Local Setup"
 description: "Quick reference for uv, make, lint, test, and type-checking commands in the LangChain monorepo, including environment setup, pre-commit hooks, and testing workflows."
 tags: [development, build, testing, linting, typing, uv, make, pre-commit, local-setup]
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-14T08:14:57.553Z
 sources:
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
@@ -18,10 +21,7 @@ sources:
     resource: repo://libs/Makefile
   - id: openwiki-source-a6e669bb11f217c6fbd06670
     resource: repo://libs/partners/anthropic/Makefile
-generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+generated: { by: "openwiki/0.5.0", at: "2026-11-14T08:14:57.553Z" }
 ---
 
 ## Overview
@@ -157,11 +157,13 @@ Prevents direct commits to `master` branch.
 make lint
 ```
 
-This runs four checks in sequence:
-1. **Import organization**: `./scripts/lint_imports.sh` (validates imports are properly structured)
+This runs sequential checks that typically include:
+1. **Import organization** (if `./scripts/lint_imports.sh` exists): Validates import structure
 2. **Ruff check**: Logical errors, naming conventions, code smells (via `ruff check`)
 3. **Ruff format (diff mode)**: Format checking without modifications (`ruff format --diff`)
 4. **Mypy**: Static type checking with strict mode enabled
+
+The exact sequence varies by package. Check the package's `Makefile` to see which checks are enabled.
 
 ### Format Code
 
@@ -746,7 +748,7 @@ rm -rf .venv uv.lock
 uv sync --all-groups
 ```
 
-Each package specifies `requires-python` in its `pyproject.toml`. The full LangChain monorepo supports Python 3.10–3.14.
+Each package specifies `requires-python` in its `pyproject.toml`. The full LangChain monorepo supports Python 3.11–3.14.
 
 ## Related Documentation
 

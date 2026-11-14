@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:72ce8f35d773650abee85c4df5de86f4a91fc15c35b521e29656963d1f4303a3",
+  "pageVersion": "sha256:93398d5bba5da2002428768846ce356c072e613e9a2b24b89971658c9a444d1a",
   "claims": [
     {
       "id": "claim_f1104a8334664647842619daa7f61e83",
@@ -22,15 +22,19 @@
     },
     {
       "id": "claim_21382a8c8fa74dacbcb4b06374c71476",
-      "statement": "OpenAI API key resolution follows a priority order: (1) explicit api_key parameter (string or callable), (2) environment variable OPENAI_API_KEY, (3) LangSmith Gateway when LANGSMITH_GATEWAY is set, (4) environment variable OPENAI_BASE_URL read by SDK; sync and async API keys are resolved separately to support callable keys that differ between sync/async contexts.",
+      "statement": "OpenAI API key resolution follows a priority order: (1) explicit api_key parameter (string or callable, returned unchanged), (2) LangSmith Gateway when LANGSMITH_GATEWAY is set and base URL comes from gateway (using LANGSMITH_GATEWAY_API_KEY with LANGSMITH_API_KEY fallback), (3) environment variable OPENAI_API_KEY read at model init; sync and async API keys are resolved separately to support callable keys that differ between sync/async contexts.",
       "evidence": [
         {
-          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1404-L1461",
-          "version": "repo-lines-v1:sha256:0a83eb2c632cea5e5aaff9f5728698b529ecf8bd3644072d7b124dd3b5a2ab9d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1YWM3ZmU4ZWY4YzhhMzU1ZDcxNDkwMzBiYzI5M2U5NDhiZDM2Nzg4ZmUzZWZmOGQwM2MyNTNlMjBmYWYxMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4YjZhMTIwNzE2ZjI1NGNhZjA1N2E0Y2U1N2NkZjhlMDhjZWViYmIyYTViZTIwNDkwNzFiOTUwZmU2NGUzZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwNjMwYTZiYzQzNTZiN2I4NzgxNTc0YjQ4Njg3YjE0YmM0OTdhMzg3MzI5Y2JhYjgzYjYzNTMwYmY0ZjJlYzUifQ"
+          "resource": "repo://libs/core/langchain_core/utils/_gateway.py#L186-L270",
+          "version": "repo-lines-v1:sha256:914e7b4b3c63d39dfd9229a2eb6d19b565e38f532226921130827c83440af8a2:eyJzZWxlY3RlZExpbmVDb3VudCI6ODUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1NWZiMDM4MDU0YmZiNjRhOTIyMWQ1MjI5YmM4YzQ0NWQ3MzIxZmQzNmU5YjQ0ZWFlOWZhYjA1OThhYmM5MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA2ZjFhYmMyNjA4NTc4YjI0Y2QzZGJiM2Y1MGNlYTcwYzM4NGEzMmUwYTQzZjk1MWRjOWMyYjc1NDc0MTVhNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5MWQ3Yzk0OGI1MzQ0YzEwMGU5NTc0ZGQ4ZDdkOGJkYzczYWM3OGE0ZjQyNDZhNmY5NTA0ZjE3NDUzYjg3YmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmNDdjOGQyZTJmZmFjYTY4NjVhN2MzMWY0ZDZiNjA5YjI1MmQ4YmE3MzBiOWFmNGU2Mjg2MDc1ZGFiMDI5MzIifQ"
         },
         {
-          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L810-L860",
-          "version": "repo-lines-v1:sha256:003a6dab73ea8fde5dc6459b1b513510f5f2edaf2d067675483617e4bbadc10c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NWZkNDk1ZWU5OWQ1OWFkN2VlNWNlNjc3NzY4NTA2OWZlYzJiMzFlN2VlOWI0ZjlhMjA2M2RlMWRkNjFhNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4YzBjYzA4MjViNjY2MWI1ZmM0YWE1MjQ5NmJhOGM5ODIxNTY3MzFiNTM2NTBlYjhiYTYxYmRmNjI2ZmNlNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyNjAzZjZjNDViZmIxODk0YWE5ZWMzY2U4MDJhMTNlMDA5YzcyNDgyMzZmOWIxMzdjMTNiODFjZmQ1NGNmYmUifQ"
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1407-L1432",
+          "version": "repo-lines-v1:sha256:f259deed55632ac812061dac90114204e0636a29b1a56ce5c71b0fad631a754f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZjFjZGQwZjU3NDMzY2U1MDc3OTA3MjJlMmY1MWQ5NzM1NmNiZmZhN2IyNGRkN2NhMTM0NDgzMmQ0ZTUyNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI5MWNiMDIzMjBiZDBiYjkzYzk5ZGYwMjE2ZThkNTRmY2U4ZTI3NGFjNzYxMGEzNGM4Nzc0YjFlZGQxNzA5ZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiYTk0MWQzYmU3NTBlNmViMGY3ZDE1ZTAxNjgyYmFiMGZiNGRiZjEwZmNhZmUzODRlN2QzYzQ0ZjJmYzdlOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkxMDc4MDQyY2U5M2QzOTVmYjE0YTM5MTZiZDhhNmEwMzI5MDA1YzYyOTBhMDAzNTRmNjFiYWFhNWFiZjBiMjkifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1456-L1548",
+          "version": "repo-lines-v1:sha256:6b14a9407b8e2892f7627e3d777b632c2c098a101dc2902532f2d907714f4292:eyJzZWxlY3RlZExpbmVDb3VudCI6OTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhNzI2ZjIxZjlkM2MzZDg1N2Y5YjA4ZGY3MmI1OWY5NzcwMjllZDc2M2FiZGY5OTUxZDBkMDY3OGUzNjEyMDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhZWY3ZjMyZjQzNjUzN2UzN2NkNThjMWI2Mzk0ZGI4ZDBlMmEzMzA2ODlkMTZiMDg2YTNhNTZiOWJiYmQ5MzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAzMTRiNWZhYzYwNjQ4YTYzNjk1NDBhZjNjY2E3OWIzNGM3ZjY2ZTY0YWM3MWRlMjYxZGNkZGUyZjIzNTIzM2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE4MTE4ZGNjYzMxZGNlNzk3YWFlNDI5NDQyNWQ5Njk2MTNhMWJiYWRhZmQ4MTkyM2NlOTEwZWI1ZThjZWM4MWQifQ"
         }
       ]
     },
@@ -197,6 +201,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-14T08:14:57.553Z"
   }
 }

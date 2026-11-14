@@ -5,7 +5,7 @@ description: "Guide to writing unit tests for LangChain: test structure, fixture
 tags: [unit-testing, pytest, fixtures, async-testing, mocking, fake-models, tools, callbacks, runnables, snapshot-testing, edge-cases, ci-integration]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-14T08:14:57.553Z
 sources:
   - id: openwiki-source-8f1875229ad4a704c8e20a06
     resource: repo://libs/core/Makefile
@@ -31,7 +31,9 @@ sources:
     resource: repo://libs/core/tests/unit_tests/test_ssrf_protection.py
   - id: openwiki-source-a690cf632a02205e3f555be8
     resource: repo://libs/core/tests/unit_tests/test_tools.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
+  - id: openwiki-source-50793dad67df196eb3db4744
+    resource: repo://libs/partners/openai/tests/unit_tests/chat_models/test_base.py
+generated: { by: "openwiki/0.5.0", at: "2026-11-14T08:14:57.553Z" }
 ---
 
 ## Overview
@@ -363,6 +365,34 @@ def test_with_spy(mocker: MockerFixture) -> None:
     mocker.stop(spy)
 ```
 
+### Callback Invocation Testing
+
+Tests verify callbacks are invoked correctly by capturing invocation order and arguments. Use `mocker.Mock()` to spy on callback methods:
+
+```python
+def test_callback_invocation_order(mocker: MockerFixture) -> None:
+    """Verify callbacks fire in correct order with correct arguments."""
+    invocations = []
+    
+    class TrackingHandler(BaseCallbackHandler):
+        def on_chain_start(self, serialized: dict, inputs: dict, **kwargs) -> None:
+            invocations.append(("chain_start", inputs))
+        
+        def on_chain_end(self, outputs: dict, **kwargs) -> None:
+            invocations.append(("chain_end", outputs))
+    
+    chain = prompt | chat
+    result = chain.invoke(
+        {"input": "test"},
+        config={"callbacks": [TrackingHandler()]}
+    )
+    
+    # Verify order: chain_start before chain_end
+    assert invocations[0][0] == "chain_start"
+    assert invocations[1][0] == "chain_end"
+    assert invocations[0][1] == {"input": "test"}
+```
+
 ### Callback Mocking
 
 Mock callback handlers to verify runnable execution paths:
@@ -531,6 +561,26 @@ class FakeTracer(BaseTracer):
 ```
 
 ## Message and Tool Testing Patterns
+
+### Message and Tool Validation Helpers
+
+LangChain provides test utilities in `tests/unit_tests/stubs.py` to simplify message comparison and construction:
+
+```python
+from tests.unit_tests.stubs import (
+    _any_id_ai_message,        # AIMessage with id wildcarded
+    _any_id_ai_message_chunk,  # AIMessageChunk with id wildcarded
+    _any_id_human_message,     # HumanMessage with id wildcarded
+)
+
+def test_message_with_any_id() -> None:
+    """Compare messages ignoring random IDs."""
+    response = model.invoke("test")
+    # Compare without caring about the exact ID value
+    assert response == _any_id_ai_message(content="hello")
+```
+
+These helpers allow assertions to ignore randomly-generated IDs while verifying content, making tests less brittle and more maintainable.
 
 ### Message Type Testing
 
@@ -714,6 +764,73 @@ def test_middleware_chain_with_callbacks() -> None:
     
     assert call_log[0] == ("before", [HumanMessage(content="Hi")])
     assert call_log[1][0] == "after"
+```
+
+## Test Parametrization
+
+Parametrized tests run the same test logic with multiple input combinations, avoiding code duplication and improving coverage. Use `@pytest.mark.parametrize()` to define test parameters:
+
+### Basic Parametrization
+
+```python
+@pytest.mark.parametrize("input_val,expected", [
+    ("hello", 5),
+    ("world", 5),
+    ("", 0),
+])
+def test_string_length(input_val: str, expected: int) -> None:
+    assert len(input_val) == expected
+```
+
+### Multiple Parameters
+
+Stack multiple decorators to test combinations:
+
+```python
+@pytest.mark.parametrize("async_mode", [True, False])
+@pytest.mark.parametrize("use_tools", [True, False])
+def test_runnable_with_options(async_mode: bool, use_tools: bool) -> None:
+    """Tests all 4 combinations: (async_mode, use_tools)."""
+    if async_mode:
+        # test async path
+        pass
+    else:
+        # test sync path
+        pass
+```
+
+### Provider-Specific Parametrization
+
+Test the same interface across multiple providers:
+
+```python
+@pytest.mark.parametrize("model_class,model_id", [
+    (ChatOpenAI, "gpt-4"),
+    (ChatAnthropic, "claude-3-sonnet"),
+    (ChatGoogleGenerativeAI, "gemini-2.0-flash"),
+])
+def test_chat_model_interface(model_class, model_id: str) -> None:
+    """Verify all chat models implement the same interface."""
+    model = model_class(model=model_id)
+    response = model.invoke([HumanMessage(content="Hi")])
+    assert isinstance(response, AIMessage)
+```
+
+### IDs for Readable Output
+
+Use `ids` parameter for clearer test names:
+
+```python
+@pytest.mark.parametrize(
+    "parser",
+    [JsonOutputParser(), XMLOutputParser(), CSVOutputParser()],
+    ids=lambda p: type(p).__name__
+)
+def test_output_parsers(parser) -> None:
+    # test_output_parsers[JsonOutputParser]
+    # test_output_parsers[XMLOutputParser]
+    # test_output_parsers[CSVOutputParser]
+    pass
 ```
 
 ## Edge Cases and Error Conditions
@@ -966,11 +1083,14 @@ When running `git commit`:
 
 ## Standard Tests and Cross-Provider Conformance
 
-LangChain uses **standard-tests** (in `libs/standard-tests/`) for cross-provider conformance testing. Partner integrations inherit test suites to verify consistency across providers:
+LangChain uses **standard-tests** (in `libs/standard-tests/`, available via `langchain-tests` package) for cross-provider conformance testing. Partner integrations (langchain-openai, langchain-anthropic, etc.) inherit test suites to verify consistency across providers without reimplementing core behaviors:
+
+### Standard Test Structure
 
 ```python
-# In langchain-openai or other partner packages
+# In langchain-openai/tests/unit_tests/chat_models/test_base.py
 from langchain_tests.standard_tests import ChatModelTests
+from langchain_openai import ChatOpenAI
 
 class TestChatOpenAI(ChatModelTests):
     """Verify OpenAI's ChatOpenAI meets standard chat model interface."""
@@ -984,12 +1104,120 @@ class TestChatOpenAI(ChatModelTests):
         return {"model": "gpt-4"}
 ```
 
-Standard tests verify:
-- Input/output types match documented interfaces
-- Async variants work correctly
-- Streaming behaves consistently
-- Tool calling follows conventions
-- Configuration propagates properly
+### Standard Test Coverage
+
+Inherited test suites automatically verify across all providers:
+
+- **Input/Output Types** – Verify invoke/ainvoke accept correct types (messages, strings) and return AIMessage
+- **Streaming** – Test stream/astream produce correct ChatGenerationChunk sequences that accumulate to full response
+- **Tool Calling** – Verify tools parameter, tool_calls in responses, tool choice handling
+- **Async Variants** – Test ainvoke, astream, abatch work correctly alongside sync methods
+- **Configuration Propagation** – Verify callbacks, tags, metadata flow through config to handlers
+- **Serialization** – Test dump/load via LangChain serialization format
+- **Error Handling** – Verify proper exception types for auth, connection, rate limit errors
+
+### Benefits of Standard Tests
+
+- **Consistency** – All providers implement the same interface with identical behavior
+- **Regression Prevention** – Core interface changes fail all provider tests immediately
+- **Reduced Test Duplication** – Providers inherit tests instead of reimplementing
+- **New Feature Coverage** – New LangChain features automatically tested across all providers
+
+## Common Anti-Patterns and Flakiness Prevention
+
+Avoid these patterns that cause test failures, flakiness, and CI noise:
+
+### ❌ Time-Dependent Tests
+
+```python
+# BAD: Test depends on system time
+def test_timeout_handling() -> None:
+    import time
+    time.sleep(2)  # Don't do this!
+    # Unreliable across different machines and CI environments
+```
+
+```python
+# GOOD: Use freezegun for deterministic time
+from freezegun import freeze_time
+
+@freeze_time("2023-01-01 12:00:00")
+def test_timeout_handling() -> None:
+    # Time is frozen, no sleep needed
+    pass
+```
+
+### ❌ Shared Mutable State
+
+```python
+# BAD: Tests share state via module-level variables
+cache = {}
+
+def test_cache() -> None:
+    cache["key"] = "value"
+    # Other tests see this modification!
+```
+
+```python
+# GOOD: Use fixtures to isolate state
+@pytest.fixture
+def clean_cache():
+    cache = {}
+    yield cache
+    cache.clear()  # Cleanup
+
+def test_cache(clean_cache) -> None:
+    clean_cache["key"] = "value"
+    # Isolated to this test
+```
+
+### ❌ Real API Calls in Tests
+
+```python
+# BAD: Tests make real network calls
+def test_llm() -> None:
+    from langchain_openai import ChatOpenAI
+    llm = ChatOpenAI()  # Needs API key, network access
+    response = llm.invoke("test")
+```
+
+```python
+# GOOD: Use fake models
+from langchain_core.language_models import FakeListChatModel
+
+def test_llm() -> None:
+    llm = FakeListChatModel(responses=["hello"])
+    response = llm.invoke([HumanMessage(content="test")])
+    assert response.content == "hello"
+```
+
+### ❌ Inadequate Async Testing
+
+```python
+# BAD: Only test sync path
+def test_invoke() -> None:
+    result = runnable.invoke("test")
+    assert result is not None
+```
+
+```python
+# GOOD: Test both sync and async
+def test_invoke() -> None:
+    result = runnable.invoke("test")
+    assert result is not None
+
+async def test_ainvoke() -> None:
+    result = await runnable.ainvoke("test")
+    assert result is not None
+
+def test_stream() -> None:
+    chunks = list(runnable.stream("test"))
+    assert len(chunks) > 0
+
+async def test_astream() -> None:
+    chunks = [chunk async for chunk in runnable.astream("test")]
+    assert len(chunks) > 0
+```
 
 ## Best Practices
 
@@ -1000,9 +1228,11 @@ Standard tests verify:
 5. **Test Async Thoroughly** – Test both sync and async variants of public methods (invoke/ainvoke, stream/astream, batch/abatch)
 6. **Mock External Dependencies** – Use `mocker.Mock()` and `mocker.spy()` to isolate units under test
 7. **Organize by Module** – Place tests in `tests/unit_tests/` mirroring source structure, with module-specific conftest files
-8. **Document Markers** – Define custom pytest markers in conftest and document their meaning
+8. **Parametrize for Coverage** – Use `@pytest.mark.parametrize()` for multiple providers, configurations, and edge cases
 9. **Parallelize Safely** – Use pytest-xdist (`-n auto`) for speed, ensuring tests don't share mutable state or global config
 10. **Review Snapshot Changes** – Always review snapshot diffs when updating to catch unintended regressions
+11. **Avoid Sleeps** – Use `freezegun` for time control instead of `time.sleep()`
+12. **Isolate State** – Use fixtures to create clean state per test, avoid module-level mutable variables
 
 ## Related Pages
 

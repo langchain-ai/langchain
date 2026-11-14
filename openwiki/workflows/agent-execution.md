@@ -5,13 +5,13 @@ description: "Detailed walkthrough of agent lifecycle, execution loops, state ma
 tags: ["agents", "agentic-loop", "middleware", "tool-calling", "state-management", "observability"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-14T08:14:57.553Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-14T08:14:57.553Z" }
 ---
 
 # Agent Execution: Agentic Loops and State Management
@@ -462,7 +462,42 @@ The agent stops under these conditions:
 4. **jump_to == "end"**: Middleware explicitly routes to termination.
 5. **Recursion limit exceeded**: Graph hits configured recursion limit.
 
-## Observability: Tracing and Callbacks
+## Streaming and Observability
+
+### Streaming Events
+
+The agent supports streaming via `stream()`, `astream()`, and `stream_events()`:
+
+```python
+# Stream updates mode (state changes)
+for chunk in agent.stream({"messages": [...]}, stream_mode="updates"):
+    print(chunk)
+
+# Stream values mode (final state at each step)
+for chunk in agent.stream({"messages": [...]}, stream_mode="values"):
+    print(chunk)
+
+# Stream v3 events with projections
+run = agent.stream_events({"messages": [...]}, version="v3")
+for tc in run.tool_calls:
+    print(f"Tool: {tc.tool_name}, Completed: {tc.completed}")
+```
+
+### Event Types
+
+Streaming produces events at different stages:
+
+- **model_start**: Model invocation starts
+- **model_end**: Model invocation completes
+- **tool_start**: Tool execution starts
+- **tool_end**: Tool execution completes with result
+- **tool_error**: Tool execution fails
+- **final_output**: Agent execution completes
+
+Tool call streaming includes:
+- **tool_calls**: Typed projection of tool calls with deltas
+- **messages**: Messages as they're produced
+- **subgraphs**: Nested agent invocations
 
 ### LangSmith Integration
 
@@ -901,9 +936,9 @@ The `name` parameter helps identify subagents in trace logs and error messages.
 
 ## Related Concepts
 
-- **Chat Models**: Language models that accept messages and return responses (see `/openwiki/concepts/chat-models.md`)
-- **Tools**: Schema-driven functions that agents can invoke (see `/openwiki/concepts/tools.md`)
-- **Middleware Framework**: Base classes and decorators for custom extensions (see `/openwiki/workflows/middleware.md`)
+- **Chat Models**: Language models that accept messages and return responses
+- **Tools**: Schema-driven functions that agents can invoke
+- **Middleware Framework**: Base classes and decorators for custom extensions
 - **Streaming**: Real-time output via `stream()` and `astream()`
 - **Structured Output**: Type-safe results from language models
-- **Composability**: Building complex workflows from agents and tools (see `/openwiki/workflows/composability.md`)
+- **Composability**: Building complex workflows from agents and tools

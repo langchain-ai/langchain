@@ -29,7 +29,7 @@ sources:
 generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-14T08:14:57.553Z
 ---
 
 ## Overview

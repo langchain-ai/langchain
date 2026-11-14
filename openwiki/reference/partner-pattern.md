@@ -3,9 +3,6 @@ type: Integration Reference
 title: Partner Pattern Reference
 description: Quick reference documentation for partner integration package structure, ChatModel implementation requirements, and integration checklist templates for LangChain provider packages.
 tags: [partner, integration, reference, chat-models, package-structure, template]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
 sources:
   - id: openwiki-source-a12395e96060f062d8ec1ca2
     resource: repo://libs/partners/anthropic/langchain_anthropic/__init__.py
@@ -24,6 +21,9 @@ sources:
   - id: openwiki-source-4065d8687d2708ee826c7818
     resource: repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py
 generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-14T08:14:57.553Z
 ---
 
 # Partner Pattern Reference

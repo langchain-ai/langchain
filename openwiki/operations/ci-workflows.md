@@ -3,6 +3,9 @@ type: "Operations Reference"
 title: "CI/CD Operations and Release Management"
 description: "Operational runbook for CI/CD workflows, troubleshooting, and release procedures."
 tags: [ci, cd, release, automation, github-actions, pypi]
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-14T08:14:57.553Z
 sources:
   - id: openwiki-source-6445599f26c9a35886c1c46e
     resource: repo://.github/PULL_REQUEST_TEMPLATE.md
@@ -20,12 +23,8 @@ sources:
     resource: repo://.github/workflows/pr_labeler.yml
   - id: openwiki-source-12805fbf767dc2a3e238645e
     resource: repo://.github/workflows/pr_lint.yml
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+generated: { by: "openwiki/0.5.0", at: "2026-11-14T08:14:57.553Z" }
 ---
-
 
 ## Overview
 
@@ -115,16 +114,21 @@ Once the `build` job outputs the matrices, seven jobs run in parallel (if not em
 - Runs `_lint.yml` reusable workflow
 - Per package: Python version from matrix
 - Checks code style, type hints, and formatting
+- Uses `make lint_package` and `make lint_tests` targets from Makefile
+- Ruff output formatted for GitHub annotations
 
 #### 2. Unit Test Job
 - Runs `_test.yml` reusable workflow
 - Matrix: `working-directory` × `python-version`
-- Executes `make tests` with unit test dependencies
+- Executes `make test` with unit test dependencies
+- Tests with current dependency versions, then re-tests with minimum versions declared in `pyproject.toml`
+- Minimum version testing ensures compatibility across supported version ranges
 
 #### 3. Pydantic Compatibility Tests
 - Runs `_test_pydantic.yml` reusable workflow
 - Matrix: `working-directory` × `pydantic-version`
-- Installs pinned Pydantic version and runs `make tests`
+- Installs pinned Pydantic version and runs `make test`
+- Validates packages work with each compatible Pydantic minor version
 
 #### 4. Extended Tests
 - Runs in same workflow (not reusable)
@@ -136,12 +140,14 @@ Once the `build` job outputs the matrices, seven jobs run in parallel (if not em
 - Runs `_compile_integration_test.yml` reusable workflow
 - Compiles integration tests without executing them (faster feedback)
 - Command: `pytest -m compile tests/integration_tests`
+- Catches syntax/import errors in integration tests before execution
 
 #### 6. VCR Cassette Tests
 - Runs `_test_vcr.yml` reusable workflow
 - Only for packages with VCR cassettes: `libs/partners/openai`
 - Runs integration tests in playback-only mode (uses cached HTTP responses, no API keys)
 - Detects stale cassettes that don't match actual API responses
+- Uses fake API key placeholder (`sk-fake`) in playback mode
 
 #### 7. Release Option Validation
 - `check-release-options` job validates that `_release.yml` dropdown options match actual package directories
@@ -276,6 +282,7 @@ Runs daily integration tests against partner libraries using live API credential
 - Uses live repository secrets for API keys
 - Only runs on main repo (forks can trigger manually but don't run on schedule)
 - Supports exclude lists and Python version overrides
+- Uses `Scheduled testing` environment for credential scoping
 
 ### Matrix Configuration
 
@@ -297,14 +304,93 @@ Default libraries tested daily:
 - Exclude specific libraries from "all" runs
 - Override Python version matrix
 
+**Serialization:** Same-package shards across workflow runs serialize concurrency to prevent racing against live API credentials while allowing Python version matrix legs within one run to execute in parallel.
+
 ### Integration Test Execution
 
 Per library:
 1. Check out repository
 2. Set up Python and UV
 3. Sync dependencies with `uv sync --group test --group test_integration`
-4. Execute `make integration_tests` (defined in each package's Makefile)
-5. Live API keys injected from repository secrets
+4. Handle external monorepos: Checks out Google (Vertex AI, GenAI) and AWS packages from separate repos, overlays local editable installs
+5. Execute `make integration_tests` (defined in each package's Makefile)
+6. Live API keys injected from repository secrets into environment
+
+### Secrets Management
+
+**Repository Secrets (Integration Tests & Releases):**
+
+The following secrets are available to integration tests and release workflows. These are configured as GitHub repository secrets and should be rotated periodically:
+
+**LangSmith Tracing:**
+- `LANGSMITH_API_KEY` — API key for LangSmith tracing
+- `LANGSMITH_GATEWAY` — Custom gateway URL (if applicable)
+- `LANGSMITH_GATEWAY_API_KEY` — Gateway API key (if applicable)
+
+**OpenAI & Azure:**
+- `OPENAI_API_KEY` — OpenAI API key
+- `AZURE_OPENAI_API_VERSION` — Azure OpenAI API version
+- `AZURE_OPENAI_API_BASE` — Azure OpenAI endpoint base URL
+- `AZURE_OPENAI_API_KEY` — Azure OpenAI API key
+- `AZURE_OPENAI_CHAT_DEPLOYMENT_NAME` — Chat model deployment name
+- `AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME` — Legacy chat deployment name
+- `AZURE_OPENAI_LLM_DEPLOYMENT_NAME` — LLM deployment name
+- `AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME` — Embeddings deployment name
+
+**Other Provider Keys:**
+- `ANTHROPIC_FILES_API_IMAGE_ID` — Anthropic Files API test image
+- `ANTHROPIC_FILES_API_PDF_ID` — Anthropic Files API test PDF
+- `GROQ_API_KEY` — Groq API key
+- `MISTRAL_API_KEY` — Mistral API key
+- `XAI_API_KEY` — XAI API key
+- `FIREWORKS_API_KEY` — Fireworks API key
+- `EXA_API_KEY` — EXA API key
+- `DEEPSEEK_API_KEY` — DeepSeek API key
+- `NOMIC_API_KEY` — Nomic API key
+- `TOGETHER_API_KEY` — Together API key
+- `HUGGINGFACEHUB_API_TOKEN` — Hugging Face token
+- `WATSONX_APIKEY` — IBM WatsonX API key
+- `WATSONX_PROJECT_ID` — WatsonX project ID
+- `OLLAMA_API_KEY` — Ollama API key
+- `OPENROUTER_API_KEY` — OpenRouter API key
+- `PPLX_API_KEY` — Perplexity API key
+- `UPSTAGE_API_KEY` — Upstage API key
+- `TYPESAFE_API_KEY` — Typesafe API key
+- `AI21_API_KEY` — AI21 API key
+- `COHERE_API_KEY` — Cohere API key
+- `NVIDIA_API_KEY` — NVIDIA API key
+- `GOOGLE_API_KEY` — Google generic API key
+- `GOOGLE_SEARCH_API_KEY` — Google Search API key
+- `GOOGLE_CSE_ID` — Google Custom Search Engine ID
+- `GOOGLE_CREDENTIALS` — Google Cloud service account JSON (for Vertex AI, GenAI)
+
+**Vector Databases & Search:**
+- `ASTRA_DB_API_ENDPOINT` — Astra DB endpoint
+- `ASTRA_DB_APPLICATION_TOKEN` — Astra DB token
+- `ASTRA_DB_KEYSPACE` — Astra DB keyspace
+- `ES_URL` — Elasticsearch URL
+- `ES_CLOUD_ID` — Elasticsearch Cloud ID
+- `ES_API_KEY` — Elasticsearch API key
+- `MONGODB_ATLAS_URI` — MongoDB Atlas connection string
+
+**AWS & Infrastructure:**
+- `AWS_ACCESS_KEY_ID` — AWS access key (integration tests only)
+- `AWS_SECRET_ACCESS_KEY` — AWS secret key (integration tests only)
+- `AWS_REGION` — AWS region (integration tests only)
+
+**Test Metadata:**
+- `LANGCHAIN_TESTS_USER_AGENT` — Custom user agent for test runs
+
+**Differences Between PR CI and Release Workflows:**
+
+| Aspect | PR CI (check_diffs) | Release Workflow | Integration Tests |
+|--------|-------------------|------------------|-------------------|
+| Secret Usage | None (read-only) | PyPI token (OIDC trusted) | All provider keys via repo secrets |
+| API Calls | Local only | PyPI version check | Real API calls (live credentials) |
+| Environment | None | Release (approval gate) | Scheduled testing (secret scoping) |
+| Credential Rotation | N/A | Automatic (OIDC) | Manual (rotate periodically) |
+| On Pull Requests | Yes | No | No |
+| On Schedule | No | No | Yes (daily 1 PM UTC) |
 
 ---
 

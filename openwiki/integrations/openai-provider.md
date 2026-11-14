@@ -4,14 +4,16 @@ title: "OpenAI Provider: ChatOpenAI Implementation"
 description: "Deep dive into the ChatOpenAI implementation: API client setup, message translation, tool handling, structured output, streaming, and Azure support."
 tags: ["chat-model", "openai", "tool-calling", "structured-output", "vision", "streaming", "partner-pattern", "azure"]
 sources:
+  - id: openwiki-source-b2829c16385a8edd785b95bb
+    resource: repo://libs/core/langchain_core/utils/_gateway.py
   - id: openwiki-source-738512768ef81ae009b097ac
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
   - id: openwiki-source-b65307f1d05bd74532af2eee
     resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-14T08:14:57.553Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-14T08:14:57.553Z
 ---
 
 # OpenAI Provider Implementation
@@ -146,12 +148,11 @@ Returns a provider identifier for logging and serialization.
 
 ### API Key Resolution Order
 
-The OpenAI integration resolves API keys through a multi-step process:
+The OpenAI integration resolves API keys through a priority order:
 
-1. **Explicit `api_key` parameter** (highest priority): Can be a string, sync callable, or async callable returning a string.
-2. **Environment variable `OPENAI_API_KEY`** (read at init time by LangChain).
-3. **LangSmith Gateway** (if `LANGSMITH_GATEWAY` is set): Uses `LANGSMITH_API_KEY` or `LANGSMITH_GATEWAY_API_KEY`.
-4. **Environment variable `OPENAI_API_BASE`** (read by the underlying SDK at runtime).
+1. **Explicit `api_key` parameter** (highest priority): Can be a string, sync callable, or async callable returning a string. Returned unchanged, bypassing all other resolution steps.
+2. **LangSmith Gateway key** (if `LANGSMITH_GATEWAY` is set and base URL came from gateway): Uses `LANGSMITH_GATEWAY_API_KEY` (preferred) or `LANGSMITH_API_KEY` fallback.
+3. **Environment variable `OPENAI_API_KEY`** (read at init time by LangChain): Used when no explicit key is provided and gateway is not active.
 
 ```python
 from langchain_openai import ChatOpenAI

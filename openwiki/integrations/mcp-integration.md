@@ -5,7 +5,7 @@ description: "MCPAdapter bridges MCP (Model Context Protocol) servers with LangC
 tags: [mcp, protocol, tools, adapter, integration, langgraph, fastmcp]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-14T08:14:57.553Z
 sources:
   - id: openwiki-source-3f94459a7a8a90bc4757cbfa
     resource: repo://libs/langchain_v1/langchain/mcp/__init__.py

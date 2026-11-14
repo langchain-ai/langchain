@@ -3,6 +3,9 @@ type: "Getting Started"
 title: "LangChain Repository Quick Start"
 description: "Entry point for engineers: orient to the monorepo structure, run first tests, understand what to edit for common tasks, and route to major development areas."
 tags: [quickstart, getting-started, monorepo, setup, development, first-steps, cli-reference]
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-14T08:14:57.553Z
 sources:
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
@@ -40,10 +43,7 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
   - id: openwiki-source-48ce5ee900993294d349b4e8
     resource: repo://libs/standard-tests/langchain_tests/__init__.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+generated: { by: "openwiki/0.5.0", at: "2026-11-14T08:14:57.553Z" }
 ---
 
 ## Welcome to LangChain Development
@@ -60,7 +60,7 @@ LangChain is organized as a **three-layer architecture** in `/libs/`:
 
 ```
 /libs/
-├── core/              # langchain-core (v1.8.0): Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
+├── core/              # langchain-core (v1.8.1): Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
 ├── langchain/         # langchain-classic (v1.0.8): Legacy orchestration layer (no new features)
 ├── langchain_v1/      # langchain (v1.5.0): Agent orchestration, factory, middleware
 ├── partners/          # Provider-specific integrations (OpenAI, Anthropic, Ollama, etc.)
@@ -291,7 +291,7 @@ langchain/
 └── pyproject.toml
 ```
 
-**langchain_v1/** — Modern agent orchestration (langchain package v1.4.7)
+**langchain_v1/** — Modern agent orchestration (langchain package v1.5.0)
 ```
 langchain_v1/
 ├── langchain/
