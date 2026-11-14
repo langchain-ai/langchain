@@ -1,7 +1,6 @@
 """Module that contains tests for runnable.astream_events API."""
 
 import asyncio
-import sys
 from collections.abc import AsyncIterator, Mapping, Sequence
 from itertools import cycle
 from typing import Any, cast
@@ -562,7 +561,7 @@ async def test_astream_events_from_model() -> None:
 
     @RunnableLambda
     def i_dont_stream(value: Any, config: RunnableConfig) -> Any:
-        return model.invoke(value, config if sys.version_info >= (3, 11) else None)
+        return model.invoke(value, config)
 
     events = await _collect_events(i_dont_stream.astream_events("hello", version="v1"))
     _assert_events_equal_allow_superset_metadata(
@@ -692,9 +691,7 @@ async def test_astream_events_from_model() -> None:
 
     @RunnableLambda
     async def ai_dont_stream(value: Any, config: RunnableConfig) -> Any:
-        return await model.ainvoke(
-            value, config if sys.version_info >= (3, 11) else None
-        )
+        return await model.ainvoke(value, config)
 
     events = await _collect_events(ai_dont_stream.astream_events("hello", version="v1"))
     _assert_events_equal_allow_superset_metadata(

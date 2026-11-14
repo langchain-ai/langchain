@@ -39,8 +39,7 @@ _UNSUPPORTED_MODEL_BEHAVIORS = ("ignore", "warn", "raise")
 
 def _get_thread_id(request: ModelRequest) -> str | None:
     """Return the thread ID from request runtime metadata or runnable config."""
-    # Runtime metadata is available even without async config propagation on
-    # Python 3.10. Older runtimes may not expose execution_info.
+    # Older runtimes may not expose execution_info.
     execution_info = getattr(request.runtime, "execution_info", None)
     thread_id = getattr(execution_info, "thread_id", None)
     if isinstance(thread_id, str) and thread_id:

@@ -562,27 +562,14 @@ def _resolve_sync_and_async_api_keys(
 
 T = TypeVar("T")
 
-# On Python ≤3.10, asyncio.TimeoutError and builtins.TimeoutError are distinct
-# hierarchies, so subclassing only asyncio.TimeoutError would not be caught by
-# `except TimeoutError:`. On Python ≥3.11 they are the same object, so listing
-# both bases would raise TypeError: duplicate base class. We resolve this at
-# class-definition time.
-_StreamChunkTimeoutBases: tuple[type, ...] = (
-    (asyncio.TimeoutError,)
-    if issubclass(asyncio.TimeoutError, TimeoutError)
-    else (asyncio.TimeoutError, TimeoutError)
-)
 
-
-class StreamChunkTimeoutError(*_StreamChunkTimeoutBases):  # type: ignore[misc]
+class StreamChunkTimeoutError(TimeoutError):
     """Raised when no streaming chunk arrives within `stream_chunk_timeout`.
 
     `issubclass(StreamChunkTimeoutError, asyncio.TimeoutError)` and
     `issubclass(StreamChunkTimeoutError, TimeoutError)` both hold on all
     supported Python versions, so existing `except asyncio.TimeoutError:`
-    and `except TimeoutError:` handlers keep catching the exception. On
-    Python 3.11+ the two exceptions are the same object, so only
-    `asyncio.TimeoutError` appears in `__bases__`.
+    and `except TimeoutError:` handlers keep catching the exception.
 
     Structured attributes (`timeout_s`, `model_name`, `chunks_received`)
     mirror the WARNING log's `extra=` payload so diagnostic code doesn't

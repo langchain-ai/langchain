@@ -83,9 +83,6 @@ langchain = { path = "../../langchain_v1", editable = true }
 [tool.uv]
 constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 
-[tool.uv.dependency-groups]
-test_integration = { requires-python = ">=3.11" }
-
 [tool.mypy]
 disallow_untyped_defs = true
 [[tool.mypy.overrides]]

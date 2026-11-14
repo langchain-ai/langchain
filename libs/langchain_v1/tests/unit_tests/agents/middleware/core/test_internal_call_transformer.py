@@ -69,8 +69,8 @@ class _InternalWholeMessageMiddleware(AgentMiddleware):
 
     A model with no `_stream`/`_astream` override reports its output as a
     whole `AIMessage` `messages`-mode event rather than streamed protocol
-    events — the shape `MessagesTransformer` falls back to on Python 3.10,
-    or for any model/provider that doesn't stream.
+    events — the shape `MessagesTransformer` falls back for any model/provider
+    that doesn't stream.
     """
 
     transformers = (InternalCallTransformer,)

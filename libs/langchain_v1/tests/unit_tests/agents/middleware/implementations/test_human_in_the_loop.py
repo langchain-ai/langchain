@@ -1,5 +1,4 @@
 import re
-import sys
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Annotated, Any, cast
 from unittest.mock import patch
@@ -2206,7 +2205,6 @@ def test_per_call_same_tool_twice_routes_each_answer_to_its_own_call() -> None:
     assert messages[""].status == "error"
 
 
-@pytest.mark.skipif(sys.version_info < (3, 11), reason="Asyncio context vars require Python 3.11+")
 @pytest.mark.parametrize(
     ("answer", "status", "content"),
     [

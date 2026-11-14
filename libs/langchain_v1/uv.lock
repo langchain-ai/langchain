@@ -1,19 +1,18 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.11.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.15'",
     "python_full_version == '3.14.*'",
     "python_full_version == '3.13.*'",
     "python_full_version == '3.12.*' and sys_platform == 'emscripten'",
-    "python_full_version < '3.12' or (python_full_version == '3.12.*' and sys_platform != 'emscripten')",
+    "(python_full_version < '3.13' and sys_platform != 'emscripten') or (python_full_version < '3.12' and sys_platform == 'emscripten')",
 ]
 
 [manifest]
 constraints = [
-    { name = "dnspython", marker = "python_full_version >= '3.11'", specifier = ">=2.9.0" },
-    { name = "filelock", marker = "python_full_version < '3.11'", specifier = "==3.20.3" },
-    { name = "filelock", marker = "python_full_version >= '3.11'", specifier = ">=4.2.1" },
+    { name = "dnspython", specifier = ">=2.9.0" },
+    { name = "filelock", specifier = ">=4.2.1" },
     { name = "pygments", specifier = ">=2.20.0" },
     { name = "urllib3", specifier = ">=2.6.3" },
 ]
@@ -502,7 +501,7 @@ resolution-markers = [
     "python_full_version == '3.14.*'",
     "python_full_version == '3.13.*'",
     "python_full_version == '3.12.*' and sys_platform == 'emscripten'",
-    "python_full_version < '3.12' or (python_full_version == '3.12.*' and sys_platform != 'emscripten')",
+    "(python_full_version < '3.13' and sys_platform != 'emscripten') or (python_full_version < '3.12' and sys_platform == 'emscripten')",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c7/94/1009e248bbfbab11397abca7193bea6626806be9a327d399810d523a07cb/beartype-0.22.9.tar.gz", hash = "sha256:8f82b54aa723a2848a56008d18875f91c1db02c32ef6a62319a002e3e25a975f", size = 1608866, upload-time = "2025-12-13T06:50:30.72Z" }
 wheels = [
@@ -1399,7 +1398,7 @@ version = "3.5.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version == '3.12.*' and sys_platform == 'emscripten'",
-    "python_full_version < '3.12' or (python_full_version == '3.12.*' and sys_platform != 'emscripten')",
+    "(python_full_version < '3.13' and sys_platform != 'emscripten') or (python_full_version < '3.12' and sys_platform == 'emscripten')",
 ]
 dependencies = [
     { name = "google-api-core" },
@@ -2626,7 +2625,7 @@ wheels = [
 
 [[package]]
 name = "langchain-openai"
-version = "1.7.4"
+version = "1.8.0"
 source = { editable = "../partners/openai" }
 dependencies = [
     { name = "certifi" },
@@ -2667,10 +2666,10 @@ test = [
     { name = "vcrpy", specifier = ">=8.2.0,<9.0.0" },
 ]
 test-integration = [
-    { name = "httpx", marker = "python_full_version >= '3.11'", specifier = ">=0.27.0,<1.0.0" },
-    { name = "numpy", marker = "python_full_version >= '3.11' and python_full_version < '3.13'", specifier = ">=1.26.4" },
+    { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
+    { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.4" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
-    { name = "pillow", marker = "python_full_version >= '3.11'", specifier = ">=13.0.0,<14.0.0" },
+    { name = "pillow", specifier = ">=13.0.0,<14.0.0" },
 ]
 typing = [
     { name = "mypy", specifier = ">=2.1.0,<2.2.0" },

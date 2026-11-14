@@ -5,7 +5,6 @@ from __future__ import annotations
 import ast
 import asyncio
 import inspect
-import sys
 import textwrap
 
 # Cannot move to TYPE_CHECKING as Mapping and Sequence are needed at runtime by
@@ -38,7 +37,6 @@ if TYPE_CHECKING:
         Coroutine,
         Iterable,
     )
-    from contextvars import Context
 
     from langchain_core.runnables.schema import StreamEvent
 
@@ -126,37 +124,6 @@ def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
         return _signature_parameters(callable).get("context") is not None
     except ValueError:
         return False
-
-
-def asyncio_accepts_context() -> bool:
-    """Check if asyncio.create_task accepts a `context` arg.
-
-    Returns:
-        True if `asyncio.create_task` accepts a context argument, `False` otherwise.
-    """
-    return sys.version_info >= (3, 11)
-
-
-_T = TypeVar("_T")
-
-
-def coro_with_context(
-    coro: Awaitable[_T], context: Context, *, create_task: bool = False
-) -> Awaitable[_T]:
-    """Await a coroutine with a context.
-
-    Args:
-        coro: The coroutine to await.
-        context: The context to use.
-        create_task: Kept for compatibility; this helper always creates a task.
-
-    Returns:
-        The coroutine with the context.
-    """
-    if asyncio_accepts_context():
-        return asyncio.create_task(coro, context=context)  # type: ignore[arg-type,call-arg,unused-ignore]
-    del create_task
-    return context.run(asyncio.create_task, coro)  # type: ignore[arg-type]
 
 
 class IsLocalDict(ast.NodeVisitor):
