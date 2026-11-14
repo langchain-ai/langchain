@@ -3,9 +3,6 @@ type: "Concept"
 title: "Tools: Function Calling and Tool Use"
 description: "Explain the BaseTool abstraction: schema generation, invocation, callbacks, and error handling; when and how models bind tools; tool selection patterns in agents."
 tags: ["tools", "function-calling", "agent-execution", "schema", "runnable"]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
 sources:
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
@@ -28,6 +25,9 @@ sources:
   - id: openwiki-source-738512768ef81ae009b097ac
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
 generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-13T08:16:35.902Z
 ---
 
 

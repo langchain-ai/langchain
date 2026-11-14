@@ -5,7 +5,7 @@ description: "Callbacks are an event-driven instrumentation system that enables 
 tags: [callbacks, observability, tracing, langsmith, run_id, instrumentation]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
+    at: 2026-11-13T08:16:35.902Z
 sources:
   - id: openwiki-source-96c73d2c05223b0b46abdbe9
     resource: repo://libs/core/langchain_core/callbacks/__init__.py
@@ -19,9 +19,7 @@ sources:
     resource: repo://libs/core/langchain_core/callbacks/usage.py
   - id: openwiki-source-bfd8b1aa6ad00852a2e99762
     resource: repo://libs/core/langchain_core/tracers/context.py
-  - id: openwiki-source-79eb321fa44e679f85ad5c48
-    resource: repo://libs/core/langchain_core/tracers/langchain.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 ---
 
 ## Overview
@@ -330,7 +328,7 @@ export LANGCHAIN_API_KEY=<your_langsmith_api_key>
 export LANGCHAIN_PROJECT=my-project
 ```
 
-With these set, a `LangChainTracer` callback handler is automatically added to all executions, sending traces to the configured LangSmith project.
+When `LANGCHAIN_TRACING_V2` is set to `true`, a `LangChainTracer` callback handler is automatically added to all executions, sending traces to the configured LangSmith project.
 
 ### Manual LangChainTracer
 
@@ -345,6 +343,8 @@ with tracing_v2_enabled(project_name="my-project") as tracer:
     run_url = tracer.get_run_url()
     print(f"View trace: {run_url}")
 ```
+
+The `tracing_v2_enabled()` context manager returns a `LangChainTracer` instance that can be used to fetch the run URL for accessing the trace in LangSmith.
 
 ### Collecting Runs Locally
 
@@ -519,25 +519,24 @@ This ensures streaming operations participate fully in the callback system and p
 
 ## Event Dispatch Mechanics
 
-### Synchronous Dispatch
+### Synchronous Dispatch with handle_event
 
-The `handle_event` function dispatches synchronous and async handlers:
+The `handle_event` function dispatches events to synchronous and async handlers:
 
-```
-handle_event(handlers, "on_llm_start", "ignore_llm", ...)
-├─ For each handler not matching ignore condition:
-│  ├─ Call handler.on_llm_start(...) 
-│  ├─ If result is a coroutine:
-│  │  └─ Collect for async execution
-│  └─ If exception and handler.raise_error:
-│     └─ Re-raise
-└─ If async coroutines collected:
-   └─ Execute in thread pool (avoid blocking event loop)
-```
+1. **Iterates over handlers** and checks ignore conditions (e.g., `ignore_llm`)
+2. **Calls the event method** (e.g., `handler.on_llm_start()`)
+3. **Collects coroutines** if the handler returns async functions (when async handlers are called from sync code)
+4. **Handles exceptions** according to handler's `raise_error` setting
+5. **Falls back to on_llm_start** if `on_chat_model_start` raises `NotImplementedError`
+6. **Executes collected coroutines** in a thread pool or new event loop to avoid blocking the main event loop
 
-Async handlers invoked from sync code run in a new event loop via `ThreadPoolExecutor`.
+Key behaviors:
 
-### Asynchronous Dispatch
+- **Async handlers invoked from sync code**: When `handle_event` detects a coroutine returned from a handler, it collects all coroutines and executes them in a thread pool executor to prevent deadlock and blocking
+- **Event loop safety**: If an event loop is already running, coroutines execute in a global thread pool; if no loop is running, a new `asyncio.Runner` is created
+- **Chat model fallback**: When a handler doesn't implement `on_chat_model_start`, the system catches `NotImplementedError` and automatically invokes `on_llm_start` with message lists converted to prompt strings
+
+### Asynchronous Dispatch with ahandle_event
 
 The `ahandle_event` function handles async dispatch:
 
@@ -549,7 +548,9 @@ ahandle_event(handlers, "on_llm_start", "ignore_llm", ...)
    └─ asyncio.gather() concurrently
 ```
 
-This ensures inline handlers maintain strict ordering while non-inline handlers execute concurrently for performance.
+- **Inline handlers** are awaited sequentially to maintain order
+- **Non-inline handlers** are gathered and awaited concurrently for better performance
+- **Chat model fallback** applies in async context as well, with async equivalents of the sync fallback
 
 ### Fallback for Chat Models
 
@@ -559,6 +560,8 @@ When a handler doesn't implement `on_chat_model_start`, the system falls back to
 def on_chat_model_start(self, serialized, messages, **kwargs):
     raise NotImplementedError  # Triggers fallback to on_llm_start
 ```
+
+The conversion uses `get_buffer_string()` to transform message objects into plain text prompts, ensuring backward compatibility with handlers built for text LLMs.
 
 ## Tracing Nested Executions
 
@@ -600,146 +603,3 @@ with trace_as_chain_group(
 ```
 
 In LangSmith, all calls within the group appear as children of a single parent run.
-
-Async version:
-
-```python
-from langchain_core.callbacks.manager import atrace_as_chain_group
-
-async with atrace_as_chain_group("async_group") as group_manager:
-    result1 = await llm1.ainvoke("prompt", config={"callbacks": group_manager})
-    result2 = await llm2.ainvoke("prompt", config={"callbacks": group_manager})
-```
-
-## Event Filtering and Composition
-
-### Tag-based Filtering
-
-Callbacks in the observability layer can filter events by tags:
-
-```python
-class TagFilterHandler(BaseCallbackHandler):
-    def __init__(self, allowed_tags: list[str]):
-        self.allowed_tags = allowed_tags
-    
-    def on_llm_start(self, serialized, prompts, **kwargs):
-        tags = kwargs.get("tags", [])
-        if any(tag in self.allowed_tags for tag in tags):
-            print(f"LLM start: {prompts[0]}")
-```
-
-Tags are inherited from parent runs, enabling hierarchical filtering.
-
-### Metadata-based Filtering
-
-Metadata can filter events by feature flags, user, or deployment:
-
-```python
-class FeatureGateHandler(BaseCallbackHandler):
-    def on_chain_start(self, serialized, inputs, **kwargs):
-        metadata = kwargs.get("metadata", {})
-        if metadata.get("feature_flag:debugging"):
-            print(f"Debug mode enabled for: {serialized.get('name')}")
-```
-
-## Error Handling
-
-### Handler Exceptions
-
-By default, exceptions in handlers are logged and swallowed:
-
-```python
-class FaultyHandler(BaseCallbackHandler):
-    def on_llm_start(self, *args, **kwargs):
-        raise ValueError("Something went wrong")
-        # Logged as warning, execution continues
-
-handler = FaultyHandler()
-result = llm.invoke("input", config={"callbacks": [handler]})  # Succeeds
-```
-
-Enable error propagation with `raise_error=True`:
-
-```python
-handler = FaultyHandler()
-handler.raise_error = True
-result = llm.invoke("input", config={"callbacks": [handler]})  # Raises ValueError
-```
-
-### Async Handler Exceptions in Sync Execution
-
-Exceptions from async handlers invoked via sync `handle_event` are caught generically and logged—they do not honor the `raise_error` flag. This is a pre-existing asymmetry between sync and async paths.
-
-## Streaming and Tokens
-
-### Token Streaming
-
-The `on_llm_new_token` callback fires for each token during streaming:
-
-```python
-class TokenHandler(BaseCallbackHandler):
-    def __init__(self):
-        self.tokens = []
-    
-    def on_llm_new_token(self, token: str, **kwargs):
-        self.tokens.append(token)
-        print(token, end="", flush=True)
-
-handler = TokenHandler()
-result = llm.stream("Tell me a story", config={"callbacks": [handler]})
-```
-
-The `chunk` parameter provides structured token information:
-
-```python
-def on_llm_new_token(self, token, chunk=None, **kwargs):
-    if chunk:
-        print(f"Token: {chunk.text}, Type: {type(chunk).__name__}")
-```
-
-### Stream Events (v3)
-
-For high-fidelity event streaming, use `stream_events(version="v3")` with `on_stream_event`:
-
-```python
-class StreamEventHandler(BaseCallbackHandler):
-    def on_stream_event(self, event, **kwargs):
-        print(f"Event: {event['type']}")
-        # Event types: message-start, content-block-start, 
-        #              content-block-delta, content-block-finish, message-finish
-```
-
-## Testing Callbacks
-
-Use `collect_runs()` to test callback behavior without LangSmith:
-
-```python
-from langchain_core.tracers.context import collect_runs
-import pytest
-
-def test_chain_tracing():
-    with collect_runs() as collector:
-        result = chain.invoke("input")
-    
-    assert len(collector.traced_runs) == 1
-    run = collector.traced_runs[0]
-    assert run.name == "my_chain"
-    assert run.inputs == {"input": "input"}
-    assert run.outputs == {"output": result}
-```
-
-For callback handler unit tests:
-
-```python
-def test_custom_handler():
-    handler = MyCallbackHandler()
-    manager = CallbackManager(handlers=[handler])
-    
-    managers = manager.on_llm_start(
-        serialized={},
-        prompts=["test"],
-        tags=["test"]
-    )
-    
-    assert handler.was_called
-```

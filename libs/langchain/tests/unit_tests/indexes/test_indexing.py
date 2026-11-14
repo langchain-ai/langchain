@@ -1,5 +1,5 @@
 from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import (
     Any,
 )
@@ -170,8 +170,8 @@ def upserting_vector_store() -> InMemoryVectorStore:
     return InMemoryVectorStore(permit_upserts=True)
 
 
-_JANUARY_FIRST = datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()
-_JANUARY_SECOND = datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()
+_JANUARY_FIRST = datetime(2021, 1, 1, tzinfo=UTC).timestamp()
+_JANUARY_SECOND = datetime(2021, 1, 2, tzinfo=UTC).timestamp()
 
 
 def test_indexing_same_content(
@@ -769,7 +769,7 @@ def test_incremental_delete(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 3, tzinfo=UTC).timestamp(),
     ):
         assert index(
             loader,
@@ -939,7 +939,7 @@ def test_incremental_delete_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2022, 1, 3, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2022, 1, 3, tzinfo=UTC).timestamp(),
     ):
         # Docs with same content
         docs = [
@@ -970,7 +970,7 @@ def test_incremental_delete_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2023, 1, 3, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2023, 1, 3, tzinfo=UTC).timestamp(),
     ):
         # Docs with same content
         docs = [
@@ -1001,7 +1001,7 @@ def test_incremental_delete_with_batch_size(
     with patch.object(
         record_manager,
         "get_time",
-        return_value=datetime(2024, 1, 3, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2024, 1, 3, tzinfo=UTC).timestamp(),
     ):
         # Docs with same content
         docs = [
@@ -1113,7 +1113,7 @@ async def test_aincremental_delete(
     with patch.object(
         arecord_manager,
         "aget_time",
-        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
+        return_value=datetime(2021, 1, 3, tzinfo=UTC).timestamp(),
     ):
         assert await aindex(
             loader.lazy_load(),

@@ -15,13 +15,13 @@ To see type errors being caught, run:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, assert_type
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel
-from typing_extensions import TypedDict, assert_type, override
+from typing_extensions import TypedDict, override
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.types import (

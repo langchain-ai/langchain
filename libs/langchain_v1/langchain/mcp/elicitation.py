@@ -17,7 +17,7 @@ refused rather than half-served.
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, TypedDict, TypeVar
+from typing import TYPE_CHECKING, Any, Final, Literal, NotRequired, TypeAlias, TypedDict, TypeVar
 
 from fastmcp.client.group import ClientGroup
 from langgraph.types import interrupt
@@ -30,7 +30,6 @@ from mcp.types import (
     InputResponses,
 )
 from mcp.types.version import LATEST_MODERN_VERSION, is_version_at_least
-from typing_extensions import NotRequired
 
 if TYPE_CHECKING:
     from collections.abc import Coroutine

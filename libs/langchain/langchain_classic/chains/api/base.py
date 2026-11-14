@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Self
 from urllib.parse import urlparse
 
 from langchain_core._api import deprecated
@@ -14,7 +14,6 @@ from langchain_core.callbacks import (
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from pydantic import Field, model_validator
-from typing_extensions import Self
 
 from langchain_classic.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain_classic.chains.base import Chain

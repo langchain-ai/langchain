@@ -77,8 +77,9 @@ def test_invoke_all_question_types() -> None:
 
         assert response.model.startswith("jev-")
         assert response.request_id
-        assert isinstance(response.usage.input_tokens, int)
-        assert isinstance(response.usage.output_tokens, int)
+        assert response.usage is not None
+        assert isinstance(response.usage["input_tokens"], int)
+        assert isinstance(response.usage["output_tokens"], int)
     finally:
         if classifier.client is not None:
             classifier.client.close()

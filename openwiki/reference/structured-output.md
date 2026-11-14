@@ -3,15 +3,15 @@ type: API Reference
 title: Structured Output API Reference
 description: Complete API reference for structured output classes, error types, and validation mechanisms used by agents to enforce JSON schema compliance on language model responses.
 tags: [structured-output, api-reference, schema, validation, error-handling]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-29T08:20:01.046Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-ec30ab6256dd50cc670919f6
     resource: repo://libs/langchain_v1/langchain/agents/structured_output.py
 generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-13T08:16:35.902Z
 ---
 
 ## Overview

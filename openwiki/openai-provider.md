@@ -16,10 +16,10 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
   - id: openwiki-source-122b01e9aef52272c0a77739
     resource: repo://libs/partners/openai/langchain_openai/decisions/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-16T08:25:55.096Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-05T08:18:41.280Z
+    at: 2026-11-13T08:16:35.902Z
 ---
 
 ## Overview
@@ -245,11 +245,12 @@ model = ChatOpenAI(model="gpt-4o")
 - **Previous response tracking** via `use_previous_response_id` parameter
 
 **Automatic API Selection**: The Responses API is automatically used when:
-- Model name starts with `gpt-5` (pro variants) or contains `codex`
+- Model name starts with specific pro variants (`gpt-5-pro`, `gpt-5.2-pro`, `gpt-5.4-pro`, `gpt-5.5-pro`, `gpt-5.6-sol`) or contains `codex`
 - `use_responses_api=True` is explicitly set
 - `reasoning` or `context_management` parameters are provided
 - `truncation` or `include` parameters are set
 - `use_previous_response_id=True` is set
+- `output_version="responses/v1"` is set
 - Model name starts with `gpt-6` and tools are provided
 
 **Explicit Control:**
@@ -397,7 +398,7 @@ def bind_tools(
   - `'any'` / `'required'` / `True`: Force at least one tool call
   - `dict`: OpenAI tool choice dict `{"type": "function", "function": {"name": "tool_name"}}`
   - `False` / `None`: No effect, default behavior
-  - `WellKnownTools` strings (`'file_search'`, `'web_search'`, `'tool_search'`, etc.): Built-in tools
+  - **Built-in tools** (WellKnownTools): `'file_search'`, `'web_search'`, `'web_search_preview'`, `'code_interpreter'`, `'image_generation'`, `'computer_use_preview'`, `'mcp'`, `'tool_search'`, `'apply_patch'`
 
   **Example:**
   ```python
@@ -464,7 +465,36 @@ while True:
 
 The `with_structured_output()` method constrains model outputs to a specific schema. Three methods are available:
 
-### Method: `'function_calling'` (Default)
+### Method: `'json_schema'` (Default)
+
+Uses OpenAI's [Structured Output API](https://platform.openai.com/docs/guides/structured-outputs). The model generates JSON strictly matching the schema.
+
+**Pros**: Guaranteed strict output conformance. Supported on modern models (gpt-4o-2024-08-06+, gpt-4-turbo-2024-04-09+).
+
+**Cons**: Only for models with `structured_output=True` in profile. Requires valid JSON Schema.
+
+**Usage:**
+
+```python
+from pydantic import BaseModel
+from langchain_openai import ChatOpenAI
+
+class Joke(BaseModel):
+    setup: str
+    punchline: str
+
+model = ChatOpenAI(model="gpt-4o")
+structured = model.with_structured_output(
+    Joke, 
+    method="json_schema",
+    strict=True  # Validate schema and output
+)
+
+result = structured.invoke("Tell me a joke")
+print(result)  # Pydantic instance if schema is BaseModel, else dict
+```
+
+### Method: `'function_calling'`
 
 Uses OpenAI's [tool-calling API](https://platform.openai.com/docs/guides/function-calling). The model must call a specific tool with arguments matching the schema.
 
@@ -488,27 +518,6 @@ structured = model.with_structured_output(Joke, method="function_calling")
 result = structured.invoke("Tell me a joke")
 print(result)
 # Joke(setup='...', punchline='...')
-```
-
-### Method: `'json_schema'`
-
-Uses OpenAI's [Structured Output API](https://platform.openai.com/docs/guides/structured-outputs). The model generates JSON strictly matching the schema.
-
-**Pros**: Guaranteed strict output conformance. Supported on modern models (gpt-4o-2024-08-06+, gpt-4-turbo-2024-04-09+).
-
-**Cons**: Only for models with `structured_output=True` in profile. Requires valid JSON Schema.
-
-**Usage:**
-
-```python
-structured = model.with_structured_output(
-    Joke, 
-    method="json_schema",
-    strict=True  # Validate schema and output
-)
-
-result = structured.invoke("Tell me a joke")
-print(result)  # Pydantic instance if schema is BaseModel, else dict
 ```
 
 ### Method: `'json_mode'`
@@ -540,7 +549,7 @@ def with_structured_output(
     self,
     schema: dict | BaseModel | type | None = None,
     *,
-    method: Literal["function_calling", "json_mode", "json_schema"] = "function_calling",
+    method: Literal["function_calling", "json_mode", "json_schema"] = "json_schema",
     include_raw: bool = False,
     strict: bool | None = None,
     tools: list | None = None,
@@ -554,7 +563,7 @@ def with_structured_output(
   - `TypedDict`
   - OpenAI tool schema dict
 
-- **`method`**: Approach for constraining output. Defaults to `"function_calling"`. Override incompatible methods:
+- **`method`**: Approach for constraining output. Defaults to `"json_schema"` for ChatOpenAI. Override incompatible methods:
   ```python
   # For older models, auto-downgrade json_schema to function_calling
   structured = model.with_structured_output(

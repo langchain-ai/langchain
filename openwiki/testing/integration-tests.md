@@ -32,10 +32,10 @@ sources:
     resource: repo://libs/standard-tests/langchain_tests/conftest.py
   - id: openwiki-source-025cad4ae99967890152b7e0
     resource: repo://libs/standard-tests/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
+    at: 2026-11-13T08:16:35.902Z
 ---
 
 ## Overview
@@ -150,32 +150,7 @@ Daily (1 PM UTC) and on-demand integration tests run against **live partner APIs
 - **Credentials**: GitHub organization secrets (scoped to "Scheduled testing" environment)
 - **Tracing**: Routes traces to LangSmith project with GitHub run metadata for debugging
 - **Concurrency**: Serialized per package to avoid racing credential usage
-- **Python versions**: 3.10, 3.14 (OpenAI and Perplexity packages require 3.11, 3.14)
-
-### Python Version Matrix: Special Handling for OpenAI and Perplexity
-
-The integration test matrix generation applies different Python version sets based on package type:
-
-- **Default packages** (Anthropic, Groq, Google, etc.): Python 3.10, 3.14
-- **OpenAI and Perplexity packages**: Python 3.11, 3.14 (due to SDK compatibility constraints)
-
-This distinction is implemented in the `compute-matrix` job's matrix generation logic:
-
-```bash
-# Default versions for most packages
-python_version='["3.10", "3.14"]'
-# Minimum 3.11 versions for packages with SDK constraints
-python_version_min_3_11='["3.11", "3.14"]'
-
-# Apply version set based on package directory
-matrix="$(jq -nc ... \
-  '{include: [$directories[] as $dir |
-    (if ($dir == "libs/partners/openai" or $dir == "libs/partners/perplexity")
-     then $integration_versions else $versions end)[] |
-    {"working-directory": $dir, "python-version": .}]}')"
-```
-
-This ensures OpenAI and Perplexity SDKs are tested only against Python versions they officially support, while other packages test a broader version range.
+- **Python versions**: 3.11, 3.14 (default across all packages)
 
 ### Test Dependency Groups: `test_integration`
 
@@ -225,7 +200,7 @@ Integration tests emit traces to LangSmith's `scheduled-testing-py` project (con
 ```yaml
 LANGSMITH_TRACING: "true"
 LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
-LANGSMITH_TAGS: "github-actions,libs/partners/openai,python-3.10,sha-abc123"
+LANGSMITH_TAGS: "github-actions,libs/partners/openai,python-3.11,sha-abc123"
 ```
 
 Traces link back to the originating Actions run, enabling developers to debug failures by examining LLM calls and chain execution.

@@ -5,13 +5,13 @@ import warnings
 from collections.abc import AsyncIterator, Iterator
 from contextlib import contextmanager
 from importlib.metadata import PackageNotFoundError
-from typing import TYPE_CHECKING, Any, Literal, get_type_hints
+from typing import TYPE_CHECKING, Any, Literal, Self, get_type_hints
 from unittest.mock import patch
 
 import pytest
 from langsmith.env import get_langchain_env_var_metadata
 from pydantic import Field, model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.callbacks import (

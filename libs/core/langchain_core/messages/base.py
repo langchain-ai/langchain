@@ -15,8 +15,7 @@ from langchain_core.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from typing_extensions import Self
+    from typing import Self
 
     from langchain_core.prompts.chat import ChatPromptTemplate
 

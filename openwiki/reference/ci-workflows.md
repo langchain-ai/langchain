@@ -3,6 +3,9 @@ type: "Reference"
 title: "GitHub Actions CI Workflows Reference"
 description: "Complete technical reference for LangChain's GitHub Actions workflows, job configurations, triggers, matrix testing, and environment variables."
 tags: [ci, workflows, github-actions, reference, automation]
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-13T08:16:35.902Z
 sources:
   - id: openwiki-source-c92cc62695c6def991956428
     resource: repo://.github/workflows/_release.yml
@@ -10,10 +13,7 @@ sources:
     resource: repo://.github/workflows/check_diffs.yml
   - id: openwiki-source-9069a5dd5fbb579fbd5470ce
     resource: repo://.github/workflows/integration_tests.yml
-generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-11-05T08:18:41.280Z
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 ---
 
 ## Overview
@@ -120,7 +120,7 @@ Each output is a JSON array of job configurations:
 2. Builds dependency graph from `pyproject.toml` and `extended_testing_deps.txt`
 3. Cascades changes through dependents
 4. Ignores partners: `huggingface` (CI instability)
-5. Infrastructure changes (`.github/workflows/`, `.github/actions/`, etc.) trigger extended tests on all core packages
+5. Infrastructure changes (`.github/workflows/`, `.github/actions/`, `.github/scripts/check_diff.py`) trigger extended tests on all core packages
 6. Diffs ≥300 files → run all tests (fallback for truncated diffs)
 
 ### Python Version Matrices
@@ -129,9 +129,9 @@ Generated per-package-type:
 
 | Package Type | Python Versions |
 |---|---|
-| `libs/core` | 3.10, 3.11, 3.12, 3.13, 3.14 |
+| `libs/core` | 3.11, 3.12, 3.13, 3.14 |
 | `openai`, `perplexity` (lint/compile) | 3.11, 3.14 |
-| Other packages | 3.10, 3.14 |
+| Other packages | 3.11, 3.14 |
 
 ### Pydantic Compatibility Testing
 
@@ -308,16 +308,21 @@ on:
     inputs:
       working-directory:
         type: choice
+        description: "Library to test (select from dropdown)"
+        default: "all"
         options: [all, core, langchain, langchain_v1, text-splitters, standard-tests, 
                   model-profiles, anthropic, aws, chroma, deepseek, exa, fireworks, 
                   google-genai, google-vertexai, groq, huggingface, mistralai, nomic, 
                   ollama, openai, openrouter, perplexity, qdrant, typesafe, xai]
       working-directory-override:
-        type: string  # Full path override (e.g., libs/partners/partner-xyz)
+        type: string
+        description: "Manual override — takes precedence over dropdown (e.g. libs/partners/partner-xyz)"
       exclude:
-        type: string  # Comma-separated short names to exclude from 'all' run
+        type: string
+        description: "Comma-separated short names to drop from the 'all' run (e.g. openai,anthropic)"
       python-version-override:
-        type: string  # Override default [3.10, 3.14] (e.g., 3.11)
+        type: string
+        description: "Python version override — defaults to 3.11 and 3.14 (e.g. 3.12)"
   schedule:
     - cron: "0 13 * * *"  # Daily at 1:00 PM UTC (9 AM EDT, 6 AM PDT)
 ```
@@ -349,7 +354,7 @@ env:
 ```yaml
 outputs:
   matrix: ${{ steps.set-matrix.outputs.matrix }}
-  python-version-min-3-11: ${{ steps.set-matrix.outputs.python-version-min-3-11 }}
+  python-versions: ${{ steps.set-matrix.outputs.python-versions }}
 ```
 
 **Matrix computation:**
@@ -358,10 +363,12 @@ outputs:
 - Excludes specified packages from all-run
 - Generates include list: `[{working-directory, python-version}, ...]`
 
-**Special Python version handling:**
-- `openai`, `perplexity`: `[3.11, 3.14]`
-- Other packages: `[3.10, 3.14]` (default)
-- If override specified ≥3.11: use in python-version-min-3-11
+**Python version handling:**
+- Default: `[3.11, 3.14]`
+- If override specified: uses override value for single-version test
+- Example: `python-version-override: "3.12"` → `[3.12]`
+
+---
 
 ### Job: `integration-tests`
 
@@ -369,28 +376,51 @@ outputs:
 
 **Environment approval:** "Scheduled testing" (restricts secret access)
 
-**Concurrency:** Per `(working-directory, python-version)` pair, no cancellation
+**Concurrency:** Per `(working-directory, python-version)` pair, **no cancellation** (prevents live API credential conflicts between manual and scheduled runs)
 
 **Matrix:** `include: ${{ fromJSON(needs.compute-matrix.outputs.matrix).include }}`
 
-**Prerequisite checkout:** Monorepo root + external repos
-- `langchain-ai/langchain` → `./langchain`
-- `langchain-ai/langchain-google` → `./langchain-google`
-- `langchain-ai/langchain-aws` → `./langchain-aws`
+**Repository checkouts:** Monorepo + external repos
+- `langchain-ai/langchain` → `./langchain` (main monorepo)
+- `langchain-ai/langchain-google` → `./langchain-google` (external Google packages)
+- `langchain-ai/langchain-aws` → `./langchain-aws` (external AWS packages)
 
 **External package setup:**
 ```bash
-rm -rf langchain/libs/partners/google-*
+rm -rf langchain/libs/partners/google-genai langchain/libs/partners/google-vertexai
 mv langchain-google/libs/genai langchain/libs/partners/google-genai
 mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
 mv langchain-aws/libs/aws langchain/libs/partners/aws
 ```
 
-**Dependency installation:**
+**Dependency installation strategy:**
+- Partner packages use `[tool.uv.sources]` in `pyproject.toml` to resolve `langchain-core`/`langchain` to local editable installs
+- External Google/AWS packages don't declare `[tool.uv.sources]`, so `uv sync` pulls from PyPI
+- Overlay local editable installs after sync for external packages to test against current branch
+
+**Installation steps:**
 ```bash
+cd langchain/${{ matrix.working-directory }}
 uv sync --group test --group test_integration
-# For google/aws: overlay local editable installs
-uv pip install -e <path-to-core>
+
+case "${{ matrix.working-directory }}" in
+  libs/partners/google-genai)
+    uv pip install -e $GITHUB_WORKSPACE/langchain/libs/core \
+                   -e $GITHUB_WORKSPACE/langchain/libs/standard-tests
+    ;;
+  libs/partners/google-vertexai)
+    uv pip install -e $GITHUB_WORKSPACE/langchain/libs/core \
+                   -e $GITHUB_WORKSPACE/langchain/libs/langchain_v1 \
+                   -e $GITHUB_WORKSPACE/langchain/libs/standard-tests
+    ;;
+  libs/partners/aws)
+    uv pip install -e $GITHUB_WORKSPACE/langchain/libs/core \
+                   -e $GITHUB_WORKSPACE/langchain/libs/langchain_v1 \
+                   -e $GITHUB_WORKSPACE/langchain/libs/langchain \
+                   -e $GITHUB_WORKSPACE/langchain/libs/standard-tests \
+                   -e $GITHUB_WORKSPACE/langchain/libs/partners/anthropic
+    ;;
+esac
 ```
 
 **Execution:**
@@ -401,12 +431,14 @@ make integration_tests
 
 ### LangSmith Metadata Injection
 
+Each test execution injects GitHub metadata for tracing and observability:
+
 ```bash
 metadata=$(jq -nc \
-  --arg github_sha "$GH_SHA" \
-  --arg github_run_id "$GH_RUN_ID" \
-  ... \
-  '{github_sha: $github_sha, github_run_id: $github_run_id, ...}')
+  --arg github_sha "$GITHUB_SHA" \
+  --arg github_run_id "$GITHUB_RUN_ID" \
+  --arg github_run_attempt "$GITHUB_RUN_ATTEMPT" \
+  '{...}')
 echo "LANGSMITH_METADATA=$metadata" >> "$GITHUB_ENV"
 ```
 
@@ -415,30 +447,17 @@ echo "LANGSMITH_METADATA=$metadata" >> "$GITHUB_ENV"
 env:
   LANGSMITH_TRACING: "true"
   LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
-  LANGSMITH_PROJECT: ${{ vars.LANGSMITH_PROJECT || 'scheduled-testing-py' }}
+  LANGSMITH_PROJECT: "scheduled-testing-py"
   LANGSMITH_TAGS: "github-actions,${{ matrix.working-directory }},python-${{ matrix.python-version }}"
   # Plus API keys for 20+ services (OpenAI, Anthropic, Google, AWS, etc.)
 ```
 
-### Job: `test-dependents`
-
-**Condition:** `github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'`
-
-**Purpose:** Test external packages against current branch's langchain
-
-**Matrix:**
-- Python: `{{ fromJSON(needs.compute-matrix.outputs.python-version-min-3-11) }}`
-- Packages:
-  - `deepagents` (from `langchain-ai/deepagents`)
-
-**Execution:**
-```bash
-cd ${{ matrix.package.name }}/${{ matrix.package.path }}
-uv sync --group test
-uv pip install -e $GITHUB_WORKSPACE/langchain/libs/core
-uv pip install -e $GITHUB_WORKSPACE/langchain/libs/langchain_v1
-make test
-```
+**Live API credentials provided** (when running with scheduled testing environment):
+- LangSmith (Tracing, Gateway)
+- OpenAI (+ Azure endpoints)
+- Anthropic
+- Google (Vertex AI, GenAI, Search)
+- Mistral, Groq, Huggingface, EXA, Nomic, WatsonX, Astra DB, Elasticsearch, MongoDB Atlas, Upstage, Fireworks, XAI, DeepSeek, Ollama, OpenRouter, and others
 
 ---
 
@@ -502,8 +521,6 @@ env:
 **Environment:** Release (approval required)
 
 **Condition:** `github.repository_owner == 'langchain-ai' && (master || dangerous-nonmaster-release)`
-
-**Timeout:** Default
 
 **Outputs:**
 ```yaml
@@ -700,312 +717,3 @@ outputs:
    - Body: Release notes from `release-notes` job
    - Artifacts: Attach `.whl` and `.tar.gz` from artifact
    - `makeLatest: true` only for `langchain-core` (primary package)
-
----
-
-## Supporting Reusable Workflows
-
-### `_lint.yml`
-
-**Inputs:**
-```yaml
-inputs:
-  working-directory:
-    type: string
-    required: true
-  python-version:
-    type: string
-    required: true
-```
-
-**Execution:** Linting checks in specified directory with Python version
-
----
-
-### `_test.yml`
-
-**Inputs:**
-```yaml
-inputs:
-  working-directory:
-    type: string
-    required: true
-  python-version:
-    type: string
-    required: true
-```
-
-**Execution:** `make tests` with dependencies
-
----
-
-### `_test_pydantic.yml`
-
-**Inputs:**
-```yaml
-inputs:
-  working-directory:
-    type: string
-    required: true
-  pydantic-version:
-    type: string
-    required: true
-```
-
-**Execution:** Installs pinned Pydantic version and runs tests
-
----
-
-### `_compile_integration_test.yml`
-
-**Inputs:**
-```yaml
-inputs:
-  working-directory:
-    type: string
-    required: true
-  python-version:
-    type: string
-    required: true
-```
-
-**Execution:** Compile integration tests: `pytest -m compile tests/integration_tests`
-
----
-
-### `_test_vcr.yml`
-
-**Inputs:**
-```yaml
-inputs:
-  working-directory:
-    type: string
-    required: true
-  python-version:
-    type: string
-    required: true
-```
-
-**Execution:** VCR cassette-backed tests in playback-only mode (no API keys)
-
----
-
-## Additional Workflows
-
-### PR Labeling Workflows
-
-- **`pr_labeler.yml`** — Auto-label PRs by contributor type, file changes, size, title patterns
-- **`pr_labeler_backfill.yml`** — Backfill labels on existing PRs
-- **`pr_lint.yml`** — Validate PR titles and trailers
-- **`pr_lint_trailer.yml`** — Enforce conventional commit trailers
-
-### Issue & Maintenance Workflows
-
-- **`close_unchecked_issues.yml`** — Auto-close issues lacking required information
-- **`require_issue_link.yml`** — Enforce external PRs link to issues
-- **`reopen_on_assignment.yml`** — Reopen issues when assigned
-- **`remove_waiting_on_author.yml`** — Auto-remove stale labels
-- **`tag-external-issues.yml`** — Tag issues by source/category
-
-### Infrastructure Workflows
-
-- **`auto-label-by-package.yml`** — Apply package-based labels
-- **`block_fork_main_prs.yml`** — Prevent forks from merging to main
-- **`check_extras_sync.yml`** — Validate extras dependencies stay in sync
-- **`check_versions.yml`** — Verify version consistency
-- **`check_release_deps.yml`** — Check release dependencies before publish
-- **`bump_uv_pin.yml`** — Auto-bump pinned UV version
-- **`codspeed.yml`** — Performance benchmarking (walltime mode for certain packages)
-- **`openwiki-update.yml`** — Trigger wiki documentation updates
-- **`refresh_model_profiles.yml`** — Re-generate model profiles
-
----
-
-## Matrix & Configuration Examples
-
-### Example: PR CI Matrix for `libs/core` Change
-
-**Lint matrix:**
-```json
-[
-  {working-directory: "libs/core", python-version: "3.10"},
-  {working-directory: "libs/core", python-version: "3.11"},
-  {working-directory: "libs/core", python-version: "3.12"},
-  {working-directory: "libs/core", python-version: "3.13"},
-  {working-directory: "libs/core", python-version: "3.14"}
-]
-```
-
-**Test matrix:** Same as lint
-
-**Pydantic matrix (if using Pydantic):**
-```json
-[
-  {working-directory: "libs/core", pydantic-version: "2.0.0"},
-  {working-directory: "libs/core", pydantic-version: "2.1.0"},
-  ...
-  {working-directory: "libs/core", pydantic-version: "2.10.0"}
-]
-```
-
-**Dependent packages triggered:** All packages with `libs/core` dependency
-
----
-
-### Example: Integration Test Matrix for Manual Run
-
-**Input:** All libraries, Python override `3.13`
-
-**Matrix output:**
-```json
-{
-  "include": [
-    {working-directory: "libs/partners/openai", python-version: "3.13"},
-    {working-directory: "libs/partners/anthropic", python-version: "3.13"},
-    ...
-  ]
-}
-```
-
-**Python version min-3-11:** `["3.13"]` (override bound to ≥3.11)
-
----
-
-## Secrets & Environment Variables Reference
-
-### Common Environment Variables
-
-| Variable | Scope | Value | Purpose |
-|---|---|---|---|
-| `UV_FROZEN` | All CI | `"true"` | Use frozen `uv.lock` |
-| `UV_NO_SYNC` | check_diffs | `"true"` | Skip dependency sync for speed |
-| `PYTHON_VERSION` | Release | `"3.11"` | Default Python for release jobs |
-| `LANGSMITH_TRACING` | Integration tests | `"true"` | Enable LangSmith trace collection |
-
-### Repository Secrets (Injected to Integration Tests & Release)
-
-**LangSmith:**
-- `LANGSMITH_API_KEY`
-- `LANGSMITH_GATEWAY`
-- `LANGSMITH_GATEWAY_API_KEY`
-
-**LLM Providers:**
-- `OPENAI_API_KEY`, `AZURE_OPENAI_API_*` (7 vars)
-- `ANTHROPIC_*` (2 vars)
-- `GOOGLE_API_KEY`, `GOOGLE_SEARCH_API_KEY`, `GOOGLE_CSE_ID`
-- `MISTRAL_API_KEY`, `GROQ_API_KEY`, `XAI_API_KEY`, `DEEPSEEK_API_KEY`, `PERPLEXITY_API_KEY`
-- `TOGETHER_API_KEY`, `HUGGINGFACEHUB_API_TOKEN`
-
-**Vector Databases:**
-- `QDRANT_*` (credentials)
-- `ASTRA_DB_*` (3 vars)
-- `ES_*` (3 vars)
-- `MONGODB_ATLAS_URI`
-
-**Other Services:**
-- `EXA_API_KEY`, `NOMIC_API_KEY`, `FIREWORKS_API_KEY`
-- `WATSONX_*` (2 vars)
-- `OLLAMA_API_KEY`, `OPENROUTER_API_KEY`, `UPSTAGE_API_KEY`
-
-**GitHub:**
-- `GITHUB_TOKEN` (auto-provided)
-
----
-
-## Cache Strategy
-
-### Build Job
-- **UV cache:** Enabled with `cache-suffix: extended-tests-<dir>`
-- **Python cache:** Enabled
-
-### PR CI Lint/Test Jobs
-- **Python cache:** Enabled (via reusable workflow)
-- **UV dependencies:** Frozen lock file
-
-### Release Jobs
-- **Cache:** **Disabled** (intentional security & completeness check)
-- **Rationale:** Catch missing dependencies that would silently pass with cache
-
-### Integration Tests
-- **Cache:** Default behavior (not explicitly disabled)
-
----
-
-## Permissions & Security
-
-### PR CI (`check_diffs.yml`)
-```yaml
-permissions:
-  contents: read
-```
-Minimal read access only.
-
-### Release Jobs
-```yaml
-permissions:
-  contents: read       # Build, pre-release-checks
-  id-token: write      # test-pypi-publish, publish (OIDC)
-  contents: write      # mark-release (git tag creation)
-```
-
-**Separation:** Build and release jobs are separate to prevent credential sharing (per PyPA guidance).
-
-### Integration Tests
-```yaml
-environment: "Scheduled testing"  # Restricts secret access
-```
-
----
-
-## Concurrency & Cancellation
-
-### PR CI
-```yaml
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-```
-Cancels old runs on same branch when new commit arrives.
-
-### Integration Tests
-```yaml
-concurrency:
-  group: integration-tests-${{ matrix.working-directory }}-${{ matrix.python-version }}
-  cancel-in-progress: false
-```
-Serializes per-package shards to avoid race conditions on live API credentials (manual runs don't cancel scheduled runs).
-
----
-
-## Common Script Dependencies
-
-### `check_diff.py`
-- Maps changed files → affected packages
-- Builds dependency graph
-- Generates test matrices with Python versions and Pydantic versions
-- Handles special cases: infrastructure changes, large diffs, ignored partners
-
-### `check_prerelease_dependencies.py`
-- Validates that stable releases don't depend on prerelease versions
-
-### `get_min_versions.py`
-- Extracts minimum supported versions from `pyproject.toml`
-- Used in pre-release testing
-
-### `test_release_options.py`
-- Validates `_release.yml` dropdown options match actual package directories
-
----
-
-## Failure Handling & Retries
-
-### Default Behavior
-- **Matrix jobs:** `fail-fast: false` (all matrix legs complete even if one fails)
-- **PR CI success job:** Aggregates results with exit code 0/1
-- **Release:** Manual retry available (re-run workflow)
-
-### Specific Safeguards
-- **PyPI version check:** Fails closed if PyPI unreachable (aborts rather than assumes version is free)
-- **Git tag validation:** Validates before publish
-- **Checksum verification:** Fails if artifact checksums mismatch
-- **Prerelease dependency check:** Blocks stable releases from depending on prerelease packages

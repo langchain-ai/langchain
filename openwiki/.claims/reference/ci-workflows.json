@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1c7140af9cc7dd78e369bbc548685411b66ed167731794c7bb32e7bd6fc76fd0",
+  "pageVersion": "sha256:df1918de78a77a602319dfb491f729e6273d73c93084f521618e616c582aab2d",
   "claims": [
     {
       "id": "claim_582624e6ba514810bdb789729d4765b2",
@@ -16,13 +16,13 @@
         },
         {
           "resource": "repo://.github/workflows/integration_tests.yml",
-          "version": "repo-file-v1:sha256:859418e2d625a4943f289edae6c9b3a43f1054ae95ef036ab49fbc1e9ae38efa"
+          "version": "repo-file-v1:sha256:0478384dba190d090d7d497c18b607ab68519e95ec37e2137e43d995a13b3409"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-05T08:18:41.280Z"
+    "at": "2026-11-13T08:16:35.902Z"
   }
 }

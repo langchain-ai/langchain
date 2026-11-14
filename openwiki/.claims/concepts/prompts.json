@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:28a599d6507524f45e155336ee5a0ad88e4486c91b60b1fc4c03a63b97100dda",
+  "pageVersion": "sha256:e514d5e9a4245edc73e08f7b204a969010f01573fa6715624e117d33f1674746",
   "claims": [
     {
       "id": "claim_2744b97852c94bb9873ec92717376683",
@@ -32,11 +32,23 @@
     },
     {
       "id": "claim_4f7217a5f503469baa69c06f5ef4ab42",
-      "statement": "ChatPromptTemplate sequences message templates into conversation structures, automatically inferring input_variables and optional_variables from embedded messages. When a ChatPromptTemplate has exactly one input variable, invoke() auto-wraps non-dict arguments. Message type strings ('system', 'human', 'ai', 'user', 'assistant', 'tool', 'function', 'placeholder') are mapped to specific message template classes.",
+      "statement": "ChatPromptTemplate sequences message templates into conversation structures, automatically inferring input_variables and optional_variables from embedded messages. When a ChatPromptTemplate has exactly one input variable, invoke() auto-wraps non-dict arguments via _validate_input(). Message type strings ('system', 'human', 'ai', 'user', 'assistant', 'placeholder') are mapped to specific message template classes via _create_template_from_message_type().",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/prompts/chat.py#L1-L52",
-          "version": "repo-lines-v1:sha256:c2c36bf1f21ba4c79c77edcef1ee67cc7adacf5b4092337fd7d3ed03b34547b8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmZGRjYTFjZDMwMjFlNzA0YjcxMjNiMTYwMGIzOGM3ZDExNTRhYWZiNGJlNzEwOTA1ZTVkZDE1MjBlNzk0NTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxNjRiMTk4NjEyZGFhY2M4N2U4NmExYjY3N2M1ZTNlMGFkOTdlNjU4MDY2YzJlNDU4ZjAxZmE2ZTg4ZjY1N2IifQ"
+          "resource": "repo://libs/core/langchain_core/prompts/base.py#L161-L195",
+          "version": "repo-lines-v1:sha256:24a40398a32cb27deaa3a91eb06f5a86ae1e017f8dabf82369476b238695f476:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjYxNDY4MTVjZjE3NGI1ZDQxNzk3YWNhMTk3MDQ3Yzg2N2FjODgxODk2YmRiMzZhOWVlNTViNzIyYTNiMDU0MDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxNmRhMTg3ZTFlZGNlYTExNzAyNGFlOTY2MmFiN2RlNTc2Mjc3N2FjNzQ2ODRlOGI4MTYyNmY0OWVjYTAxZjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjcwMGU2Yzc0ZDBkZTUzNzk1MGRkMGY2ZjNiZjQwYWQxNTk0NGMwOTg5YTRiNzMwNWI3YmQ4NmEyYzE5YzZkYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUzMDI5MzQ4MmMwNmVkNGFhMzkxZDNiZWNiNjc4Yjc4NDYyNGI0ZWE2ZjdhMjJiOTk0NDkyMmYwMWMwZDczNzQifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/chat.py#L1342-L1416",
+          "version": "repo-lines-v1:sha256:40a74a20b3bc02a2981a0ffed769a0d58184ce6497e4a07bea9576ac94456869:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlMzY3YmUwYjExY2M5ZTA0ZDZjYzJhNmEwNGI1NzQzZmUxZDJkMTQxNGI3ODk2ZTgxOGUxMzU0ZTEwY2ZhYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkZTBhMWNkMWFkNzhjNzZiM2ViY2VhYmJkYThkYmI0MTMwYzhkMGE0Y2U4MzQ0Y2RiN2MyZGIxNDg3ZGU1ZGUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBjNDRkNWJhODdiYTNiYjg4OGJlOTY5YzM5MmViZGM1MjEyZjIxZWU5YzQ3MWQ3N2U4YjNmYTNlN2I4MDc5YzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJjOTY3ZGY3NGY5MTFkM2U0MTNkYzlkNjgyZDQwMzRjZTNjNGMzMGNmYmU4ZjI2MzU5NDhmMTdhNzU4NjBmMTkifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/chat.py#L795-L900",
+          "version": "repo-lines-v1:sha256:040d1578598239df35c70290b0e25446707e0afe1dab25a4ee75fdc0a11d56d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3MDk4NzY1MDA1NDFjNjljMzM4OWQ5MTc5OTljMjZiZjlhZTcyOWMwMGE4NGRlNTcyMWYwMjM4NjEwODkzMzJmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhNmE3MTUyNTcyZWU4NGYxMDkwNmM3NGI5ZjJhOTI0MzRkZGFiMGUzYzQyODEzYjA0ZTU5N2VmY2VjOTUxYjI2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhOThiMDYzZDliNDdlNjUzNzk2MjU1NzJjY2UxOTc2NjlkNTc2N2UxMmMxOGJlMDc1NjUyYjhjZDk4MWNlOGQ1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNTE4MGMwZTNlMGI1NDhjOGRmNjdhZGNlMjhmNmE4ZmI3MzExOGI1ZmU3ZjQxNjQxYWExYTViMjYxNDMyNGFlIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/prompts/chat.py#L908-L1001",
+          "version": "repo-lines-v1:sha256:82680204b73641675dd92697d21d9488a4af38958c77164038941444b124403f:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlmZDdhMDdhODNkZDE5OTZmYjUxNjg0YjQyYWVjYWY0ZTkwZmI3OGJhNzIzMGU1NDJlZDdiZDAxZDQyMzAxYmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2NDkwMTIxYmYxZDY5Y2MxMjAxNzBkZTQ2MzFkMmYwYTVhMWE3MjhkMTVhMTgwNTQ3MzVlM2M1ZjNkMThmNzgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZmNDdiZmFjOWU4OGQ0YWMyM2ZiZTUzOTJhYjVmZTg5ODlmYjgzYjdkMTE0OTUxYmZiN2FjNmQyMDFiMGEwMDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxM2QxNTY1OGFlNGYxMWMwYWE4Mzc1NWM2MDM0ZmI2MWZhMWY1OWFmMjRlNTYwOWI4NTc0MjJmOGQ3YTQyOTcifQ"
         }
       ]
     },
@@ -157,6 +169,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-06T08:17:28.425Z"
+    "at": "2026-11-13T08:16:35.902Z"
   }
 }

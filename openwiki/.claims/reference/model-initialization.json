@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6f05b56648eb4b01a6918e4e07940e3fec0fd1c24d76afd0425e86bbd4743970",
+  "pageVersion": "sha256:ea80bdef6f7dedaa75819ae6b9a786b85c42347c47658e9c08b7e1986b1d82c1",
   "claims": [
     {
       "id": "claim_b85084bee91348b586c4dc2140796ec8",
@@ -15,10 +15,106 @@
           "version": "repo-file-v1:sha256:757316423a5b1f95b14b1ebaac56e612af026bb50f06c1748e688e65a8a17b67"
         }
       ]
+    },
+    {
+      "id": "claim_5f122fec3f8f4850be2bc516d24b08c6",
+      "statement": "init_chat_model function has three overload signatures: one returning a fixed BaseChatModel when model is specified with no configurable_fields, one returning a _ConfigurableModel when model is None and no configurable_fields, and one returning _ConfigurableModel when any configurable_fields specification is provided.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L196-L226",
+          "version": "repo-lines-v1:sha256:735767f0ee6cc07f2f21d7dff4cc4ca193dbd136884971f5a6f8b2ee947e0ec5:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmODJlNmUxZDU5Nzc1ZWM0ZWViY2E3N2I5ODcyYWY2ZmE4NzExODBhNjI0YTQ5OTYxMTY2Y2Y1NzU1N2E0YTkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhYjM5ZmZlOTZjNTdjNTFlNDBmN2ExMTliMGUyZmRmZjk4OWVlMDM4NWMzZTUzZWI2NTJiODZjMzgwMjcyZjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIzZDk5MjgyNjQ4MTIxZTM0YzU0NzFiMTc2NWY0MWEwM2RlNDBmZDA0N2YzMzBjMDg5MDgxNTk1Zjk3NDcxM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2YzQ2ODdkNTIyYzhlYjkzZjc2ZGQ4ZjZmODNiMDM0ZTQ5NTA4OTg2ODE0NzAxZjA2OGE1OWM4NWRiN2NjZGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a053643fbeda4652babd3eeef4c67584",
+      "statement": "The _parse_model function extracts provider prefixes from model identifiers using colon separation, falls back to provider inference via _attempt_infer_model_provider, normalizes provider names to lowercase with underscores, and raises ValueError with suggestions if provider cannot be determined.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L623-L651",
+          "version": "repo-lines-v1:sha256:0f3986f6ea39cbaccfb49ef380d145f3efc5306c2d8faba7cb4e99ecd6236f53:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NzUyNzA5Y2ZhODMyODY3NTc4ZjRiNjU2NWJlZGQ5ZmJiYzJlNTkzNTRmNDU5ZTZmM2RkZDgxZjNjNjAyNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4YzU3MmZhNzdjYTc0YTBiNjhlODVkOGMyNWI2OTNlYzNmMjYyMTY4YTg0YjFiZDAyZWI2YjNmNGY2ODRjNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwN2RlYjgwY2I0N2I0ZTQwNDg1ZTdmMTQ2YTMyODdlYjNkZjFhNTkwZjUzMjNjOTE3MmNkODE2YzJjNzhhNTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b9c8a5294dba402d9590f5669a61b448",
+      "statement": "Provider inference from model names uses case-insensitive prefix matching for 11 provider patterns (openai: gpt-, o1, o3, chatgpt, text-davinci; anthropic: claude; bedrock: amazon., anthropic., meta.; mistral: mistral, mixtral; and others). Gemini prefix currently defaults to google_vertexai but is deprecated in favor of google_genai.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L547-L620",
+          "version": "repo-lines-v1:sha256:a9fa9d961e85cbbccd7d57b4421babf5fbe5d93a7aa62b3bc0b38d6b368121dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NjVhMDM2OTVmYTJkMWU0YmU3OWZhYzhmMDNhOGMzOTU2OTI3OTcwMjY0MTMxNDU5NDUzMDc3ZmU0ZjM1NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlNTMyODkxMmQzMWM2MTZhZWI3NzBhM2M1YmI3ZmIxZTE0OTI3MTRiNjQyNThjOTdhZjJlYmM0MDIxNTdkMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllNDUzZTU0YTQ0ZDU0ZDAyYWNiZDViOWE0YjBlNTIxNTQ4ZGM4MTY0ODFjYTBhZDM2YzBiNmFhMzdhZmNiMDcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_38557dafafff461f8718d5371c3548ad",
+      "statement": "The _BUILTIN_PROVIDERS dictionary contains 30 entries mapping provider names to module paths, class names, and creator functions. Each provider entry enables dynamic module import and instantiation. Most providers use the standard _call creator; HuggingFace uses from_model_id, IBM uses model_id mapping, and LangSmith wraps instantiation with gateway configuration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L56-L99",
+          "version": "repo-lines-v1:sha256:a0432456fbcc294961073b737c0871eb2e1444b6649f4f39c8fd5af7d29f8834:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0OWFmODNkYjQ4ODc5YTQyYjVjNTliMmEyYmY3NThiYWY4YjFkMmQwNTJmOGRmN2VlNWNkOTIyMjJkYTM4NzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjJkNzA5NGEwOTBkZDkxYjgwMmJjZWIxYWNkYzMwYWMyNTc5MjU4YTFjNjkxNTk4YWVmNjYyMDAyMWQ1NWMzMDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJhYzk3OTRjOTIxODcwZGVjNjU0YWU5YjU2ZDBiMDk3YWU0NDlhODU4NzE5Y2Q3MjhkZDI5N2ZhNjMyN2VhOTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_342f2c78b5dc45eba70ae2f0459f8ee8",
+      "statement": "The _ConfigurableModel wrapper implements lazy instantiation: it defers actual chat model creation until invoke/stream/batch time, extracts configurable parameters from config[\"configurable\"] dict using config_prefix namespacing, merges them with defaults, and instantiates the underlying model. Declarative operations (bind_tools, with_structured_output) are queued and applied after model instantiation.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L661-L731",
+          "version": "repo-lines-v1:sha256:d646d99f2edf5883ed0c4b0fb49d519c1cb7662c5c084c9caaa79c6ca74584a8:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM5MzJlZDgzMDcwMjhjNjk2ZDc1ZDQ4ZjFhZTQ5YjJiOTE4OWY2NDA3NTFlYWU4ZGYxZTMyNzc5ZTI4ZDQ2ODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4OWNiNzEyNjQ5NjEyYmI2OTJlZGNlYzNhNjQ5ZTg4ZDlkNWYzZDkwNmMzZjNmMDkyM2RkMDMyYTQ3YzNkMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUyNTE0YmJlNzM5OGY4YTY1MWQ1Zjk1MGNiOGRkOWVhOWJmNjNjYTg3NzRlZjc4YmE4ZmVjZmZiNTk5MTRiNzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkNWFlM2Y3MDYwOGZmOGQ0NjNiZDZkYjVlMDczYmM4YjlhYmI1OGU4YWRkNGM3N2I5ZjBhNzUyMWI1ZGUwZDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_018b1b57dfc946d0ba9cddf7f81386f5",
+      "statement": "The configurable_fields parameter controls runtime configurability: None creates a fixed model, \"any\" makes all parameters configurable, list/tuple specifies individual parameter names. When model is None and configurable_fields is not specified, configurable_fields defaults to (\"model\", \"model_provider\"). Security warning applies when configurable_fields=\"any\" allows api_key and base_url override.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L337-L358",
+          "version": "repo-lines-v1:sha256:028e288e860e14e725f71ae418eea6e4b0cdf7f008f83abc9f207692d66ebadb:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4ODM0ZTM2YzM5MjhlZjRkODEwNjMxZmE1OTA3NWZmMTgzZDlkMmU2Njc4OWI1NjU1MjUyMmQ3ZjcxOWY2MDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0MWMwZjJmYmM5OGRkZmYyY2EwNGIzMGE1NDc2YzUxOGVjMmM0NzMxNWUwYWQ2YzZmMDJhMTI5ZWU5ZjJiOTkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFhOTUwMTFlZDQxNWI5YTY2YzE1Nzc2ZGFiM2I4ODJjY2MwMTliM2YyMWMyZWU1YjY2MTgwZmRiN2U4MTNmODcifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L508-L533",
+          "version": "repo-lines-v1:sha256:8d6bd971ba147c98d0537564a713391955674ef1301e12f99ddf11deccd7d790:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiNzhiOWQzNzI4N2ZmM2NmYmNmMzVjZDlmMjA1NGYxNWQ3ZmI2NDEwZTRkMGQ5ZjkxYjQ1MWQyYjRmNDlhNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0ODVlZTcxYmI4YmY1ZjVmZWFiOGM1OTczZWY5YmZjY2NkYzUwM2Y1MGY1YjZlOWYwYzY4N2FiMzc0ZjE0ZDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImFlYWI5MWUyNzg3Zjk0YjdmNDU0ODAxYjliYWE5MTI1ZmQxMzRkMzc3NGE0ZmU1Mjc5N2M1ZDMzNWRiMGM5NDgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_142270ca87a544c2bd3c69837ad63878",
+      "statement": "The config_prefix parameter creates a namespace for runtime config keys: when set to a non-empty string, it is appended with underscore and used to filter configurable parameters from config[\"configurable\"]. An empty string or None uses no prefix. Warning is issued if config_prefix is set but no fields are configurable.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L510-L517",
+          "version": "repo-lines-v1:sha256:0bf116adce8fb7b9d75ba131e9c4f83238e105ee372c8296f37a867a24fab4cf:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTRlZTBhZmMyYWZlOWYxZmVjZWJlODYzOWUyMDg1OTI2Y2UyNDljMDAzMTk2Y2UyNzliMTJlNmYyNTU3MTVmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTkwOWE1M2E2MThkMDI4ZTFkMzAwMGMwYTdhYmNlZWNiZTVmYjM3ZjRlNTExZWZlNDY2NDNmYWQ2ZTY2ODcyZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTI0Njk2ZTBlMTM1YWY1M2FiNTIyOTQ3NWQwZjJhZGE4YTU5MjBhZTk0NGNjZDBhZmM3YjI5NTY5MzVmMDU0ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzMwNGFmNmJjNTI2ZDA0YWEzMmQ2ZjBmNTc4OGFiY2UyZWNmMWFmODQ3ZDllMDRiNmQ4NmJlYTMxMTAzNGI3ZiJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L722-L731",
+          "version": "repo-lines-v1:sha256:c4374ce21b4f6fd5954ed1db71f666184e7bcb6ae57d42a2deadc3824c22e4fd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3ZmRjY2IyZTIyNGQyZmZhZjdiNzNmNzY4YjRkZDUxNTZkMDMyN2Q1OTg3YjdmMzNkNmU1ZmMxY2ZjOTFhM2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI4OWNiNzEyNjQ5NjEyYmI2OTJlZGNlYzNhNjQ5ZTg4ZDlkNWYzZDkwNmMzZjNmMDkyM2RkMDMyYTQ3YzNkMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE2NzVhOTgxN2ZlYWEzNWZhNTRhZjQwNGYwMDQwZWI4MDU3ZjQ1MDVmNTlkNDc4ZjIzYTZiOTA1YmNlMmFkYWQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkNWFlM2Y3MDYwOGZmOGQ0NjNiZDZkYjVlMDczYmM4YjlhYmI1OGU4YWRkNGM3N2I5ZjBhNzUyMWI1ZGUwZDYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b21fc51a0cd8437abecc4681eb39d1b1",
+      "statement": "init_chat_model validates that model parameter is a string (raises TypeError if not), validates provider can be inferred or is specified (raises ValueError with suggestions if not), and catches ImportError from missing provider packages with helpful pip install messages via _import_module.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L125-L149",
+          "version": "repo-lines-v1:sha256:44a60c38a37dacb69dad7d0b97f20680b0698b814036e129b6aa2ef12da1f10a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMzM5NzBiMzhhNTU5MDE4NjYxYTA1MTE5YjA4MzgzMTk5YWExNWIzYzk4YWI5N2Q1MWQ0ZDM1ODllODQwZjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc4Mzg0MGY4MjkyNWM1NmE5NzNlNGNmODBhMDM1MTBhZjhlYWJkNDgwNTY1MGQ2YzY0ODRmYjhlNTA1M2I3MjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4YWU2MGEwOWE3ODRiNDdlYTA4NTMxNmJmZjkyYzY4MDExZGQ2NzBkODlmMjhkYWY1ZGE5YmI2YWU0MWJjNDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2NGUxZGFhMjllMWU2YTc4ODQxOTQ1ZWY5NGUwMjA0MTc3ZDM0NWYxMjZiY2M5ZDc0ZjBlZDk0ODAwOWMzZmUifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L501-L507",
+          "version": "repo-lines-v1:sha256:bd22c0afbc81092301d2c80387a31fce2bf634a361165ad6a12698273c569724:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWQxM2I2ZjVjNjgzZGUxMmE0NDY0YTNiNGZiNjJhNDJkNmM2ZTAzNWU5MDNlMDE5NWFiOWExNTY2NDQ5OWQxMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTc3ODg0NzQ5M2NlYjRhMmM1NWVmYmZmMDUxYTgxNDk3MzkwOTVkOTM3MTg0M2E5MDVhNzVhYTdjOTQ5ZGJhYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWY5MjdhNDI2MjI3MzIwMDcxYmUyNTNmNmY5M2ZmNTU2ZDE2MDBhNDgxYzc0YjY4YzFiMzY1NDRiNWMwZWE5ZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYWQ5M2QyNTkxODc0Zjg1ZWZmMmQ3ZmMwZjVlYmFmN2YwZGEzMTQzZTY0NzFmOTliOWNjOWM1MDI3YmQzODMzOSJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L637-L647",
+          "version": "repo-lines-v1:sha256:ce9d39c9d1c43c7788dd0a478cdf47a6b15f501e32d2395e7587e45390108b09:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5M2U1NzZkODJhOWEyMDRlYzRjMmUyMzE0NjE5ZTIzMzk4ODY0OWM2OGM4ZmU0ZjE4ZDgxZmRkMTM0NWM1YjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2MWUzYmZlZjJjZDZhZjhhZTUyYmYxYzNiYjllM2NiYTViYmYwZDI4ZDg1MTBlM2YzYWFjZGI2MWM4ZGJhNWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2MjRiZDA3NTkyMDdmNjE1ODg3ZWQ3YmZkNjBlN2ZlYWRhMWI0ZmRjMDg3NGZlMWViODczYzdhZDg0MTcwYWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjI4ZDgxY2U3N2VlMmRlZDNmNGRjZWI1NjM1MTNkZDUyN2E2OTJjNjQwOGZkOTcxM2EwMGI3YmE3OGJiZmIzOWQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-25T08:23:03.589Z"
+    "at": "2026-11-13T08:16:35.902Z"
   }
 }

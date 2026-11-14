@@ -24,10 +24,10 @@ sources:
     resource: repo://libs/core/langchain_core/prompts/string.py
   - id: openwiki-source-204b5e61a019044332bd2dd4
     resource: repo://libs/core/langchain_core/prompts/structured.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-20T08:25:57.412Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
+    at: 2026-11-13T08:16:35.902Z
 ---
 
 ## Overview
@@ -637,17 +637,12 @@ This immutability enables safe composition and caching in pipelines.
 
 ## Integration with Agents
 
-Prompts are a core input to the **Agent Factory** (`create_agent`), providing the conversational context for agent reasoning and tool use.
+Prompts are used as a core input to the **Agent Factory** (`create_agent` in `langchain.agents`), where they provide the conversational context for agent reasoning and tool use. The `create_agent` function accepts a `system_prompt` parameter (either a string or `SystemMessage`) that defines the agent's instructions.
 
 ```python
 from langchain.agents import create_agent
-from langchain_core.prompts import ChatPromptTemplate
 
-system_template = ChatPromptTemplate.from_messages([
-    ("system", "You are a helpful weather assistant."),
-])
-
-# Or use a simple string
+# create_agent accepts a system_prompt parameter
 agent = create_agent(
     model="openai:gpt-4o",
     tools=[weather_tool],
@@ -655,4 +650,4 @@ agent = create_agent(
 )
 ```
 
-The agent factory internally compiles prompts with the model and tool bindings, managing message flow through the state machine. Middleware can intercept and modify prompts before model invocation via the `wrap_model_call` hook, enabling use cases like prompt optimization or safety filters.
+The agent factory internally compiles the system prompt with the model and tool bindings, managing message flow through a state machine. This decouples prompt construction (a core feature of `langchain_core.prompts`) from agent execution logic (in the higher-level `langchain` package). Prompt templates are **immutable** and can be composed with other templates, making them suitable for reuse across different agent configurations.

@@ -116,9 +116,9 @@ Factory functions offer benefits such as:
 - No need to manually specify the `type` field
 """
 
-from typing import Any, Literal, get_args, get_type_hints
+from typing import Any, Literal, NotRequired, get_args, get_type_hints
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
 
 from langchain_core.utils.utils import ensure_id
 

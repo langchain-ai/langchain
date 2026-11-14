@@ -219,7 +219,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "name": "Kimi K3.1 Pro",
         "release_date": "2026-10-23",
         "last_updated": "2026-10-23",
-        "open_weights": False,
+        "open_weights": True,
         "max_input_tokens": 1048576,
         "max_output_tokens": 131072,
         "text_inputs": True,

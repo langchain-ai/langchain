@@ -12,12 +12,13 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    NotRequired,
     TypeVar,
     overload,
 )
 
 import jsonpatch  # type: ignore[import-untyped]
-from typing_extensions import NotRequired, TypedDict, override
+from typing_extensions import TypedDict, override
 
 from langchain_core.callbacks.base import BaseCallbackManager
 from langchain_core.load import dumps

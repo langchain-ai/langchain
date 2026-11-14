@@ -1,8 +1,8 @@
 """Metadata for messages the agent harness adds to a conversation."""
 
-from typing import Any
+from typing import Any, NotRequired
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
 
 from langchain_core.messages.base import BaseMessage
 from langchain_core.messages.human import HumanMessage

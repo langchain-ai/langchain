@@ -2,23 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable, Mapping
-from dataclasses import dataclass
-
-from langchain.agents.middleware import Runtime
-from langchain.agents.middleware.types import ContextT
+from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 try:
-    from langchain.agents.middleware.types import (
-        AgentMiddleware,
-        AgentState,
-        ModelRequest,
-        ModelResponse,
-        ResponseT,
-        TracePolicy,
-        omit_payload,
+    from langchain.agents.middleware.model_router import (
+        ModelChoice,
     )
-    from langchain.chat_models import init_chat_model
+    from langchain.agents.middleware.model_router import (
+        ModelRouterMiddleware as _ModelRouterMiddleware,
+    )
 except ImportError as error:
     msg = (
         "ModelRouterMiddleware requires the LangChain agent framework. "
@@ -26,68 +19,33 @@ except ImportError as error:
     )
     raise ImportError(msg) from error
 
-from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import HumanMessage
-from pydantic import BaseModel, Field, JsonValue
-from typing_extensions import NotRequired, override
+from langchain_core._api import deprecated
 
 from langchain_typesafe.classifier import TypeSafeClassifier
-from langchain_typesafe.types import Choice, ChoiceAnswer, Question
 
-_QUESTION_ID = "model_route"
-_QuestionContent = str | dict[str, JsonValue] | list[JsonValue]
-
-
-@dataclass(frozen=True)
-class ModelChoice:
-    """A model available to the router and the criterion for selecting it.
-
-    Args:
-        model: LangChain model instance or model string accepted by `init_chat_model`.
-        criteria: Description of the tasks suited to the model.
-    """
-
-    model: str | BaseChatModel
-    criteria: JsonValue
+if TYPE_CHECKING:
+    from langchain_typesafe.types import Content
 
 
-class _ModelRouterConfig(BaseModel):
-    """Validated model-router configuration."""
-
-    choices: dict[str, ModelChoice] = Field(min_length=1)
-    instructions: _QuestionContent
-
-
-def _routing_questions(config: _ModelRouterConfig) -> dict[str, Question]:
-    """Build the routing question from validated middleware configuration."""
-    return {
-        _QUESTION_ID: Choice(
-            instructions=config.instructions,
-            criteria={
-                route: choice.criteria for route, choice in config.choices.items()
-            },
-        )
-    }
-
-
-class _ModelRouterState(AgentState):
-    """Agent state used to persist the TypeSafe routing answer."""
-
-    model_route: NotRequired[ChoiceAnswer]
-
-
-class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
+@deprecated(
+    since="0.1.0",
+    removal="0.2.0",
+    message=(
+        "`langchain_typesafe.experimental.middleware.ModelRouterMiddleware` is "
+        "deprecated since langchain-typesafe 0.1.0 and will be removed in 0.2.0. Use "
+        "`langchain.agents.middleware.ModelRouterMiddleware` with "
+        "`classifier=TypeSafeClassifier()` instead."
+    ),
+    package="langchain-typesafe",
+)
+class ModelRouterMiddleware(_ModelRouterMiddleware):
     """Select an agent's model with a TypeSafe `Choice` classification.
 
-    The middleware classifies the latest human message once before an agent run,
-    stores the complete `ChoiceAnswer` in agent state, and uses its selected label
-    for every model call in the run. Keeping the complete answer makes probabilities
-    and confidence available in state and traces. Classifier failures propagate and
+    This is `langchain.agents.middleware.ModelRouterMiddleware` with a default
+    `TypeSafeClassifier`. The middleware classifies the latest human message once
+    before an agent run, stores the complete `ChoiceAnswer` in agent state, and uses its
+    selected label for every model call in the run. Classifier failures propagate and
     terminate the run rather than silently selecting a different model.
-
-    !!! warning
-
-        This middleware is experimental. Its API may change without notice.
 
     Install the experimental extra to use this class:
 
@@ -133,84 +91,21 @@ class ModelRouterMiddleware(AgentMiddleware[_ModelRouterState]):
         ```
     """
 
-    state_schema = _ModelRouterState
-    trace_policy = TracePolicy(process_inputs=omit_payload)
+    classifier: TypeSafeClassifier
 
     def __init__(
         self,
         *,
         choices: Mapping[str, ModelChoice],
-        instructions: _QuestionContent,
+        instructions: Content,
         classifier: TypeSafeClassifier | None = None,
     ) -> None:
         """Initialize the model router."""
-        self.config = _ModelRouterConfig.model_validate(
-            {"choices": choices, "instructions": instructions}
+        super().__init__(
+            choices=choices,
+            instructions=instructions,
+            classifier=classifier if classifier is not None else TypeSafeClassifier(),
         )
-        self.models = {
-            route: init_chat_model(choice.model)
-            if isinstance(choice.model, str)
-            else choice.model
-            for route, choice in self.config.choices.items()
-        }
-        self.classifier = classifier if classifier is not None else TypeSafeClassifier()
-
-    @staticmethod
-    def _latest_human_message(state: _ModelRouterState) -> HumanMessage:
-        """Return the latest human message from agent state."""
-        return next(
-            message
-            for message in reversed(state["messages"])
-            if isinstance(message, HumanMessage)
-        )
-
-    @override
-    def before_agent(
-        self, state: _ModelRouterState, runtime: Runtime[ContextT]
-    ) -> dict[str, ChoiceAnswer]:
-        """Classify the latest task and store the complete routing answer."""
-        response = self.classifier.invoke(
-            {
-                "state": self._latest_human_message(state),
-                "questions": _routing_questions(self.config),
-            }
-        )
-        return {"model_route": response.choices[_QUESTION_ID]}
-
-    @override
-    async def abefore_agent(
-        self, state: _ModelRouterState, runtime: Runtime[ContextT]
-    ) -> dict[str, ChoiceAnswer]:
-        """Classify the latest task asynchronously and store the routing answer."""
-        response = await self.classifier.ainvoke(
-            {
-                "state": self._latest_human_message(state),
-                "questions": _routing_questions(self.config),
-            }
-        )
-        return {"model_route": response.choices[_QUESTION_ID]}
-
-    @override
-    def wrap_model_call(
-        self,
-        request: ModelRequest[ContextT],
-        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
-    ) -> ModelResponse[ResponseT]:
-        """Route a synchronous model call to the selected model."""
-        answer: ChoiceAnswer = request.state["model_route"]  # type: ignore[typeddict-item]
-        return handler(request.override(model=self.models[answer.choice]))
-
-    @override
-    async def awrap_model_call(
-        self,
-        request: ModelRequest[ContextT],
-        handler: Callable[
-            [ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]
-        ],
-    ) -> ModelResponse[ResponseT]:
-        """Route an asynchronous model call to the selected model."""
-        answer: ChoiceAnswer = request.state["model_route"]  # type: ignore[typeddict-item]
-        return await handler(request.override(model=self.models[answer.choice]))
 
 
 __all__ = ["ModelChoice", "ModelRouterMiddleware"]

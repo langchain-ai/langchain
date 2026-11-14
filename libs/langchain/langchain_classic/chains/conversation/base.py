@@ -1,9 +1,11 @@
 """Chain that carries on a conversation and calls an LLM."""
 
+from typing import Self
+
 from langchain_core._api import deprecated
 from langchain_core.prompts import BasePromptTemplate
 from pydantic import ConfigDict, Field, model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_classic.base_memory import BaseMemory
 from langchain_classic.chains.conversation.prompt import PROMPT

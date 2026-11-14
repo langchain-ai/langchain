@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e5b67409c910d1bab8f0005e0e32f062d9fa9fa0cde66d56df2d23612aa3b3fe",
+  "pageVersion": "sha256:18b158b86b4d777c69f2ba33e0c4d5c9f1c4ba7996929f2f49c911ff29759d10",
   "claims": [
     {
       "id": "claim_72f3312a1c4a494889542dc6efdbf940",
@@ -119,20 +119,8 @@
       "statement": "ToolException is a custom exception for controlled tool errors, and tools support flexible error handling strategies via handle_tool_error (bool/str/callable) and handle_validation_error (bool/str/callable) configurations that catch exceptions and optionally return error messages or invoke custom handlers instead of raising.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/tools/base.py#L1115-L1126",
-          "version": "repo-lines-v1:sha256:8eaf8e3f2c68fae527c1405b883fba67653bf1cba8aeaadb17ce4a4b14602d01:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRkMDJlMjdlNWZmZTZjYzA1YTc3YjQyM2VlZjVmZjg5M2YyMzA5NmUzY2FkMWMxZjdmODk5NzE1OGQyMzcyMGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRlY2ZkNzYyYWIzNDY3Y2JiNWJjMzRkODZiMTJkZGQ1NTAzYWM4NWFhYjk3NWM1MzY1NTg3NDllYWI1NDJjZTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5ZTlkMDExOTY1ZGRiMjI1Y2YwNDNlNDY2NTRlZDhjOTBiNGZlNDEwMmM3MjAwMWMzZTMwOTc4ZWNkYzc1ZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE0NDlhMDhhOGQwMGQyMjRhYzAwM2NiYTAzZjk0YmRlZGFjYzgyMGU3M2YzNzMwMzZmM2Y0MGIwNzViZmM0NjUifQ"
-        },
-        {
-          "resource": "repo://libs/core/langchain_core/tools/base.py#L1281-L1349",
-          "version": "repo-lines-v1:sha256:e5a5fbc1d9b22b6b452e5775f901887b32f6f3f56707481ca49005609195f360:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyNDFhYjE1ZmMzMmJmMmRmMjdjZWM4OTI0NmI4OWI5OWJmNGRjMTBkMmJiNDk5MDgzN2FkMjQyYWY3N2NmNzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRhOGE1ZTU5NzYzOGZiYzZlMGZkMDJlYTZhMTA1OWU4ZGVjNWJiY2FhNzI2ZDJiMzllM2UzMjg2YTcxN2EyYTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY2N2RjZTM1ZWE1YThjYWZkOGEzMDRlODg5YzRmYjIwYjUyOGE5YzFkNzBkNzgxZTA5ZTJjNThiYTk3Y2RlN2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM3ODdkODljNjMwMjhmM2U0ZDEwMDAyM2M1YTU5ODRiMWYzMDQ2Njg2Mjg1Y2IxMTQxZjdkMWFmM2ViNjM2ZTQifQ"
-        },
-        {
-          "resource": "repo://libs/core/langchain_core/tools/base.py#L371-L379",
-          "version": "repo-lines-v1:sha256:6754e030f2664cf2bb941a8212da9d42ca14e83d38ea428a826bd04c72994e7d:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODRiODgyODBlNGU2Njc2MzMwZDYxMDFhNmZkZGU0NzE4MzE3ZjQ2YmFjOTVjMDU5OTIxY2UzMzU2Zjk2OTczNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGNjNGE3ZDFjYzc5NmFiYTNlNDY3MjMzMjdmNTE3ZTlmODExOTgyZDI1MGYwNzAyOTg2ZTRiNTc2NGFkOTU4OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDc2NzJlYWQ4MzMxMDQwYjQyNGM0OTc5ZWQ1NDA5MGIwYzJiN2VmZDIxNDBmODU4OTQ3N2RhM2RiNTc2NjU1MiJ9"
-        },
-        {
-          "resource": "repo://libs/core/langchain_core/tools/base.py#L527-L545",
-          "version": "repo-lines-v1:sha256:070d21a32867a76d53cbe6a1da7dedd3aa94d9a418f3bb4c1ea820a451d66a34:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5NDMxZTg5NTMxNTY0ZTE5NjhiZWNmNzk3YjYyZmUwNjE2MzQ3NjA5NDE0M2M4NzQyOTNmYzFhMzg4NzliYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUzMWY4NTVlMTY1MmVlYTk2YWZhM2M3Y2JlNzUwYzhkMzNmMzgzMzc3YTFjMzE4ZTI4ZTRlNjFkMWY1NTMyYWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI2MGU0NWIxNjFlOTAwYmY3MjY0NjE0NjY4MzljMWZhMTBhOTRmMzU5NzFmODA2MDRiNTNlNmFmNDE3ZGVjZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUyYTVmOTMyYzFiYzVjNThkMmIyOGM4NWM4OThmMWY0NjlmNzUxNDdhYjU2NTVjYjNlZDlkNDQ0MDFhZjUwOTQifQ"
+          "resource": "repo://libs/core/langchain_core/tools/base.py",
+          "version": "repo-file-v1:sha256:239c77d07a9283ced902fb161ca0fcdb5e532a9824caaa169ab014ac41c899d4"
         }
       ]
     },
@@ -253,6 +241,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-05T08:18:41.280Z"
+    "at": "2026-11-13T08:16:35.902Z"
   }
 }

@@ -16,8 +16,8 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/retry.py
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
-generated: { by: "openwiki/0.5.0", at: "2026-10-20T08:25:57.412Z" }
+    at: 2026-11-13T08:16:35.902Z
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 ---
 
 ## Overview
@@ -28,7 +28,7 @@ The **LangChain Expression Language (LCEL)** leverages Runnables to build chains
 
 ## The Runnable Protocol
 
-**Location**: `repo://libs/core/langchain_core/runnables/base.py#L134-L265`
+**Location**: `repo://libs/core/langchain_core/runnables/base.py#L197-L290`
 
 The `Runnable` abstract base class defines the contract for all components. A Runnable is generic over input and output types (`Runnable[Input, Output]`) and must implement the abstract `invoke` method. All other execution methods have default implementations that subclasses can override for optimization.
 
@@ -43,7 +43,7 @@ The `Runnable` abstract base class defines the contract for all components. A Ru
 
 ### Synchronous Methods
 
-**`invoke(input, config=None)`** (`repo://libs/core/langchain_core/runnables/base.py#L885-L906`) is the abstract core method:
+**`invoke(input, config=None)`** (`repo://libs/core/langchain_core/runnables/base.py#L950-L971`) is the abstract core method:
 
 ```python
 @abstractmethod
@@ -60,7 +60,7 @@ def invoke(
 - Accepts optional `RunnableConfig` for tags, metadata, callbacks, recursion limits, and configurable parameters.
 - Returns a single output.
 
-**`batch(inputs, config=None, return_exceptions=False)`** (`repo://libs/core/langchain_core/runnables/base.py#L931-L975`) processes multiple inputs:
+**`batch(inputs, config=None, return_exceptions=False)`** (`repo://libs/core/langchain_core/runnables/base.py#L995-L1043`) processes multiple inputs:
 
 ```python
 def batch(
@@ -81,7 +81,7 @@ def batch(
 
 **`batch_as_completed(inputs, config=None, return_exceptions=False)`** yields results as they complete, useful for streaming partial results while processing batches.
 
-**`stream(input, config=None)`** (`repo://libs/core/langchain_core/runnables/base.py#L1195-L1213`) yields partial outputs:
+**`stream(input, config=None)`** (`repo://libs/core/langchain_core/runnables/base.py#L1258-L1277`) yields partial outputs:
 
 ```python
 def stream(
@@ -101,7 +101,7 @@ def stream(
 
 ### Asynchronous Methods
 
-**`ainvoke(input, config=None)`** (`repo://libs/core/langchain_core/runnables/base.py#L908-L929`) is the async variant:
+**`ainvoke(input, config=None)`** (`repo://libs/core/langchain_core/runnables/base.py#L972-L993`) is the async variant:
 
 ```python
 async def ainvoke(
@@ -116,7 +116,7 @@ async def ainvoke(
 - **Default**: Delegates to sync `invoke` via `run_in_executor`.
 - **Subclasses override** for native async (e.g., async API calls).
 
-**`abatch(inputs, config=None, return_exceptions=False)`** (`repo://libs/core/langchain_core/runnables/base.py#L1066-L1112`) batches async:
+**`abatch(inputs, config=None, return_exceptions=False)`** batches async:
 
 ```python
 async def abatch(
@@ -135,7 +135,7 @@ async def abatch(
 
 **`abatch_as_completed(inputs, config=None, return_exceptions=False)`** yields completed async results as they finish.
 
-**`astream(input, config=None)`** (`repo://libs/core/langchain_core/runnables/base.py#L1216-L1235`) is the async streaming variant:
+**`astream(input, config=None)`** (`repo://libs/core/langchain_core/runnables/base.py#L1279-L1298`) is the async streaming variant:
 
 ```python
 async def astream(
@@ -152,7 +152,7 @@ async def astream(
 
 ### Schema Introspection
 
-**`input_schema` / `output_schema`** (`repo://libs/core/langchain_core/runnables/base.py#L374-L527`) expose the input and output types as Pydantic models:
+**`input_schema` / `output_schema`** expose the input and output types as Pydantic models:
 
 ```python
 @property
@@ -177,7 +177,7 @@ The heart of LCEL is declarative composition. Runnables are chained together usi
 
 ### Sequential Composition: Pipe Operator `|`
 
-**`__or__(other)` / `__ror__(other)`** (`repo://libs/core/langchain_core/runnables/base.py#L648-L722`) creates a `RunnableSequence`:
+**`__or__(other)` / `__ror__(other)`** (`repo://libs/core/langchain_core/runnables/base.py#L712-L775`) creates a `RunnableSequence`:
 
 ```python
 def __or__(self, other):
@@ -205,7 +205,7 @@ result = chain.invoke({"topic": "machine learning"})
 - Automatically flattens nested `RunnableSequence` for efficiency.
 - The output of the left side becomes the input to the right side.
 
-**`pipe(*others, name=None)`** (`repo://libs/core/langchain_core/runnables/base.py#L724-L771`) is the explicit method form:
+**`pipe(*others, name=None)`** is the explicit method form:
 
 ```python
 sequence = runnable_1.pipe(runnable_2, runnable_3)
@@ -214,7 +214,7 @@ sequence = runnable_1.pipe(runnable_2, runnable_3)
 
 ### Parallel Composition: Fork with Dict
 
-**Dict literal** or **`RunnableParallel`** (`repo://libs/core/langchain_core/runnables/base.py#L3864-L3990`) invokes multiple Runnables concurrently with the same input:
+**Dict literal** or **`RunnableParallel`** (`repo://libs/core/langchain_core/runnables/base.py#L3883-L4020`) invokes multiple Runnables concurrently with the same input:
 
 ```python
 from langchain_core.runnables import RunnableParallel
@@ -239,7 +239,7 @@ parallel = RunnableParallel(
 
 ### Sequencing with RunnableSequence
 
-**Location**: `repo://libs/core/langchain_core/runnables/base.py#L3075-L3235`
+**Location**: `repo://libs/core/langchain_core/runnables/base.py#L3094-L3380`
 
 `RunnableSequence` is the composition engine for sequential execution. It chains multiple `Runnable` objects where each output feeds into the next input. The `first`, `middle`, and `last` attributes store the steps; the sequence automatically optimizes batch and stream operations by calling each step's batch/stream method in order.
 
@@ -414,7 +414,7 @@ chain = prompt | streaming_model | slow_parser
 
 ### RunnableLambda
 
-**Location**: `repo://libs/core/langchain_core/runnables/base.py#L4707-L4850`
+**Location**: `repo://libs/core/langchain_core/runnables/base.py#L4722-L4870`
 
 `RunnableLambda` wraps a Python callable into a `Runnable`:
 

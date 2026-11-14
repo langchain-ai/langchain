@@ -12,10 +12,13 @@ from typing import (
     Annotated,
     Any,
     Generic,
+    NotRequired,
+    Required,
     cast,
     get_args,
     get_origin,
     get_type_hints,
+    overload,
 )
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -35,7 +38,7 @@ from langgraph.prebuilt import ToolCallTransformer
 from langgraph.prebuilt.tool_node import ToolNode
 from langgraph.types import Command, Send
 from langsmith import traceable
-from typing_extensions import NotRequired, Required, TypedDict, overload
+from typing_extensions import TypedDict
 
 from langchain.agents._subagent_transformer import SubagentTransformer
 from langchain.agents.middleware._trace_policy import (
@@ -1901,9 +1904,6 @@ def create_agent(
     if name:
         config["metadata"]["lc_agent_name"] = name
 
-    # Middleware that makes internal model calls (e.g. `SummarizationMiddleware`)
-    # each declare `InternalCallTransformer` on their own `transformers` tuple so
-    # it's only registered when one of them is actually in use.
     middleware_transformers = [t for m in middleware for t in getattr(m, "transformers", ())]
 
     return graph.compile(
