@@ -423,7 +423,6 @@ async def test_async_unsupported_model_passes_original_request() -> None:
 
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_agent_thread_id_without_runnable_context(*, use_async: bool) -> None:
-    """Runtime metadata supplies affinity without ambient config on Python 3.10."""
     model = _make_model()
     agent = create_agent(model, middleware=[FireworksPromptCachingMiddleware()])
     config: RunnableConfig = {"configurable": {"thread_id": _THREAD_ID}}

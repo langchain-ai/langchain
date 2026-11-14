@@ -15,7 +15,14 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 # Keep in sync with the non-partner allowlist in `EFFECTIVE_WORKING_DIR`
 # in `.github/workflows/_release.yml`.
 TOP_LEVEL_PACKAGES = frozenset(
-    {"core", "langchain", "langchain_v1", "text-splitters", "standard-tests", "model-profiles"}
+    {
+        "core",
+        "langchain",
+        "langchain_v1",
+        "text-splitters",
+        "standard-tests",
+        "model-profiles",
+    }
 )
 
 

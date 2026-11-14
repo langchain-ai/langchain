@@ -561,9 +561,6 @@ class HumanInTheLoopMiddleware(AgentMiddleware[StateT, ContextT, ResponseT]):
                     not have side effects before calling `handler`. The tool itself
                     runs only after the answer.
 
-                As in `batched` mode, running the agent asynchronously (`ainvoke`,
-                `astream`) needs Python 3.11 or later.
-
         Raises:
             ValueError: If a tool's `InterruptOnConfig` does not have a non-empty
                 `allowed_decisions` list (e.g. a misspelled key or an empty list).

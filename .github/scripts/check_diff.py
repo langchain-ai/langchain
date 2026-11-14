@@ -351,11 +351,8 @@ if __name__ == "__main__":
             ] != ["README.md"]:
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
                 # Only add to codspeed if the partner has benchmarks and is not ignored
-                if (
-                    partner_dir not in IGNORED_PARTNERS
-                    and os.path.isdir(
-                        f"libs/partners/{partner_dir}/tests/benchmarks"
-                    )
+                if partner_dir not in IGNORED_PARTNERS and os.path.isdir(
+                    f"libs/partners/{partner_dir}/tests/benchmarks"
                 ):
                     dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
