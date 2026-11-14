@@ -5,7 +5,7 @@ description: "How init_chat_model routes model identifiers to provider-specific 
 tags: [model-initialization, factory, provider-routing, model-discovery, chat-models, configuration, profiles]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
+    at: 2026-11-14T08:14:57.553Z
 sources:
   - id: openwiki-source-c479d4fffee5cf62576699e4
     resource: repo://libs/langchain_v1/langchain/chat_models/base.py
@@ -13,7 +13,7 @@ sources:
     resource: repo://libs/model-profiles/langchain_model_profiles/_summary.py
   - id: openwiki-source-e0b95eafb4bbd52f491c8cee
     resource: repo://libs/model-profiles/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-14T08:14:57.553Z" }
 ---
 
 # Model Initialization: init_chat_model Provider Routing
@@ -90,20 +90,24 @@ Each registry entry specifies:
 
 ### Built-in Provider Registry
 
-The registry includes 30+ popular providers:
+The registry includes 30 popular providers:
 
 | Provider | Module | Class | Creator Function | Example Models |
 |----------|--------|-------|------------------|-----------------|
 | `openai` | `langchain_openai` | `ChatOpenAI` | `_call` | `gpt-4-turbo`, `gpt-4o`, `o1` |
 | `anthropic` | `langchain_anthropic` | `ChatAnthropic` | `_call` | `claude-opus-4-7`, `claude-haiku-4-5` |
 | `azure_openai` | `langchain_openai` | `AzureChatOpenAI` | `_call` | `gpt-4-turbo` (on Azure) |
+| `azure_ai` | `langchain_azure_ai.chat_models` | `AzureAIOpenAIApiChatModel` | `_call` | (Azure AI models) |
 | `google_vertexai` | `langchain_google_vertexai` | `ChatVertexAI` | `_call` | `gemini-1.5-pro`, `gemini-1.5-flash` |
 | `google_genai` | `langchain_google_genai` | `ChatGoogleGenerativeAI` | `_call` | `gemini-1.5-pro` (AI Studio) |
+| `google_anthropic_vertex` | `langchain_google_vertexai.model_garden` | `ChatAnthropicVertex` | `_call` | (Anthropic models on Vertex) |
 | `ollama` | `langchain_ollama` | `ChatOllama` | `_call` | `llama2`, `mistral`, `neural-chat` |
 | `mistralai` | `langchain_mistralai` | `ChatMistralAI` | `_call` | `mistral-large`, `mixtral-8x7b` |
 | `groq` | `langchain_groq` | `ChatGroq` | `_call` | `mixtral-8x7b-32768` |
 | `bedrock` | `langchain_aws` | `ChatBedrock` | `_call` | `amazon.titan-text-express-v1` |
 | `bedrock_converse` | `langchain_aws` | `ChatBedrockConverse` | `_call` | (newer Bedrock API) |
+| `bedrock_mantle_openai` | `langchain_aws` | `ChatOpenAIMantle` | `_call` | (OpenAI via Bedrock Mantle) |
+| `bedrock_mantle_anthropic` | `langchain_aws` | `ChatAnthropicMantle` | `_call` | (Anthropic via Bedrock Mantle) |
 | `anthropic_bedrock` | `langchain_aws` | `ChatAnthropicBedrock` | `_call` | Anthropic via AWS Bedrock |
 | `cohere` | `langchain_cohere` | `ChatCohere` | `_call` | `command-r-plus`, `command-light` |
 | `xai` | `langchain_xai` | `ChatXAI` | `_call` | `grok-beta` |
@@ -115,8 +119,13 @@ The registry includes 30+ popular providers:
 | `together` | `langchain_together` | `ChatTogether` | `_call` | `meta-llama/Meta-Llama-3-70B` |
 | `huggingface` | `langchain_huggingface` | `ChatHuggingFace` | lambda (`.from_model_id`) | `mistralai/Mistral-7B` |
 | `ibm` | `langchain_ibm` | `ChatWatsonx` | lambda (model_id param) | (IBM Watsonx models) |
+| `baseten` | `langchain_baseten` | `ChatBaseten` | `_call` | (Baseten models) |
+| `litellm` | `langchain_litellm` | `ChatLiteLLM` | `_call` | (any LiteLLM-supported model) |
+| `meta` | `langchain_meta` | `ChatMetaModel` | `_call` | (Meta/Llama models) |
+| `nvidia` | `langchain_nvidia_ai_endpoints` | `ChatNVIDIA` | `_call` | (NVIDIA AI endpoints) |
+| `openrouter` | `langchain_openrouter` | `ChatOpenRouter` | `_call` | (OpenRouter models) |
 
-**Note**: The registry is not exhaustive; ~35 providers are built in. Unlisted providers can still be used if their integration package is installed by passing `model_provider` explicitly.
+**Note**: The registry includes 30 built-in providers. Additional providers can be used if their integration package is installed by passing `model_provider` explicitly.
 
 ## Model Identifier Inference
 

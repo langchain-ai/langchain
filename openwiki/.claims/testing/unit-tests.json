@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bc687ff8d1df2b14599c9b38abc8fd003467a1fe2cb6b0e849af39e510de9c60",
+  "pageVersion": "sha256:7571e2c1066101878a90d57c802f4fd88e455e36877f4510a1f7546457d478c5",
   "claims": [
     {
       "id": "claim_31a05d6469ea495ebed1cdff1e3c3f8a",
@@ -279,10 +279,94 @@
           "version": "repo-lines-v1:sha256:405d79d681ca70d254e3bfd68334c0d639c4bdf46a59db1a360c7c1497d8a4d1:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiYjQzZjQwMmVhN2UxYjA3NTU3YjdhYTRjZDFjYjlhZDIxMjMxNmRhYWMwZDBlN2U0MTg0Mzg0NmJlM2MwZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlZjE4MmFjNWY0YmUwNzRjOWVhYzAyODI1M2M3MzFmYjljZTZjOTE5MTljNjNlODQ4NWU1YzlhYzdjZWYwNjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1MTE2MmY3MGY5ZDI2YzNkMzc0M2E5YzYyOGY5OGNhNjIzZDMwMTlkY2FiNDc0ZDZmYjg4ZjIyMmUxMmY3MzUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_99dd86f2608a4f63a7ba1c8d03897965",
+      "statement": "Test parametrization using @pytest.mark.parametrize() with single parameters, multiple stacked decorators for combinations, and custom ids for readable test names enables testing the same logic across multiple providers, configurations, and input values without code duplication.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/test_runnable.py#L4626-L6466",
+          "version": "repo-lines-v1:sha256:15a5656a51eab6695a2960f17973530278d0d36aa9aeccb91253eb053c78def6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTg0MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWYzNDU4M2E1OTg3NjdiZjU2YWVmZWI2NWUyMDMzYTE2NTFjYzRjOGQ3ZTZmMGFmM2U1Y2ZkMzI5M2Y5MzNiMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjViZDA0ZmU1ZWFmNjk5YzhmMDEwODNkNmY2YTNiNTlmN2QzYzE2OWM1YzQzMGUzY2Y1NDNhY2ZiOTM1ZmIwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYjQxMWY3OGZmOTU0MmVlNDNjMjRkNzQ1MTk3NGFjMzNiOWVmNjZkMGVlMWM1ODExNGY1YTQwNDg0NWJkYTEzNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzg4MGUxMmIyNDczMTdmMjBlZDY3Yjk2OTVlZmEzODUyMWI1ZmRmYmMzNWI4ZDA3Mzk2NmY1MmQxZmFjMTE0YyJ9"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/test_tools.py#L1097-L1435",
+          "version": "repo-lines-v1:sha256:c4d07dad5ece57a026f7af05ee7bc7d2a2dab1d319928780ab47b23495d45d31:eyJzZWxlY3RlZExpbmVDb3VudCI6MzM5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhZjM0NTgzYTU5ODc2N2JmNTZhZWZlYjY1ZTIwMzNhMTY1MWNjNGM4ZDdlNmYwYWYzZTVjZmQzMjkzZjkzM2IzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhZjM0NTgzYTU5ODc2N2JmNTZhZWZlYjY1ZTIwMzNhMTY1MWNjNGM4ZDdlNmYwYWYzZTVjZmQzMjkzZjkzM2IzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0Yzg0YWQzYjg4YzgxZTI2ZjRjOWIyYjA0NzBjNGJiYWEwZWE4MWM4YjdkMTU4MzBlYzUzMmJhYTA0ZjY0NDUwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3MWI2MGViYTkzYzljZjBmM2MxM2NlM2Y2M2JlYjA2YjYxYmMwY2NkZTUxODM3NWVlNzc4ZDI1M2QxMjEyNTgzIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_64cc2591eee94878bba1e901003907de",
+      "statement": "Time-dependent tests using time.sleep() are flaky and unreliable across different machines and CI environments; freezegun should be used instead to freeze time deterministically for test execution.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/runnables/test_runnable.py#L20-L21",
+          "version": "repo-lines-v1:sha256:d97a075e45ab005f888d8a0c031354df2b750cd7a607f8940713d37770586524:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc1YTgzMDJjNjIxOTA3NDZjZDhmYzIyOWM2MTg2ZjExZmI1MzE0MjE4YjIwZDFiNzQyOTIwMzAxYTQ5NWI3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmM1ZmU3ZDFmOWVmMmE3NjM0YjM0ZDdhYjA0MTM1MDljY2I2MDc3OWNkYjM1MTFiOWEyNjZjNTMwNmY1MzgwYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmM0MDdmMzJjZWViNDk1OTBjMjA5NGM5MTYzOTlmMzdjNTY0YjlmZTQ4MTZhMGFkNTA5Y2E1ZWQ0OWQxNTJkNyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTUzZjU2YzEzZDhjYmIzOGVhODRkMmEwN2RiYzNjNjIzZjU3MjBjYzYzYTkzY2U3NGQ1NzQxMTNmMWIyZjMwYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_482e6475c597464d8b9b2253fe182ae5",
+      "statement": "Tests must not share mutable state via module-level variables; pytest fixtures should create isolated state per test to prevent cross-test pollution when tests run in parallel via pytest-xdist.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/Makefile#L20-L20",
+          "version": "repo-lines-v1:sha256:a7fbd80411acecdd918b88984171870f95e8f17a6b404be8064ba76ba6764977:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTdmYmQ4MDQxMWFjZWNkZDkxOGI4ODk4NDE3MTg3MGY5NWU4ZjE3YTZiNDA0YmU4MDY0YmE3NmJhNjc2NDk3NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDhhN2M2ZTg2ZDY0MzYxMjdjODdmOWYxNzhjMDllMTE3YmE5NmEwMzVlMmEzNTRkZGJkN2ViMDkzM2RkOTg3NyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzgzNzQ1ZTU1YTIzYmI0MzZjYTUxMGFiMTgwNGQyODMwMjhhNTJlNzc5MjE5YmNlNzAyODRkOWY3YjEwMDcxMCJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_beb1cc42c8434331afda3b1b9c9841f1",
+      "statement": "Unit tests must not make real API calls; instead, FakeListChatModel, GenericFakeChatModel, and FakeStreamingListLLM provide predetermined responses to test chains without network access, API keys, or costs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/fake/test_fake_chat_model.py#L1-L150",
+          "version": "repo-lines-v1:sha256:017cf0e6c67b16aa63a1e9768467604349fb4d6b178eed6521258231cffac584:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1Y2VhMzc2MDc5ODlkM2NkZjVlZmNlOTIzMWE5ZjdjMTZhZTUyNDUxNjM3NmVlZGM5ZWFhYjAxNjVkNDBlYmIwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmYWZiYTA1MjdjMzk1M2M0YjZlMGU1YjU3MzliYTgzNjEyZjgwNTNiY2RjOTQ2NjczMDE5M2NkMWQ1OTBiNDA4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5OWYxZDkzMzg1OWZiMmFmNDk3NjM5ZjU0YmNmMTRlZDU3OGRiZWJlZmYwNTlhY2EyYmE1ZDkwOGEwZDVkZjU0In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_2c3f887195574abe9f9b0bb580dc3fee",
+      "statement": "Test utilities in tests/unit_tests/stubs.py provide _any_id_ai_message, _any_id_ai_message_chunk, and _any_id_human_message helpers that ignore randomly-generated IDs during message assertions, making tests less brittle and more maintainable.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/fake/test_fake_chat_model.py#L20-L24",
+          "version": "repo-lines-v1:sha256:3e7721d25c55e9cff4de3a8270cd0f1c4080a0d330c50d65379b7ce629052345:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWZmNDk1YzY2MjVhMmM4ODUzNjlmNTBhZjg3YmM2OTBhNzdlYzc5YWVlMzZmZjAxYTczY2MwZTA5Y2I3YjYzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmFmYmEwNTI3YzM5NTNjNGI2ZTBlNWI1NzM5YmE4MzYxMmY4MDUzYmNkYzk0NjY3MzAxOTNjZDFkNTkwYjQwOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMWJjZDZlNTIxMTIyZmQ3ZjhiOTdkMjg5ZDY0YjQzNTM3ZGJkMWRmMWYzMmQ1YjNjNGI1ODBmODczZjMwYWZmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMmEwNDkxNmUwZWZjNDFhMDZmMmQ4ZGE4NmIyYWNmZTRiODUwOThiNDUyNWNjM2MwNjg2YjNhNjk5OTU5OTU3NiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f60485398a041339a198098d64ed9ca",
+      "statement": "Callback testing verifies handlers are invoked in correct order by defining custom BaseCallbackHandler subclasses that track invocations in a list or mock object, then asserting callback order and arguments after chain execution.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/callbacks/test_async_callback_manager.py#L22-L150",
+          "version": "repo-lines-v1:sha256:b35e9564ceb6e4cd7e30adc78ccd8c83fafc71516ed533b1e54ed43efda4e6ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxYmI0M2Y0MDJlYTdlMWIwNzU1N2I3YWE0Y2QxY2I5YWQyMTIzMTZkYWFjMGQwZTdlNDE4NDM4NDZiZTNjMGQ1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlOGQ1N2ZhOTQ2YTYwMTUzNTNiNDEyY2YyOTUyMmY1Mjk3NWE1ZDllNDE2YjdjMjkzODdjODM1NjIwNGQ5ZTRlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhOThiMDYzZDliNDdlNjUzNzk2MjU1NzJjY2UxOTc2NjlkNTc2N2UxMmMxOGJlMDc1NjUyYjhjZDk4MWNlOGQ1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwOWQ2ZGJiNDZmNzg3MjZiNjhhOTVjMGEzZDIyYmM4MWFhYWQ0NzNhYTAzZmI2Zjc5NGQ5OThkM2UxMDM0ZDIzIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_5ceee3da725141929a2737193b365a83",
+      "statement": "Partner integrations inherit test suites from langchain_tests.standard_tests (ChatModelTests, LLMTests, etc.) to verify cross-provider conformance without reimplementing core tests; inheritance requires implementing chat_model_class and chat_model_params properties.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/tests/unit_tests/chat_models/test_base.py#L1-L100",
+          "version": "repo-lines-v1:sha256:323825b20e22147f5b79bce0e0c13bac9386ac21c593fc6ee459c9cc8240f5ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0YTk1NjY5NjVmZTlkZTg2Yzc4NjNmZjg5NzI5Yzk2MzA2OGRlNjc5ZDAxM2VjYWExM2FjNTRjMjJiYjBlZjUxIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzNDFjMmQzYzRlMWFlMzhjMWQ0ZjdlYzJkZmU4NWExYmI0ZDVjNDNjN2Q0NGI4OGY2MzI0OWEyNDdjNGJjMWYzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzM2NkYWIzZTFlMzkyMjE1YTE1ZGU5NDY3ZDQ3ODc2NzA5OTFkMzE2NzEyZTUyMDcyN2U0MzY4MjVkYzQ5NTlkIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_40c3ed5b083a49e9902ac94f2254ec31",
+      "statement": "Standard tests automatically verify input/output types, streaming behavior, tool calling, async variants, configuration propagation, serialization, and error handling across all providers to prevent regressions and ensure consistency.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/tests/unit_tests/chat_models/test_base.py#L100-L200",
+          "version": "repo-lines-v1:sha256:96676cae81fc753b6b20144733fdab8e838e0c3b78b649a1680f601cc5df5818:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNDFjMmQzYzRlMWFlMzhjMWQ0ZjdlYzJkZmU4NWExYmI0ZDVjNDNjN2Q0NGI4OGY2MzI0OWEyNDdjNGJjMWYzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJjZTVlNjg3NjlkZTAyNTk2MTQ0MTBjYmE3MTMyNzM3ZGM1YWJkZmVmZjJmYjcxZjE0NDUzMTY1OTA2OTU2YjVhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyNTk1MWVjMjQ3ZjJlMjc4NmM4Y2I3NjZjMTg0MzAzM2IyM2I2NDUxMTk1YmRlMmUxMzQyOTA2OTYzMmY4MTU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5OTE1MTIwZTZlOGQ1ZDdiODQwNWY4OWRmMzc1Y2VkMWM0YjI0OWU2MmRjMzM3OTg3ZDYwMTljY2Q3MTE5MTI2In0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-14T08:14:57.553Z"
   }
 }

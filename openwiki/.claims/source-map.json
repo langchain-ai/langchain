@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:593ee2456e69de62554f979a9638f97d0ed144482490558b2cd5590a7620d9c8",
+  "pageVersion": "sha256:27c286feeb0409a82346773f404ab6a29c5a290257b96b93225843bebde907e7",
   "claims": [
     {
       "id": "claim_c71edae5b0f64c8fa79c17ef1aca0f6b",
@@ -98,7 +98,7 @@
       "evidence": [
         {
           "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1-L50",
-          "version": "repo-lines-v1:sha256:b972f9928545904dc248d138c943fc37ce04364c9f3ed8a4461915e774ca44b6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMWZkYTIxNjI4MGFjNjg0ZmI1ZGQ4NjIxYmE5NTJiMjU3YzhjZTVlMDExM2U2N2JjMTJkZDBlZGU1ZTg2MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyODFhMDEyZDkwNWU4YzQwNTdiNzJmNGY2NWQ5ODBjZWUyNTAxMmU2MTgzM2E2MDM1N2JiZjk2ODY5ODk1ZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2NDcxNTMyNmUwZDYxNDlkYWE3YTYzZDFkMDE3MmVlMWM1Yjk1NzlkZTliOTQ0NDBjZGM4MjFiNzVhYmNjMWEifQ"
+          "version": "repo-lines-v1:sha256:4e2cef5dbb9a02c406f5aaf3d124542d182a924c77babcdce9a8bab73a0c550a:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMWZkYTIxNjI4MGFjNjg0ZmI1ZGQ4NjIxYmE5NTJiMjU3YzhjZTVlMDExM2U2N2JjMTJkZDBlZGU1ZTg2MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyODFhMDEyZDkwNWU4YzQwNTdiNzJmNGY2NWQ5ODBjZWUyNTAxMmU2MTgzM2E2MDM1N2JiZjk2ODY5ODk1ZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2NDcxNTMyNmUwZDYxNDlkYWE3YTYzZDFkMDE3MmVlMWM1Yjk1NzlkZTliOTQ0NDBjZGM4MjFiNzVhYmNjMWEifQ"
         }
       ]
     },
@@ -164,7 +164,7 @@
         },
         {
           "resource": "repo://libs/core/pyproject.toml#L1-L30",
-          "version": "repo-lines-v1:sha256:3eb5ce4a7596defa3d41f6491630f970aa2a4c8020000eae9235433885b75015:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NTY5OTQ2YWM5YmJlN2NiMmNkZWMzZjhiZWNmMzQzNzUwYzU4YjliMzIxZWMyMTk1YmZiYWFiMmFhOGM0YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ODZmY2QxODljODI2ZTE3MGE2MmI0ZjljNjM1ZWJhMzBlNzFkNWIwOWRkMDdjNTkwODFlYTkwOTYwNzI5NWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3MWNkY2FlNWU4YTk1MmI2Nzc5NmUwZjI5ZDViNmE4N2I0OWQyZjViN2M5MmM1M2VhYjFiZjk2NmI2NWE5YTMifQ"
+          "version": "repo-lines-v1:sha256:ea4da49fab51a5fe77d78d194eba0b726cc5a2cdefa0a2ee5b098bba6f0ee81d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NTY5OTQ2YWM5YmJlN2NiMmNkZWMzZjhiZWNmMzQzNzUwYzU4YjliMzIxZWMyMTk1YmZiYWFiMmFhOGM0YmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk5ODZmY2QxODljODI2ZTE3MGE2MmI0ZjljNjM1ZWJhMzBlNzFkNWIwOWRkMDdjNTkwODFlYTkwOTYwNzI5NWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ3MWNkY2FlNWU4YTk1MmI2Nzc5NmUwZjI5ZDViNmE4N2I0OWQyZjViN2M5MmM1M2VhYjFiZjk2NmI2NWE5YTMifQ"
         },
         {
           "resource": "repo://libs/langchain_v1/pyproject.toml#L1-L30",
@@ -174,11 +174,11 @@
     },
     {
       "id": "claim_458d709b604149fa8fb9639025882358",
-      "statement": "LangChain uses a multi-layer architecture: langchain-core (v1.8.0) for base abstractions, langchain (v1.5.0) for orchestration and agents, and partners for provider-specific implementations, enabling model interoperability and independent release cycles.",
+      "statement": "LangChain uses a multi-layer architecture: langchain-core (v1.8.1) for base abstractions, langchain (v1.5.0) for orchestration and agents, and partners for provider-specific implementations, enabling model interoperability and independent release cycles.",
       "evidence": [
         {
           "resource": "repo://libs/core/pyproject.toml#L23-L23",
-          "version": "repo-lines-v1:sha256:27d31dd1e833da6defd031f3ada493737129d5d28cd7046dd916525627139aa3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdkMzFkZDFlODMzZGE2ZGVmZDAzMWYzYWRhNDkzNzM3MTI5ZDVkMjhjZDcwNDZkZDkxNjUyNTYyNzEzOWFhMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdkMzFkZDFlODMzZGE2ZGVmZDAzMWYzYWRhNDkzNzM3MTI5ZDVkMjhjZDcwNDZkZDkxNjUyNTYyNzEzOWFhMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWQyNGE4M2M2NzViYjUwMTAwMmFkN2YxZmNmYTA4OGFiM2FmZjUwNTQyZjBjNjI2Mzg3NDE4NGQ4YjQ2OTA3NCJ9"
+          "version": "repo-lines-v1:sha256:e36e8ecd8bd18b139a902e0be5b1127d793310307e6618605ad5696a289d2304:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTM2ZThlY2Q4YmQxOGIxMzlhOTAyZTBiZTViMTEyN2Q3OTMzMTAzMDdlNjYxODYwNWFkNTY5NmEyODlkMjMwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTM2ZThlY2Q4YmQxOGIxMzlhOTAyZTBiZTViMTEyN2Q3OTMzMTAzMDdlNjYxODYwNWFkNTY5NmEyODlkMjMwNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWQyNGE4M2M2NzViYjUwMTAwMmFkN2YxZmNmYTA4OGFiM2FmZjUwNTQyZjBjNjI2Mzg3NDE4NGQ4YjQ2OTA3NCJ9"
         },
         {
           "resource": "repo://libs/langchain_v1/pyproject.toml#L23-L23",
@@ -192,7 +192,7 @@
       "evidence": [
         {
           "resource": "repo://libs/partners/openai/langchain_openai/decisions/base.py#L1-L50",
-          "version": "repo-lines-v1:sha256:01f66adc147c6f14f590ebb882a22a3ff3f66745e18a0f0baa2fbe72b4ade091:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyNDdjY2I3YTlmOGU5MmY1YWVkZThhYTZjOThmMTA5MjRiM2FjZjY5OTFlYzVkNDMzNDNlMTIwYThhMTkzMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjNmY3NTkwYTNlYTgzYmVhOTVlYzg4NDZhYmYzZTg1ZDJjODUxNTAyODAzZjYyNTMxMTdlMGU0MjkzYjE3MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiZmRiYWU5ZDlhYzgwMzUzMGZjM2VjOTc0OWNkZWEzMzE0MGFjYjhlMDc5NTkwNjU4ZTRhNTkxNTI4Mzk1NzQifQ"
+          "version": "repo-lines-v1:sha256:2fd9b08fb8f5324fdaf85b226799ed85d5cdb96045c834c9f64c2b6b180c2b29:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyNDdjY2I3YTlmOGU5MmY1YWVkZThhYTZjOThmMTA5MjRiM2FjZjY5OTFlYzVkNDMzNDNlMTIwYThhMTkzMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjNmY3NTkwYTNlYTgzYmVhOTVlYzg4NDZhYmYzZTg1ZDJjODUxNTAyODAzZjYyNTMxMTdlMGU0MjkzYjE3MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiZmRiYWU5ZDlhYzgwMzUzMGZjM2VjOTc0OWNkZWEzMzE0MGFjYjhlMDc5NTkwNjU4ZTRhNTkxNTI4Mzk1NzQifQ"
         }
       ]
     },
@@ -245,6 +245,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-14T08:14:57.553Z"
   }
 }

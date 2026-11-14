@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:350bf26838196910e583da9eeb7a912be71774c604a083f2f8a6b1276b31ddea",
+  "pageVersion": "sha256:a06ea5b009d41b2f76040f939da1a946fe5bae2a14d343ffb84aef73119f4e3e",
   "claims": [
     {
       "id": "claim_3ad3740cfbd545d8ba64cdf277cd6364",
@@ -22,7 +22,7 @@
       "evidence": [
         {
           "resource": "repo://libs/partners/anthropic/langchain_anthropic/chat_models.py",
-          "version": "repo-file-v1:sha256:5f785dfb8457197966c2bba1dbd1a97999110b0ae376cb3547ea122e4b2669b2"
+          "version": "repo-file-v1:sha256:1033127ee5571fcdb1e6275699d181bf4a52cf9baa5840b5520e135c426c1068"
         },
         {
           "resource": "repo://libs/partners/openai/langchain_openai/chat_models/__init__.py",
@@ -50,7 +50,7 @@
       "evidence": [
         {
           "resource": "repo://libs/partners/openai/langchain_openai/data/_profiles.py",
-          "version": "repo-file-v1:sha256:c37c3c0c07172e5d14fa2fae6f0b742f69431948f8fb4b7911084588639236fb"
+          "version": "repo-file-v1:sha256:0dff3a7f08d63fd83e0c8d001f2d8ca164cc44dd79c07d69b81fe125ba6bd756"
         },
         {
           "resource": "repo://libs/partners/openai/langchain_openai/data/profile_augmentations.toml",
@@ -61,6 +61,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-14T08:14:57.553Z"
   }
 }

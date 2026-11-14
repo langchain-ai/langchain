@@ -34,10 +34,10 @@ sources:
     resource: repo://libs/partners/README.md
   - id: openwiki-source-7da6afe7fe64c6589cf1fed0
     resource: repo://libs/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-14T08:14:57.553Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-14T08:14:57.553Z
 ---
 
 ## Overview
@@ -61,7 +61,7 @@ graph TB
     User["User Applications"]
     
     User -->|imports from| LangChain["langchain<br/>(Orchestration & Agents)<br/>v1.5.0"]
-    User -->|may use directly| Core["langchain-core<br/>(Base Abstractions)<br/>v1.8.0"]
+    User -->|may use directly| Core["langchain-core<br/>(Base Abstractions)<br/>v1.8.1"]
     
     LangChain -->|depends on| Core
     LangChain -->|depends on| LangGraph["LangGraph<br/>(State Graph Engine)"]
@@ -292,7 +292,7 @@ The core layer (langchain-core) is intentionally minimal and stable. Orchestrati
 
 ## Versioning and Release Policy
 
-- **langchain-core** (`v1.8.0`): Stable base abstractions. Major version bumps are rare and announced in advance. Deprecations carry multiple minor versions of notice. This is the "least-moving" part of the ecosystem.
+- **langchain-core** (`v1.8.1`): Stable base abstractions. Major version bumps are rare and announced in advance. Deprecations carry multiple minor versions of notice. This is the "least-moving" part of the ecosystem.
 
 - **langchain** (`v1.5.0`): Main user-facing package. Minor versions may add new agent patterns, middleware types, or orchestration improvements. Patch versions fix bugs. Requires specific langchain-core version (e.g., `>=1.8.0,<2.0.0`).
 
