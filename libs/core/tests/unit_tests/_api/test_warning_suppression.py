@@ -3,7 +3,7 @@ import warnings
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import AbstractContextManager
-from contextvars import Context
+from contextvars import copy_context
 from functools import partial
 from typing import NamedTuple, cast
 
@@ -72,10 +72,11 @@ def test_suppression_is_thread_local(warning_api: WarningAPI, *, direct: bool) -
     )
     with warnings.catch_warnings(), ThreadPoolExecutor(max_workers=1) as executor:
         warnings.simplefilter("error", warning_api.category)
+        context = copy_context()
         with warning_api.suppress():
             warning_api.emit()
             with pytest.raises(warning_api.category):
-                executor.submit(Context().run, emit).result(timeout=5)
+                executor.submit(context.run, emit).result(timeout=5)
 
 
 def test_nested_suppression_restores_after_exception(warning_api: WarningAPI) -> None:
