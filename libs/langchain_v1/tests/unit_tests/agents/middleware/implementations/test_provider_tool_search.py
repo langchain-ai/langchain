@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import warnings
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 from typing import TYPE_CHECKING, Any, cast
 
 import pytest
@@ -12,7 +15,9 @@ from langchain.agents.middleware import (
     ModelRequest,
     ModelResponse,
     ProviderToolSearchMiddleware,
+    provider_tool_search,
 )
+from langchain.chat_models.base import _attempt_infer_model_provider
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
@@ -325,6 +330,30 @@ def test_detects_provider_from_bare_model_name(
     modified_request = _invoke(middleware, request)
 
     assert expected_tool in modified_request.tools
+
+
+@pytest.mark.filterwarnings("error::DeprecationWarning")
+def test_provider_inference_preserves_concurrent_warnings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    inferring = Event()
+    resume = Event()
+
+    def infer(model_name: str) -> str | None:
+        inferring.set()
+        assert resume.wait(timeout=5)
+        return _attempt_infer_model_provider(model_name)
+
+    monkeypatch.setattr(provider_tool_search, "_attempt_infer_model_provider", infer)
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(provider_tool_search._provider_from_model_name, "gemini-2.5-pro")
+        try:
+            assert inferring.wait(timeout=5)
+            with pytest.raises(DeprecationWarning, match="unrelated deprecation"):
+                warnings.warn("unrelated deprecation", DeprecationWarning, stacklevel=1)
+        finally:
+            resume.set()
+        assert future.result(timeout=5) == "google_vertexai"
 
 
 def test_raises_for_unrecognized_bare_model_name() -> None:
