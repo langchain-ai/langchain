@@ -6696,3 +6696,36 @@ def test_with_structured_output_still_streams_partial_json() -> None:
 
     assert len(outputs) > 1
     assert outputs[-1] == {"answer": "42"}
+
+
+def test_tool_message_list_of_strings() -> None:
+    _, formatted = _format_messages(
+        [
+            AIMessage(
+                content="",
+                tool_calls=[{"id": "call_1", "name": "list_orders", "args": {}}],
+            ),
+            ToolMessage(content=["4071", "5523", "1180"], tool_call_id="call_1"),
+        ],
+        model=MODEL_NAME,
+    )
+    assert formatted[1]["content"] == [
+        {
+            "type": "tool_result",
+            "content": '["4071", "5523", "1180"]',
+            "tool_use_id": "call_1",
+            "is_error": False,
+        }
+    ]
+
+    _, empty_formatted = _format_messages(
+        [
+            AIMessage(
+                content="",
+                tool_calls=[{"id": "call_2", "name": "list_orders", "args": {}}],
+            ),
+            ToolMessage(content=[], tool_call_id="call_2"),
+        ],
+        model=MODEL_NAME,
+    )
+    assert empty_formatted[1]["content"][0]["content"] == []

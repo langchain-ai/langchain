@@ -6061,3 +6061,56 @@ def test_with_structured_output_still_streams_partial_json() -> None:
 
     assert len(outputs) > 1
     assert outputs[-1] == {"answer": "42"}
+
+
+def test_tool_message_list_of_strings() -> None:
+    tool_msg = ToolMessage(content=["4071", "5523", "1180"], tool_call_id="call_1")
+    converted = _convert_message_to_dict(tool_msg)
+    assert converted["content"] == '["4071", "5523", "1180"]'
+
+    responses_input = _construct_responses_api_input([tool_msg])
+    assert responses_input == [
+        {
+            "type": "function_call_output",
+            "output": '["4071", "5523", "1180"]',
+            "call_id": "call_1",
+        }
+    ]
+
+    empty_tool_msg = ToolMessage(content=[], tool_call_id="call_2")
+    assert _convert_message_to_dict(empty_tool_msg)["content"] == []
+
+
+def test_list_of_strings_message_content() -> None:
+    human = HumanMessage(content=["What is 2 + 2?", "Answer with one number."])
+    system = SystemMessage(content=["Rule 1", "Rule 2"])
+    ai = AIMessage(content=["Part 1", "Part 2"])
+
+    assert _convert_message_to_dict(human)["content"] == [
+        {"type": "text", "text": "What is 2 + 2?"},
+        {"type": "text", "text": "Answer with one number."},
+    ]
+    assert _convert_message_to_dict(system)["content"] == [
+        {"type": "text", "text": "Rule 1"},
+        {"type": "text", "text": "Rule 2"},
+    ]
+    assert _convert_message_to_dict(ai)["content"] == [
+        {"type": "text", "text": "Part 1"},
+        {"type": "text", "text": "Part 2"},
+    ]
+
+    responses_input = _construct_responses_api_input([system, human, ai])
+    assert responses_input[0]["content"] == [
+        {"type": "input_text", "text": "Rule 1"},
+        {"type": "input_text", "text": "Rule 2"},
+    ]
+    assert responses_input[1]["content"] == [
+        {"type": "input_text", "text": "What is 2 + 2?"},
+        {"type": "input_text", "text": "Answer with one number."},
+    ]
+    assert responses_input[2]["content"] == [
+        {"type": "output_text", "text": "Part 1", "annotations": []},
+    ]
+    assert responses_input[3]["content"] == [
+        {"type": "output_text", "text": "Part 2", "annotations": []},
+    ]

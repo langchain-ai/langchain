@@ -407,6 +407,9 @@ def _format_message_content(
     if content and isinstance(content, list):
         formatted_content = []
         for block in content:
+            if isinstance(block, str) and role != "tool":
+                formatted_content.append({"type": "text", "text": block})
+                continue
             # Remove unexpected block types
             if (
                 isinstance(block, dict)
@@ -544,9 +547,14 @@ def _convert_message_to_dict(
     elif isinstance(message, ToolMessage):
         message_dict["role"] = "tool"
         message_dict["tool_call_id"] = message.tool_call_id
-        message_dict["content"] = _sanitize_chat_completions_content(
-            message_dict["content"]
-        )
+        content = message_dict["content"]
+        if (
+            isinstance(content, list)
+            and content
+            and all(isinstance(block, str) for block in content)
+        ):
+            content = _stringify(content)
+        message_dict["content"] = _sanitize_chat_completions_content(content)
         supported_props = {"content", "role", "tool_call_id"}
         message_dict = {k: v for k, v in message_dict.items() if k in supported_props}
     else:

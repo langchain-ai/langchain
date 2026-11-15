@@ -349,15 +349,22 @@ def _merge_messages(
                 # to the tool_result level.  Anthropic's API does not
                 # support cache_control on tool_result content sub-blocks.
                 if isinstance(tool_content, list):
-                    cleaned = []
-                    for block in tool_content:
-                        if isinstance(block, dict) and "cache_control" in block:
-                            cache_ctrl = block["cache_control"]
-                            block = {
-                                k: v for k, v in block.items() if k != "cache_control"
-                            }
-                        cleaned.append(block)
-                    tool_content = cleaned
+                    if tool_content and all(
+                        isinstance(block, str) for block in tool_content
+                    ):
+                        tool_content = json.dumps(tool_content, ensure_ascii=False)
+                    else:
+                        cleaned = []
+                        for block in tool_content:
+                            if isinstance(block, dict) and "cache_control" in block:
+                                cache_ctrl = block["cache_control"]
+                                block = {
+                                    k: v
+                                    for k, v in block.items()
+                                    if k != "cache_control"
+                                }
+                            cleaned.append(block)
+                        tool_content = cleaned
                 tool_result: dict = {
                     "type": "tool_result",
                     "content": tool_content,
