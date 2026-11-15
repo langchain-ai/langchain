@@ -18,7 +18,7 @@ class TestMistralStandard(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         return {
-            "model": "mistral-large-latest",
+            "model": "mistral-large-2512",
             "rate_limiter": rate_limiter,
         }
 
