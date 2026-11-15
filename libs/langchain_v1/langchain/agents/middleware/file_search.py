@@ -384,7 +384,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
                     continue
 
                 try:
-                    content = file_path.read_text()
+                    content = file_path.read_text(encoding="utf-8")
                 except (UnicodeDecodeError, PermissionError):
                     continue
 

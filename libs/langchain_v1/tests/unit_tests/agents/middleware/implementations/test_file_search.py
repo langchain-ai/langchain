@@ -70,11 +70,23 @@ class TestFilesystemGrepSearch:
 
         assert isinstance(middleware.grep_search, StructuredTool)
         assert middleware.grep_search.func is not None
-        result = middleware.grep_search.func(pattern="hello")
+        result = middleware.grep_search.func(pattern="🔥")
 
         assert "/file1.py" in result
         assert "/file3.txt" in result
         assert "/file2.py" not in result
+
+
+    def test_grep_reads_files_as_utf8(self, tmp_path: Path) -> None:
+        """A UTF-8 file with non-ASCII text must be searchable whatever the locale is."""
+        (tmp_path / "notes.txt").write_text("hello 🔥\n", encoding="utf-8")
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert middleware.grep_search.func is not None
+        result = middleware.grep_search.func(pattern="🔥")
+
+        assert "/notes.txt" in result
 
     def test_grep_with_include_filter(self, tmp_path: Path) -> None:
         """Test grep search with include pattern filter."""
