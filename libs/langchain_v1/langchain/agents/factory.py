@@ -6,6 +6,7 @@ import functools
 import importlib
 import itertools
 import re
+from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 from typing import (
     TYPE_CHECKING,
@@ -21,6 +22,7 @@ from typing import (
     overload,
 )
 
+from langchain_core.callbacks import BaseCallbackManager
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -29,15 +31,18 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
+from langchain_core.tracers.langchain import LangChainTracer
 from langgraph._internal._runnable import RunnableCallable
+from langgraph.config import get_config
 from langgraph.constants import END, START
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.graph.state import StateGraph
 from langgraph.prebuilt import ToolCallTransformer
 from langgraph.prebuilt.tool_node import ToolNode
 from langgraph.types import Command, Send
-from langsmith import traceable
+from langsmith import get_tracing_context, traceable, tracing_context
 from typing_extensions import TypedDict
 
 from langchain.agents._subagent_transformer import SubagentTransformer
@@ -91,7 +96,7 @@ class _ComposedExtendedModelResponse(Generic[ResponseT]):
 
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Iterable, Sequence
+    from collections.abc import Awaitable, Callable, Iterable, Iterator, Sequence
 
     from langchain_core.messages import InvalidToolCall
     from langchain_core.runnables import Runnable, RunnableConfig
@@ -152,6 +157,58 @@ Option 2: Handle dynamic tools in middleware (for tools created at runtime)
                 return handler(request.override(tool=my_dynamic_tool))
             return handler(request)
 """.strip()
+
+
+@contextmanager
+def _model_tracing_context(request: ModelRequest[Any], model: Runnable[Any, Any]) -> Iterator[None]:
+    """Default top-level, resolved model calls to root in tracing context only."""
+    current = get_tracing_context()
+    metadata = current.get("metadata") or {}
+    parent = current.get("parent")
+    config = get_config()
+    sources = [metadata, parent.metadata if parent else {}, config.get("metadata") or {}]
+    callbacks = [config.get("callbacks")]
+    agent_type = config.get("configurable", {}).get("ls_agent_type")
+    while isinstance(model, RunnableBinding):
+        if model.config_factories:
+            yield
+            return
+        sources.append(model.config.get("metadata") or {})
+        callbacks.append(model.config.get("callbacks"))
+        if agent_type is None:
+            agent_type = model.config.get("configurable", {}).get("ls_agent_type")
+        model = model.bound
+    if isinstance(model, BaseChatModel):
+        sources.append(model.metadata or {})
+        callbacks.append(model.callbacks)
+    for callback in callbacks:
+        if isinstance(callback, BaseCallbackManager):
+            sources.append(callback.metadata or {})
+            handlers = callback.handlers
+        else:
+            handlers = callback or []
+        sources.extend(
+            handler.tracing_metadata or {}
+            for handler in handlers
+            if isinstance(handler, LangChainTracer)
+        )
+    if any("ls_agent_type" in source for source in sources):
+        yield
+        return
+
+    if agent_type is None:
+        execution_info = request.runtime.execution_info
+        if (
+            execution_info is None
+            or "|" in execution_info.checkpoint_ns
+            or not isinstance(model, BaseChatModel)
+        ):
+            yield
+            return
+        agent_type = "root"
+
+    with tracing_context(**{**current, "metadata": {**metadata, "ls_agent_type": agent_type}}):
+        yield
 
 
 def _scrub_inputs(inputs: dict[str, Any]) -> dict[str, Any]:
@@ -1506,7 +1563,8 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = model_.invoke(messages)
+        with _model_tracing_context(request, model_):
+            output = model_.invoke(messages)
         if name:
             output.name = name
 
@@ -1565,7 +1623,8 @@ def create_agent(
         if request.system_message:
             messages = [request.system_message, *messages]
 
-        output = await model_.ainvoke(messages)
+        with _model_tracing_context(request, model_):
+            output = await model_.ainvoke(messages)
         if name:
             output.name = name
 
