@@ -1502,3 +1502,52 @@ def test_convert_to_openai_function_without_tools_module_imported(
     result = convert_to_openai_function(my_func)
 
     assert result["name"] == "my_func"
+
+
+def test_convert_to_openai_tool_strict_oneof_and_prefix_items() -> None:
+    """Strict mode recurses into oneOf (discriminated union) and prefixItems (tuple)."""
+
+    class Cat(BaseModel):
+        pet_type: Literal["cat"]
+        meows: int
+
+    class Dog(BaseModel):
+        pet_type: Literal["dog"]
+        barks: int
+
+    class ToolInput(BaseModel):
+        pet: TypingAnnotated[Cat | Dog, Field(discriminator="pet_type")]
+        pair: tuple[Cat, Dog]
+
+    tool = convert_to_openai_tool(ToolInput, strict=True)
+    props = tool["function"]["parameters"]["properties"]
+
+    for branch in props["pet"]["oneOf"]:
+        assert branch["additionalProperties"] is False
+        assert set(branch["required"]) == set(branch["properties"].keys())
+
+    for item_schema in props["pair"]["prefixItems"]:
+        assert item_schema["additionalProperties"] is False
+        assert set(item_schema["required"]) == set(item_schema["properties"].keys())
+
+
+def test_convert_to_openai_tool_strict_propertyless_schema_dict() -> None:
+    """Propertyless object schema dict with strict=True does not raise KeyError."""
+    tool = convert_to_openai_tool(
+        {"title": "Ping", "description": "No args", "type": "object"},
+        strict=True,
+    )
+    assert tool == {
+        "type": "function",
+        "function": {
+            "name": "Ping",
+            "description": "No args",
+            "strict": True,
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+                "additionalProperties": False,
+            },
+        },
+    }
