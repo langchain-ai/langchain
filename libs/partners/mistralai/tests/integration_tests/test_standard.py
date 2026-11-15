@@ -19,7 +19,6 @@ class TestMistralStandard(ChatModelIntegrationTests):
     def chat_model_params(self) -> dict:
         return {
             "model": "mistral-large-latest",
-            "temperature": 0,
             "rate_limiter": rate_limiter,
         }
 

@@ -347,6 +347,15 @@ async def acompletion_with_retry(
     return await _completion_with_retry(**kwargs)
 
 
+def _is_empty_chunk(chunk: AIMessageChunk) -> bool:
+    return (
+        not chunk.content
+        and not chunk.tool_call_chunks
+        and not chunk.usage_metadata
+        and "finish_reason" not in chunk.response_metadata
+    )
+
+
 def _convert_chunk_to_message_chunk(
     chunk: dict,
     default_class: type[BaseMessageChunk],
@@ -358,8 +367,9 @@ def _convert_chunk_to_message_chunk(
     _delta = _choice["delta"]
     role = _delta.get("role")
     content = _delta.get("content") or ""
-    if output_version == "v1" and isinstance(content, str):
-        content = [{"type": "text", "text": content}]
+    # Once a stream has sent list content, keep later string deltas as text blocks
+    if isinstance(content, str) and (output_version == "v1" or index_type):
+        content = [{"type": "text", "text": content}] if content else []
     content = _normalize_mistral_content(content)
     if isinstance(content, list):
         for block in content:
@@ -667,6 +677,16 @@ class ChatMistralAI(BaseChatModel):
 
     safe_mode: bool | None = None
 
+    reasoning_effort: str | None = None
+    """Reasoning effort.
+
+    Forwarded as the `reasoning_effort` request field. Supported values vary by
+    model (e.g. `'none'` or `'high'`).
+
+    Can also be passed at call time, e.g.
+    `model.invoke(..., reasoning_effort="high")`.
+    """
+
     streaming: bool = False
 
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
@@ -694,6 +714,7 @@ class ChatMistralAI(BaseChatModel):
             "top_p": self.top_p,
             "random_seed": self.random_seed,
             "safe_prompt": self.safe_mode,
+            "reasoning_effort": self.reasoning_effort,
             **self.model_kwargs,
         }
         return {k: v for k, v in defaults.items() if v is not None}
@@ -917,6 +938,8 @@ class ChatMistralAI(BaseChatModel):
             )
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
+            if isinstance(new_chunk, AIMessageChunk) and _is_empty_chunk(new_chunk):
+                continue
             gen_chunk = ChatGenerationChunk(message=new_chunk)
             if run_manager:
                 run_manager.on_llm_new_token(
@@ -947,6 +970,8 @@ class ChatMistralAI(BaseChatModel):
             )
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
+            if isinstance(new_chunk, AIMessageChunk) and _is_empty_chunk(new_chunk):
+                continue
             gen_chunk = ChatGenerationChunk(message=new_chunk)
             if run_manager:
                 await run_manager.on_llm_new_token(
