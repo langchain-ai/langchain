@@ -465,7 +465,7 @@ def deprecated(
 
 @contextlib.contextmanager
 def suppress_langchain_deprecation_warning() -> Generator[None, None, None]:
-    """Suppress deprecations emitted by LangChain helpers in the current context."""
+    """Suppress context-aware LangChain deprecations, not raw third-party warnings."""
     token = _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.set(True)
     try:
         yield

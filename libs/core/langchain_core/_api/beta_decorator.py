@@ -223,7 +223,7 @@ def beta(
 
 @contextlib.contextmanager
 def suppress_langchain_beta_warning() -> Generator[None, None, None]:
-    """Suppress beta warnings emitted by LangChain helpers in the current context."""
+    """Suppress context-aware LangChain beta warnings, not raw third-party warnings."""
     token = _SUPPRESSING_LANGCHAIN_BETA_WARNING.set(True)
     try:
         yield
