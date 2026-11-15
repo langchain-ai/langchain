@@ -74,3 +74,64 @@ def test_selector_empty_example(
     )
     output = empty_selector.select_examples({"question": "empty question"})
     assert output == []
+
+
+def test_selector_add_example_failure_does_not_corrupt_state() -> None:
+    """Test failed add_example does not desynchronize examples and lengths."""
+    selector = LengthBasedExampleSelector(
+        examples=[{"question": "existing"}],
+        example_prompt=PromptTemplate.from_template("{question}"),
+        get_text_length=len,
+        max_length=100,
+    )
+
+    with pytest.raises(KeyError):
+        selector.add_example({})
+
+    assert selector.examples == [{"question": "existing"}]
+    assert selector.example_text_lengths == [len("existing")]
+    assert selector.select_examples({"question": "query"}) == [
+        {"question": "existing"}
+    ]
+
+
+def test_selector_add_example_length_error_does_not_corrupt_state() -> None:
+    """Test get_text_length failure in add_example does not corrupt state."""
+
+    def measure(text: str) -> int:
+        if text == "bad":
+            msg = "cannot measure"
+            raise ValueError(msg)
+        return len(text)
+
+    selector = LengthBasedExampleSelector(
+        examples=[{"question": "good"}],
+        example_prompt=PromptTemplate.from_template("{question}"),
+        get_text_length=measure,
+        max_length=100,
+    )
+
+    with pytest.raises(ValueError, match="cannot measure"):
+        selector.add_example({"question": "bad"})
+
+    assert selector.examples == [{"question": "good"}]
+    assert selector.example_text_lengths == [len("good")]
+    assert selector.select_examples({"question": "query"}) == [{"question": "good"}]
+
+
+async def test_selector_aadd_example_failure_does_not_corrupt_state() -> None:
+    """Test failed aadd_example does not desynchronize examples and lengths."""
+    selector = LengthBasedExampleSelector(
+        examples=[{"question": "existing"}],
+        example_prompt=PromptTemplate.from_template("{question}"),
+        get_text_length=len,
+        max_length=100,
+    )
+
+    with pytest.raises(KeyError):
+        await selector.aadd_example({})
+
+    assert selector.examples == [{"question": "existing"}]
+    assert await selector.aselect_examples({"question": "query"}) == [
+        {"question": "existing"}
+    ]

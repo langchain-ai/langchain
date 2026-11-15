@@ -70,9 +70,10 @@ class LengthBasedExampleSelector(BaseExampleSelector, BaseModel):
             example: A dictionary with keys as input variables
                 and values as their values.
         """
-        self.examples.append(example)
         string_example = self.example_prompt.format(**example)
-        self.example_text_lengths.append(self.get_text_length(string_example))
+        example_length = self.get_text_length(string_example)
+        self.examples.append(example)
+        self.example_text_lengths.append(example_length)
 
     async def aadd_example(self, example: dict[str, str]) -> None:
         """Async add new example to list.
