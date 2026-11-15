@@ -23,6 +23,16 @@ class TestMistralStandard(ChatModelIntegrationTests):
         }
 
     @property
+    def has_tool_choice(self) -> bool:
+        # mistral-large-latest hangs when tool_choice is specified
+        return False
+
+    @property
+    def structured_output_kwargs(self) -> dict:
+        # TODO: make json_schema the default `with_structured_output` method
+        return {"method": "json_schema"}
+
+    @property
     def supports_json_mode(self) -> bool:
         return True
 
