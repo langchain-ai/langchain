@@ -140,9 +140,9 @@ def deprecated(
     inherited its `__init__` from its own base class, then `@deprecated` would mess up
     `__init__` inheritance when installing its own (deprecation-emitting) `C.__init__`).
 
-    Parameters are the same as for `warn_deprecated`, except that *obj_type* defaults to
-    'class' if decorating a class, 'attribute' if decorating a property, and 'function'
-    otherwise.
+    Parameters are the same as for `warn_deprecated`, except for `stacklevel`;
+    *obj_type* defaults to 'class' if decorating a class, 'attribute' if decorating a
+    property, and 'function' otherwise.
 
     Args:
         since: The release at which this API became deprecated.
@@ -485,6 +485,7 @@ def warn_deprecated(
     addendum: str = "",
     removal: str = "",
     package: str = "",
+    stacklevel: int = 4,
 ) -> None:
     """Display a standardized deprecation.
 
@@ -515,6 +516,8 @@ def warn_deprecated(
 
             Cannot be used together with pending.
         package: The package of the deprecated object.
+        stacklevel: Warning attribution depth passed to `warnings.warn`; `1` points
+            inside this helper and `2` points to its caller.
     """
     if _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get():
         return
@@ -565,7 +568,7 @@ def warn_deprecated(
         LangChainPendingDeprecationWarning if pending else LangChainDeprecationWarning
     )
     warning = warning_cls(message)
-    warnings.warn(warning, category=LangChainDeprecationWarning, stacklevel=4)
+    warnings.warn(warning, category=LangChainDeprecationWarning, stacklevel=stacklevel)
 
 
 def surface_langchain_deprecation_warnings() -> None:
