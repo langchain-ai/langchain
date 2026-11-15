@@ -14,6 +14,7 @@ import functools
 import inspect
 import warnings
 from collections.abc import Callable, Generator
+from contextvars import ContextVar
 from typing import Any, TypeVar, cast
 
 from langchain_core._api.internal import is_caller_internal
@@ -21,6 +22,11 @@ from langchain_core._api.internal import is_caller_internal
 
 class LangChainBetaWarning(DeprecationWarning):
     """A class for issuing beta warnings for LangChain users."""
+
+
+_SUPPRESSING_LANGCHAIN_BETA_WARNING = ContextVar(
+    "_SUPPRESSING_LANGCHAIN_BETA_WARNING", default=False
+)
 
 
 # PUBLIC API
@@ -217,10 +223,12 @@ def beta(
 
 @contextlib.contextmanager
 def suppress_langchain_beta_warning() -> Generator[None, None, None]:
-    """Context manager to suppress `LangChainDeprecationWarning`."""
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", LangChainBetaWarning)
+    """Suppress beta warnings emitted by LangChain helpers in the current context."""
+    token = _SUPPRESSING_LANGCHAIN_BETA_WARNING.set(True)
+    try:
         yield
+    finally:
+        _SUPPRESSING_LANGCHAIN_BETA_WARNING.reset(token)
 
 
 def warn_beta(
@@ -241,6 +249,9 @@ def warn_beta(
         obj_type: The object type being annotated.
         addendum: Additional text appended directly to the final message.
     """
+    if _SUPPRESSING_LANGCHAIN_BETA_WARNING.get():
+        return
+
     if not message:
         message = ""
 

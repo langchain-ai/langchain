@@ -465,13 +465,10 @@ def deprecated(
 
 @contextlib.contextmanager
 def suppress_langchain_deprecation_warning() -> Generator[None, None, None]:
-    """Context manager to suppress `LangChainDeprecationWarning`."""
+    """Suppress deprecations emitted by LangChain helpers in the current context."""
     token = _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.set(True)
     try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", LangChainDeprecationWarning)
-            warnings.simplefilter("ignore", LangChainPendingDeprecationWarning)
-            yield
+        yield
     finally:
         _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.reset(token)
 
@@ -519,6 +516,9 @@ def warn_deprecated(
             Cannot be used together with pending.
         package: The package of the deprecated object.
     """
+    if _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get():
+        return
+
     if not pending and removal:
         removal = f"in {removal}"
 
