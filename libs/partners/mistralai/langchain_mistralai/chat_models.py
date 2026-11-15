@@ -1071,7 +1071,9 @@ class ChatMistralAI(BaseChatModel):
                     [function-calling feature](https://docs.mistral.ai/capabilities/function_calling/).
                 - `'json_schema'`:
                     Uses Mistral's
-                    [structured output feature](https://docs.mistral.ai/capabilities/structured-output/custom_structured_output/).
+                    [structured output feature](https://docs.mistral.ai/inference/conversations/structured-output/custom).
+                    Recommended. Some models (e.g. reasoning models) do not reliably
+                    follow the forced tool choice used by `'function_calling'`.
                 - `'json_mode'`:
                     Uses Mistral's
                     [JSON mode](https://docs.mistral.ai/capabilities/structured-output/json_mode/).
