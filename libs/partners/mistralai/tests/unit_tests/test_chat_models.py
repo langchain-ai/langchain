@@ -1,7 +1,7 @@
 """Test MistralAI Chat API wrapper."""
 
 import os
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Generator, Iterator
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
@@ -1230,3 +1230,134 @@ def test_langsmith_gateway_context_overrides_explicit_values() -> None:
     assert llm.endpoint == "https://gateway.smith.langchain.com/mistral/v1"
     assert llm.mistral_api_key is not None
     assert llm.mistral_api_key.get_secret_value() == "service-key"
+
+
+def _make_delta_chunk(content: Any, finish_reason: str | None = None) -> dict:
+    return {
+        "id": "abc123",
+        "model": "mistral-large-latest",
+        "choices": [
+            {"index": 0, "delta": {"content": content}, "finish_reason": finish_reason}
+        ],
+    }
+
+
+_REASONING_STREAM = [
+    {
+        "id": "abc123",
+        "model": "mistral-large-latest",
+        "choices": [
+            {
+                "index": 0,
+                "delta": {"role": "assistant", "content": ""},
+                "finish_reason": None,
+            }
+        ],
+    },
+    _make_delta_chunk(
+        [{"type": "thinking", "thinking": [{"type": "text", "text": "User says"}]}]
+    ),
+    _make_delta_chunk(
+        [{"type": "thinking", "thinking": [{"type": "text", "text": " hello."}]}]
+    ),
+    _make_delta_chunk(
+        [
+            {"type": "thinking", "thinking": []},
+            {"type": "text", "text": "Hello! How"},
+        ]
+    ),
+    _make_delta_chunk(" can I help you"),
+    _make_delta_chunk(" today?", finish_reason="stop"),
+]
+
+
+def mock_reasoning_stream(*args: Any, **kwargs: Any) -> Iterator[dict]:
+    return iter([dict(c) for c in _REASONING_STREAM])
+
+
+async def mock_reasoning_astream(*args: Any, **kwargs: Any) -> AsyncGenerator:
+    async def it() -> AsyncGenerator:
+        for c in _REASONING_STREAM:
+            yield dict(c)
+
+    return it()
+
+
+def _check_reasoning_stream(chunks: list[AIMessageChunk]) -> None:
+    assert all(c.content for c in chunks[:-1])
+    full = chunks[0]
+    for c in chunks[1:]:
+        full += c
+    assert isinstance(full, AIMessageChunk)
+    text_blocks = [b for b in full.content_blocks if b["type"] == "text"]
+    assert len(text_blocks) == 1
+    assert text_blocks[0]["text"] == "Hello! How can I help you today?"
+    reasoning_blocks = [b for b in full.content_blocks if b["type"] == "reasoning"]
+    assert len(reasoning_blocks) == 1
+    assert reasoning_blocks[0].get("reasoning") == "User says hello."
+    assert full.text == "Hello! How can I help you today?"
+    assert full.chunk_position == "last"
+
+
+@pytest.mark.parametrize("output_version", [None, "v1"])
+@patch(
+    "langchain_mistralai.chat_models.ChatMistralAI.completion_with_retry",
+    new=mock_reasoning_stream,
+)
+def test_stream_reasoning_then_text(output_version: str | None) -> None:
+    llm = ChatMistralAI(output_version=output_version)
+    chunks = [cast("AIMessageChunk", c) for c in llm.stream("Hello")]
+    _check_reasoning_stream(chunks)
+
+
+@pytest.mark.parametrize("output_version", [None, "v1"])
+@patch(
+    "langchain_mistralai.chat_models.acompletion_with_retry",
+    new=mock_reasoning_astream,
+)
+async def test_astream_reasoning_then_text(output_version: str | None) -> None:
+    llm = ChatMistralAI(output_version=output_version)
+    chunks = [cast("AIMessageChunk", c) async for c in llm.astream("Hello")]
+    _check_reasoning_stream(chunks)
+
+
+@patch(
+    "langchain_mistralai.chat_models.ChatMistralAI.completion_with_retry",
+    new=mock_chat_stream,
+)
+def test_stream_string_content_stays_string() -> None:
+    llm = ChatMistralAI()
+    full: AIMessageChunk | None = None
+    for chunk in llm.stream("Hello"):
+        full = chunk if full is None else full + chunk  # type: ignore[assignment]
+    assert full is not None
+    assert full.content == "Hello how can I help?"
+
+
+def test_reasoning_effort_omitted_by_default() -> None:
+    llm = ChatMistralAI()
+    assert "reasoning_effort" not in llm._default_params
+
+
+def test_reasoning_effort_in_default_params() -> None:
+    llm = ChatMistralAI(reasoning_effort="high")
+    assert llm._default_params["reasoning_effort"] == "high"
+
+
+def test_reasoning_effort_passed_to_client() -> None:
+    llm = ChatMistralAI(reasoning_effort="high")
+    with patch.object(
+        ChatMistralAI,
+        "completion_with_retry",
+        return_value={
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "Hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        },
+    ) as mock_completion:
+        llm.invoke("Hello")
+    assert mock_completion.call_args.kwargs["reasoning_effort"] == "high"
