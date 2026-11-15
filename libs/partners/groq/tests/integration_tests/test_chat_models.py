@@ -25,11 +25,11 @@ from tests.unit_tests.fake.callbacks import (
 )
 
 DEFAULT_MODEL_NAME = "openai/gpt-oss-20b"
-TOOL_CALLING_MODEL_NAME = "qwen/qwen3.6-27b"
+TOOL_CALLING_MODEL_NAME = "qwen/qwen3.8-27b"
 TOOL_CALLING_MODEL_KWARGS: dict[str, Any] = {"reasoning_effort": "none"}
 
 # GPT-OSS models don't support `reasoning_format`
-REASONING_MODEL_NAME = "qwen/qwen3.6-27b"
+REASONING_MODEL_NAME = "qwen/qwen3.8-27b"
 
 
 #
