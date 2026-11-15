@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import warnings
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, NotRequired, TypeAlias
 
@@ -284,12 +283,7 @@ def _provider_from_model_name(model_name: str) -> str | None:
     provider, _, rest = model_name.partition(":")
     if rest:
         return _normalize_provider(provider)
-    # The inferred provider is only used for a registry lookup here, so suppress the
-    # `model_provider` inference deprecation warning that `_attempt_infer_model_provider`
-    # emits for some names (e.g. `gemini*`); its guidance is irrelevant to routing.
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-        inferred = _attempt_infer_model_provider(model_name)
+    inferred = _attempt_infer_model_provider(model_name)
     return _normalize_provider(inferred) if inferred else None
 
 
