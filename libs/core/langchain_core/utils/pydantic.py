@@ -443,14 +443,12 @@ def _create_root_model(
 
     if default_ is not NO_DEFAULT:
         base_class_attributes["root"] = default_
-    with warnings.catch_warnings():
-        try:
-            if isinstance(type_, type) and issubclass(type_, BaseModelV1):
-                warnings.filterwarnings(
-                    action="ignore", category=PydanticDeprecationWarning
-                )
-        except TypeError:
-            pass
+    is_v1_model = isinstance(type_, type) and issubclass(type_, BaseModelV1)
+    with warnings.catch_warnings() if is_v1_model else nullcontext():
+        if is_v1_model:
+            warnings.filterwarnings(
+                action="ignore", category=PydanticDeprecationWarning
+            )
         custom_root_type = type(name, (RootModel,), base_class_attributes)
     return cast("type[BaseModel]", custom_root_type)
 
@@ -607,25 +605,12 @@ def create_model_v2(
             )
         return named_root_model
 
-    # No root, just field definitions
-    names = set(field_definitions.keys())
-
-    capture_warnings = False
-
-    for name in names:
-        # Also if any non-reserved name is used (e.g., model_id or model_name)
-        if name.startswith("model"):
-            capture_warnings = True
-
-    with warnings.catch_warnings() if capture_warnings else nullcontext():
-        if capture_warnings:
-            warnings.filterwarnings(action="ignore")
-        try:
-            return _create_model_cached(model_name, **field_definitions)
-        except TypeError:
-            # something in field definitions is not hashable
-            return _create_model_base(
-                model_name,
-                __config__=_SchemaConfig,
-                **_remap_field_definitions(field_definitions),
-            )
+    try:
+        return _create_model_cached(model_name, **field_definitions)
+    except TypeError:
+        # something in field definitions is not hashable
+        return _create_model_base(
+            model_name,
+            __config__=_SchemaConfig,
+            **_remap_field_definitions(field_definitions),
+        )
