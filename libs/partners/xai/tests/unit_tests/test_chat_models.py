@@ -1,4 +1,6 @@
 import json
+from collections.abc import Iterator
+from typing import Self
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
@@ -432,3 +434,97 @@ def test_langsmith_gateway_context_overrides_explicit_values() -> None:
     assert llm.xai_api_base == "https://gateway.smith.langchain.com/xai/v1"
     assert llm.xai_api_key is not None
     assert llm.xai_api_key.get_secret_value() == "service-key"
+
+
+def _stream_chunk() -> dict:
+    return {
+        "id": "chatcmpl-1",
+        "object": "chat.completion.chunk",
+        "created": 0,
+        "model": MODEL_NAME,
+        "choices": [
+            {
+                "index": 0,
+                "delta": {"role": "assistant", "content": "hi"},
+                "finish_reason": None,
+            }
+        ],
+    }
+
+
+class _IterableStream:
+    def __init__(self, chunks: list[dict]) -> None:
+        self._chunks = chunks
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *args: object) -> bool:
+        return False
+
+    def __iter__(self) -> Iterator[dict]:
+        yield from self._chunks
+
+
+class _GatewayRawResponse(_IterableStream):
+    def __init__(self, chunks: list[dict]) -> None:
+        super().__init__(chunks)
+        self.headers = {
+            "X-LangSmith-Gateway-Metadata": json.dumps(
+                {"ls_model_name": "grok-4", "ls_provider": "xai"}
+            )
+        }
+
+    def parse(self) -> "_GatewayRawResponse":
+        return self
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_uses_gateway_reads_xai_api_key() -> None:
+    gateway = ChatXAI(model=MODEL_NAME, api_key="lsv2_test")
+    # The parent check looks at openai_api_key, which ChatXAI leaves empty.
+    assert gateway.openai_api_key is None
+    assert gateway._uses_gateway is True
+
+    direct = ChatXAI(model=MODEL_NAME, api_key="xai-key")
+    assert direct._uses_gateway is False
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_stream_includes_gateway_metadata() -> None:
+    llm = ChatXAI(model=MODEL_NAME, api_key="lsv2_test")
+    raw = _GatewayRawResponse([_stream_chunk()])
+    seen: dict[str, bool] = {}
+
+    def create(**kwargs: object) -> _GatewayRawResponse:
+        seen["raw"] = True
+        assert kwargs.get("stream") is True
+        return raw
+
+    llm.client.with_raw_response.create = create  # type: ignore[method-assign]
+    chunks = list(llm._stream([HumanMessage(content="hi")]))
+
+    assert seen.get("raw") is True
+    assert chunks[0].generation_info is not None
+    assert chunks[0].generation_info["lc_gateway_metadata"] == {
+        "ls_model_name": "grok-4",
+        "ls_provider": "xai",
+    }
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_stream_without_gateway_skips_raw_response() -> None:
+    llm = ChatXAI(model=MODEL_NAME, api_key="xai-key")
+
+    def create(**_kwargs: object) -> _IterableStream:
+        return _IterableStream([_stream_chunk()])
+
+    def raw_create(**_kwargs: object) -> _GatewayRawResponse:
+        msg = "provider keys must not request raw gateway headers"
+        raise AssertionError(msg)
+
+    llm.client.create = create  # type: ignore[method-assign]
+    llm.client.with_raw_response.create = raw_create  # type: ignore[method-assign]
+    chunks = list(llm._stream([HumanMessage(content="hi")]))
+    assert chunks[0].message.content == "hi"
+    assert "lc_gateway_metadata" not in (chunks[0].generation_info or {})

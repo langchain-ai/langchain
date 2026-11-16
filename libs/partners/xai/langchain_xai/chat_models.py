@@ -487,6 +487,19 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         params["ls_provider"] = "xai"
         return params
 
+    @property
+    def _uses_gateway(self) -> bool:
+        """Whether requests are routed through the LangSmith gateway.
+
+        `BaseChatOpenAI` inspects `openai_api_key`, which stays unset here.
+        The key that is actually sent is `xai_api_key`. LangSmith gateway
+        keys use the `lsv2_` prefix. Callable keys are not inspected.
+        """
+        api_key = self.xai_api_key
+        if isinstance(api_key, SecretStr):
+            return api_key.get_secret_value().startswith("lsv2_")
+        return False
+
     @model_validator(mode="after")
     def _set_xai_version(self) -> Self:
         """Set package version in metadata.
