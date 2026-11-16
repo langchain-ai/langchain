@@ -25,7 +25,8 @@ class ExpectedCancellation(Exception):  # noqa: N818
     specific reason (user stop, supersede, rollback).
 
     A bare `CancelledError`, a timeout or a shutdown cancel carry no marker and
-    stay errors.
+    stay errors. The marker must be the cancel message itself (`args[0]` of the
+    `CancelledError`); one wrapped inside another exception is not detected.
 
     ```python
     task.cancel(msg=ExpectedCancellation("user interrupt"))
