@@ -67,7 +67,10 @@ from langchain_core.utils import from_env, get_pydantic_field_names
 from langchain_core.utils._gateway import (
     GATEWAY_METADATA_RESPONSE_KEY,
     _apply_gateway_config,
+    _gateway_headers,
+    _langsmith_gateway_active,
     _parse_gateway_metadata,
+    _with_gateway_headers,
 )
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
@@ -75,7 +78,14 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    SecretStr,
+    model_validator,
+)
 from typing_extensions import TypedDict
 
 from langchain_anthropic import __version__
@@ -1460,6 +1470,9 @@ class ChatAnthropic(BaseChatModel):
     """
 
     default_headers: Mapping[str, str] | None = None
+
+    _langsmith_gateway_headers: dict[str, str] = PrivateAttr(default_factory=dict)
+    """Headers from `langsmith_gateway`, sent by the client but never serialized."""
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
     betas: list[str] | None = None
@@ -1725,6 +1738,13 @@ class ChatAnthropic(BaseChatModel):
         self._add_version("langchain-anthropic", __version__)
         return self
 
+    @model_validator(mode="after")
+    def _set_langsmith_gateway_headers(self) -> Self:
+        """Keep `langsmith_gateway` headers for the lazily built clients."""
+        if _langsmith_gateway_active():
+            self._langsmith_gateway_headers = _gateway_headers()
+        return self
+
     @model_validator(mode="before")
     @classmethod
     def _resolve_gateway(cls, values: Any) -> Any:
@@ -1738,6 +1758,8 @@ class ChatAnthropic(BaseChatModel):
         when the gateway is enabled.
         """
         if isinstance(values, dict):
+            if _langsmith_gateway_active():
+                values["anthropic_proxy"] = None
             _apply_gateway_config(
                 values,
                 cls,
@@ -1765,6 +1787,10 @@ class ChatAnthropic(BaseChatModel):
         }
         if self.default_headers:
             default_headers.update(self.default_headers)
+        default_headers = dict(
+            _with_gateway_headers(default_headers, self._langsmith_gateway_headers)
+            or {}
+        )
 
         client_params: dict[str, Any] = {
             "api_key": self.anthropic_api_key.get_secret_value(),
