@@ -59,7 +59,9 @@ def _run_status_from_error(error: BaseException | None) -> str | None:
         return None
     if any(c.__name__ == "GraphBubbleUp" for c in type(error).__mro__):
         return "interrupted"
-    while isinstance(error, asyncio.CancelledError):
+    seen: set[int] = set()
+    while isinstance(error, asyncio.CancelledError) and id(error) not in seen:
+        seen.add(id(error))
         if error.args and isinstance(error.args[0], ExpectedCancellation):
             return "cancelled"
         # Python < 3.11 drops the cancel message at each task boundary but keeps

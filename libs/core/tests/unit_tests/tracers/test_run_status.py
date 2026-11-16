@@ -11,6 +11,7 @@ from langsmith import Client
 from langsmith.run_trees import RunTree
 
 from langchain_core.exceptions import ExpectedCancellation
+from langchain_core.tracers.core import _run_status_from_error
 from langchain_core.tracers.langchain import LangChainTracer
 
 
@@ -128,3 +129,11 @@ async def test_langsmith_without_status_support_keeps_error_only() -> None:
     _tracer()._record_error(run, await _cancel_error(ExpectedCancellation()))  # type: ignore[arg-type]
     assert run.error
     assert not hasattr(run, "status")
+
+
+def test_cyclic_cancel_context_terminates() -> None:
+    a = asyncio.CancelledError()
+    b = asyncio.CancelledError()
+    a.__context__ = b
+    b.__context__ = a
+    assert _run_status_from_error(a) is None
