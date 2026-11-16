@@ -286,6 +286,8 @@ class BaseOutputParser(
         The return value is parsed from only the first `Generation` in the result, which
         is assumed to be the highest-likelihood `Generation`.
 
+        A custom `aparse` is used only when `parse_result` is not overridden.
+
         Args:
             result: A list of `Generation` to be parsed.
 
@@ -298,6 +300,11 @@ class BaseOutputParser(
         Returns:
             Structured output.
         """
+        if (
+            type(self).aparse is not BaseOutputParser.aparse
+            and type(self).parse_result is BaseOutputParser.parse_result
+        ):
+            return await self.aparse(result[0].text)
         return await run_in_executor(None, self.parse_result, result, partial=partial)
 
     async def aparse(self, text: str) -> T:

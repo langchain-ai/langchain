@@ -1,5 +1,7 @@
 """Module to test base parser implementations."""
 
+import asyncio
+import threading
 from typing import Any, get_type_hints
 
 import pytest
@@ -31,6 +33,81 @@ def test_asdict_replaces_deprecated_dict() -> None:
 
 def test_base_output_parser_type_hints_resolve() -> None:
     assert get_type_hints(BaseOutputParser.asdict)["return"] == dict[str, Any]
+
+
+@pytest.mark.parametrize("inherited", [False, True])
+@pytest.mark.parametrize("input", ["text", AIMessage(content="text")])
+async def test_base_output_parser_ainvoke_uses_aparse(
+    *, inherited: bool, input: str | AIMessage
+) -> None:
+    caller_loop = asyncio.get_running_loop()
+    caller_thread = threading.get_ident()
+
+    class AsyncParser(BaseOutputParser[str]):
+        def parse(self, text: str) -> str:
+            return asyncio.run(self.aparse(text))
+
+        async def aparse(self, text: str) -> str:
+            assert asyncio.get_running_loop() is caller_loop
+            assert threading.get_ident() == caller_thread
+            return text.upper()
+
+    class InheritedParser(AsyncParser):
+        pass
+
+    parser = InheritedParser() if inherited else AsyncParser()
+    assert await parser.ainvoke(input) == "TEXT"
+    assert await parser.aparse_result([Generation(text="text")]) == "TEXT"
+
+
+@pytest.mark.parametrize("override_aparse", [False, True])
+@pytest.mark.parametrize("partial", [False, True])
+async def test_base_output_parser_preserves_parse_result(
+    *, override_aparse: bool, partial: bool
+) -> None:
+    caller_thread = threading.get_ident()
+    message = AIMessage(
+        content="", tool_calls=[{"name": "tool", "args": {}, "id": "call_1"}]
+    )
+
+    class ResultParser(BaseOutputParser[str]):
+        def parse(self, text: str) -> str:
+            pytest.fail(f"parse must not be called with {text!r}")
+
+        def parse_result(
+            self, result: list[Generation], *, partial: bool = False
+        ) -> str:
+            assert threading.get_ident() != caller_thread
+            assert isinstance(result[0], ChatGeneration)
+            assert result[0].message is message
+            return f"result:{partial}"
+
+    class AsyncResultParser(ResultParser):
+        async def aparse(self, text: str) -> str:
+            pytest.fail(f"aparse must not bypass parse_result for {text!r}")
+
+    class InheritedParser(AsyncResultParser):
+        pass
+
+    parser = InheritedParser() if override_aparse else ResultParser()
+    assert (
+        await parser.aparse_result([ChatGeneration(message=message)], partial=partial)
+        == f"result:{partial}"
+    )
+    assert await parser.ainvoke(message) == "result:False"
+
+
+async def test_base_output_parser_keeps_sync_fallback() -> None:
+    caller_thread = threading.get_ident()
+
+    class SyncParser(BaseOutputParser[str]):
+        def parse(self, text: str) -> str:
+            assert threading.get_ident() != caller_thread
+            return text.upper()
+
+    parser = SyncParser()
+    assert await parser.ainvoke("text") == "TEXT"
+    assert await parser.aparse("text") == "TEXT"
 
 
 def test_base_generation_parser() -> None:
