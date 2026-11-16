@@ -1104,6 +1104,47 @@ def test_convert_to_openai_function_no_args() -> None:
     }
 
 
+def test_convert_to_openai_tool_strict_propertyless_object_schema() -> None:
+    """A propertyless object dict must not KeyError under strict mode."""
+    actual = convert_to_openai_tool(
+        {"title": "Ping", "description": "No args", "type": "object"},
+        strict=True,
+    )
+    assert actual["function"]["parameters"] == {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": False,
+    }
+
+
+def test_convert_to_openai_tool_strict_oneof_and_prefix_items() -> None:
+    """Discriminated unions and tuples are object schemas and must be closed."""
+
+    class Cat(BaseModel):
+        pet_type: Literal["cat"]
+        meows: int
+
+    class Dog(BaseModel):
+        pet_type: Literal["dog"]
+        barks: int
+
+    class ToolInput(BaseModel):
+        pet: typing.Annotated[Cat | Dog, Field(discriminator="pet_type")]
+        pair: tuple[Cat, Dog]
+
+    tool = convert_to_openai_tool(ToolInput, strict=True)
+    props = tool["function"]["parameters"]["properties"]
+
+    for branch in props["pet"]["oneOf"]:
+        assert branch["additionalProperties"] is False
+        assert set(branch["required"]) == set(branch["properties"])
+
+    for branch in props["pair"]["prefixItems"]:
+        assert branch["additionalProperties"] is False
+        assert set(branch["required"]) == set(branch["properties"])
+
+
 def test_convert_to_json_schema(
     pydantic: type[BaseModel],
     function: Callable[[int, Literal["bar", "baz"]], None],

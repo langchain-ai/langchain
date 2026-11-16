@@ -442,7 +442,13 @@ def convert_to_openai_function(
         oai_function = {"name": function_copy.pop("title")}
         if "description" in function_copy:
             oai_function["description"] = function_copy.pop("description")
-        if function_copy and "properties" in function_copy:
+        # A propertyless object (`{"type": "object"}`) still needs parameters
+        # when strict mode is on. Omitting them makes the strict pass below
+        # raise KeyError, and OpenAI rejects an object with no `properties`.
+        if function_copy and (
+            "properties" in function_copy
+            or (strict and function_copy.get("type") == "object")
+        ):
             oai_function["parameters"] = function_copy
     elif isinstance(function, type) and is_basemodel_subclass(function):
         oai_function = cast(
@@ -487,6 +493,8 @@ def convert_to_openai_function(
             raise ValueError(msg)
         oai_function["strict"] = strict
         if strict:
+            if "parameters" not in oai_function:
+                oai_function["parameters"] = {"type": "object"}
             oai_function["parameters"] = _recursive_set_additional_properties_false(
                 oai_function["parameters"]
             )
@@ -826,6 +834,19 @@ def _recursive_set_additional_properties_false(
     schema: dict[str, Any],
 ) -> dict[str, Any]:
     if isinstance(schema, dict):
+        # A propertyless object has nothing to forbid, but strict mode still
+        # requires `properties`, `required`, and `additionalProperties: false`.
+        # Free-form objects already set `additionalProperties` and must be left
+        # alone here so that flag can be forced to false below.
+        if (
+            schema.get("type") == "object"
+            and "properties" not in schema
+            and "additionalProperties" not in schema
+            and "patternProperties" not in schema
+        ):
+            schema["properties"] = {}
+            schema["required"] = []
+
         # OpenAI strict mode requires every property to appear in `required` at every
         # level of nesting. Without this, nested object schemas are rejected.
         properties = schema.get("properties")
@@ -849,6 +870,11 @@ def _recursive_set_additional_properties_false(
         if "anyOf" in schema:
             for sub_schema in schema["anyOf"]:
                 _recursive_set_additional_properties_false(sub_schema)
+        # Pydantic v2 emits discriminated unions as `oneOf`, and tuples as
+        # `prefixItems`. Both are object schemas that strict mode must close.
+        if "oneOf" in schema:
+            for sub_schema in schema["oneOf"]:
+                _recursive_set_additional_properties_false(sub_schema)
         # Pydantic <2.9 wraps a referenced model field in 'allOf' when it has
         # sibling keys (e.g. 'description'), instead of merging them directly.
         if "allOf" in schema:
@@ -859,6 +885,9 @@ def _recursive_set_additional_properties_false(
                 _recursive_set_additional_properties_false(sub_schema)
         if "items" in schema:
             _recursive_set_additional_properties_false(schema["items"])
+        if "prefixItems" in schema:
+            for sub_schema in schema["prefixItems"]:
+                _recursive_set_additional_properties_false(sub_schema)
         # Raw JSON schemas may keep nested objects in `$defs` and reference them via
         # `$ref`; walk those definitions too so they're made strict.
         for defs_key in ("$defs", "definitions"):
