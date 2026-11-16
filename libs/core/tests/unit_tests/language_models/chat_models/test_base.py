@@ -4,6 +4,7 @@ import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
 from contextlib import contextmanager
+from functools import cache
 from importlib.metadata import PackageNotFoundError
 from typing import TYPE_CHECKING, Any, Literal, Self, get_type_hints
 from unittest.mock import patch
@@ -1502,14 +1503,14 @@ def test_langchain_version_in_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
         raise PackageNotFoundError(pkg)
 
     monkeypatch.setattr("importlib.metadata.version", _fake_version)
-    _get_langchain_version.cache_clear()
-    try:
-        llm = FakeListChatModel(responses=["x"])
-        assert llm.metadata is not None
-        assert llm.metadata["lc_versions"]["langchain"] == "1.2.13"
-        assert "langchain-core" in llm.metadata["lc_versions"]
-    finally:
-        _get_langchain_version.cache_clear()
+    monkeypatch.setattr(
+        "langchain_core.language_models.base._get_langchain_version",
+        cache(_get_langchain_version.__wrapped__),
+    )
+    llm = FakeListChatModel(responses=["x"])
+    assert llm.metadata is not None
+    assert llm.metadata["lc_versions"]["langchain"] == "1.2.13"
+    assert "langchain-core" in llm.metadata["lc_versions"]
 
 
 def test_langchain_version_missing_when_not_installed(
@@ -1525,14 +1526,14 @@ def test_langchain_version_missing_when_not_installed(
         raise PackageNotFoundError(pkg)
 
     monkeypatch.setattr("importlib.metadata.version", _raise_not_found)
-    _get_langchain_version.cache_clear()
-    try:
-        llm = FakeListChatModel(responses=["x"])
-        assert llm.metadata is not None
-        assert "langchain" not in llm.metadata["lc_versions"]
-        assert "langchain-core" in llm.metadata["lc_versions"]
-    finally:
-        _get_langchain_version.cache_clear()
+    monkeypatch.setattr(
+        "langchain_core.language_models.base._get_langchain_version",
+        cache(_get_langchain_version.__wrapped__),
+    )
+    llm = FakeListChatModel(responses=["x"])
+    assert llm.metadata is not None
+    assert "langchain" not in llm.metadata["lc_versions"]
+    assert "langchain-core" in llm.metadata["lc_versions"]
 
 
 def test_version_validator_coexists_with_core_seed() -> None:
