@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import Awaitable, Callable
+from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock
 
@@ -372,3 +373,41 @@ async def test_model_classification_context_restored_after_error(
         for post in posts
         if post["name"] == "helper"
     )
+
+
+class _HandlerOnWorkerThread(AgentMiddleware):
+    """Runs the handler on a thread that doesn't copy the runnable context."""
+
+    def wrap_model_call(
+        self,
+        request: ModelRequest[Any],
+        handler: Callable[[ModelRequest[Any]], ModelResponse[Any]],
+    ) -> ModelResponse[Any]:
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            return executor.submit(handler, request).result()
+
+    async def awrap_model_call(
+        self,
+        request: ModelRequest[Any],
+        handler: Callable[[ModelRequest[Any]], Awaitable[ModelResponse[Any]]],
+    ) -> ModelResponse[Any]:
+        async def call() -> ModelResponse[Any]:
+            return await handler(request)
+
+        return await asyncio.get_running_loop().run_in_executor(None, asyncio.run, call())
+
+
+def test_model_call_outside_runnable_context() -> None:
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[_HandlerOnWorkerThread()])
+
+    result = agent.invoke({"messages": [HumanMessage("hi")]})
+
+    assert result["messages"][-1].type == "ai"
+
+
+async def test_async_model_call_outside_runnable_context() -> None:
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[_HandlerOnWorkerThread()])
+
+    result = await agent.ainvoke({"messages": [HumanMessage("hi")]})
+
+    assert result["messages"][-1].type == "ai"

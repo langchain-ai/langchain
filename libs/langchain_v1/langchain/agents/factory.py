@@ -162,10 +162,16 @@ Option 2: Handle dynamic tools in middleware (for tools created at runtime)
 @contextmanager
 def _model_tracing_context(request: ModelRequest[Any], model: Runnable[Any, Any]) -> Iterator[None]:
     """Default top-level, resolved model calls to root in tracing context only."""
+    try:
+        config = get_config()
+    except RuntimeError:
+        # Middleware may run the handler on a thread that doesn't copy the
+        # runnable context; the call can't be placed in the trace, so leave it.
+        yield
+        return
     current = get_tracing_context()
     metadata = current.get("metadata") or {}
     parent = current.get("parent")
-    config = get_config()
     sources = [metadata, parent.metadata if parent else {}, config.get("metadata") or {}]
     callbacks = [config.get("callbacks")]
     agent_type = config.get("configurable", {}).get("ls_agent_type")
@@ -197,7 +203,8 @@ def _model_tracing_context(request: ModelRequest[Any], model: Runnable[Any, Any]
         return
 
     if agent_type is None:
-        execution_info = request.runtime.execution_info
+        # Middleware may hand over a request built without a runtime.
+        execution_info = request.runtime.execution_info if request.runtime else None
         if (
             execution_info is None
             or "|" in execution_info.checkpoint_ns
