@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any, Literal
 from unittest.mock import MagicMock
 
 import pytest
+from langchain_core.load import dumpd
 from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
+from langchain_core.utils._gateway import langsmith_gateway
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types import CompletionUsage
@@ -790,3 +793,17 @@ def test_langsmith_gateway_context_overrides_explicit_values() -> None:
     assert llm.api_base == "https://gateway.smith.langchain.com/deepseek/v1"
     assert llm.api_key is not None
     assert llm.api_key.get_secret_value() == "service-key"
+
+
+def test_langsmith_gateway_context_headers() -> None:
+    """Gateway headers reach the client but are never serialized."""
+    with langsmith_gateway(api_key="placeholder", headers={"X-Service-Key": "svc-key"}):
+        llm = ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("user-key"),
+            default_headers={"x-service-key": "forged", "X-Custom": "kept"},
+        )
+    sent = llm.root_client.default_headers
+    assert sent["X-Service-Key"] == "svc-key"
+    assert sent["X-Custom"] == "kept"
+    assert "svc-key" not in json.dumps(dumpd(llm))
