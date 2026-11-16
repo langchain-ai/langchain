@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:eb4c71f0e293fe6b9571cb610f3af28103c75cb36dae61a485182fe7cf6e155d",
+  "pageVersion": "sha256:be46cc834e4b466be0701a3ed913cc18716569cb7248bb35b03e65b02401fcaa",
   "claims": [
     {
       "id": "claim_42b2b3c1ac6e4a938efa7b2651c79b81",
@@ -40,11 +40,11 @@
     },
     {
       "id": "claim_347794b754514e73bc35701f1c522cc7",
-      "statement": "The .pre-commit-config.yaml defines hooks for YAML/TOML validation, file ending/whitespace normalization, per-package format and lint execution via make, and version consistency checks across langchain-core, langchain-v1, and partner packages. Hooks prevent commits that fail linting or have formatting issues.",
+      "statement": "The .pre-commit-config.yaml defines hooks for YAML/TOML validation, file ending/whitespace normalization, per-package format and lint execution via make for core, langchain_v1, langchain, standard-tests, text-splitters, and multiple partner packages, and version consistency checks across langchain-core, langchain-v1, and all partner packages. Hooks prevent commits that fail linting or have formatting issues.",
       "evidence": [
         {
-          "resource": "repo://.pre-commit-config.yaml#L1-L100",
-          "version": "repo-lines-v1:sha256:a9b9a140da0a9184682b104e2e262dcba390cc849f401fa81833bd3ceeafd102:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YTExMGRiNWE5MzU3Y2RhMWQ3ODIxNmNkYzBiZjhiMjU1ZTMzOGNiYzFmMzI3ZTBkZjA4Y2ZjNzczOTFkZGVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiMzIxNDFiMWFlZTU0NWU4YmI5MWY5NTE5M2MxOTA0YzgxZDgwY2Q5MDk5NGM2NTM4ZmUxOGIxNmFlNzg3OTg3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4NTRmY2ZmNDA3YmE0ZjU4OWIyNjI1NTU5OWZlMTM0MWNlMmRmYTc4NGNhYTY2YWU3ZDlmNWM1YmQwMDdlM2MyIn0"
+          "resource": "repo://.pre-commit-config.yaml#L1-L250",
+          "version": "repo-lines-v1:sha256:d09a93538ea87f9fcfd082d461a71fc170db9e0fb001c1564ab4c5bf3bf81997:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YTExMGRiNWE5MzU3Y2RhMWQ3ODIxNmNkYzBiZjhiMjU1ZTMzOGNiYzFmMzI3ZTBkZjA4Y2ZjNzczOTFkZGVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3NGRlY2E2ZmNmNzExNTM0NTQwYWEyMmY4YjI2OWE1NmE5NTljZDY0NmQ3ZjI4Zjc0ZTlmNTkzY2FjMjJhZmQ1IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiZjE3MDJjMDQyYTQwMjhkZDNkOGQwNDNiZjdlZTNhZmRmNDdlZDY2MTVhODFiNmFlMzAwOTYxNjg5NDIyYjYyIn0"
         }
       ]
     },
@@ -255,6 +255,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-16T08:30:18.041Z"
   }
 }

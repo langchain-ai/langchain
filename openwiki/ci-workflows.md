@@ -30,10 +30,10 @@ sources:
     resource: repo://.github/workflows/pr_lint.yml
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 # CI/CD Workflows: GitHub Actions and Release Process
@@ -362,7 +362,7 @@ Local developers use pre-commit hooks (`.pre-commit-config.yaml`) to enforce cod
 
 **Version consistency hooks**:
 - Enforce that version strings in `pyproject.toml` match version files (e.g., `langchain_core/version.py`)
-- Applies to core, langchain_v1, anthropic, chroma, and deepseek packages
+- Applies to core, langchain_v1, and 16+ partner packages (anthropic, chroma, deepseek, exa, fireworks, groq, huggingface, mistralai, nomic, ollama, openai, openrouter, perplexity, qdrant, typesafe, xai)
 - Prevents accidental version mismatches during development
 
 ### Workflow

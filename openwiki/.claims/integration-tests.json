@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b8dd1d3194b86c39fee03631f2cf46d6d99b7db9db39f888b334abdec3d57612",
+  "pageVersion": "sha256:eb64c0318541545643c43d341dae25ee4e065f707201981bca287943a6dce74b",
   "claims": [
     {
       "id": "claim_2b394255185b4645a1dcf0e8c628a197",
@@ -104,15 +104,19 @@
     },
     {
       "id": "claim_30e157b2c11a4c03b076a66f28517ea7",
-      "statement": "Integration tests support parameterized testing of multiple models/configurations via @pytest.mark.parametrize. Each parameter combination generates a separate cassette file (e.g., test_invoke[model0].yaml.gz, test_invoke[model1].yaml.gz), allowing independent recorded interactions for different model variants.",
+      "statement": "Integration tests support parameterized testing of multiple models/configurations via @pytest.mark.parametrize on standard test methods. Each parameter combination generates a separate cassette file (e.g., test_invoke[0].yaml.gz, test_invoke[1].yaml.gz, TestOpenAIStandard.test_stream[0].yaml.gz), allowing independent recorded interactions for different model variants.",
       "evidence": [
         {
-          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/conftest.py#L1-L50",
-          "version": "repo-lines-v1:sha256:eddffa985f00658447b0e5984bb7a938e635dde6458d1bacce1465edb7ee3053:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4MjU5MGRjNzZjZWI0YTMzYTJhMzhkOGFkYzgyNTFiOGM3MmU1MDlhNjZlYzg5NGQwOGE2ZDdkYzk3NGQxOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU4MThkNzI2MGJmZTcwMjc3MzIwMzVjNzE3NWNlNzZmODA3M2Q5NGNlZmZmZTlkYThkNWNiMjRhZGUzYzg5NzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxYWNjZjkwNGZhNmM3MGY4ZmZiYjQ3NTVhMzc1MGE0MTFiNzZjZTJiOTE4M2M4MmQ4NjQxZDU1MjA2NzYxZmYifQ"
+          "resource": "repo://libs/standard-tests/langchain_tests/integration_tests/chat_models.py#L822-L823",
+          "version": "repo-lines-v1:sha256:a37a7fd3af21550e58616e45fd37cc6decbbd435bf855513d0a76f207aa2f516:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg4OWFmZjgyZTdjYzFmMTM2ZmFlODZiZDhlYjUzOGM0MDRjMzg0YzhiZTcxYTZlYTFhMjVmZmU3N2Y5MThlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDVjMjFiMWQxMzNjZjhiZWU3NDI5NDE3NzllYmU4ODZmNDFiYTUwOTNmMTQ0MTA1YWUyZGE4YTk4ZDkxMzk5MyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOTRmZjFlNzkwOTA1OWJhNzY1ZjI0MTJmN2I5ODMwMTc2MWM0OTNiYTNmNGU4MGJlMzEwOWM3NDU3NjVhNjkxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmZjMzFiZmFiODZiMGFmOGNkNmFmY2I2NTU5ZDFiMWZjYjlmYWE5M2ZlOWFjZDJiYWE2MDUzYzM2NDZjMzVjZiJ9"
         },
         {
-          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_base_standard.py#L16-L60",
-          "version": "repo-lines-v1:sha256:4abaae78a2c7e532f9fd3b3e1a05a877804ba3311b29f8e072acd915c3be821f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNWExYzAzOWM1OTM5MGMzOTY0MDlmNTU3OGUzNDU4ZGUzOWI5ZmZjYzY0OTNkZjA4MWM0ODY2YWJlYjI3NmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQxMDQyNGJkZTNhZDkxZmY4ZGFlYTgxYTRhYTUwNGIyZmU5ZDM3OTIzZjU5Mzc5MTUyZDU0M2Q3YjRkZWFmNzEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwMjM0YTQwZWNmNjU1OTUyOGMzODQ4ZDFkZjdkYWYyMzE5ZDFhNGNjOTU5ZWUxNWQ0MzllMjJjNmJmY2U0OWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyMTU5ZTRjNTBlMWNmMTlmM2UzZDM4YWFmMTMwYTI3ZWRmNTg3MDVhZTVjZTFhMWYyMjBiNTAwOGIzMzczYWIifQ"
+          "resource": "repo://libs/standard-tests/langchain_tests/integration_tests/chat_models.py#L885-L886",
+          "version": "repo-lines-v1:sha256:f326f657aa90c340c2e592b1170f160b76338f5097106ea42bed6d115f1e3a66:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDg4OWFmZjgyZTdjYzFmMTM2ZmFlODZiZDhlYjUzOGM0MDRjMzg0YzhiZTcxYTZlYTFhMjVmZmU3N2Y5MThlMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMTZiNTI1NTY4OGZiZjBhODRjMTAzMDYyOGJiYzkyZTlhYmZjOGQyMmVlYmQyMWRjZDZiMTFmMTIyMGUzZTJmYyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmY4ZjYzZmMxMjQzNWUzZTNmNGFkZTM1MDBlNDEwNjQ0ZGY4NjM1MzE5MTlmN2ExMmM1ZjNjM2E0MjM4NDMzNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzcwMmQ5NmNmNzZjYWYyZjZiY2FiMmUwZmZhMDZmYWU1ZDUzOTMwNGZiMWUzN2I0NzZhOWE1OTU1YzcxMjE4YiJ9"
+        },
+        {
+          "resource": "repo://libs/standard-tests/langchain_tests/unit_tests/chat_models.py#L68-L78",
+          "version": "repo-lines-v1:sha256:196aca592b1f1b3142d065b5585f36a4647730169695dffe70da7d4b48fc8299:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBhNjE4MWIyNTdjZTIyZmYyMzkzYmEzMTZkYmFlMzc2OGY2MzdhZmIzYzc3ZDc3OWZmMTBlMjY1M2RjMzNhNTAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVmZDg2OTlhMTVmYTNmNjAwMTQyYjU1ODRmMmVlNTY1MjQyNGMyODZlODhiNzM5NWRkZTViYmI4MmUzMjA3YjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkwZjIwYzEyNzMyNTk0NGJlMDJlYmY1YTdmZTIyZjAxMDRhYzFkNmRlZTdhOWY1OWYzODU5NDNjODg1ZWI3ZDcifQ"
         }
       ]
     },
@@ -146,19 +150,15 @@
     },
     {
       "id": "claim_150d3ea6225d45dd9187d0a97ab6047b",
-      "statement": "OpenAI Codex tests require special VCR handling in CI: conftest.py skips Codex tests at collection time unless running in --record-mode=none (cassette playback), and uses monkeypatch to stub _FileChatGPTOAuthTokenProvider token methods with fake in-memory tokens for VCR playback without requiring on-disk OAuth files.",
+      "statement": "OpenAI Codex tests require special VCR handling in CI: a pytest_collection_modifyitems hook in conftest.py skips Codex tests at collection time when running in recording mode (unless running in --record-mode=none, which is playback-only). Additionally, an autouse fixture monkeypatches _FileChatGPTOAuthTokenProvider token methods with fake in-memory tokens for VCR playback when record mode is none, eliminating the need for on-disk OAuth files during cassette replay.",
       "evidence": [
-        {
-          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/conftest.py#L1-L14",
-          "version": "repo-lines-v1:sha256:e1ec6b6d802926f2b1cac2647b9c3accc444f2b800170c6878377c812edd08df:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4MjU5MGRjNzZjZWI0YTMzYTJhMzhkOGFkYzgyNTFiOGM3MmU1MDlhNjZlYzg5NGQwOGE2ZDdkYzk3NGQxOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU1YjZlODcwNmI0MzA0N2YyYTZkYjY3ZjEzMjYzODU5NTYwNGU2N2YzNjk2Njg3NmNlMDE1OGYwMDUzZTZiZDEifQ"
-        },
         {
           "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/conftest.py#L66-L92",
           "version": "repo-lines-v1:sha256:57f36b10f5a271c6395a3103efe0146cbc3df80328363db90b11be8cf4cd1625:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmYzYwZGExMTM1NTc1OTRhYTlhZmUyNjJmYjUxZjNhM2RlMWNhYTdjNDdhNTg4NTExYjdlYjA0MjY3OTY0ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiNDZkM2U4YWZjMzk3MWNjNzIyODc1N2Q5ZGI2Njk4ZmNmMGU0MzUyODAxNDc2MDcyMDBkZDhmMjBhODk3OTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlZjExYzliNzE2N2MwYWRjNDJmZWE4NTRhYjYzNDk5NzcwODE0YjBlNzE4MTAzYTllYzBmOWJlN2FmNjk5NzkifQ"
         },
         {
           "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/conftest.py#L95-L147",
-          "version": "repo-lines-v1:sha256:290ba4ef134137e43ce35cf85c1bbed29bf210fcd78fd848944179e080537c58:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMDg2NmY0MDExZTU4NWZmYzA5MDkyZWRmMDgzMmUxN2I1MmY0YzkwYzRjYTBiNDJkY2ZhMDUwZmEzNzViNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1NDhjOWVjNjdmMzU3OWFhMTYyMWFhOTcxOGFmNjVjNGJkMjY2ZmRlMzQwZDA5ZWZlMTYyZTk0M2I5Y2IxN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "version": "repo-lines-v1:sha256:de4ba44365a6c69b60027bb2f1b41482abd6c5ec0ace06938cf48ee662b6d2fe:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZmMDg2NmY0MDExZTU4NWZmYzA5MDkyZWRmMDgzMmUxN2I1MmY0YzkwYzRjYTBiNDJkY2ZhMDUwZmEzNzViNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE1NDhjOWVjNjdmMzU3OWFhMTYyMWFhOTcxOGFmNjVjNGJkMjY2ZmRlMzQwZDA5ZWZlMTYyZTk0M2I5Y2IxN2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -326,17 +326,17 @@
     },
     {
       "id": "claim_be882bec446143dc9770753b11575dae",
-      "statement": "OpenAI Codex tests require special VCR handling in CI: conftest.py uses pytest_collection_modifyitems() to skip Codex tests at collection time unless running in --record-mode=none (cassette playback), and uses an autouse fixture to monkeypatch _FileChatGPTOAuthTokenProvider token methods with fake in-memory tokens for VCR playback without requiring on-disk OAuth files.",
+      "statement": "OpenAI Codex tests skip in CI during recording-mode runs but run during cassette playback (--record-mode=none). The pytest_collection_modifyitems hook at conftest.py skips tests when not in CI or when in playback mode. A separate autouse fixture monkeypatches _FileChatGPTOAuthTokenProvider token methods with fake in-memory tokens only during playback (when record mode is 'none'), so VCR cassette replay succeeds without requiring on-disk OAuth token files.",
       "evidence": [
         {
-          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/conftest.py#L66-L147",
-          "version": "repo-lines-v1:sha256:b97eef509e815d61903c1593c52de0c953c752cdf6b6a8f7cb3c43feee075640:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNmYzYwZGExMTM1NTc1OTRhYTlhZmUyNjJmYjUxZjNhM2RlMWNhYTdjNDdhNTg4NTExYjdlYjA0MjY3OTY0ZmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/conftest.py#L54-L147",
+          "version": "repo-lines-v1:sha256:fec1e7e608112e7d6a09ad8f2c0676ca7c380b81fd89a264991cc6b710d4280c:eyJzZWxlY3RlZExpbmVDb3VudCI6OTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQyZGNjZmNiZWE2NGU2ZDhlMTk5ZjQ5ODc2YmZjODEwNDNlMDQ0MGM2ZTc4OTRiNTYzNDJkZDdmYjdjZmJlNmQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxYWNjZjkwNGZhNmM3MGY4ZmZiYjQ3NTVhMzc1MGE0MTFiNzZjZTJiOTE4M2M4MmQ4NjQxZDU1MjA2NzYxZmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-16T08:30:18.041Z"
   }
 }

@@ -8,15 +8,17 @@ sources:
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-10T08:17:41.265Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 ## Overview
 
 Agent middleware in LangChain provides a composable, layered approach to intercepting and modifying agent behavior at well-defined execution points without changing core agent logic. Middleware registers handlers for lifecycle hooks spanning initialization (`before_agent`), per-iteration model invocation (`before_model`, `wrap_model_call`, `after_model`), tool execution (`wrap_tool_call`), and completion (`after_agent`). Multiple middleware instances compose by wrapping handlers in registration order, with the first-registered middleware becoming the outermost layer, enabling cross-cutting concerns such as automatic retries with backoff, error handling and recovery, human-in-the-loop approval workflows, tool argument validation, and request/response transformation.
+
+Middleware can be created by subclassing `AgentMiddleware` or by using convenience decorators (`@before_agent`, `@after_agent`, `@before_model`, `@after_model`, `@wrap_model_call`, `@wrap_tool_call`, `@dynamic_prompt`, `@hook_config`) that generate middleware instances from plain functions.
 
 ## Core Hooks
 
@@ -237,6 +239,177 @@ class ConditionalMiddleware(AgentMiddleware):
         return False
 ```
 
+## Middleware Decorators
+
+LangChain provides convenience decorators to create middleware from plain functions, eliminating the need to subclass `AgentMiddleware`. Each decorator generates a middleware class dynamically at runtime.
+
+### Lifecycle Hook Decorators
+
+#### `@before_agent`
+
+Runs once when agent execution begins, before the first model call. Returns optional state updates or commands.
+
+```python
+@before_agent
+def initialize_session(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+    return {"messages": [SystemMessage(content="Session initialized")]}
+
+# With conditional jumping
+@before_agent(can_jump_to=["end"])
+def early_exit(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+    if should_exit_early(state):
+        return {"jump_to": "end"}
+    return None
+```
+
+#### `@after_agent`
+
+Runs after agent loop terminates (no more tool calls or explicit exit). Returns optional state updates or commands.
+
+```python
+@after_agent
+def log_completion(state: AgentState, runtime: Runtime) -> None:
+    print(f"Agent completed with {len(state['messages'])} messages")
+```
+
+#### `@before_model`
+
+Runs before each model invocation. Can update state, set `jump_to` for control flow, or emit streaming events.
+
+```python
+@before_model
+async def notify_thinking(state: AgentState, runtime: Runtime) -> None:
+    runtime.stream_writer({"type": "status", "message": "Thinking..."})
+```
+
+#### `@after_model`
+
+Runs after model response is received. Can filter tool calls or update state.
+
+```python
+@after_model
+def log_model_choice(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+    last_msg = state["messages"][-1]
+    if hasattr(last_msg, "tool_calls") and last_msg.tool_calls:
+        return {"log_entry": f"Called {len(last_msg.tool_calls)} tools"}
+    return None
+```
+
+### Interception Hook Decorators
+
+#### `@wrap_model_call`
+
+Intercepts model execution with handler callback. Can retry, modify request, transform response, or short-circuit.
+
+```python
+@wrap_model_call
+def retry_with_backoff(request: ModelRequest, handler) -> ModelResponse:
+    for attempt in range(3):
+        try:
+            return handler(request)
+        except (TimeoutError, ConnectionError) as e:
+            if attempt < 2:
+                time.sleep(2 ** attempt)
+            else:
+                raise
+
+# Async version
+@wrap_model_call
+async def async_retry(request: ModelRequest, handler) -> ModelResponse:
+    for attempt in range(3):
+        try:
+            return await handler(request)
+        except Exception:
+            if attempt == 2:
+                raise
+```
+
+#### `@wrap_tool_call`
+
+Intercepts tool execution with handler callback. Can retry, validate arguments, or handle errors.
+
+```python
+@wrap_tool_call
+def validate_args(request: ToolCallRequest, handler) -> ToolMessage | Command:
+    # Normalize tool arguments
+    if request.tool_call["name"] == "search":
+        args = request.tool_call.get("args", {})
+        args["query"] = args.get("query", "").lower().strip()
+        request = request.override(tool_call={**request.tool_call, "args": args})
+    return handler(request)
+```
+
+#### `@dynamic_prompt`
+
+Convenience decorator for dynamically generating system prompts. Receives `ModelRequest` and returns string or `SystemMessage`.
+
+```python
+@dynamic_prompt
+def context_aware_system_prompt(request: ModelRequest) -> str:
+    user_name = request.runtime.context.get("user_name", "User")
+    msg_count = len(request.state["messages"])
+    
+    if msg_count > 10:
+        return f"You are a helpful assistant for {user_name}. Be concise in a long conversation."
+    return f"You are a helpful assistant for {user_name}."
+```
+
+### Decorator Configuration
+
+#### `@hook_config`
+
+Decorator to configure hook behavior on class methods. Currently supports specifying valid jump destinations.
+
+```python
+class MyMiddleware(AgentMiddleware):
+    @hook_config(can_jump_to=["end", "model"])
+    def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        if should_exit(state):
+            return {"jump_to": "end"}
+        return None
+```
+
+Alternatively, pass `can_jump_to` directly to lifecycle decorators:
+
+```python
+@before_model(can_jump_to=["end", "tools"])
+def conditional_logic(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+    if condition(state):
+        return {"jump_to": "end"}
+    return None
+```
+
+### Decorator Parameters
+
+Most decorators accept optional parameters:
+
+- **`state_schema`**: Custom state schema type (default: `AgentState`)
+- **`tools`**: Additional tools registered with this middleware
+- **`can_jump_to`** (lifecycle hooks only): Valid jump destinations (`"tools"`, `"model"`, `"end"`)
+- **`name`** (class decorators): Middleware class name (default: function name)
+
+## Control Flow and Jumping
+
+Lifecycle hooks can return state updates that include a `jump_to` field to redirect agent execution. The valid destinations are:
+
+- **`"model"`**: Jump back to the model invocation step
+- **`"tools"`**: Jump to tool execution (models and processes tool calls)
+- **`"end"`**: Exit the agent loop immediately
+
+To enable jumping in a `before_model` or `after_model` hook, declare valid destinations via `@hook_config` or the decorator's `can_jump_to` parameter:
+
+```python
+@before_model(can_jump_to=["end", "model"])
+def early_exit_or_retry(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+    if should_exit(state):
+        return {"jump_to": "end"}
+    if should_retry(state):
+        return {"jump_to": "model"}
+    return None
+```
+
+`Interception hooks` (`wrap_model_call`, `wrap_tool_call`) cannot use `jump_to` directly; instead, return a `Command` with control flow directives, though `goto`, `resume`, and `graph` commands are not yet supported in middleware and will raise `NotImplementedError`.
+
 ## Key Invariants
 
 - **Immutability**: `ModelRequest` and `ToolCallRequest` follow an immutable pattern; use `override()` or `replace()` methods
@@ -245,6 +418,7 @@ class ConditionalMiddleware(AgentMiddleware):
 - **Command Flow**: `ExtendedModelResponse` commands are collected (inner-to-outer) and applied after the model node completes through LangGraph reducers
 - **Sync/Async Consistency**: Execution path is determined at agent invocation time; middleware cannot switch contexts mid-execution
 - **Exception Propagation**: Exceptions that are not explicitly handled propagate to the caller
+- **Decorator Nesting**: Each decorator parameter (e.g., `can_jump_to`) configures behavior at generation time; decorators compose by creating distinct middleware instances that integrate with the agent
 
 ## See Also
 

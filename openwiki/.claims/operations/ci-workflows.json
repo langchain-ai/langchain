@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fde42640bf086d2e9a83eb118bd8672b8d0a88c7525583146743302d4a08eec7",
+  "pageVersion": "sha256:e9012bdfbf3ffe96f38c2da77671fe8dca73e0c40567ad298332d445857ac9f7",
   "claims": [
     {
       "id": "claim_bfd9abbe9d6f4a7b84caf7cb98fb5029",
@@ -99,8 +99,8 @@
       "statement": "The pre-release-checks job validates packages before publishing: installs wheel from built artifact, runs unit tests, checks for prerelease dependencies, tests against minimum supported versions, and runs integration tests for partner packages with live API keys. Intentionally disables caching to catch missing dependencies.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/_release.yml#L414-L560",
-          "version": "repo-lines-v1:sha256:0b07687fda6c3e4a7a02113a0a141803d68c9cf239b60382d05acecbe855fe18:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQ3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNmI2OTNjOWRmMzU1MThmNzEyODQwN2UyNDhiODM3ZTAxZjBlZmJmNTQ4ZTg4MGUyMDA4NTgyZDdmMTI3MDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxZGRmODM0M2NmN2Y5OGZkMWY4OWQ1NGRjOGEwMGFkYjhhOTRkYmZhYThiM2I4YmZlMGM4NmFhNzY3NmU3NTM0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MTZhZDk2YzhlNWQyNGQ4OWU2MWQyZTkwMzEyOGY2YWE0YWYzYmQ2Y2I2MjhmNWMzYzY5NTI5YWUxNDJjZWY4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2MTMwMTFmMjU5Yzk0MThlMDJjM2FjN2UyMTYzZTEyNGJhNWFjZTU4MjQ3MjEwZDE1MWNlYzlkODE2ZDVmODY0In0"
+          "resource": "repo://.github/workflows/_release.yml#L414-L589",
+          "version": "repo-lines-v1:sha256:6dede91dc3a34033f9cb753fe8b5f359b9d6580f6197f5fa64f0b6f4126e09f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTc2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNmI2OTNjOWRmMzU1MThmNzEyODQwN2UyNDhiODM3ZTAxZjBlZmJmNTQ4ZTg4MGUyMDA4NTgyZDdmMTI3MDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxYTU5ZmRkM2Q4MWZkMTUyZDU5ZTJiNzliYTIxOGNmMGJhMDgyYWQ2NzM3ZmE3ZTFiYTEwYjRlY2FlMjlkY2I3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MTZhZDk2YzhlNWQyNGQ4OWU2MWQyZTkwMzEyOGY2YWE0YWYzYmQ2Y2I2MjhmNWMzYzY5NTI5YWUxNDJjZWY4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNzBkZDYxNTE3ZTAxOGI4NWVmYzNjOWM3YWM0ZWM5ZjUxYTU2NzMyMWU1Mjk4MjEwYjZmZjZlN2FkNTkzYjFmIn0"
         }
       ]
     },
@@ -249,6 +249,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-16T08:30:18.041Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:b633b552f79395d9044e44bcfbb4f34fc838d5676acbc4d9b8deb0ccbaedc7f4",
+  "pageVersion": "sha256:36a1301b3c8ad651872b3154309a12b127ad08844a7a8ba0d059bc558429c628",
   "claims": [
     {
       "id": "claim_74e3645d28f4432bb5a4a3f867b0f51b",
@@ -31,8 +31,8 @@
       "statement": "ModelRequest encapsulates model call parameters (model, messages excluding system message, system_message, tool_choice, tools, response_format, state, runtime, model_settings) with immutable override() method for creating modified requests; ModelResponse returns result messages and optional structured_response; ExtendedModelResponse wraps ModelResponse with optional Command for state updates.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L76-L327",
-          "version": "repo-lines-v1:sha256:6407adef0d076d443ab593a4b7e158e7cdb98257c3b1ba2b66281b99a6b1d878:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxZTRiNDZkNGUyYjVmOGNmM2JiNGY1YzJmNmFhZGVlNTUzYWNmNTRmMTJiZGM0ZmNhNzQ1MjZiOTlmYzUzYTZlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhMzAzZWNkZDRhNGQxMGYxOWM3M2ZkNDJmZDEyNDM3ZmQzMzU0YTgyNjgxNjA1ZGE1MjU1YTk3YTM5MDY4ZGJiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjYzk0NzhmMzk0ZWRhMWRhM2I3NmJlMjg1MmU4OThiOWRhM2IwOTg2ZTg0YzllMDY0YmQ5YzhjMjVkZmYzYjMzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YzFmMDJmZDdlYzFkNDYyYzBjYjgxOGI5NDhmZmU0ZjcxNWIyYzJjNDMyNjMwYzIzMmRmZTM0ZDQyNzQzZmE5In0"
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L89-L327",
+          "version": "repo-lines-v1:sha256:7f398efe7d9986ba4f9506c3065f1e1b97a710bb58bfe537f05e800ebe65647e:eyJzZWxlY3RlZExpbmVDb3VudCI6MjM5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOWE0ZjBkOTIyOWRmY2E0YWM1MDllNDc0OWQyNGFiZGIxMzg2NGIwYWVmMmIxNWViYmQ5ODlkNTgyNjhjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhMzAzZWNkZDRhNGQxMGYxOWM3M2ZkNDJmZDEyNDM3ZmQzMzU0YTgyNjgxNjA1ZGE1MjU1YTk3YTM5MDY4ZGJiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjE2MTg3MTIxNzdiOGJkY2RmZTZmMWFkNTEzNzM1ZmQzMjBiZDAzZWQ2MGJkZTQzZmNiY2FkMjYzYmViZTVmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YzFmMDJmZDdlYzFkNDYyYzBjYjgxOGI5NDhmZmU0ZjcxNWIyYzJjNDMyNjMwYzIzMmRmZTM0ZDQyNzQzZmE5In0"
         }
       ]
     },
@@ -119,6 +119,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-16T08:30:18.041Z"
   }
 }

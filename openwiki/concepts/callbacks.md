@@ -5,12 +5,14 @@ description: "Callbacks are an event-driven instrumentation system that enables 
 tags: [callbacks, observability, tracing, langsmith, run_id, instrumentation]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-16T08:30:18.041Z
 sources:
   - id: openwiki-source-96c73d2c05223b0b46abdbe9
     resource: repo://libs/core/langchain_core/callbacks/__init__.py
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py
+  - id: openwiki-source-b15ceb5ed590ce6a2b569ed6
+    resource: repo://libs/core/langchain_core/callbacks/file.py
   - id: openwiki-source-1c233fccf5a66b84d0045366
     resource: repo://libs/core/langchain_core/callbacks/manager.py
   - id: openwiki-source-55497dabc655f803e40dc13a
@@ -19,7 +21,7 @@ sources:
     resource: repo://libs/core/langchain_core/callbacks/usage.py
   - id: openwiki-source-bfd8b1aa6ad00852a2e99762
     resource: repo://libs/core/langchain_core/tracers/context.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 ---
 
 ## Overview
@@ -172,7 +174,10 @@ async def main():
 asyncio.run(main())
 ```
 
-Async handlers with `run_inline=False` are scheduled concurrently; those with `run_inline=True` run sequentially.
+**Async handler execution:**
+- Async methods (coroutine functions) are awaited naturally
+- Sync methods with `run_inline=True` are called directly in the event loop
+- Sync methods with `run_inline=False` (default) are run in a thread pool executor to avoid blocking the event loop
 
 ### Run Managers
 
@@ -223,10 +228,45 @@ chain_manager = manager.on_chain_start(...)
 
 # The child manager created by chain_manager.get_child() inherits:
 child = chain_manager.get_child(tag="step1")
-# child.handlers = [tracer]           (inheritable only)
+# child has empty handlers (inheritable_handlers not added to handlers)
 # child.inheritable_handlers = [tracer]
 # child.inheritable_tags = ["user:alice", "step1"]
 ```
+
+### Sync Handlers in Async Contexts
+
+When async handlers are invoked from a synchronous `handle_event` call (e.g., in a sync LLM), LangChain collects coroutines and executes them in a thread pool to avoid blocking:
+
+```python
+# In sync handle_event, if a handler has async methods:
+coros = []
+for handler in handlers:
+    event = getattr(handler, event_name)(*args, **kwargs)
+    if asyncio.iscoroutine(event):  # Async handler
+        coros.append(event)
+
+# Later, run collected coroutines in a thread pool
+if coros:
+    _executor().submit(_run_coros, coros).result()  # Blocks until async work completes
+```
+
+This allows sync components to work with async handlers without deadlock.
+
+### on_chat_model_start Fallback
+
+When `on_chat_model_start` raises `NotImplementedError`, the callback system automatically falls back to `on_llm_start` with message lists converted to prompt strings:
+
+```python
+class MyHandler(BaseCallbackHandler):
+    def on_chat_model_start(self, serialized, messages, **kwargs):
+        raise NotImplementedError  # Triggers fallback
+    
+    def on_llm_start(self, serialized, prompts, **kwargs):
+        # Called with prompts: [get_buffer_string(m) for m in messages]
+        pass
+```
+
+This fallback applies to both sync `handle_event` and async `ahandle_event` contexts.
 
 ### Handler Filtering
 
@@ -251,6 +291,41 @@ class SelectiveHandler(BaseCallbackHandler):
 ```
 
 Available ignore properties: `ignore_llm`, `ignore_chat_model`, `ignore_chain`, `ignore_agent`, `ignore_retriever`, `ignore_retry`, `ignore_custom_event`.
+
+### Event Dispatch and Error Handling
+
+The `handle_event` function dispatches events to handlers with careful error handling:
+
+```python
+def handle_event(
+    handlers: list[BaseCallbackHandler],
+    event_name: str,
+    ignore_condition_name: str | None,
+    *args: Any,
+    **kwargs: Any,
+) -> None:
+    """Dispatch an event to all handlers."""
+    for handler in handlers:
+        try:
+            if ignore_condition_name and getattr(handler, ignore_condition_name):
+                continue  # Skip this handler
+            
+            event = getattr(handler, event_name)(*args, **kwargs)
+            if asyncio.iscoroutine(event):
+                coros.append(event)  # Collect async work
+        except NotImplementedError:
+            # Handle fallback (e.g., on_chat_model_start -> on_llm_start)
+            pass
+        except Exception as e:
+            logger.warning(f"Error in {handler}.{event_name}: {e}")
+            if handler.raise_error:
+                raise
+```
+
+**Key behaviors:**
+- Exceptions are logged and swallowed unless `handler.raise_error=True`
+- Exceptions in async handlers run through sync `handle_event` are logged but never propagated (pre-existing asymmetry)
+- Exceptions in sync handlers run through async `ahandle_event` honor `raise_error` and propagate when True
 
 ### Merging Callback Managers
 
@@ -293,13 +368,24 @@ handler = StreamingStdOutCallbackHandler()
 
 ### FileCallbackHandler
 
-Logs events to a file:
+Writes chain execution output to a file:
 
 ```python
 from langchain_core.callbacks import FileCallbackHandler
 
-handler = FileCallbackHandler(filename="trace.log")
+# Using context manager (recommended)
+with FileCallbackHandler("trace.log") as handler:
+    chain.invoke(inputs, config={"callbacks": [handler]})
+
+# Direct instantiation (deprecated)
+handler = FileCallbackHandler("trace.log", mode="a")
+try:
+    chain.invoke(inputs, config={"callbacks": [handler]})
+finally:
+    handler.close()
 ```
+
+The handler writes formatted output for chain and tool execution, similar to `StdOutCallbackHandler` but to a file.
 
 ### UsageMetadataCallbackHandler
 
@@ -370,9 +456,67 @@ The `LangChainTracer` accepts:
 - **`metadata`**: Metadata for run filtering and querying
 - **`address`**: Agent address for agent addressing (beta feature)
 
+## Callback Lifecycle and Execution Order
+
+### Run Lifecycle
+
+Every execution follows a start→end or start→error pattern:
+
+1. **on_*_start**: Called when a component begins execution with initialization parameters
+2. **on_*_new_token** (LLM/chat only): Called for each token during streaming
+3. **on_stream_event** (LLM v3 only): Called for each protocol event in v3 streaming
+4. **on_*_end** or **on_*_error**: Called when execution completes or fails
+
+For agents, additional events fire:
+
+```
+on_chain_start (agent)
+├── on_tool_start
+├── on_tool_end
+├── on_agent_action
+│
+└── on_agent_finish
+on_chain_end or on_chain_error
+```
+
+### Nested Execution Context
+
+When a parent component calls children, context flows through the callback hierarchy:
+
+```
+Parent run (run_id=A)
+├── handlers: [debug_handler]
+├── inheritable_handlers: [tracer]
+├── on_chain_start → fires at parent
+│
+└─ Child run (parent_run_id=A, run_id=B)
+   ├── handlers: []  (empty, inheritable handlers not copied)
+   ├── inheritable_handlers: [tracer]  (inherited)
+   ├── on_chain_start → fires at child with parent_run_id=A
+   │
+   └─ Grandchild run (parent_run_id=B, run_id=C)
+      ├── on_chain_start → fires with parent_run_id=B
+      └── [tracer] still observes via inheritable_handlers
+```
+
+Run IDs and parent relationships establish the execution tree visible in tracing systems.
+
+### Handler Ordering
+
+Handlers are called in iteration order from the handlers list:
+
+```python
+# Multiple handlers execute in sequence
+handlers = [handler1, handler2, handler3]
+for handler in handlers:
+    # Call handler.on_llm_start(...) in order
+```
+
+An exception in one handler is caught, logged, and execution continues with the next (unless `raise_error=True`).
+
 ## Custom Events
 
-Applications can dispatch custom events for application-specific instrumentation:
+Applications can dispatch custom events for application-specific instrumentation via `dispatch_custom_event` (sync) or `adispatch_custom_event` (async):
 
 ```python
 from langchain_core.callbacks.manager import dispatch_custom_event
@@ -405,13 +549,19 @@ class CustomEventHandler(BaseCallbackHandler):
         print(f"Event {name}: {data}")
 ```
 
-Dispatch with async:
+Async dispatch:
 
 ```python
 from langchain_core.callbacks.manager import adispatch_custom_event
 
 await adispatch_custom_event("async_event", {"data": "value"}, config=config)
 ```
+
+**Custom event contract:**
+- `name`: Identifier for the event type
+- `data`: Arbitrary event data (must be serializable for LangSmith tracing)
+- Receives `run_id`, `tags`, and `metadata` from the current execution context
+- Handlers can filter by checking `ignore_custom_event` property
 
 ## Configuring Callbacks
 
@@ -434,9 +584,25 @@ result = chain.invoke(
 )
 ```
 
-### CallbackManager.configure()
+### CallbackManager Construction and Configuration
 
-Use `configure()` for flexible callback setup with environment variable integration:
+**Direct construction:**
+
+```python
+from langchain_core.callbacks import CallbackManager, BaseCallbackHandler
+
+manager = CallbackManager(
+    handlers=[debug_handler],           # Handlers for this run only
+    inheritable_handlers=[tracer],      # Propagated to child runs
+    tags=["local"],
+    inheritable_tags=["app"],
+    metadata={"session": "123"},
+    inheritable_metadata={"user": "alice"},
+    parent_run_id=parent_uuid
+)
+```
+
+**Class method `configure()` for flexible setup:**
 
 ```python
 from langchain_core.callbacks import CallbackManager
@@ -447,11 +613,16 @@ manager = CallbackManager.configure(
     inheritable_tags=["system"],
     local_tags=["this-run"],
     inheritable_metadata={"version": "1.0"},
+    local_metadata={"request_id": "456"},
     verbose=True
 )
 ```
 
-When `verbose=True`, a `StdOutCallbackHandler` is automatically added for chain execution tracing.
+**Key behaviors:**
+- `configure()` aggregates callbacks from multiple sources with environment variable integration
+- When `verbose=True`, a `StdOutCallbackHandler` is automatically added for chain execution tracing
+- Inheritable callbacks/tags/metadata flow to child runs; local ones apply only to the current run
+- `langsmith_inheritable_metadata` and `langsmith_inheritable_tags` are applied to `LangChainTracer` handlers
 
 ### Context Variables
 
@@ -477,80 +648,23 @@ Callbacks flow through runnables via `_call_with_config`, which:
 
 1. **Extracts the callback manager** from the RunnableConfig via `get_callback_manager_for_config(config)`
 2. **Fires on_chain_start** to notify all handlers of the execution beginning
-3. **Creates a child config** with `patch_config(config, callbacks=run_manager.get_child())` to inherit tags and handlers
-4. **Passes the child config** to nested runnables so they inherit observability context
-5. **Fires on_chain_end or on_chain_error** to close the run and propagate results
+3. **Creates a child manager** via `run_manager.get_child()` that inherits tags and inheritable handlers
+4. **Patches the config** with the child manager as callbacks for nested runnables
+5. **Passes the patched config** to nested runnables so they inherit observability context
+6. **Fires on_chain_end or on_chain_error** to close the run and propagate results
 
-```python
-def _call_with_config(
-    self,
-    func: Callable[[Input], Output],
-    input_: Input,
-    config: RunnableConfig | None,
-) -> Output:
-    config = ensure_config(config)
-    callback_manager = get_callback_manager_for_config(config)
-    run_manager = callback_manager.on_chain_start(...)
-    
-    try:
-        child_config = patch_config(config, callbacks=run_manager.get_child())
-        # Call function with child_config (handlers inherited by children)
-        output = func(input_, config=child_config)
-    except BaseException as e:
-        run_manager.on_chain_error(e)
-        raise
-    else:
-        run_manager.on_chain_end(output)
-        return output
-```
+The child manager created by `get_child()` has:
+- Empty handlers list (inheritable_handlers not propagated as handlers)
+- Inheritable handlers preserved for further nesting
+- Inherited tags plus any tag passed to `get_child(tag="...")`
+- Inherited metadata
+
+This design ensures:
+- Inheritable handlers reach all descendants
+- Non-inheritable handlers apply only to their current run
+- Each level of nesting creates a new run with distinct callbacks
 
 **Key insight**: Every child runnable gets a fresh CallbackManager configured from the child config, enabling automatic context propagation without explicit handler passing.
-
-### Streaming Config Integration
-
-For streaming operations, `_transform_stream_with_config` follows the same pattern:
-
-1. Creates a callback manager from the config
-2. Fires on_chain_start
-3. Iterates over the stream, yielding chunks
-4. Fires on_chain_end with the accumulated output
-
-This ensures streaming operations participate fully in the callback system and produce complete traces in LangSmith.
-
-## Event Dispatch Mechanics
-
-### Synchronous Dispatch with handle_event
-
-The `handle_event` function dispatches events to synchronous and async handlers:
-
-1. **Iterates over handlers** and checks ignore conditions (e.g., `ignore_llm`)
-2. **Calls the event method** (e.g., `handler.on_llm_start()`)
-3. **Collects coroutines** if the handler returns async functions (when async handlers are called from sync code)
-4. **Handles exceptions** according to handler's `raise_error` setting
-5. **Falls back to on_llm_start** if `on_chat_model_start` raises `NotImplementedError`
-6. **Executes collected coroutines** in a thread pool or new event loop to avoid blocking the main event loop
-
-Key behaviors:
-
-- **Async handlers invoked from sync code**: When `handle_event` detects a coroutine returned from a handler, it collects all coroutines and executes them in a thread pool executor to prevent deadlock and blocking
-- **Event loop safety**: If an event loop is already running, coroutines execute in a global thread pool; if no loop is running, a new `asyncio.Runner` is created
-- **Chat model fallback**: When a handler doesn't implement `on_chat_model_start`, the system catches `NotImplementedError` and automatically invokes `on_llm_start` with message lists converted to prompt strings
-
-### Asynchronous Dispatch with ahandle_event
-
-The `ahandle_event` function handles async dispatch:
-
-```
-ahandle_event(handlers, "on_llm_start", "ignore_llm", ...)
-├─ Inline handlers (run_inline=True):
-│  └─ await sequentially
-└─ Non-inline handlers (run_inline=False):
-   └─ asyncio.gather() concurrently
-```
-
-- **Inline handlers** are awaited sequentially to maintain order
-- **Non-inline handlers** are gathered and awaited concurrently for better performance
-- **Chat model fallback** applies in async context as well, with async equivalents of the sync fallback
 
 ### Fallback for Chat Models
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e926b725ec67bc7c775e066a1df58c04aa68859b8ab43fff1117f736a1a4a92b",
+  "pageVersion": "sha256:208b780a192f6d836202f02629efdf6a8ab3744194bacf243fb1538808c8ddaf",
   "claims": [
     {
       "id": "claim_106c015e2cd54bee94baf1f2020dab90",
@@ -168,11 +168,11 @@
     },
     {
       "id": "claim_8530d93f9e2b4ae1862f302763857430",
-      "statement": "Provider inference heuristics in init_chat_model() map model name prefixes to providers: gpt-/o1/o3 → openai, claude → anthropic, gemini → google_vertexai, mistral/mixtral → mistralai, deepseek → deepseek, grok → xai, sonar → perplexity.",
+      "statement": "Provider inference heuristics in init_chat_model() via _attempt_infer_model_provider() map model name prefixes (case-insensitive) to providers: gpt-/o1/o3/chatgpt/text-davinci → openai, claude → anthropic, command → cohere, accounts/fireworks → fireworks, gemini → google_vertexai, amazon./anthropic./meta. → bedrock, mistral/mixtral → mistralai, deepseek → deepseek, grok → xai, sonar → perplexity, solar → upstage; returns None if no match, causing ValueError with provider list unless model_provider is explicit.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L547-L620",
-          "version": "repo-lines-v1:sha256:a9fa9d961e85cbbccd7d57b4421babf5fbe5d93a7aa62b3bc0b38d6b368121dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NjVhMDM2OTVmYTJkMWU0YmU3OWZhYzhmMDNhOGMzOTU2OTI3OTcwMjY0MTMxNDU5NDUzMDc3ZmU0ZjM1NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlNTMyODkxMmQzMWM2MTZhZWI3NzBhM2M1YmI3ZmIxZTE0OTI3MTRiNjQyNThjOTdhZjJlYmM0MDIxNTdkMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllNDUzZTU0YTQ0ZDU0ZDAyYWNiZDViOWE0YjBlNTIxNTQ4ZGM4MTY0ODFjYTBhZDM2YzBiNmFhMzdhZmNiMDcifQ"
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L547-L611",
+          "version": "repo-lines-v1:sha256:80c2bcafbfdb9cb4601260a6e32745d98008bfe45dbf6fbf95a4e8f9a370236b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NjVhMDM2OTVmYTJkMWU0YmU3OWZhYzhmMDNhOGMzOTU2OTI3OTcwMjY0MTMxNDU5NDUzMDc3ZmU0ZjM1NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlNTMyODkxMmQzMWM2MTZhZWI3NzBhM2M1YmI3ZmIxZTE0OTI3MTRiNjQyNThjOTdhZjJlYmM0MDIxNTdkMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllNDUzZTU0YTQ0ZDU0ZDAyYWNiZDViOWE0YjBlNTIxNTQ4ZGM4MTY0ODFjYTBhZDM2YzBiNmFhMzdhZmNiMDcifQ"
         }
       ]
     },
@@ -233,6 +233,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-16T08:30:18.041Z"
   }
 }

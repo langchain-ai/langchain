@@ -1,8 +1,8 @@
 ---
-type: "Reference"
-title: "Prompts: Templates and Formatting"
-description: "Prompt templates define parameterized message sequences and variable substitution patterns for language models. Covers template syntax, variable handling, few-shot learning, image inputs, message composition, PromptValue routing, and runnable integration."
-tags: [prompt, template, few-shot, variable-substitution, runnable, composition, chat-model, image-input, formatting]
+type: "Concept"
+title: "Prompts: Template Composition"
+description: "Prompt templates are parameterized message sequences that format user inputs for language models and return PromptValue objects. Covers composition patterns, template syntax, variable substitution, few-shot learning, runnable integration, and PromptValue routing for flexible downstream consumption."
+tags: [prompt, template, composition, variable-substitution, runnable, few-shot, chat-model, image-input, formatting, prompt-value]
 sources:
   - id: openwiki-source-269af2bb49a21bd6c548b3f0
     resource: repo://libs/core/langchain_core/prompt_values.py
@@ -16,13 +16,13 @@ sources:
     resource: repo://libs/core/langchain_core/prompts/prompt.py
   - id: openwiki-source-cf81d0ba0a387a7cd9b5dfb8
     resource: repo://libs/core/langchain_core/prompts/string.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-16T08:30:18.041Z
 ---
 
-# Prompts: Templates and Formatting
+# Prompts: Template Composition
 
 Prompts are the **primary input interface** to language models in LangChain. They accept user-provided variables, format them into structured message sequences, and return `PromptValue` objects that can be routed to chat models, string-based APIs, or output parsers. The system provides three core abstractions: `PromptTemplate` for strings, `ChatPromptTemplate` for message sequences, and `FewShotPromptTemplate` for including examples that teach models by demonstration.
 

@@ -5,7 +5,7 @@ description: "Quick reference for uv, make, lint, test, and type-checking comman
 tags: [development, build, testing, linting, typing, uv, make, pre-commit, local-setup, conventional-commits]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-16T08:30:18.041Z
 sources:
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
@@ -23,7 +23,7 @@ sources:
     resource: repo://libs/Makefile
   - id: openwiki-source-a6e669bb11f217c6fbd06670
     resource: repo://libs/partners/anthropic/Makefile
-generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 ---
 
 ## Overview
@@ -112,7 +112,7 @@ The `.pre-commit-config.yaml` defines hooks that enforce:
 
 - **Standard validation**: YAML/TOML syntax checking, proper file endings, no trailing whitespace
 - **Text normalization**: Fix curly quotes and non-standard spaces
-- **Per-package format and lint**: Each package in `libs/` (core, langchain, langchain_v1, partners/*) runs `make format lint`
+- **Per-package format and lint**: Each package in `libs/` (core, langchain, langchain_v1, standard-tests, text-splitters, partners/*) runs `make format lint`
 - **Version consistency checks**: Ensure `pyproject.toml` versions match source code for `langchain-core`, `langchain-v1`, and partner packages
 - **Branch protection**: Prevents direct commits to the `master` branch
 
@@ -541,6 +541,5 @@ rm -rf .pytest_cache
 rm -rf .ruff_cache
 
 # Full clean: reinstall environment
-rm uv.lock
-uv sync --all-groups
+rm -rf .venv && uv sync --all-groups
 ```

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:bc687ff8d1df2b14599c9b38abc8fd003467a1fe2cb6b0e849af39e510de9c60",
+  "pageVersion": "sha256:fdce15c92b5150a61f90560b1f5f20a05bfb1fd80665ec6396a52805c590920e",
   "claims": [
     {
       "id": "claim_31a05d6469ea495ebed1cdff1e3c3f8a",
@@ -279,10 +279,54 @@
           "version": "repo-lines-v1:sha256:405d79d681ca70d254e3bfd68334c0d639c4bdf46a59db1a360c7c1497d8a4d1:eyJzZWxlY3RlZExpbmVDb3VudCI6OTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFiYjQzZjQwMmVhN2UxYjA3NTU3YjdhYTRjZDFjYjlhZDIxMjMxNmRhYWMwZDBlN2U0MTg0Mzg0NmJlM2MwZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlZjE4MmFjNWY0YmUwNzRjOWVhYzAyODI1M2M3MzFmYjljZTZjOTE5MTljNjNlODQ4NWU1YzlhYzdjZWYwNjIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE5OGIwNjNkOWI0N2U2NTM3OTYyNTU3MmNjZTE5NzY2OWQ1NzY3ZTEyYzE4YmUwNzU2NTJiOGNkOTgxY2U4ZDUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY1MTE2MmY3MGY5ZDI2YzNkMzc0M2E5YzYyOGY5OGNhNjIzZDMwMTlkY2FiNDc0ZDZmYjg4ZjIyMmUxMmY3MzUifQ"
         }
       ]
+    },
+    {
+      "id": "claim_f5b4076c1bea4184896f50863f47a537",
+      "statement": "Environment variable mocking with @mock.patch.dict(os.environ, {...}, clear=True) isolates tests from developer configuration and prevents environment variable leakage when testing configuration-dependent code, ensuring reproducible test behavior.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/chat_models/test_chat_models.py#L60-L86",
+          "version": "repo-lines-v1:sha256:ab5dbc1ecddadb21739ab4dc0a48d2d7c5adb25bfba3b4fd7e55fbdd5a7d893d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4ZWQ4YTQ1MDQ0MWZhN2QyMjk4ZmI0NzI5MjMyN2IxNDI2OGM2ZjQxOGQxMGViMGY1NTEyMTU1MTdhMzk3MjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRlZjE2OGUzMjQ2YzExNWQ2ZDMxMGZhZDZkZGM4ZTdhMGRkZGNiMTA5YTZlY2NkMjViZDFkOGYyMmE3ZjgyNjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdmY2MwNWE0NDhhMjczZmFmNWY3MTRkZTIxNzYyODQyZmM2YjJkOTZiY2U2ZjkzYjlmNGY1ZjgxYjMxOGU3YzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_70b382c09fba4445a6ceb76cdb6fda3b",
+      "statement": "Parametrized tests using @pytest.mark.parametrize can be combined with @pytest.mark.requires to test multiple input combinations with optional dependencies; if any required package is missing, the entire parametrized test is skipped (unless --only-extended forces failure).",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/chat_models/test_chat_models.py#L31-L56",
+          "version": "repo-lines-v1:sha256:02a42996a4e7b1d5efa6c9cba1e6f1a936685aca02d39b0cf9719baece444862:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFkYzE5ZmE5MGYxZDViMTFhZDI2N2U1MWU4MzdlMjlkM2Y0N2Y3YTE4NGFiNDI1MjljODgwNDg1MTI3MjBkOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0OWVmYzAwN2VmY2M3MDBjMTIwNzAzZmI3MWVmYWMwYTNmNjY3YzFiNTIwZDhjYjMxZTdhYjVkODMzYWZkZmQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkOTMwZjYzN2JmMzIxOTk2ZGVlMTRhMmNlZDJkNzRkMGU5YmJlYmQ1MjRiMjUxNGZmNDY2NGI5ZTBjN2U1YzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRlZjE2OGUzMjQ2YzExNWQ2ZDMxMGZhZDZkZGM4ZTdhMGRkZGNiMTA5YTZlY2NkMjViZDFkOGYyMmE3ZjgyNjQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_3d78066b3718453e95856ebca05b0ae0",
+      "statement": "Chat model tests verify model initialization with factory functions (init_chat_model), handling of API configuration (api_key, base_url), environment-specific settings (LANGSMITH_GATEWAY, LANGSMITH_API_KEY), and fallback behavior (API key fallback when gateway key unavailable).",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/chat_models/test_chat_models.py#L46-L135",
+          "version": "repo-lines-v1:sha256:27f749252e4a0a71862b60db7a1454d2666585240ebe7c74bf30d5759efa6837:eyJzZWxlY3RlZExpbmVDb3VudCI6OTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmMmZmMTU2OGRjNjZhNzVlYmE5MWZiM2Y2ODFjNTM4YzIwOGNmNGNmYzk2YmM4OTc4NzQwM2Q2NjI0YmQxOTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE0YzE0YTcxYzY1ZWM2MWM0NTcxODVlYWZlMDhjNDMzMzk5MjFiY2Q1OGJlNzZlNDMyMDI0MDdiNmU3ZDNjNWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFlOTg0YjBhYjAwNWMxOWU0MWMzMDBkZmJiYTkyZGE4ZWIwNWU3YzU0ODMzYzM3ZmEyZjljY2I2ODAyYTM0ZTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a9405ff49fb1408ab6afd072c34e5c4f",
+      "statement": "TYPE_CHECKING imports with cast() and TYPE_CHECKING guards enable better IDE type support during test development without circular import overhead; tests use cast() to narrow types when initializing models for assertions.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/chat_models/test_chat_models.py#L14-L16",
+          "version": "repo-lines-v1:sha256:4db016c96a76c3eef03dd2e72a45cadc92e0e85717edc1b5587309945bed2771:eyJzZWxlY3RlZExpbmVDb3VudCI6MywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTIzYTgyMmYyNzhiZGI4ZmZiNjRiZjkyMDk3OTBjMzljMTMyOThhNjAxNmZmMmRkOGFlYmU3OWM3M2Q0YTE0MyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNWNhODJiZTI1NDgzMjU2MzJkNjU3ZTIzZDJkNDNmNGM4YmY0MzNlNjk1MWI2ODgwMjQyODU3ZmY5NGJmODMyOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjhhYjQwZTRmYjEyYjEyMjMxMWU1MzRhMjJkNTE3M2JkMTkwMzE4NDBjYzUyNzllYWFhN2ZlNDU0ODI1MmYxOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDdmNGZjZTAzMWIxNzRiN2FlNjkxZmYwNjA0NjAzYTE2ZTI2ODI1YmVkZGQ3YjJhYWY2ZWIzYTlkZmFmYTg1NyJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/chat_models/test_chat_models.py#L69-L70",
+          "version": "repo-lines-v1:sha256:8ccb9dd4b8a6c4e85a5d55ff9f6545a10bcd600c6dec6a570414e4bbb9f592c0:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODc3ZjgwYTJjY2E0N2YzMmNkYzc4ODI5OWY0NWMxYmNjMTNmODM1NzA1Y2MzYTM4YjlkNjYxMzk2NDA2NWQ5OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiODEzZWFmZGMwYjIwZDI5NjlkNDQ2NzQ0ZjQ0NjM2ZDI0ZGEyODJlMjVjZGRjYWRmMjdhZTM5NmVkZGFmYjczMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzRmYzYyNjY4NzQxNmE3Mzg0NWUyOGMwZDgxZmExOTFlNmE3ZDY0MDU0OTAxYTA3MTUxYjQxMmI2ZTcxYmE0MCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-16T08:30:18.041Z"
   }
 }

@@ -3,15 +3,15 @@ type: API Reference
 title: Model Initialization API Reference
 description: Complete API reference for init_chat_model factory function, covering function signature, provider registry, model parsing, configuration, and runtime behavior.
 tags: [chat-models, factory-pattern, initialization, api-reference, provider-registry, configuration]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
 sources:
   - id: openwiki-source-b09b1477098d69af6abaa5b4
     resource: repo://libs/langchain_v1/langchain/chat_models/__init__.py
   - id: openwiki-source-c479d4fffee5cf62576699e4
     resource: repo://libs/langchain_v1/langchain/chat_models/base.py
 generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 ## Overview

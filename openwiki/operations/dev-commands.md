@@ -18,10 +18,10 @@ sources:
     resource: repo://libs/Makefile
   - id: openwiki-source-a6e669bb11f217c6fbd06670
     resource: repo://libs/partners/anthropic/Makefile
-generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 ## Overview
@@ -131,11 +131,11 @@ make -C libs/<package> format lint
 
 This applies ruff formatting, linting, and mypy type checking. Hook IDs in pre-commit:
 - `core`: libs/core
-- `langchain`: libs/langchain  
-- `langchain_v1`: libs/langchain_v1
+- `langchain-classic`: libs/langchain
+- `langchain`: libs/langchain_v1
 - `standard-tests`: libs/standard-tests
 - `text-splitters`: libs/text-splitters
-- Partner packages: `anthropic`, `chroma`, `exa`, `fireworks`, `groq`, `huggingface`, `mistralai`, `nomic`, `ollama`, `openai`, `qdrant`, etc.
+- Partner packages: `anthropic`, `chroma`, `deepseek`, `exa`, `fireworks`, `groq`, `huggingface`, `mistralai`, `nomic`, `ollama`, `openai`, `openrouter`, `perplexity`, `qdrant`, `typesafe`, `xai`
 
 ### Version Consistency Checks
 Each package with a version file has a hook ensuring `pyproject.toml` version matches source code:

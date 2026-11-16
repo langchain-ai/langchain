@@ -36,10 +36,12 @@ sources:
     resource: repo://libs/standard-tests/langchain_tests/integration_tests/__init__.py
   - id: openwiki-source-f7c26a6473517c7b426ef023
     resource: repo://libs/standard-tests/langchain_tests/integration_tests/chat_models.py
+  - id: openwiki-source-3eb9100e02f9d70098d1b30d
+    resource: repo://libs/standard-tests/langchain_tests/unit_tests/chat_models.py
 generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 ## Overview
