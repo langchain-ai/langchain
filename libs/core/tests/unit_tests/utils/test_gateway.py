@@ -9,9 +9,11 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from langchain_core.utils._gateway import (
     GatewayConfig,
     _apply_gateway_config,
+    _gateway_headers,
     _parse_gateway_metadata,
     _resolve_gateway_base_url,
     _resolve_gateway_config,
+    _with_gateway_headers,
     langsmith_gateway,
 )
 
@@ -378,6 +380,22 @@ def test_context_nesting_restores_outer() -> None:
         with langsmith_gateway(api_key="inner", base_url="https://inner.example.com"):
             assert _config().api_key.get_secret_value() == "inner"
         assert _config().base_url == "https://outer.example.com/openai/v1"
+
+
+def test_context_headers() -> None:
+    assert _gateway_headers() == {}
+    with langsmith_gateway(api_key="k", headers={"X-Service-Key": "svc"}):
+        assert _gateway_headers() == {"X-Service-Key": "svc"}
+    assert _gateway_headers() == {}
+
+
+def test_gateway_headers_replace_model_headers() -> None:
+    merged = _with_gateway_headers(
+        {"x-service-key": "forged", "X-Custom": "kept"}, {"X-Service-Key": "svc"}
+    )
+    assert merged == {"X-Custom": "kept", "X-Service-Key": "svc"}
+    model_headers = {"X-Custom": "kept"}
+    assert _with_gateway_headers(model_headers, {}) is model_headers
 
 
 @pytest.mark.parametrize("api_key", ["", SecretStr("")])

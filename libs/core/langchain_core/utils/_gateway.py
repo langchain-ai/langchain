@@ -46,6 +46,7 @@ class _GatewayOverride(NamedTuple):
 
     base_url: str
     api_key: SecretStr
+    headers: Mapping[str, str]
 
 
 _GATEWAY_OVERRIDE: ContextVar[_GatewayOverride | None] = ContextVar(
@@ -58,6 +59,7 @@ def langsmith_gateway(
     *,
     api_key: str | SecretStr,
     base_url: str = _LANGSMITH_GATEWAY_DEFAULT_BASE,
+    headers: Mapping[str, str] | None = None,
 ) -> Iterator[None]:
     """Route chat models built in this context through the LangSmith gateway.
 
@@ -76,6 +78,11 @@ def langsmith_gateway(
     Args:
         api_key: Key used to authenticate to the gateway.
         base_url: Gateway host. The provider's path is appended per model.
+        headers: Headers sent with every request to the gateway, such as a
+            service key. They replace any header of the same name
+            (case-insensitive) set on the model. They are added to the model's
+            HTTP client only, not stored on the model, so they are never
+            serialized or traced.
 
     Yields:
         None.
@@ -91,11 +98,47 @@ def langsmith_gateway(
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         msg = f"Invalid gateway base URL: {base_url!r}"
         raise ValueError(msg)
-    token = _GATEWAY_OVERRIDE.set(_GatewayOverride(base_url.rstrip("/"), secret))
+    token = _GATEWAY_OVERRIDE.set(
+        _GatewayOverride(base_url.rstrip("/"), secret, dict(headers or {}))
+    )
     try:
         yield
     finally:
         _GATEWAY_OVERRIDE.reset(token)
+
+
+def _langsmith_gateway_active() -> bool:
+    """Whether a `langsmith_gateway` context is active.
+
+    Integrations ignore their proxy setting while it is, so a serialized model
+    cannot send the gateway key through a proxy.
+    """
+    return _GATEWAY_OVERRIDE.get() is not None
+
+
+def _gateway_headers() -> dict[str, str]:
+    """Return the headers of the active `langsmith_gateway` context, if any.
+
+    Integrations that build their client lazily read these at construction and
+    keep them in a private attribute, so they never reach the serialized model.
+    """
+    override = _GATEWAY_OVERRIDE.get()
+    return dict(override.headers) if override is not None else {}
+
+
+def _with_gateway_headers(
+    headers: Mapping[str, str] | None, gateway_headers: Mapping[str, str]
+) -> Mapping[str, str] | None:
+    """Return ``headers`` with ``gateway_headers`` applied.
+
+    Gateway headers replace any of the same name (case-insensitive), so a model
+    cannot override them. ``headers`` is returned unchanged when there are none.
+    """
+    if not gateway_headers:
+        return headers
+    names = {name.lower() for name in gateway_headers}
+    kept = {k: v for k, v in (headers or {}).items() if k.lower() not in names}
+    return {**kept, **gateway_headers}
 
 
 def _override_base_url(
