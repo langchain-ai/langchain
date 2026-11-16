@@ -27,7 +27,7 @@ from langchain_core.exceptions import (
     ModelRefusalError,
     ModelTimeoutError,
 )
-from langchain_core.load import dumps, loads
+from langchain_core.load import dumpd, dumps, loads
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -50,7 +50,10 @@ from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
-from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
+from langchain_core.utils._gateway import (
+    GATEWAY_METADATA_RESPONSE_KEY,
+    langsmith_gateway,
+)
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from openai.types.responses import (
     ResponseApplyPatchToolCall,
@@ -6061,3 +6064,19 @@ def test_with_structured_output_still_streams_partial_json() -> None:
 
     assert len(outputs) > 1
     assert outputs[-1] == {"answer": "42"}
+
+
+def test_langsmith_gateway_context_headers() -> None:
+    """Gateway headers reach the client but are never serialized."""
+    with langsmith_gateway(api_key="placeholder", headers={"X-Service-Key": "svc-key"}):
+        llm = ChatOpenAI(
+            model="gpt-4.1",
+            api_key=SecretStr("user-key"),
+            default_headers={"x-service-key": "forged", "X-Custom": "kept"},
+            openai_proxy="http://proxy:8080",
+        )
+    sent = llm.root_client.default_headers
+    assert sent["X-Service-Key"] == "svc-key"
+    assert sent["X-Custom"] == "kept"
+    assert "svc-key" not in json.dumps(dumpd(llm))
+    assert llm.openai_proxy is None
