@@ -7,9 +7,10 @@ from contextlib import contextmanager
 from functools import cache
 from importlib.metadata import PackageNotFoundError
 from typing import TYPE_CHECKING, Any, Literal, Self, get_type_hints
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
+from langsmith import Client
 from langsmith.env import get_langchain_env_var_metadata
 from pydantic import Field, model_validator
 from typing_extensions import override
@@ -378,7 +379,7 @@ class FakeTracer(BaseTracer):
 
 class LangChainTracerRunCollector:
     def __init__(self) -> None:
-        self.tracer = LangChainTracer()
+        self.tracer = LangChainTracer(client=MagicMock(spec=Client))
         self.runs: list[Run] = []
 
     @contextmanager
@@ -386,7 +387,13 @@ class LangChainTracerRunCollector:
         def collect_tracer_run(_: LangChainTracer, run: Run) -> None:
             self.runs.append(run)
 
-        with patch.object(LangChainTracer, "_persist_run", new=collect_tracer_run):
+        with (
+            patch.object(LangChainTracer, "_persist_run", new=collect_tracer_run),
+            patch(
+                "langchain_core.tracers.langchain.get_runtime_environment",
+                return_value={},
+            ),
+        ):
             yield self.tracer
 
 
