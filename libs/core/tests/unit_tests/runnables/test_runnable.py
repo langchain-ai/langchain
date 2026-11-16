@@ -3568,6 +3568,55 @@ def test_bind_with_lambda() -> None:
     assert chunks == [4]
 
 
+@pytest.mark.parametrize(
+    "method", ["batch", "abatch", "batch_as_completed", "abatch_as_completed"]
+)
+@pytest.mark.parametrize("run_id_source", ["call_config", "with_config"])
+async def test_bind_batch_run_id_only_on_first_input(
+    method: str, run_id_source: str
+) -> None:
+    """A single `run_id` passed to a bound runnable's batch applies to one run only.
+
+    The remaining inputs get their own run ids, matching `Runnable.batch`. The
+    `run_id` can come from the call config or from `with_config(run_id=...)`.
+    """
+
+    def my_function(x: int, **_: Any) -> int:
+        return x + 1
+
+    tracer = FakeTracer()
+    run_id = uuid.uuid4()
+    config: RunnableConfig = {"callbacks": [tracer]}
+    if run_id_source == "call_config":
+        runnable = RunnableLambda(my_function).bind(n=1)
+        config["run_id"] = run_id
+    else:
+        runnable = RunnableLambda(my_function).with_config(run_id=run_id)
+    inputs = [1, 2, 3]
+
+    async def run() -> list[Any]:
+        if method == "batch":
+            return runnable.batch(inputs, config)
+        if method == "abatch":
+            return await runnable.abatch(inputs, config)
+        if method == "batch_as_completed":
+            return sorted(runnable.batch_as_completed(inputs, config))
+        return sorted([r async for r in runnable.abatch_as_completed(inputs, config)])
+
+    with pytest.warns(RuntimeWarning, match="run_id"):
+        results = await run()
+
+    if method.endswith("as_completed"):
+        assert results == [(0, 2), (1, 3), (2, 4)]
+    else:
+        assert results == [2, 3, 4]
+
+    run_ids = tracer.run_ids
+    assert len(run_ids) == 3
+    assert run_id in run_ids
+    assert len(set(run_ids)) == 3
+
+
 async def test_bind_with_lambda_async() -> None:
     def my_function(_: Any, **kwargs: Any) -> int:
         return 3 + int(kwargs.get("n", 0))

@@ -6032,7 +6032,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
                 [self._merge_configs(conf) for conf in config],
             )
         else:
-            configs = [self._merge_configs(config) for _ in range(len(inputs))]
+            configs = get_config_list(self._merge_configs(config), len(inputs))
         return self.bound.batch(
             inputs,
             configs,
@@ -6055,7 +6055,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
                 [self._merge_configs(conf) for conf in config],
             )
         else:
-            configs = [self._merge_configs(config) for _ in range(len(inputs))]
+            configs = get_config_list(self._merge_configs(config), len(inputs))
         return await self.bound.abatch(
             inputs,
             configs,
@@ -6098,7 +6098,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
                 [self._merge_configs(conf) for conf in config],
             )
         else:
-            configs = [self._merge_configs(config) for _ in range(len(inputs))]
+            configs = get_config_list(self._merge_configs(config), len(inputs))
         # lol mypy
         if return_exceptions:
             yield from self.bound.batch_as_completed(
@@ -6150,7 +6150,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
                 [self._merge_configs(conf) for conf in config],
             )
         else:
-            configs = [self._merge_configs(config) for _ in range(len(inputs))]
+            configs = get_config_list(self._merge_configs(config), len(inputs))
         if return_exceptions:
             async for item in self.bound.abatch_as_completed(
                 inputs,
