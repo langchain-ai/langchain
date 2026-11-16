@@ -117,7 +117,9 @@ def _get_trace_callbacks(
     *,
     address: AgentAddress | None = None,
 ) -> Callbacks:
-    if _tracing_v2_is_enabled():
+    # ``"local"`` is truthy, but it means "do not post". Only a real ``True``
+    # attaches the tracer that uploads runs.
+    if _tracing_v2_is_enabled() is True:
         tracer = tracing_v2_callback_var.get() or LangChainTracer(
             example_id=example_id,
             **_get_tracer_kwargs(project_name, address=address),

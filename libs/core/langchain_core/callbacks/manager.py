@@ -2481,9 +2481,12 @@ def _configure(
     )
 
     tracer_v2 = tracing_v2_callback_var.get()
-    tracing_v2_enabled_ = _tracing_v2_is_enabled()
+    tracing_v2_setting = _tracing_v2_is_enabled()
+    # ``"local"`` still counts as tracing being configured (so the removed v1
+    # tracer is not raised), but it must not attach a tracer that posts runs.
+    tracing_v2_enabled_ = tracing_v2_setting is True
 
-    if v1_tracing_enabled_ and not tracing_v2_enabled_:
+    if v1_tracing_enabled_ and not tracing_v2_setting:
         # if both are enabled, can silently ignore the v1 tracer
         msg = (
             "Tracing using LangChainTracerV1 is no longer supported. "
