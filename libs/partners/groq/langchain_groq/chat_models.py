@@ -64,13 +64,25 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
-from langchain_core.utils._gateway import _apply_gateway_config
+from langchain_core.utils._gateway import (
+    _apply_gateway_config,
+    _gateway_headers,
+    _langsmith_gateway_active,
+    _with_gateway_headers,
+)
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    SecretStr,
+    model_validator,
+)
 
 from langchain_groq._compat import _convert_from_v1_to_groq
 from langchain_groq._version import __version__
@@ -486,6 +498,9 @@ class ChatGroq(BaseChatModel):
 
     default_headers: Mapping[str, str] | None = None
 
+    _langsmith_gateway_headers: dict[str, str] = PrivateAttr(default_factory=dict)
+    """Headers from `langsmith_gateway`, sent by the client but never serialized."""
+
     default_query: Mapping[str, object] | None = None
 
     # Configure a custom httpx client. See the
@@ -567,8 +582,11 @@ class ChatGroq(BaseChatModel):
         if self.temperature == 0:
             self.temperature = 1e-8
 
+        if _langsmith_gateway_active():
+            self._langsmith_gateway_headers = _gateway_headers()
         default_headers = {"User-Agent": f"langchain/{__version__}"} | dict(
-            self.default_headers or {}
+            _with_gateway_headers(self.default_headers, self._langsmith_gateway_headers)
+            or {}
         )
 
         client_params: dict[str, Any] = {
