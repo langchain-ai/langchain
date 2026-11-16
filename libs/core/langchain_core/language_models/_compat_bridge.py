@@ -55,6 +55,7 @@ from langchain_protocol.protocol import (
 )
 
 from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.messages.ai import add_usage
 from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 from langchain_core.utils._merge import merge_dicts
 
@@ -471,30 +472,11 @@ def _extract_start_metadata(response_metadata: dict[str, Any]) -> MessageMetadat
 
 
 def _accumulate_usage(current: UsageInfo | None, delta: UsageMetadata) -> UsageInfo:
-    """Sum usage counts and merge detail dicts across chunks.
-
-    `delta` is a chunk's `usage_metadata`; `current` is the running total.
-    Both sides are read and written by literal key so the typed shape is
-    preserved end to end — no `dict[str, Any]` detour.
-    """
-    new: UsageInfo = current if current is not None else {}
-    if "input_tokens" in delta:
-        new["input_tokens"] = new.get("input_tokens", 0) + delta["input_tokens"]
-    if "output_tokens" in delta:
-        new["output_tokens"] = new.get("output_tokens", 0) + delta["output_tokens"]
-    if "total_tokens" in delta:
-        new["total_tokens"] = new.get("total_tokens", 0) + delta["total_tokens"]
-    input_details = delta.get("input_token_details")
-    if input_details:
-        merged_input = new.get("input_token_details", {})
-        merged_input.update(input_details)
-        new["input_token_details"] = merged_input
-    output_details = delta.get("output_token_details")
-    if output_details:
-        merged_output = new.get("output_token_details", {})
-        merged_output.update(output_details)
-        new["output_token_details"] = merged_output
-    return new
+    """Sum usage counts and token details across chunks."""
+    return cast(
+        "UsageInfo",
+        add_usage(cast("UsageMetadata | None", current), delta),
+    )
 
 
 def _isolate_usage(usage: UsageInfo | None) -> UsageInfo | None:

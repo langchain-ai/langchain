@@ -1493,11 +1493,26 @@ class _CachedUsageModel(BaseChatModel):
                     "input_tokens": 100,
                     "output_tokens": 0,
                     "total_tokens": 100,
-                    "input_token_details": {"cache_read": 90, "cache_creation": 7},
+                    "input_token_details": {
+                        "cache_read": 90,
+                        "cache_creation": 7,
+                        "audio": 2,
+                    },
                 },
             )
         )
-        yield ChatGenerationChunk(message=AIMessageChunk(content=" world"))
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=" world",
+                usage_metadata={
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "total_tokens": 0,
+                    "input_token_details": {"cache_read": 5, "audio": 1},
+                    "output_token_details": {"reasoning": 1, "audio": 1},
+                },
+            )
+        )
         yield ChatGenerationChunk(
             message=AIMessageChunk(
                 content="",
@@ -1505,7 +1520,7 @@ class _CachedUsageModel(BaseChatModel):
                     "input_tokens": 0,
                     "output_tokens": 5,
                     "total_tokens": 5,
-                    "output_token_details": {"reasoning": 3},
+                    "output_token_details": {"reasoning": 3, "audio": 2},
                 },
             )
         )
@@ -1515,8 +1530,8 @@ _EXPECTED_CACHED_USAGE = {
     "input_tokens": 100,
     "output_tokens": 5,
     "total_tokens": 105,
-    "input_token_details": {"cache_read": 90, "cache_creation": 7},
-    "output_token_details": {"reasoning": 3},
+    "input_token_details": {"cache_read": 95, "cache_creation": 7, "audio": 3},
+    "output_token_details": {"reasoning": 4, "audio": 3},
 }
 
 
@@ -1534,6 +1549,13 @@ class TestUsageTokenDetails:
         for _ in stream:
             pass
         assert stream.output.usage_metadata == _EXPECTED_CACHED_USAGE
+
+    @pytest.mark.asyncio
+    async def test_astream_events_v3_output_preserves_token_details(self) -> None:
+        stream = await _CachedUsageModel().astream_events("hi", version="v3")
+        async for _ in stream:
+            pass
+        assert (await stream).usage_metadata == _EXPECTED_CACHED_USAGE
 
     def test_stream_events_v3_on_llm_end_preserves_token_details(self) -> None:
         end_usages: list[Any] = []
@@ -1570,6 +1592,29 @@ class TestUsageTokenDetails:
                 break
             await asyncio.sleep(0)
         assert end_usages == [_EXPECTED_CACHED_USAGE]
+
+    def test_invoke_v2_streaming_preserves_token_details(self) -> None:
+        handler = _V2RecordingHandler()
+        message = _CachedUsageModel().invoke("hi", config={"callbacks": [handler]})
+
+        assert message.usage_metadata == _EXPECTED_CACHED_USAGE
+        finish = next(
+            event for event in handler.events if event["event"] == "message-finish"
+        )
+        assert finish["usage"] == _EXPECTED_CACHED_USAGE
+
+    @pytest.mark.asyncio
+    async def test_ainvoke_v2_streaming_preserves_token_details(self) -> None:
+        handler = _AsyncV2RecordingHandler()
+        message = await _CachedUsageModel().ainvoke(
+            "hi", config={"callbacks": [handler]}
+        )
+
+        assert message.usage_metadata == _EXPECTED_CACHED_USAGE
+        finish = next(
+            event for event in handler.events if event["event"] == "message-finish"
+        )
+        assert finish["usage"] == _EXPECTED_CACHED_USAGE
 
 
 class _GatewayModel(_MalformedToolCallModel):
