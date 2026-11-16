@@ -22,10 +22,10 @@ sources:
     resource: repo://libs/core/langchain_core/utils/function_calling.py
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 ## Overview
@@ -79,7 +79,7 @@ When `infer_schema=True` (default), the tool examines the function signature to 
 - Function docstring is parsed (if `parse_docstring=True`) following Google style to extract parameter descriptions
 - Descriptions are merged from: Annotated metadata → docstring Args section → none
 - Injected arguments (those annotated with `InjectedToolArg`, `InjectedToolCallId`, or `ToolRuntime`) are automatically excluded from the schema sent to models but re-injected at runtime
-- Reserved parameter names (`run_manager`, `callbacks`, `config`) are filtered from the user-facing schema
+- Reserved parameter names (`run_manager`, `callbacks`) are filtered from the user-facing schema; additionally, `config` is a reserved name that causes errors if used as a tool parameter because it shadows the injected RunnableConfig
 
 **Memoization:** The `tool_call_schema` property builds and caches a subset model class per tool instance, excluding injected arguments. The schema class's `model_json_schema()` method is patched to cache the generated dict, preventing expensive regeneration on every agent loop.
 
@@ -351,10 +351,11 @@ def track_call(query: str, call_id: InjectedToolCallId) -> str:
     return f"Call {call_id}: {query}"
 ```
 
-**ToolRuntime:** A directly-injected argument type providing access to state, context, and store:
+**ToolRuntime:** A directly-injected argument type (from LangGraph) providing access to state, context, and store:
 
 ```python
-from langchain_core.tools import tool, ToolRuntime
+from langchain_core.tools import tool
+from langgraph.prebuilt.tool_node import ToolRuntime
 
 @tool
 def stateful_tool(query: str, runtime: ToolRuntime) -> str:
@@ -544,7 +545,7 @@ Tools expose run_manager in `_run()` signature to allow direct callback invocati
 
 **Reserved Parameter Names:**
 
-Parameters named `config`, `run_manager`, or `callbacks` are filtered from the tool schema because they conflict with LangChain's runtime injection. Use `ToolRuntime` annotation to access runtime state instead.
+Parameters named `run_manager` or `callbacks` are filtered from the tool schema by FILTERED_ARGS. The parameter name `config` is also reserved because when used as a tool argument, it shadows the injected `RunnableConfig`, causing a `TypeError: missing 1 required positional argument: 'config'`. Use `ToolRuntime` annotation to access runtime state, context, and store instead of these reserved parameter names.
 
 **Provider Extras:**
 

@@ -3,9 +3,6 @@ type: "Reference"
 title: "GitHub Actions CI Workflows Reference"
 description: "Complete technical reference for LangChain's GitHub Actions workflows, job configurations, triggers, matrix testing, and environment variables."
 tags: [ci, workflows, github-actions, reference, automation]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
 sources:
   - id: openwiki-source-c92cc62695c6def991956428
     resource: repo://.github/workflows/_release.yml
@@ -14,6 +11,9 @@ sources:
   - id: openwiki-source-9069a5dd5fbb579fbd5470ce
     resource: repo://.github/workflows/integration_tests.yml
 generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 ## Overview

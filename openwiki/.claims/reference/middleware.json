@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:c491c1a7a68c52ccbc1d2a0fc979953903f5d1d5f6c00b6fbc3bb80cb4f0f90c",
+  "pageVersion": "sha256:e62acdc21d9a1ee1260e47c79548afe3444afb317b2fc4c630acfcb5eac6ebd2",
   "claims": [
     {
       "id": "claim_37a46b11c73844ac8d4d5ee6f2f737c6",
@@ -12,13 +12,91 @@
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py",
-          "version": "repo-file-v1:sha256:d9a5ae88cc2dd6bcdc3030ce2e1b55f876d2af88c02c27f5b630dadad350fb75"
+          "version": "repo-file-v1:sha256:a54d19d95dce38d27cc6920a5e05b6e1ebd4526d630d9bcf435a6a479d6edcca"
+        }
+      ]
+    },
+    {
+      "id": "claim_bcfc0de1aef44484ace80da7774732f2",
+      "statement": "LangChain provides convenience decorators (@before_agent, @after_agent, @before_model, @after_model, @wrap_model_call, @wrap_tool_call, @dynamic_prompt, @hook_config) that dynamically generate AgentMiddleware subclasses from plain functions at runtime, accepting parameters for state_schema, tools, can_jump_to (lifecycle hooks), and name, eliminating the need to manually subclass AgentMiddleware.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L1320-L1510",
+          "version": "repo-lines-v1:sha256:cd505344e06db4d51fdc8a038eae8da6f75f2af48cd9af9d97b18adfc29afb7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTkxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwZjNhOThkN2FjZmJhZGZhOTU0NGE3NjE4NDZjMDk1NTI3MDkzOTg1NzA3MjVlNTJjOTk0MWJjMzI0NDg3NmZhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3NTAxYmM4OGZjZDI4MzU1ODYwYmViNzg2MzNiN2YwYzc0MmUxNTQ1ODA2YzJiMzNmODE4NjBmYmViZWI2NGI5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkNjBmZTg2NTMxMGRlMzMwZjE2YzQyZTY4ZjMwMWMzODNhZjg3MDk2NzVhYjYyN2E0OTcxNmY0YzQ2OWFiOGU0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3OTEzMDlkNzIyOWZhMmUzMzA3NjdhYTk5OGVlMTUwY2U5MjJjOTQzYTA0ZmZiY2FmMTRhY2FmMWRhOGViZDI3In0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L1532-L1688",
+          "version": "repo-lines-v1:sha256:af444ff0070a898f128e4a46cdcd17f1b0992776511a51000732e8516ff1cdbd:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNzMxZDAxZjE1MzRlNTgzYmRhZDE4YjQ0ZjQ5OTMxYzJhNmI2YjJlM2MwZDZjMmIyYjhlMDZjYWYyMjFmYWQwIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3NTAxYmM4OGZjZDI4MzU1ODYwYmViNzg2MzNiN2YwYzc0MmUxNTQ1ODA2YzJiMzNmODE4NjBmYmViZWI2NGI5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkNjBmZTg2NTMxMGRlMzMwZjE2YzQyZTY4ZjMwMWMzODNhZjg3MDk2NzVhYjYyN2E0OTcxNmY0YzQ2OWFiOGU0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3OTEzMDlkNzIyOWZhMmUzMzA3NjdhYTk5OGVlMTUwY2U5MjJjOTQzYTA0ZmZiY2FmMTRhY2FmMWRhOGViZDI3In0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L1706-L1840",
+          "version": "repo-lines-v1:sha256:a6731e691494c2bd492799fabe8945c94dac4d01a373354d64904987f127ac76:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxYmFiY2ZkYjBkNmEwMTliNDA5YTY5MDQ1ZTJkYzg1YWE5OTI4NjZiODBkNDhkYjRlMDQxZThhMzc4ZWYxZjMyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1OTA5YTUzYTYxOGQwMjhlMWQzMDAwYzBhN2FiY2VlY2JlNWZiMzdmNGU1MTFlZmU0NjY0M2ZhZDZlNjY4NzJmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkNjBmZTg2NTMxMGRlMzMwZjE2YzQyZTY4ZjMwMWMzODNhZjg3MDk2NzVhYjYyN2E0OTcxNmY0YzQ2OWFiOGU0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxMGFiZTZjMmE4MTY1Yzg0MjgwMmY2ZDNiNWU1Yjc5OGU0MGU5MTI1ZDA3MzRiMzcyNzg2MDk2NTYxMzY2Y2FhIn0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L1866-L2017",
+          "version": "repo-lines-v1:sha256:0b99bff9cd169d58b15364e346bef3c757c1b39cd8ac67f9aa63e47a91d3491d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1ODhkYzdlY2NkNjI3MWQ4NjM1MGY5Yjc3MDAyNjg4OGYyYzg5MzA3YzZmYjUwMWFhMmRlMDM2MGI3MjJjM2Q0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3NTAxYmM4OGZjZDI4MzU1ODYwYmViNzg2MzNiN2YwYzc0MmUxNTQ1ODA2YzJiMzNmODE4NjBmYmViZWI2NGI5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkNjBmZTg2NTMxMGRlMzMwZjE2YzQyZTY4ZjMwMWMzODNhZjg3MDk2NzVhYjYyN2E0OTcxNmY0YzQ2OWFiOGU0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3OTEzMDlkNzIyOWZhMmUzMzA3NjdhYTk5OGVlMTUwY2U5MjJjOTQzYTA0ZmZiY2FmMTRhY2FmMWRhOGViZDI3In0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L2039-L2203",
+          "version": "repo-lines-v1:sha256:c7fba8ac30341647f6c029d6d94a4c261edbf2044bd3609e8649afb88a80aa94:eyJzZWxlY3RlZExpbmVDb3VudCI6MTY1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhNGZkZDc0OGIxZDVlZTc4ODIzZGM4NjhlZjUyYjgwOTZlODAxNGFlN2Q2NjEyMmEwZDAxYmI3OGFlN2U3ZGYzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI3NTAxYmM4OGZjZDI4MzU1ODYwYmViNzg2MzNiN2YwYzc0MmUxNTQ1ODA2YzJiMzNmODE4NjBmYmViZWI2NGI5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkNjBmZTg2NTMxMGRlMzMwZjE2YzQyZTY4ZjMwMWMzODNhZjg3MDk2NzVhYjYyN2E0OTcxNmY0YzQ2OWFiOGU0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L881-L932",
+          "version": "repo-lines-v1:sha256:d72ab9e9837a845d6a47128eb308726b24cf6de7a6db06f8dfbdc66a543c10ce:eyJzZWxlY3RlZExpbmVDb3VudCI6NTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZlNjMxNGFhMjQyMzIyOTE2NjU3NmE3MWI5N2FiYTQ3NTc4ZjI4MDBjMzYyZGIwMDZkNWE4ZmE4MTgwOGUzMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc1MDFiYzg4ZmNkMjgzNTU4NjBiZWI3ODYzM2I3ZjBjNzQyZTE1NDU4MDZjMmIzM2Y4MTg2MGZiZWJlYjY0YjkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzNWMxMzBmMjdlOTE5MGFjOTUxMzI5NDUxMDE4NWMwYjkzNWFiYTQ0NzI0YzhhYWU3ZmI3MThkYTM0MDNhZGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5MTMwOWQ3MjI5ZmEyZTMzMDc2N2FhOTk4ZWUxNTBjZTkyMmM5NDNhMDRmZmJjYWYxNGFjYWYxZGE4ZWJkMjcifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L954-L1122",
+          "version": "repo-lines-v1:sha256:c6becab2cb0a3a2c0a1a1fde9f44ce16291d38f192a1c8543d7579f92aae235f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTY5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5M2EwMTBhZTY2NDEyZTgzNzc2YTY2YmI5ZWQyOTc5NTc2YTMwODlkN2RmNDAzZjRlYmQwZDU5MzI0ZjA4ZGRhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkNjBmZTg2NTMxMGRlMzMwZjE2YzQyZTY4ZjMwMWMzODNhZjg3MDk2NzVhYjYyN2E0OTcxNmY0YzQ2OWFiOGU0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjOGY0MjVkNTU4ZDY1NTE5ZTQ0NGY4ZGVlNTA1NzQxMTA1MjI5YjQ1ODdlYTVjYTg0MWNiNmY0YWM2OWIxNzhkIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_5d3735212f39419a90cc15dc439f0c39",
+      "statement": "Lifecycle hooks (before_model, after_model) support conditional control flow via jump_to field in returned state dictionaries, with valid destinations being 'model' (retry model invocation), 'tools' (execute tool node), and 'end' (exit agent loop). Jumping capability must be declared upfront via @hook_config decorator or can_jump_to parameter on lifecycle hook decorators; interception hooks cannot use jump_to directly and unsupported Command directives (goto, resume, graph) raise NotImplementedError.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L266-L277",
+          "version": "repo-lines-v1:sha256:237c16940bc40551fd36f5b5172473561a9cb695619541440b146f417cf486e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjYzc5ZDE5ODU5MjBiNjg0M2MzNGQ2MmI4OTkwZjQyMmU1ODU2MDdkNmMwZGFiM2QzNzY4NDUxMDY5YTg2M2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxNmNkYmRmY2NhNjNjMjdkZDY1MDA2MzU3ZjJkYjcyYjJjZjEyMTEyZmFmNTNjYjZkM2U4OTBmYTE4NDg4MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4ZTAxMzMzMWUxNDU2ZGJjZDc1NjliOTY0ZTA1NWNlNGNkZWE4MGJjZWI4MmMwOWIwZjU2NTllNDkzYjI3ZGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA0ODI5NWVjYWZhMjcwMTk3ZWQyYzA0NGY1MmY5ZTBiZjgwZWNmY2U1NTBjNGE1YzY5NmY2YTg2NWRiNDliNTUifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L70-L71",
+          "version": "repo-lines-v1:sha256:18fe1a5e5e27fd9f0e81853e7e42d878617c4c61e2352c57aa796ed58e087e33:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODJjMjVjNTYwNTUzZWJkMGY5MzkxMzRmMGE1ZjNhYzZmOTIxYjA3YTRhYTM3ZTY4MWU1NmFmYmJmYjU2ZWRjZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTNjNDVlY2FjZTRhMjNiNzRmNGI1NjM2N2ZkZWI2MDBhMmQzOTdkOGNjYWU2ODg5OTBlZGNjZDE5MzQ4MWQyOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNGU1ZDcyNmNjYzAzMzNkMzI3MDE3Y2VjYjQwZGMyZGUzZDU3NGJkYWM2YTQ0NDg2ODgxOGJmOTk2N2ZhNDMyMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjY3MTI4ZjBjZTc4ZmYyNjk5OWZiMTgyYTRmYjc5Mjk4OGExY2U1ZTQzNTE2MTNkNDFkMmJjY2JmZGQxNDVlOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_c960a9c6c6cc4529900a93d8406f13e4",
+      "statement": "@dynamic_prompt is a convenience decorator for dynamically generating system prompts at runtime by intercepting wrap_model_call. The decorated function receives ModelRequest containing state and runtime context, returns a string or SystemMessage, and the decorator automatically integrates this as a system message override to the model request before invocation.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L1706-L1840",
+          "version": "repo-lines-v1:sha256:a6731e691494c2bd492799fabe8945c94dac4d01a373354d64904987f127ac76:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIxYmFiY2ZkYjBkNmEwMTliNDA5YTY5MDQ1ZTJkYzg1YWE5OTI4NjZiODBkNDhkYjRlMDQxZThhMzc4ZWYxZjMyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1OTA5YTUzYTYxOGQwMjhlMWQzMDAwYzBhN2FiY2VlY2JlNWZiMzdmNGU1MTFlZmU0NjY0M2ZhZDZlNjY4NzJmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJkNjBmZTg2NTMxMGRlMzMwZjE2YzQyZTY4ZjMwMWMzODNhZjg3MDk2NzVhYjYyN2E0OTcxNmY0YzQ2OWFiOGU0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxMGFiZTZjMmE4MTY1Yzg0MjgwMmY2ZDNiNWU1Yjc5OGU0MGU5MTI1ZDA3MzRiMzcyNzg2MDk2NTYxMzY2Y2FhIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_ed9e1f428f454fb1ad9ffae3309740ab",
+      "statement": "ModelRequest enforces immutability with direct attribute assignment raising DeprecationWarning and directing users to override() method, which creates a new instance with specified field modifications. Supported overrides include model, system_message, messages, tool_choice, tools, response_format, model_settings, and state. Both system_prompt (deprecated) and system_message parameters are supported with mutual exclusivity validation.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L89-L271",
+          "version": "repo-lines-v1:sha256:600628d5f7060020785d3e286975332bd146042f2590fd05d04a7625c8ba48c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOWE0ZjBkOTIyOWRmY2E0YWM1MDllNDc0OWQyNGFiZGIxMzg2NGIwYWVmMmIxNWViYmQ5ODlkNTgyNjhjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NzZhMTRjYWViNDY3MTJkNzBjNmJmOWEyYzhkNWNiZTY4NzdjOTJmMWM3YmFkNGQ2MjA3ZTNiZmUwYzNkN2FiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjE2MTg3MTIxNzdiOGJkY2RmZTZmMWFkNTEzNzM1ZmQzMjBiZDAzZWQ2MGJkZTQzZmNiY2FkMjYzYmViZTVmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YzFmMDJmZDdlYzFkNDYyYzBjYjgxOGI5NDhmZmU0ZjcxNWIyYzJjNDMyNjMwYzIzMmRmZTM0ZDQyNzQzZmE5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_bce72bd2703d4798bc83076327e81e31",
+      "statement": "Middleware decorators detect sync vs async functions via iscoroutinefunction and generate appropriate wrapper methods. For dynamic_prompt decorators wrapping sync functions, both sync (wrap_model_call) and async (awrap_model_call via async_wrapped_from_sync) are generated to support both execution modes; other decorators generate only the matching execution mode method.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L1763-L1840",
+          "version": "repo-lines-v1:sha256:7aa53c30b2c0d3e04510596ddf0d9a72ba6cff201f0c147864251f0a657ee637:eyJzZWxlY3RlZExpbmVDb3VudCI6NzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1MzI3ODUyNTUxN2E4MjA3YjAyZGM4MmVlZDk1MzFkYzgyNzY1NDA4ZGUyYzczNzhkMmIwYzBkZTQ5MDdjOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3MmE4NTA2MzFiMjI5MGVlMmYzN2YwZGEyZDM0YjAyNjEwNWE0NGYzMDU4NmFkMGU1MTc4NWMyZjg0NTVmMGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwYWJlNmMyYTgxNjVjODQyODAyZjZkM2I1ZTViNzk4ZTQwZTkxMjVkMDczNGIzNzI3ODYwOTY1NjEzNjZjYWEifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-16T08:30:18.041Z"
   }
 }

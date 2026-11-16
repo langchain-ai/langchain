@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d08e32c164f830b2e68f4439df51471dda51451f29b8008768a1203767f85d80",
+  "pageVersion": "sha256:eefacebefabf5d223c30fddd4ab8098e08f23f4bcc86a306ef2b48e87dc07974",
   "claims": [
     {
       "id": "claim_cb5fe3f72803497eac3f09ebf02d97cd",
@@ -89,8 +89,8 @@
       "statement": "Pre-release checks (pre-release-checks job) disable caching to catch missing dependencies, import the built wheel directly, run unit tests on both current and minimum dependency versions, block prerelease dependencies for stable releases, and run integration tests for partner packages.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/_release.yml#L414-L585",
-          "version": "repo-lines-v1:sha256:b603e390fcf7f13072d7489541e688df01105b3bb9ca3ce98e2898b18a117faa:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNmI2OTNjOWRmMzU1MThmNzEyODQwN2UyNDhiODM3ZTAxZjBlZmJmNTQ4ZTg4MGUyMDA4NTgyZDdmMTI3MDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxYTU5ZmRkM2Q4MWZkMTUyZDU5ZTJiNzliYTIxOGNmMGJhMDgyYWQ2NzM3ZmE3ZTFiYTEwYjRlY2FlMjlkY2I3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MTZhZDk2YzhlNWQyNGQ4OWU2MWQyZTkwMzEyOGY2YWE0YWYzYmQ2Y2I2MjhmNWMzYzY5NTI5YWUxNDJjZWY4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNzBkZDYxNTE3ZTAxOGI4NWVmYzNjOWM3YWM0ZWM5ZjUxYTU2NzMyMWU1Mjk4MjEwYjZmZjZlN2FkNTkzYjFmIn0"
+          "resource": "repo://.github/workflows/_release.yml#L414-L589",
+          "version": "repo-lines-v1:sha256:6dede91dc3a34033f9cb753fe8b5f359b9d6580f6197f5fa64f0b6f4126e09f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTc2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNmI2OTNjOWRmMzU1MThmNzEyODQwN2UyNDhiODM3ZTAxZjBlZmJmNTQ4ZTg4MGUyMDA4NTgyZDdmMTI3MDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxYTU5ZmRkM2Q4MWZkMTUyZDU5ZTJiNzliYTIxOGNmMGJhMDgyYWQ2NzM3ZmE3ZTFiYTEwYjRlY2FlMjlkY2I3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MTZhZDk2YzhlNWQyNGQ4OWU2MWQyZTkwMzEyOGY2YWE0YWYzYmQ2Y2I2MjhmNWMzYzY5NTI5YWUxNDJjZWY4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNzBkZDYxNTE3ZTAxOGI4NWVmYzNjOWM3YWM0ZWM5ZjUxYTU2NzMyMWU1Mjk4MjEwYjZmZjZlN2FkNTkzYjFmIn0"
         }
       ]
     },
@@ -246,11 +246,11 @@
     },
     {
       "id": "claim_a54c9526bb7843848baf8164db31f684",
-      "statement": "Pre-commit hooks (.pre-commit-config.yaml) enforce code quality standards locally for all developers, including branch protection, YAML/TOML validation, whitespace fixes, per-package format and lint targets (make format, make lint) for each library directory, and version consistency checks for core, langchain_v1, anthropic, chroma, and deepseek packages.",
+      "statement": "Pre-commit hooks (.pre-commit-config.yaml) enforce code quality standards locally for all developers, including branch protection, YAML/TOML validation, whitespace fixes, per-package format and lint targets (make format, make lint) for each library directory, and version consistency checks for core, langchain_v1, and 16+ partner packages (anthropic, chroma, deepseek, exa, fireworks, groq, huggingface, mistralai, nomic, ollama, openai, openrouter, perplexity, qdrant, typesafe, xai).",
       "evidence": [
         {
-          "resource": "repo://.pre-commit-config.yaml#L1-L200",
-          "version": "repo-lines-v1:sha256:d90a7db12e21999b427f58f7e8da653d632e6cb396c9bb0bde749a7da497ec7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YTExMGRiNWE5MzU3Y2RhMWQ3ODIxNmNkYzBiZjhiMjU1ZTMzOGNiYzFmMzI3ZTBkZjA4Y2ZjNzczOTFkZGVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2ZTk0MGY2NjliNzFlZWVlZWY3NjVmMmMxMjJiYTc3ZjRlNzhkMTJlMDAzZWZlYzg3NzQ0M2U4MjEwZjc4MTc5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjOGUzNDIyZmQwNDFiMzUxZDgwY2NjNWZiNjNmYjI1MjgxYzU2Y2E1YjI1MGE5NTM1YWU0Mjk5N2YxNDYxNDU2In0"
+          "resource": "repo://.pre-commit-config.yaml",
+          "version": "repo-file-v1:sha256:9836d4928d1c589efa89343147da52657dc4a76dc63e9a05d0609586294ecd86"
         }
       ]
     },
@@ -300,7 +300,7 @@
         },
         {
           "resource": "repo://.pre-commit-config.yaml#L1-L200",
-          "version": "repo-lines-v1:sha256:d90a7db12e21999b427f58f7e8da653d632e6cb396c9bb0bde749a7da497ec7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YTExMGRiNWE5MzU3Y2RhMWQ3ODIxNmNkYzBiZjhiMjU1ZTMzOGNiYzFmMzI3ZTBkZjA4Y2ZjNzczOTFkZGVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2ZTk0MGY2NjliNzFlZWVlZWY3NjVmMmMxMjJiYTc3ZjRlNzhkMTJlMDAzZWZlYzg3NzQ0M2U4MjEwZjc4MTc5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjOGUzNDIyZmQwNDFiMzUxZDgwY2NjNWZiNjNmYjI1MjgxYzU2Y2E1YjI1MGE5NTM1YWU0Mjk5N2YxNDYxNDU2In0"
+          "version": "repo-lines-v1:sha256:c7b0bb9f5a5d01d36da3e3d2934fa34ee41e666418981ea3060de8d14ed07c94:eyJzZWxlY3RlZExpbmVDb3VudCI6MjM2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YTExMGRiNWE5MzU3Y2RhMWQ3ODIxNmNkYzBiZjhiMjU1ZTMzOGNiYzFmMzI3ZTBkZjA4Y2ZjNzczOTFkZGVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2ZTk0MGY2NjliNzFlZWVlZWY3NjVmMmMxMjJiYTc3ZjRlNzhkMTJlMDAzZWZlYzg3NzQ0M2U4MjEwZjc4MTc5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjOGUzNDIyZmQwNDFiMzUxZDgwY2NjNWZiNjNmYjI1MjgxYzU2Y2E1YjI1MGE5NTM1YWU0Mjk5N2YxNDYxNDU2In0"
         }
       ]
     },
@@ -335,6 +335,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-16T08:30:18.041Z"
   }
 }

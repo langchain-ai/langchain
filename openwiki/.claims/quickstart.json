@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f71079c7c5f15c8bd4a719f0a03a9f461e06268fde8f82bc3c707e3a45e46f4d",
+  "pageVersion": "sha256:0815a2087451e8a8658b1d408b939e1d12cc80595246a38b09c15295cb4c7dbf",
   "claims": [
     {
       "id": "claim_7425c73f5e4c4667b8babba66c3663a0",
@@ -102,7 +102,7 @@
       "evidence": [
         {
           "resource": "repo://.pre-commit-config.yaml",
-          "version": "repo-file-v1:sha256:f6173b7f48573811a6a8ca9f0691ecb2d79c331ac1676af11542ab5cdcf68deb"
+          "version": "repo-file-v1:sha256:9836d4928d1c589efa89343147da52657dc4a76dc63e9a05d0609586294ecd86"
         }
       ]
     },
@@ -183,6 +183,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-16T08:30:18.041Z"
   }
 }

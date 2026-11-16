@@ -3,9 +3,6 @@ type: API Reference
 title: Agent Composability API Reference
 description: Complete reference documentation for agent composition APIs including middleware, subagents, and hook patterns in LangChain agents.
 tags: [composability, agents, middleware, subagents, API-reference, hook-patterns]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
 sources:
   - id: openwiki-source-ef89c5b8bd7c35a091f64f0a
     resource: repo://libs/langchain_v1/langchain/agents/__init__.py
@@ -18,6 +15,9 @@ sources:
   - id: openwiki-source-363977308087d996c7530860
     resource: repo://libs/langchain_v1/tests/unit_tests/agents/test_subagent_transformer.py
 generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 ## Overview

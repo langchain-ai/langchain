@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:2083eb1c63e279229be063096b0767e3e70cabc4f8a8e932949a39e262894c3d",
+  "pageVersion": "sha256:ab019ff7e821ea1c74241abf8853094b2ba18eea1302db97f480fdafec7b9c11",
   "claims": [
     {
       "id": "claim_bf4a816208b849fcbec8f49d366129d2",
-      "statement": "The /openwiki/reference/agent-execution.md page serves as a redirect to the primary Agent Execution documentation, which provides comprehensive coverage of the agent's structured, state-driven loop orchestrated by a LangGraph StateGraph, including initialization, model invocation, tool dispatch, result processing, termination logic, middleware hooks, and structured output handling.",
+      "statement": "The /openwiki/reference/agent-execution.md page provides comprehensive documentation of the agent's structured, state-driven loop orchestrated by a LangGraph StateGraph, including initialization, model invocation, tool dispatch, result processing, termination logic, middleware hooks, and structured output handling.",
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/factory.py",
           "version": "repo-file-v1:sha256:22c48a3478de99dabb06b413085e0e388e74ddb3681bd9892a373faa757cf8fe"
         },
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py",
-          "version": "repo-file-v1:sha256:d9a5ae88cc2dd6bcdc3030ce2e1b55f876d2af88c02c27f5b630dadad350fb75"
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L89-L314",
+          "version": "repo-lines-v1:sha256:35b7a6f9ce513f8f3e5b336f4fc0afee95e9ab1a293e0e925f8e78b9f21aaf14:eyJzZWxlY3RlZExpbmVDb3VudCI6MjI2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOWE0ZjBkOTIyOWRmY2E0YWM1MDllNDc0OWQyNGFiZGIxMzg2NGIwYWVmMmIxNWViYmQ5ODlkNTgyNjhjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4YzBjY2U5OWY4ZGIwM2FjYzU2NThhNDllMmQ1YzIxMGNkNzE4ZWMyMzRlNWVmMjE3NDFhMmE4YTNiNjAwMDk5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjE2MTg3MTIxNzdiOGJkY2RmZTZmMWFkNTEzNzM1ZmQzMjBiZDAzZWQ2MGJkZTQzZmNiY2FkMjYzYmViZTVmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1NmQ2YjFiYWQ5MTI0M2QzYTE5YjkzMGE2NWU3ZjhkZTAxMWUwMWViYmMwNmE3MzI3NGNmNjViMjZiNTQyMTRhIn0"
         }
       ]
     },
@@ -36,15 +36,11 @@
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1350-L1423",
-          "version": "repo-lines-v1:sha256:5b0754a81c637f2f8797ce56432a8c0f2a72cbd3a5f303a6994bf85246b0dc16:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhmNTljMWIxOTg5YTgxYWI4YWU5ODU3MjkwMmZhN2U5MTc2NzIzZDdkMmY3MzMzYjhjNTNlZGE5MTlhZDMwMjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmZWQ2MTVlZmExMWYwYTYyZTBiZmQ2MDZhZDE1NmM3NWU2NTYxNTBlMWYyZmNlODkwZjgxYjVlMjk1YWY5ODUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQ0MzdhYTE2ZGIzNDFjYTYzODYyMDk3MjYwZTk1YmQyNjhiZjFmOTRlODEzNzY1MzA4OWUzYTIyMTMyOTQwODgifQ"
+          "version": "repo-lines-v1:sha256:44b298b901faea8e9bf357d494ba6f8a029597181a6a88aee8a7770257c628ad:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5N2I0N2JiODFjZTkzY2JhNjdhZmMwODY5OGE4MGNmYTA5M2E4NjY3ZTljOWY5NjUzMzc4MThkNjU3OGQxODUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjUxOGUzZTM5MmEwYzZkYjA3NGEzZTE3NGMxZDMxNjBhNDgxYjgzZDMzMWZkYjQzMDc1ZDhjZTM2ZTFkNmU2OTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAwYzQ4NWVlOGQ0ZTMwMTY0MDZkYzIyYjY4NmQwNGQ1ZDRmZjVjY2QzYjk2MWY4OTM3YTFhZjdiYjU5NDVhOGYifQ"
         },
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L272-L325",
-          "version": "repo-lines-v1:sha256:c96042469fd0aa5d729a55088e83d397356f784c464237c8cbd7749d0dddc62e:eyJzZWxlY3RlZExpbmVDb3VudCI6NTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZmJhZTBiOTFkNDRmYzBkNDlmNWRlNjkxZGE2ZmM0MzFmMjYwMTM0YmY3MzFlMGUyMWY3NjQ4MDk0MzM0Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMDNlY2RkNGE0ZDEwZjE5YzczZmQ0MmZkMTI0MzdmZDMzNTRhODI2ODE2MDVkYTUyNTVhOTdhMzkwNjhkYmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllM2U3YTMyMjI2YmE0MjQ3MmYwMzZkYTU4ZDAzMjFjOTk2MTZmNDRjNGM3OTRmZDQ1YWMwMzQxMzk2OTlkYjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMWYwMmZkN2VjMWQ0NjJjMGNiODE4Yjk0OGZmZTRmNzE1YjJjMmM0MzI2MzBjMjMyZGZlMzRkNDI3NDNmYTkifQ"
-        },
-        {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L87-L269",
-          "version": "repo-lines-v1:sha256:2e092d648db88d84598f61d1f81e0d629676c59f2cd9d2892492f2a466327fb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOWE0ZjBkOTIyOWRmY2E0YWM1MDllNDc0OWQyNGFiZGIxMzg2NGIwYWVmMmIxNWViYmQ5ODlkNTgyNjhjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NzZhMTRjYWViNDY3MTJkNzBjNmJmOWEyYzhkNWNiZTY4NzdjOTJmMWM3YmFkNGQ2MjA3ZTNiZmUwYzNkN2FiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjE2MTg3MTIxNzdiOGJkY2RmZTZmMWFkNTEzNzM1ZmQzMjBiZDAzZWQ2MGJkZTQzZmNiY2FkMjYzYmViZTVmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YzFmMDJmZDdlYzFkNDYyYzBjYjgxOGI5NDhmZmU0ZjcxNWIyYzJjNDMyNjMwYzIzMmRmZTM0ZDQyNzQzZmE5In0"
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L89-L314",
+          "version": "repo-lines-v1:sha256:35b7a6f9ce513f8f3e5b336f4fc0afee95e9ab1a293e0e925f8e78b9f21aaf14:eyJzZWxlY3RlZExpbmVDb3VudCI6MjI2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOWE0ZjBkOTIyOWRmY2E0YWM1MDllNDc0OWQyNGFiZGIxMzg2NGIwYWVmMmIxNWViYmQ5ODlkNTgyNjhjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4YzBjY2U5OWY4ZGIwM2FjYzU2NThhNDllMmQ1YzIxMGNkNzE4ZWMyMzRlNWVmMjE3NDFhMmE4YTNiNjAwMDk5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjE2MTg3MTIxNzdiOGJkY2RmZTZmMWFkNTEzNzM1ZmQzMjBiZDAzZWQ2MGJkZTQzZmNiY2FkMjYzYmViZTVmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1NmQ2YjFiYWQ5MTI0M2QzYTE5YjkzMGE2NWU3ZjhkZTAxMWUwMWViYmMwNmE3MzI3NGNmNjViMjZiNTQyMTRhIn0"
         }
       ]
     },
@@ -189,6 +185,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-16T08:30:18.041Z"
   }
 }

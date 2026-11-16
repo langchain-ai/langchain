@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5bd6e79e5246904c06ed8b80d948ffe730f64d29939028a859d0b7dab3c539bd",
+  "pageVersion": "sha256:69085a0739d0e12a7416db0c751625dca7f980f357021615868fe7aa70eaf2f8",
   "claims": [
     {
       "id": "claim_d872799ce6874d76b63667fe912b7616",
@@ -26,7 +26,7 @@
     },
     {
       "id": "claim_bf4afec1395b4acbbf413fe2928daab6",
-      "statement": "langchain-core (v1.8.0) provides the stable base abstractions including Runnable protocol, BaseChatModel, message types, tools, prompts, and callbacks.",
+      "statement": "langchain-core (v1.8.1) provides the stable base abstractions including Runnable protocol, BaseChatModel, message types, tools, prompts, and callbacks.",
       "evidence": [
         {
           "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L1-L80",
@@ -38,7 +38,7 @@
         },
         {
           "resource": "repo://libs/core/pyproject.toml#L23-L23",
-          "version": "repo-lines-v1:sha256:27d31dd1e833da6defd031f3ada493737129d5d28cd7046dd916525627139aa3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdkMzFkZDFlODMzZGE2ZGVmZDAzMWYzYWRhNDkzNzM3MTI5ZDVkMjhjZDcwNDZkZDkxNjUyNTYyNzEzOWFhMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMjdkMzFkZDFlODMzZGE2ZGVmZDAzMWYzYWRhNDkzNzM3MTI5ZDVkMjhjZDcwNDZkZDkxNjUyNTYyNzEzOWFhMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWQyNGE4M2M2NzViYjUwMTAwMmFkN2YxZmNmYTA4OGFiM2FmZjUwNTQyZjBjNjI2Mzg3NDE4NGQ4YjQ2OTA3NCJ9"
+          "version": "repo-lines-v1:sha256:e36e8ecd8bd18b139a902e0be5b1127d793310307e6618605ad5696a289d2304:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZTM2ZThlY2Q4YmQxOGIxMzlhOTAyZTBiZTViMTEyN2Q3OTMzMTAzMDdlNjYxODYwNWFkNTY5NmEyODlkMjMwNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTM2ZThlY2Q4YmQxOGIxMzlhOTAyZTBiZTViMTEyN2Q3OTMzMTAzMDdlNjYxODYwNWFkNTY5NmEyODlkMjMwNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNmRmYWFiMzNiMmUzYTUwMTM3NmZlODIxNDNkNzBmNmVkYjMyNWI4YWMzYWI5MDUwYTg0OTgwN2ZmM2FhZGI3NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWQyNGE4M2M2NzViYjUwMTAwMmFkN2YxZmNmYTA4OGFiM2FmZjUwNTQyZjBjNjI2Mzg3NDE4NGQ4YjQ2OTA3NCJ9"
         }
       ]
     },
@@ -74,7 +74,7 @@
         },
         {
           "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1-L50",
-          "version": "repo-lines-v1:sha256:b972f9928545904dc248d138c943fc37ce04364c9f3ed8a4461915e774ca44b6:eyJzZWxlY3RlZExpbmVDb3VudCI6NTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMWZkYTIxNjI4MGFjNjg0ZmI1ZGQ4NjIxYmE5NTJiMjU3YzhjZTVlMDExM2U2N2JjMTJkZDBlZGU1ZTg2MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyODFhMDEyZDkwNWU4YzQwNTdiNzJmNGY2NWQ5ODBjZWUyNTAxMmU2MTgzM2E2MDM1N2JiZjk2ODY5ODk1ZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2NDcxNTMyNmUwZDYxNDlkYWE3YTYzZDFkMDE3MmVlMWM1Yjk1NzlkZTliOTQ0NDBjZGM4MjFiNzVhYmNjMWEifQ"
+          "version": "repo-lines-v1:sha256:4e2cef5dbb9a02c406f5aaf3d124542d182a924c77babcdce9a8bab73a0c550a:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwMWZkYTIxNjI4MGFjNjg0ZmI1ZGQ4NjIxYmE5NTJiMjU3YzhjZTVlMDExM2U2N2JjMTJkZDBlZGU1ZTg2MGMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEyODFhMDEyZDkwNWU4YzQwNTdiNzJmNGY2NWQ5ODBjZWUyNTAxMmU2MTgzM2E2MDM1N2JiZjk2ODY5ODk1ZDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2NDcxNTMyNmUwZDYxNDlkYWE3YTYzZDFkMDE3MmVlMWM1Yjk1NzlkZTliOTQ0NDBjZGM4MjFiNzVhYmNjMWEifQ"
         }
       ]
     },
@@ -149,6 +149,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-16T08:30:18.041Z"
   }
 }
