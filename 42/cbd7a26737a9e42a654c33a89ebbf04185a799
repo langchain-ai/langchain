@@ -1,0 +1,19 @@
+libs/core/langchain_core/exceptions.py
+  s_ee81ae05343800::t_4e5d3b1d671f7c 28-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "42cbd7a26737a9e42a654c33a89ebbf04185a799",
+  "prompts": {},
+  "sessions": {
+    "s_ee81ae05343800": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a1453052-17c6-4ec7-aa98-164c7dc795a5",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Kiewan Villatel <kiewan@langchain.dev>"
+    }
+  }
+}
