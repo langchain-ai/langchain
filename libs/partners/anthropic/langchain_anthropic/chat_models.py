@@ -1166,7 +1166,13 @@ def _reasoning_effort_levels(profile: object) -> tuple[str, ...]:
 def _supports_forced_tool_choice(model: str) -> bool:
     """Return whether the model accepts `tool_choice` types `any` and `tool`."""
     return not model.startswith(
-        ("claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5")
+        (
+            "claude-fable-5-1",
+            "claude-fable-5-2",
+            "claude-mythos-5-2",
+            "claude-opus-5-5",
+            "claude-sonnet-5-5",
+        )
     )
 
 
@@ -1753,7 +1759,10 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _client_params(self) -> dict[str, Any]:
         # Merge User-Agent with user-provided headers (user headers take precedence)
-        default_headers = {"User-Agent": _USER_AGENT}
+        default_headers = {
+            "User-Agent": _USER_AGENT,
+            "anthropic-version": "2023-06-01",
+        }
         if self.default_headers:
             default_headers.update(self.default_headers)
 
@@ -1820,7 +1829,7 @@ class ChatAnthropic(BaseChatModel):
         if effort:
             output_config["effort"] = effort
 
-        is_fable_model = self.model.startswith("claude-fable-5")
+        is_fable_model = self.model.startswith(("claude-fable-5", "claude-mythos-5-2"))
         is_sonnet_55 = self.model.startswith("claude-sonnet-5-5")
         if is_fable_model or is_sonnet_55:
             top_k = request_config.get("top_k", self.top_k)
@@ -1973,7 +1982,7 @@ class ChatAnthropic(BaseChatModel):
             payload["thinking"] = self.thinking
         if self.inference_geo is not None:
             payload["inference_geo"] = self.inference_geo
-        if self.model.startswith("claude-fable-5"):
+        if self.model.startswith(("claude-fable-5", "claude-mythos-5-2")):
             payload.pop("temperature", None)
             payload.pop("top_k", None)
             payload.pop("top_p", None)
@@ -2226,6 +2235,7 @@ class ChatAnthropic(BaseChatModel):
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
+                and not self.model.startswith(("claude-fable-5", "claude-mythos-5-2"))
                 and not _compact_in_params(payload)
             )
             block_start_event = None
@@ -2276,6 +2286,7 @@ class ChatAnthropic(BaseChatModel):
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
+                and not self.model.startswith(("claude-fable-5", "claude-mythos-5-2"))
                 and not _compact_in_params(payload)
             )
             block_start_event = None
