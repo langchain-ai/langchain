@@ -232,6 +232,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "image_tool_message": True,
         "structured_output": True,
         "tool_call_streaming": True,
+        "max_input_tokens": 1000000,
         "max_output_tokens": 128000,
         "tool_choice": False,
         "reasoning_effort_levels": [
