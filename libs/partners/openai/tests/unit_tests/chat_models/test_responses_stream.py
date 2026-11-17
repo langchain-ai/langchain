@@ -1127,9 +1127,10 @@ def test_responses_stream_function_call_preserves_namespace() -> None:
             sequence_number=4,
             type="response.function_call_arguments.delta",
         ),
-        ResponseFunctionCallArgumentsDoneEvent(
+        ResponseFunctionCallArgumentsDoneEvent.model_construct(
             arguments='{"query":"test"}',
             item_id="fc_123",
+            name="search_tool",
             output_index=0,
             sequence_number=5,
             type="response.function_call_arguments.done",
