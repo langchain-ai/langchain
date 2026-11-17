@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "langchain-convexlake"
+version = "0.1.0"
+description = "LangChain tools for ConvexLake prediction-market and options data."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+keywords = ["langchain", "prediction-markets", "options", "convexlake", "market-data"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "langchain-core>=0.3",
+    "convexlake>=0.2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/sergey-frolov/langchain-convexlake"
+Repository = "https://github.com/sergey-frolov/langchain-convexlake"
+
+[dependency-groups]
+dev = [
+    "langchain-tests>=0.3",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-socket",
+    "ruff",
+    "mypy",
+    "pandas-stubs",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["langchain_convexlake"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config"
+asyncio_mode = "auto"
+markers = ["integration: mark test as requiring a live API key"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
