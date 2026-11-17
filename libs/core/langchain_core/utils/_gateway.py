@@ -52,9 +52,6 @@ class _GatewayOverride(NamedTuple):
 _GATEWAY_OVERRIDE: ContextVar[_GatewayOverride | None] = ContextVar(
     "langchain_gateway_override", default=None
 )
-_GATEWAY_RECONSTRUCTION_PROTECTION: ContextVar[bool] = ContextVar(
-    "langchain_gateway_reconstruction_protection", default=False
-)
 
 
 @contextmanager
@@ -109,33 +106,6 @@ def langsmith_gateway(
     try:
         yield
     finally:
-        _GATEWAY_OVERRIDE.reset(token)
-
-
-def _get_gateway_override_snapshot() -> _GatewayOverride | None:
-    """Capture the current gateway context for later model reconstruction."""
-    override = _GATEWAY_OVERRIDE.get()
-    if override is None:
-        return None
-    return _GatewayOverride(override.base_url, override.api_key, dict(override.headers))
-
-
-@contextmanager
-def _use_gateway_override(
-    override: _GatewayOverride | None, *, protect_redirects: bool = False
-) -> Iterator[None]:
-    """Temporarily restore a model's construction-time gateway context."""
-    snapshot = (
-        _GatewayOverride(override.base_url, override.api_key, dict(override.headers))
-        if override is not None
-        else None
-    )
-    token = _GATEWAY_OVERRIDE.set(snapshot)
-    protection_token = _GATEWAY_RECONSTRUCTION_PROTECTION.set(protect_redirects)
-    try:
-        yield
-    finally:
-        _GATEWAY_RECONSTRUCTION_PROTECTION.reset(protection_token)
         _GATEWAY_OVERRIDE.reset(token)
 
 
