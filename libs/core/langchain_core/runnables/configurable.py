@@ -41,7 +41,6 @@ from langchain_core.runnables.utils import (
     gather_with_concurrency,
     get_unique_config_specs,
 )
-from langchain_core.utils._gateway import _use_gateway_override
 
 if TYPE_CHECKING:
     from langchain_core.runnables.graph import Graph
@@ -452,25 +451,6 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                 for k, v in self.default.__dict__.items()
                 if k in type(self.default).model_fields
             }
-            if (
-                "_langsmith_gateway_override"
-                in type(self.default).__private_attributes__
-            ):
-                with _use_gateway_override(
-                    self.default._langsmith_gateway_override,  # type: ignore[attr-defined]  # noqa: SLF001
-                    protect_redirects=(
-                        getattr(
-                            self.default,
-                            "_langsmith_gateway_redirect_protection",
-                            False,
-                        )
-                        is True
-                    ),
-                ):
-                    return (
-                        self.default.__class__(**{**init_params, **configurable}),
-                        config,
-                    )
             return (
                 self.default.__class__(**{**init_params, **configurable}),
                 config,

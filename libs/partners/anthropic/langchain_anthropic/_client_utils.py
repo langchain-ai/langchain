@@ -14,7 +14,6 @@ from functools import lru_cache
 from typing import Any
 
 import anthropic
-from langchain_core.utils._gateway_redirect import _gateway_request_hooks
 
 _NOT_GIVEN: Any = object()
 
@@ -50,15 +49,12 @@ def _get_default_httpx_client(
     base_url: str | None,
     timeout: Any = _NOT_GIVEN,
     anthropic_proxy: str | None = None,
-    gateway_origin: str | None = None,
 ) -> _SyncHttpxClientWrapper:
     kwargs: dict[str, Any] = {
         "base_url": base_url
         or os.environ.get("ANTHROPIC_BASE_URL")
         or "https://api.anthropic.com",
     }
-    if gateway_origin is not None:
-        kwargs["event_hooks"] = _gateway_request_hooks(gateway_origin, is_async=False)
     if timeout is not _NOT_GIVEN:
         kwargs["timeout"] = timeout
     if anthropic_proxy is not None:
@@ -72,15 +68,12 @@ def _get_default_async_httpx_client(
     base_url: str | None,
     timeout: Any = _NOT_GIVEN,
     anthropic_proxy: str | None = None,
-    gateway_origin: str | None = None,
 ) -> _AsyncHttpxClientWrapper:
     kwargs: dict[str, Any] = {
         "base_url": base_url
         or os.environ.get("ANTHROPIC_BASE_URL")
         or "https://api.anthropic.com",
     }
-    if gateway_origin is not None:
-        kwargs["event_hooks"] = _gateway_request_hooks(gateway_origin, is_async=True)
     if timeout is not _NOT_GIVEN:
         kwargs["timeout"] = timeout
     if anthropic_proxy is not None:
