@@ -1471,7 +1471,7 @@ class ChatAnthropic(BaseChatModel):
 
     default_headers: Mapping[str, str] | None = None
 
-    _langsmith_gateway_headers: dict[str, str] = PrivateAttr(default_factory=dict)
+    _langsmith_gateway_headers: dict[str, str] | None = PrivateAttr(default=None)
     """Headers from `langsmith_gateway`, sent by the client but never serialized."""
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
@@ -1741,7 +1741,7 @@ class ChatAnthropic(BaseChatModel):
     @model_validator(mode="after")
     def _set_langsmith_gateway_headers(self) -> Self:
         """Keep `langsmith_gateway` headers for the lazily built clients."""
-        if _langsmith_gateway_active():
+        if self._langsmith_gateway_headers is None:
             self._langsmith_gateway_headers = _gateway_headers()
         return self
 
@@ -1788,7 +1788,9 @@ class ChatAnthropic(BaseChatModel):
         if self.default_headers:
             default_headers.update(self.default_headers)
         default_headers = dict(
-            _with_gateway_headers(default_headers, self._langsmith_gateway_headers)
+            _with_gateway_headers(
+                default_headers, self._langsmith_gateway_headers or {}
+            )
             or {}
         )
 
