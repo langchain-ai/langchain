@@ -1127,7 +1127,7 @@ def test_responses_stream_function_call_preserves_namespace() -> None:
             sequence_number=4,
             type="response.function_call_arguments.delta",
         ),
-        ResponseFunctionCallArgumentsDoneEvent(
+        ResponseFunctionCallArgumentsDoneEvent.model_construct(
             arguments='{"query":"test"}',
             item_id="fc_123",
             name="search_tool",
@@ -1306,7 +1306,7 @@ def _function_call_stream(deltas: dict[str, list[str]]) -> list[Any]:
         )
         events.extend(
             [
-                ResponseFunctionCallArgumentsDoneEvent(
+                ResponseFunctionCallArgumentsDoneEvent.model_construct(
                     arguments=arguments,
                     item_id=item_id,
                     name="get_price",
