@@ -1,4 +1,5 @@
 import json
+from contextlib import nullcontext
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.load import dumpd
@@ -22,7 +23,7 @@ from openai.types.completion_usage import (
     CompletionTokensDetails,
     CompletionUsage,
 )
-from pydantic import SecretStr
+from pydantic import BaseModel, SecretStr
 
 from langchain_xai import ChatXAI
 
@@ -448,3 +449,38 @@ def test_langsmith_gateway_context_headers() -> None:
     assert sent["X-Service-Key"] == "svc-key"
     assert sent["X-Custom"] == "kept"
     assert "svc-key" not in json.dumps(dumpd(llm))
+
+
+@pytest.mark.parametrize("initial_gateway", [False, True])
+def test_langsmith_gateway_headers_survive_revalidation(
+    *, initial_gateway: bool
+) -> None:
+    context = (
+        langsmith_gateway(
+            api_key="original-api-secret", headers={"X-Service-Key": "original-secret"}
+        )
+        if initial_gateway
+        else nullcontext()
+    )
+    with context:
+        llm = ChatXAI(model=MODEL_NAME, api_key=SecretStr("user-key"))
+    original_clients = llm.root_client, llm.root_async_client
+    headers = {"x-service-key": "forged", "X-Other-Key": "kept"}
+    with langsmith_gateway(
+        api_key="other-api-secret", headers={"X-Other-Key": "other-secret"}
+    ):
+        assert ChatXAI.model_validate(llm) is llm
+
+        class Wrapper(BaseModel):
+            model: ChatXAI
+
+        assert Wrapper(model=llm).model is llm
+    assert (llm.root_client, llm.root_async_client) == original_clients
+    expected_headers = {"X-Other-Key": "kept"} if initial_gateway else headers
+    payload = llm._get_request_payload("hello", extra_headers=headers)
+    assert payload["extra_headers"] == expected_headers
+    for client in original_clients:
+        assert client.default_headers.get("X-Service-Key") == (
+            "original-secret" if initial_gateway else None
+        )
+        assert "X-Other-Key" not in client.default_headers
