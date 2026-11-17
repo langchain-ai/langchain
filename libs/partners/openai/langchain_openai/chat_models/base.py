@@ -1732,6 +1732,7 @@ class BaseChatOpenAI(BaseChatModel):
                 current_sub_index = -1
                 has_reasoning = False
                 item_output_indices: dict[str, int] = {}
+                function_call_arguments: dict[str, str] = {}
                 for chunk in response:
                     metadata = headers if is_first_chunk else {}
                     (
@@ -1749,6 +1750,7 @@ class BaseChatOpenAI(BaseChatModel):
                         has_reasoning=has_reasoning,
                         output_version=self.output_version,
                         item_output_indices=item_output_indices,
+                        function_call_arguments=function_call_arguments,
                     )
                     if generation_chunk:
                         if is_first_chunk and base_generation_info:
@@ -1804,6 +1806,7 @@ class BaseChatOpenAI(BaseChatModel):
                 current_sub_index = -1
                 has_reasoning = False
                 item_output_indices: dict[str, int] = {}
+                function_call_arguments: dict[str, str] = {}
                 async for chunk in _astream_with_chunk_timeout(
                     response,
                     self.stream_chunk_timeout,
@@ -1825,6 +1828,7 @@ class BaseChatOpenAI(BaseChatModel):
                         has_reasoning=has_reasoning,
                         output_version=self.output_version,
                         item_output_indices=item_output_indices,
+                        function_call_arguments=function_call_arguments,
                     )
                     if generation_chunk:
                         if is_first_chunk and base_generation_info:
@@ -5405,6 +5409,28 @@ def _coerce_chunk_response(resp: Any) -> Any:
     return resp
 
 
+def _remaining_function_call_arguments(
+    chunk: Any, function_call_arguments: dict[str, str]
+) -> str:
+    """Return the part of a completed function call's arguments not yet streamed.
+
+    Args:
+        chunk: A `response.function_call_arguments.done` event.
+        function_call_arguments: Arguments streamed so far, keyed by item ID. Updated
+            in place to the completed arguments.
+
+    Returns:
+        The missing suffix, or an empty string if nothing is missing or the streamed
+        arguments are not a prefix of the completed ones.
+    """
+    streamed = function_call_arguments.get(chunk.item_id, "")
+    arguments = chunk.arguments or ""
+    function_call_arguments[chunk.item_id] = arguments
+    if not arguments.startswith(streamed):
+        return ""
+    return arguments[len(streamed) :]
+
+
 def _convert_responses_chunk_to_generation_chunk(
     chunk: Any,
     current_index: int,  # index in content
@@ -5415,6 +5441,7 @@ def _convert_responses_chunk_to_generation_chunk(
     has_reasoning: bool = False,
     output_version: str | None = None,
     item_output_indices: dict[str, int] | None = None,  # item id -> `output_index`
+    function_call_arguments: dict[str, str] | None = None,  # item id -> args so far
 ) -> tuple[int, int, int, ChatGenerationChunk | None]:
     # After several built-in tool calls the API can report a later `output_index` on
     # an item's `done` events than on its `added` event. Pin each item to the first
@@ -5567,6 +5594,8 @@ def _convert_responses_chunk_to_generation_chunk(
         and chunk.item.type == "function_call"
     ):
         _advance(chunk.output_index)
+        if function_call_arguments is not None:
+            function_call_arguments[chunk.item.id] = chunk.item.arguments or ""
         tool_call_chunks.append(
             {
                 "type": "tool_call_chunk",
@@ -5631,11 +5660,32 @@ def _convert_responses_chunk_to_generation_chunk(
         )
     elif chunk.type == "response.function_call_arguments.delta":
         _advance(chunk.output_index)
+        if function_call_arguments is not None:
+            function_call_arguments[chunk.item_id] = (
+                function_call_arguments.get(chunk.item_id, "") + chunk.delta
+            )
         tool_call_chunks.append(
             {"type": "tool_call_chunk", "args": chunk.delta, "index": current_index}
         )
         content.append(
             {"type": "function_call", "arguments": chunk.delta, "index": current_index}
+        )
+    elif (
+        chunk.type == "response.function_call_arguments.done"
+        and function_call_arguments is not None
+        and (
+            remaining := _remaining_function_call_arguments(
+                chunk, function_call_arguments
+            )
+        )
+    ):
+        # The API can skip some or all argument deltas, so emit what is still missing.
+        _advance(chunk.output_index)
+        tool_call_chunks.append(
+            {"type": "tool_call_chunk", "args": remaining, "index": current_index}
+        )
+        content.append(
+            {"type": "function_call", "arguments": remaining, "index": current_index}
         )
     elif chunk.type == "response.refusal.done":
         content.append({"type": "refusal", "refusal": chunk.refusal})

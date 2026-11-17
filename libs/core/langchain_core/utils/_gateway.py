@@ -52,6 +52,9 @@ class _GatewayOverride(NamedTuple):
 _GATEWAY_OVERRIDE: ContextVar[_GatewayOverride | None] = ContextVar(
     "langchain_gateway_override", default=None
 )
+_GATEWAY_RECONSTRUCTION_PROTECTION: ContextVar[bool] = ContextVar(
+    "langchain_gateway_reconstruction_protection", default=False
+)
 
 
 @contextmanager
@@ -83,9 +86,8 @@ def langsmith_gateway(
         base_url: Gateway host. The provider's path is appended per model.
         headers: Headers sent with every request to the gateway, such as a
             service key. They replace any header of the same name
-            (case-insensitive) set on the model. They are added to the model's
-            HTTP client only, not stored on the model, so they are never
-            serialized or traced.
+            (case-insensitive) set on the model. They are kept in private model
+            state and sent by the HTTP client, but are not serialized or traced.
 
     Yields:
         None.
@@ -107,6 +109,33 @@ def langsmith_gateway(
     try:
         yield
     finally:
+        _GATEWAY_OVERRIDE.reset(token)
+
+
+def _get_gateway_override_snapshot() -> _GatewayOverride | None:
+    """Capture the current gateway context for later model reconstruction."""
+    override = _GATEWAY_OVERRIDE.get()
+    if override is None:
+        return None
+    return _GatewayOverride(override.base_url, override.api_key, dict(override.headers))
+
+
+@contextmanager
+def _use_gateway_override(
+    override: _GatewayOverride | None, *, protect_redirects: bool = False
+) -> Iterator[None]:
+    """Temporarily restore a model's construction-time gateway context."""
+    snapshot = (
+        _GatewayOverride(override.base_url, override.api_key, dict(override.headers))
+        if override is not None
+        else None
+    )
+    token = _GATEWAY_OVERRIDE.set(snapshot)
+    protection_token = _GATEWAY_RECONSTRUCTION_PROTECTION.set(protect_redirects)
+    try:
+        yield
+    finally:
+        _GATEWAY_RECONSTRUCTION_PROTECTION.reset(protection_token)
         _GATEWAY_OVERRIDE.reset(token)
 
 
@@ -229,6 +258,23 @@ def _resolve_gateway_base_url(provider_path: str) -> str | None:
     return f"{base}/{provider_path}"
 
 
+def _same_origin(first: str, second: str) -> bool:
+    """Check whether two HTTP URLs have the same origin."""
+    try:
+        left, right = urlsplit(first), urlsplit(second)
+        if left.scheme not in {"http", "https"} or right.scheme != left.scheme:
+            return False
+        if not left.hostname or not right.hostname:
+            return False
+        default_port = 443 if left.scheme == "https" else 80
+        left_port = left.port if left.port is not None else default_port
+        right_port = right.port if right.port is not None else default_port
+    except ValueError:
+        return False
+    else:
+        return left.hostname == right.hostname and left_port == right_port
+
+
 def _resolve_gateway_config(
     *,
     base_url: str | None,
@@ -248,16 +294,11 @@ def _resolve_gateway_config(
     - **base_url:** explicit ``base_url`` > ``base_url_env`` > LangSmith gateway
       > ``default_base_url``.
     - **api_key:** explicit ``api_key`` (returned unchanged) > the gateway key if
-      the base URL came from the gateway, otherwise the provider key > the other.
-      The gateway key uses ``LANGSMITH_GATEWAY_API_KEY`` when the gateway is
-      enabled, with ``LANGSMITH_API_KEY`` as a fallback only when the base URL came
-      from the gateway.
-
-    The provenance flip on the key means an ``OPENAI_API_KEY``-style provider key
-    is preferred whenever the caller pointed the base URL at a non-gateway
-    endpoint (so a stray gateway key is not sent to the provider), while the
-    gateway key wins for the common "just enable the gateway" setup even if a
-    provider key happens to be present in the environment.
+      the base URL came from the gateway, otherwise the provider key. A gateway
+      key is a fallback for an explicit URL only when it has the same origin as
+      the configured gateway. ``LANGSMITH_GATEWAY_API_KEY`` is used when the
+      gateway is enabled, with ``LANGSMITH_API_KEY`` as a fallback only when the
+      base URL came from the gateway.
 
     Args:
         base_url: Explicitly-provided base URL (e.g. a ``base_url`` kwarg), or
@@ -306,11 +347,17 @@ def _resolve_gateway_config(
         if not gateway_api_key and base_url_from_gateway:
             gateway_api_key = os.getenv(_LANGSMITH_API_KEY_ENV)
         provider_api_key = _first_env(api_key_env)
-        chosen = (
-            (gateway_api_key or provider_api_key)
-            if base_url_from_gateway
-            else (provider_api_key or gateway_api_key)
-        )
+        if base_url_from_gateway:
+            chosen = gateway_api_key or provider_api_key
+        elif (
+            gateway_api_key
+            and gateway_base_url
+            and resolved_base_url
+            and _same_origin(gateway_base_url, resolved_base_url)
+        ):
+            chosen = provider_api_key or gateway_api_key
+        else:
+            chosen = provider_api_key
         resolved_api_key = SecretStr(chosen) if chosen else None
 
     return GatewayConfig(resolved_base_url, resolved_api_key, base_url_from_gateway)
