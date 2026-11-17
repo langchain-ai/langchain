@@ -124,11 +124,14 @@ from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils._gateway import (
     GATEWAY_METADATA_RESPONSE_KEY,
     _gateway_headers,
+    _GatewayOverride,
+    _get_gateway_override_snapshot,
     _langsmith_gateway_active,
     _parse_gateway_metadata,
     _resolve_gateway_config,
     _with_gateway_headers,
 )
+from langchain_core.utils._gateway_redirect import _protect_gateway_redirects
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
@@ -1023,6 +1026,10 @@ class BaseChatOpenAI(BaseChatModel):
 
     default_headers: Mapping[str, str] | None = None
 
+    _langsmith_gateway_override: _GatewayOverride | None = PrivateAttr(
+        default_factory=_get_gateway_override_snapshot
+    )
+    _langsmith_gateway_redirect_protection: bool | None = PrivateAttr(default=None)
     _langsmith_gateway_headers: dict[str, str] | None = PrivateAttr(default=None)
     """Headers from `langsmith_gateway`, sent by the client but never serialized."""
 
@@ -1427,21 +1434,30 @@ class BaseChatOpenAI(BaseChatModel):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        # Resolve base URL and API key, applying LangSmith gateway settings.
-        _gateway_config = _resolve_gateway_config(
-            base_url=self.openai_api_base,
-            api_key=self.openai_api_key,
-            provider_path="openai/v1",
-            base_url_env="OPENAI_API_BASE",
-            api_key_env="OPENAI_API_KEY",
-        )
-        self.openai_api_base = _gateway_config.base_url
-        self.openai_api_key = _gateway_config.api_key
-        _base_url_from_gateway = _gateway_config.base_url_from_gateway
-        if _langsmith_gateway_active():
-            self.openai_proxy = None
+        _base_url_from_gateway = False
         if self._langsmith_gateway_headers is None:
+            _gateway_config = _resolve_gateway_config(
+                base_url=self.openai_api_base,
+                api_key=self.openai_api_key,
+                provider_path="openai/v1",
+                base_url_env="OPENAI_API_BASE",
+                api_key_env="OPENAI_API_KEY",
+            )
+            self.openai_api_base = _gateway_config.base_url
+            self.openai_api_key = _gateway_config.api_key
+            _base_url_from_gateway = _gateway_config.base_url_from_gateway
+            if _langsmith_gateway_active():
+                self.openai_proxy = None
             self._langsmith_gateway_headers = _gateway_headers()
+        if self._langsmith_gateway_redirect_protection is None:
+            self._langsmith_gateway_redirect_protection = _protect_gateway_redirects(
+                self.openai_api_base, self.openai_api_key, "openai/v1"
+            )
+        gateway_client_options = (
+            {"gateway_origin": self.openai_api_base}
+            if self._langsmith_gateway_redirect_protection
+            else {}
+        )
 
         # Enable stream_usage by default if using default base URL and client,
         # or when the base URL was set by the LangSmith gateway (which proxies
@@ -1526,6 +1542,7 @@ class BaseChatOpenAI(BaseChatModel):
                         proxy=self.openai_proxy,
                         verify=global_ssl_context,
                         socket_options=resolved_socket_options,
+                        **gateway_client_options,
                     )
                 sync_specific = {
                     "http_client": self.http_client
@@ -1533,6 +1550,7 @@ class BaseChatOpenAI(BaseChatModel):
                         self.openai_api_base,
                         self.request_timeout,
                         resolved_socket_options,
+                        **gateway_client_options,
                     ),
                     "api_key": sync_api_key_value,
                 }
@@ -1544,6 +1562,7 @@ class BaseChatOpenAI(BaseChatModel):
                     proxy=self.openai_proxy,
                     verify=global_ssl_context,
                     socket_options=resolved_socket_options,
+                    **gateway_client_options,
                 )
             async_specific = {
                 "http_client": self.http_async_client
@@ -1551,6 +1570,7 @@ class BaseChatOpenAI(BaseChatModel):
                     self.openai_api_base,
                     self.request_timeout,
                     resolved_socket_options,
+                    **gateway_client_options,
                 ),
                 "api_key": async_api_key_value,
             }
@@ -1745,6 +1765,7 @@ class BaseChatOpenAI(BaseChatModel):
                 current_sub_index = -1
                 has_reasoning = False
                 item_output_indices: dict[str, int] = {}
+                function_call_arguments: dict[str, str] = {}
                 for chunk in response:
                     metadata = headers if is_first_chunk else {}
                     (
@@ -1762,6 +1783,7 @@ class BaseChatOpenAI(BaseChatModel):
                         has_reasoning=has_reasoning,
                         output_version=self.output_version,
                         item_output_indices=item_output_indices,
+                        function_call_arguments=function_call_arguments,
                     )
                     if generation_chunk:
                         if is_first_chunk and base_generation_info:
@@ -1817,6 +1839,7 @@ class BaseChatOpenAI(BaseChatModel):
                 current_sub_index = -1
                 has_reasoning = False
                 item_output_indices: dict[str, int] = {}
+                function_call_arguments: dict[str, str] = {}
                 async for chunk in _astream_with_chunk_timeout(
                     response,
                     self.stream_chunk_timeout,
@@ -1838,6 +1861,7 @@ class BaseChatOpenAI(BaseChatModel):
                         has_reasoning=has_reasoning,
                         output_version=self.output_version,
                         item_output_indices=item_output_indices,
+                        function_call_arguments=function_call_arguments,
                     )
                     if generation_chunk:
                         if is_first_chunk and base_generation_info:
@@ -5427,6 +5451,28 @@ def _coerce_chunk_response(resp: Any) -> Any:
     return resp
 
 
+def _remaining_function_call_arguments(
+    chunk: Any, function_call_arguments: dict[str, str]
+) -> str:
+    """Return the part of a completed function call's arguments not yet streamed.
+
+    Args:
+        chunk: A `response.function_call_arguments.done` event.
+        function_call_arguments: Arguments streamed so far, keyed by item ID. Updated
+            in place to the completed arguments.
+
+    Returns:
+        The missing suffix, or an empty string if nothing is missing or the streamed
+        arguments are not a prefix of the completed ones.
+    """
+    streamed = function_call_arguments.get(chunk.item_id, "")
+    arguments = chunk.arguments or ""
+    function_call_arguments[chunk.item_id] = arguments
+    if not arguments.startswith(streamed):
+        return ""
+    return arguments[len(streamed) :]
+
+
 def _convert_responses_chunk_to_generation_chunk(
     chunk: Any,
     current_index: int,  # index in content
@@ -5437,6 +5483,7 @@ def _convert_responses_chunk_to_generation_chunk(
     has_reasoning: bool = False,
     output_version: str | None = None,
     item_output_indices: dict[str, int] | None = None,  # item id -> `output_index`
+    function_call_arguments: dict[str, str] | None = None,  # item id -> args so far
 ) -> tuple[int, int, int, ChatGenerationChunk | None]:
     # After several built-in tool calls the API can report a later `output_index` on
     # an item's `done` events than on its `added` event. Pin each item to the first
@@ -5589,6 +5636,8 @@ def _convert_responses_chunk_to_generation_chunk(
         and chunk.item.type == "function_call"
     ):
         _advance(chunk.output_index)
+        if function_call_arguments is not None:
+            function_call_arguments[chunk.item.id] = chunk.item.arguments or ""
         tool_call_chunks.append(
             {
                 "type": "tool_call_chunk",
@@ -5653,11 +5702,32 @@ def _convert_responses_chunk_to_generation_chunk(
         )
     elif chunk.type == "response.function_call_arguments.delta":
         _advance(chunk.output_index)
+        if function_call_arguments is not None:
+            function_call_arguments[chunk.item_id] = (
+                function_call_arguments.get(chunk.item_id, "") + chunk.delta
+            )
         tool_call_chunks.append(
             {"type": "tool_call_chunk", "args": chunk.delta, "index": current_index}
         )
         content.append(
             {"type": "function_call", "arguments": chunk.delta, "index": current_index}
+        )
+    elif (
+        chunk.type == "response.function_call_arguments.done"
+        and function_call_arguments is not None
+        and (
+            remaining := _remaining_function_call_arguments(
+                chunk, function_call_arguments
+            )
+        )
+    ):
+        # The API can skip some or all argument deltas, so emit what is still missing.
+        _advance(chunk.output_index)
+        tool_call_chunks.append(
+            {"type": "tool_call_chunk", "args": remaining, "index": current_index}
+        )
+        content.append(
+            {"type": "function_call", "arguments": remaining, "index": current_index}
         )
     elif chunk.type == "response.refusal.done":
         content.append({"type": "refusal", "refusal": chunk.refusal})
