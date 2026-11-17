@@ -664,7 +664,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.8.0"
+version = "1.8.2"
 source = { editable = "../../core" }
 dependencies = [
     { name = "certifi" },
