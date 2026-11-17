@@ -75,6 +75,9 @@ def langsmith_gateway(
     lets a caller load an untrusted serialized model without it redirecting the
     gateway key to another host or bypassing the gateway.
 
+    Treat invocation arguments, including `extra_headers`, as trusted application
+    input; gateway header precedence is not an authorization boundary.
+
     Args:
         api_key: Key used to authenticate to the gateway.
         base_url: Gateway host. The provider's path is appended per model.
