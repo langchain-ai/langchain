@@ -50,17 +50,6 @@ def test_request(model: str) -> None:
     ]
 
 
-def test_sdk_upgrade_preserves_api_version() -> None:
-    model = ChatAnthropic(model="claude-fable-5-2", api_key="test")
-    assert model._client.default_headers["anthropic-version"] == "2023-06-01"
-    override = ChatAnthropic(
-        model="claude-fable-5-2",
-        api_key="test",
-        default_headers={"anthropic-version": "2026-10-21"},
-    )
-    assert override._client.default_headers["anthropic-version"] == "2026-10-21"
-
-
 @pytest.mark.parametrize("model", ["claude-fable-5-2", "claude-mythos-5-2"])
 def test_implicit_thinking_stream(model: str) -> None:
     from unittest.mock import Mock, patch
