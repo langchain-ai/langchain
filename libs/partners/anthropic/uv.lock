@@ -592,7 +592,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.4.9"
+version = "1.4.10"
 source = { editable = "../../langchain_v1" }
 dependencies = [
     { name = "langchain-core" },
@@ -700,7 +700,7 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=2.7.0" },
+    { name = "anthropic", specifier = ">=0.120.0" },
     { name = "langchain-core", editable = "../../core" },
     { name = "pydantic", specifier = ">=2.7.4" },
 ]
@@ -733,7 +733,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "1.7.6"
+version = "1.7.7"
 source = { editable = "../../core" }
 dependencies = [
     { name = "certifi" },
