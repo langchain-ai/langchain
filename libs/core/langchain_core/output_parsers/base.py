@@ -5,6 +5,7 @@ from __future__ import annotations
 import builtins
 import contextlib
 from abc import ABC, abstractmethod
+from contextvars import ContextVar
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -29,6 +30,10 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 OutputParserLike = Runnable[LanguageModelOutput, T]
+
+_APARSE_RESULT_ACTIVE: ContextVar[frozenset[int]] = ContextVar(
+    "_aparse_result_active", default=frozenset()
+)
 
 
 class BaseLLMOutputParser(ABC, Generic[T]):
@@ -303,8 +308,13 @@ class BaseOutputParser(
         if (
             type(self).aparse is not BaseOutputParser.aparse
             and type(self).parse_result is BaseOutputParser.parse_result
+            and id(self) not in _APARSE_RESULT_ACTIVE.get()
         ):
-            return await self.aparse(result[0].text)
+            token = _APARSE_RESULT_ACTIVE.set(_APARSE_RESULT_ACTIVE.get() | {id(self)})
+            try:
+                return await self.aparse(result[0].text)
+            finally:
+                _APARSE_RESULT_ACTIVE.reset(token)
         return await run_in_executor(None, self.parse_result, result, partial=partial)
 
     async def aparse(self, text: str) -> T:

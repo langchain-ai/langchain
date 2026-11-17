@@ -97,6 +97,50 @@ async def test_base_output_parser_preserves_parse_result(
     assert await parser.ainvoke(message) == "result:False"
 
 
+@pytest.mark.parametrize("inherited", [False, True])
+async def test_base_output_parser_aparse_delegates_to_aparse_result(
+    *, inherited: bool
+) -> None:
+    caller_thread = threading.get_ident()
+
+    class DelegatingParser(BaseOutputParser[str]):
+        def parse(self, text: str) -> str:
+            assert threading.get_ident() != caller_thread
+            return text.upper()
+
+        async def aparse(self, text: str) -> str:
+            return await self.aparse_result([Generation(text=text)])
+
+    class InheritedParser(DelegatingParser):
+        pass
+
+    parser = InheritedParser() if inherited else DelegatingParser()
+    assert await parser.ainvoke("text") == "TEXT"
+    assert await parser.aparse("text") == "TEXT"
+    assert await parser.aparse_result([Generation(text="text")]) == "TEXT"
+
+
+async def test_base_output_parser_async_dispatch_is_task_local() -> None:
+    class AsyncParser(BaseOutputParser[str]):
+        def parse(self, text: str) -> str:
+            pytest.fail(f"parse must not be called with {text!r}")
+
+        async def aparse(self, text: str) -> str:
+            if text == "error":
+                msg = "parse failed"
+                raise ValueError(msg)
+            await asyncio.sleep(0)
+            return text.upper()
+
+    parser = AsyncParser()
+    with pytest.raises(ValueError, match="parse failed"):
+        await parser.aparse_result([Generation(text="error")])
+    first, second = await asyncio.gather(parser.ainvoke("one"), parser.ainvoke("two"))
+    assert (first, second) == ("ONE", "TWO")
+    assert await parser.aparse_result([Generation(text="three")]) == "THREE"
+    assert await parser.aparse_result([Generation(text="four")]) == "FOUR"
+
+
 async def test_base_output_parser_keeps_sync_fallback() -> None:
     caller_thread = threading.get_ident()
 
