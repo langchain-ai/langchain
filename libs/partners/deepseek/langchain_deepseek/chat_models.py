@@ -29,6 +29,10 @@ from langchain_core.utils._gateway import (
     _gateway_headers,
     _with_gateway_headers,
 )
+from langchain_core.utils._gateway_redirect import (
+    _gateway_request_hooks,
+    _protect_gateway_redirects,
+)
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
@@ -328,6 +332,10 @@ class ChatDeepSeek(BaseChatOpenAI):
         """Validate necessary environment vars and client params."""
         if self._langsmith_gateway_headers is None:
             self._langsmith_gateway_headers = _gateway_headers()
+        if self._langsmith_gateway_redirect_protection is None:
+            self._langsmith_gateway_redirect_protection = _protect_gateway_redirects(
+                self.api_base, self.api_key, "deepseek/v1"
+            )
         if self.api_base == DEFAULT_API_BASE and not (
             self.api_key and self.api_key.get_secret_value()
         ):
@@ -350,10 +358,21 @@ class ChatDeepSeek(BaseChatOpenAI):
 
         if not (self.client or None):
             sync_specific: dict = {"http_client": self.http_client}
+            if self.http_client is None and self._langsmith_gateway_redirect_protection:
+                sync_specific["http_client"] = openai.DefaultHttpxClient(
+                    event_hooks=_gateway_request_hooks(self.api_base, is_async=False)
+                )
             self.root_client = openai.OpenAI(**client_params, **sync_specific)
             self.client = self.root_client.chat.completions
         if not (self.async_client or None):
             async_specific: dict = {"http_client": self.http_async_client}
+            if (
+                self.http_async_client is None
+                and self._langsmith_gateway_redirect_protection
+            ):
+                async_specific["http_client"] = openai.DefaultAsyncHttpxClient(
+                    event_hooks=_gateway_request_hooks(self.api_base, is_async=True)
+                )
             self.root_async_client = openai.AsyncOpenAI(
                 **client_params,
                 **async_specific,

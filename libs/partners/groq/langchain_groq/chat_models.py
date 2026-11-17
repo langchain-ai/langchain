@@ -67,7 +67,13 @@ from langchain_core.utils import from_env, get_pydantic_field_names, secret_from
 from langchain_core.utils._gateway import (
     _apply_gateway_config,
     _gateway_headers,
+    _GatewayOverride,
+    _get_gateway_override_snapshot,
     _with_gateway_headers,
+)
+from langchain_core.utils._gateway_redirect import (
+    _gateway_request_hooks,
+    _protect_gateway_redirects,
 )
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
@@ -497,6 +503,10 @@ class ChatGroq(BaseChatModel):
 
     default_headers: Mapping[str, str] | None = None
 
+    _langsmith_gateway_override: _GatewayOverride | None = PrivateAttr(
+        default_factory=_get_gateway_override_snapshot
+    )
+    _langsmith_gateway_redirect_protection: bool | None = PrivateAttr(default=None)
     _langsmith_gateway_headers: dict[str, str] | None = PrivateAttr(default=None)
     """Headers from `langsmith_gateway`, sent by the client but never serialized."""
 
@@ -583,6 +593,10 @@ class ChatGroq(BaseChatModel):
 
         if self._langsmith_gateway_headers is None:
             self._langsmith_gateway_headers = _gateway_headers()
+        if self._langsmith_gateway_redirect_protection is None:
+            self._langsmith_gateway_redirect_protection = _protect_gateway_redirects(
+                self.groq_api_base, self.groq_api_key, "groq"
+            )
         default_headers = {"User-Agent": f"langchain/{__version__}"} | dict(
             _with_gateway_headers(self.default_headers, self._langsmith_gateway_headers)
             or {}
@@ -599,11 +613,26 @@ class ChatGroq(BaseChatModel):
             "default_query": self.default_query,
         }
 
-        sync_specific: dict[str, Any] = {"http_client": self.http_client}
         if not self.client:
+            sync_specific: dict[str, Any] = {"http_client": self.http_client}
+            if self.http_client is None and self._langsmith_gateway_redirect_protection:
+                sync_specific["http_client"] = groq.DefaultHttpxClient(
+                    event_hooks=_gateway_request_hooks(
+                        self.groq_api_base, is_async=False
+                    )
+                )
             self.client = groq.Groq(**client_params, **sync_specific).chat.completions
         if not self.async_client:
             async_specific: dict[str, Any] = {"http_client": self.http_async_client}
+            if (
+                self.http_async_client is None
+                and self._langsmith_gateway_redirect_protection
+            ):
+                async_specific["http_client"] = groq.DefaultAsyncHttpxClient(
+                    event_hooks=_gateway_request_hooks(
+                        self.groq_api_base, is_async=True
+                    )
+                )
             self.async_client = groq.AsyncGroq(
                 **client_params, **async_specific
             ).chat.completions

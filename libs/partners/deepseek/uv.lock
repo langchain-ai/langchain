@@ -462,7 +462,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.8.0"
+version = "1.8.2"
 source = { editable = "../../core" }
 dependencies = [
     { name = "certifi" },
@@ -575,7 +575,7 @@ typing = [{ name = "mypy", specifier = ">=2.1.0,<2.2.0" }]
 
 [[package]]
 name = "langchain-openai"
-version = "1.7.4"
+version = "1.8.2"
 source = { editable = "../openai" }
 dependencies = [
     { name = "certifi" },

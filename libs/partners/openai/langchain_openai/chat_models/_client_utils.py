@@ -23,6 +23,7 @@ from functools import lru_cache
 from typing import Any, TypeVar, cast
 
 import openai
+from langchain_core.utils._gateway_redirect import _gateway_request_hooks
 from pydantic import SecretStr
 
 from langchain_openai._compat import httpx
@@ -389,6 +390,7 @@ def _build_sync_httpx_client(
     base_url: str | None,
     timeout: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    gateway_origin: str | None = None,
 ) -> _SyncHttpxClientWrapper:
     kwargs: dict[str, Any] = {
         "base_url": base_url
@@ -396,6 +398,8 @@ def _build_sync_httpx_client(
         or "https://api.openai.com/v1",
         "timeout": timeout,
     }
+    if gateway_origin is not None:
+        kwargs["event_hooks"] = _gateway_request_hooks(gateway_origin, is_async=False)
     if socket_options:
         # httpx ignores limits= when transport= is provided; set it explicitly
         # on the transport to avoid silently shrinking the connection pool.
@@ -410,6 +414,7 @@ def _build_async_httpx_client(
     base_url: str | None,
     timeout: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    gateway_origin: str | None = None,
 ) -> _AsyncHttpxClientWrapper:
     kwargs: dict[str, Any] = {
         "base_url": base_url
@@ -417,6 +422,8 @@ def _build_async_httpx_client(
         or "https://api.openai.com/v1",
         "timeout": timeout,
     }
+    if gateway_origin is not None:
+        kwargs["event_hooks"] = _gateway_request_hooks(gateway_origin, is_async=True)
     if socket_options:
         # See _build_sync_httpx_client for the limits= rationale.
         kwargs["transport"] = httpx.AsyncHTTPTransport(
@@ -430,14 +437,20 @@ def _build_proxied_sync_httpx_client(
     proxy: str,
     verify: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    gateway_origin: str | None = None,
 ) -> httpx.Client:
     """httpx.Client for the openai_proxy code path.
 
     When socket options are disabled (`()`), returns a plain
     `httpx.Client(proxy=..., verify=...)` with no transport injected.
     """
+    hooks = (
+        _gateway_request_hooks(gateway_origin, is_async=False)
+        if gateway_origin is not None
+        else None
+    )
     if not socket_options:
-        return httpx.Client(proxy=proxy, verify=verify)
+        return httpx.Client(proxy=proxy, verify=verify, event_hooks=hooks)
     # Mount under `all://` (not `transport=`) so `Client._mounts` mirrors the
     # shape produced by httpx's own `proxy=` path — a single-entry dict keyed
     # by `URLPattern("all://")`. Callers (and the existing proxy integration
@@ -453,13 +466,14 @@ def _build_proxied_sync_httpx_client(
         socket_options=list(socket_options),
         limits=_DEFAULT_CONNECTION_LIMITS,
     )
-    return httpx.Client(mounts={"all://": transport})
+    return httpx.Client(mounts={"all://": transport}, event_hooks=hooks)
 
 
 def _build_proxied_async_httpx_client(
     proxy: str,
     verify: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    gateway_origin: str | None = None,
 ) -> httpx.AsyncClient:
     """httpx.AsyncClient for the openai_proxy code path.
 
@@ -467,15 +481,20 @@ def _build_proxied_async_httpx_client(
     the `mounts={"all://": ...}` shape, and the `httpx.Proxy` wrapping
     rationale.
     """
+    hooks = (
+        _gateway_request_hooks(gateway_origin, is_async=True)
+        if gateway_origin is not None
+        else None
+    )
     if not socket_options:
-        return httpx.AsyncClient(proxy=proxy, verify=verify)
+        return httpx.AsyncClient(proxy=proxy, verify=verify, event_hooks=hooks)
     transport = httpx.AsyncHTTPTransport(
         proxy=httpx.Proxy(proxy),
         verify=verify,
         socket_options=list(socket_options),
         limits=_DEFAULT_CONNECTION_LIMITS,
     )
-    return httpx.AsyncClient(mounts={"all://": transport})
+    return httpx.AsyncClient(mounts={"all://": transport}, event_hooks=hooks)
 
 
 @lru_cache
@@ -483,8 +502,10 @@ def _cached_sync_httpx_client(
     base_url: str | None,
     timeout: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    gateway_origin: str | None = None,
 ) -> _SyncHttpxClientWrapper:
-    return _build_sync_httpx_client(base_url, timeout, socket_options)
+    options = {"gateway_origin": gateway_origin} if gateway_origin is not None else {}
+    return _build_sync_httpx_client(base_url, timeout, socket_options, **options)
 
 
 @lru_cache
@@ -492,42 +513,48 @@ def _cached_async_httpx_client(
     base_url: str | None,
     timeout: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    gateway_origin: str | None = None,
 ) -> _AsyncHttpxClientWrapper:
-    return _build_async_httpx_client(base_url, timeout, socket_options)
+    options = {"gateway_origin": gateway_origin} if gateway_origin is not None else {}
+    return _build_async_httpx_client(base_url, timeout, socket_options, **options)
 
 
 def _get_default_httpx_client(
     base_url: str | None,
     timeout: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    gateway_origin: str | None = None,
 ) -> _SyncHttpxClientWrapper:
     """Get default httpx client.
 
     Uses cached client unless timeout is `httpx.Timeout`, which is not hashable.
     """
+    options = {"gateway_origin": gateway_origin} if gateway_origin is not None else {}
     try:
         hash(timeout)
     except TypeError:
-        return _build_sync_httpx_client(base_url, timeout, socket_options)
+        return _build_sync_httpx_client(base_url, timeout, socket_options, **options)
     else:
-        return _cached_sync_httpx_client(base_url, timeout, socket_options)
+        return _cached_sync_httpx_client(base_url, timeout, socket_options, **options)
 
 
 def _get_default_async_httpx_client(
     base_url: str | None,
     timeout: Any,
     socket_options: tuple[SocketOption, ...] = (),
+    gateway_origin: str | None = None,
 ) -> _AsyncHttpxClientWrapper:
     """Get default httpx client.
 
     Uses cached client unless timeout is `httpx.Timeout`, which is not hashable.
     """
+    options = {"gateway_origin": gateway_origin} if gateway_origin is not None else {}
     try:
         hash(timeout)
     except TypeError:
-        return _build_async_httpx_client(base_url, timeout, socket_options)
+        return _build_async_httpx_client(base_url, timeout, socket_options, **options)
     else:
-        return _cached_async_httpx_client(base_url, timeout, socket_options)
+        return _cached_async_httpx_client(base_url, timeout, socket_options, **options)
 
 
 def _resolve_sync_and_async_api_keys(
