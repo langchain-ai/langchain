@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -43,7 +43,7 @@ class FakeTokenProvider:
         return _ChatGPTToken(
             access_token=self.access_token,
             refresh_token="rt",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
             account_id=self.account_id,
         )
 
@@ -72,7 +72,7 @@ class AsyncOnlyTokenProvider(FakeTokenProvider):
         return _ChatGPTToken(
             access_token=self.access_token,
             refresh_token="rt",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
             account_id=self.account_id,
         )
 

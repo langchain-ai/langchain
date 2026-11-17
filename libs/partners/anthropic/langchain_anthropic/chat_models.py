@@ -11,7 +11,7 @@ import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Final, Literal, TypeGuard, cast
+from typing import Any, Final, Literal, NotRequired, Self, TypeGuard, cast
 
 import anthropic
 from langchain_core.callbacks import (
@@ -76,7 +76,7 @@ from langchain_core.utils.function_calling import (
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import NotRequired, Self, TypedDict
+from typing_extensions import TypedDict
 
 from langchain_anthropic import __version__
 from langchain_anthropic._client_utils import (
@@ -2435,13 +2435,14 @@ class ChatAnthropic(BaseChatModel):
                             content_block.pop("citations", None)
                         message_chunk = AIMessageChunk(content=[content_block])
             else:  # thinking
-                thinking = getattr(event.content_block, "thinking", "") or ""
-                signature = getattr(event.content_block, "signature", "") or ""
-                if thinking or signature:
-                    content_block = event.content_block.model_dump()
-                    content_block["index"] = event.index
-                    content_block["type"] = "thinking"
-                    message_chunk = AIMessageChunk(content=[content_block])
+                # Emitted even when empty: under `display: "omitted"` no thinking
+                # text streams, so this start is the first sign of reasoning.
+                content_block = event.content_block.model_dump()
+                if not content_block.get("signature"):
+                    content_block.pop("signature", None)
+                content_block["index"] = event.index
+                content_block["type"] = "thinking"
+                message_chunk = AIMessageChunk(content=[content_block])
 
         # Process incremental content updates
         elif event.type == "content_block_delta":

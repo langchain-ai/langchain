@@ -150,7 +150,11 @@ def test_retry_parameters(caplog: pytest.LogCaptureFixture) -> None:
 
 
 def test_reasoning() -> None:
-    model = ChatMistralAI(model="magistral-medium-latest", rate_limiter=rate_limiter)  # type: ignore[call-arg]
+    model = ChatMistralAI(  # type: ignore[call-arg]
+        model="magistral-medium-latest",
+        reasoning_effort="high",
+        rate_limiter=rate_limiter,
+    )
     input_message = {
         "role": "user",
         "content": "Hello, my name is Bob.",
@@ -176,6 +180,7 @@ def test_reasoning() -> None:
 def test_reasoning_v1() -> None:
     model = ChatMistralAI(  # type: ignore[call-arg]
         model="magistral-medium-latest",
+        reasoning_effort="high",
         output_version="v1",
         rate_limiter=rate_limiter,
     )

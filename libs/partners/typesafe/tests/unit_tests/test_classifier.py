@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 import httpx2
 import pytest
-from langchain_core._api import LangChainBetaWarning
 from langchain_core.callbacks import BaseCallbackHandler
+from langchain_core.decisions import base as decision_base
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from pydantic import SecretStr, ValidationError
 
 from langchain_typesafe import (
+    Box,
+    BoxAnswer,
+    BoxCoordinates,
     Choice,
     ChoiceAnswer,
     ClassifierRequest,
@@ -23,7 +27,6 @@ from langchain_typesafe import (
     TypeSafeClassifier,
     __version__,
 )
-from langchain_typesafe import classifier as classifier_module
 from langchain_typesafe.client import (
     TypeSafeAPIConnectionError,
     TypeSafeAPIError,
@@ -33,7 +36,7 @@ from langchain_typesafe.client import (
 
 
 class _RunTreeStub:
-    """Stand-in for the LangSmith run tree that `_record_usage` writes to."""
+    """Stand-in for the LangSmith run tree that usage is recorded on."""
 
     def __init__(self) -> None:
         self.extra: dict[str, Any] = {}
@@ -96,17 +99,6 @@ def _questions() -> dict[str, Choice | Noul | Score]:
 
 def _request(state: Any = "hello") -> ClassifierRequest:
     return {"state": state, "questions": _questions()}
-
-
-def test_classifier_is_beta() -> None:
-    """Constructing the classifier warns that its API is in beta."""
-    with pytest.warns(
-        LangChainBetaWarning,
-        match=r"The class `TypeSafeClassifier` is in beta\.",
-    ):
-        TypeSafeClassifier(
-            api_key=API_KEY,
-        )
 
 
 def test_questions_require_instructions() -> None:
@@ -185,7 +177,8 @@ def test_invoke_sends_request_and_parses_response() -> None:
     result = classifier.invoke(request)
 
     assert result.request_id == REQUEST_ID
-    assert result.usage.input_tokens == 42
+    assert result.usage is not None
+    assert result.usage["input_tokens"] == 42
     assert result.choices["department"] == ChoiceAnswer(
         type="choice",
         choice="technical",
@@ -618,7 +611,7 @@ def test_usage_is_recorded_on_the_active_run(
     `usage_metadata`, so both the payload and the run type are pinned.
     """
     stub = _RunTreeStub()
-    monkeypatch.setattr(classifier_module, "get_current_run_tree", lambda: stub)
+    monkeypatch.setattr(decision_base, "get_current_run_tree", lambda: stub)
 
     def handler(_: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(200, json=_response_payload())
@@ -651,7 +644,7 @@ async def test_async_usage_is_recorded_on_the_active_run(
 ) -> None:
     """`ainvoke` records the same usage as `invoke`."""
     stub = _RunTreeStub()
-    monkeypatch.setattr(classifier_module, "get_current_run_tree", lambda: stub)
+    monkeypatch.setattr(decision_base, "get_current_run_tree", lambda: stub)
 
     async def handler(_: httpx2.Request) -> httpx2.Response:
         return httpx2.Response(200, json=_response_payload())
@@ -708,4 +701,176 @@ def test_untraced_invocation_is_unaffected() -> None:
     result = classifier.invoke(_request())
     client.close()
 
-    assert result.usage.input_tokens == 42
+    assert result.usage is not None
+    assert result.usage["input_tokens"] == 42
+
+
+_PNG_BASE64 = "iVBORw0KGgo="
+_REFERENCE_PATTERN = r"<image:[0-9a-f]{32}>"
+
+
+def _capture_payloads(
+    payloads: list[dict[str, Any]], response: dict[str, Any] | None = None
+) -> httpx2.Client:
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        payloads.append(json.loads(request.content))
+        return httpx2.Response(200, json=response or _response_payload())
+
+    return httpx2.Client(transport=httpx2.MockTransport(handler))
+
+
+@pytest.mark.parametrize(
+    "image",
+    [
+        {"type": "image", "base64": _PNG_BASE64, "mime_type": "image/png"},
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": _PNG_BASE64,
+            "mime_type": "image/png",
+        },
+        {"type": "image", "url": f"data:image/png;base64,{_PNG_BASE64}"},
+        {
+            "type": "image_url",
+            "image_url": {"url": f"data:image/png;base64,{_PNG_BASE64}"},
+        },
+    ],
+)
+def test_image_blocks_in_state_are_sent_as_assets(image: dict[str, Any]) -> None:
+    """Inline image blocks are replaced by references to request assets."""
+    payloads: list[dict[str, Any]] = []
+    client = _capture_payloads(payloads)
+    classifier = TypeSafeClassifier(api_key=API_KEY, client=client)
+
+    classifier.invoke(
+        {
+            "state": {"caption": "Product photo", "photo": image},
+            "questions": _questions(),
+        }
+    )
+    client.close()
+
+    [payload] = payloads
+    reference = payload["state"]["photo"]
+    assert re.fullmatch(_REFERENCE_PATTERN, reference)
+    assert payload["state"]["caption"] == "Product photo"
+    assert payload["assets"] == {
+        reference: {"type": "image", "format": "png", "data_base64": _PNG_BASE64}
+    }
+
+
+def test_images_in_messages_and_questions_are_sent_as_assets() -> None:
+    """Images inside messages and question content each get their own asset."""
+    payloads: list[dict[str, Any]] = []
+    client = _capture_payloads(payloads)
+    classifier = TypeSafeClassifier(api_key=API_KEY, client=client)
+    jpeg: dict[str, Any] = {
+        "type": "image",
+        "base64": "/9j/",
+        "mime_type": "image/jpeg",
+    }
+
+    classifier.invoke(
+        {
+            "state": HumanMessage(content=[{"type": "text", "text": "Hi"}, jpeg]),
+            "questions": {
+                "match": Noul(instructions={"reference": jpeg, "task": "Same item?"})
+            },
+        }
+    )
+    client.close()
+
+    [payload] = payloads
+    message_reference = payload["state"]["content"][1]
+    question_reference = payload["questions"]["match"]["instructions"]["reference"]
+    assert message_reference != question_reference
+    assert set(payload["assets"]) == {message_reference, question_reference}
+    assert all(asset["format"] == "jpeg" for asset in payload["assets"].values())
+
+
+def test_payload_without_images_has_no_assets() -> None:
+    """The `assets` field is omitted when a request contains no images."""
+    payloads: list[dict[str, Any]] = []
+    client = _capture_payloads(payloads)
+    classifier = TypeSafeClassifier(api_key=API_KEY, client=client)
+
+    classifier.invoke(
+        {
+            "state": {"photo": {"type": "image", "caption": "x"}},
+            "questions": _questions(),
+        }
+    )
+    client.close()
+
+    assert "assets" not in payloads[0]
+    assert payloads[0]["state"] == {"photo": {"type": "image", "caption": "x"}}
+
+
+@pytest.mark.parametrize(
+    ("image", "match"),
+    [
+        ({"type": "image", "url": "https://example.com/a.png"}, "data:"),
+        ({"type": "image", "file_id": "file-123"}, "base64 data"),
+        ({"type": "image", "base64": _PNG_BASE64}, "mime_type"),
+        (
+            {"type": "image", "base64": _PNG_BASE64, "mime_type": "image/gif"},
+            "image/gif",
+        ),
+    ],
+)
+def test_unsupported_image_blocks_are_rejected(
+    image: dict[str, Any], match: str
+) -> None:
+    """Image blocks without inline PNG or JPEG data fail before a request is sent."""
+    payloads: list[dict[str, Any]] = []
+    client = _capture_payloads(payloads)
+    classifier = TypeSafeClassifier(api_key=API_KEY, client=client)
+
+    with pytest.raises(ValueError, match=match):
+        classifier.invoke({"state": {"photo": image}, "questions": _questions()})
+    client.close()
+
+    assert payloads == []
+
+
+def test_box_question_is_sent_and_answer_parsed() -> None:
+    """Box questions are sent as-is and box answers are parsed."""
+    payloads: list[dict[str, Any]] = []
+    client = _capture_payloads(
+        payloads,
+        {
+            "model": "jev-latest",
+            "answers": {
+                "dog": {
+                    "type": "box",
+                    "box": {"top": 0.1, "bottom": 0.9, "left": 0.2, "right": 0.8},
+                    "confidence": None,
+                }
+            },
+        },
+    )
+    classifier = TypeSafeClassifier(api_key=API_KEY, client=client)
+
+    result = classifier.invoke(
+        {"state": "photo", "questions": {"dog": Box(instructions="The dog.")}}
+    )
+    client.close()
+
+    assert payloads[0]["questions"] == {
+        "dog": {"type": "box", "instructions": "The dog."}
+    }
+    assert result.boxes["dog"] == BoxAnswer(
+        type="box", box=BoxCoordinates(top=0.1, bottom=0.9, left=0.2, right=0.8)
+    )
+
+
+def test_unknown_answer_types_are_rejected() -> None:
+    """Answers of an unrecognized type fail response validation."""
+    payload = _response_payload()
+    payload["answers"]["future"] = {"type": "UNKNOWN"}
+    client = _capture_payloads([], payload)
+    classifier = TypeSafeClassifier(api_key=API_KEY, client=client)
+
+    with pytest.raises(TypeSafeAPIResponseValidationError):
+        classifier.invoke(_request())
+    client.close()

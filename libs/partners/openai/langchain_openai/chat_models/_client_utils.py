@@ -532,14 +532,14 @@ def _get_default_async_httpx_client(
 
 def _resolve_sync_and_async_api_keys(
     api_key: SecretStr | Callable[[], str] | Callable[[], Awaitable[str]],
-) -> tuple[str | None | Callable[[], str], str | Callable[[], Awaitable[str]]]:
+) -> tuple[str | Callable[[], str] | None, str | Callable[[], Awaitable[str]]]:
     """Resolve sync and async API key values.
 
     Because OpenAI and AsyncOpenAI clients support either sync or async callables for
     the API key, we need to resolve separate values here.
     """
     if isinstance(api_key, SecretStr):
-        sync_api_key_value: str | None | Callable[[], str] = api_key.get_secret_value()
+        sync_api_key_value: str | Callable[[], str] | None = api_key.get_secret_value()
         async_api_key_value: str | Callable[[], Awaitable[str]] = (
             api_key.get_secret_value()
         )
@@ -651,7 +651,7 @@ async def _astream_with_chunk_timeout(
                 chunk = await asyncio.wait_for(it.__anext__(), timeout=timeout)
             except StopAsyncIteration:
                 return
-            except asyncio.TimeoutError as e:
+            except TimeoutError as e:
                 logger.warning(
                     "langchain_openai.stream_chunk_timeout fired",
                     extra={

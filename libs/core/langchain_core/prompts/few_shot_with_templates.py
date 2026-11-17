@@ -1,10 +1,9 @@
 """Prompt template that contains few shot examples."""
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 from pydantic import ConfigDict, model_validator
-from typing_extensions import Self
 
 from langchain_core._api import deprecated
 from langchain_core.example_selectors import BaseExampleSelector

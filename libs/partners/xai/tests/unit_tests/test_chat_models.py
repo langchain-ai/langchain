@@ -368,3 +368,67 @@ def test_convert_chunk_recomputes_total_tokens_for_reasoning() -> None:
     assert usage_metadata["output_tokens"] == 14  # 9 completion + 5 reasoning
     assert usage_metadata["total_tokens"] == 46  # 32 + 14, invariant holds
     assert usage_metadata["output_token_details"]["reasoning"] == 5
+
+
+# --- LangSmith gateway ---
+
+
+@pytest.fixture
+def _gateway_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for var in (
+        "LANGSMITH_GATEWAY",
+        "LANGSMITH_GATEWAY_API_KEY",
+        "LANGSMITH_API_KEY",
+        "XAI_API_BASE",
+        "XAI_API_KEY",
+    ):
+        monkeypatch.delenv(var, raising=False)
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    llm = ChatXAI(model="grok-4")
+    assert llm.xai_api_base == "https://gateway.smith.langchain.com/xai/v1"
+    assert llm.xai_api_key is not None
+    assert llm.xai_api_key.get_secret_value() == "gateway-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("XAI_API_KEY", "provider-key")
+    llm = ChatXAI(model="grok-4")
+    assert llm.xai_api_base == "https://api.x.ai/v1/"
+    assert llm.xai_api_key is not None
+    assert llm.xai_api_key.get_secret_value() == "provider-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_provider_env_base_url_wins(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("XAI_API_BASE", "https://proxy.example.com/v1")
+    monkeypatch.setenv("XAI_API_KEY", "provider-key")
+    llm = ChatXAI(model="grok-4")
+    assert llm.xai_api_base == "https://proxy.example.com/v1"
+    assert llm.xai_api_key is not None
+    assert llm.xai_api_key.get_secret_value() == "provider-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_context_overrides_explicit_values() -> None:
+    gateway = pytest.importorskip("langchain_core.utils._gateway")
+    if not hasattr(gateway, "langsmith_gateway"):
+        pytest.skip("Requires a langchain-core release with `langsmith_gateway`.")
+    with gateway.langsmith_gateway(api_key="service-key"):
+        llm = ChatXAI(
+            model="grok-4",
+            base_url="https://other.example.com/v1",
+            api_key=SecretStr("user-key"),
+        )
+    assert llm.xai_api_base == "https://gateway.smith.langchain.com/xai/v1"
+    assert llm.xai_api_key is not None
+    assert llm.xai_api_key.get_secret_value() == "service-key"

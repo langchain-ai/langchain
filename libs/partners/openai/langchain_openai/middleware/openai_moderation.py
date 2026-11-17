@@ -475,7 +475,7 @@ class OpenAIModerationMiddleware(AgentMiddleware[AgentState[Any], Any]):
         if text_accessor is None:
             return str(message.content)
         text = str(text_accessor)
-        return text if text else None
+        return text or None
 
 
 __all__ = [

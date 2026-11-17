@@ -286,6 +286,12 @@ class BaseOutputParser(
         The return value is parsed from only the first `Generation` in the result, which
         is assumed to be the highest-likelihood `Generation`.
 
+        This method is used by `ainvoke` and `abatch`. The default implementation
+        runs `parse_result` in an executor; it does not call `aparse`. Override this
+        method to provide native async parsing, for example when using async I/O or
+        clients bound to the caller's event loop. Synchronous parsers can use the
+        default implementation.
+
         Args:
             result: A list of `Generation` to be parsed.
 
@@ -302,6 +308,10 @@ class BaseOutputParser(
 
     async def aparse(self, text: str) -> T:
         """Async parse a single string model output into some structure.
+
+        The default implementation runs `parse` in an executor. To use native
+        async parsing through `ainvoke` or `abatch`, override `aparse_result`
+        instead; those entry points do not call this method by default.
 
         Args:
             text: String output of a language model.

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:7811ce9dcf154f49980fefc0b71c565b68afe5fcb1b0ac19d45cddf8e1a4ffcc",
+  "pageVersion": "sha256:b8bc68daa112c9f6a04e40492b3984cc35f2ecd33c48e274e6737dd311278755",
   "claims": [
     {
       "id": "claim_fc612ca95e764c84b4bd1c6e12a8536a",
@@ -37,8 +37,8 @@
       "statement": "ModelRequest is an immutable dataclass containing model, messages, system_message, tools, tool_choice, response_format, state, runtime, and model_settings; it provides an override() method that returns a new instance with specified fields replaced, following immutable patterns.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L87-L269",
-          "version": "repo-lines-v1:sha256:2e092d648db88d84598f61d1f81e0d629676c59f2cd9d2892492f2a466327fb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOWE0ZjBkOTIyOWRmY2E0YWM1MDllNDc0OWQyNGFiZGIxMzg2NGIwYWVmMmIxNWViYmQ5ODlkNTgyNjhjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NzZhMTRjYWViNDY3MTJkNzBjNmJmOWEyYzhkNWNiZTY4NzdjOTJmMWM3YmFkNGQ2MjA3ZTNiZmUwYzNkN2FiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjE2MTg3MTIxNzdiOGJkY2RmZTZmMWFkNTEzNzM1ZmQzMjBiZDAzZWQ2MGJkZTQzZmNiY2FkMjYzYmViZTVmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YzFmMDJmZDdlYzFkNDYyYzBjYjgxOGI5NDhmZmU0ZjcxNWIyYzJjNDMyNjMwYzIzMmRmZTM0ZDQyNzQzZmE5In0"
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L89-L271",
+          "version": "repo-lines-v1:sha256:600628d5f7060020785d3e286975332bd146042f2590fd05d04a7625c8ba48c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOWE0ZjBkOTIyOWRmY2E0YWM1MDllNDc0OWQyNGFiZGIxMzg2NGIwYWVmMmIxNWViYmQ5ODlkNTgyNjhjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NzZhMTRjYWViNDY3MTJkNzBjNmJmOWEyYzhkNWNiZTY4NzdjOTJmMWM3YmFkNGQ2MjA3ZTNiZmUwYzNkN2FiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjE2MTg3MTIxNzdiOGJkY2RmZTZmMWFkNTEzNzM1ZmQzMjBiZDAzZWQ2MGJkZTQzZmNiY2FkMjYzYmViZTVmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YzFmMDJmZDdlYzFkNDYyYzBjYjgxOGI5NDhmZmU0ZjcxNWIyYzJjNDMyNjMwYzIzMmRmZTM0ZDQyNzQzZmE5In0"
         }
       ]
     },
@@ -104,11 +104,11 @@
     },
     {
       "id": "claim_512212713cf943b092ca5b8d081534b6",
-      "statement": "LangChain provides production-ready middleware including ModelRetryMiddleware, ToolRetryMiddleware, ToolErrorMiddleware, ModelCallLimitMiddleware, ToolCallLimitMiddleware, ModelFallbackMiddleware, HumanInTheLoopMiddleware, LLMToolSelectorMiddleware, PIIMiddleware, ShellToolMiddleware, SummarizationMiddleware, ModelRefusalMiddleware, ContextEditingMiddleware, FilesystemFileSearchMiddleware, ProviderToolSearchMiddleware, TodoListMiddleware, and LLMToolEmulator for common agent customization needs.",
+      "statement": "LangChain provides production-ready middleware including ModelRetryMiddleware, ToolRetryMiddleware, ToolErrorMiddleware, ModelCallLimitMiddleware, ToolCallLimitMiddleware, ModelFallbackMiddleware, HumanInTheLoopMiddleware, LLMToolSelectorMiddleware, PIIMiddleware, ShellToolMiddleware, SummarizationMiddleware, ModelRefusalMiddleware, ContextEditingMiddleware, FilesystemFileSearchMiddleware, ProviderToolSearchMiddleware, TodoListMiddleware, LLMToolEmulator, AutoModeMiddleware, and ModelRouterMiddleware for common agent customization needs.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py#L1-L102",
-          "version": "repo-lines-v1:sha256:2ed2639dea637ba04a59441b1698bf8e005b8c0f6e0be7fbaa97fc55827e3f17:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNDA5OTU2YzRjNTg2NDc3MzNhYTU3Mjc0OTdhYmU0ZWFlZDY2NDdiMjkyNDk0MmI2NWUxYjJmOWM3OWQ1Y2Y1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmOTQxNmUwOWY3OGJhMzE2YzAzMjU2ODIxM2I4NTVlZTc1NmU0MTU2NWQ5MThmMDk1MTljODFmZDYyMGY0MDYwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py#L1-L107",
+          "version": "repo-lines-v1:sha256:b442784cecad802b1e49de0766e8a4ed4d230b7e22abde800dc02d063b5231e6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNDA5OTU2YzRjNTg2NDc3MzNhYTU3Mjc0OTdhYmU0ZWFlZDY2NDdiMjkyNDk0MmI2NWUxYjJmOWM3OWQ1Y2Y1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmOTQxNmUwOWY3OGJhMzE2YzAzMjU2ODIxM2I4NTVlZTc1NmU0MTU2NWQ5MThmMDk1MTljODFmZDYyMGY0MDYwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -199,18 +199,18 @@
       "statement": "StateFileSearchMiddleware and text editor tools (StateClaudeTextEditorMiddleware, StateClaudeMemoryMiddleware) use AnthropicToolsState schema to manage virtual files and memories in agent state, enabling multi-turn file management and context persistence for coding and data analysis tasks.",
       "evidence": [
         {
-          "resource": "repo://libs/partners/anthropic/langchain_anthropic/middleware/anthropic_tools.py",
-          "version": "repo-file-v1:sha256:e749ff42b7e20d880f624c29587ff5344bac02566e1fa3cd2d5326e93ee1bc82"
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/middleware/anthropic_tools.py#L86-L93",
+          "version": "repo-lines-v1:sha256:61d2a487d2e679a5ede04451fe7a8dbc9c311aeee0c58af6d14cfb5828f752a4:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOTk4NzZiZmIwNjUyYTlhMDRlYzcxYTcwOGM2NWQ5NjM4YzE4ZTFjZDAxM2NmODliYWE1MTU2ZDJlZTczYWZlOSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDczZDBkZjMwYmY0MWFkOWI2ZTIyZjM4ZjAyZGJhN2Q0MjBmM2VlNDFiOTcxNWY0ZWZiOGQwYWQ4NTJjNjVhNCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDcyMjMxMDZmZDg3NDJiNzBlYTIzM2Y5ZGMzNTlmNGIwMmJiYjA2OWI3MjgzZWVmNzYyNDk5NTE2YmQ3YjljOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODYzNTQ2OTA1YWUyZjM1MDk1MzUzMWNhZDdhYjAwNGFiODgwYzMwZjA0MmE3MzQ5ZDRhNDRkM2Q3MTRmMmZhYiJ9"
         },
         {
-          "resource": "repo://libs/partners/anthropic/langchain_anthropic/middleware/file_search.py#L89-L120",
-          "version": "repo-lines-v1:sha256:5f45bc1571439f6dbdbf2df3a73e438300396b15692a46f4d8101da3029e7256:eyJzZWxlY3RlZExpbmVDb3VudCI6MzIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyOTk3ZjYwNTQ2ZDE1MzY2Y2NiZTlhMzVmOWI4ZDI3ZDE3NGJkODBjMzNmMzFhYjBhYjUzMWVlMGM0MGY5ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNjODcyYzgzMmZhZjQ1N2UwMGVjODYyODZkOWI2OTU3OWZiMDc5ZWU0N2I3ZmU2Mjg0ZTNjNTI2YjA2OTRjYTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkYzk0NWE2N2EyNzE1Zjc0Y2Q3Mjk0Yzk1NDJkMzg2NWVlMzAxY2YzNTFmNzEwODg5Njg3ZDNkMmE3MzFlMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwZWM4OTU5ZGM0YTdiNDM1NzM3MDNjOWY1MGFlZDczZWNhNDY2NTgyNWM5NDA2N2Y0NTliYTU3NzRiMjQwZmIifQ"
+          "resource": "repo://libs/partners/anthropic/langchain_anthropic/middleware/file_search.py#L89-L115",
+          "version": "repo-lines-v1:sha256:08889c002c3ac381c46a33e05ca3081431a4eaa94ebaf8fb7844d44b072839c9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUyOTk3ZjYwNTQ2ZDE1MzY2Y2NiZTlhMzVmOWI4ZDI3ZDE3NGJkODBjMzNmMzFhYjBhYjUzMWVlMGM0MGY5ZTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRkYzk0NWE2N2EyNzE1Zjc0Y2Q3Mjk0Yzk1NDJkMzg2NWVlMzAxY2YzNTFmNzEwODg5Njg3ZDNkMmE3MzFlMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQwZTIyM2QzNzA5ZGVkMTdkY2I4YTZiZmEzNjYxNmFlMzZiYmQ4ZTExNmFjNDgyYjU4ZGMzMTQ5NDZjM2ZiMGEifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-10T08:17:41.265Z"
+    "at": "2026-11-16T08:30:18.041Z"
   }
 }

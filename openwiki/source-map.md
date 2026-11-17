@@ -58,22 +58,22 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
   - id: openwiki-source-bd29e79613d5f366a00068f5
     resource: repo://libs/standard-tests/langchain_tests/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-10T08:17:41.265Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-10T08:17:41.265Z
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 ## Overview
 
 This page provides a quick reference for locating code by topic in the LangChain monorepo. The repository is organized as a multi-package workspace with a three-layer architecture:
 
-- **langchain-core** (v1.7.7): Base abstractions for messages, runnables, tools, prompts, language models, callbacks, and refusal handling
-- **langchain** (v1.4.9): Orchestration, agent factory, middleware composition, and model initialization
+- **langchain-core** (v1.8.1): Base abstractions for messages, runnables, tools, prompts, language models, callbacks, and refusal handling
+- **langchain** (v1.5.0): Orchestration, agent factory, middleware composition, and model initialization
 - **langchain-classic** (v1.0.8): Legacy chains, memory, retrieval abstractions, and backward compatibility
 - **partners** (`langchain-*` packages): Provider-specific implementations (OpenAI, Anthropic, Ollama, etc.)
-- **text-splitters** (v1.x): Text splitting and chunking utilities
-- **model-profiles**: LLM metadata and capability profiles
+- **text-splitters** (v1.1.3): Text splitting and chunking utilities
+- **model-profiles** (v0.0.6): LLM metadata and capability profiles
 - **standard-tests** (shared): Ecosystem test contracts and conformance suites
 
 Use this map to navigate directly to the code responsible for a given concept, understand architectural layering, and locate integration points.
@@ -129,7 +129,7 @@ Use this map to navigate directly to the code responsible for a given concept, u
 
 ```
 /libs/
-├── core/                           # langchain-core: Base abstractions (v1.7.7)
+├── core/                           # langchain-core: Base abstractions (v1.8.1)
 │   ├── langchain_core/
 │   │   ├── language_models/        # BaseChatModel and language model abstractions
 │   │   │   ├── chat_models.py      # Core chat model interface
@@ -187,7 +187,7 @@ Use this map to navigate directly to the code responsible for a given concept, u
 │   ├── Makefile
 │   └── pyproject.toml
 │
-├── langchain_v1/                   # langchain: Orchestration and agents (v1.4.9)
+├── langchain_v1/                   # langchain: Orchestration and agents (v1.5.0)
 │   ├── langchain/
 │   │   ├── agents/
 │   │   │   ├── factory.py          # Agent factory: graph construction, node orchestration
@@ -264,20 +264,14 @@ Use this map to navigate directly to the code responsible for a given concept, u
 │   ├── perplexity/                 # Perplexity models
 │   ├── fireworks/                  # Fireworks inference
 │   ├── openrouter/                 # OpenRouter aggregator
-│   ├── together/                   # Together AI models
-│   ├── google-vertexai/            # Google Vertex AI
-│   ├── google-genai/               # Google Generative AI
-│   ├── azure-ai/                   # Azure OpenAI and AI services
-│   ├── aws/                        # AWS Bedrock and SageMaker
 │   ├── chroma/                     # Chroma vector store
 │   ├── qdrant/                     # Qdrant vector store
 │   ├── exa/                        # Exa search
 │   ├── nomic/                      # Nomic embeddings
 │   ├── typesafe/                   # Typesafe schema generation
-│   ├── cohere/                     # Cohere models
 │   └── Makefile
 │
-├── text-splitters/                 # Text splitting utilities (v1.x)
+├── text-splitters/                 # Text splitting utilities (v1.1.3)
 │   ├── langchain_text_splitters/
 │   │   ├── base.py                 # TextSplitter base class
 │   │   ├── character.py            # Character-based splitting
@@ -313,7 +307,7 @@ Use this map to navigate directly to the code responsible for a given concept, u
 
 ## Architecture Layers
 
-### Layer 1: langchain-core (Base Abstractions, v1.7.7)
+### Layer 1: langchain-core (Base Abstractions, v1.8.1)
 Core interfaces and implementations used by all other packages:
 - **Message protocol**: AIMessage, HumanMessage, SystemMessage, ToolMessage with rich content blocks, including standard refusal blocks
 - **Runnable protocol**: Composable units with `invoke()`, `stream()`, `batch()` and async variants
@@ -559,8 +553,8 @@ Refusals are now handled uniformly across providers using standard content block
 
 ```
 User Applications
-  ├─→ langchain (v1.4.9)
-  │    ├─→ langchain-core (v1.7.7)
+  ├─→ langchain (v1.5.0)
+  │    ├─→ langchain-core (v1.8.1)
   │    └─→ LangGraph (state machines, runtime)
   │
   ├─→ langchain-core (direct use)
@@ -570,7 +564,7 @@ User Applications
   │    └─→ langchain-core, SQLAlchemy, LangSmith
   │
   └─→ Partner Packages (langchain-openai, langchain-anthropic, etc.)
-       ├─→ langchain-core (pinned versions ≥1.7.5)
+       ├─→ langchain-core (pinned versions ≥1.8.0)
        └─→ Provider SDKs (openai, anthropic, etc.)
 ```
 

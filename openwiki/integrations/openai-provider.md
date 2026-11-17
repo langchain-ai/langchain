@@ -8,10 +8,10 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
   - id: openwiki-source-b65307f1d05bd74532af2eee
     resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 # OpenAI Provider Implementation
@@ -149,9 +149,8 @@ Returns a provider identifier for logging and serialization.
 The OpenAI integration resolves API keys through a multi-step process:
 
 1. **Explicit `api_key` parameter** (highest priority): Can be a string, sync callable, or async callable returning a string.
-2. **Environment variable `OPENAI_API_KEY`** (read at init time by LangChain).
-3. **LangSmith Gateway** (if `LANGSMITH_GATEWAY` is set): Uses `LANGSMITH_API_KEY` or `LANGSMITH_GATEWAY_API_KEY`.
-4. **Environment variable `OPENAI_API_BASE`** (read by the underlying SDK at runtime).
+2. **Environment variable `OPENAI_API_KEY`** (read at init time by Pydantic validation).
+3. **LangSmith Gateway** (if `LANGSMITH_GATEWAY` is set): Uses `LANGSMITH_API_KEY` or `LANGSMITH_GATEWAY_API_KEY` instead.
 
 ```python
 from langchain_openai import ChatOpenAI

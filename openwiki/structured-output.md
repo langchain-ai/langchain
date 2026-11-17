@@ -3,15 +3,15 @@ type: "Reference"
 title: "Structured Output and Response Formatting"
 description: "Document the structured output system: response format specification, strategy selection (auto, provider, tool-based), parsing, validation, and middleware integration."
 tags: [structured-output, response-format, agent, schema, validation, middleware]
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-16T08:30:18.041Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-ec30ab6256dd50cc670919f6
     resource: repo://libs/langchain_v1/langchain/agents/structured_output.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-28T08:35:20.640Z" }
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-29T08:20:01.046Z
+generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 ---
 
 ## Overview
@@ -78,7 +78,7 @@ The schema is sent to the model provider's native structured output API (e.g., O
 
 **Lifecycle:**
 
-1. Schema converted to JSON Schema via Pydantic's `model_json_schema()`
+1. Schema converted to JSON Schema via Pydantic's `model_json_schema()` or `TypeAdapter.json_schema()`
 2. Wrapped in provider-specific format: `{"type": "json_schema", "json_schema": {"name": ..., "schema": ..., "strict": ...}}`
 3. Passed to model via `model.bind(..., response_format={...})`
 4. Model returns JSON text (guaranteed valid by provider)
@@ -391,6 +391,25 @@ class MyMiddleware(AgentMiddleware):
 ```
 
 The agent re-detects strategy and rebuilds tool bindings on each invocation, allowing dynamic schema changes. However, **all structured output schemas must be declared upfront**—middleware cannot add new schemas not present in the initial `response_format`.
+
+## Supported Models
+
+The following models support provider-native structured output (when available, AutoStrategy will use ProviderStrategy):
+
+**OpenAI:**
+- `gpt-4.1`, `gpt-4o`, `gpt-5`, `gpt-5.1`, `gpt-5.2`, `gpt-5.3`, `gpt-5.4`, `gpt-5.5`
+- `gpt-6` (astra, luna, sol)
+
+**Claude:**
+- `claude-fable-5`, `claude-mythos-5`
+- `claude-haiku-4-5`
+- `claude-opus-4-5`, `claude-opus-4-6`, `claude-opus-4-7`, `claude-opus-4-8`
+- `claude-sonnet-4-5`, `claude-sonnet-4-6`
+
+**Other:**
+- `grok-4`, `grok-build`
+
+For models not in this list, ToolStrategy is used. Pre-3-series Gemini models are excluded from provider strategy when tools are present due to incompatibility.
 
 ## Example: Weather Agent with Structured Output
 

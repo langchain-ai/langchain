@@ -2792,11 +2792,6 @@ async def test_custom_event_root_dispatch() -> None:
         await adispatch_custom_event("event1", {"x": 1})
 
 
-IS_GTE_3_11 = sys.version_info >= (3, 11)
-
-
-# Test relies on automatically picking up RunnableConfig from contextvars
-@pytest.mark.skipif(not IS_GTE_3_11, reason="Requires Python >=3.11")
 async def test_custom_event_root_dispatch_with_in_tool() -> None:
     """Test adhoc event in a nested chain."""
 

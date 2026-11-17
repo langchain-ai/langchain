@@ -3,6 +3,7 @@
 from langgraph.runtime import Runtime
 
 from langchain.agents.middleware._trace_policy import configure_trace_policy
+from langchain.agents.middleware.auto_mode import AutoModeMiddleware
 from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
 from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
 from langchain.agents.middleware.human_in_the_loop import (
@@ -13,6 +14,7 @@ from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddlewar
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_refusal import ModelRefusalMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
+from langchain.agents.middleware.model_router import ModelChoice, ModelRouterMiddleware
 from langchain.agents.middleware.pii import PIIDetectionError, PIIMatch, PIIMiddleware
 from langchain.agents.middleware.provider_tool_search import ProviderToolSearchMiddleware
 from langchain.agents.middleware.shell_tool import (
@@ -54,6 +56,7 @@ from langchain.agents.middleware.types import (
 __all__ = [
     "AgentMiddleware",
     "AgentState",
+    "AutoModeMiddleware",
     "ClearToolUsesEdit",
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
@@ -68,11 +71,13 @@ __all__ = [
     "LLMToolSelectorMiddleware",
     "ModelCallLimitMiddleware",
     "ModelCallResult",
+    "ModelChoice",
     "ModelFallbackMiddleware",
     "ModelRefusalMiddleware",
     "ModelRequest",
     "ModelResponse",
     "ModelRetryMiddleware",
+    "ModelRouterMiddleware",
     "OutputAgentState",
     "PIIDetectionError",
     "PIIMatch",

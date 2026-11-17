@@ -1,9 +1,13 @@
 """Unit tests for override() methods on ModelRequest and ToolCallRequest."""
 
+import warnings
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 from typing import Any
 from unittest.mock import Mock
 
 import pytest
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import (
     AIMessage,
@@ -18,6 +22,33 @@ from langchain.agents import AgentState
 from langchain.agents.middleware.types import ModelRequest, ToolCallRequest
 
 
+@pytest.mark.filterwarnings("error::DeprecationWarning")
+def test_model_request_initialization_preserves_concurrent_warnings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Constructing a request must not suppress warnings in another thread."""
+    initializing = Event()
+    resume = Event()
+    model = GenericFakeChatModel(messages=iter([]))
+
+    def set_model(request: ModelRequest, value: BaseChatModel) -> None:
+        initializing.set()
+        assert resume.wait(timeout=5)
+        request.__dict__["model"] = value
+
+    monkeypatch.setattr(ModelRequest, "model", property(fset=set_model), raising=False)
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(ModelRequest[Any], model=model, messages=[])
+        try:
+            assert initializing.wait(timeout=5)
+            with pytest.raises(DeprecationWarning, match="unrelated deprecation"):
+                warnings.warn("unrelated deprecation", DeprecationWarning, stacklevel=1)
+        finally:
+            resume.set()
+        future.result(timeout=5)
+
+
+@pytest.mark.filterwarnings("error::DeprecationWarning")
 class TestModelRequestOverride:
     """Test the ModelRequest.override() method."""
 

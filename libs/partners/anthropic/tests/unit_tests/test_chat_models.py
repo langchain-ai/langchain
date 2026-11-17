@@ -4217,24 +4217,48 @@ def test_thinking_content_block_start_carries_initial_thinking() -> None:
     assert thinking_blocks[0]["signature"] == "sig123"
 
 
-def test_empty_thinking_content_block_start_emits_no_chunk() -> None:
-    """An empty `ThinkingBlock` start must not emit a spurious chunk."""
-    from anthropic.types import RawContentBlockStartEvent, ThinkingBlock
+def test_empty_thinking_content_block_start_emits_thinking_block() -> None:
+    """The start of an omitted thinking block emits a chunk, merged block unchanged."""
+    from anthropic.types import (
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawContentBlockStopEvent,
+        SignatureDelta,
+        ThinkingBlock,
+    )
 
     llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
-    chunk, block_start_event = llm._make_message_chunk_from_anthropic_event(
-        RawContentBlockStartEvent(
-            content_block=ThinkingBlock(thinking="", signature="", type="thinking"),
-            index=0,
-            type="content_block_start",
-        ),
+    start = RawContentBlockStartEvent(
+        content_block=ThinkingBlock(thinking="", signature="", type="thinking"),
+        index=0,
+        type="content_block_start",
+    )
+    chunk, _ = llm._make_message_chunk_from_anthropic_event(
+        start,
         stream_usage=True,
         coerce_content_to_string=False,
         block_start_event=None,
     )
-    assert chunk is None
-    # The block is still tracked so subsequent deltas resolve against it.
-    assert block_start_event is not None
+    assert chunk is not None
+    assert chunk.content == [{"type": "thinking", "thinking": "", "index": 0}]
+
+    aggregate = _aggregate_anthropic_events(
+        llm,
+        [
+            start,
+            RawContentBlockDeltaEvent(
+                delta=SignatureDelta(signature="sig_abc", type="signature_delta"),
+                index=0,
+                type="content_block_delta",
+            ),
+            RawContentBlockStopEvent(index=0, type="content_block_stop"),
+        ],
+        coerce_content_to_string=False,
+    )
+    assert aggregate is not None
+    assert aggregate.content == [
+        {"type": "thinking", "thinking": "", "signature": "sig_abc", "index": 0}
+    ]
 
 
 def test_signature_delta_preserves_empty_thinking_field() -> None:
@@ -4253,8 +4277,8 @@ def test_signature_delta_preserves_empty_thinking_field() -> None:
 
     llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
 
-    # Step 1: process the empty content_block_start (no chunk emitted).
-    chunk, block_start_event = llm._make_message_chunk_from_anthropic_event(
+    # Step 1: process the empty content_block_start.
+    _, block_start_event = llm._make_message_chunk_from_anthropic_event(
         RawContentBlockStartEvent(
             content_block=ThinkingBlock(thinking="", signature="", type="thinking"),
             index=0,
@@ -4264,7 +4288,6 @@ def test_signature_delta_preserves_empty_thinking_field() -> None:
         coerce_content_to_string=False,
         block_start_event=None,
     )
-    assert chunk is None
     assert block_start_event is not None
 
     # Step 2: process the signature_delta with the tracked start event.

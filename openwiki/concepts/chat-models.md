@@ -14,10 +14,10 @@ sources:
     resource: repo://libs/partners/anthropic/langchain_anthropic/chat_models.py
   - id: openwiki-source-738512768ef81ae009b097ac
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 # Chat Models: Core Abstractions and Protocol
@@ -265,18 +265,21 @@ This enables workflows where tool binding and model provider are determined at r
 
 ### Provider Inference
 
-Model names are inferred to providers via prefix matching:
+Model names are inferred to providers via case-insensitive prefix matching in `_attempt_infer_model_provider()`:
 
 - `gpt-`, `o1`, `o3`, `chatgpt`, `text-davinci` → `openai`
 - `claude` → `anthropic`
-- `gemini` → `google_vertexai`
 - `command` → `cohere`
+- `accounts/fireworks` → `fireworks`
+- `gemini` → `google_vertexai` (with deprecation warning; defaults change in next major version)
+- `amazon.`, `anthropic.`, `meta.` → `bedrock`
 - `mistral`, `mixtral` → `mistralai`
 - `deepseek` → `deepseek`
 - `grok` → `xai`
 - `sonar` → `perplexity`
-- `amazon.`, `anthropic.`, `meta.` → `bedrock`
-- And ~25 additional providers in the registry.
+- `solar` → `upstage`
+
+Inference returns `None` if no prefix matches; in that case `init_chat_model()` raises a `ValueError` with a helpful list of supported providers unless `model_provider` is explicitly specified.
 
 ### Built-in Provider Registry
 

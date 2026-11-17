@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:4cc3236cc282c803c1b750224dd3321b98546d2308f6feca0b17945c1a3996cd",
+  "pageVersion": "sha256:dbf9e1d8f2670c34b0caff0df7422286d863ad53bdc748a0171d9b7d87e956ff",
   "claims": [
     {
       "id": "claim_f1104a8334664647842619daa7f61e83",
@@ -22,15 +22,15 @@
     },
     {
       "id": "claim_21382a8c8fa74dacbcb4b06374c71476",
-      "statement": "OpenAI API key resolution follows a priority order: (1) explicit api_key parameter (string or callable), (2) environment variable OPENAI_API_KEY, (3) LangSmith Gateway when LANGSMITH_GATEWAY is set, (4) environment variable OPENAI_BASE_URL read by SDK; sync and async API keys are resolved separately to support callable keys that differ between sync/async contexts.",
+      "statement": "OpenAI API key resolution follows a priority order: (1) explicit api_key parameter (string or callable), (2) environment variable OPENAI_API_KEY (read at init time), (3) LangSmith Gateway when LANGSMITH_GATEWAY is set (uses LANGSMITH_API_KEY or LANGSMITH_GATEWAY_API_KEY); sync and async API keys are resolved separately to support callable keys that differ between sync/async contexts.",
       "evidence": [
         {
-          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1404-L1461",
-          "version": "repo-lines-v1:sha256:0a83eb2c632cea5e5aaff9f5728698b529ecf8bd3644072d7b124dd3b5a2ab9d:eyJzZWxlY3RlZExpbmVDb3VudCI6NTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1YWM3ZmU4ZWY4YzhhMzU1ZDcxNDkwMzBiYzI5M2U5NDhiZDM2Nzg4ZmUzZWZmOGQwM2MyNTNlMjBmYWYxMWIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4YjZhMTIwNzE2ZjI1NGNhZjA1N2E0Y2U1N2NkZjhlMDhjZWViYmIyYTViZTIwNDkwNzFiOTUwZmU2NGUzZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwNjMwYTZiYzQzNTZiN2I4NzgxNTc0YjQ4Njg3YjE0YmM0OTdhMzg3MzI5Y2JhYjgzYjYzNTMwYmY0ZjJlYzUifQ"
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L1407-L1465",
+          "version": "repo-lines-v1:sha256:81fc82b81aecd9f100f790feeee256b2bbe9ba4d91d7f4734285a85be8ee7a25:eyJzZWxlY3RlZExpbmVDb3VudCI6NTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlZjFjZGQwZjU3NDMzY2U1MDc3OTA3MjJlMmY1MWQ5NzM1NmNiZmZhN2IyNGRkN2NhMTM0NDgzMmQ0ZTUyNDgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhiYTk0MWQzYmU3NTBlNmViMGY3ZDE1ZTAxNjgyYmFiMGZiNGRiZjEwZmNhZmUzODRlN2QzYzQ0ZjJmYzdlOGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIwNjMwYTZiYzQzNTZiN2I4NzgxNTc0YjQ4Njg3YjE0YmM0OTdhMzg3MzI5Y2JhYjgzYjYzNTMwYmY0ZjJlYzUifQ"
         },
         {
-          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L810-L860",
-          "version": "repo-lines-v1:sha256:003a6dab73ea8fde5dc6459b1b513510f5f2edaf2d067675483617e4bbadc10c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NWZkNDk1ZWU5OWQ1OWFkN2VlNWNlNjc3NzY4NTA2OWZlYzJiMzFlN2VlOWI0ZjlhMjA2M2RlMWRkNjFhNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4YzBjYzA4MjViNjY2MWI1ZmM0YWE1MjQ5NmJhOGM5ODIxNTY3MzFiNTM2NTBlYjhiYTYxYmRmNjI2ZmNlNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyNjAzZjZjNDViZmIxODk0YWE5ZWMzY2U4MDJhMTNlMDA5YzcyNDgyMzZmOWIxMzdjMTNiODFjZmQ1NGNmYmUifQ"
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L814-L864",
+          "version": "repo-lines-v1:sha256:bf96495a283eac05f6522d00a63dff41926406e63dcdc52005a9e1bffc487d9f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NWZkNDk1ZWU5OWQ1OWFkN2VlNWNlNjc3NzY4NTA2OWZlYzJiMzFlN2VlOWI0ZjlhMjA2M2RlMWRkNjFhNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4YzBjYzA4MjViNjY2MWI1ZmM0YWE1MjQ5NmJhOGM5ODIxNTY3MzFiNTM2NTBlYjhiYTYxYmRmNjI2ZmNlNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyNjAzZjZjNDViZmIxODk0YWE5ZWMzY2U4MDJhMTNlMDA5YzcyNDgyMzZmOWIxMzdjMTNiODFjZmQ1NGNmYmUifQ"
         }
       ]
     },
@@ -197,6 +197,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-06T08:17:28.425Z"
+    "at": "2026-11-16T08:30:18.041Z"
   }
 }

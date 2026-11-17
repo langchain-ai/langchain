@@ -12,6 +12,7 @@ from typing import (
     Any,
     Literal,
     NoReturn,
+    Self,
     TypeAlias,
     cast,
 )
@@ -116,7 +117,6 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
-from typing_extensions import Self
 
 from langchain_fireworks._compat import _convert_from_v1_to_chat_completions
 from langchain_fireworks._version import __version__

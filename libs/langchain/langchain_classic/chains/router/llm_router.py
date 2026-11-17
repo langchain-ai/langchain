@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any, Self, cast
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -15,7 +15,7 @@ from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.utils.json import parse_and_check_json_markdown
 from pydantic import model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_classic.chains import LLMChain
 from langchain_classic.chains.router.base import RouterChain

@@ -2,10 +2,10 @@
 type: "Reference"
 title: "Unit Testing: Test Organization & Patterns"
 description: "Guide to writing unit tests for LangChain: test structure, fixtures, mocking models/tools, test patterns, edge cases, and CI integration."
-tags: [unit-testing, pytest, fixtures, async-testing, mocking, fake-models, tools, callbacks, runnables, snapshot-testing, edge-cases, ci-integration]
+tags: [unit-testing, pytest, fixtures, async-testing, mocking, fake-models, tools, callbacks, runnables, snapshot-testing, edge-cases, ci-integration, parametrization, environment-mocking]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
+    at: 2026-11-16T08:30:18.041Z
 sources:
   - id: openwiki-source-8f1875229ad4a704c8e20a06
     resource: repo://libs/core/Makefile
@@ -31,7 +31,9 @@ sources:
     resource: repo://libs/core/tests/unit_tests/test_ssrf_protection.py
   - id: openwiki-source-a690cf632a02205e3f555be8
     resource: repo://libs/core/tests/unit_tests/test_tools.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
+  - id: openwiki-source-64d5c35af2d90b887d4e32eb
+    resource: repo://libs/langchain_v1/tests/unit_tests/chat_models/test_chat_models.py
+generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 ---
 
 ## Overview
@@ -408,6 +410,30 @@ def test_http_endpoint():
     assert result["status"] == "ok"
 ```
 
+### Environment Variable Mocking
+
+Mock environment variables for configuration-dependent code using `unittest.mock.patch.dict`:
+
+```python
+from unittest import mock
+import os
+
+@mock.patch.dict(
+    os.environ,
+    {
+        "API_KEY": "test-key",
+        "API_BASE": "https://test.example.com",
+    },
+    clear=True  # Clear all other environment variables for isolation
+)
+def test_model_configuration() -> None:
+    model = init_model("gpt-4")
+    assert model.api_key == "test-key"
+    assert model.api_base == "https://test.example.com"
+```
+
+The `clear=True` flag ensures tests don't leak from developer configuration and provides complete environment isolation for reproducible tests.
+
 ## Network Isolation
 
 ### pytest-socket Enforcement
@@ -716,6 +742,50 @@ def test_middleware_chain_with_callbacks() -> None:
     assert call_log[1][0] == "after"
 ```
 
+## Parametrized Testing
+
+### Basic Parametrization
+
+Test multiple input combinations with `@pytest.mark.parametrize`:
+
+```python
+@pytest.mark.parametrize(
+    ("model_name", "expected_provider"),
+    [
+        ("gpt-4", "openai"),
+        ("claude-3", "anthropic"),
+        ("mixtral-8x7b", "mistralai"),
+    ],
+)
+def test_infer_provider(model_name: str, expected_provider: str) -> None:
+    assert infer_provider(model_name) == expected_provider
+```
+
+### Parametrization with Dependencies
+
+Combine parametrization with the `requires` marker to test optional dependencies conditionally:
+
+```python
+@pytest.mark.requires("langchain_openai", "langchain_anthropic", "langchain_groq")
+@pytest.mark.parametrize(
+    ("model_name", "model_provider"),
+    [
+        ("gpt-4", "openai"),
+        ("claude-opus", "anthropic"),
+        ("mixtral-8x7b-32768", "groq"),
+    ],
+)
+def test_init_chat_model(model_name: str, model_provider: str) -> None:
+    model = init_chat_model(
+        model_name,
+        model_provider=model_provider,
+        api_key="test-key",
+    )
+    assert model is not None
+```
+
+When a package required by any test variant is missing, the entire parametrized test is skipped unless `--only-extended` is passed, which fails instead.
+
 ## Edge Cases and Error Conditions
 
 Testing edge cases and error conditions ensures components fail safely and provide meaningful feedback:
@@ -999,10 +1069,12 @@ Standard tests verify:
 4. **Deterministic Tests** – Use `deterministic_uuids`, `freezegun`, and fake models to ensure reproducible snapshots
 5. **Test Async Thoroughly** – Test both sync and async variants of public methods (invoke/ainvoke, stream/astream, batch/abatch)
 6. **Mock External Dependencies** – Use `mocker.Mock()` and `mocker.spy()` to isolate units under test
-7. **Organize by Module** – Place tests in `tests/unit_tests/` mirroring source structure, with module-specific conftest files
-8. **Document Markers** – Define custom pytest markers in conftest and document their meaning
-9. **Parallelize Safely** – Use pytest-xdist (`-n auto`) for speed, ensuring tests don't share mutable state or global config
-10. **Review Snapshot Changes** – Always review snapshot diffs when updating to catch unintended regressions
+7. **Isolate Environment Variables** – Use `@mock.patch.dict(os.environ, {...}, clear=True)` to prevent leakage from developer configuration
+8. **Organize by Module** – Place tests in `tests/unit_tests/` mirroring source structure, with module-specific conftest files
+9. **Document Markers** – Define custom pytest markers in conftest and document their meaning
+10. **Parallelize Safely** – Use pytest-xdist (`-n auto`) for speed, ensuring tests don't share mutable state or global config
+11. **Review Snapshot Changes** – Always review snapshot diffs when updating to catch unintended regressions
+12. **Use TYPE_CHECKING for Imports** – Use `if TYPE_CHECKING:` guards for imports needed only for type hints to avoid circular imports and improve import performance
 
 ## Related Pages
 

@@ -485,6 +485,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "claude-sonnet-4-5": {
         "name": "Claude Sonnet 4.5 (latest)",
+        "status": "deprecated",
         "release_date": "2025-09-29",
         "last_updated": "2025-09-29",
         "open_weights": False,
@@ -511,6 +512,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "claude-sonnet-4-5-20250929": {
         "name": "Claude Sonnet 4.5",
+        "status": "deprecated",
         "release_date": "2025-09-29",
         "last_updated": "2025-09-29",
         "open_weights": False,

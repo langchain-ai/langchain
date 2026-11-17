@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:8454876a6265e4bc3b00a0db92584214861996f70066500ccd7ee97fd911bd55",
+  "pageVersion": "sha256:5e04f2bb45d17930463f582c70173a3f4a80e3979cdb3aea293d2b5693dcadb7",
   "claims": [
     {
       "id": "claim_a7a0d2cfeae145c6bf24b0e16e8e8bb3",
@@ -28,15 +28,15 @@
     },
     {
       "id": "claim_8d551130bff34446b88a11fcb95ec789",
-      "statement": "Model identifiers support two formats: explicit 'provider:model-name' syntax or bare model names with provider inference. The _parse_model function extracts the provider prefix if present, otherwise infers the provider from model name patterns using _attempt_infer_model_provider, which checks for prefixes like 'gpt-', 'claude', 'command', 'accounts/fireworks', 'mistral', 'deepseek', 'grok', 'sonar', 'solar', 'gemini', or bedrock model prefixes.",
+      "statement": "Model identifiers support two formats: explicit 'provider:model-name' syntax or bare model names with provider inference. The _parse_model function extracts the provider prefix if present, otherwise infers the provider from model name patterns using _attempt_infer_model_provider, which checks for prefixes including: 'gpt-', 'o1', 'o3', 'chatgpt', 'text-davinci' (openai); 'claude' (anthropic); 'command' (cohere); 'accounts/fireworks' (fireworks); 'amazon.', 'anthropic.', 'meta.' (bedrock); 'mistral', 'mixtral' (mistralai); 'deepseek'; 'grok' (xai); 'sonar' (perplexity); 'solar' (upstage); 'gemini' (google_vertexai with deprecation warning).",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L547-L620",
-          "version": "repo-lines-v1:sha256:a9fa9d961e85cbbccd7d57b4421babf5fbe5d93a7aa62b3bc0b38d6b368121dc:eyJzZWxlY3RlZExpbmVDb3VudCI6NzQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NjVhMDM2OTVmYTJkMWU0YmU3OWZhYzhmMDNhOGMzOTU2OTI3OTcwMjY0MTMxNDU5NDUzMDc3ZmU0ZjM1NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlNTMyODkxMmQzMWM2MTZhZWI3NzBhM2M1YmI3ZmIxZTE0OTI3MTRiNjQyNThjOTdhZjJlYmM0MDIxNTdkMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllNDUzZTU0YTQ0ZDU0ZDAyYWNiZDViOWE0YjBlNTIxNTQ4ZGM4MTY0ODFjYTBhZDM2YzBiNmFhMzdhZmNiMDcifQ"
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L547-L611",
+          "version": "repo-lines-v1:sha256:80c2bcafbfdb9cb4601260a6e32745d98008bfe45dbf6fbf95a4e8f9a370236b:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3NjVhMDM2OTVmYTJkMWU0YmU3OWZhYzhmMDNhOGMzOTU2OTI3OTcwMjY0MTMxNDU5NDUzMDc3ZmU0ZjM1NTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTYwMGE3M2QyZTAyZjM1MmI5MGZlZjFkOGQ2MzgxMWJhNGE4ZWUwYzFiZWFhN2FlNDY1OGYzNmFhMmUxOTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhlNTMyODkxMmQzMWM2MTZhZWI3NzBhM2M1YmI3ZmIxZTE0OTI3MTRiNjQyNThjOTdhZjJlYmM0MDIxNTdkMmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjllNDUzZTU0YTQ0ZDU0ZDAyYWNiZDViOWE0YjBlNTIxNTQ4ZGM4MTY0ODFjYTBhZDM2YzBiNmFhMzdhZmNiMDcifQ"
         },
         {
-          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L623-L650",
-          "version": "repo-lines-v1:sha256:59b694d1f2e32b1f82a827e10dd64f2d9849423a8bd312f3faa648d942afc3ee:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NzUyNzA5Y2ZhODMyODY3NTc4ZjRiNjU2NWJlZGQ5ZmJiYzJlNTkzNTRmNDU5ZTZmM2RkZDgxZjNjNjAyNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmNzJlNTc1ODBiYTlhZjM1OWI0Yjk0NDljZjZiMzQ3MTg2YmExMGMxNTU4MGNkNWZhZDBmMzNkZWQxY2JlNTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcxYjM2MjI2YWQ1NmIyNGE1NWRjYTRiYjU2NzFlODc2NjU1M2RkOTI4YjM0YmY5MjY5ZWM5YzA4MjVmNWNmNzEifQ"
+          "resource": "repo://libs/langchain_v1/langchain/chat_models/base.py#L614-L653",
+          "version": "repo-lines-v1:sha256:4d23ccff00161afd0aa6a006adcc0fb6f7bef5fb680291b0e51eade11f4fd036:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA0NzUyNzA5Y2ZhODMyODY3NTc4ZjRiNjU2NWJlZGQ5ZmJiYzJlNTkzNTRmNDU5ZTZmM2RkZDgxZjNjNjAyNjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4YzU3MmZhNzdjYTc0YTBiNjhlODVkOGMyNWI2OTNlYzNmMjYyMTY4YTg0YjFiZDAyZWI2YjNmNGY2ODRjNjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ3MDE0OWUwNjlhZDY3ZWNjZjQ3MzY0NmZmMWM3NTAwNTBkMzI5ZDExMDAxOGRjNTc2Njg3OGVhZmExZDYwN2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjcwN2RlYjgwY2I0N2I0ZTQwNDg1ZTdmMTQ2YTMyODdlYjNkZjFhNTkwZjUzMjNjOTE3MmNkODE2YzJjNzhhNTEifQ"
         }
       ]
     },
@@ -151,6 +151,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-06T08:17:28.425Z"
+    "at": "2026-11-16T08:30:18.041Z"
   }
 }

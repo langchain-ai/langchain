@@ -4,13 +4,12 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Awaitable, Callable, Mapping
-from typing import Any, cast
+from typing import Any, Self, cast
 
 import openai
 from langchain_core.language_models import LangSmithParams
 from langchain_core.utils import from_env, secret_from_env
 from pydantic import Field, SecretStr, model_validator
-from typing_extensions import Self
 
 from langchain_openai._version import __version__
 from langchain_openai.llms.base import BaseOpenAI

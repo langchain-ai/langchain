@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Self
 
 import pytest
 from langchain.agents import create_agent
@@ -11,7 +11,7 @@ from langchain.agents.middleware.types import InputAgentState
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import tool
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_typesafe.experimental.middleware import AutoModeMiddleware
 

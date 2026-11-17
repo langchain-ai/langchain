@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import traceback
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -226,7 +226,7 @@ class _TracerCore(ABC):
                 f"for {self._schema_format} format."
             )
             raise NotImplementedError(msg)
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
         return Run(
@@ -257,7 +257,7 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         """Create a llm run."""
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
         return Run(
@@ -290,7 +290,7 @@ class _TracerCore(ABC):
         llm_run.events.append(
             {
                 "name": "new_token",
-                "time": datetime.now(timezone.utc),
+                "time": datetime.now(UTC),
                 "kwargs": event_kwargs,
             },
         )
@@ -319,7 +319,7 @@ class _TracerCore(ABC):
         llm_run.events.append(
             {
                 "name": "retry",
-                "time": datetime.now(timezone.utc),
+                "time": datetime.now(UTC),
                 "kwargs": retry_d,
             },
         )
@@ -340,7 +340,7 @@ class _TracerCore(ABC):
                     output_generation["message"] = dumpd(
                         cast("ChatGeneration", generation).message
                     )
-        llm_run.end_time = datetime.now(timezone.utc)
+        llm_run.end_time = datetime.now(UTC)
         llm_run.events.append({"name": "end", "time": llm_run.end_time})
 
         tool_call_count = 0
@@ -390,7 +390,7 @@ class _TracerCore(ABC):
                             cast("ChatGeneration", generation).message
                         )
             self._attach_gateway_metadata(llm_run, response)
-        llm_run.end_time = datetime.now(timezone.utc)
+        llm_run.end_time = datetime.now(UTC)
         llm_run.events.append({"name": "error", "time": llm_run.end_time})
 
         return llm_run
@@ -408,7 +408,7 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         """Create a chain Run."""
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
         return Run(
@@ -461,7 +461,7 @@ class _TracerCore(ABC):
             cast("dict[str, Any]", chain_run.outputs).update(
                 self._get_chain_outputs(outputs)
             )
-        chain_run.end_time = datetime.now(timezone.utc)
+        chain_run.end_time = datetime.now(UTC)
         chain_run.events.append({"name": "end", "time": chain_run.end_time})
         if inputs is not None:
             chain_run.inputs = self._get_chain_inputs(inputs)
@@ -475,7 +475,7 @@ class _TracerCore(ABC):
     ) -> Run:
         chain_run = self._get_run(run_id)
         chain_run.error = self._get_stacktrace(error)
-        chain_run.end_time = datetime.now(timezone.utc)
+        chain_run.end_time = datetime.now(UTC)
         chain_run.events.append({"name": "error", "time": chain_run.end_time})
         if inputs is not None:
             chain_run.inputs = self._get_chain_inputs(inputs)
@@ -494,7 +494,7 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         """Create a tool run."""
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
 
@@ -532,7 +532,7 @@ class _TracerCore(ABC):
             tool_run.outputs = {}
         if not tool_run.extra.get("__omit_auto_outputs", False):
             cast("dict[str, Any]", tool_run.outputs).update({"output": output})
-        tool_run.end_time = datetime.now(timezone.utc)
+        tool_run.end_time = datetime.now(UTC)
         tool_run.events.append({"name": "end", "time": tool_run.end_time})
         return tool_run
 
@@ -544,7 +544,7 @@ class _TracerCore(ABC):
         """Update a tool run with error and end time."""
         tool_run = self._get_run(run_id, run_type="tool")
         tool_run.error = self._get_stacktrace(error)
-        tool_run.end_time = datetime.now(timezone.utc)
+        tool_run.end_time = datetime.now(UTC)
         tool_run.events.append({"name": "error", "time": tool_run.end_time})
         return tool_run
 
@@ -560,7 +560,7 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         """Create a retrieval run."""
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
         return Run(
@@ -590,7 +590,7 @@ class _TracerCore(ABC):
             cast("dict[str, Any]", retrieval_run.outputs).update(
                 {"documents": documents}
             )
-        retrieval_run.end_time = datetime.now(timezone.utc)
+        retrieval_run.end_time = datetime.now(UTC)
         retrieval_run.events.append({"name": "end", "time": retrieval_run.end_time})
         return retrieval_run
 
@@ -601,7 +601,7 @@ class _TracerCore(ABC):
     ) -> Run:
         retrieval_run = self._get_run(run_id, run_type="retriever")
         retrieval_run.error = self._get_stacktrace(error)
-        retrieval_run.end_time = datetime.now(timezone.utc)
+        retrieval_run.end_time = datetime.now(UTC)
         retrieval_run.events.append({"name": "error", "time": retrieval_run.end_time})
         return retrieval_run
 

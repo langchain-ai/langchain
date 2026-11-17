@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:ce613ff58bd0e27d46967aba9681fa3162fef9c7ba199f251d76f97573735b2f",
+  "pageVersion": "sha256:4fec7d9ec38752029e26a623c8b870f65c306cde42fba498858c90ab68112bf6",
   "claims": [
     {
       "id": "claim_0d3a898647bd4d1d9c08eb386919394b",
@@ -41,12 +41,12 @@
       "statement": "ModelRequest encapsulates all inputs needed for a model invocation: model instance, messages, system_message, tools, response_format, state, runtime, tool_choice, and model_settings. Middleware access and transform requests immutably via request.override(). ModelResponse carries result messages and optional structured_response.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L272-L287",
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L274-L289",
           "version": "repo-lines-v1:sha256:4b29b35e7cd99402231b6a07024efadb326a7c5048754fc1b27ace7a459970f7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2ZmJhZTBiOTFkNDRmYzBkNDlmNWRlNjkxZGE2ZmM0MzFmMjYwMTM0YmY3MzFlMGUyMWY3NjQ4MDk0MzM0Y2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ4NzBmYWYzYzFkNDkwMGI1ODNlZGI3MjYxNzk1YWFiZjZmZDI2NWZjMDllNjliMDQwNmRlNzMyMmQ3ZTMwMDciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjllM2U3YTMyMjI2YmE0MjQ3MmYwMzZkYTU4ZDAzMjFjOTk2MTZmNDRjNGM3OTRmZDQ1YWMwMzQxMzk2OTlkYjYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMWYwMmZkN2VjMWQ0NjJjMGNiODE4Yjk0OGZmZTRmNzE1YjJjMmM0MzI2MzBjMjMyZGZlMzRkNDI3NDNmYTkifQ"
         },
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L87-L269",
-          "version": "repo-lines-v1:sha256:2e092d648db88d84598f61d1f81e0d629676c59f2cd9d2892492f2a466327fb3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOWE0ZjBkOTIyOWRmY2E0YWM1MDllNDc0OWQyNGFiZGIxMzg2NGIwYWVmMmIxNWViYmQ5ODlkNTgyNjhjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NzZhMTRjYWViNDY3MTJkNzBjNmJmOWEyYzhkNWNiZTY4NzdjOTJmMWM3YmFkNGQ2MjA3ZTNiZmUwYzNkN2FiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjE2MTg3MTIxNzdiOGJkY2RmZTZmMWFkNTEzNzM1ZmQzMjBiZDAzZWQ2MGJkZTQzZmNiY2FkMjYzYmViZTVmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YzFmMDJmZDdlYzFkNDYyYzBjYjgxOGI5NDhmZmU0ZjcxNWIyYzJjNDMyNjMwYzIzMmRmZTM0ZDQyNzQzZmE5In0"
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L89-L271",
+          "version": "repo-lines-v1:sha256:600628d5f7060020785d3e286975332bd146042f2590fd05d04a7625c8ba48c2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOWE0ZjBkOTIyOWRmY2E0YWM1MDllNDc0OWQyNGFiZGIxMzg2NGIwYWVmMmIxNWViYmQ5ODlkNTgyNjhjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NzZhMTRjYWViNDY3MTJkNzBjNmJmOWEyYzhkNWNiZTY4NzdjOTJmMWM3YmFkNGQ2MjA3ZTNiZmUwYzNkN2FiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjE2MTg3MTIxNzdiOGJkY2RmZTZmMWFkNTEzNzM1ZmQzMjBiZDAzZWQ2MGJkZTQzZmNiY2FkMjYzYmViZTVmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI2YzFmMDJmZDdlYzFkNDYyYzBjYjgxOGI5NDhmZmU0ZjcxNWIyYzJjNDMyNjMwYzIzMmRmZTM0ZDQyNzQzZmE5In0"
         }
       ]
     },
@@ -158,11 +158,11 @@
     },
     {
       "id": "claim_4a3da71e41f94163825c83ce79fb8b84",
-      "statement": "The factory ships with middleware for: retry/errors (ModelRetryMiddleware, ToolRetryMiddleware, ToolErrorMiddleware), fallback (ModelFallbackMiddleware), tool filtering (LLMToolSelectorMiddleware, ToolCallLimitMiddleware, ProviderToolSearchMiddleware), execution (ShellToolMiddleware), search (FilesystemFileSearchMiddleware), interaction (HumanInTheLoopMiddleware, SummarizationMiddleware), state management (ContextEditingMiddleware, TodoListMiddleware), protection (PIIMiddleware), and call limiting (ModelCallLimitMiddleware, ModelRefusalMiddleware).",
+      "statement": "The factory ships with middleware for: retry/errors (ModelRetryMiddleware, ToolRetryMiddleware, ToolErrorMiddleware), fallback/routing (ModelFallbackMiddleware, ModelRouterMiddleware, ModelRefusalMiddleware), tool filtering (LLMToolSelectorMiddleware, ToolCallLimitMiddleware, ProviderToolSearchMiddleware, LLMToolEmulator), execution (ShellToolMiddleware), search (FilesystemFileSearchMiddleware), interaction (HumanInTheLoopMiddleware, SummarizationMiddleware, AutoModeMiddleware), state management (ContextEditingMiddleware, TodoListMiddleware), protection (PIIMiddleware), and call limiting (ModelCallLimitMiddleware).",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py#L5-L31",
-          "version": "repo-lines-v1:sha256:efa0b77a9141b80def9858c5dad5912315c3d76e5c9fe4551f476040b4db0cb9:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YzM4NzFlYjlmMGVlYmUxODIyMTE3MmM5ODNiNDEwZDI4NDU2MzM4NDRmZGI3Y2RkNDBmOTQ0ZGY0MWYwMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMGYxYzljYjUyOGVkMjQ1OWJjNTliYjM4ZDQwYjdkMzExNjRmZDJkMGRmOTcyMjVmYmUwYjE4MmQxMzZiMzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZTdjMDdlMTM0MmE5YzI3MGJlMGVmZDY0ZmMxNzVjZWM4ZTI0NGJlNzMwYjEzMTZhZTIwNDdkNDRlMGIyMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxOWY2YjcwNmJmYjg0NTU5ODlmNTkwMjkyYmU4ODUzMDdmMjNlZDBiMmQ3ZGM1M2UyMDY2YzQ2NWVhNWFjYzAifQ"
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/__init__.py#L5-L33",
+          "version": "repo-lines-v1:sha256:26bda65dc6d95035bb290d4d40c8499c9b2e07464fb583efdf1d89270b361680:eyJzZWxlY3RlZExpbmVDb3VudCI6MjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc2YzM4NzFlYjlmMGVlYmUxODIyMTE3MmM5ODNiNDEwZDI4NDU2MzM4NDRmZGI3Y2RkNDBmOTQ0ZGY0MWYwMDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImEzMGYxYzljYjUyOGVkMjQ1OWJjNTliYjM4ZDQwYjdkMzExNjRmZDJkMGRmOTcyMjVmYmUwYjE4MmQxMzZiMzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM3ZTdjMDdlMTM0MmE5YzI3MGJlMGVmZDY0ZmMxNzVjZWM4ZTI0NGJlNzMwYjEzMTZhZTIwNDdkNDRlMGIyMzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImYxOWY2YjcwNmJmYjg0NTU5ODlmNTkwMjkyYmU4ODUzMDdmMjNlZDBiMmQ3ZGM1M2UyMDY2YzQ2NWVhNWFjYzAifQ"
         }
       ]
     },
@@ -233,6 +233,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-10T08:17:41.265Z"
+    "at": "2026-11-16T08:30:18.041Z"
   }
 }

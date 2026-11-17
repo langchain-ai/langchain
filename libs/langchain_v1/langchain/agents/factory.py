@@ -12,10 +12,13 @@ from typing import (
     Annotated,
     Any,
     Generic,
+    NotRequired,
+    Required,
     cast,
     get_args,
     get_origin,
     get_type_hints,
+    overload,
 )
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -35,7 +38,7 @@ from langgraph.prebuilt import ToolCallTransformer
 from langgraph.prebuilt.tool_node import ToolNode
 from langgraph.types import Command, Send
 from langsmith import traceable
-from typing_extensions import NotRequired, Required, TypedDict, overload
+from typing_extensions import TypedDict
 
 from langchain.agents._subagent_transformer import SubagentTransformer
 from langchain.agents.middleware._trace_policy import (
