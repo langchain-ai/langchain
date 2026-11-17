@@ -110,6 +110,7 @@ mid_conversation_system_messages = true
 mid_conversation_tools = true
 
 [overrides."claude-mythos-5-2"]
+max_output_tokens = 128000
 structured_output = true
 tool_choice = false
 reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]

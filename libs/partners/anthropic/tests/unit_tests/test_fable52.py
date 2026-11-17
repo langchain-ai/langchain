@@ -12,7 +12,7 @@ def test_profiles(model: str) -> None:
     assert profile is not None
     if model == "claude-fable-5-2":
         assert profile["max_input_tokens"] == 1_000_000
-        assert profile["max_output_tokens"] == 128_000
+    assert profile["max_output_tokens"] == 128_000
     assert profile["structured_output"] is True
     assert profile["tool_choice"] is False
     assert profile["mid_conversation_system_messages"] is True
