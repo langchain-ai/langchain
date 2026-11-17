@@ -12,7 +12,7 @@ from langchain_core.language_models.fake_chat_models import (
     FakeListChatModel,
     GenericFakeChatModel,
 )
-from langchain_core.load import dumps
+from langchain_core.load import dumpd, dumps, load
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.outputs.chat_result import ChatResult
@@ -537,3 +537,31 @@ async def test_cache_key_ignores_message_id_async() -> None:
 
     # Verify only one cache entry exists
     assert len(local_cache._cache) == 1
+
+
+def test_cache_hit_preserves_absent_usage_metadata() -> None:
+    """A model that reports no usage has no cost to zero on a cache hit.
+
+    Building the update dict anyway produced usage_metadata={"total_cost": 0},
+    which fails UsageMetadata validation (input_tokens missing) the moment the
+    message is rebuilt: AIMessage.model_validate(hit.model_dump()) and
+    load(dumpd(hit)) both crashed (#41915).
+    """
+    local_cache = InMemoryCache()
+    messages = [
+        AIMessage(content="Hello, how are you?"),  # no usage_metadata
+    ]
+    model = GenericFakeChatModel(messages=iter(messages), cache=local_cache)
+
+    first_response = model.invoke("Hello")
+    assert isinstance(first_response, AIMessage)
+    assert first_response.usage_metadata is None
+
+    second_response = model.invoke("Hello")
+    assert isinstance(second_response, AIMessage)
+    # No usage was reported: the message stays as it was, with no invalid
+    # {"total_cost": 0} metadata bolted on.
+    assert second_response.usage_metadata is None
+    # The cached message round-trips through validation and dump/load.
+    AIMessage.model_validate(second_response.model_dump())
+    load(dumpd(second_response))

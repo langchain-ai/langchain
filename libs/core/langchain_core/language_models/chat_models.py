@@ -1473,12 +1473,21 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 converted_generations.append(chat_gen)
             else:
                 # Already a ChatGeneration or other expected type
-                if hasattr(gen, "message") and isinstance(gen.message, AIMessage):
-                    # We zero out cost on cache hits
+                if (
+                    hasattr(gen, "message")
+                    and isinstance(gen.message, AIMessage)
+                    # We zero out cost on cache hits. A message that reported no
+                    # usage has no cost to zero: building the update dict anyway
+                    # yields usage_metadata={"total_cost": 0}, which fails
+                    # UsageMetadata validation (input_tokens missing) the moment
+                    # the message is rebuilt — e.g. AIMessage.model_validate or
+                    # load(dumpd(msg)) (#41915).
+                    and gen.message.usage_metadata is not None
+                ):
                     gen.message = gen.message.model_copy(
                         update={
                             "usage_metadata": {
-                                **(gen.message.usage_metadata or {}),
+                                **gen.message.usage_metadata,
                                 "total_cost": 0,
                             }
                         }
