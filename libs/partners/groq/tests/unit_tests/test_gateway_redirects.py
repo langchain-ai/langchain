@@ -1,0 +1,106 @@
+"""Tests for gateway redirect isolation through the default HTTP clients."""
+
+import socket
+from contextlib import nullcontext
+from typing import Any
+
+import groq
+import httpx
+import pytest
+from langchain_core.utils._gateway import langsmith_gateway
+
+from langchain_groq import ChatGroq
+
+
+@pytest.mark.parametrize("mode", ["context", "empty", "env", "provider"])
+@pytest.mark.parametrize("async_call", [False, True])
+async def test_redirects_stay_on_gateway_origin(
+    monkeypatch: pytest.MonkeyPatch, mode: str, *, async_call: bool
+) -> None:
+    """Block credential forwarding while preserving same-origin redirects."""
+
+    def no_network(*_args: Any, **_kwargs: Any) -> None:
+        raise AssertionError
+
+    monkeypatch.setattr(socket.socket, "connect", no_network)
+    for name in (
+        "LANGSMITH_GATEWAY",
+        "LANGSMITH_GATEWAY_API_KEY",
+        "LANGSMITH_API_KEY",
+        "GROQ_API_BASE",
+        "GROQ_BASE_URL",
+        "GROQ_API_KEY",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    if mode == "env":
+        monkeypatch.setenv("LANGSMITH_GATEWAY", "https://gateway.test")
+        monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-secret")
+    context = (
+        langsmith_gateway(
+            api_key="gateway-secret",
+            base_url="https://gateway.test",
+            headers={"X-Service-Key": "service-secret"} if mode == "context" else {},
+        )
+        if mode in {"context", "empty"}
+        else nullcontext()
+    )
+    kwargs: dict[str, Any] = {"model": "test-model", "max_retries": 0}
+    if mode == "provider":
+        kwargs.update(base_url="https://gateway.test", api_key="provider-secret")
+    with context:
+        model = ChatGroq(**kwargs)
+
+    requests: list[Any] = []
+    gateway_requests = 2
+    all_requests = 3
+
+    def handle(request: Any) -> Any:
+        requests.append(request)
+        if len(requests) == 1:
+            return httpx.Response(307, headers={"Location": "/same-origin"})
+        if len(requests) == gateway_requests:
+            return httpx.Response(307, headers={"Location": "https://other.test/steal"})
+        return httpx.Response(
+            200,
+            json={
+                "id": "test",
+                "object": "chat.completion",
+                "created": 0,
+                "model": "test-model",
+                "choices": [
+                    {
+                        "index": 0,
+                        "finish_reason": "stop",
+                        "message": {"role": "assistant", "content": "ok"},
+                    }
+                ],
+            },
+        )
+
+    client = (model.async_client if async_call else model.client)._client._client
+    monkeypatch.setattr(client, "_transport", httpx.MockTransport(handle))
+    monkeypatch.setattr(client, "_mounts", {})
+
+    async def invoke() -> None:
+        if async_call:
+            await model.ainvoke("hello")
+        else:
+            model.invoke("hello")
+
+    if mode == "provider":
+        await invoke()
+        assert len(requests) == all_requests
+    else:
+        with pytest.raises((ValueError, groq.APIConnectionError)) as exc_info:
+            await invoke()
+        error: BaseException | None = exc_info.value
+        while error is not None and not isinstance(error, ValueError):
+            error = error.__cause__
+        assert isinstance(error, ValueError)
+        assert "Cross-origin redirects" in str(error)
+        assert len(requests) == gateway_requests
+        assert requests[0].headers["authorization"] == "Bearer gateway-secret"
+        assert requests[1].headers["authorization"] == "Bearer gateway-secret"
+        if mode == "context":
+            assert all(r.headers["x-service-key"] == "service-secret" for r in requests)
+    assert all(r.method == "POST" for r in requests)

@@ -2,13 +2,14 @@
 
 import json
 from contextlib import AsyncExitStack, nullcontext
-from typing import Any
+from typing import Any, cast
 from unittest.mock import patch
 
 import httpx
 import pytest
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.load import dumpd
+from langchain_core.runnables import ConfigurableField
 from langchain_core.utils._gateway import langsmith_gateway
 from pydantic import BaseModel, SecretStr
 
@@ -235,3 +236,81 @@ async def test_gateway_headers_are_fixed_when_model_is_revalidated(
         )
         assert request.headers["x-other-key"] == "kept"
         assert "other-secret" not in str(request.headers)
+
+
+@pytest.mark.parametrize("initial_gateway", ["none", "empty", "headers"])
+@pytest.mark.parametrize("rebuild_client", [False, True])
+@pytest.mark.parametrize("async_call", [False, True])
+async def test_configurable_preserves_gateway_context(
+    initial_gateway: str, *, rebuild_client: bool, async_call: bool
+) -> None:
+    requests: list[httpx.Request] = []
+
+    def handle(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return _response(request)
+
+    context = (
+        langsmith_gateway(
+            api_key="original-api-secret",
+            base_url="https://original.test",
+            headers={"X-Service-Key": "original-secret"}
+            if initial_gateway == "headers"
+            else {},
+        )
+        if initial_gateway != "none"
+        else nullcontext()
+    )
+    async with AsyncExitStack() as stack:
+        sync_http = stack.enter_context(
+            httpx.Client(transport=httpx.MockTransport(handle))
+        )
+        async_http = await stack.enter_async_context(
+            httpx.AsyncClient(transport=httpx.MockTransport(handle))
+        )
+        with context:
+            llm = ChatGroq(
+                model="test-model",
+                api_key=SecretStr("user-key"),
+                base_url="https://provider.test",
+                http_client=sync_http,
+                http_async_client=async_http,
+            )
+        original_clients = (llm.client, llm.async_client)
+        fields = {"temperature": ConfigurableField(id="temperature")}
+        config: dict[str, Any] = {"temperature": 0.4}
+        if rebuild_client:
+            for name in ("client", "async_client"):
+                fields[name] = ConfigurableField(id=name)
+                config[name] = None
+        runnable = llm.configurable_fields(**fields)
+        with langsmith_gateway(
+            api_key="other-api-secret",
+            base_url="https://other.test",
+            headers={"X-Other": "other-secret"},
+        ):
+            prepared, _ = cast("Any", runnable).prepare({"configurable": config})
+            if async_call:
+                await prepared.ainvoke(
+                    "hello", extra_headers={"x-service-key": "forged"}
+                )
+            else:
+                prepared.invoke("hello", extra_headers={"x-service-key": "forged"})
+        assert (llm.client, llm.async_client) == original_clients
+        for secret in ("original-api-secret", "original-secret"):
+            assert secret not in json.dumps(dumpd(prepared))
+            assert secret not in str(prepared.model_dump())
+    assert len(requests) == 1
+    request = requests[0]
+    assert str(request.url).startswith(
+        "https://provider.test"
+        if initial_gateway == "none"
+        else "https://original.test"
+    )
+    assert request.headers["authorization"] == (
+        "Bearer user-key" if initial_gateway == "none" else "Bearer original-api-secret"
+    )
+    assert request.headers["x-service-key"] == (
+        "original-secret" if initial_gateway == "headers" else "forged"
+    )
+    assert "x-other" not in request.headers
