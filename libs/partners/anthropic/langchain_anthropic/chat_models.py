@@ -2216,6 +2216,15 @@ class ChatAnthropic(BaseChatModel):
             else:
                 payload["betas"] = [required_beta]
 
+        if self._langsmith_gateway_headers and isinstance(
+            payload.get("extra_headers"), Mapping
+        ):
+            protected = {name.lower() for name in self._langsmith_gateway_headers}
+            payload["extra_headers"] = {
+                name: value
+                for name, value in payload["extra_headers"].items()
+                if name.lower() not in protected
+            }
         return _route_unsupported_sampling_params(
             {k: v for k, v in payload.items() if v is not None}
         )
