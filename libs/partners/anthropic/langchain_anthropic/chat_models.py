@@ -1470,10 +1470,10 @@ class ChatAnthropic(BaseChatModel):
     """
 
     default_headers: Mapping[str, str] | None = None
+    """Headers to pass to the Anthropic clients, will be used for every API call."""
 
     _langsmith_gateway_headers: dict[str, str] | None = PrivateAttr(default=None)
     """Headers from `langsmith_gateway`, sent by the client but never serialized."""
-    """Headers to pass to the Anthropic clients, will be used for every API call."""
 
     betas: list[str] | None = None
     """List of beta features to enable. If specified, invocations will be routed
