@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from contextlib import nullcontext
 from typing import Any, Literal
 from unittest.mock import MagicMock
 
@@ -807,3 +808,41 @@ def test_langsmith_gateway_context_headers() -> None:
     assert sent["X-Service-Key"] == "svc-key"
     assert sent["X-Custom"] == "kept"
     assert "svc-key" not in json.dumps(dumpd(llm))
+
+
+@pytest.mark.usefixtures("_gateway_env")
+@pytest.mark.parametrize(
+    "initial_headers", [None, {}, {"X-Service-Key": "original-secret"}]
+)
+def test_langsmith_gateway_headers_survive_revalidation(
+    initial_headers: dict[str, str] | None,
+) -> None:
+    """Revalidation preserves the clients' original gateway header snapshot."""
+    context = (
+        langsmith_gateway(api_key="original-api-secret", headers=initial_headers)
+        if initial_headers is not None
+        else nullcontext()
+    )
+    with context:
+        llm = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("user-key"))
+    original_clients = llm.root_client, llm.root_async_client
+    headers = {"x-service-key": "forged", "X-Other-Key": "kept"}
+    with langsmith_gateway(
+        api_key="other-api-secret", headers={"X-Other-Key": "other-secret"}
+    ):
+        assert ChatDeepSeek.model_validate(llm) is llm
+
+        class Wrapper(PydanticBaseModel):
+            model: ChatDeepSeek
+
+        assert Wrapper(model=llm).model is llm
+    assert (llm.root_client, llm.root_async_client) == original_clients
+    assert llm._langsmith_gateway_headers == (initial_headers or {})
+    expected_headers = {"X-Other-Key": "kept"} if initial_headers else headers
+    payload = llm._get_request_payload("hello", extra_headers=headers)
+    assert payload["extra_headers"] == expected_headers
+    for client in original_clients:
+        assert client.default_headers.get("X-Service-Key") == (
+            (initial_headers or {}).get("X-Service-Key")
+        )
+        assert "X-Other-Key" not in client.default_headers

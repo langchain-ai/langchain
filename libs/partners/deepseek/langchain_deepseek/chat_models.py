@@ -27,7 +27,6 @@ from langchain_core.utils import from_env, secret_from_env
 from langchain_core.utils._gateway import (
     _apply_gateway_config,
     _gateway_headers,
-    _langsmith_gateway_active,
     _with_gateway_headers,
 )
 from langchain_openai.chat_models.base import BaseChatOpenAI
@@ -327,7 +326,7 @@ class ChatDeepSeek(BaseChatOpenAI):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate necessary environment vars and client params."""
-        if _langsmith_gateway_active():
+        if self._langsmith_gateway_headers is None:
             self._langsmith_gateway_headers = _gateway_headers()
         if self.api_base == DEFAULT_API_BASE and not (
             self.api_key and self.api_key.get_secret_value()
