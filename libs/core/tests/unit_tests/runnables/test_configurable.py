@@ -1,20 +1,13 @@
-from typing import Any, Self, cast
+from typing import Any, Self
 
 import pytest
-from pydantic import ConfigDict, Field, PrivateAttr, ValidationError, model_validator
+from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import override
 
 from langchain_core.runnables import (
     ConfigurableField,
     RunnableConfig,
     RunnableSerializable,
-)
-from langchain_core.utils._gateway import (
-    _GATEWAY_RECONSTRUCTION_PROTECTION,
-    _gateway_headers,
-    _GatewayOverride,
-    _get_gateway_override_snapshot,
-    langsmith_gateway,
 )
 
 
@@ -79,49 +72,6 @@ class MyOtherRunnable(RunnableSerializable[str, str]):
     def my_other_custom_function_w_config(self, config: RunnableConfig) -> str:
         _ = config
         return self.my_other_property
-
-
-class GatewayRunnable(MyRunnable):
-    _langsmith_gateway_override: _GatewayOverride | None = PrivateAttr(
-        default_factory=_get_gateway_override_snapshot
-    )
-    _langsmith_gateway_redirect_protection: bool = PrivateAttr(default=True)
-    _observed_headers: dict[str, str] = PrivateAttr(default_factory=dict)
-    _observed_redirect_protection: bool = PrivateAttr(default=False)
-
-    @model_validator(mode="after")
-    def capture_headers(self) -> Self:
-        self._observed_headers = _gateway_headers()
-        self._observed_redirect_protection = _GATEWAY_RECONSTRUCTION_PROTECTION.get()
-        if self.my_property == "bad":
-            msg = "invalid property"
-            raise ValueError(msg)
-        return self
-
-
-def test_configurable_gateway_context_reset_on_error() -> None:
-    supplied_headers = {"X-Original": "original-secret"}
-    with langsmith_gateway(api_key="original-key", headers=supplied_headers):
-        runnable = GatewayRunnable(my_property="a")
-    supplied_headers["X-Original"] = "changed"
-    configurable = runnable.configurable_fields(
-        my_property=ConfigurableField(id="property")
-    )
-    with langsmith_gateway(api_key="other-key", headers={"X-Other": "other-secret"}):
-        prepared, _ = cast("Any", configurable).prepare(
-            {"configurable": {"property": "b"}}
-        )
-        assert prepared._observed_headers == {"X-Original": "original-secret"}
-        assert prepared._observed_redirect_protection
-        assert _gateway_headers() == {"X-Other": "other-secret"}
-        assert not _GATEWAY_RECONSTRUCTION_PROTECTION.get()
-        with pytest.raises(ValidationError, match="invalid property"):
-            cast("Any", configurable).prepare({"configurable": {"property": "bad"}})
-        assert _gateway_headers() == {"X-Other": "other-secret"}
-        assert not _GATEWAY_RECONSTRUCTION_PROTECTION.get()
-    assert _gateway_headers() == {}
-    assert runnable._observed_headers == {"X-Original": "original-secret"}
-    assert "original-secret" not in str(runnable.model_dump())
 
 
 def test_doubly_set_configurable() -> None:

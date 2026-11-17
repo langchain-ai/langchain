@@ -13,10 +13,6 @@ from langchain_core.utils._gateway import (
     _gateway_headers,
     _with_gateway_headers,
 )
-from langchain_core.utils._gateway_redirect import (
-    _gateway_request_hooks,
-    _protect_gateway_redirects,
-)
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
@@ -540,26 +536,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             )
         return values
 
-    def _gateway_http_client(self, *, is_async: bool) -> Any:
-        client = self.http_async_client if is_async else self.http_client
-        if client is not None or not self._langsmith_gateway_redirect_protection:
-            return client
-        client_class = (
-            openai.DefaultAsyncHttpxClient if is_async else openai.DefaultHttpxClient
-        )
-        return client_class(
-            event_hooks=_gateway_request_hooks(self.xai_api_base, is_async=is_async)
-        )
-
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
         if self._langsmith_gateway_headers is None:
             self._langsmith_gateway_headers = _gateway_headers()
-        if self._langsmith_gateway_redirect_protection is None:
-            self._langsmith_gateway_redirect_protection = _protect_gateway_redirects(
-                self.xai_api_base, self.xai_api_key, "xai/v1"
-            )
         if self.n is not None and self.n < 1:
             msg = "n must be at least 1."
             raise ValueError(msg)
@@ -589,17 +570,13 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             raise ValueError(msg)
 
         if not (self.client or None):
-            sync_specific: dict = {
-                "http_client": self._gateway_http_client(is_async=False)
-            }
+            sync_specific: dict = {"http_client": self.http_client}
             self.client = openai.OpenAI(
                 **client_params, **sync_specific
             ).chat.completions
             self.root_client = openai.OpenAI(**client_params, **sync_specific)
         if not (self.async_client or None):
-            async_specific: dict = {
-                "http_client": self._gateway_http_client(is_async=True)
-            }
+            async_specific: dict = {"http_client": self.http_async_client}
             self.async_client = openai.AsyncOpenAI(
                 **client_params, **async_specific
             ).chat.completions

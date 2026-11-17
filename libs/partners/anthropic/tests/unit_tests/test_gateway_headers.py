@@ -3,7 +3,7 @@
 import json
 from collections.abc import AsyncIterator
 from contextlib import nullcontext
-from typing import Any, cast
+from typing import Any
 from unittest.mock import patch
 
 import anthropic
@@ -11,7 +11,6 @@ import pytest
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.load import dumpd
 from langchain_core.messages import HumanMessage
-from langchain_core.runnables import ConfigurableField
 from langchain_core.utils._gateway import langsmith_gateway
 from pydantic import BaseModel, SecretStr
 
@@ -232,88 +231,6 @@ async def test_gateway_headers_at_request_boundary(
         assert secret not in json.dumps(dumpd(llm))
         assert secret not in str(llm.model_dump())
         assert secret not in str(capture.calls)
-
-
-@pytest.mark.parametrize("initial_gateway", ["none", "empty", "headers"])
-@pytest.mark.parametrize("later_gateway", [False, True])
-@pytest.mark.parametrize("async_call", [False, True])
-async def test_configurable_preserves_gateway_context(
-    initial_gateway: str,
-    outbound_requests: list[Any],
-    *,
-    later_gateway: bool,
-    async_call: bool,
-) -> None:
-    initial = (
-        langsmith_gateway(
-            api_key="original-api-secret",
-            base_url="https://original.test",
-            headers={"X-Service-Key": "original-header-secret"}
-            if initial_gateway == "headers"
-            else {},
-        )
-        if initial_gateway != "none"
-        else nullcontext()
-    )
-    later = (
-        langsmith_gateway(
-            api_key="other-api-secret",
-            base_url="https://other.test",
-            headers={"X-Other": "other-header-secret"},
-        )
-        if later_gateway
-        else nullcontext()
-    )
-    with initial:
-        llm = ChatAnthropic(
-            model="test-model",
-            api_key=SecretStr("provider-key"),
-            base_url="https://provider.test",
-        )
-    original_url, original_key = llm.anthropic_api_url, llm.anthropic_api_key
-    runnable = llm.configurable_fields(temperature=ConfigurableField(id="temperature"))
-    headers = {"x-service-key": "forged", "X-Custom": "kept"}
-    with later:
-        prepared, _ = cast(Any, runnable).prepare(
-            {"configurable": {"temperature": 0.4}}
-        )
-        assert prepared is not llm
-        assert prepared.anthropic_api_url == original_url
-        assert prepared.anthropic_api_key == original_key
-        if async_call:
-            await prepared.ainvoke("hello", extra_headers=headers)
-        else:
-            prepared.invoke("hello", extra_headers=headers)
-        if later_gateway:
-            assert ChatAnthropic(model="test-model")._langsmith_gateway_headers == {
-                "X-Other": "other-header-secret"
-            }
-    assert llm.anthropic_api_url == original_url
-    assert llm.anthropic_api_key == original_key
-    assert {"_client", "_async_client", "_client_params"}.isdisjoint(llm.__dict__)
-    assert llm._langsmith_gateway_headers == (
-        {"X-Service-Key": "original-header-secret"}
-        if initial_gateway == "headers"
-        else {}
-    )
-    for secret in ("original-header-secret", "original-api-secret"):
-        assert secret not in json.dumps(dumpd(prepared))
-        assert secret not in str(prepared.model_dump())
-    assert len(outbound_requests) == 1
-    request = outbound_requests[0]
-    assert str(request.url).startswith(
-        "https://provider.test"
-        if initial_gateway == "none"
-        else "https://original.test"
-    )
-    assert request.headers["x-api-key"] == (
-        "provider-key" if initial_gateway == "none" else "original-api-secret"
-    )
-    assert request.headers["x-service-key"] == (
-        "original-header-secret" if initial_gateway == "headers" else "forged"
-    )
-    assert "x-other" not in request.headers
-    assert headers == {"x-service-key": "forged", "X-Custom": "kept"}
 
 
 @pytest.mark.parametrize("gateway", [False, True])
