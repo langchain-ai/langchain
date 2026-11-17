@@ -882,9 +882,24 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         `AIMessage` containing the corresponding `tool_calls` and adjust the cutoff to
         include it. This ensures tool call requests and responses stay together.
 
+        Anthropic server-tool blocks carried across assistant messages are kept
+        together as well: nested blocks (e.g. a `web_search` run inside
+        `code_execution`) reference their source through a `caller.tool_id` that
+        names a `server_tool_use` block in an *earlier* message. A cutoff that
+        separates them makes the next request fail with
+        `invalid_request_error: source tool ... not found`, and since the
+        summarization event only commits after a successful call, the thread
+        then recomputes the same cutoff every turn and stays stuck (#41898).
+        The cutoff moves back to the earliest message holding such a referenced
+        `server_tool_use`, repeating until it stops moving.
+
         Falls back to advancing forward past `ToolMessage` objects only if no matching
         `AIMessage` is found (edge case).
         """
+        cutoff_index = SummarizationMiddleware._avoid_orphaned_caller_blocks(
+            messages, cutoff_index
+        )
+
         if cutoff_index >= len(messages) or not isinstance(messages[cutoff_index], ToolMessage):
             return cutoff_index
 
@@ -909,6 +924,58 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         # Fallback: no matching AIMessage found, advance past ToolMessages to avoid
         # orphaned tool responses
         return idx
+
+    @staticmethod
+    def _avoid_orphaned_caller_blocks(messages: list[AnyMessage], cutoff_index: int) -> int:
+        """Move the cutoff back until no preserved block references a missing source.
+
+        A preserved (at/after the cutoff) content block whose `caller.tool_id`
+        names a `server_tool_use` block living before the cutoff would be sent
+        to Anthropic without its source. Repeatedly move the cutoff to the
+        earliest such source message until no orphaned references remain — the
+        newly included messages can themselves carry callers, so a single pass
+        is not enough.
+        """
+        while True:
+            preserved_ids: set[str] = set()
+            orphan_sources: dict[str, int] = {}
+            for i in range(cutoff_index, len(messages)):
+                content = messages[i].content
+                if not isinstance(content, list):
+                    continue
+                for block in content:
+                    if not isinstance(block, dict):
+                        continue
+                    block_id = block.get("id")
+                    if isinstance(block_id, str) and block_id:
+                        preserved_ids.add(block_id)
+                    caller = block.get("caller")
+                    if isinstance(caller, dict):
+                        source_id = caller.get("tool_id")
+                        if isinstance(source_id, str) and source_id:
+                            orphan_sources[source_id] = i
+            referenced = orphan_sources.keys() - preserved_ids
+            if not referenced:
+                return cutoff_index
+            moved = cutoff_index
+            for source_id in referenced:
+                for i in range(cutoff_index - 1, -1, -1):
+                    content = messages[i].content
+                    if not isinstance(content, list):
+                        continue
+                    if any(
+                        isinstance(b, dict)
+                        and b.get("type") == "server_tool_use"
+                        and b.get("id") == source_id
+                        for b in content
+                    ):
+                        moved = min(moved, i)
+                        break
+            if moved == cutoff_index:
+                # Source message not found; leave the cutoff untouched rather
+                # than collapsing the whole history.
+                return cutoff_index
+            cutoff_index = moved
 
     def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
         """Generate summary for the given messages.

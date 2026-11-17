@@ -2760,3 +2760,105 @@ def test_async_summarizer_on_sync_path_raises() -> None:
 
     with pytest.raises(TypeError, match="coroutine function synchronously"):
         middleware._create_summary([HumanMessage(content="hi")])
+
+
+class TestCallerBlockCutoff:
+    """Caller blocks must stay with their source across the cutoff.
+
+    Anthropic server-tool blocks must not be separated from their source
+    `server_tool_use` by the summarization cutoff (#41898).
+    """
+
+    def _messages(self) -> list[AnyMessage]:
+        caller = {"type": "code_execution_20260120", "tool_id": "srvtoolu_code"}
+        return [
+            HumanMessage("research these firms"),
+            AIMessage(
+                content=[
+                    {"type": "tool_use", "id": "toolu_a", "name": "lookup", "input": {}},
+                    {"type": "server_tool_use", "id": "srvtoolu_code",
+                     "name": "code_execution", "input": {"code": "..."}},
+                ],
+                tool_calls=[{"id": "toolu_a", "name": "lookup", "args": {}}],
+            ),
+            ToolMessage("lookup result", tool_call_id="toolu_a"),
+            AIMessage(content=[
+                {"type": "server_tool_use", "id": "srvtoolu_search",
+                 "name": "web_search", "input": {"query": "x"}, "caller": caller},
+                {"type": "web_search_tool_result", "tool_use_id": "srvtoolu_search",
+                 "content": [], "caller": caller},
+                {"type": "code_execution_tool_result", "tool_use_id": "srvtoolu_code",
+                 "content": {}},
+                {"type": "text", "text": "done"},
+            ]),
+        ]
+
+    def test_cutoff_moves_back_to_the_referenced_server_tool_message(self) -> None:
+        messages = self._messages()
+        cutoff = SummarizationMiddleware._find_safe_cutoff_point(messages, 3)
+        assert cutoff == 1
+        kept = messages[cutoff:]
+        kept_ids = {
+            b["id"]
+            for m in kept if isinstance(m.content, list)
+            for b in m.content if isinstance(b, dict) and b.get("type") == "server_tool_use"
+        }
+        for m in kept:
+            if isinstance(m.content, list):
+                for b in m.content:
+                    caller = b.get("caller") if isinstance(b, dict) else None
+                    if caller:
+                        assert caller["tool_id"] in kept_ids
+
+    def test_cutoff_without_caller_references_is_unchanged(self) -> None:
+        messages = self._messages()
+        # Index 3's blocks carry callers, but the source lives at index 1...
+        # Remove the callers: cutoff stays where the ToolMessage check puts it.
+        for m in messages:
+            if isinstance(m.content, list):
+                for b in m.content:
+                    if isinstance(b, dict):
+                        b.pop("caller", None)
+        # index 3 is not a ToolMessage, so the cutoff stays at 3
+        assert SummarizationMiddleware._find_safe_cutoff_point(messages, 3) == 3
+
+    def test_cutoff_beyond_the_last_message_is_returned_as_is(self) -> None:
+        messages = self._messages()
+        # Index 4 is out of range: nothing to protect and nothing to split, so
+        # the cutoff comes back unchanged.
+        assert SummarizationMiddleware._find_safe_cutoff_point(messages, 4) == 4
+
+    def test_missing_source_block_leaves_cutoff_untouched(self) -> None:
+        # Caller references a source that does not exist anywhere: cannot fix
+        # by moving the cutoff, so it stays put instead of collapsing history.
+        caller = {"type": "code_execution_20260120", "tool_id": "srvtoolu_gone"}
+        messages = [
+            HumanMessage("hi"),
+            AIMessage(content=[
+                {"type": "web_search_tool_result", "tool_use_id": "srvtoolu_x",
+                 "content": [], "caller": caller},
+            ]),
+        ]
+        assert SummarizationMiddleware._find_safe_cutoff_point(messages, 1) == 1
+
+    def test_chained_callers_move_the_cutoff_in_one_pass(self) -> None:
+        # Preserved message B references a source in A, and B is itself a
+        # server_tool_use referenced by C — one backward move must cover both.
+        caller_a = {"type": "code_execution_20260120", "tool_id": "srvtoolu_a"}
+        caller_b = {"type": "code_execution_20260120", "tool_id": "srvtoolu_b"}
+        messages = [
+            HumanMessage("start"),
+            AIMessage(content=[
+                {"type": "server_tool_use", "id": "srvtoolu_a",
+                 "name": "code_execution", "input": {}},
+            ]),
+            AIMessage(content=[
+                {"type": "server_tool_use", "id": "srvtoolu_b", "name": "code_execution",
+                 "input": {}, "caller": caller_a},
+            ]),
+            AIMessage(content=[
+                {"type": "web_search_tool_result", "tool_use_id": "srvtoolu_x",
+                 "content": [], "caller": caller_b},
+            ]),
+        ]
+        assert SummarizationMiddleware._find_safe_cutoff_point(messages, 3) == 1
