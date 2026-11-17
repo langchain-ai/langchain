@@ -1228,6 +1228,186 @@ def test_responses_stream_function_call_preserves_namespace() -> None:
     )
 
 
+def _function_call_response(status: str, output: list[Any]) -> Response:
+    return Response(
+        id="resp_fc",
+        created_at=1749734255.0,
+        error=None,
+        incomplete_details=None,
+        instructions=None,
+        metadata={},
+        model=MODEL,
+        object="response",
+        output=output,
+        parallel_tool_calls=True,
+        temperature=1.0,
+        tool_choice="auto",
+        tools=[],
+        top_p=1.0,
+        status=status,  # type: ignore[arg-type]
+        text=ResponseTextConfig(format=ResponseFormatText(type="text")),
+        truncation="disabled",
+        usage=ResponseUsage(
+            input_tokens=10,
+            input_tokens_details=InputTokensDetails(
+                cache_write_tokens=0, cached_tokens=0
+            ),
+            output_tokens=20,
+            output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
+            total_tokens=30,
+        ),
+        user=None,
+    )
+
+
+_FUNCTION_CALL_ARGUMENTS = {"fc_1": '{"symbol":"XLK"}', "fc_2": '{"symbol":"XLF"}'}
+
+
+def _function_call_stream(deltas: dict[str, list[str]]) -> list[Any]:
+    """Build a stream of two function calls with the given argument deltas."""
+
+    def _item(item_id: str, arguments: str, status: str) -> Any:
+        return ResponseFunctionToolCallItem(
+            id=item_id,
+            arguments=arguments,
+            call_id=f"call_{item_id}",
+            name="get_price",
+            type="function_call",
+            status=status,  # type: ignore[arg-type]
+        )
+
+    events: list[Any] = [
+        ResponseCreatedEvent(
+            response=_function_call_response("in_progress", []),
+            sequence_number=0,
+            type="response.created",
+        )
+    ]
+    for output_index, (item_id, arguments) in enumerate(
+        _FUNCTION_CALL_ARGUMENTS.items()
+    ):
+        events.append(
+            ResponseOutputItemAddedEvent(
+                item=_item(item_id, "", "in_progress"),
+                output_index=output_index,
+                sequence_number=0,
+                type="response.output_item.added",
+            )
+        )
+        events.extend(
+            ResponseFunctionCallArgumentsDeltaEvent(
+                delta=delta,
+                item_id=item_id,
+                output_index=output_index,
+                sequence_number=0,
+                type="response.function_call_arguments.delta",
+            )
+            for delta in deltas[item_id]
+        )
+        events.extend(
+            [
+                ResponseFunctionCallArgumentsDoneEvent.model_construct(
+                    arguments=arguments,
+                    item_id=item_id,
+                    name="get_price",
+                    output_index=output_index,
+                    sequence_number=0,
+                    type="response.function_call_arguments.done",
+                ),
+                ResponseOutputItemDoneEvent(
+                    item=_item(item_id, arguments, "completed"),
+                    output_index=output_index,
+                    sequence_number=0,
+                    type="response.output_item.done",
+                ),
+            ]
+        )
+    events.append(
+        ResponseCompletedEvent(
+            response=_function_call_response(
+                "completed",
+                [
+                    _item(item_id, arguments, "completed")
+                    for item_id, arguments in _FUNCTION_CALL_ARGUMENTS.items()
+                ],
+            ),
+            sequence_number=0,
+            type="response.completed",
+        )
+    )
+    for sequence_number, event in enumerate(events):
+        event.sequence_number = sequence_number
+    return events
+
+
+_FUNCTION_CALL_DELTAS = {
+    "no_deltas": {"fc_1": [], "fc_2": []},
+    "partial_deltas": {"fc_1": ['{"symbol":'], "fc_2": []},
+    "all_deltas": {"fc_1": ['{"symbol":', '"XLK"}'], "fc_2": ['{"symbol":"XLF"}']},
+}
+
+
+def _assert_function_call_arguments(full: AIMessageChunk, output_version: str) -> None:
+    assert [(tc["id"], tc["args"]) for tc in full.tool_calls] == [
+        ("call_fc_1", {"symbol": "XLK"}),
+        ("call_fc_2", {"symbol": "XLF"}),
+    ]
+    if output_version == "responses/v1":
+        assert [
+            block["arguments"]  # type: ignore[index]
+            for block in full.content
+            if isinstance(block, dict) and block.get("type") == "function_call"
+        ] == list(_FUNCTION_CALL_ARGUMENTS.values())
+
+
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1", "v0"])
+@pytest.mark.parametrize(
+    "deltas", _FUNCTION_CALL_DELTAS.values(), ids=list(_FUNCTION_CALL_DELTAS)
+)
+def test_responses_stream_function_call_arguments_done(
+    deltas: dict[str, list[str]], output_version: str
+) -> None:
+    """Arguments missing from deltas are recovered from the `done` event."""
+    stream = _function_call_stream(deltas)
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version=output_version)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("test"):
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    _assert_function_call_arguments(full, output_version)
+
+
+@pytest.mark.parametrize(
+    "deltas", _FUNCTION_CALL_DELTAS.values(), ids=list(_FUNCTION_CALL_DELTAS)
+)
+async def test_responses_astream_function_call_arguments_done(
+    deltas: dict[str, list[str]],
+) -> None:
+    stream = _function_call_stream(deltas)
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="responses/v1")
+    mock_client = MagicMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_async_client", mock_client):
+        async for chunk in llm.astream("test"):
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    _assert_function_call_arguments(full, "responses/v1")
+
+
 def test_responses_stream_tolerates_dict_response_field() -> None:
     """Regression test for `AttributeError: 'dict' object has no attribute 'id'`.
 

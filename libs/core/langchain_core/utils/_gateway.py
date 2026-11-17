@@ -46,6 +46,7 @@ class _GatewayOverride(NamedTuple):
 
     base_url: str
     api_key: SecretStr
+    headers: Mapping[str, str]
 
 
 _GATEWAY_OVERRIDE: ContextVar[_GatewayOverride | None] = ContextVar(
@@ -58,6 +59,7 @@ def langsmith_gateway(
     *,
     api_key: str | SecretStr,
     base_url: str = _LANGSMITH_GATEWAY_DEFAULT_BASE,
+    headers: Mapping[str, str] | None = None,
 ) -> Iterator[None]:
     """Route chat models built in this context through the LangSmith gateway.
 
@@ -73,9 +75,16 @@ def langsmith_gateway(
     lets a caller load an untrusted serialized model without it redirecting the
     gateway key to another host or bypassing the gateway.
 
+    Treat invocation arguments, including `extra_headers`, as trusted application
+    input; gateway header precedence is not an authorization boundary.
+
     Args:
         api_key: Key used to authenticate to the gateway.
         base_url: Gateway host. The provider's path is appended per model.
+        headers: Headers sent with every request to the gateway, such as a
+            service key. They replace any header of the same name
+            (case-insensitive) set on the model. They are kept in private model
+            state and sent by the HTTP client, but are not serialized or traced.
 
     Yields:
         None.
@@ -91,11 +100,47 @@ def langsmith_gateway(
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
         msg = f"Invalid gateway base URL: {base_url!r}"
         raise ValueError(msg)
-    token = _GATEWAY_OVERRIDE.set(_GatewayOverride(base_url.rstrip("/"), secret))
+    token = _GATEWAY_OVERRIDE.set(
+        _GatewayOverride(base_url.rstrip("/"), secret, dict(headers or {}))
+    )
     try:
         yield
     finally:
         _GATEWAY_OVERRIDE.reset(token)
+
+
+def _langsmith_gateway_active() -> bool:
+    """Whether a `langsmith_gateway` context is active.
+
+    Integrations ignore their proxy setting while it is, so a serialized model
+    cannot send the gateway key through a proxy.
+    """
+    return _GATEWAY_OVERRIDE.get() is not None
+
+
+def _gateway_headers() -> dict[str, str]:
+    """Return the headers of the active `langsmith_gateway` context, if any.
+
+    Integrations that build their client lazily read these at construction and
+    keep them in a private attribute, so they never reach the serialized model.
+    """
+    override = _GATEWAY_OVERRIDE.get()
+    return dict(override.headers) if override is not None else {}
+
+
+def _with_gateway_headers(
+    headers: Mapping[str, str] | None, gateway_headers: Mapping[str, str]
+) -> Mapping[str, str] | None:
+    """Return ``headers`` with ``gateway_headers`` applied.
+
+    Gateway headers replace any of the same name (case-insensitive), so a model
+    cannot override them. ``headers`` is returned unchanged when there are none.
+    """
+    if not gateway_headers:
+        return headers
+    names = {name.lower() for name in gateway_headers}
+    kept = {k: v for k, v in (headers or {}).items() if k.lower() not in names}
+    return {**kept, **gateway_headers}
 
 
 def _override_base_url(
@@ -183,6 +228,23 @@ def _resolve_gateway_base_url(provider_path: str) -> str | None:
     return f"{base}/{provider_path}"
 
 
+def _same_origin(first: str, second: str) -> bool:
+    """Check whether two HTTP URLs have the same origin."""
+    try:
+        left, right = urlsplit(first), urlsplit(second)
+        if left.scheme not in {"http", "https"} or right.scheme != left.scheme:
+            return False
+        if not left.hostname or not right.hostname:
+            return False
+        default_port = 443 if left.scheme == "https" else 80
+        left_port = left.port if left.port is not None else default_port
+        right_port = right.port if right.port is not None else default_port
+    except ValueError:
+        return False
+    else:
+        return left.hostname == right.hostname and left_port == right_port
+
+
 def _resolve_gateway_config(
     *,
     base_url: str | None,
@@ -202,16 +264,11 @@ def _resolve_gateway_config(
     - **base_url:** explicit ``base_url`` > ``base_url_env`` > LangSmith gateway
       > ``default_base_url``.
     - **api_key:** explicit ``api_key`` (returned unchanged) > the gateway key if
-      the base URL came from the gateway, otherwise the provider key > the other.
-      The gateway key uses ``LANGSMITH_GATEWAY_API_KEY`` when the gateway is
-      enabled, with ``LANGSMITH_API_KEY`` as a fallback only when the base URL came
-      from the gateway.
-
-    The provenance flip on the key means an ``OPENAI_API_KEY``-style provider key
-    is preferred whenever the caller pointed the base URL at a non-gateway
-    endpoint (so a stray gateway key is not sent to the provider), while the
-    gateway key wins for the common "just enable the gateway" setup even if a
-    provider key happens to be present in the environment.
+      the base URL came from the gateway, otherwise the provider key. A gateway
+      key is a fallback for an explicit URL only when it has the same origin as
+      the configured gateway. ``LANGSMITH_GATEWAY_API_KEY`` is used when the
+      gateway is enabled, with ``LANGSMITH_API_KEY`` as a fallback only when the
+      base URL came from the gateway.
 
     Args:
         base_url: Explicitly-provided base URL (e.g. a ``base_url`` kwarg), or
@@ -260,11 +317,17 @@ def _resolve_gateway_config(
         if not gateway_api_key and base_url_from_gateway:
             gateway_api_key = os.getenv(_LANGSMITH_API_KEY_ENV)
         provider_api_key = _first_env(api_key_env)
-        chosen = (
-            (gateway_api_key or provider_api_key)
-            if base_url_from_gateway
-            else (provider_api_key or gateway_api_key)
-        )
+        if base_url_from_gateway:
+            chosen = gateway_api_key or provider_api_key
+        elif (
+            gateway_api_key
+            and gateway_base_url
+            and resolved_base_url
+            and _same_origin(gateway_base_url, resolved_base_url)
+        ):
+            chosen = provider_api_key or gateway_api_key
+        else:
+            chosen = provider_api_key
         resolved_api_key = SecretStr(chosen) if chosen else None
 
     return GatewayConfig(resolved_base_url, resolved_api_key, base_url_from_gateway)

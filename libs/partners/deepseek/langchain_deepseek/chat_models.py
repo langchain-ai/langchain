@@ -24,7 +24,11 @@ from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, secret_from_env
-from langchain_core.utils._gateway import _apply_gateway_config
+from langchain_core.utils._gateway import (
+    _apply_gateway_config,
+    _gateway_headers,
+    _with_gateway_headers,
+)
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
@@ -322,6 +326,8 @@ class ChatDeepSeek(BaseChatOpenAI):
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate necessary environment vars and client params."""
+        if self._langsmith_gateway_headers is None:
+            self._langsmith_gateway_headers = _gateway_headers()
         if self.api_base == DEFAULT_API_BASE and not (
             self.api_key and self.api_key.get_secret_value()
         ):
@@ -334,7 +340,9 @@ class ChatDeepSeek(BaseChatOpenAI):
                 "base_url": self.api_base,
                 "timeout": self.request_timeout,
                 "max_retries": self.max_retries,
-                "default_headers": self.default_headers,
+                "default_headers": _with_gateway_headers(
+                    self.default_headers, self._langsmith_gateway_headers
+                ),
                 "default_query": self.default_query,
             }.items()
             if v is not None

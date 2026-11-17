@@ -28,6 +28,7 @@ from langchain_core.exceptions import (
     ModelRefusalError,
     ModelTimeoutError,
 )
+from langchain_core.load import dumpd
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -43,7 +44,10 @@ from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
-from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
+from langchain_core.utils._gateway import (
+    GATEWAY_METADATA_RESPONSE_KEY,
+    langsmith_gateway,
+)
 from pydantic import BaseModel, Field, RootModel, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
@@ -3153,7 +3157,15 @@ _ANTHROPIC_TOOL_SCHEMA = {
 }
 
 
-@pytest.mark.parametrize("model", ["claude-opus-5-5", "claude-fable-5-1"])
+@pytest.mark.parametrize(
+    "model",
+    [
+        "claude-opus-5-5",
+        "claude-fable-5-1",
+        "claude-fable-5-2",
+        "claude-mythos-5-2",
+    ],
+)
 @pytest.mark.parametrize("schema", [_Person, _ANTHROPIC_TOOL_SCHEMA])
 @pytest.mark.parametrize("thinking", [None, {"type": "adaptive"}])
 def test_with_structured_output_skips_forced_tool_choice_when_unsupported(
@@ -6719,3 +6731,19 @@ def test_with_structured_output_still_streams_partial_json() -> None:
 
     assert len(outputs) > 1
     assert outputs[-1] == {"answer": "42"}
+
+
+def test_langsmith_gateway_context_headers() -> None:
+    """Gateway headers reach the client but are never serialized."""
+    with langsmith_gateway(api_key="placeholder", headers={"X-Service-Key": "svc-key"}):
+        llm = ChatAnthropic(
+            model="claude-sonnet-4-5",
+            api_key=SecretStr("user-key"),
+            default_headers={"x-service-key": "forged", "X-Custom": "kept"},
+            anthropic_proxy="http://proxy:8080",
+        )
+    sent = llm._client.default_headers
+    assert sent["X-Service-Key"] == "svc-key"
+    assert sent["X-Custom"] == "kept"
+    assert "svc-key" not in json.dumps(dumpd(llm))
+    assert llm.anthropic_proxy is None

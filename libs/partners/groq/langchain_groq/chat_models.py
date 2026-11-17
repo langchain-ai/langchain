@@ -64,13 +64,24 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
-from langchain_core.utils._gateway import _apply_gateway_config
+from langchain_core.utils._gateway import (
+    _apply_gateway_config,
+    _gateway_headers,
+    _with_gateway_headers,
+)
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    SecretStr,
+    model_validator,
+)
 
 from langchain_groq._compat import _convert_from_v1_to_groq
 from langchain_groq._version import __version__
@@ -486,6 +497,9 @@ class ChatGroq(BaseChatModel):
 
     default_headers: Mapping[str, str] | None = None
 
+    _langsmith_gateway_headers: dict[str, str] | None = PrivateAttr(default=None)
+    """Headers from `langsmith_gateway`, sent by the client but never serialized."""
+
     default_query: Mapping[str, object] | None = None
 
     # Configure a custom httpx client. See the
@@ -567,8 +581,11 @@ class ChatGroq(BaseChatModel):
         if self.temperature == 0:
             self.temperature = 1e-8
 
+        if self._langsmith_gateway_headers is None:
+            self._langsmith_gateway_headers = _gateway_headers()
         default_headers = {"User-Agent": f"langchain/{__version__}"} | dict(
-            self.default_headers or {}
+            _with_gateway_headers(self.default_headers, self._langsmith_gateway_headers)
+            or {}
         )
 
         client_params: dict[str, Any] = {
@@ -675,10 +692,7 @@ class ChatGroq(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {
-            **params,
-            **kwargs,
-        }
+        params = self._filter_gateway_headers({**params, **kwargs})
         try:
             response = self.client.create(messages=message_dicts, **params)
         except groq.BadRequestError as e:
@@ -699,10 +713,7 @@ class ChatGroq(BaseChatModel):
             return await agenerate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
-        params = {
-            **params,
-            **kwargs,
-        }
+        params = self._filter_gateway_headers({**params, **kwargs})
         try:
             response = await self.async_client.create(messages=message_dicts, **params)
         except groq.BadRequestError as e:
@@ -718,7 +729,7 @@ class ChatGroq(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
 
-        params = {**params, **kwargs, "stream": True}
+        params = self._filter_gateway_headers({**params, **kwargs, "stream": True})
 
         try:
             stream = self.client.create(messages=message_dicts, **params)
@@ -774,7 +785,7 @@ class ChatGroq(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
 
-        params = {**params, **kwargs, "stream": True}
+        params = self._filter_gateway_headers({**params, **kwargs, "stream": True})
 
         try:
             stream = await self.async_client.create(messages=message_dicts, **params)
@@ -826,6 +837,18 @@ class ChatGroq(BaseChatModel):
     #
     # Internal methods
     #
+    def _filter_gateway_headers(self, params: dict[str, Any]) -> dict[str, Any]:
+        if self._langsmith_gateway_headers and isinstance(
+            params.get("extra_headers"), Mapping
+        ):
+            protected = {name.lower() for name in self._langsmith_gateway_headers}
+            params["extra_headers"] = {
+                name: value
+                for name, value in params["extra_headers"].items()
+                if name.lower() not in protected
+            }
+        return params
+
     @property
     def _default_params(self) -> dict[str, Any]:
         """Get the default parameters for calling Groq API."""
