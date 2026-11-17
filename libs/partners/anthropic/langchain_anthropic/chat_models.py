@@ -68,13 +68,10 @@ from langchain_core.utils._gateway import (
     GATEWAY_METADATA_RESPONSE_KEY,
     _apply_gateway_config,
     _gateway_headers,
-    _GatewayOverride,
-    _get_gateway_override_snapshot,
     _langsmith_gateway_active,
     _parse_gateway_metadata,
     _with_gateway_headers,
 )
-from langchain_core.utils._gateway_redirect import _protect_gateway_redirects
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
@@ -1475,10 +1472,6 @@ class ChatAnthropic(BaseChatModel):
     default_headers: Mapping[str, str] | None = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
-    _langsmith_gateway_override: _GatewayOverride | None = PrivateAttr(
-        default_factory=_get_gateway_override_snapshot
-    )
-    _langsmith_gateway_redirect_protection: bool | None = PrivateAttr(default=None)
     _langsmith_gateway_headers: dict[str, str] | None = PrivateAttr(default=None)
     """Headers from `langsmith_gateway`, sent by the client but never serialized."""
 
@@ -1750,10 +1743,6 @@ class ChatAnthropic(BaseChatModel):
         """Keep `langsmith_gateway` headers for the lazily built clients."""
         if self._langsmith_gateway_headers is None:
             self._langsmith_gateway_headers = _gateway_headers()
-        if self._langsmith_gateway_redirect_protection is None:
-            self._langsmith_gateway_redirect_protection = _protect_gateway_redirects(
-                self.anthropic_api_url, self.anthropic_api_key, "anthropic"
-            )
         return self
 
     @model_validator(mode="before")
@@ -1823,8 +1812,6 @@ class ChatAnthropic(BaseChatModel):
     def _client(self) -> anthropic.Client:
         client_params = self._client_params
         http_client_params = {"base_url": client_params["base_url"]}
-        if self._langsmith_gateway_redirect_protection:
-            http_client_params["gateway_origin"] = client_params["base_url"]
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
         if self.anthropic_proxy:
@@ -1840,8 +1827,6 @@ class ChatAnthropic(BaseChatModel):
     def _async_client(self) -> anthropic.AsyncClient:
         client_params = self._client_params
         http_client_params = {"base_url": client_params["base_url"]}
-        if self._langsmith_gateway_redirect_protection:
-            http_client_params["gateway_origin"] = client_params["base_url"]
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
         if self.anthropic_proxy:

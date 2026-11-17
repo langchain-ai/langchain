@@ -124,14 +124,11 @@ from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils._gateway import (
     GATEWAY_METADATA_RESPONSE_KEY,
     _gateway_headers,
-    _GatewayOverride,
-    _get_gateway_override_snapshot,
     _langsmith_gateway_active,
     _parse_gateway_metadata,
     _resolve_gateway_config,
     _with_gateway_headers,
 )
-from langchain_core.utils._gateway_redirect import _protect_gateway_redirects
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
@@ -1026,10 +1023,6 @@ class BaseChatOpenAI(BaseChatModel):
 
     default_headers: Mapping[str, str] | None = None
 
-    _langsmith_gateway_override: _GatewayOverride | None = PrivateAttr(
-        default_factory=_get_gateway_override_snapshot
-    )
-    _langsmith_gateway_redirect_protection: bool | None = PrivateAttr(default=None)
     _langsmith_gateway_headers: dict[str, str] | None = PrivateAttr(default=None)
     """Headers from `langsmith_gateway`, sent by the client but never serialized."""
 
@@ -1434,30 +1427,21 @@ class BaseChatOpenAI(BaseChatModel):
             or os.getenv("OPENAI_ORG_ID")
             or os.getenv("OPENAI_ORGANIZATION")
         )
-        _base_url_from_gateway = False
-        if self._langsmith_gateway_headers is None:
-            _gateway_config = _resolve_gateway_config(
-                base_url=self.openai_api_base,
-                api_key=self.openai_api_key,
-                provider_path="openai/v1",
-                base_url_env="OPENAI_API_BASE",
-                api_key_env="OPENAI_API_KEY",
-            )
-            self.openai_api_base = _gateway_config.base_url
-            self.openai_api_key = _gateway_config.api_key
-            _base_url_from_gateway = _gateway_config.base_url_from_gateway
-            if _langsmith_gateway_active():
-                self.openai_proxy = None
-            self._langsmith_gateway_headers = _gateway_headers()
-        if self._langsmith_gateway_redirect_protection is None:
-            self._langsmith_gateway_redirect_protection = _protect_gateway_redirects(
-                self.openai_api_base, self.openai_api_key, "openai/v1"
-            )
-        gateway_client_options = (
-            {"gateway_origin": self.openai_api_base}
-            if self._langsmith_gateway_redirect_protection
-            else {}
+        # Resolve base URL and API key, applying LangSmith gateway settings.
+        _gateway_config = _resolve_gateway_config(
+            base_url=self.openai_api_base,
+            api_key=self.openai_api_key,
+            provider_path="openai/v1",
+            base_url_env="OPENAI_API_BASE",
+            api_key_env="OPENAI_API_KEY",
         )
+        self.openai_api_base = _gateway_config.base_url
+        self.openai_api_key = _gateway_config.api_key
+        _base_url_from_gateway = _gateway_config.base_url_from_gateway
+        if _langsmith_gateway_active():
+            self.openai_proxy = None
+        if self._langsmith_gateway_headers is None:
+            self._langsmith_gateway_headers = _gateway_headers()
 
         # Enable stream_usage by default if using default base URL and client,
         # or when the base URL was set by the LangSmith gateway (which proxies
@@ -1542,7 +1526,6 @@ class BaseChatOpenAI(BaseChatModel):
                         proxy=self.openai_proxy,
                         verify=global_ssl_context,
                         socket_options=resolved_socket_options,
-                        **gateway_client_options,
                     )
                 sync_specific = {
                     "http_client": self.http_client
@@ -1550,7 +1533,6 @@ class BaseChatOpenAI(BaseChatModel):
                         self.openai_api_base,
                         self.request_timeout,
                         resolved_socket_options,
-                        **gateway_client_options,
                     ),
                     "api_key": sync_api_key_value,
                 }
@@ -1562,7 +1544,6 @@ class BaseChatOpenAI(BaseChatModel):
                     proxy=self.openai_proxy,
                     verify=global_ssl_context,
                     socket_options=resolved_socket_options,
-                    **gateway_client_options,
                 )
             async_specific = {
                 "http_client": self.http_async_client
@@ -1570,7 +1551,6 @@ class BaseChatOpenAI(BaseChatModel):
                     self.openai_api_base,
                     self.request_timeout,
                     resolved_socket_options,
-                    **gateway_client_options,
                 ),
                 "api_key": async_api_key_value,
             }
