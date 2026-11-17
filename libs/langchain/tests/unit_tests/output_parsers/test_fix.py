@@ -1,10 +1,6 @@
-import asyncio
-import threading
 from datetime import UTC
 from datetime import datetime as dt
-from types import SimpleNamespace
 from typing import Any, TypeVar
-from unittest.mock import AsyncMock, Mock
 
 import pytest
 from langchain_core.exceptions import OutputParserException
@@ -106,104 +102,6 @@ async def test_output_fixing_parser_aparse(
     assert (await parser.aparse("completion")) == "parsed"
     assert base_parser.parse_count == n + 1
     # TODO: test whether "instructions" is passed to the retry_chain
-
-
-async def test_output_fixing_parser_ainvoke_sync_parser() -> None:
-    caller_thread = threading.get_ident()
-
-    def parse(completion: str) -> str:
-        assert threading.get_ident() != caller_thread
-        return completion.upper()
-
-    parser = OutputFixingParser[str](
-        parser=SimpleNamespace(parse=parse),
-        retry_chain=RunnablePassthrough(),
-    )
-    assert await parser.ainvoke("completion") == "COMPLETION"
-
-
-@pytest.mark.parametrize(
-    ("method", "legacy", "has_instructions"),
-    [
-        ("run", True, True),
-        ("invoke", True, True),
-        ("invoke", False, True),
-        ("invoke", False, False),
-        ("arun", True, True),
-        ("ainvoke", True, True),
-        ("ainvoke", False, True),
-    ],
-)
-async def test_output_fixing_parser_ainvoke_retry_dispatch(
-    method: str, *, legacy: bool, has_instructions: bool
-) -> None:
-    caller_loop = asyncio.get_running_loop()
-    caller_thread = threading.get_ident()
-    parse_error = OutputParserException("bad completion")
-
-    async def aparse(completion: str) -> str:
-        assert asyncio.get_running_loop() is caller_loop
-        if completion == "fixed":
-            return "parsed"
-        raise parse_error
-
-    def retry(*_args: Any, **_kwargs: Any) -> str:
-        assert threading.get_ident() != caller_thread
-        return "fixed"
-
-    async def aretry(*_args: Any, **_kwargs: Any) -> str:
-        assert asyncio.get_running_loop() is caller_loop
-        return "fixed"
-
-    inner_parser = SimpleNamespace(aparse=aparse)
-    if has_instructions:
-        inner_parser.get_format_instructions = lambda: "instructions"
-    retry_mock = (
-        AsyncMock(side_effect=aretry)
-        if method.startswith("a")
-        else Mock(side_effect=retry)
-    )
-    retry_chain = SimpleNamespace(**{method: retry_mock})
-    if method.startswith("a"):
-        retry_chain.run = Mock()
-        retry_chain.invoke = Mock()
-    parser = OutputFixingParser[str](
-        parser=inner_parser, retry_chain=retry_chain, legacy=legacy
-    )
-    assert await parser.ainvoke("bad") == "parsed"
-    expected = {"completion": "bad", "error": repr(parse_error)}
-    if has_instructions:
-        expected["instructions"] = "instructions"
-    args, kwargs = ((), expected) if method.endswith("run") else ((expected,), {})
-    retry_mock.assert_called_once_with(*args, **kwargs)
-    if isinstance(retry_mock, AsyncMock):
-        retry_mock.assert_awaited_once_with(*args, **kwargs)
-        retry_chain.run.assert_not_called()
-        retry_chain.invoke.assert_not_called()
-
-
-@pytest.mark.parametrize("method", ["parse", "aparse"])
-@pytest.mark.parametrize("error_type", [OutputParserException, AttributeError])
-async def test_output_fixing_parser_ainvoke_parser_failure(
-    method: str, error_type: type[Exception]
-) -> None:
-    parse_error = error_type("bad completion")
-    parse_mock = (
-        AsyncMock(side_effect=parse_error)
-        if method == "aparse"
-        else Mock(side_effect=parse_error)
-    )
-    retry_chain = SimpleNamespace(run=Mock())
-    parser = OutputFixingParser[str](
-        parser=SimpleNamespace(**{method: parse_mock}),
-        retry_chain=retry_chain,
-        max_retries=0,
-    )
-    with pytest.raises(error_type) as exc_info:
-        await parser.ainvoke("bad")
-    assert exc_info.value is parse_error
-    parse_mock.assert_called_once_with("bad")
-    retry_chain.run.assert_not_called()
 
 
 def test_output_fixing_parser_parse_fail() -> None:

@@ -5,7 +5,6 @@ from __future__ import annotations
 import builtins
 import contextlib
 from abc import ABC, abstractmethod
-from contextvars import ContextVar
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -30,10 +29,6 @@ if TYPE_CHECKING:
 
 T = TypeVar("T")
 OutputParserLike = Runnable[LanguageModelOutput, T]
-
-_APARSE_RESULT_ACTIVE: ContextVar[frozenset[int]] = ContextVar(
-    "_aparse_result_active", default=frozenset()
-)
 
 
 class BaseLLMOutputParser(ABC, Generic[T]):
@@ -291,7 +286,11 @@ class BaseOutputParser(
         The return value is parsed from only the first `Generation` in the result, which
         is assumed to be the highest-likelihood `Generation`.
 
-        A custom `aparse` is used only when `parse_result` is not overridden.
+        This method is used by `ainvoke` and `abatch`. The default implementation
+        runs `parse_result` in an executor; it does not call `aparse`. Override this
+        method to provide native async parsing, for example when using async I/O or
+        clients bound to the caller's event loop. Synchronous parsers can use the
+        default implementation.
 
         Args:
             result: A list of `Generation` to be parsed.
@@ -305,20 +304,14 @@ class BaseOutputParser(
         Returns:
             Structured output.
         """
-        if (
-            type(self).aparse is not BaseOutputParser.aparse
-            and type(self).parse_result is BaseOutputParser.parse_result
-            and id(self) not in _APARSE_RESULT_ACTIVE.get()
-        ):
-            token = _APARSE_RESULT_ACTIVE.set(_APARSE_RESULT_ACTIVE.get() | {id(self)})
-            try:
-                return await self.aparse(result[0].text)
-            finally:
-                _APARSE_RESULT_ACTIVE.reset(token)
         return await run_in_executor(None, self.parse_result, result, partial=partial)
 
     async def aparse(self, text: str) -> T:
         """Async parse a single string model output into some structure.
+
+        The default implementation runs `parse` in an executor. To use native
+        async parsing through `ainvoke` or `abatch`, override `aparse_result`
+        instead; those entry points do not call this method by default.
 
         Args:
             text: String output of a language model.

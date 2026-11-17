@@ -6,7 +6,6 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.runnables import Runnable, RunnableSerializable
-from langchain_core.runnables.config import run_in_executor
 from pydantic import SkipValidation
 from typing_extensions import TypedDict, override
 
@@ -111,9 +110,7 @@ class OutputFixingParser(BaseOutputParser[T]):
 
         while retries <= self.max_retries:
             try:
-                if hasattr(self.parser, "aparse"):
-                    return await self.parser.aparse(completion)
-                return await run_in_executor(None, self.parser.parse, completion)
+                return await self.parser.aparse(completion)
             except OutputParserException as e:
                 if retries == self.max_retries:
                     raise
@@ -124,21 +121,9 @@ class OutputFixingParser(BaseOutputParser[T]):
                         completion=completion,
                         error=repr(e),
                     )
-                elif (
-                    self.legacy
-                    and hasattr(self.retry_chain, "run")
-                    and not hasattr(self.retry_chain, "ainvoke")
-                ):
-                    completion = await run_in_executor(
-                        None,
-                        self.retry_chain.run,
-                        instructions=self.parser.get_format_instructions(),
-                        completion=completion,
-                        error=repr(e),
-                    )
                 else:
                     try:
-                        completion = await self._ainvoke_retry_chain(
+                        completion = await self.retry_chain.ainvoke(
                             {
                                 "instructions": self.parser.get_format_instructions(),
                                 "completion": completion,
@@ -147,7 +132,7 @@ class OutputFixingParser(BaseOutputParser[T]):
                         )
                     except (NotImplementedError, AttributeError):
                         # Case: self.parser does not have get_format_instructions
-                        completion = await self._ainvoke_retry_chain(
+                        completion = await self.retry_chain.ainvoke(
                             {
                                 "completion": completion,
                                 "error": repr(e),
@@ -156,13 +141,6 @@ class OutputFixingParser(BaseOutputParser[T]):
 
         msg = "Failed to parse"
         raise OutputParserException(msg)
-
-    async def _ainvoke_retry_chain(
-        self, retry_input: OutputFixingParserRetryChainInput
-    ) -> str:
-        if hasattr(self.retry_chain, "ainvoke"):
-            return await self.retry_chain.ainvoke(retry_input)
-        return await run_in_executor(None, self.retry_chain.invoke, retry_input)
 
     @override
     def get_format_instructions(self) -> str:
