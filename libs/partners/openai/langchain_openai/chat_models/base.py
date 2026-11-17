@@ -1023,7 +1023,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     default_headers: Mapping[str, str] | None = None
 
-    _langsmith_gateway_headers: dict[str, str] = PrivateAttr(default_factory=dict)
+    _langsmith_gateway_headers: dict[str, str] | None = PrivateAttr(default=None)
     """Headers from `langsmith_gateway`, sent by the client but never serialized."""
 
     default_query: Mapping[str, object] | None = None
@@ -1440,6 +1440,7 @@ class BaseChatOpenAI(BaseChatModel):
         _base_url_from_gateway = _gateway_config.base_url_from_gateway
         if _langsmith_gateway_active():
             self.openai_proxy = None
+        if self._langsmith_gateway_headers is None:
             self._langsmith_gateway_headers = _gateway_headers()
 
         # Enable stream_usage by default if using default base URL and client,
@@ -2073,6 +2074,15 @@ class BaseChatOpenAI(BaseChatModel):
                 else _convert_message_to_dict(m)
                 for m in messages
             ]
+        if self._langsmith_gateway_headers and isinstance(
+            payload.get("extra_headers"), Mapping
+        ):
+            protected = {name.lower() for name in self._langsmith_gateway_headers}
+            payload["extra_headers"] = {
+                name: value
+                for name, value in payload["extra_headers"].items()
+                if name.lower() not in protected
+            }
         return payload
 
     def _create_chat_result(
