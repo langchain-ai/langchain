@@ -237,17 +237,38 @@ class OpenAIModerationMiddleware(AgentMiddleware[AgentState[Any], Any]):
             return None
 
         ai_message = messages[last_ai_idx]
+
+        texts: list[str] = []
         text = self._extract_text(ai_message)
-        if not text:
+        if text:
+            texts.append(text)
+        if isinstance(ai_message, AIMessage):
+            for tc in ai_message.tool_calls:
+                args = tc.get("args")
+                if isinstance(args, str):
+                    texts.append(args)
+                elif isinstance(args, dict):
+                    texts.append(json.dumps(args))
+                    for v in args.values():
+                        if isinstance(v, str):
+                            texts.append(v)
+
+        if not texts:
             return None
 
-        result = self._moderate(text)
-        if not result.flagged:
-            return None
-
-        return self._apply_violation(
-            messages, index=last_ai_idx, stage="output", content=text, result=result
-        )
+        results = self._moderate(texts)
+        if isinstance(results, Moderation):
+            results = [results]
+        for content, result in zip(texts, results):
+            if result.flagged:
+                return self._apply_violation(
+                    messages,
+                    index=last_ai_idx,
+                    stage="output",
+                    content=content,
+                    result=result,
+                )
+        return None
 
     async def _amoderate_output(
         self, messages: Sequence[BaseMessage]
@@ -257,17 +278,37 @@ class OpenAIModerationMiddleware(AgentMiddleware[AgentState[Any], Any]):
             return None
 
         ai_message = messages[last_ai_idx]
+
+        texts: list[str] = []
         text = self._extract_text(ai_message)
-        if not text:
+        if text:
+            texts.append(text)
+        if isinstance(ai_message, AIMessage):
+            for tc in ai_message.tool_calls:
+                args = tc.get("args")
+                if isinstance(args, str):
+                    texts.append(args)
+                elif isinstance(args, dict):
+                    texts.append(json.dumps(args))
+                    for v in args.values():
+                        if isinstance(v, str):
+                            texts.append(v)
+        if not texts:
             return None
 
-        result = await self._amoderate(text)
-        if not result.flagged:
-            return None
-
-        return self._apply_violation(
-            messages, index=last_ai_idx, stage="output", content=text, result=result
-        )
+        results = await self._amoderate(texts)
+        if isinstance(results, Moderation):
+            results = [results]
+        for content, result in zip(texts, results):
+            if result.flagged:
+                return self._apply_violation(
+                    messages,
+                    index=last_ai_idx,
+                    stage="output",
+                    content=content,
+                    result=result,
+                )
+        return None
 
     def _moderate_tool_messages(
         self, messages: Sequence[BaseMessage]
@@ -401,33 +442,46 @@ class OpenAIModerationMiddleware(AgentMiddleware[AgentState[Any], Any]):
                 result=result,
                 message=violation_text,
             )
-
-        if self.exit_behavior == "end":
-            return {"jump_to": "end", "messages": [AIMessage(content=violation_text)]}
-
         if index is None:
+            if self.exit_behavior == "end":
+                return {
+                    "jump_to": "end",
+                    "messages": [AIMessage(content=violation_text)],
+                }
             return None
-
         new_messages = list(messages)
         original = new_messages[index]
-        new_messages[index] = cast(
-            BaseMessage, original.model_copy(update={"content": violation_text})
-        )
+        update: dict[str, Any] = {"content": violation_text}
+        if isinstance(original, AIMessage):
+            update["tool_calls"] = []
+            if getattr(original, "invalid_tool_calls", None):
+                update["invalid_tool_calls"] = []
+        replacement = cast(BaseMessage, original.model_copy(update=update))
+
+        if self.exit_behavior == "end":
+            return {"jump_to": "end", "messages": [replacement]}
+        new_messages[index] = replacement
         return {"messages": new_messages}
 
-    def _moderate(self, text: str) -> Moderation:
+    def _moderate(self, text: str | Sequence[str]) -> Moderation | list[Moderation]:
         if self._client is None:
             self._client = self._build_client()
         response = self._client.moderations.create(model=self.model, input=text)
-        return response.results[0]
+        if isinstance(text, str):
+            return response.results[0]
+        return response.results
 
-    async def _amoderate(self, text: str) -> Moderation:
+    async def _amoderate(
+        self, text: str | Sequence[str]
+    ) -> Moderation | list[Moderation]:
         if self._async_client is None:
             self._async_client = self._build_async_client()
         response = await self._async_client.moderations.create(
             model=self.model, input=text
         )
-        return response.results[0]
+        if isinstance(text, str):
+            return response.results[0]
+        return response.results
 
     def _build_client(self) -> OpenAI:
         self._client = OpenAI()

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from typing import Any, cast
 from unittest.mock import Mock
@@ -82,10 +82,14 @@ class StubModerationMiddleware(OpenAIModerationMiddleware):
         super().__init__(**kwargs)
         self._decisions = decisions
 
-    def _moderate(self, text: str) -> Moderation:
-        return self._decisions.get(text, DEFAULT_OK)
+    def _moderate(self, text: str | Sequence[str]) -> Moderation | list[Moderation]:
+        if isinstance(text, str):
+            return self._decisions.get(text, DEFAULT_OK)
+        return [self._decisions.get(t, DEFAULT_OK) for t in text]
 
-    async def _amoderate(self, text: str) -> Moderation:
+    async def _amoderate(
+        self, text: str | Sequence[str]
+    ) -> Moderation | list[Moderation]:
         return self._moderate(text)
 
 
@@ -193,3 +197,64 @@ async def test_async_before_model_uses_async_moderation() -> None:
     response = await middleware.abefore_model(state, Mock())
     assert response is not None
     assert response["jump_to"] == "end"
+
+
+def test_after_model_checks_tool_call_arguments() -> None:
+    """Verify tool call arguments are moderated even if content is empty."""
+    middleware = StubModerationMiddleware(
+        {"dangerous_arg": flagged_result()}, model="test", exit_behavior="end"
+    )
+    ai_msg = AIMessage(
+        id="ai-1",
+        content="",
+        tool_calls=[{"name": "test_tool", "args": {"input": "dangerous_arg"}, "id": "call-1"}],
+    )
+    state = make_state([HumanMessage(content="run tool"), ai_msg])
+
+    response = middleware.after_model(state, Mock())
+    assert response is not None
+    assert response["jump_to"] == "end"
+    replaced = response["messages"][0]
+    assert isinstance(replaced, AIMessage)
+    assert replaced.id == "ai-1"
+    assert replaced.tool_calls == []
+    assert "flagged" in replaced.content
+
+
+def test_after_model_exit_end_replaces_message_in_place_without_tool_calls() -> None:
+    """Verify exit_behavior='end' replaces the flagged message with same id and empty tool_calls."""
+    middleware = StubModerationMiddleware(
+        {"unsafe": flagged_result()}, model="test", exit_behavior="end"
+    )
+    ai_msg = AIMessage(
+        id="ai-123",
+        content="unsafe",
+        tool_calls=[{"name": "tool_a", "args": {}, "id": "call-1"}],
+    )
+    state = make_state([HumanMessage(content="hello"), ai_msg])
+
+    response = middleware.after_model(state, Mock())
+    assert response is not None
+    assert response["jump_to"] == "end"
+    replaced = response["messages"][0]
+    assert replaced.id == "ai-123"
+    assert replaced.tool_calls == []
+
+
+def test_after_model_exit_replace_strips_tool_calls() -> None:
+    """Verify exit_behavior='replace' strips tool calls so they are not executed."""
+    middleware = StubModerationMiddleware(
+        {"unsafe": flagged_result()}, model="test", exit_behavior="replace"
+    )
+    ai_msg = AIMessage(
+        id="ai-123",
+        content="unsafe",
+        tool_calls=[{"name": "tool_a", "args": {}, "id": "call-1"}],
+    )
+    state = make_state([HumanMessage(content="hello"), ai_msg])
+
+    response = middleware.after_model(state, Mock())
+    assert response is not None
+    replaced = response["messages"][-1]
+    assert replaced.id == "ai-123"
+    assert replaced.tool_calls == []
