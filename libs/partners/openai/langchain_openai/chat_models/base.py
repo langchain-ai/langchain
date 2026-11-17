@@ -123,8 +123,11 @@ from langchain_core.tools.base import _stringify
 from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils._gateway import (
     GATEWAY_METADATA_RESPONSE_KEY,
+    _gateway_headers,
+    _langsmith_gateway_active,
     _parse_gateway_metadata,
     _resolve_gateway_config,
+    _with_gateway_headers,
 )
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
@@ -140,6 +143,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     SecretStr,
     ValidationError,
     field_validator,
@@ -1019,6 +1023,9 @@ class BaseChatOpenAI(BaseChatModel):
 
     default_headers: Mapping[str, str] | None = None
 
+    _langsmith_gateway_headers: dict[str, str] | None = PrivateAttr(default=None)
+    """Headers from `langsmith_gateway`, sent by the client but never serialized."""
+
     default_query: Mapping[str, object] | None = None
 
     # Configure a custom httpx client. See the
@@ -1431,6 +1438,10 @@ class BaseChatOpenAI(BaseChatModel):
         self.openai_api_base = _gateway_config.base_url
         self.openai_api_key = _gateway_config.api_key
         _base_url_from_gateway = _gateway_config.base_url_from_gateway
+        if _langsmith_gateway_active():
+            self.openai_proxy = None
+        if self._langsmith_gateway_headers is None:
+            self._langsmith_gateway_headers = _gateway_headers()
 
         # Enable stream_usage by default if using default base URL and client,
         # or when the base URL was set by the LangSmith gateway (which proxies
@@ -1468,7 +1479,9 @@ class BaseChatOpenAI(BaseChatModel):
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
-            "default_headers": self.default_headers,
+            "default_headers": _with_gateway_headers(
+                self.default_headers, self._langsmith_gateway_headers
+            ),
             "default_query": self.default_query,
         }
         if self.max_retries is not None:
@@ -2065,6 +2078,15 @@ class BaseChatOpenAI(BaseChatModel):
                 else _convert_message_to_dict(m)
                 for m in messages
             ]
+        if self._langsmith_gateway_headers and isinstance(
+            payload.get("extra_headers"), Mapping
+        ):
+            protected = {name.lower() for name in self._langsmith_gateway_headers}
+            payload["extra_headers"] = {
+                name: value
+                for name, value in payload["extra_headers"].items()
+                if name.lower() not in protected
+            }
         return payload
 
     def _create_chat_result(
