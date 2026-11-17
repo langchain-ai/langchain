@@ -184,16 +184,15 @@ def test_provider_base_url_does_not_use_langsmith_key(
     assert config.api_key is None
 
 
-def test_provider_base_url_falls_back_to_gateway_key(
+def test_provider_base_url_does_not_use_gateway_key(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # Base URL overridden, no provider key -> gateway key used as fallback.
     monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
     monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
     monkeypatch.setenv(_BASE_ENV, "https://api.openai.com/v1")
     config = _config()
     assert config.base_url == "https://api.openai.com/v1"
-    assert config.api_key.get_secret_value() == "gateway-key"
+    assert config.api_key is None
 
 
 def test_custom_gateway_url(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -221,15 +220,39 @@ def test_explicit_kwargs_override_everything(
     assert config.api_key is explicit_key
 
 
-def test_explicit_base_url_pairs_with_gateway_key(
-    monkeypatch: pytest.MonkeyPatch,
+@pytest.mark.parametrize(
+    ("base_url", "expected_key"),
+    [
+        ("https://eu.gateway.example.com/openai/v1", "gateway-key"),
+        ("https://EU.gateway.example.com:443/openai/v1", "gateway-key"),
+        ("https://apac.gateway.example.com", None),
+        ("https://eu.gateway.example.com.attacker.example", None),
+        ("http://eu.gateway.example.com", None),
+        ("https://eu.gateway.example.com:444", None),
+        ("https://eu.gateway.example.com:0", None),
+        ("https://eu.gateway.example.com:invalid", None),
+    ],
+)
+def test_explicit_base_url_only_uses_gateway_key_on_same_origin(
+    monkeypatch: pytest.MonkeyPatch, base_url: str, expected_key: str | None
 ) -> None:
-    # Explicit base URL, no explicit key: gateway key still resolved from env.
     monkeypatch.setenv("LANGSMITH_GATEWAY", "https://eu.gateway.example.com")
     monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
-    config = _config(base_url="https://apac.gateway.example.com")
-    assert config.base_url == "https://apac.gateway.example.com"
-    assert config.api_key.get_secret_value() == "gateway-key"
+    config = _config(base_url=base_url)
+    assert config.base_url == base_url
+    assert (
+        config.api_key.get_secret_value() if config.api_key else None
+    ) == expected_key
+
+
+def test_explicit_gateway_url_still_prefers_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "https://eu.gateway.example.com")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv(_KEY_ENV, "provider-key")
+    config = _config(base_url="https://eu.gateway.example.com/openai/v1")
+    assert config.api_key.get_secret_value() == "provider-key"
 
 
 def test_no_gateway_uses_provider_defaults(
