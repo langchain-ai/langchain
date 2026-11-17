@@ -1131,7 +1131,7 @@ requires-dist = [
     { name = "azure-identity", marker = "extra == 'azure-identity'", specifier = ">=1.25.0" },
     { name = "certifi", specifier = ">=2024.6.2" },
     { name = "langchain-core", editable = "../../core" },
-    { name = "openai", specifier = ">=3.53.0" },
+    { name = "openai", specifier = ">=2.45.0" },
     { name = "tiktoken", specifier = ">=0.7.0" },
 ]
 provides-extras = ["azure-identity"]
