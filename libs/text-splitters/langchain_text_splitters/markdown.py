@@ -355,7 +355,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         self.current_chunk = Document(page_content="")
         self.current_header_stack: list[tuple[int, str]] = []
         self.strip_headers = strip_headers
-        if headers_to_split_on:
+        if headers_to_split_on is not None:
             self.splittable_headers = dict(headers_to_split_on)
         else:
             self.splittable_headers = {

@@ -698,30 +698,23 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         self._allowlist_tags = allowlist_tags
         self._preserve_parent_metadata = preserve_parent_metadata
         self._keep_separator = keep_separator
-        if allowlist_tags:
+        if allowlist_tags is not None:
             self._allowlist_tags = list(
                 set(allowlist_tags + [header[0] for header in headers_to_split_on])
             )
         self._denylist_tags = denylist_tags
-        if denylist_tags:
+        if denylist_tags is not None:
             self._denylist_tags = [
                 tag
                 for tag in denylist_tags
                 if tag not in [header[0] for header in headers_to_split_on]
             ]
-        if separators:
-            self._recursive_splitter = RecursiveCharacterTextSplitter(
-                separators=separators,
-                keep_separator=keep_separator,
-                chunk_size=max_chunk_size,
-                chunk_overlap=chunk_overlap,
-            )
-        else:
-            self._recursive_splitter = RecursiveCharacterTextSplitter(
-                keep_separator=keep_separator,
-                chunk_size=max_chunk_size,
-                chunk_overlap=chunk_overlap,
-            )
+        self._recursive_splitter = RecursiveCharacterTextSplitter(
+            separators=separators,
+            keep_separator=keep_separator,
+            chunk_size=max_chunk_size,
+            chunk_overlap=chunk_overlap,
+        )
 
         if self._stopword_removal:
             nltk = cast("Any", _import_nltk())
@@ -750,7 +743,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         if self._preserve_links:
             self._process_links(soup)
 
-        if self._allowlist_tags or self._denylist_tags:
+        if self._allowlist_tags is not None or self._denylist_tags is not None:
             self._filter_tags(soup)
 
         return self._process_html(soup)
@@ -841,12 +834,12 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         Args:
             soup: Parsed HTML content using BeautifulSoup.
         """
-        if self._allowlist_tags:
+        if self._allowlist_tags is not None:
             for tag in _find_all_tags(soup, name=True):
                 if tag.name not in self._allowlist_tags:
                     tag.decompose()
 
-        if self._denylist_tags:
+        if self._denylist_tags is not None:
             for tag in _find_all_tags(soup, name=self._denylist_tags):
                 tag.decompose()
 
