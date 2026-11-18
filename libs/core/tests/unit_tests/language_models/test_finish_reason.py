@@ -10,7 +10,10 @@ from langchain_core.language_models._compat_bridge import (
     chunks_to_events,
     message_to_events,
 )
-from langchain_core.language_models._finish_reason import normalize_finish_reason
+from langchain_core.language_models._finish_reason import (
+    get_raw_finish_reason,
+    normalize_finish_reason,
+)
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
@@ -72,7 +75,7 @@ def test_normalize_finish_reason_mapping(
         ("openai", "something_new"),
         ("anthropic", "something_new"),
         ("google_genai", "FINISH_REASON_UNSPECIFIED"),
-        ("some_provider", "end_turn"),
+        ("some_provider", "weird"),
         (None, "weird"),
     ],
 )
@@ -81,6 +84,26 @@ def test_unknown_finish_reason_maps_to_other(provider: str | None, raw: str) -> 
     if provider is not None:
         metadata["model_provider"] = provider
     assert normalize_finish_reason(metadata) == ("other", "complete")
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("end_turn", "stop"),
+        ("tool_use", "tool_call"),
+        ("guardrail_intervened", "content_filter"),
+        ("MAX_TOKENS", "length"),
+        ("IMAGE-SAFETY", "content_filter"),
+    ],
+)
+def test_unknown_provider_uses_generic_table(raw: str, expected: str) -> None:
+    metadata = {"model_provider": "bedrock_converse", "stop_reason": raw}
+    assert normalize_finish_reason(metadata) == (expected, "complete")
+
+
+def test_openai_responses_raw_reason_is_status() -> None:
+    metadata = {"model_provider": "openai", "status": "incomplete"}
+    assert get_raw_finish_reason(metadata) == "incomplete"
 
 
 def test_anthropic_reads_stop_reason_key() -> None:
@@ -94,11 +117,8 @@ def test_pause_turn_is_suspended() -> None:
 
 
 def test_missing_finish_reason_is_none() -> None:
-    assert normalize_finish_reason({"model_provider": "anthropic"}) == (
-        None,
-        "complete",
-    )
-    assert normalize_finish_reason(None) == (None, "complete")
+    assert normalize_finish_reason({"model_provider": "anthropic"}) == (None, None)
+    assert normalize_finish_reason(None) == (None, None)
 
 
 @pytest.mark.parametrize(
@@ -150,7 +170,8 @@ def test_non_stop_reason_not_overridden_by_tool_calls() -> None:
             "content_filter",
         ),
         ({"status": "incomplete", "incomplete_details": None}, False, "other"),
-        ({"status": "failed"}, False, "other"),
+        ({"status": "failed"}, False, "error"),
+        ({"status": "cancelled"}, False, "other"),
     ],
 )
 def test_openai_responses_status(
@@ -165,7 +186,7 @@ def test_openai_responses_status(
 
 def test_status_ignored_for_non_openai_provider() -> None:
     metadata = {"model_provider": "anthropic", "status": "completed"}
-    assert normalize_finish_reason(metadata) == (None, "complete")
+    assert normalize_finish_reason(metadata) == (None, None)
 
 
 def _finish_event(events: list[Any]) -> dict[str, Any]:
@@ -227,7 +248,7 @@ def test_chunks_to_events_omits_normalized_without_raw() -> None:
     finish = _finish_event(list(chunks_to_events(iter(chunks))))
     assert "finish_reason" not in finish
     assert "normalized_finish_reason" not in finish
-    assert finish["finish_state"] == "complete"
+    assert "finish_state" not in finish
 
 
 def test_message_to_events_sets_finish_fields() -> None:

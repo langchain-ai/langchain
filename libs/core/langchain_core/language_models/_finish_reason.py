@@ -56,6 +56,19 @@ _RESPONSES_INCOMPLETE: dict[str, FinishReason] = {
 
 _GEMINI_PROVIDERS = frozenset({"google_genai", "google_vertexai"})
 
+_BEDROCK: dict[str, FinishReason] = {
+    "guardrail_intervened": "content_filter",
+    "content_filtered": "content_filter",
+}
+
+# Unknown providers: try every known vocabulary.
+_GENERIC: dict[str, FinishReason] = {
+    **_GEMINI,
+    **_ANTHROPIC,
+    **_BEDROCK,
+    **_OPENAI_CHAT,
+}
+
 
 def get_raw_finish_reason(response_metadata: dict[str, Any]) -> Any:
     """Return the provider's raw finish value, or `None` if absent.
@@ -64,11 +77,15 @@ def get_raw_finish_reason(response_metadata: dict[str, Any]) -> Any:
         response_metadata: The message's response metadata.
 
     Returns:
-        The value of `finish_reason`, falling back to `stop_reason`.
+        The value of `finish_reason`, falling back to `stop_reason`, then
+        `status` for the OpenAI Responses API.
     """
     raw = response_metadata.get("finish_reason")
     if raw is None:
         raw = response_metadata.get("stop_reason")
+    if raw is None and response_metadata.get("model_provider") == "openai":
+        # OpenAI Responses reports `status` instead of `finish_reason`.
+        raw = response_metadata.get("status")
     return raw
 
 
@@ -82,6 +99,8 @@ def _normalize_responses(
         details = response_metadata.get("incomplete_details")
         reason = details.get("reason") if isinstance(details, dict) else None
         return _RESPONSES_INCOMPLETE.get(str(reason), "other")
+    if status == "failed":
+        return "error"
     if status is None:
         return None
     return "other"
@@ -91,7 +110,7 @@ def normalize_finish_reason(
     response_metadata: dict[str, Any] | None,
     *,
     has_tool_calls: bool = False,
-) -> tuple[FinishReason | None, FinishState]:
+) -> tuple[FinishReason | None, FinishState | None]:
     """Map a message's raw finish value onto `FinishReason`.
 
     Args:
@@ -102,29 +121,35 @@ def normalize_finish_reason(
             value is reported as `"tool_call"` when `True`.
 
     Returns:
-        `(normalized, state)`. `normalized` is `None` when no raw value is
-        present; unknown values map to `"other"`, never `"stop"`.
+        `(normalized, state)`. Both are `None` when no raw value is present;
+        unknown values map to `"other"`, never `"stop"`.
     """
     metadata = response_metadata or {}
     provider = metadata.get("model_provider")
-    raw = get_raw_finish_reason(metadata)
-    state: FinishState = "complete"
+    has_raw_reason = (
+        metadata.get("finish_reason") is not None
+        or metadata.get("stop_reason") is not None
+    )
 
     normalized: FinishReason | None
-    if raw is None:
-        # OpenAI Responses reports `status` instead of `finish_reason`.
+    state: FinishState = "complete"
+    if not has_raw_reason:
         normalized = _normalize_responses(metadata) if provider == "openai" else None
     else:
-        key = str(raw).lower()
+        key = str(get_raw_finish_reason(metadata)).lower().replace("-", "_")
+        if key == "pause_turn":
+            state = "suspended"
         if provider == "anthropic":
             normalized = _ANTHROPIC.get(key, "other")
-            if key == "pause_turn":
-                state = "suspended"
         elif provider in _GEMINI_PROVIDERS:
             normalized = _GEMINI.get(key, "other")
-        else:
+        elif provider == "openai":
             normalized = _OPENAI_CHAT.get(key, "other")
+        else:
+            normalized = _GENERIC.get(key, "other")
 
+    if normalized is None:
+        return None, None
     if normalized == "stop" and has_tool_calls:
         normalized = "tool_call"
     return normalized, state

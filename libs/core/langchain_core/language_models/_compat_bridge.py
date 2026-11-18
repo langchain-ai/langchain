@@ -561,7 +561,8 @@ def _build_message_finish(
         finish_data["finish_reason"] = raw_reason
     if normalized is not None:
         finish_data["normalized_finish_reason"] = normalized
-    finish_data["finish_state"] = finish_state
+    if finish_state is not None:
+        finish_data["finish_state"] = finish_state
     usage_info = _isolate_usage(usage)
     if usage_info is not None:
         finish_data["usage"] = usage_info
