@@ -1,6 +1,6 @@
 import asyncio
 import warnings
-from collections.abc import Callable
+from collections.abc import AsyncGenerator, Callable
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import AbstractContextManager
 from contextvars import copy_context
@@ -116,6 +116,42 @@ async def test_suppression_follows_context(warning_api: WarningAPI) -> None:
         await inherited
         with pytest.raises(warning_api.category):
             warning_api.emit()
+
+
+async def test_exit_from_another_context_leaves_closer_alone(
+    warning_api: WarningAPI,
+) -> None:
+    """Closing a suspended block from another task keeps that task's own state."""
+
+    async def suspended_in_block() -> AsyncGenerator[None, None]:
+        with warning_api.suppress():
+            yield
+
+    async def start(*, suppressed: bool) -> AsyncGenerator[None, None]:
+        gen = suspended_in_block()
+        if suppressed:
+            with warning_api.suppress():
+                await gen.__anext__()
+        else:
+            await gen.__anext__()
+        return gen
+
+    async def close_unsuppressed(gen: AsyncGenerator[None, None]) -> None:
+        await gen.aclose()
+        with pytest.raises(warning_api.category):
+            warning_api.emit()
+
+    async def close_suppressed(gen: AsyncGenerator[None, None]) -> None:
+        with warning_api.suppress():
+            await gen.aclose()
+            warning_api.emit()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", warning_api.category)
+        gen = await asyncio.create_task(start(suppressed=True))
+        await asyncio.create_task(close_unsuppressed(gen))
+        gen = await asyncio.create_task(start(suppressed=False))
+        await asyncio.create_task(close_suppressed(gen))
 
 
 async def test_suppressed_decorators_preserve_warning_state(

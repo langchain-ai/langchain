@@ -15,7 +15,7 @@ import inspect
 import sys
 import warnings
 from collections.abc import Callable, Generator
-from contextvars import ContextVar, Token
+from contextvars import ContextVar
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -481,14 +481,11 @@ def suppress_langchain_deprecation_warning() -> Generator[None, None, None]:
     try:
         yield
     finally:
-        try:
+        # Exiting from a different context (e.g. an async generator suspended
+        # inside the block and closed by another task) makes `reset` raise. That
+        # context never saw this block's `set`, so there is nothing to undo.
+        with contextlib.suppress(ValueError):
             _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.reset(token)
-        except ValueError:
-            # The block was exited from a different context, e.g. an async
-            # generator suspended inside it and closed by another task.
-            _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.set(
-                False if token.old_value is Token.MISSING else token.old_value
-            )
 
 
 def warn_deprecated(
