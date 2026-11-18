@@ -176,11 +176,11 @@ async def test_suppressed_decorators_preserve_warning_state(
         assert obj.value == "value"
         obj.value = "value"
         del obj.value
-        assert len(recorded) == (3 if is_beta else 6)
+        assert len(recorded) == 6
         assert all(w.category is warning_api.category for w in recorded)
         assert all(w.filename == __file__ for w in recorded)
 
         assert function() == "value"
         assert await async_function() == "value"
         AnnotatedClass()
-        assert len(recorded) == (3 if is_beta else 6)
+        assert len(recorded) == 6

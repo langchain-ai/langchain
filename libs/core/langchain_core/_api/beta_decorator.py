@@ -107,16 +107,20 @@ def beta(
             """
             nonlocal warned
             if not warned and not is_caller_internal():
-                warned = True
                 emit_warning()
+                # Only mark the warning as emitted if it was not intentionally
+                # suppressed by `suppress_langchain_beta_warning()`.
+                warned = not _SUPPRESSING_LANGCHAIN_BETA_WARNING.get()
             return wrapped(*args, **kwargs)
 
         async def awarning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
             """Same as warning_emitting_wrapper, but for async functions."""
             nonlocal warned
             if not warned and not is_caller_internal():
-                warned = True
                 emit_warning()
+                # Only mark the warning as emitted if it was not intentionally
+                # suppressed by `suppress_langchain_beta_warning()`.
+                warned = not _SUPPRESSING_LANGCHAIN_BETA_WARNING.get()
             return await wrapped(*args, **kwargs)
 
         if isinstance(obj, type):
@@ -138,8 +142,10 @@ def beta(
                     """Warn that the class is in beta."""
                     nonlocal warned
                     if not warned and type(self) is obj and not is_caller_internal():
-                        warned = True
                         emit_warning()
+                        # Only mark the warning as emitted if it was not intentionally
+                        # suppressed by `suppress_langchain_beta_warning()`.
+                        warned = not _SUPPRESSING_LANGCHAIN_BETA_WARNING.get()
                     return wrapped(self, *args, **kwargs)
 
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
