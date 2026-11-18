@@ -6500,6 +6500,37 @@ def test_stream_close_does_not_drain_upstream() -> None:
     chain = RunnableGenerator(upstream) | StrOutputParser()
     stream = chain.stream("prompt")
     assert next(stream) == "chunk 0 "
-    stream.close()
+    stream.close()  # type: ignore[attr-defined]
 
     assert upstream_reached_the_end == []
+
+
+def test_stream_close_still_ends_the_run() -> None:
+    """An early-closed stream ends its run normally, without an error callback."""
+    events: list[str] = []
+
+    class Handler(BaseCallbackHandler):
+        def on_chain_end(self, outputs: Any, **kwargs: Any) -> None:  # noqa: ARG002
+            events.append("end")
+
+        def on_chain_error(
+            self,
+            error: BaseException,  # noqa: ARG002
+            **kwargs: Any,  # noqa: ARG002
+        ) -> None:
+            events.append("error")
+
+    def upstream(chunks: Iterator[str]) -> Iterator[str]:
+        for _ in chunks:
+            pass
+        for index in range(100):
+            yield f"chunk {index} "
+
+    chain = RunnableGenerator(upstream) | StrOutputParser()
+    stream = chain.stream("prompt", {"callbacks": [Handler()]})
+    next(stream)
+    stream.close()  # type: ignore[attr-defined]
+
+    assert events
+    assert "error" not in events
+    assert set(events) == {"end"}
