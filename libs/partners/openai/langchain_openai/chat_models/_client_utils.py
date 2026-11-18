@@ -16,6 +16,7 @@ import inspect
 import logging
 import os
 import socket
+import ssl
 import sys
 import urllib.request
 from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
@@ -406,6 +407,27 @@ def _build_sync_httpx_client(
     return _SyncHttpxClientWrapper(**kwargs)
 
 
+@lru_cache
+def _cached_ssl_context(
+    ssl_cert_file: str | None,
+    ssl_cert_dir: str | None,
+) -> ssl.SSLContext:
+    return httpx.create_ssl_context()
+
+
+def _default_ssl_context() -> ssl.SSLContext:
+    """Return the SSL context httpx would build by default, shared across clients.
+
+    Loading CA certificates is most of the cost of building an httpx client,
+    and an SSL context is safe to share between clients and event loops.
+    `httpx.create_ssl_context()` honors `SSL_CERT_FILE` / `SSL_CERT_DIR`, so
+    those are part of the cache key.
+    """
+    return _cached_ssl_context(
+        os.environ.get("SSL_CERT_FILE"), os.environ.get("SSL_CERT_DIR")
+    )
+
+
 def _build_async_httpx_client(
     base_url: str | None,
     timeout: Any,
@@ -416,10 +438,12 @@ def _build_async_httpx_client(
         or os.environ.get("OPENAI_BASE_URL")
         or "https://api.openai.com/v1",
         "timeout": timeout,
+        "verify": _default_ssl_context(),
     }
     if socket_options:
         # See _build_sync_httpx_client for the limits= rationale.
         kwargs["transport"] = httpx.AsyncHTTPTransport(
+            verify=kwargs["verify"],
             socket_options=list(socket_options),
             limits=_DEFAULT_CONNECTION_LIMITS,
         )
@@ -487,15 +511,6 @@ def _cached_sync_httpx_client(
     return _build_sync_httpx_client(base_url, timeout, socket_options)
 
 
-@lru_cache
-def _cached_async_httpx_client(
-    base_url: str | None,
-    timeout: Any,
-    socket_options: tuple[SocketOption, ...] = (),
-) -> _AsyncHttpxClientWrapper:
-    return _build_async_httpx_client(base_url, timeout, socket_options)
-
-
 def _get_default_httpx_client(
     base_url: str | None,
     timeout: Any,
@@ -518,16 +533,15 @@ def _get_default_async_httpx_client(
     timeout: Any,
     socket_options: tuple[SocketOption, ...] = (),
 ) -> _AsyncHttpxClientWrapper:
-    """Get default httpx client.
+    """Get default async httpx client.
 
-    Uses cached client unless timeout is `httpx.Timeout`, which is not hashable.
+    Unlike the sync client, this is never shared between models: an async
+    client's connections belong to the event loop that opened them, so sharing
+    one would make a model fail when another model has used it from a different
+    loop (`RuntimeError: Event loop is closed`). Building a client is cheap once
+    the SSL context is shared, which was the expensive part.
     """
-    try:
-        hash(timeout)
-    except TypeError:
-        return _build_async_httpx_client(base_url, timeout, socket_options)
-    else:
-        return _cached_async_httpx_client(base_url, timeout, socket_options)
+    return _build_async_httpx_client(base_url, timeout, socket_options)
 
 
 def _resolve_sync_and_async_api_keys(
