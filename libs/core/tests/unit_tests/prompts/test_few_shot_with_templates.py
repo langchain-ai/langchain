@@ -83,6 +83,29 @@ def test_prompttemplate_validation() -> None:
     ).input_variables == ["content", "new_content"]
 
 
+def test_partial_variables_are_not_required_inputs() -> None:
+    """A variable bound by `partial_variables` is not an input variable.
+
+    The exclusion must not depend on whether the suffix or the prefix uses the
+    variable; `invoke` must accept an empty input mapping when everything is bound.
+    """
+    suffix = PromptTemplate(
+        input_variables=["new_content"],
+        template="Now you try to talk about {new_content}.",
+    )
+    prompt = FewShotPromptWithTemplates(
+        suffix=suffix,
+        input_variables=[],
+        examples=[{"question": "foo", "answer": "bar"}],
+        example_prompt=EXAMPLE_PROMPT,
+        partial_variables={"new_content": "party"},
+    )
+
+    assert prompt.input_variables == []
+    rendered = prompt.invoke({}).to_string()
+    assert rendered == "foo: bar\n\nNow you try to talk about party."
+
+
 async def test_get_examples_requires_examples_or_selector() -> None:
     """Both `_get_examples` and `_aget_examples` raise when neither is set.
 

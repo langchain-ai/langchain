@@ -79,12 +79,14 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
     @model_validator(mode="after")
     def template_is_valid(self) -> Self:
         """Check that prefix, suffix, and input variables are consistent."""
+        # Variables bound by `partial_variables` are not inputs, no matter whether
+        # they are used by the prefix or by the suffix.
+        expected_input_variables = (
+            set(self.suffix.input_variables)
+            | set(self.prefix.input_variables if self.prefix else [])
+        ) - set(self.partial_variables)
         if self.validate_template:
             input_variables = self.input_variables
-            expected_input_variables = set(self.suffix.input_variables)
-            expected_input_variables |= set(self.partial_variables)
-            if self.prefix is not None:
-                expected_input_variables |= set(self.prefix.input_variables)
             missing_vars = expected_input_variables.difference(input_variables)
             if missing_vars:
                 msg = (
@@ -93,11 +95,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
                 )
                 raise ValueError(msg)
         else:
-            self.input_variables = sorted(
-                set(self.suffix.input_variables)
-                | set(self.prefix.input_variables if self.prefix else [])
-                - set(self.partial_variables)
-            )
+            self.input_variables = sorted(expected_input_variables)
         return self
 
     model_config = ConfigDict(
