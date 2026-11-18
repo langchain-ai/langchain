@@ -34,6 +34,10 @@ class GraphBubbleUp(Exception):  # noqa: N818
     """Same class name as langgraph's, which core matches by name."""
 
 
+class GraphDrained(GraphBubbleUp):
+    """Shutdown drain: a `GraphBubbleUp` that is not an interrupt."""
+
+
 class GraphInterrupt(GraphBubbleUp):
     """Subclass, as in langgraph."""
 
@@ -81,6 +85,20 @@ async def test_graph_interrupt_sets_interrupted() -> None:
     run = _new_run()
     _tracer()._record_error(run, GraphInterrupt("pause"))
     assert run.status == "interrupted"
+    assert run.error
+
+
+@pytest.mark.parametrize("name", ["NodeInterrupt", "ParentCommand", "GraphDelegate"])
+def test_other_interrupt_errors_set_interrupted(name: str) -> None:
+    run = _new_run()
+    _tracer()._record_error(run, type(name, (GraphBubbleUp,), {})())
+    assert run.status == "interrupted"
+
+
+def test_graph_drained_has_no_status() -> None:
+    run = _new_run()
+    _tracer()._record_error(run, GraphDrained("shutdown"))
+    assert run.status is None
     assert run.error
 
 

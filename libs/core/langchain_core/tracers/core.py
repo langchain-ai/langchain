@@ -45,19 +45,27 @@ _GATEWAY_RUN_METADATA_KEY = "ls_gateway_info"
 
 _CANCEL_MSG_DROPPED = sys.version_info < (3, 11)
 
+# LangGraph control-flow errors that pause a run for outside input. Matched by
+# class name (including subclasses) so core does not depend on langgraph.
+# `GraphDrained` is a `GraphBubbleUp` too but is a shutdown, so it stays an error.
+_INTERRUPT_ERROR_NAMES = frozenset(
+    {"GraphInterrupt", "NodeInterrupt", "ParentCommand", "GraphDelegate"}
+)
+
 
 def _run_status_from_error(error: BaseException | None) -> str | None:
     """Return the explicit run status an error asks to be traced with.
 
     - `cancelled`: a `CancelledError` cancelled with an `ExpectedCancellation`.
-    - `interrupted`: a langgraph `GraphBubbleUp` subclass (`GraphInterrupt`,
-        `NodeInterrupt`, `ParentCommand`, ...), matched by class name so core
-        does not depend on langgraph.
+    - `interrupted`: a langgraph `GraphInterrupt`, `NodeInterrupt`,
+        `ParentCommand` or `GraphDelegate` (or subclass), matched by class name
+        so core does not depend on langgraph. `GraphDrained` (shutdown) is not.
     - `None` otherwise: a bare `CancelledError` or a timeout stays a plain error.
     """
     if error is None:
         return None
-    if any(c.__name__ == "GraphBubbleUp" for c in type(error).__mro__):
+    names = {c.__name__ for c in type(error).__mro__}
+    if "GraphDrained" not in names and names & _INTERRUPT_ERROR_NAMES:
         return "interrupted"
     seen: set[int] = set()
     while isinstance(error, asyncio.CancelledError) and id(error) not in seen:
