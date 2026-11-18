@@ -124,7 +124,7 @@ constraint-dependencies = [
     "urllib3>=2.6.3",
     "pygments>=2.20.0",
     "filelock>=4.2.1",
-    "tornado>=6.6",
+    "tornado>=6.6.1",
 ]
 
 [tool.ruff]
