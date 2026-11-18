@@ -465,7 +465,18 @@ def deprecated(
 
 @contextlib.contextmanager
 def suppress_langchain_deprecation_warning() -> Generator[None, None, None]:
-    """Suppress context-aware LangChain deprecations, not raw third-party warnings."""
+    """Suppress LangChain deprecation warnings within the current context.
+
+    Silences warnings emitted through `warn_deprecated` and `@deprecated`. It does not
+    modify the global `warnings` filters, so calling `warnings.warn` directly with
+    `LangChainDeprecationWarning` is not suppressed; use `warnings.filterwarnings` for
+    that.
+
+    Suppression is stored in a context variable, not a process-wide filter. It
+    applies to the current thread or asyncio task, and to tasks or copied contexts
+    created inside the block (e.g. `asyncio.create_task`, `asyncio.to_thread`),
+    which keep it even after the block exits. Other threads are unaffected.
+    """
     token = _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.set(True)
     try:
         yield

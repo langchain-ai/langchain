@@ -229,7 +229,17 @@ def beta(
 
 @contextlib.contextmanager
 def suppress_langchain_beta_warning() -> Generator[None, None, None]:
-    """Suppress context-aware LangChain beta warnings, not raw third-party warnings."""
+    """Suppress LangChain beta warnings within the current context.
+
+    Silences warnings emitted through `warn_beta` and `@beta`. It does not modify the
+    global `warnings` filters, so calling `warnings.warn` directly with
+    `LangChainBetaWarning` is not suppressed; use `warnings.filterwarnings` for that.
+
+    Suppression is stored in a context variable, not a process-wide filter. It
+    applies to the current thread or asyncio task, and to tasks or copied contexts
+    created inside the block (e.g. `asyncio.create_task`, `asyncio.to_thread`),
+    which keep it even after the block exits. Other threads are unaffected.
+    """
     token = _SUPPRESSING_LANGCHAIN_BETA_WARNING.set(True)
     try:
         yield
