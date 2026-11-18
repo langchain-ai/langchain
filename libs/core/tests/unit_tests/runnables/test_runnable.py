@@ -6484,3 +6484,22 @@ async def test_streaming_a_reasoning_block_then_text_adds_the_text_once(
     content = [{"type": "thinking", "thinking": "hmm"}, "Hello world"]
     assert received == [content]
     assert model_output.content == content
+
+
+def test_stream_close_does_not_drain_upstream() -> None:
+    """Closing a sequence's stream early must not run the upstream step to its end."""
+    upstream_reached_the_end: list[bool] = []
+
+    def upstream(chunks: Iterator[str]) -> Iterator[str]:
+        for _ in chunks:
+            pass
+        for index in range(100):
+            yield f"chunk {index} "
+        upstream_reached_the_end.append(True)
+
+    chain = RunnableGenerator(upstream) | StrOutputParser()
+    stream = chain.stream("prompt")
+    assert next(stream) == "chunk 0 "
+    stream.close()
+
+    assert upstream_reached_the_end == []

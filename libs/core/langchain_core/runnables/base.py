@@ -2616,15 +2616,22 @@ class Runnable(ABC, Generic[Input, Output]):
                     iterator = stream_handler.tap_output_iter(
                         run_manager.run_id, iterator
                     )
+                closed_early = False
                 try:
                     while True:
                         chunk: Output = context.run(next, iterator)
                         yield chunk
                         final_output.add(chunk)
-                except (StopIteration, GeneratorExit):
+                except StopIteration:
                     pass
-                for ichunk in input_for_tracing:
-                    final_input.add(ichunk)
+                except GeneratorExit:
+                    # The consumer closed the stream: don't pull the rest of the
+                    # input just to build the traced input, that would run the
+                    # upstream step to its end.
+                    closed_early = True
+                if not closed_early:
+                    for ichunk in input_for_tracing:
+                        final_input.add(ichunk)
                 # Reading a value merges its chunks, which can raise; read them here
                 # so the run still ends, inputs first so the error path has them.
                 merged_input = final_input.value
