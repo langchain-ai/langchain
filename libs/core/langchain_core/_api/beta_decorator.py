@@ -14,7 +14,7 @@ import functools
 import inspect
 import warnings
 from collections.abc import Callable, Generator
-from contextvars import ContextVar
+from contextvars import ContextVar, Token
 from typing import Any, TypeVar, cast
 
 from langchain_core._api.internal import is_caller_internal
@@ -228,7 +228,14 @@ def suppress_langchain_beta_warning() -> Generator[None, None, None]:
     try:
         yield
     finally:
-        _SUPPRESSING_LANGCHAIN_BETA_WARNING.reset(token)
+        try:
+            _SUPPRESSING_LANGCHAIN_BETA_WARNING.reset(token)
+        except ValueError:
+            # The block was exited from a different context, e.g. an async
+            # generator suspended inside it and closed by another task.
+            _SUPPRESSING_LANGCHAIN_BETA_WARNING.set(
+                False if token.old_value is Token.MISSING else token.old_value
+            )
 
 
 def warn_beta(
