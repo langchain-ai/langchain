@@ -2625,9 +2625,6 @@ class Runnable(ABC, Generic[Input, Output]):
                 except StopIteration:
                     pass
                 except GeneratorExit:
-                    # The consumer closed the stream: don't pull the rest of the
-                    # input just to build the traced input, that would run the
-                    # upstream step to its end.
                     closed_early = True
                 if not closed_early:
                     for ichunk in input_for_tracing:

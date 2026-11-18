@@ -6487,7 +6487,6 @@ async def test_streaming_a_reasoning_block_then_text_adds_the_text_once(
 
 
 def test_stream_close_does_not_drain_upstream() -> None:
-    """Closing a sequence's stream early must not run the upstream step to its end."""
     upstream_reached_the_end: list[bool] = []
 
     def upstream(chunks: Iterator[str]) -> Iterator[str]:
@@ -6506,7 +6505,6 @@ def test_stream_close_does_not_drain_upstream() -> None:
 
 
 def test_stream_close_still_ends_the_run() -> None:
-    """An early-closed stream ends its run normally, without an error callback."""
     events: list[str] = []
 
     class Handler(BaseCallbackHandler):
