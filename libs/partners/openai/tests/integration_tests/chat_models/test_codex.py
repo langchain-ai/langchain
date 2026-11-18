@@ -108,12 +108,12 @@ def test_codex_invoke() -> None:
 
 
 def test_codex_invoke_lifts_system_message_into_instructions() -> None:
-    """`SystemMessage` content is lifted into top-level `instructions`.
+    """`SystemMessage` content is sent as the leading `developer` message.
 
-    Codex rejects `SystemMessage` chat turns; `_ChatOpenAICodex` works
-    around this by moving the `SystemMessage` content into the
-    `instructions` field and stripping it from the input list. The model
-    should respect the lifted instruction (here: respond with HELLO).
+    Codex rejects `system`-role input entries; `_ChatOpenAICodex` works
+    around this by moving the `SystemMessage` content into a leading
+    `developer` message. The model should respect it (here: respond with
+    HELLO).
     """
     llm = _ChatOpenAICodex(model=MODEL_NAME, instructions=TERSE_INSTRUCTIONS)
     response = llm.invoke(
@@ -127,7 +127,7 @@ def test_codex_invoke_lifts_system_message_into_instructions() -> None:
 
 
 def test_codex_invoke_with_instructions_override() -> None:
-    """Per-call `instructions=` overrides the constructor value for one call."""
+    """Per-call `instructions=` adds turn-only guidance on top of the prompt."""
     llm = _ChatOpenAICodex(
         model=MODEL_NAME, instructions="You are an English assistant."
     )
