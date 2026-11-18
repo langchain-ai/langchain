@@ -12,7 +12,7 @@ import asyncio
 import logging
 import os
 import socket
-from typing import Any
+from typing import Any, cast
 
 import httpx
 import pytest
@@ -829,3 +829,146 @@ async def test_async_client_wrapper_del_handles_uninitialized_client() -> None:
     )
 
     client.__del__()
+
+
+class _CountingTransport(httpx.AsyncBaseTransport):
+    def __init__(self) -> None:
+        self.closed = False
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"transport": id(self)})
+
+    async def aclose(self) -> None:
+        self.closed = True
+
+
+def _per_loop_transport() -> tuple[
+    _client_utils._PerLoopAsyncTransport, list[_CountingTransport]
+]:
+    built: list[_CountingTransport] = []
+
+    def factory() -> _CountingTransport:
+        built.append(_CountingTransport())
+        return built[-1]
+
+    return _client_utils._PerLoopAsyncTransport(factory), built
+
+
+def test_per_loop_transport_gives_each_event_loop_its_own_pool() -> None:
+    transport, built = _per_loop_transport()
+    assert len(built) == 1, "first transport is built eagerly"
+
+    async def send_twice() -> set[int]:
+        request = httpx.Request("GET", "http://test")
+        first = await transport.handle_async_request(request)
+        second = await transport.handle_async_request(request)
+        return {first.json()["transport"], second.json()["transport"]}
+
+    first_loop_ids = asyncio.run(send_twice())
+    second_loop_ids = asyncio.run(send_twice())
+
+    # Reused within a loop, never shared across loops.
+    assert len(first_loop_ids) == 1
+    assert len(second_loop_ids) == 1
+    assert first_loop_ids != second_loop_ids
+    assert first_loop_ids == {id(built[0])}, "eager transport is claimed first"
+    assert len(built) == 2
+    # The first loop is closed, so its pool was dropped rather than kept alive.
+    assert list(transport._transports.values()) == [built[1]]
+
+
+def test_per_loop_transport_aclose_closes_current_loop_pool() -> None:
+    transport, built = _per_loop_transport()
+
+    async def use_then_close() -> None:
+        await transport.handle_async_request(httpx.Request("GET", "http://test"))
+        await transport.aclose()
+
+    asyncio.run(use_then_close())
+    assert [t.closed for t in built] == [True]
+    assert transport._transports == {}
+
+
+def test_per_loop_transport_aclose_closes_unclaimed_transport() -> None:
+    transport, built = _per_loop_transport()
+    asyncio.run(transport.aclose())
+    assert [t.closed for t in built] == [True]
+
+
+def test_async_client_wrapper_wraps_default_and_env_proxy_transports(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """httpx-built transports are per-loop, and env proxies still apply."""
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.example:3128")
+    client = _client_utils._AsyncHttpxClientWrapper(base_url="https://example.com")
+
+    assert isinstance(client._transport, _client_utils._PerLoopAsyncTransport)
+    proxy_mounts = [t for t in client._mounts.values() if t is not None]
+    assert proxy_mounts, "HTTPS_PROXY should still produce a proxy mount"
+    assert all(
+        isinstance(t, _client_utils._PerLoopAsyncTransport) for t in proxy_mounts
+    )
+
+
+def test_async_client_wrapper_keeps_explicit_transport() -> None:
+    explicit = _CountingTransport()
+    client = _client_utils._AsyncHttpxClientWrapper(transport=cast("Any", explicit))
+    assert client._transport is explicit
+
+
+def test_build_async_httpx_client_socket_options_transport_is_per_loop() -> None:
+    client = _client_utils._build_async_httpx_client(
+        base_url=None,
+        timeout=None,
+        socket_options=((SOL_SOCKET, SO_KEEPALIVE, 1),),
+    )
+    assert isinstance(client._transport, _client_utils._PerLoopAsyncTransport)
+
+
+@pytest.mark.enable_socket
+def test_cached_async_client_reusable_across_event_loops() -> None:
+    """Regression: a keep-alive connection must not leak into a later loop.
+
+    Before the fix, the second `asyncio.run()` picked up the first loop's pooled
+    connection and failed with `RuntimeError: Event loop is closed`. Older
+    `openai` SDKs hid this by retrying any exception; from `openai==3.14.1`
+    only `httpx` request errors are retried, so it reached callers.
+    """
+    import threading
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    class Handler(BaseHTTPRequestHandler):
+        protocol_version = "HTTP/1.1"  # keep-alive
+
+        def do_POST(self) -> None:
+            self.rfile.read(int(self.headers["content-length"]))
+            self.send_response(200)
+            self.send_header("content-length", "2")
+            self.end_headers()
+            self.wfile.write(b"ok")
+
+        def log_message(self, *args: Any) -> None:
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    server.daemon_threads = True
+    threading.Thread(
+        target=server.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True
+    ).start()
+    try:
+        client = _client_utils._build_async_httpx_client(
+            base_url=f"http://127.0.0.1:{server.server_address[1]}",
+            timeout=5,
+            # Exercise the default path; socket options would pass `transport=`.
+            socket_options=(),
+        )
+
+        # The bug needs a request body (every OpenAI API call has one) and a
+        # TCP connection; Unix sockets and body-less requests don't trip it.
+        async def post() -> int:
+            return (await client.post("/", json={"model": "x"})).status_code
+
+        assert [asyncio.run(post()) for _ in range(3)] == [200, 200, 200]
+    finally:
+        server.shutdown()
+        server.server_close()
