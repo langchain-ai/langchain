@@ -83,6 +83,29 @@ def test_prompttemplate_validation() -> None:
     ).input_variables == ["content", "new_content"]
 
 
+async def test_prefix_and_suffix_share_a_variable() -> None:
+    """A variable used by both the prefix and the suffix is filled in for both."""
+    prefix = PromptTemplate(
+        input_variables=["content"], template="This is a test about {content}."
+    )
+    suffix = PromptTemplate(
+        input_variables=["content"], template="Now you talk about {content}."
+    )
+    prompt = FewShotPromptWithTemplates(
+        suffix=suffix,
+        prefix=prefix,
+        input_variables=["content"],
+        examples=[{"question": "foo", "answer": "bar"}],
+        example_prompt=EXAMPLE_PROMPT,
+    )
+    expected_output = (
+        "This is a test about animals.\n\nfoo: bar\n\nNow you talk about animals."
+    )
+
+    assert prompt.format(content="animals") == expected_output
+    assert await prompt.aformat(content="animals") == expected_output
+
+
 async def test_get_examples_requires_examples_or_selector() -> None:
     """Both `_get_examples` and `_aget_examples` raise when neither is set.
 
