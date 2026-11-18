@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e12cb92ac27d19ee09af123b0e2238220bb2d578fde6ed3e275da84fab43d119",
+  "pageVersion": "sha256:c593356f189d8052e6d476ac262dd886604f57e65c1312d308774c3fd47248e1",
   "claims": [
     {
       "id": "claim_45a8435fd4d34f05bd759e8dc55f0454",
@@ -181,10 +181,52 @@
           "version": "repo-lines-v1:sha256:6a00a8eda00a0de92a66de32852e1bd19d9a76c9d55feffea0dc922a5b501a32:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGIzZDViZWIyMDJjMTU2ZjM5MDk1NzlhNTUzNzdhOTYzZTdhNTM4ZWUyMmFlYmI0YjM0ZTliOWNhNTkyNGM0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTIzMTFhMzdhMjhiMzNhMGZiN2M0MTMwMTk3ZDUwYWQ3MDcwNTBjYTNjYWY5YWFiZDM2MzYxN2FjOWQ3OTFmOSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzUwYjM2OTg2MjliZWQ4YjMwYzI4NWIzZWFiZmY2YmQ2MDQ0ODVjMjJkNGE5NTI1NGZiMWZkNWM3MTc5OWViMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTlkYjA1MjJmMGU4YjliNmIwN2UwZGRiOTI3M2E4YTNlYjJjZjY1ZjQ5MWZkMmQzMjFkMDAwNjgzNjM0NjZhYiJ9"
         }
       ]
+    },
+    {
+      "id": "claim_f97cd2e71a9b4740b87aa24259f64e03",
+      "statement": "ResponseFormat is a union type (ToolStrategy | ProviderStrategy | AutoStrategy) that abstracts strategy selection for structured output in agents. All strategies normalize schemas through _SchemaSpec, which extracts JSON Schema representation and classifies schema kinds (Pydantic, dataclass, TypedDict, or JSON schema dict), enabling consistent handling across strategy types.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L108-L194",
+          "version": "repo-lines-v1:sha256:3362103d065e36404882c2d050d110ab936fbaef42a6af8711e35c62a505963c:eyJzZWxlY3RlZExpbmVDb3VudCI6ODcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5YTRmMGQ5MjI5ZGZjYTRhYzUwOWU0NzQ5ZDI0YWJkYjEzODY0YjBhZWYyYjE1ZWJiZDk4OWQ1ODI2OGNkNTMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI1YWJhNDI4N2NkYjk1NjFkNGUxYjIyNDUzOGUyNTJhYWI0MDc0ZDE0MjI4Yjc2NDQ5MjBmZWQ1NTg5N2M1NDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc5OWJhM2QxMmYxMDk5NTEzYzhjNGE2MTY1N2E3MjUxNDFjNDViMTEzYWJlMWQwNjIyMzkwMjVmYTRmMDM2YjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2MTlmYmNkMDIyMzI5NDQ3ODAwMmU4Zjg2ZmNlZWU3ZDgyYjc0OWFhM2M1ZjhhMDZmYjM3Y2JkMjBhOGY5MTQifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L31-L35",
+          "version": "repo-lines-v1:sha256:6af6185a0db8e88ad5c02956c7d24550b9ac42578fd3bb46e7929c2c43227e91:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGIzZDViZWIyMDJjMTU2ZjM5MDk1NzlhNTUzNzdhOTYzZTdhNTM4ZWUyMmFlYmI0YjM0ZTliOWNhNTkyNGM0ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzUwYjM2OTg2MjliZWQ4YjMwYzI4NWIzZWFiZmY2YmQ2MDQ0ODVjMjJkNGE5NTI1NGZiMWZkNWM3MTc5OWViMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiY2ZhMmVhNzY5NWNhY2Q4OGFhM2M3ZWIyNDc4YzA5NTlmYTE5NjE5ZGY4MDJlZmZlOGQ3YjI3MzY1MGFmODI1NyJ9"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L459-L473",
+          "version": "repo-lines-v1:sha256:0a2cf0fddb144438a33c3f46fa2f3c578a10b89b003d4d441f7e5204112fe327:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiZjA5NDJjNTBkOWIzZGExOTk1MDczYzlkOTA4NjZjOGMzMGJmZjc3MzJlYzNlMWNmMGFiNDk4Yzg1OWZjZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI0NDBhZGQ3OGFlMmJlZmZlMmZkOTc5YTI4OGVmZDE5M2MwOTkyNmQ3ZmQ2YjQ3N2M5MTZhMDViMTEzZjgxYTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImEwMDVmMzRlYmNmY2ZiZTZjYjNjODAxODg3YmJjZGQyYTJkYzRhOWRhN2YzMGUwYjM2YzNlNzJhNjdmZTBiN2EiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwN2RkNjc5OWVlZGRhZmI0Yzk3MjU5M2Q4NGEwYmFlN2JjNWEzNjRmNjVlNDVhY2RhYTIxNDY3NWYzMDc0ZTUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1d0d6483214b4ced9d5d21284b707b93",
+      "statement": "Automatic retry on validation failure is controlled by ToolStrategy's handle_errors parameter: True catches all errors with default message, False disables retry, string catches all with custom message, type/tuple catches specific exceptions, and Callable enables custom per-exception logic. The retry sends a ToolMessage with error details back to the model for correction.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L649-L690",
+          "version": "repo-lines-v1:sha256:355ad36999445c20c5153546260a72680360025b7f8ed589938e9b44ec7d5d00:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmM2JjYWUzMzhlZjQxNGQ2NmFhM2Q4MTUxNjA5MmE2MWMxNGZhNTllZGExMTMxMmVlMzgwM2UwNDNjZDAyMzUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkNDFjMzM2MWU1MGU1NTI2MDIzYzVjZjlhODJmMDc5MDZlZjIxZTkyYjI4ODg4ZDhjYmMyNjQ3ZjZmNWUwYWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA5ZjViNTk4NTM5MWU3MTAyMWY1ZDZiYjczZTE1YzgzZDYwNmJmNTNhMTVhYzM1NGRhMGI0OWM3YzZjYWZlM2IiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQ3OThlM2Y1ZmQ5NTUwYjRjODM2MjE3ZDQwM2FmMjcwYTUyYTdjNjJiMjc2MTY0ZTkzMTE0MDcxZTM1YjgwMzIifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L212-L233",
+          "version": "repo-lines-v1:sha256:e252cc76fcf4722f8c58272db6776a145dacaa594e39c861920f3a1ca4681b40:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5MTYzZmIxYWZmYmZjMzdhZTRhYjBhZmI5YmVhNmM3OWJmNTc3NjRmNmRhOTU0NGVlYjljYTAyYTE2MWZhOTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4ZDZkNjIxNjkzY2EwNzU0MmQxYmJmZmYyMDlmMjI3Y2ZiNDE0ZDJlMTRjYTBjNGRkNjhmNDJmNDdiYjRhMTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQzMzEwOTVkNWZkOTQ5N2Y0M2RkNjkwMWE5M2Y3NDNiYjY1NTUwNmEwNTBlMTVjMjgxNWJmMWM5ZDRmMTMyOTgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_ed1b275aef3f46a7bd38c7232edfc6b2",
+      "statement": "with_structured_output() supports two error handling patterns: include_raw=False raises exceptions (default), while include_raw=True returns a dict with 'raw', 'parsed', and 'parsing_error' keys for graceful error handling. Fallback patterns can be composed via with_fallbacks() to implement custom retry or default logic.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py#L2428-L2565",
+          "version": "repo-lines-v1:sha256:4b394d69d88d4d7f5e43261ef6854cbb96194fdf4506fdda29f0355c1c0891a8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiOTk3OTkzN2Q3ZGUxOTkyNzZjM2I3YzVkMTJkZWM2ODJhZTBmOTVjNTliZjA2OTlhNGI2OTRhZDg1ZWQxMTVhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1MjkyMTdlZDExODRiZmJlYjY3YzIwN2Y4N2M2NGI1OTAyOGQxMjFlODc3ZWI2OTgwNzcyMWMxYWRmMTI2N2Q2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5ODYzYTc3NDFkMDgxOGZiZWMxOGIzODJlN2YyNzZjZTQxNGVlOGY1NGYyYzZjNWU0OGEzYTdkNDIzNDAxNzgxIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkMzQ1MDZmNzIxNjUzYjA1NDNmYTU1ODI4NTIzZTRjZTU1ODc5NTdkOWE0OTAyYmU1MTMzNDMxMzZjNmRhMjM4In0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-16T08:30:18.041Z"
+    "at": "2026-11-18T08:17:15.497Z"
   }
 }

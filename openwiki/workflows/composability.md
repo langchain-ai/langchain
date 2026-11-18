@@ -16,10 +16,16 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/fallbacks.py
   - id: openwiki-source-2bb5c49861e72a9099b51970
     resource: repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+  - id: openwiki-source-71e882e1ac9757ea8e959a7c
+    resource: repo://libs/langchain_v1/langchain/agents/factory.py
+  - id: openwiki-source-a5eb2874945fdc55df0c578f
+    resource: repo://libs/langchain_v1/langchain/agents/middleware/tool_selection.py
+  - id: openwiki-source-03e8ca0eebe37feda8566793
+    resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
+generated: { by: "openwiki/0.5.0", at: "2026-11-18T08:17:15.497Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-16T08:30:18.041Z
+    at: 2026-11-18T08:17:15.497Z
 ---
 
 # Composability: Chaining & Piping Runnables & Hierarchical Agents
@@ -1277,6 +1283,244 @@ def test_hierarchy_end_to_end():
     assert len(result["messages"]) > 2  # Multiple turns expected
 ```
 
+## Tool Selection Strategies: Middleware for Dynamic Tool Filtering
+
+When an agent has many tools, selecting only the most relevant subset reduces token usage and helps the model focus. LangChain provides tool selection as a middleware layer, enabling multiple strategies.
+
+### LLMToolSelectorMiddleware: Dynamic LLM-Based Selection
+
+**LLMToolSelectorMiddleware** uses a secondary LLM to filter tools before the main model is invoked. It analyzes the user's query and selects only the most relevant tools, reducing context window usage.
+
+**Location**: `repo://libs/langchain_v1/langchain/agents/middleware/tool_selection.py#L121-L241`
+
+```python
+from langchain.agents.middleware import LLMToolSelectorMiddleware
+from langchain.agents import create_agent
+from langchain_openai import ChatOpenAI
+
+# Create selector middleware with a lightweight model
+selector = LLMToolSelectorMiddleware(
+    model="openai:gpt-4o-mini",  # Smaller model for selection
+    max_tools=3,                  # Limit to 3 most relevant
+    always_include=["emergency_support"],  # Always include critical tools
+    max_retries=1,                # Retry once on malformed response
+    on_parsing_failure="all",     # Fall back to all tools if selection fails
+)
+
+agent = create_agent(
+    model="openai:gpt-4o",
+    tools=[tool1, tool2, tool3, tool4, tool5],
+    middleware=[selector],
+)
+```
+
+**Key behaviors**:
+
+- **Selection flow**: Selector intercepts `wrap_model_call`, sends the user's latest message and tool descriptions to its selection model, parses the response (a JSON `{"tools": ["tool1", "tool2"]}` structure), and filters the request.
+- **Always include**: Tools in `always_include` are never filtered out and don't count against `max_tools`.
+- **Provider tools**: Provider-specific tool dicts (e.g., OpenAI function schemas) are preserved even after selection.
+- **Parsing resilience**: If the selection model returns malformed JSON, `max_retries` determines retry behavior. `on_parsing_failure` specifies fallback: `"error"` (raise), `"none"` (select nothing), `"all"` (select all), a list of tool names, or a callable.
+- **System prompt**: Can be customized via `system_prompt` parameter (default: "Your goal is to select the most relevant tools for answering the user's query").
+
+**Use cases**:
+
+- **Large tool catalogs**: 20+ tools where most queries use only 2-3.
+- **Multi-domain agents**: Weather, database, calculator, search—each query typically uses one domain.
+- **Cost optimization**: Smaller selection model saves tokens; only relevant tools in context.
+
+**Real-world example: Multi-domain agent with tool selection**:
+
+```python
+from langchain.agents.middleware import LLMToolSelectorMiddleware
+from langchain_core.tools import tool
+
+@tool
+def get_weather(location: str) -> str:
+    """Get weather for a location."""
+    return f"Weather in {location}: Sunny, 72°F"
+
+@tool
+def search_web(query: str) -> str:
+    """Search the web."""
+    return f"Search results for {query}"
+
+@tool
+def calculate(expression: str) -> str:
+    """Perform calculations."""
+    return str(eval(expression))
+
+# Selector uses gpt-4o-mini; main agent uses gpt-4o
+selector = LLMToolSelectorMiddleware(
+    model="openai:gpt-4o-mini",
+    max_tools=2,
+)
+
+agent = create_agent(
+    model="openai:gpt-4o",
+    tools=[get_weather, search_web, calculate],
+    middleware=[selector],
+)
+
+# When user asks "What's the weather in Paris?", selector picks get_weather only
+result = agent.invoke({
+    "messages": [{"role": "user", "content": "What's the weather in Paris?"}]
+})
+```
+
+### Selection Request and Response Processing
+
+**Location**: `repo://libs/langchain_v1/langchain/agents/middleware/tool_selection.py#L52-L110`
+
+The middleware prepares a structured selection request:
+
+1. **Input preparation**: Extracts the last user message and available tools, filters out provider-specific dicts (kept separate), validates `always_include` tools exist.
+2. **Schema generation**: Builds a TypedDict schema with Literal enum for each tool name, including descriptions from tool metadata.
+3. **Model invocation**: Calls the selection model (or main model if no selector specified) with structured output enabled.
+4. **Response validation**: Checks if response is a dict with `tools` list; if malformed, retries or falls back.
+5. **Tool filtering**: Keeps selected tools in original order, enforces `max_tools` limit, appends `always_include` tools, preserves provider dicts.
+
+## Middleware Composition and Layering
+
+Agent middleware provides hooks across the agent lifecycle, composing in predictable layers. Understanding middleware stacking is essential for building modular, testable agents.
+
+### AgentMiddleware: Lifecycle Hooks and Request Interception
+
+**Location**: `repo://libs/langchain_v1/langchain/agents/middleware/types.py#L387-L750`
+
+Every middleware subclass can override these hooks:
+
+**Lifecycle node hooks** (before/after agent and model execution):
+
+- `before_agent()` / `abefore_agent()`: Run before agent starts; can modify state.
+- `before_model()` / `abefore_model()`: Run before model call; can modify state.
+- `wrap_model_call()` / `awrap_model_call()`: Intercept and control the model execution via handler callback. Can retry, short-circuit, or modify request/response. This is the main middleware hook.
+- `after_model()` / `aafter_model()`: Run after model call; can modify state.
+- `after_agent()` / `aafter_agent()`: Run after agent completes; can finalize state.
+
+**Tool execution hook**:
+
+- `wrap_tool_call()` / `awrap_tool_call()`: Intercept tool execution (e.g., for logging, caching, retries).
+
+**Request objects**:
+
+- `ModelRequest[ContextT]`: Encapsulates model call inputs—messages, system message, tools, tool_choice, response_format, state, runtime context, model settings.
+- `ToolCallRequest`: Encapsulates tool execution inputs—the tool call dict, tool instance, state, runtime.
+
+```python
+from langchain.agents.middleware import AgentMiddleware
+from langchain.agents.middleware.types import ModelRequest, ModelResponse
+from langchain_core.messages import AIMessage
+
+class CustomMiddleware(AgentMiddleware):
+    """Custom middleware for logging and retry logic."""
+    
+    def wrap_model_call(self, request: ModelRequest, handler):
+        """Intercept model execution."""
+        print(f"Calling model with {len(request.tools)} tools")
+        
+        # Call handler (the actual model execution)
+        try:
+            response = handler(request)
+            print(f"Model returned: {response.result[0].content[:50]}...")
+            return response
+        except Exception as e:
+            print(f"Model call failed: {e}")
+            # Return fallback response instead of re-raising
+            return ModelResponse(
+                result=[AIMessage(content="I encountered an error. Please try again.")],
+                structured_response=None,
+            )
+    
+    def wrap_tool_call(self, request, handler):
+        """Intercept tool execution."""
+        tool_name = request.tool_call.get("name")
+        print(f"Executing tool: {tool_name}")
+        result = handler(request)
+        print(f"Tool {tool_name} returned: {result}")
+        return result
+```
+
+### Middleware Composition Order and Control Flow
+
+When multiple middleware are registered, they compose in registration order: **first-in = outermost layer**.
+
+```python
+from langchain.agents import create_agent
+from langchain.agents.middleware import LoggingMiddleware, RetryMiddleware, CachingMiddleware
+
+agent = create_agent(
+    model="openai:gpt-4o",
+    tools=[tool1, tool2],
+    middleware=[
+        LoggingMiddleware(),        # Outermost
+        RetryMiddleware(max_retries=2),
+        CachingMiddleware(),        # Innermost
+    ],
+)
+```
+
+**Control flow** during model execution:
+
+```
+agent.invoke()
+  ↓ LoggingMiddleware.wrap_model_call (outermost)
+    ↓ print("Starting model call")
+    ↓ handler (next layer)
+      ↓ RetryMiddleware.wrap_model_call
+        ↓ attempt 1: handler (next layer)
+          ↓ CachingMiddleware.wrap_model_call (innermost)
+            ↓ if cached: return cached
+            ↓ else: handler (actual model call)
+        ↓ if failed: attempt 2, etc.
+    ↓ print("Model call complete")
+  ↓ response returned
+```
+
+**Location**: `repo://libs/langchain_v1/langchain/agents/factory.py#L284-L464`
+
+Middleware handlers are composed using functional wrapping. Inner middleware layers receive a handler callback pointing to the next layer. The composition preserves command accumulation: when middleware returns `ExtendedModelResponse` with a `Command`, those commands are collected and merged (inner-first, then outer) so the graph's reducers apply them in proper order.
+
+### Context and State Management Across Middleware
+
+**ModelRequest** provides access to agent state and runtime context:
+
+```python
+class ContextAwareMiddleware(AgentMiddleware):
+    """Middleware that adapts based on runtime context."""
+    
+    def wrap_model_call(self, request: ModelRequest, handler):
+        # Access agent state
+        messages = request.messages
+        custom_field = request.state.get("custom_data")
+        
+        # Access runtime context (if provided by application)
+        if request.runtime.context:
+            user_id = request.runtime.context.get("user_id")
+            user_preferences = request.runtime.context.get("preferences", {})
+            
+            # Modify request based on context
+            new_messages = [
+                {"role": "system", "content": f"User {user_id} prefers {user_preferences}"}
+            ] + messages
+            request = request.override(messages=new_messages)
+        
+        return handler(request)
+```
+
+**State merging from middleware hooks**: Hooks like `before_model()` return optional state dicts that are merged into agent state using LangGraph reducers. For message fields with `add_messages` reducer, messages accumulate; for other fields, later values override earlier ones.
+
+```python
+class StateUpdatingMiddleware(AgentMiddleware):
+    """Middleware that updates agent state via hooks."""
+    
+    def before_model(self, state, runtime):
+        # This dict is merged into agent state before model execution
+        return {
+            "metadata": {"middleware_step": "before_model"},
+            "messages": [{"role": "system", "content": "Updated by middleware"}],
+        }
+```
+
 ## Summary: Composability Best Practices
 
 ### Runnable Composition
@@ -1308,3 +1552,5 @@ def test_hierarchy_end_to_end():
 3. **Merge state updates**: Lifecycle hooks return optional state updates; these merge using LangGraph reducers.
 4. **Handle exceptions consistently**: Middleware can convert exceptions to messages; coordinate strategies across levels.
 5. **Leverage context variables**: Use `ContextVar` to pass configuration without function parameters.
+6. **Tool selection as middleware**: Use `LLMToolSelectorMiddleware` to filter tools dynamically before model execution, reducing token usage on large tool sets.
+7. **Request interception patterns**: Leverage `wrap_model_call` for retries, caching, request modification; use `wrap_tool_call` for tool-level observability and error handling.

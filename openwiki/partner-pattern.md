@@ -36,10 +36,10 @@ sources:
     resource: repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py
   - id: openwiki-source-025cad4ae99967890152b7e0
     resource: repo://libs/standard-tests/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-18T08:17:15.497Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-16T08:30:18.041Z
+    at: 2026-11-18T08:17:15.497Z
 ---
 
 ## Overview
@@ -108,7 +108,7 @@ requires-python = ">=3.10.0,<4.0.0"
 version = "0.1.0"
 
 dependencies = [
-    "langchain-core>=1.7.5,<2.0.0",           # Required: base LangChain (current minimum)
+    "langchain-core>=1.8.2,<2.0.0",           # Required: base LangChain (current minimum)
     "provider-client-library>=2.45.0",        # Provider's own SDK (pinned minimum version)
     "certifi>=2024.6.2",                      # SSL certificates
 ]
