@@ -5,7 +5,7 @@ description: "Callbacks are an event-driven instrumentation system that enables 
 tags: [callbacks, observability, tracing, langsmith, run_id, instrumentation]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-16T08:30:18.041Z
+    at: 2026-11-18T08:17:15.497Z
 sources:
   - id: openwiki-source-96c73d2c05223b0b46abdbe9
     resource: repo://libs/core/langchain_core/callbacks/__init__.py
@@ -21,7 +21,7 @@ sources:
     resource: repo://libs/core/langchain_core/callbacks/usage.py
   - id: openwiki-source-bfd8b1aa6ad00852a2e99762
     resource: repo://libs/core/langchain_core/tracers/context.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-18T08:17:15.497Z" }
 ---
 
 ## Overview
@@ -49,6 +49,8 @@ Every callable component in LangChain (LLM, chain, tool, retriever) generates a 
 | **Tool** | `on_tool_start` | `on_tool_end` | `on_tool_error` | — |
 | **Retriever** | `on_retriever_start` | `on_retriever_end` | `on_retriever_error` | — |
 | **Agent** | `on_chain_start` | `on_chain_end` | `on_chain_error` | `on_agent_action`, `on_agent_finish` |
+
+Chat models also emit `on_stream_event` for v3 protocol events when using `stream_events(version="v3")` or `astream_events(version="v3")`.
 
 ### BaseCallbackHandler
 
@@ -87,9 +89,9 @@ class MyCallbackHandler(BaseCallbackHandler):
 
 **Key handler properties:**
 
-- `raise_error` (bool, default=False): Whether to raise exceptions from the handler
+- `raise_error` (bool, default=False): Whether to raise exceptions from the handler instead of swallowing them
 - `run_inline` (bool, default=False): Whether to run the handler synchronously in the calling thread (vs. thread pool for async handlers)
-- `ignore_*` properties: Filter callbacks for specific component types (e.g., `ignore_llm`, `ignore_chain`)
+- `ignore_*` properties: Filter callbacks for specific component types (e.g., `ignore_llm`, `ignore_chain`, `ignore_agent`, `ignore_retriever`, `ignore_chat_model`, `ignore_retry`, `ignore_custom_event`)
 
 ### Callback Event Parameters
 
@@ -220,7 +222,8 @@ manager = CallbackManager(
     inheritable_handlers=[tracer],      # Inherited by child runs
     tags=["debug"],                     # Non-inheritable tags
     inheritable_tags=["user:alice"],    # Inherited tags
-    metadata={"version": "1.0"}         # Non-inheritable metadata
+    metadata={"version": "1.0"},        # Non-inheritable metadata
+    inheritable_metadata={"user": "alice"}  # Inherited metadata
 )
 
 # When on_chain_start is called, it returns a CallbackManagerForChainRun
@@ -231,6 +234,7 @@ child = chain_manager.get_child(tag="step1")
 # child has empty handlers (inheritable_handlers not added to handlers)
 # child.inheritable_handlers = [tracer]
 # child.inheritable_tags = ["user:alice", "step1"]
+# child.inheritable_metadata = {"user": "alice"}
 ```
 
 ### Sync Handlers in Async Contexts
@@ -266,7 +270,7 @@ class MyHandler(BaseCallbackHandler):
         pass
 ```
 
-This fallback applies to both sync `handle_event` and async `ahandle_event` contexts.
+This fallback applies to both sync `handle_event` and async `ahandle_event` contexts. **Important**: When implementing `on_chat_model_start`, always use explicit `serialized` and `messages` parameters; avoid `*args` to prevent `IndexError` during the fallback conversion.
 
 ### Handler Filtering
 
@@ -324,7 +328,7 @@ def handle_event(
 
 **Key behaviors:**
 - Exceptions are logged and swallowed unless `handler.raise_error=True`
-- Exceptions in async handlers run through sync `handle_event` are logged but never propagated (pre-existing asymmetry)
+- Exceptions in async handlers run through sync `handle_event` are logged but never propagated (pre-existing asymmetry in callback error handling)
 - Exceptions in sync handlers run through async `ahandle_event` honor `raise_error` and propagate when True
 
 ### Merging Callback Managers
@@ -338,8 +342,8 @@ manager1 = CallbackManager(handlers=[handler1], tags=["tag1"])
 manager2 = CallbackManager(handlers=[handler2], tags=["tag2"])
 
 merged = manager1.merge(manager2)
-# merged.handlers = [handler1, handler2]
-# merged.tags = ["tag1", "tag2"]  (deduplicated)
+# merged.handlers = [handler1, handler2]  (deduplicated via set union)
+# merged.tags = ["tag1", "tag2"]  (deduplicated via set union)
 ```
 
 ## Built-in Handlers
@@ -464,7 +468,7 @@ Every execution follows a start→end or start→error pattern:
 
 1. **on_*_start**: Called when a component begins execution with initialization parameters
 2. **on_*_new_token** (LLM/chat only): Called for each token during streaming
-3. **on_stream_event** (LLM v3 only): Called for each protocol event in v3 streaming
+3. **on_stream_event** (v3 events only): Called for each protocol event in v3 streaming
 4. **on_*_end** or **on_*_error**: Called when execution completes or fails
 
 For agents, additional events fire:
@@ -522,7 +526,7 @@ Applications can dispatch custom events for application-specific instrumentation
 from langchain_core.callbacks.manager import dispatch_custom_event
 from langchain_core.runnables.config import RunnableConfig
 
-@runnables.RunnableLambda
+@RunnableLambda
 def my_function(x: int, config: RunnableConfig):
     dispatch_custom_event(
         "user_action",
@@ -562,6 +566,7 @@ await adispatch_custom_event("async_event", {"data": "value"}, config=config)
 - `data`: Arbitrary event data (must be serializable for LangSmith tracing)
 - Receives `run_id`, `tags`, and `metadata` from the current execution context
 - Handlers can filter by checking `ignore_custom_event` property
+- Custom events require a parent run ID and must be called from within an active run (tool, RunnableLambda, etc.)
 
 ## Configuring Callbacks
 

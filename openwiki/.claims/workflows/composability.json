@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:697e8d0b5f95f970efffe87345d4ad45ab0980663861ed8d519cf692499118e1",
+  "pageVersion": "sha256:11ecd3f93450c32e219ab59eace1a4dca085d97af0f2b0a03b226cc83027c02d",
   "claims": [
     {
       "id": "claim_c1ceff5d6c5d4e22aa8b16a8ce787305",
@@ -163,10 +163,58 @@
           "version": "repo-lines-v1:sha256:ef669de86cae8ca4c6e2bb1152366a4fb1710a8dd4ff9c3e6f2321873c73caaa:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MDNjNjdlMmM3Mjk0OTc1NWFhOWFhOTNiMTY5YjNiYjBlNzY0OGY4YjBiOTFlMmQ5NTgxYTdiYzQ1ODAyNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhMmZhNDgyNjA2ZWVmNDBkZmIxYzc0YzI1ZDhjNTc2ZmVkZDQ1ZmNiM2M1ZTBhYzVlYzUwZjc2MDhkYjFiYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiYTI1ODljMzVjMGNhMThjYTY5NjM3NTI2ZjAzZmY3MmU0OTM5Zjk4MTRmMmM0M2I1MzJmMzA5YjEzNjk2OWYifQ"
         }
       ]
+    },
+    {
+      "id": "claim_360b64e91097401eac3b95edadd31f5d",
+      "statement": "LLMToolSelectorMiddleware dynamically filters tools before model execution by invoking a secondary LLM to analyze the user query and select only the most relevant tools. It supports max_tools to cap the selection, always_include to protect critical tools, and on_parsing_failure to specify fallback behavior when the selection model returns malformed responses. Provider-specific tool dicts are preserved separately.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/tool_selection.py#L121-L241",
+          "version": "repo-lines-v1:sha256:9f4df514ec2011b6ebdcc06ef0dc569eab86a1f99bf2d91e1b09cd8df11a231b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMzBjNjRmM2Y1MmViYjQ3ZDFkMTA1NTUwOTNkYjE2YmE0NTNkZDczNTdjNjg1YWUyZjlmNjMwYmFmNjQyYTE5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkNjdiNzMzYzllZDQ5ODE4N2RjOGE2MDMxMGFlNGM3NWNkZmVlZTM4MjU2NzJiNDk1MWNkNmNmMzBkNDY4NDE0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhODMxNmM5YmQ2MjRjMmRmZTQ2NGFjNDlkZjE3NTRiYTJlMGJmZjQxMTFlMTYyYmEwZWUzZmEwNmJlMWYyOWIwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NGQwZjViOTY3YjVkNDFhOTU2Y2I3OTQ0ZTk3NjJiMDBmZDMwYzZmZDZlYmFmMDg2MDNiYWNhYTBhNzAzYzFjIn0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/tool_selection.py#L52-L440",
+          "version": "repo-lines-v1:sha256:9e32a15bb5f5fc6e0a6ba3ce25de299beb36b0a3dd3b25e596c7b60d195a8048:eyJzZWxlY3RlZExpbmVDb3VudCI6Mzg5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiNmZiYWUwYjkxZDQ0ZmMwZDQ5ZjVkZTY5MWRhNmZjNDMxZjI2MDEzNGJmNzMxZTBlMjFmNzY0ODA5NDMzNGNiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4ZDFjNjZlMThiMDM3ZDM1ZjJlZGY2MzE2NGRlMzY5YmU0ZmQ0OGE2ODliOTZkMWFhOGYxNWIyMjRkNTBmNDBhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzOGFlNjBhMDlhNzg0YjQ3ZWEwODUzMTZiZmY5MmM2ODAxMWRkNjcwZDg5ZjI4ZGFmNWRhOWJiNmFlNDFiYzQyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjMjM3NTY4ZjM3MWM2NjRmYTczOWZlNmRmMzcwMmU3NjI1M2UwNzQzMjhkMDI1NmE0YWFkM2RlZDk5ZDdmOGE0In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_a8ef2d9045a84a2aa3f80c95d7d95627",
+      "statement": "AgentMiddleware provides lifecycle hooks across the agent execution pipeline: before_agent/abefore_agent (pre-execution), before_model/abefore_model (pre-model), wrap_model_call/awrap_model_call (model interception via handler callback), after_model/aafter_model (post-model), and wrap_tool_call/awrap_tool_call (tool execution interception). Hooks can modify state, skip execution, or retry by calling the handler multiple times.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L433-L750",
+          "version": "repo-lines-v1:sha256:33fe400711fe4a4eed543b4c3e1dc7c54917061b158a7b112459d868a04720d1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzE4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1MWI2OTVmNDZkZjYzNWMwOTc2NTg0OTRjMzQ5MDNjOGI0NjQ5OGIwZTNhYzIwMzY5ODNiYmQ3NzFkM2QwZjhhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2MDg5M2ZiZWEyYjk3MjkwNTc5OGFmY2ZmNWMyMTFkYmUyMGUwZmEyY2I0MWQwOTQ0NmM3NzRmZDQ0MmU1NWZmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5M2U2N2M2ZWMwZTYwZGNlYmFkMzYyYmM3MmNlOGZiNGI3ZTJkMzM1Yjg4ZTk1NjkwMTI4MjRkOTUwMmRmOGQ0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4MWE4YzY0OWM0M2E3ZjM4YTQ4NGM2ZWU2NjMzM2FlMWU3NWU2ZDBkNGJmODI1OTIzYjcxOTdhN2VkOWI5N2I3In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_01a93b394ccb405aae315bdae8ce08f9",
+      "statement": "Multiple middleware compose in registration order where first-registered becomes the outermost layer. Each middleware wraps the next via handler callback, enabling layered control flow. wrap_model_call handlers from inner middleware accumulate via Command objects; LangGraph reducers apply accumulated commands (inner-first, then outer) so message fields append and other fields are overridden by outermost.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L284-L350",
+          "version": "repo-lines-v1:sha256:fd06edb4cf66ba065e30018ccd135a283a07c2ecd82be8d7a4e0445c439769ca:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1Y2IwNmM0MzdmOTk3ODhiZDVjOGM4MDY5MjU0MTI5YmVlN2ExNGYzMzc2ZTFjZWY2MTczYWUyMGE3Y2YyZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlZTJjODVhYzY1OTAyNzZhYjllMGUxNDE1MTVhOTc1YjJlZDk5MTQ2N2QxNzc0OTZhZTdjYWE5ZDA1MGFjMGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4YjE2YTdhZjFkZDFlYzI4OTY3MWRhMWU5MmExY2UzN2I4MTA0YWFlYjZlYjU3MzY1NmU4NWVhMzU0YTNhY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyNjY5YTFkNmEwMTdjOTNjMDM5ZGIwMTQxNmJlN2E4YThiOWRlY2E1ZDgyNjJiYTA5OWQyY2I4ZDc1NDE2MWEifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L334-L390",
+          "version": "repo-lines-v1:sha256:4aed6d6a863ea681643bc61bfba1ac18c8526d334e24875d1af251131b7cd7c8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4YTRjZmM4OWI5Yzc0NmZiOWQyMjE4YmZkZWYyYjA0ZDMzYzE3NzIzYmI1Yjc1NzdlY2I3YjQ5YTNiM2UwOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlZjFiODU0ZTRlMGYyNTllOTljZWJkODY5MDQ5MzIzMjVkY2IzMzg3OGM2NzI4Njk3NWUxYTI2YmE2M2Y3YWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5OGM5YTYxMWVmNGRjOWUzODk5MWMzZWI3ZDIyOGNkODZmMjNlNDIyZDc0MmY4NzMwZDg3Zjg0NDI1ODg2ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyOWM5MWJjNTM1ODg3ZWVjNDYzZDlhYzZkMGIxNzJhNmQ4MzExOWI3YWE2ZjIzNjhmOWIzMTAxZTZmOTUzNzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c5deebc0e7f64f65ab09b46821abee59",
+      "statement": "ModelRequest provides access to messages, system_message, tools, tool_choice, response_format, state (agent state dict), runtime (Runtime[ContextT]), and model_settings. The request object is immutable; middleware uses override() to create modified copies. runtime.context (if provided by the application) enables middleware to access application-level context for adaptive behavior.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L89-L272",
+          "version": "repo-lines-v1:sha256:41282f9288054a87165c1249402e85c3e2f4217cacd582f6ef8a15f3027c7b7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTg0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOWE0ZjBkOTIyOWRmY2E0YWM1MDllNDc0OWQyNGFiZGIxMzg2NGIwYWVmMmIxNWViYmQ5ODlkNTgyNjhjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjE2MTg3MTIxNzdiOGJkY2RmZTZmMWFkNTEzNzM1ZmQzMjBiZDAzZWQ2MGJkZTQzZmNiY2FkMjYzYmViZTVmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNmNiNWM0MDIzMDhiY2YyYTI4ZjRjNjJkN2NjNGNjZmJiYjg1Nzg1ZjgwZmYyZGUwY2Q0YWJhODY0MTliODQ1In0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-16T08:30:18.041Z"
+    "at": "2026-11-18T08:17:15.497Z"
   }
 }
