@@ -1,5 +1,6 @@
 from langchain_core.messages import (
     HumanMessage,
+    ToolMessage,
     add_notification_metadata,
     get_notification_metadata,
     messages_from_dict,
@@ -22,6 +23,39 @@ def test_metadata_is_added_to_a_copy() -> None:
         "lc_data": {"task_id": "t_42"},
     }
     assert original.additional_kwargs == {"other": 1}
+
+
+def test_tool_metadata_preserves_message_and_survives_serialization() -> None:
+    original = ToolMessage(
+        "denied",
+        id="msg_1",
+        name="send_email",
+        tool_call_id="call_1",
+        status="error",
+        artifact={"detail": "kept"},
+        additional_kwargs={"other": 1},
+    )
+
+    message = add_notification_metadata(
+        original, source="human_in_the_loop", data={"decision": "reject"}
+    )
+
+    assert isinstance(message, ToolMessage)
+    assert message.model_dump(exclude={"additional_kwargs"}) == original.model_dump(
+        exclude={"additional_kwargs"}
+    )
+    assert original.additional_kwargs == {"other": 1}
+    assert message.additional_kwargs == {
+        "other": 1,
+        "lc_source": "human_in_the_loop",
+        "lc_data": {"decision": "reject"},
+    }
+    [restored] = messages_from_dict(messages_to_dict([message]))
+    assert restored == message
+    assert get_notification_metadata(restored) == {
+        "source": "human_in_the_loop",
+        "data": {"decision": "reject"},
+    }
 
 
 def test_metadata_is_read_back() -> None:

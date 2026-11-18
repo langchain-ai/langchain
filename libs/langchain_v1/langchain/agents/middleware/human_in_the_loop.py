@@ -16,7 +16,7 @@ from typing import (
     get_args,
 )
 
-from langchain_core.messages import AIMessage, ToolCall, ToolMessage
+from langchain_core.messages import AIMessage, ToolCall, ToolMessage, add_notification_metadata
 from langgraph.config import get_config
 from langgraph.prebuilt.tool_node import ToolRuntime
 from langgraph.runtime import get_runtime
@@ -278,11 +278,15 @@ def _answer_message(tool_call: ToolCall, decision: RejectDecision | RespondDecis
             f"{tool_call['id']}. The tool was not executed. Do not retry this tool "
             "call unless the user explicitly requests it."
         )
-    return ToolMessage(
-        content=content,
-        name=tool_call["name"],
-        tool_call_id=tool_call["id"],
-        status="success" if decision["type"] == "respond" else "error",
+    return add_notification_metadata(
+        ToolMessage(
+            content=content,
+            name=tool_call["name"],
+            tool_call_id=tool_call["id"],
+            status="success" if decision["type"] == "respond" else "error",
+        ),
+        source="human_in_the_loop",
+        data={"decision": decision["type"]},
     )
 
 

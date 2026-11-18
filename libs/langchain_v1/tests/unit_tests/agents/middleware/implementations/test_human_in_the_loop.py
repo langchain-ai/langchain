@@ -1972,8 +1972,9 @@ def test_per_call_interrupt_shows_the_call_and_the_answers_it_accepts() -> None:
     ],
     ids=["approve", "edit", "edit-with-an-undeclared-arg", "reject", "respond"],
 )
-def test_per_call_resume_with_each_decision(
-    answer: Decision, ran_with: list[str], status: str, content: str
+@pytest.mark.parametrize("interrupt_mode", ["batched", "per_call"])
+def test_resume_with_each_decision(
+    answer: Decision, ran_with: list[str], status: str, content: str, interrupt_mode: InterruptMode
 ) -> None:
     ran: list[str] = []
 
@@ -1983,17 +1984,26 @@ def test_per_call_resume_with_each_decision(
         ran.append(to)
         return f"sent to {to}"
 
-    agent = _agent(
-        [send_email],
-        [ToolCall(name="send_email", args={"to": "alice"}, id="call_email")],
-        {"send_email": True},
+    agent = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[[ToolCall(name="send_email", args={"to": "alice"}, id="call_email")], []]
+        ),
+        tools=[send_email],
+        middleware=[HumanInTheLoopMiddleware({"send_email": True}, interrupt_mode=interrupt_mode)],
+        checkpointer=InMemorySaver(),
     )
     config: RunnableConfig = {"configurable": {"thread_id": "t"}}
     [intr] = agent.invoke({"messages": [HumanMessage("go")]}, config)["__interrupt__"]
 
-    final = agent.invoke(Command(resume={intr.id: answer}), config)
+    resume = {"decisions": [answer]} if interrupt_mode == "batched" else answer
+    final = agent.invoke(Command(resume={intr.id: resume}), config)
 
     [message] = [m for m in final["messages"] if isinstance(m, ToolMessage)]
+    assert message.additional_kwargs == (
+        {"lc_source": "human_in_the_loop", "lc_data": {"decision": answer["type"]}}
+        if answer["type"] in ("reject", "respond")
+        else {}
+    )
     assert (ran, message.status) == (ran_with, status)
     assert str(message.content).endswith(content)
     # Only an edit tells the model that a reviewer replaced the call.
@@ -2216,8 +2226,9 @@ def test_per_call_same_tool_twice_routes_each_answer_to_its_own_call() -> None:
             "sent to bob",
         ),
         ({"type": "reject"}, "error", "The tool was not executed."),
+        ({"type": "respond", "message": "already sent"}, "success", "already sent"),
     ],
-    ids=["edit", "reject"],
+    ids=["edit", "reject", "respond"],
 )
 async def test_per_call_works_with_ainvoke(answer: Decision, status: str, content: str) -> None:
     @tool
@@ -2240,6 +2251,11 @@ async def test_per_call_works_with_ainvoke(answer: Decision, status: str, conten
     [message] = [m for m in final["messages"] if isinstance(m, ToolMessage)]
     assert message.status == status
     assert content in str(message.content)
+    assert message.additional_kwargs == (
+        {"lc_source": "human_in_the_loop", "lc_data": {"decision": answer["type"]}}
+        if answer["type"] in ("reject", "respond")
+        else {}
+    )
 
 
 def test_per_call_retried_tool_is_not_reviewed_again_when_hitl_wraps_retry() -> None:
