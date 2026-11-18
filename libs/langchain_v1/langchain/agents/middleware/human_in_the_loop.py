@@ -285,7 +285,7 @@ def _answer_message(tool_call: ToolCall, decision: RejectDecision | RespondDecis
             tool_call_id=tool_call["id"],
             status="success" if decision["type"] == "respond" else "error",
         ),
-        source="human_in_the_loop",
+        source="hitl_interrupt_decision",
         data={"decision": decision["type"]},
     )
 

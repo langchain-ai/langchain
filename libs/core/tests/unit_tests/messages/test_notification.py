@@ -37,7 +37,7 @@ def test_tool_metadata_preserves_message_and_survives_serialization() -> None:
     )
 
     message = add_notification_metadata(
-        original, source="human_in_the_loop", data={"decision": "reject"}
+        original, source="hitl_interrupt_decision", data={"decision": "reject"}
     )
 
     assert isinstance(message, ToolMessage)
@@ -47,13 +47,13 @@ def test_tool_metadata_preserves_message_and_survives_serialization() -> None:
     assert original.additional_kwargs == {"other": 1}
     assert message.additional_kwargs == {
         "other": 1,
-        "lc_source": "human_in_the_loop",
+        "lc_source": "hitl_interrupt_decision",
         "lc_data": {"decision": "reject"},
     }
     [restored] = messages_from_dict(messages_to_dict([message]))
     assert restored == message
     assert get_notification_metadata(restored) == {
-        "source": "human_in_the_loop",
+        "source": "hitl_interrupt_decision",
         "data": {"decision": "reject"},
     }
 

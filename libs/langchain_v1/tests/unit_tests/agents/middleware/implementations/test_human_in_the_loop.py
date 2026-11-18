@@ -2000,7 +2000,7 @@ def test_resume_with_each_decision(
 
     [message] = [m for m in final["messages"] if isinstance(m, ToolMessage)]
     assert message.additional_kwargs == (
-        {"lc_source": "human_in_the_loop", "lc_data": {"decision": answer["type"]}}
+        {"lc_source": "hitl_interrupt_decision", "lc_data": {"decision": answer["type"]}}
         if answer["type"] in ("reject", "respond")
         else {}
     )
@@ -2252,7 +2252,7 @@ async def test_per_call_works_with_ainvoke(answer: Decision, status: str, conten
     assert message.status == status
     assert content in str(message.content)
     assert message.additional_kwargs == (
-        {"lc_source": "human_in_the_loop", "lc_data": {"decision": answer["type"]}}
+        {"lc_source": "hitl_interrupt_decision", "lc_data": {"decision": answer["type"]}}
         if answer["type"] in ("reject", "respond")
         else {}
     )
