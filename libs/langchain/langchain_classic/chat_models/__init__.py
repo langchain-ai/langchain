@@ -8,6 +8,7 @@ an interface where "chat messages" are the inputs and outputs.
 import warnings
 
 from langchain_core._api import LangChainDeprecationWarning
+from langchain_core._api.deprecation import _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING
 
 from langchain_classic._api.interactive_env import is_interactive_env
 from langchain_classic.chat_models.base import init_chat_model
@@ -17,7 +18,10 @@ def __getattr__(name: str) -> None:
     from langchain_community import chat_models
 
     # If not in interactive env, raise warning.
-    if not is_interactive_env():
+    if (
+        not is_interactive_env()
+        and not _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get()
+    ):
         warnings.warn(
             "Importing chat models from langchain is deprecated. Importing from "
             "langchain will no longer be supported as of langchain==0.2.0. "

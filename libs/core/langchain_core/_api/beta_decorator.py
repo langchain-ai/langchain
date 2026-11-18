@@ -14,6 +14,7 @@ import functools
 import inspect
 import warnings
 from collections.abc import Callable, Generator
+from contextvars import ContextVar
 from typing import Any, TypeVar, cast
 
 from langchain_core._api.internal import is_caller_internal
@@ -21,6 +22,11 @@ from langchain_core._api.internal import is_caller_internal
 
 class LangChainBetaWarning(DeprecationWarning):
     """A class for issuing beta warnings for LangChain users."""
+
+
+_SUPPRESSING_LANGCHAIN_BETA_WARNING = ContextVar(
+    "_SUPPRESSING_LANGCHAIN_BETA_WARNING", default=False
+)
 
 
 # PUBLIC API
@@ -101,16 +107,20 @@ def beta(
             """
             nonlocal warned
             if not warned and not is_caller_internal():
-                warned = True
                 emit_warning()
+                # Only mark the warning as emitted if it was not intentionally
+                # suppressed by `suppress_langchain_beta_warning()`.
+                warned = not _SUPPRESSING_LANGCHAIN_BETA_WARNING.get()
             return wrapped(*args, **kwargs)
 
         async def awarning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
             """Same as warning_emitting_wrapper, but for async functions."""
             nonlocal warned
             if not warned and not is_caller_internal():
-                warned = True
                 emit_warning()
+                # Only mark the warning as emitted if it was not intentionally
+                # suppressed by `suppress_langchain_beta_warning()`.
+                warned = not _SUPPRESSING_LANGCHAIN_BETA_WARNING.get()
             return await wrapped(*args, **kwargs)
 
         if isinstance(obj, type):
@@ -132,8 +142,10 @@ def beta(
                     """Warn that the class is in beta."""
                     nonlocal warned
                     if not warned and type(self) is obj and not is_caller_internal():
-                        warned = True
                         emit_warning()
+                        # Only mark the warning as emitted if it was not intentionally
+                        # suppressed by `suppress_langchain_beta_warning()`.
+                        warned = not _SUPPRESSING_LANGCHAIN_BETA_WARNING.get()
                     return wrapped(self, *args, **kwargs)
 
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
@@ -217,10 +229,26 @@ def beta(
 
 @contextlib.contextmanager
 def suppress_langchain_beta_warning() -> Generator[None, None, None]:
-    """Context manager to suppress `LangChainDeprecationWarning`."""
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", LangChainBetaWarning)
+    """Suppress LangChain beta warnings within the current context.
+
+    Silences warnings emitted through `warn_beta` and `@beta`. It does not modify the
+    global `warnings` filters, so calling `warnings.warn` directly with
+    `LangChainBetaWarning` is not suppressed; use `warnings.filterwarnings` for that.
+
+    Suppression is stored in a context variable, not a process-wide filter. It
+    applies to the current thread or asyncio task, and to tasks or copied contexts
+    created inside the block (e.g. `asyncio.create_task`, `asyncio.to_thread`),
+    which keep it even after the block exits. Other threads are unaffected.
+    """
+    token = _SUPPRESSING_LANGCHAIN_BETA_WARNING.set(True)
+    try:
         yield
+    finally:
+        # Exiting from a different context (e.g. an async generator suspended
+        # inside the block and closed by another task) makes `reset` raise. That
+        # context never saw this block's `set`, so there is nothing to undo.
+        with contextlib.suppress(ValueError):
+            _SUPPRESSING_LANGCHAIN_BETA_WARNING.reset(token)
 
 
 def warn_beta(
@@ -241,6 +269,9 @@ def warn_beta(
         obj_type: The object type being annotated.
         addendum: Additional text appended directly to the final message.
     """
+    if _SUPPRESSING_LANGCHAIN_BETA_WARNING.get():
+        return
+
     if not message:
         message = ""
 
