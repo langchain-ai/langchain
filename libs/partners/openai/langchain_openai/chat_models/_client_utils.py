@@ -16,8 +16,8 @@ import inspect
 import logging
 import os
 import socket
+import ssl
 import sys
-import threading
 import urllib.request
 from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from functools import lru_cache
@@ -373,92 +373,8 @@ class _SyncHttpxClientWrapper(openai.DefaultHttpxClient):
             pass
 
 
-class _PerLoopAsyncTransport(httpx.AsyncBaseTransport):
-    """Async transport that keeps a separate connection pool per event loop.
-
-    The default async client is cached and shared by every model with the same
-    settings, and a single model may be used from several event loops (e.g.
-    repeated `asyncio.run()` calls, or one loop per test). A pooled connection
-    is bound to the loop that opened it, so reusing it from another loop fails
-    with `RuntimeError: Event loop is closed` (or hangs, if that loop is still
-    running in another thread). Giving each loop its own pool avoids that while
-    keeping connection reuse within a loop.
-
-    Outside asyncio (e.g. trio) there is no running asyncio loop, so all
-    requests share one pool, as before.
-    """
-
-    def __init__(self, factory: Callable[[], httpx.AsyncBaseTransport]) -> None:
-        self._factory = factory
-        self._lock = threading.Lock()
-        self._transports: dict[
-            asyncio.AbstractEventLoop | None, httpx.AsyncBaseTransport
-        ] = {}
-        # Built eagerly so construction errors surface when the client is built,
-        # not on the first request. The first loop to send a request claims it.
-        self._unclaimed: httpx.AsyncBaseTransport | None = factory()
-
-    def _transport_for_running_loop(self) -> httpx.AsyncBaseTransport:
-        try:
-            loop: asyncio.AbstractEventLoop | None = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-        with self._lock:
-            transport = self._transports.get(loop)
-            if transport is not None:
-                return transport
-            # Drop pools whose loop has closed: their connections can no longer
-            # be used or closed cleanly, and holding them would leak the loop.
-            for stale in [k for k in self._transports if k and k.is_closed()]:
-                del self._transports[stale]
-            if self._unclaimed is not None:
-                transport, self._unclaimed = self._unclaimed, None
-            else:
-                transport = self._factory()
-            self._transports[loop] = transport
-            return transport
-
-    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-        transport = self._transport_for_running_loop()
-        return await transport.handle_async_request(request)
-
-    async def aclose(self) -> None:
-        # Only the current loop's pool can be closed from here; pools owned by
-        # other loops are dropped and released when those loops go away.
-        try:
-            loop: asyncio.AbstractEventLoop | None = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-        with self._lock:
-            transports = [self._transports.pop(loop, None), self._unclaimed]
-            self._unclaimed = None
-            self._transports.clear()
-        for transport in transports:
-            if transport is not None:
-                await transport.aclose()
-
-
 class _AsyncHttpxClientWrapper(openai.DefaultAsyncHttpxClient):
-    """Borrowed from openai._base_client.
-
-    Transports built by httpx (the default one and any for environment
-    proxies) are wrapped in `_PerLoopAsyncTransport` so the cached client is
-    safe to share across event loops. Hooking these methods, rather than
-    passing `transport=`, keeps httpx's environment proxy support, which it
-    disables when an explicit transport is given.
-    """
-
-    # The SDK base class may be typed against `httpx2` while `httpx` here
-    # type-checks as `httpx` (see `_compat`), hence the `Any` at the boundary.
-    def _init_transport(self, *args: Any, transport: Any = None, **kwargs: Any) -> Any:
-        if transport is not None:
-            return transport
-        parent: Callable[..., Any] = super()._init_transport
-        return _PerLoopAsyncTransport(lambda: parent(*args, **kwargs))
-
-    def _init_proxy_transport(self, *args: Any, **kwargs: Any) -> Any:
-        parent: Callable[..., Any] = super()._init_proxy_transport
-        return _PerLoopAsyncTransport(lambda: parent(*args, **kwargs))
+    """Borrowed from openai._base_client."""
 
     def __del__(self) -> None:
         try:
@@ -491,6 +407,27 @@ def _build_sync_httpx_client(
     return _SyncHttpxClientWrapper(**kwargs)
 
 
+@lru_cache
+def _cached_ssl_context(
+    ssl_cert_file: str | None,
+    ssl_cert_dir: str | None,
+) -> ssl.SSLContext:
+    return httpx.create_ssl_context()
+
+
+def _default_ssl_context() -> ssl.SSLContext:
+    """Return the SSL context httpx would build by default, shared across clients.
+
+    Loading CA certificates is most of the cost of building an httpx client,
+    and an SSL context is safe to share between clients and event loops.
+    `httpx.create_ssl_context()` honors `SSL_CERT_FILE` / `SSL_CERT_DIR`, so
+    those are part of the cache key.
+    """
+    return _cached_ssl_context(
+        os.environ.get("SSL_CERT_FILE"), os.environ.get("SSL_CERT_DIR")
+    )
+
+
 def _build_async_httpx_client(
     base_url: str | None,
     timeout: Any,
@@ -501,14 +438,14 @@ def _build_async_httpx_client(
         or os.environ.get("OPENAI_BASE_URL")
         or "https://api.openai.com/v1",
         "timeout": timeout,
+        "verify": _default_ssl_context(),
     }
     if socket_options:
         # See _build_sync_httpx_client for the limits= rationale.
-        kwargs["transport"] = _PerLoopAsyncTransport(
-            lambda: httpx.AsyncHTTPTransport(
-                socket_options=list(socket_options),
-                limits=_DEFAULT_CONNECTION_LIMITS,
-            )
+        kwargs["transport"] = httpx.AsyncHTTPTransport(
+            verify=kwargs["verify"],
+            socket_options=list(socket_options),
+            limits=_DEFAULT_CONNECTION_LIMITS,
         )
     return _AsyncHttpxClientWrapper(**kwargs)
 
@@ -574,15 +511,6 @@ def _cached_sync_httpx_client(
     return _build_sync_httpx_client(base_url, timeout, socket_options)
 
 
-@lru_cache
-def _cached_async_httpx_client(
-    base_url: str | None,
-    timeout: Any,
-    socket_options: tuple[SocketOption, ...] = (),
-) -> _AsyncHttpxClientWrapper:
-    return _build_async_httpx_client(base_url, timeout, socket_options)
-
-
 def _get_default_httpx_client(
     base_url: str | None,
     timeout: Any,
@@ -605,16 +533,15 @@ def _get_default_async_httpx_client(
     timeout: Any,
     socket_options: tuple[SocketOption, ...] = (),
 ) -> _AsyncHttpxClientWrapper:
-    """Get default httpx client.
+    """Get default async httpx client.
 
-    Uses cached client unless timeout is `httpx.Timeout`, which is not hashable.
+    Unlike the sync client, this is never shared between models: an async
+    client's connections belong to the event loop that opened them, so sharing
+    one would make a model fail when another model has used it from a different
+    loop (`RuntimeError: Event loop is closed`). Building a client is cheap once
+    the SSL context is shared, which was the expensive part.
     """
-    try:
-        hash(timeout)
-    except TypeError:
-        return _build_async_httpx_client(base_url, timeout, socket_options)
-    else:
-        return _cached_async_httpx_client(base_url, timeout, socket_options)
+    return _build_async_httpx_client(base_url, timeout, socket_options)
 
 
 def _resolve_sync_and_async_api_keys(

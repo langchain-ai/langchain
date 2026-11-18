@@ -12,7 +12,7 @@ import asyncio
 import logging
 import os
 import socket
-from typing import Any, cast
+from typing import Any
 
 import httpx
 import pytest
@@ -748,7 +748,6 @@ def test_client_build_skips_transport_on_proxy_env_default_shape(
     monkeypatch.setattr(_client_utils, "_proxy_env_warning_emitted", False)
     # Clear cached builder results so env changes take effect.
     _client_utils._cached_sync_httpx_client.cache_clear()
-    _client_utils._cached_async_httpx_client.cache_clear()
 
     recorded: list[tuple[Any, ...]] = []
 
@@ -763,14 +762,6 @@ def test_client_build_skips_transport_on_proxy_env_default_shape(
         return original_build(base_url, timeout, socket_options)
 
     monkeypatch.setattr(_client_utils, "_build_async_httpx_client", spy)
-    # `_get_default_async_httpx_client` reaches the cached builder directly,
-    # which ignores our module-level patch; bypass the cache to route through
-    # the spy.
-    monkeypatch.setattr(
-        _client_utils,
-        "_cached_async_httpx_client",
-        spy,
-    )
 
     ChatOpenAI(model="gpt-5.1")
 
@@ -788,7 +779,6 @@ def test_client_build_applies_socket_options_when_user_opts_in(
     monkeypatch.setattr(_client_utils, "_proxy_env_bypass_info_emitted", False)
     monkeypatch.setattr(_client_utils, "_proxy_env_warning_emitted", False)
     _client_utils._cached_sync_httpx_client.cache_clear()
-    _client_utils._cached_async_httpx_client.cache_clear()
 
     recorded: list[tuple[Any, ...]] = []
     original_build = _client_utils._build_async_httpx_client
@@ -802,7 +792,6 @@ def test_client_build_applies_socket_options_when_user_opts_in(
         return original_build(base_url, timeout, socket_options)
 
     monkeypatch.setattr(_client_utils, "_build_async_httpx_client", spy)
-    monkeypatch.setattr(_client_utils, "_cached_async_httpx_client", spy)
 
     explicit = [(SOL_SOCKET, SO_KEEPALIVE, 1)]
     ChatOpenAI(model="gpt-5.1", http_socket_options=explicit)
@@ -831,111 +820,74 @@ async def test_async_client_wrapper_del_handles_uninitialized_client() -> None:
     client.__del__()
 
 
-class _CountingTransport(httpx.AsyncBaseTransport):
-    def __init__(self) -> None:
-        self.closed = False
-
-    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json={"transport": id(self)})
-
-    async def aclose(self) -> None:
-        self.closed = True
-
-
-def _per_loop_transport() -> tuple[
-    _client_utils._PerLoopAsyncTransport, list[_CountingTransport]
-]:
-    built: list[_CountingTransport] = []
-
-    def factory() -> _CountingTransport:
-        built.append(_CountingTransport())
-        return built[-1]
-
-    return _client_utils._PerLoopAsyncTransport(factory), built
-
-
-def test_per_loop_transport_gives_each_event_loop_its_own_pool() -> None:
-    transport, built = _per_loop_transport()
-    assert len(built) == 1, "first transport is built eagerly"
-
-    async def send_twice() -> set[int]:
-        request = httpx.Request("GET", "http://test")
-        first = await transport.handle_async_request(request)
-        second = await transport.handle_async_request(request)
-        return {first.json()["transport"], second.json()["transport"]}
-
-    first_loop_ids = asyncio.run(send_twice())
-    second_loop_ids = asyncio.run(send_twice())
-
-    # Reused within a loop, never shared across loops.
-    assert len(first_loop_ids) == 1
-    assert len(second_loop_ids) == 1
-    assert first_loop_ids != second_loop_ids
-    assert first_loop_ids == {id(built[0])}, "eager transport is claimed first"
-    assert len(built) == 2
-    # The first loop is closed, so its pool was dropped rather than kept alive.
-    assert list(transport._transports.values()) == [built[1]]
-
-
-def test_per_loop_transport_aclose_closes_current_loop_pool() -> None:
-    transport, built = _per_loop_transport()
-
-    async def use_then_close() -> None:
-        await transport.handle_async_request(httpx.Request("GET", "http://test"))
-        await transport.aclose()
-
-    asyncio.run(use_then_close())
-    assert [t.closed for t in built] == [True]
-    assert transport._transports == {}
-
-
-def test_per_loop_transport_aclose_closes_unclaimed_transport() -> None:
-    transport, built = _per_loop_transport()
-    asyncio.run(transport.aclose())
-    assert [t.closed for t in built] == [True]
-
-
-def test_async_client_wrapper_wraps_default_and_env_proxy_transports(
+def test_async_httpx_client_not_shared_but_ssl_context_is(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """httpx-built transports are per-loop, and env proxies still apply."""
-    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.example:3128")
-    client = _client_utils._AsyncHttpxClientWrapper(base_url="https://example.com")
+    """Each model gets its own async client; the costly SSL context is shared."""
+    _client_utils._cached_ssl_context.cache_clear()
+    calls: list[None] = []
+    original = _client_utils.httpx.create_ssl_context
 
-    assert isinstance(client._transport, _client_utils._PerLoopAsyncTransport)
-    proxy_mounts = [t for t in client._mounts.values() if t is not None]
-    assert proxy_mounts, "HTTPS_PROXY should still produce a proxy mount"
-    assert all(
-        isinstance(t, _client_utils._PerLoopAsyncTransport) for t in proxy_mounts
+    def counting_create_ssl_context(*args: Any, **kwargs: Any) -> Any:
+        calls.append(None)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(
+        _client_utils.httpx, "create_ssl_context", counting_create_ssl_context
     )
 
+    first = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    second = ChatOpenAI(model=OPENAI_TEST_MODEL)
 
-def test_async_client_wrapper_keeps_explicit_transport() -> None:
-    explicit = _CountingTransport()
-    client = _client_utils._AsyncHttpxClientWrapper(transport=cast("Any", explicit))
-    assert client._transport is explicit
+    assert first.root_async_client._client is not second.root_async_client._client
+    assert len(calls) == 1
 
 
-def test_build_async_httpx_client_socket_options_transport_is_per_loop() -> None:
-    client = _client_utils._build_async_httpx_client(
-        base_url=None,
-        timeout=None,
-        socket_options=((SOL_SOCKET, SO_KEEPALIVE, 1),),
-    )
-    assert isinstance(client._transport, _client_utils._PerLoopAsyncTransport)
+def test_default_ssl_context_follows_ssl_cert_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`SSL_CERT_FILE` is honored, as httpx does when it builds the context."""
+    import certifi
+
+    monkeypatch.delenv("SSL_CERT_FILE", raising=False)
+    monkeypatch.delenv("SSL_CERT_DIR", raising=False)
+    default = _client_utils._default_ssl_context()
+    assert _client_utils._default_ssl_context() is default
+
+    monkeypatch.setenv("SSL_CERT_FILE", certifi.where())
+    assert _client_utils._default_ssl_context() is not default
 
 
 @pytest.mark.enable_socket
-def test_cached_async_client_reusable_across_event_loops() -> None:
-    """Regression: a keep-alive connection must not leak into a later loop.
+def test_new_model_per_event_loop_does_not_reuse_closed_loop_connection() -> None:
+    """Regression: models must not share one async client across event loops.
 
-    Before the fix, the second `asyncio.run()` picked up the first loop's pooled
-    connection and failed with `RuntimeError: Event loop is closed`. Older
-    `openai` SDKs hid this by retrying any exception; from `openai==3.14.1`
-    only `httpx` request errors are retried, so it reached callers.
+    The default async client used to be cached and shared by every model with
+    the same settings, so a model created in a new event loop could pick up a
+    keep-alive connection opened in an earlier, closed loop and fail with
+    `RuntimeError: Event loop is closed`. Older `openai` SDKs hid this by
+    retrying any exception; from `openai==3.14.1` only `httpx` request errors
+    are retried.
     """
+    import json
     import threading
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    body = json.dumps(
+        {
+            "id": "chatcmpl-1",
+            "object": "chat.completion",
+            "created": 0,
+            "model": OPENAI_TEST_MODEL,
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+        }
+    ).encode()
 
     class Handler(BaseHTTPRequestHandler):
         protocol_version = "HTTP/1.1"  # keep-alive
@@ -943,9 +895,10 @@ def test_cached_async_client_reusable_across_event_loops() -> None:
         def do_POST(self) -> None:
             self.rfile.read(int(self.headers["content-length"]))
             self.send_response(200)
-            self.send_header("content-length", "2")
+            self.send_header("content-type", "application/json")
+            self.send_header("content-length", str(len(body)))
             self.end_headers()
-            self.wfile.write(b"ok")
+            self.wfile.write(body)
 
         def log_message(self, *args: Any) -> None:
             pass
@@ -955,20 +908,15 @@ def test_cached_async_client_reusable_across_event_loops() -> None:
     threading.Thread(
         target=server.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True
     ).start()
+    base_url = f"http://127.0.0.1:{server.server_address[1]}/v1"
     try:
-        client = _client_utils._build_async_httpx_client(
-            base_url=f"http://127.0.0.1:{server.server_address[1]}",
-            timeout=5,
-            # Exercise the default path; socket options would pass `transport=`.
-            socket_options=(),
-        )
 
-        # The bug needs a request body (every OpenAI API call has one) and a
-        # TCP connection; Unix sockets and body-less requests don't trip it.
-        async def post() -> int:
-            return (await client.post("/", json={"model": "x"})).status_code
+        async def invoke() -> Any:
+            # A fresh model per loop, as in one test per event loop.
+            llm = ChatOpenAI(model=OPENAI_TEST_MODEL, base_url=base_url)
+            return (await llm.ainvoke("hi")).content
 
-        assert [asyncio.run(post()) for _ in range(3)] == [200, 200, 200]
+        assert [asyncio.run(invoke()) for _ in range(3)] == ["hi", "hi", "hi"]
     finally:
         server.shutdown()
         server.server_close()
