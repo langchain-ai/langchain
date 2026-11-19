@@ -6,6 +6,7 @@ from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
+from langchain_core.exceptions import ModelAPIError
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
 from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 from openai.types.responses import (
@@ -51,6 +52,7 @@ from openai.types.shared.response_format_text import ResponseFormatText
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
+    OpenAIResponsesServerError,
     _convert_responses_chunk_to_generation_chunk,
 )
 from tests.unit_tests.chat_models.test_base import (
@@ -1581,3 +1583,50 @@ async def test_responses_astream_raises_on_failure(
     ):
         async for _ in llm.astream("test"):
             pass
+
+
+@pytest.mark.parametrize(
+    "failure_event",
+    [
+        _failed_event(ResponseError(code="server_error", message="Model failed.")),
+        ResponseErrorEvent(
+            type="error",
+            code="server_error",
+            message="An error occurred while processing your request.",
+            param=None,
+            sequence_number=1,
+        ),
+    ],
+)
+async def test_responses_stream_server_error_is_retryable(failure_event: Any) -> None:
+    """Server-error failure events are classified like a 5xx and stay `ValueError`."""
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager([responses_stream[0], failure_event])
+
+    mock_client.responses.create = mock_create
+
+    async def mock_acreate(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager([responses_stream[0], failure_event])
+
+    mock_async_client = MagicMock()
+    mock_async_client.responses.create = mock_acreate
+
+    with (
+        patch.object(llm, "root_client", mock_client),
+        pytest.raises(OpenAIResponsesServerError) as sync_exc,
+    ):
+        list(llm.stream("test"))
+    with (
+        patch.object(llm, "root_async_client", mock_async_client),
+        pytest.raises(OpenAIResponsesServerError) as async_exc,
+    ):
+        async for _ in llm.astream("test"):
+            pass
+
+    for error in (sync_exc.value, async_exc.value):
+        assert isinstance(error, ValueError)
+        assert isinstance(error, ModelAPIError)
+        assert error.is_retryable is True

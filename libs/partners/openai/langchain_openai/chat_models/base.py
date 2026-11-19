@@ -685,6 +685,28 @@ class OpenAITimeoutError(openai.APITimeoutError, ModelTimeoutError):
     """OpenAI timeout error classified as a LangChain model error."""
 
 
+class OpenAIStreamServerError(openai.APIError, ModelAPIError):
+    """OpenAI server error reported inside a stream, classified as retryable.
+
+    OpenAI can accept a streaming request with HTTP 200 and then fail partway
+    through by sending an error event. The SDK raises these as a bare
+    `openai.APIError` with no status code, so this class carries the same
+    `ModelAPIError` classification an HTTP 5xx gets without fabricating an
+    HTTP response.
+    """
+
+
+class OpenAIResponsesServerError(ValueError, ModelAPIError):
+    """Responses API `response.failed` or `error` event with a server error code.
+
+    Subclasses `ValueError`, which these stream events raise for other codes.
+    """
+
+
+_TRANSIENT_STREAM_ERROR_CODES = frozenset({"server_error"})
+"""In-band stream error codes/types that indicate a transient backend failure."""
+
+
 def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
     if (
         "context_length_exceeded" in str(e)
@@ -750,6 +772,14 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
         raise OpenAITimeoutError(e.request) from e
     if isinstance(e, openai.APIConnectionError):
         raise OpenAIConnectionError(message=e.message, request=e.request) from e
+    # The SDK raises the exact `APIError` for an error event inside a stream that
+    # already returned HTTP 200; subclasses carry their own status-based verdicts.
+    if type(e) is openai.APIError and not _TRANSIENT_STREAM_ERROR_CODES.isdisjoint(
+        (e.code, e.type)
+    ):
+        raise OpenAIStreamServerError(
+            message=e.message, request=e.request, body=e.body
+        ) from e
     raise
 
 
@@ -5572,10 +5602,20 @@ def _convert_responses_chunk_to_generation_chunk(
         response_metadata["id"] = response.id  # Backwards compatibility
     elif chunk.type == "response.failed":
         response = _coerce_chunk_response(chunk.response)
-        error_msg = str(response.error or f"Response {response.id} failed.")
+        error = response.error
+        error_msg = str(error or f"Response {response.id} failed.")
+        code = (
+            error.get("code")
+            if isinstance(error, dict)
+            else getattr(error, "code", None)
+        )
+        if code in _TRANSIENT_STREAM_ERROR_CODES:
+            raise OpenAIResponsesServerError(error_msg)
         raise ValueError(error_msg)
     elif chunk.type == "error":
         error_msg = f"{chunk.code}: {chunk.message}" if chunk.code else chunk.message
+        if chunk.code in _TRANSIENT_STREAM_ERROR_CODES:
+            raise OpenAIResponsesServerError(error_msg)
         raise ValueError(error_msg)
     elif chunk.type in ("response.completed", "response.incomplete"):
         response = _coerce_chunk_response(chunk.response)
