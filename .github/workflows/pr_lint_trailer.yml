@@ -43,19 +43,23 @@ jobs:
             const fullBody = (body || '').replace(/\r\n/g, '\n');
             const STICKY_MARKER = '<!-- pr-trailer-lint -->';
 
-            // Mirrors the org ruleset regex on the default branch. Keep in lock-step:
-            // the live source of truth is the ruleset's `commit_message_pattern.pattern`
-            // field at GitHub org settings → Rulesets → `block-anthropic-coauthor`
-            // (or whichever ruleset blocks this trailer on the default branch).
-            // The pattern below is informational; verify against the live ruleset
-            // when updating either side, or this check silently passes pushes
-            // that the ruleset will then reject (defeating the entire purpose).
+            // Mirrors the `No Claude on main` repository ruleset (Settings → Rules →
+            // Rulesets), whose `commit_message_pattern` rule rejects any pushed commit
+            // on the default branch whose message matches. Keep this regex identical
+            // to that rule's pattern: if they drift, this check either passes PRs the
+            // ruleset will reject at merge time (defeating its purpose) or flags PRs
+            // the ruleset would accept. A ruleset holds one rule per type, so both
+            // banned forms share one alternation there and here:
+            //   - the `Co-authored-by: ... <noreply@anthropic.com>` commit trailer
+            //   - the `🤖 Generated with [Claude Code](...)` PR-description footer
+            //     (the squash-merge message is the PR description, so it lands on
+            //     the default branch unless removed)
             //
             // Case-folding is intentionally narrow (`[Aa]`/`[Bb]`) because the
             // ruleset's pattern is narrow. Do NOT add the `i` flag — that would
             // catch cases the ruleset does not, surfacing false positives the
             // ruleset would let through.
-            const BANNED_REGEX = /Co-[Aa]uthored-[Bb]y:.*<noreply@anthropic\.com>/;
+            const BANNED_REGEX = /Co-[Aa]uthored-[Bb]y:.*<noreply@anthropic\.com>|Generated with \[Claude Code\]/;
 
             const squashMessage = `${title} (#${number})\n\n${fullBody}`;
 
@@ -150,9 +154,9 @@ jobs:
 
             const commentBody = [
               STICKY_MARKER,
-              '⚠️ **Banned trailer in PR — would block the squash-merge push to the default branch.**',
+              '⚠️ **Banned Claude Code attribution in PR — would block the squash-merge push to the default branch.**',
               '',
-              'The would-be squash-merge commit message contains a `Co-authored-by: ... <noreply@anthropic.com>` line. An organization ruleset on the default branch rejects any push whose commit message matches that pattern, so this PR cannot be merged until the trailer is removed.',
+              'The would-be squash-merge commit message (PR title + description) contains a banned Claude Code attribution line (the `Co-authored-by: ... <noreply@anthropic.com>` trailer or the `🤖 Generated with [Claude Code]` footer). A repository ruleset on the default branch rejects any push whose commit message matches that pattern, so this PR cannot be merged until the line is removed.',
               '',
               '**Found:**',
               '```',
@@ -161,7 +165,7 @@ jobs:
               '',
               '### Fix',
               '',
-              'Edit the PR description and remove the offending line(s). The trailer is auto-inserted by some Claude-based authoring tools — strip it before opening or merging the PR. Save the description; this check will re-run automatically.',
+              'Edit the PR description and remove the offending line(s). These lines are auto-inserted by Claude Code — strip them before opening or merging the PR. Save the description; this check will re-run automatically.',
             ].join('\n');
 
             // Set the failure signal BEFORE the sticky write — if the comment
