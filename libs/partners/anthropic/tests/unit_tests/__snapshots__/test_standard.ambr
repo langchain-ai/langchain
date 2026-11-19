@@ -17,6 +17,7 @@
       }),
       'anthropic_api_url': 'https://api.anthropic.com',
       'default_request_timeout': 60.0,
+      'drop_stale_thinking': True,
       'max_retries': 2,
       'max_tokens': 100,
       'model': 'claude-3-haiku-20240307',

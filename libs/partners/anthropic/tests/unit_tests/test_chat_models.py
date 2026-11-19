@@ -5266,7 +5266,11 @@ def test_reasoning_effort_defaults_adaptive_thinking() -> None:
 
     payload = model._get_request_payload("Test query")
 
-    assert payload["thinking"] == {"type": "adaptive", "display": "summarized"}
+    assert payload["thinking"] == {
+        "type": "adaptive",
+        "display": "summarized",
+        "block_binding": {"prefix_mismatch_behavior": "drop_block"},
+    }
     assert payload["output_config"]["effort"] == "low"
 
 
@@ -6552,6 +6556,133 @@ def test_thinking_display_summarized_does_not_enable_beta() -> None:
         model=MODEL_NAME, thinking={"type": "adaptive", "display": "summarized"}
     )
     payload = llm._get_request_payload([HumanMessage("Hello, world!")])
+    assert "betas" not in payload
+
+
+_DROP_BLOCK = {"prefix_mismatch_behavior": "drop_block"}
+_BINDING_BETA = "thinking-binding-controls-2026-08-01"
+
+
+def test_drop_stale_thinking_explicit_adaptive() -> None:
+    """Explicit adaptive thinking on Claude 5+ drops stale blocks by default."""
+    thinking = {"type": "adaptive", "display": "summarized"}
+    llm = ChatAnthropic(model="claude-opus-5-5", thinking=thinking)
+    payload = llm._get_request_payload([HumanMessage("Hello")])
+    assert payload["thinking"] == {**thinking, "block_binding": _DROP_BLOCK}
+    assert payload["betas"] == [_BINDING_BETA]
+    # The model's own `thinking` config isn't mutated.
+    assert llm.thinking == {"type": "adaptive", "display": "summarized"}
+
+
+def test_drop_stale_thinking_call_time_adaptive() -> None:
+    llm = ChatAnthropic(model="claude-sonnet-5-5")
+    payload = llm._get_request_payload(
+        [HumanMessage("Hello")], thinking={"type": "adaptive"}
+    )
+    assert payload["thinking"] == {"type": "adaptive", "block_binding": _DROP_BLOCK}
+    assert payload["betas"] == [_BINDING_BETA]
+
+
+def test_drop_stale_thinking_default_filled_adaptive() -> None:
+    """The adaptive thinking filled in for `reasoning_effort` is bound too."""
+    llm = ChatAnthropic(model="claude-opus-5-5", reasoning_effort="high")
+    payload = llm._get_request_payload([HumanMessage("Hello")])
+    assert payload["thinking"] == {
+        "type": "adaptive",
+        "display": "summarized",
+        "block_binding": _DROP_BLOCK,
+    }
+    assert payload["betas"] == [_BINDING_BETA]
+
+
+@pytest.mark.parametrize(
+    "block_binding",
+    [{"prefix_mismatch_behavior": "error"}, {}],
+)
+def test_drop_stale_thinking_keeps_caller_binding(
+    block_binding: dict[str, Any],
+) -> None:
+    thinking = {"type": "adaptive", "block_binding": block_binding}
+    llm = ChatAnthropic(model="claude-opus-5-5", thinking=thinking)
+    payload = llm._get_request_payload([HumanMessage("Hello")])
+    assert payload["thinking"] == thinking
+    # The beta is still added, since `block_binding` is rejected without it.
+    assert payload["betas"] == [_BINDING_BETA]
+
+
+def test_drop_stale_thinking_opt_out() -> None:
+    llm = ChatAnthropic(
+        model="claude-opus-5-5",
+        thinking={"type": "adaptive"},
+        drop_stale_thinking=False,
+    )
+    payload = llm._get_request_payload([HumanMessage("Hello")])
+    assert payload["thinking"] == {"type": "adaptive"}
+    assert "betas" not in payload
+
+
+@pytest.mark.parametrize(
+    ("model", "thinking"),
+    [
+        # Thinking absent: never turned on.
+        ("claude-opus-5-5", None),
+        ("claude-opus-5", {"type": "disabled"}),
+        ("claude-sonnet-4-6", {"type": "enabled", "budget_tokens": 2_000}),
+        # Not Claude 5+.
+        ("claude-opus-4-8", {"type": "adaptive"}),
+        ("claude-sonnet-4-6", {"type": "adaptive"}),
+        ("claude-3-7-sonnet-latest", {"type": "adaptive"}),
+    ],
+)
+def test_drop_stale_thinking_not_applied(
+    model: str, thinking: dict[str, Any] | None
+) -> None:
+    llm = ChatAnthropic(model=model, thinking=thinking)
+    payload = llm._get_request_payload([HumanMessage("Hello")])
+    assert payload.get("thinking") == thinking
+    assert "betas" not in payload
+
+
+def test_drop_stale_thinking_forced_tool_choice() -> None:
+    """Requests that force a tool call are left alone."""
+    llm = ChatAnthropic(model="claude-opus-5")
+    bound = cast(
+        "RunnableBinding", llm.bind_tools([GetWeather], tool_choice="GetWeather")
+    )
+    payload = llm._get_request_payload(
+        [HumanMessage("Hello")], **bound.kwargs, thinking={"type": "adaptive"}
+    )
+    assert payload["tool_choice"]["type"] == "tool"
+    assert payload["thinking"] == {"type": "adaptive"}
+    assert "betas" not in payload
+
+
+def test_drop_stale_thinking_merges_existing_betas() -> None:
+    llm = ChatAnthropic(
+        model="claude-opus-5-5",
+        thinking={"type": "adaptive"},
+        betas=["context-1m-2025-08-07", _BINDING_BETA],
+    )
+    payload = llm._get_request_payload([HumanMessage("Hello")])
+    assert payload["betas"] == ["context-1m-2025-08-07", _BINDING_BETA]
+
+    payload = llm._get_request_payload(
+        [HumanMessage("Hello")], betas=["context-1m-2025-08-07"]
+    )
+    assert payload["betas"] == ["context-1m-2025-08-07", _BINDING_BETA]
+
+
+def test_drop_stale_thinking_skips_other_platforms() -> None:
+    """Subclasses that route through another platform are left alone."""
+
+    class _OtherPlatform(ChatAnthropic):
+        @property
+        def _llm_type(self) -> str:
+            return "anthropic-other-chat"
+
+    llm = _OtherPlatform(model="claude-opus-5-5", thinking={"type": "adaptive"})
+    payload = llm._get_request_payload([HumanMessage("Hello")])
+    assert payload["thinking"] == {"type": "adaptive"}
     assert "betas" not in payload
 
 
