@@ -2565,6 +2565,7 @@ class ChatAnthropic(BaseChatModel):
             response_metadata = {
                 "stop_reason": event.delta.stop_reason,
                 "stop_sequence": event.delta.stop_sequence,
+                **_finish_reason_fields(event.delta.stop_reason),
             }
             if stop_details := event.delta.model_dump().get("stop_details"):
                 response_metadata["stop_details"] = stop_details
@@ -2632,7 +2633,10 @@ class ChatAnthropic(BaseChatModel):
         ):
             # TODO: dump all `data` with `mode="json"`
             llm_output["container"]["expires_at"] = expires_at.isoformat()
-        response_metadata: dict[str, Any] = {"model_provider": "anthropic"}
+        response_metadata: dict[str, Any] = {
+            "model_provider": "anthropic",
+            **_finish_reason_fields(llm_output.get("stop_reason")),
+        }
         if llm_output.get("stop_reason") == "refusal":
             # Needed on the message itself so `output_version="v1"` content, which
             # is built before `llm_output` is merged, includes the refusal block.
@@ -3395,6 +3399,28 @@ def _convert_to_anthropic_output_config_format(schema: dict | type) -> dict[str,
         # TypedDict
         json_schema = transform_schema(convert_to_json_schema(schema))
     return {"type": "json_schema", "schema": json_schema}
+
+
+_FINISH_REASONS: dict[str, str] = {
+    "end_turn": "stop",
+    "stop_sequence": "stop",
+    "max_tokens": "length",
+    "tool_use": "tool_call",
+    "refusal": "refusal",
+    "model_context_window_exceeded": "context_exceeded",
+}
+
+
+def _finish_reason_fields(stop_reason: str | None) -> dict[str, str]:
+    """Map `stop_reason` onto the shared finish fields in `response_metadata`."""
+    if not stop_reason:
+        return {}
+    return {
+        "finish_reason": stop_reason,
+        "normalized_finish_reason": _FINISH_REASONS.get(stop_reason, "other"),
+        # `pause_turn` means the caller must send another request to finish.
+        "finish_state": "suspended" if stop_reason == "pause_turn" else "complete",
+    }
 
 
 def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:

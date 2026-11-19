@@ -1147,8 +1147,8 @@ class _ChatModelStreamBase:
                 response_metadata["model_name"] = self._start_metadata["model"]
         if self._finish_metadata:
             response_metadata.update(self._finish_metadata)
-        for key, value in self._finish_reason_fields.items():
-            response_metadata.setdefault(key, value)
+        # The event's fields carry the tool-call and refusal corrections.
+        response_metadata.update(self._finish_reason_fields)
         # Pin `output_version` last: `stream_events(version="v3")` always
         # assembles content as v1 protocol blocks, regardless of the
         # provider's configured output format.

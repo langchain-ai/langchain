@@ -1711,6 +1711,7 @@ class BaseChatOpenAI(BaseChatModel):
 
         if finish_reason := choice.get("finish_reason"):
             generation_info["finish_reason"] = finish_reason
+            generation_info.update(_chat_finish_reason_fields(finish_reason))
             if model_name := chunk.get("model"):
                 generation_info["model_name"] = model_name
             if system_fingerprint := chunk.get("system_fingerprint"):
@@ -2192,7 +2193,13 @@ class BaseChatOpenAI(BaseChatModel):
             )
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
-            gen = ChatGeneration(message=message, generation_info=generation_info)
+            finish_fields = _chat_finish_reason_fields(
+                generation_info["finish_reason"],
+                refusal=bool(message.additional_kwargs.get("refusal")),
+            )
+            gen = ChatGeneration(
+                message=message, generation_info={**generation_info, **finish_fields}
+            )
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
@@ -5423,6 +5430,17 @@ def _construct_lc_result_from_responses_api(
         except json.JSONDecodeError:
             pass
 
+    response_metadata.update(
+        _responses_finish_reason_fields(
+            response_metadata.get("status"),
+            response_metadata.get("incomplete_details"),
+            has_tool_calls=bool(tool_calls or invalid_tool_calls),
+            refusal=any(
+                isinstance(block, dict) and block.get("type") == "refusal"
+                for block in content_blocks
+            ),
+        )
+    )
     message = AIMessage(
         content=content_blocks,
         id=response.id,
@@ -5436,6 +5454,61 @@ def _construct_lc_result_from_responses_api(
         message = _convert_to_v03_ai_message(message)
 
     return ChatResult(generations=[ChatGeneration(message=message)])
+
+
+_CHAT_FINISH_REASONS: dict[str, str] = {
+    "stop": "stop",
+    "length": "length",
+    "tool_calls": "tool_call",
+    "function_call": "tool_call",
+    "content_filter": "content_filter",
+}
+
+_RESPONSES_INCOMPLETE_REASONS: dict[str, str] = {
+    "max_output_tokens": "length",
+    "content_filter": "content_filter",
+}
+
+
+def _chat_finish_reason_fields(
+    finish_reason: str | None, *, refusal: bool = False
+) -> dict[str, str]:
+    """Map a Chat Completions `finish_reason` onto `normalized_finish_reason`."""
+    if not finish_reason:
+        return {}
+    # OpenAI refuses with a normal `stop`; the refusal is the signal.
+    normalized = (
+        "refusal" if refusal else _CHAT_FINISH_REASONS.get(finish_reason, "other")
+    )
+    return {"normalized_finish_reason": normalized}
+
+
+def _responses_finish_reason_fields(
+    status: str | None,
+    incomplete_details: Any,
+    *,
+    has_tool_calls: bool,
+    refusal: bool,
+) -> dict[str, str]:
+    """Map a Responses API `status` onto the shared finish fields."""
+    if not status:
+        return {}
+    if refusal:
+        normalized = "refusal"
+    elif status == "completed":
+        normalized = "tool_call" if has_tool_calls else "stop"
+    elif status == "incomplete":
+        reason = (
+            incomplete_details.get("reason")
+            if isinstance(incomplete_details, dict)
+            else None
+        )
+        normalized = _RESPONSES_INCOMPLETE_REASONS.get(str(reason), "other")
+    elif status == "failed":
+        normalized = "error"
+    else:
+        normalized = "other"
+    return {"finish_reason": status, "normalized_finish_reason": normalized}
 
 
 def _coerce_chunk_response(resp: Any) -> Any:

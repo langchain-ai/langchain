@@ -55,9 +55,8 @@ from langchain_protocol.protocol import (
 )
 
 from langchain_core.language_models._finish_reason import (
-    get_raw_finish_reason,
+    finish_fields,
     has_refusal_block,
-    normalize_finish_reason,
 )
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
@@ -553,17 +552,12 @@ def _build_message_finish(
     # Protocol 0.0.9 removed the top-level `reason` field from
     # `MessageFinishData`; the provider's raw `finish_reason` /
     # `stop_reason` still rides inside `metadata` for backward compat.
-    finish_data: dict[str, Any] = {"event": "message-finish"}
-    raw_reason = get_raw_finish_reason(response_metadata or {})
-    normalized, finish_state = normalize_finish_reason(
-        response_metadata, has_tool_calls=has_tool_calls, has_refusal=has_refusal
-    )
-    if raw_reason is not None:
-        finish_data["finish_reason"] = raw_reason
-    if normalized is not None:
-        finish_data["normalized_finish_reason"] = normalized
-    if finish_state is not None:
-        finish_data["finish_state"] = finish_state
+    finish_data: dict[str, Any] = {
+        "event": "message-finish",
+        **finish_fields(
+            response_metadata, has_tool_calls=has_tool_calls, has_refusal=has_refusal
+        ),
+    }
     usage_info = _isolate_usage(usage)
     if usage_info is not None:
         finish_data["usage"] = usage_info
