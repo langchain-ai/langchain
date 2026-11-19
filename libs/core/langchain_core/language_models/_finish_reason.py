@@ -1,7 +1,6 @@
 """Normalize provider finish reasons onto a shared vocabulary.
 
-Normalized values follow the OpenTelemetry GenAI `finish_reason` values, plus
-`"other"` for anything unmapped. The raw provider value is always kept
+Unmapped values become `"other"`. The raw provider value is always kept
 alongside; this only adds a portable view of it.
 """
 
