@@ -140,9 +140,8 @@ def _async_decisions(handler: Any, **kwargs: Any) -> OpenAIDecisions:
     )
 
 
-def test_is_beta() -> None:
-    # The beta warning fires once per process, so check the decorator's marker.
-    assert (OpenAIDecisions.__doc__ or "").startswith(".. beta::")
+def test_is_not_beta() -> None:
+    assert not (OpenAIDecisions.__doc__ or "").startswith(".. beta::")
 
 
 def test_model_is_required() -> None:
@@ -351,6 +350,55 @@ def test_callable_api_key_is_kept_with_gateway(
     assert decisions.base_url == "https://gateway.smith.langchain.com/openai/v1"
 
 
+@pytest.mark.parametrize("question", list(_questions().values()))
+def test_question_accepts_image_instructions(
+    question: Choice | Predicate | Score,
+) -> None:
+    instructions = [
+        {"type": "input_text", "text": "Compare with this image."},
+        {
+            "type": "input_image",
+            "image_url": "https://example.com/candidate.png",
+            "detail": "high",
+        },
+    ]
+    updated = type(question).model_validate(
+        {**question.model_dump(), "instructions": instructions}
+    )
+
+    assert (
+        _decisions()._payload(
+            {"input": "reference", "questions": {"compare": updated}}
+        )["questions"][0]["instructions"]
+        == instructions
+    )
+
+
+@pytest.mark.parametrize(
+    "instructions",
+    [
+        "",
+        [],
+        [{"type": "input_audio"}],
+        [
+            {
+                "type": "input_image",
+                "image_url": "https://example.com/a.png",
+                "prompt_cache_breakpoint": {"mode": "explicit"},
+            }
+        ],
+    ],
+)
+@pytest.mark.parametrize("question", list(_questions().values()))
+def test_invalid_question_instructions(
+    question: Choice | Predicate | Score, instructions: Any
+) -> None:
+    with pytest.raises(ValidationError):
+        type(question).model_validate(
+            {**question.model_dump(), "instructions": instructions}
+        )
+
+
 def test_score_requires_two_levels() -> None:
     with pytest.raises(ValidationError):
         Score(instructions="How severe?", levels=["only"])
@@ -430,6 +478,51 @@ def test_invoke_sends_request_and_parses_response() -> None:
     )
     assert result.usage.input_tokens == 42
     assert result.request_id == REQUEST_ID
+
+
+@pytest.mark.parametrize("asynchronous", [False, True])
+@pytest.mark.parametrize(("cache_read", "cache_write"), [(20, 10), (0, 0)])
+async def test_cache_controls_and_usage(
+    monkeypatch: pytest.MonkeyPatch,
+    asynchronous: bool,
+    cache_read: int,
+    cache_write: int,
+) -> None:
+    stub = _RunTreeStub()
+    monkeypatch.setattr(base_module, "get_current_run_tree", lambda: stub)
+    request = _request()
+    request["prompt_cache_key"] = "reference-v1"
+    request["prompt_cache_options"] = {"mode": "explicit", "ttl": "30m"}
+
+    def handler(wire_request: httpx.Request) -> httpx.Response:
+        body = json.loads(wire_request.content)
+        assert body["prompt_cache_key"] == request["prompt_cache_key"]
+        assert body["prompt_cache_options"] == request["prompt_cache_options"]
+        payload = _response_payload()
+        payload["usage"]["input_tokens_details"] = {
+            "cached_tokens": cache_read,
+            "cache_write_tokens": cache_write,
+        }
+        return httpx.Response(200, json=payload)
+
+    result = (
+        await _async_decisions(handler).ainvoke(request)
+        if asynchronous
+        else _decisions(handler).invoke(request)
+    )
+
+    assert result.usage.input_tokens_details is not None
+    assert result.usage.input_tokens_details.cached_tokens == cache_read
+    assert result.usage.input_tokens_details.cache_write_tokens == cache_write
+    assert stub.extra["metadata"]["usage_metadata"] == {
+        "input_tokens": 42,
+        "output_tokens": 0,
+        "total_tokens": 42,
+        "input_token_details": {
+            "cache_read": cache_read,
+            "cache_creation": cache_write,
+        },
+    }
 
 
 def test_boolean_choice_values_round_trip() -> None:
