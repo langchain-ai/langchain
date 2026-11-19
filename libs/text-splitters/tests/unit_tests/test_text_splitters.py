@@ -1848,6 +1848,183 @@ Content under custom header 2.
     assert output == expected_output
 
 
+def test_md_header_text_splitter_preserve_headers_custom() -> None:
+    """Test custom headers merge like standard headers when preserving headers.
+
+    The nested-header merge branch in `aggregate_lines_to_chunks` used a
+    hardcoded `line[0] == "#"` check, so custom patterns such as `**Header**`
+    were never merged and the parent header was emitted as a header-only chunk.
+    """
+    markdown_document = "**H1**\n***H2***\nbody\n"
+
+    headers_to_split_on = [
+        ("**", "Header 1"),
+        ("***", "Header 2"),
+    ]
+
+    custom_header_patterns = {
+        "**": 1,
+        "***": 2,
+    }
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        custom_header_patterns=custom_header_patterns,
+        strip_headers=False,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="**H1**  \n***H2***\nbody",
+            metadata={"Header 1": "H1", "Header 2": "H2"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+def test_md_header_text_splitter_preserve_headers_mixed() -> None:
+    """Test a custom parent header merges with a standard child header.
+
+    The parent must be a custom header here: a `#` parent would satisfy the old
+    `line[0] == "#"` check and pass even without the fix.
+    """
+    markdown_document = "**Custom H1**\n## H2\nContent.\n"
+
+    headers_to_split_on = [
+        ("**", "Custom Header"),
+        ("##", "Header 2"),
+    ]
+
+    custom_header_patterns = {
+        "**": 1,
+    }
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        custom_header_patterns=custom_header_patterns,
+        strip_headers=False,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="**Custom H1**  \n## H2\nContent.",
+            metadata={"Custom Header": "Custom H1", "Header 2": "H2"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+def test_md_header_text_splitter_custom_headers_strip_unchanged() -> None:
+    """Test that stripping headers is unaffected by the aggregation fix."""
+    markdown_document = "**H1**\n***H2***\nbody\n"
+
+    headers_to_split_on = [
+        ("**", "Header 1"),
+        ("***", "Header 2"),
+    ]
+
+    custom_header_patterns = {
+        "**": 1,
+        "***": 2,
+    }
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        custom_header_patterns=custom_header_patterns,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="body",
+            metadata={"Header 1": "H1", "Header 2": "H2"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+def test_md_header_text_splitter_hash_prefixed_body_line() -> None:
+    """Test a body line starting with `#` does not merge its chunk into the next.
+
+    The old check read any line starting with `#` as a header, so a chunk
+    ending in a body line such as `#hashtag` was merged into the next chunk and
+    the body line picked up that chunk's metadata. `_is_header_line` requires a
+    real header. No custom patterns are involved here: this is the default
+    `#`-only path.
+    """
+    markdown_document = "# H1\n#hashtag\n## H2\nbody\n"
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+    ]
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        strip_headers=False,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="# H1\n#hashtag",
+            metadata={"Header 1": "H1"},
+        ),
+        Document(
+            page_content="## H2\nbody",
+            metadata={"Header 1": "H1", "Header 2": "H2"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+def test_md_header_text_splitter_custom_headers_nested_siblings() -> None:
+    """Test a header-only custom parent merges into its child, siblings do not.
+
+    The empty `**H1**` is absorbed by the first `***H2***`, matching how `#`
+    headers behave. `***H2b***` is at the same level as `***H2***`, so it stays
+    a separate chunk: the merge only ever pulls a shallower header into a
+    deeper one. Without the fix this splits into three chunks, one per header.
+    """
+    markdown_document = "**H1**\n***H2***\n***H2b***\nbody\n"
+
+    headers_to_split_on = [
+        ("**", "Header 1"),
+        ("***", "Header 2"),
+    ]
+
+    custom_header_patterns = {
+        "**": 1,
+        "***": 2,
+    }
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        custom_header_patterns=custom_header_patterns,
+        strip_headers=False,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="**H1**  \n***H2***",
+            metadata={"Header 1": "H1", "Header 2": "H2"},
+        ),
+        Document(
+            page_content="***H2b***\nbody",
+            metadata={"Header 1": "H1", "Header 2": "H2b"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
 EXPERIMENTAL_MARKDOWN_DOCUMENT = (
     "# My Header 1\n"
     "Content for header 1\n"
