@@ -1265,7 +1265,9 @@ def _function_call_response(status: str, output: list[Any]) -> Response:
 _FUNCTION_CALL_ARGUMENTS = {"fc_1": '{"symbol":"XLK"}', "fc_2": '{"symbol":"XLF"}'}
 
 
-def _function_call_stream(deltas: dict[str, list[str]]) -> list[Any]:
+def _function_call_stream(
+    deltas: dict[str, list[str]], *, final_event: str = "all"
+) -> list[Any]:
     """Build a stream of two function calls with the given argument deltas."""
 
     def _item(item_id: str, arguments: str, status: str) -> Any:
@@ -1337,6 +1339,13 @@ def _function_call_stream(deltas: dict[str, list[str]]) -> list[Any]:
             type="response.completed",
         )
     )
+    if final_event != "all":
+        omitted = {"response.function_call_arguments.done"}
+        if final_event == "response.completed":
+            omitted.add("response.output_item.done")
+        else:
+            omitted.add("response.completed")
+        events = [event for event in events if event.type not in omitted]
     for sequence_number, event in enumerate(events):
         event.sequence_number = sequence_number
     return events
@@ -1364,13 +1373,16 @@ def _assert_function_call_arguments(full: AIMessageChunk, output_version: str) -
 
 @pytest.mark.parametrize("output_version", ["responses/v1", "v1", "v0"])
 @pytest.mark.parametrize(
+    "final_event", ["all", "response.output_item.done", "response.completed"]
+)
+@pytest.mark.parametrize(
     "deltas", _FUNCTION_CALL_DELTAS.values(), ids=list(_FUNCTION_CALL_DELTAS)
 )
 def test_responses_stream_function_call_arguments_done(
-    deltas: dict[str, list[str]], output_version: str
+    deltas: dict[str, list[str]], output_version: str, final_event: str
 ) -> None:
-    """Arguments missing from deltas are recovered from the `done` event."""
-    stream = _function_call_stream(deltas)
+    """Arguments missing from deltas are recovered from final events."""
+    stream = _function_call_stream(deltas, final_event=final_event)
     llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version=output_version)
     mock_client = MagicMock()
 
@@ -1388,12 +1400,16 @@ def test_responses_stream_function_call_arguments_done(
 
 
 @pytest.mark.parametrize(
+    "final_event", ["all", "response.output_item.done", "response.completed"]
+)
+@pytest.mark.parametrize(
     "deltas", _FUNCTION_CALL_DELTAS.values(), ids=list(_FUNCTION_CALL_DELTAS)
 )
 async def test_responses_astream_function_call_arguments_done(
     deltas: dict[str, list[str]],
+    final_event: str,
 ) -> None:
-    stream = _function_call_stream(deltas)
+    stream = _function_call_stream(deltas, final_event=final_event)
     llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="responses/v1")
     mock_client = MagicMock()
 
