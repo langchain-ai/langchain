@@ -34,6 +34,7 @@ Public API:
 from __future__ import annotations
 
 import json
+import uuid
 from typing import TYPE_CHECKING, Any, cast
 
 from langchain_protocol.protocol import (
@@ -118,35 +119,19 @@ def _to_finalized_block(block: CompatBlock) -> FinalizedContentBlock:
 def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
     """Read per-chunk protocol blocks from `msg.content_blocks`.
 
-    Returns `(key, block)` pairs.  The key is the block's stable identifier
-    across the stream: the block's `index` field when present (can be an
-    int or a string — some providers use string identifiers like
-    `"lc_rs_305f30"`), or the positional index within the message as a
-    fallback.  Callers are responsible for allocating wire-level `uint`
-    indices; this helper only surfaces the source-side identity.
+    Returns `(key, block)` pairs. The key combines block type and source
+    index, keeping distinct block types in separate internal namespaces even
+    if a provider reuses an integer or string index. For blocks without an
+    index, use a type-aware positional fallback. Callers allocate wire-level
+    `uint` indices; these internal keys never become provider-facing IDs.
 
     For finalized `AIMessage`, also surfaces `invalid_tool_calls`
     — which `AIMessage.content_blocks` currently omits from its return
     value even though they are a defined protocol block type.
 
-    The positional fallback is a known fragility: when a provider emits
-    blocks without an `index` field (e.g. Anthropic's `_stream` with
-    `coerce_content_to_string=True`, where text chunks lose their
-    source-side index), every such chunk gets positional key 0 and
-    successive chunks merge into one block. This works correctly for
-    single-type streams (pure-text responses merge cleanly) because all
-    chunks share the same key and the open-block logic collapses them.
-    It would miscategorise a stream that mixed indexed structured
-    blocks with non-indexed coerced-text blocks, since an indexed
-    block with `index == 0` would collide with the anonymous text
-    block's positional-0 key.  In the anthropic integration this
-    cannot currently occur: coerce-to-string mode is only selected
-    when no tools, thinking, or documents are present, and any of
-    those flips the stream to structured mode where every block
-    carries an integer index.  A native `_stream_chat_model_events`
-    hook per provider (or a bridge-level "continue the open block when
-    the source has no identity" rule) would close the gap if another
-    integration ever emits mixed content.
+    The positional fallback remains heuristic: two same-type anonymous
+    blocks at the same position across chunks are assumed to be one block.
+    Native provider event hooks could resolve that ambiguity.
     """
     try:
         raw = msg.content_blocks
@@ -171,7 +156,7 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
             # streaming text / reasoning relies on.
             key: Any = ("__lc_no_index__", block.get("type"), i)
         else:
-            key = explicit_idx
+            key = (block.get("type"), explicit_idx)
         result.append((key, dict(block)))
 
     if not isinstance(msg, AIMessageChunk):
@@ -401,7 +386,7 @@ def finalize_tool_call_chunk(
     if finalized_type == "tool_call":
         finalized_tc = ToolCall(
             type="tool_call",
-            id=id_ or "",
+            id=id_ or uuid.uuid4().hex,
             name=name or "",
             args=parsed,
         )
@@ -409,7 +394,7 @@ def finalize_tool_call_chunk(
         return finalized_tc
     finalized_stc = ServerToolCall(
         type="server_tool_call",
-        id=id_ or "",
+        id=id_ or uuid.uuid4().hex,
         name=name or "",
         args=parsed,
     )
