@@ -1954,9 +1954,7 @@ class BaseChatOpenAI(BaseChatModel):
                 context_manager = response
             with context_manager as response:
                 is_first_chunk = True
-                refusal_parts: list[str] | None = (
-                    None if "response_format" in payload else []
-                )
+                finish_tracker = _StreamFinishTracker()
                 for chunk in response:
                     if not isinstance(chunk, dict):
                         chunk = chunk.model_dump()
@@ -1967,7 +1965,7 @@ class BaseChatOpenAI(BaseChatModel):
                     )
                     if generation_chunk is None:
                         continue
-                    _attach_streamed_refusal(chunk, generation_chunk, refusal_parts)
+                    finish_tracker.update(chunk, generation_chunk)
                     default_chunk_class = generation_chunk.message.__class__
                     logprobs = (generation_chunk.generation_info or {}).get("logprobs")
                     if run_manager:
@@ -2274,9 +2272,7 @@ class BaseChatOpenAI(BaseChatModel):
                 context_manager = response
             async with context_manager as response:
                 is_first_chunk = True
-                refusal_parts: list[str] | None = (
-                    None if "response_format" in payload else []
-                )
+                finish_tracker = _StreamFinishTracker()
                 async for chunk in _astream_with_chunk_timeout(
                     response,
                     self.stream_chunk_timeout,
@@ -2291,7 +2287,7 @@ class BaseChatOpenAI(BaseChatModel):
                     )
                     if generation_chunk is None:
                         continue
-                    _attach_streamed_refusal(chunk, generation_chunk, refusal_parts)
+                    finish_tracker.update(chunk, generation_chunk)
                     default_chunk_class = generation_chunk.message.__class__
                     logprobs = (generation_chunk.generation_info or {}).get("logprobs")
                     if run_manager:
@@ -5500,6 +5496,32 @@ def _chat_finish_reason_fields(
     return {"normalized_finish_reason": normalized}
 
 
+class _StreamFinishTracker:
+    """Corrects the final chunk's finish fields using earlier stream chunks."""
+
+    def __init__(self) -> None:
+        self.saw_tool_call = False
+        self.saw_refusal = False
+
+    def update(self, chunk: dict, generation_chunk: ChatGenerationChunk) -> None:
+        message = generation_chunk.message
+        if isinstance(message, AIMessageChunk) and message.tool_call_chunks:
+            self.saw_tool_call = True
+        # Refusal deltas aren't kept on the message chunk, so read the raw delta.
+        choices = chunk.get("choices") or []
+        if choices and (choices[0].get("delta") or {}).get("refusal"):
+            self.saw_refusal = True
+        info = generation_chunk.generation_info
+        if info and info.get("normalized_finish_reason"):
+            info.update(
+                _chat_finish_reason_fields(
+                    info.get("finish_reason"),
+                    has_tool_calls=self.saw_tool_call,
+                    refusal=self.saw_refusal,
+                )
+            )
+
+
 def _responses_finish_reason_fields(
     status: str | None,
     incomplete_details: Any,
@@ -5526,28 +5548,6 @@ def _responses_finish_reason_fields(
     else:
         normalized = "other"
     return {"finish_reason": status, "normalized_finish_reason": normalized}
-
-
-def _attach_streamed_refusal(
-    chunk: dict,
-    generation_chunk: ChatGenerationChunk,
-    refusal_parts: list[str] | None,
-) -> None:
-    """Attach the full streamed refusal to the chunk carrying `finish_reason`.
-
-    Like the Responses API, the refusal is reported once and complete, so the
-    assembled message matches `invoke`. `None` skips this for `response_format`
-    streams, whose final completion already carries the refusal.
-    """
-    if refusal_parts is None:
-        return
-    choices = chunk.get("choices") or []
-    if not choices:
-        return
-    if refusal := (choices[0].get("delta") or {}).get("refusal"):
-        refusal_parts.append(refusal)
-    if choices[0].get("finish_reason") and refusal_parts:
-        generation_chunk.message.additional_kwargs["refusal"] = "".join(refusal_parts)
 
 
 def _coerce_chunk_response(resp: Any) -> Any:

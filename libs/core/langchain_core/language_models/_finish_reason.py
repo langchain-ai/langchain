@@ -9,8 +9,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from langchain_core.messages import AIMessageChunk, BaseMessageChunk
-
 _FINISH_KEYS = ("finish_reason", "normalized_finish_reason", "finish_state")
 
 
@@ -45,35 +43,3 @@ def _finish_fields(
     elif normalized == "stop" and has_tool_calls:
         fields["normalized_finish_reason"] = "tool_call"
     return fields
-
-
-class _StreamFinishCorrector:
-    """Applies the corrections to the final chunk of a `stream()` call.
-
-    The finish reason arrives on the last chunk, after any tool calls or refusal.
-    """
-
-    def __init__(self) -> None:
-        self._saw_tool_call = False
-        self._saw_refusal = False
-
-    def update(self, message: BaseMessageChunk) -> None:
-        if isinstance(message, AIMessageChunk) and message.tool_call_chunks:
-            self._saw_tool_call = True
-        if message.additional_kwargs.get("refusal") or (
-            isinstance(message.content, list)
-            and any(
-                isinstance(block, dict) and block.get("type") == "refusal"
-                for block in message.content
-            )
-        ):
-            self._saw_refusal = True
-        metadata = message.response_metadata
-        if metadata.get("normalized_finish_reason"):
-            metadata.update(
-                _finish_fields(
-                    metadata,
-                    has_tool_calls=self._saw_tool_call,
-                    has_refusal=self._saw_refusal,
-                )
-            )
