@@ -6432,3 +6432,17 @@ def test_stream_forced_tool_call_finish_reason() -> None:
     )
     assert message.response_metadata["finish_reason"] == "stop"
     assert message.response_metadata["normalized_finish_reason"] == "tool_call"
+
+
+def test_stream_refusal_finish_reason() -> None:
+    message = _streamed_message(
+        _stream_chunks(
+            ({"role": "assistant", "refusal": "I can't "}, None),
+            ({"refusal": "help."}, None),
+            ({}, "stop"),
+        )
+    )
+    assert message.additional_kwargs["refusal"] == "I can't help."
+    assert message.response_metadata["finish_reason"] == "stop"
+    assert message.response_metadata["normalized_finish_reason"] == "refusal"
+    assert any(block["type"] == "refusal" for block in message.content_blocks)
