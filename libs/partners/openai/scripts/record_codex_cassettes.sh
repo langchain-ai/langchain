@@ -83,8 +83,8 @@ import sys
 from pathlib import Path
 
 from langchain_openai.chatgpt_oauth import (
-    ChatGPTOAuthRefreshError,
-    FileChatGPTOAuthTokenProvider,
+    _ChatGPTOAuthRefreshError as ChatGPTOAuthRefreshError,
+    _FileChatGPTOAuthTokenProvider as FileChatGPTOAuthTokenProvider,
 )
 
 path = Path(os.environ["CHATGPT_AUTH_FILE"])

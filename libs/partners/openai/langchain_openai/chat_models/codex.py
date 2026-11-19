@@ -18,8 +18,8 @@ The standard `ChatOpenAI` (API-key) flow is untouched.
 
 from __future__ import annotations
 
-import logging
 import os
+import uuid
 import warnings
 from typing import TYPE_CHECKING, Any
 
@@ -41,9 +41,6 @@ if TYPE_CHECKING:
     from langchain_core.outputs import ChatGenerationChunk, ChatResult
 
 
-logger = logging.getLogger(__name__)
-
-
 CHATGPT_CODEX_BASE_URL = "https://chatgpt.com/backend-api/codex"
 ORIGINATOR_HEADER = "originator"
 ORIGINATOR_VALUE = "langchain"
@@ -55,6 +52,13 @@ env var.
 """
 ORIGINATOR_ENV_VAR = "LANGCHAIN_CODEX_ORIGINATOR"
 ACCOUNT_ID_HEADER = "ChatGPT-Account-Id"
+SESSION_ID_HEADER = "session-id"
+"""Header the ChatGPT backend keys its prompt cache on.
+
+Requests that share a `session-id` can reuse each other's cached prompt
+prefix; without it, nothing is cached. `prompt_cache_key` in the body has no
+effect on this backend.
+"""
 _CODEX_HEADERS_KWARG = "_codex_headers"
 """Private kwarg used to hand pre-built Codex headers to `_get_request_payload`.
 
@@ -127,13 +131,13 @@ def _is_instruction_message(message: BaseMessage) -> bool:
 
 
 def _flatten_system_message_content(system_messages: list[BaseMessage]) -> str:
-    """Join system/developer message content into a single `instructions` string.
+    """Join system/developer message content into a single developer prompt.
 
-    Codex rejects system-role entries in the input list, so their content
-    is lifted into the top-level `instructions` field. Content that uses
-    list-of-content-blocks form is accepted only when every block is
-    `{"type": "text", ...}`; anything else cannot be flattened into the
-    string-typed `instructions` field.
+    Codex rejects system-role entries in the input list, so their content is
+    sent as one leading `developer` message instead. Flattening to a single
+    string keeps that prefix byte-stable across turns so it can be cached.
+    Content that uses list-of-content-blocks form is accepted only when every
+    block is `{"type": "text", ...}`.
 
     Raises:
         ValueError: A system/developer message carries a non-text content block.
@@ -158,11 +162,9 @@ def _flatten_system_message_content(system_messages: list[BaseMessage]) -> str:
                 msg = (
                     f"`{message_name}` at index {index} contains a "
                     f"non-text content block at position {block_index} "
-                    "(Codex `instructions` is a string field — only "
-                    '`{"type": "text", "text": "..."}` blocks can be '
-                    "lifted into it). Move the non-text content to a "
-                    "`HumanMessage`, or pass plain instructions via the "
-                    "constructor or `instructions=` kwarg."
+                    '(only `{"type": "text", "text": "..."}` blocks can be '
+                    "flattened into the Codex developer prompt). Move the "
+                    "non-text content to a `HumanMessage`."
                 )
                 raise ValueError(msg)
             text_value = block.get("text", "")
@@ -179,12 +181,11 @@ def _flatten_system_message_content(system_messages: list[BaseMessage]) -> str:
 
 
 DEFAULT_INSTRUCTIONS = "You are ChatGPT, a large language model trained by OpenAI."
-"""Generic fallback for the Responses-API `instructions` field.
+"""Generic fallback system prompt, sent as the leading `developer` input message.
 
-The Codex backend rejects any request missing a top-level `instructions`
-value (400 `Instructions are required`), so this constant keeps zero-config
-construction working. **Most callers should override it** with their own
-prompt — see `_ChatOpenAICodex.instructions` for the resolution rules.
+Used only when the input carries no `SystemMessage`. **Most callers should
+override it** with their own prompt — see `_ChatOpenAICodex.instructions` for
+the resolution rules.
 """
 _FORCED_VALUES: dict[str, Any] = {
     "use_responses_api": True,
@@ -247,7 +248,7 @@ class _ChatOpenAICodex(ChatOpenAI):
         # explicit `token_provider`.
         login_chatgpt()
         model = _ChatOpenAICodex(
-            model="gpt-5.5",
+            model="gpt-6.2-sol",
             instructions="You are a senior Python reviewer. Be terse.",
         )
         response = model.invoke("hello")
@@ -255,11 +256,19 @@ class _ChatOpenAICodex(ChatOpenAI):
 
     !!! tip "Override `instructions`"
 
-        The Codex backend requires a top-level `instructions` value on every
-        request. A generic default keeps zero-config use working, but most
-        callers should override it via the constructor (above) or per call
-        (`model.invoke(..., instructions=...)`). See the field's docstring
-        for the full resolution rules.
+        The reusable system prompt is sent as the first `developer` message in
+        the request `input`, where it can be prompt-cached. A generic default
+        keeps zero-config use working, but most callers should override it via
+        the constructor (above) or a `SystemMessage`. See the field's
+        docstring for the full resolution rules.
+
+    !!! tip "Set `session_id` per conversation"
+
+        The ChatGPT backend only caches across requests that share a
+        `session-id` header. Each instance gets a random one by default; when
+        one instance serves several conversations, pass each conversation's
+        id per call (`model.invoke(..., session_id=thread_id)`) so unrelated
+        conversations don't share a cache key.
 
     !!! note
 
@@ -304,43 +313,57 @@ class _ChatOpenAICodex(ChatOpenAI):
     default never resolves to `None`.
     """
 
+    session_id: str | None = Field(default_factory=lambda: str(uuid.uuid4()))
+    """Value sent in the `session-id` request header, or `None` to omit it.
+
+    The ChatGPT backend keys its prompt cache on this header: turns that
+    share a `session-id` can be served the cached prompt prefix, and turns
+    without one are never cached. Defaults to a random UUID per instance, so
+    every turn sent through the same instance shares a cache key.
+
+    Override per call with `model.invoke(..., session_id=...)`, e.g. with a
+    thread or conversation id when one instance serves many conversations.
+    A per-call `extra_headers={"session-id": ...}` wins over both.
+    """
+
     instructions: str = Field(default=DEFAULT_INSTRUCTIONS)
-    """System prompt sent in the Responses-API `instructions` field.
+    """Default system prompt, sent as the leading `developer` message in `input`.
 
-    `instructions` is a *top-level* field of the Responses API request — it
-    is not a chat message. The Codex backend rejects any request where this
-    field is missing or empty (400 `Instructions are required`) **and**
-    rejects any `SystemMessage` entry in the input list
-    (400 `System messages are not allowed`). To bridge those constraints
-    transparently, `_ChatOpenAICodex` resolves `instructions` per call with
-    this precedence (highest wins):
+    Despite the name, this is **not** sent in the top-level Responses-API
+    `instructions` field. GPT-6.2+ models place top-level `instructions` after
+    `input` for prompt caching, so a reusable prompt sent there is billed as
+    uncached on every turn. Sending it as the first `developer` message keeps it
+    in the cacheable prefix. The Codex backend rejects `system`-role input
+    entries (400 `System messages are not allowed`), so `SystemMessage` content
+    is converted the same way. Per call, the developer prompt is:
 
-    1. Explicit `instructions=` kwarg on `invoke` / `stream`.
-    2. Concatenated content of any `SystemMessage` entries in the input
-        list — joined with `"\\n\\n"` and stripped from the input before
-        sending. Set the explicit kwarg in (1) to override.
-    3. This constructor field (defaults to a generic ChatGPT prompt).
+    1. The concatenated content of any `SystemMessage` entries in the input
+        list, joined with `"\\n\\n"` and stripped from their original
+        positions.
+    2. Otherwise, this constructor field (defaults to a generic ChatGPT
+        prompt). An empty string sends no developer prompt.
 
-    The Codex backend is stateless for this client (`store=False` is
-    forced), so `instructions` is sent on every request and can be changed
-    between calls — useful for switching persona / tooling mid-conversation:
+    The top-level `instructions` field is sent only when passed explicitly per
+    call (`model.invoke(..., instructions=...)`). Reserve it for guidance that
+    applies to the current turn only; it is added on top of the developer
+    prompt rather than replacing it.
 
     ```python
     model = _ChatOpenAICodex(
-        model="gpt-5.5",
+        model="gpt-6.2-sol",
         instructions="You are a senior Python reviewer. Be terse.",
     )
     model.invoke("review this diff…")
     model.invoke(
-        "now translate the review to French",
-        instructions="You are a translator.",
+        "now summarize the review",
+        instructions="Answer in French for this turn.",
     )
     ```
 
     `SystemMessage` content that uses list-of-content-blocks form is
     accepted only if every block is `{"type": "text", ...}`; any other
     block type raises `ValueError` since it cannot be flattened into the
-    string-typed `instructions` field.
+    string developer prompt.
     """
 
     @model_validator(mode="before")
@@ -437,10 +460,10 @@ class _ChatOpenAICodex(ChatOpenAI):
     ) -> dict:
         """Build the request payload and attach Codex auth headers.
 
-        Lifts any `SystemMessage` content out of the input list into the
-        top-level `instructions` field, since Codex rejects `SystemMessage`
-        chat turns. See the `instructions` field docstring for the
-        precedence rules.
+        Moves any `SystemMessage` content (or, absent one, the constructor
+        `instructions`) into a leading `developer` input message so it stays in
+        the cacheable prompt prefix. See the `instructions` field docstring for
+        the precedence rules.
 
         Fast path: when the input can't carry a `SystemMessage`, skip the
         local conversion and delegate `input_` straight to super — that
@@ -448,33 +471,26 @@ class _ChatOpenAICodex(ChatOpenAI):
         here and again there.
         """
         codex_headers = kwargs.pop(_CODEX_HEADERS_KWARG, None)
+        session_id = kwargs.pop("session_id", self.session_id)
         payload_input: LanguageModelInput = input_
+        developer_prompt = self.instructions
         if _maybe_has_system_messages(input_):
             messages = self._convert_input(input_).to_messages()
             system_messages = [m for m in messages if _is_instruction_message(m)]
             if system_messages:
-                non_system = [m for m in messages if not _is_instruction_message(m)]
-                lifted = _flatten_system_message_content(system_messages)
-                explicit = kwargs.get("instructions")
-                if explicit is not None:
-                    logger.warning(
-                        "Both `instructions=` and a `SystemMessage` were "
-                        "provided; the explicit `instructions=` kwarg wins "
-                        "and the `SystemMessage` content is discarded for "
-                        "this call. Discarded length: %d.",
-                        len(lifted),
-                    )
-                else:
-                    kwargs["instructions"] = lifted
-                payload_input = non_system
+                payload_input = [m for m in messages if not _is_instruction_message(m)]
+                developer_prompt = _flatten_system_message_content(system_messages)
 
         payload = super()._get_request_payload(payload_input, stop=stop, **kwargs)
-        # The Codex backend rejects requests without `instructions` — populate
-        # the field's value if the caller didn't supply one. An explicit empty
-        # string from the caller is preserved (the backend will reject it, but
-        # silently overwriting it would hide a programming error).
+        if developer_prompt:
+            developer_message = {
+                "type": "message",
+                "role": "developer",
+                "content": developer_prompt,
+            }
+            payload["input"] = [developer_message, *payload.get("input", [])]
         if payload.get("instructions") is None:
-            payload["instructions"] = self.instructions
+            payload.pop("instructions", None)
         # An async caller may have already built the headers off the event loop
         # and passed them through `_codex_headers`. Honor them verbatim — the
         # `is not None` check (not truthiness) is deliberate: an explicit empty
@@ -484,6 +500,8 @@ class _ChatOpenAICodex(ChatOpenAI):
         headers = (
             codex_headers if codex_headers is not None else self._codex_headers_sync()
         )
+        if session_id:
+            headers = {**headers, SESSION_ID_HEADER: session_id}
         return self._merge_codex_headers(payload, headers)
 
     async def _agenerate(
@@ -530,7 +548,7 @@ class _ChatOpenAICodex(ChatOpenAI):
     def _resolve_model_profile(self) -> ModelProfile | None:
         profile = super()._resolve_model_profile()
         if profile is not None:
-            # System content is lifted into the string `instructions` field, so
+            # System content is flattened into one leading developer message, so
             # it can neither stay in place nor carry a tool definition.
             profile["mid_conversation_system_messages"] = False
             profile["mid_conversation_tools"] = False
