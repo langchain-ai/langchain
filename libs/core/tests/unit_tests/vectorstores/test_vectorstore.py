@@ -292,3 +292,25 @@ async def test_default_afrom_documents(vs_class: type[VectorStore]) -> None:
     store = await vs_class.afrom_documents([original_document], embeddings, ids=["6"])
     assert original_document.id == "7"  # original document should not be modified
     assert await store.aget_by_ids(["6"]) == [Document(id="6", page_content="baz")]
+
+
+@pytest.mark.parametrize("score_threshold", [0.0, 0.5, 1.0, 0, 1])
+def test_retriever_accepts_score_threshold_in_range(score_threshold: float) -> None:
+    store = CustomAddTextsVectorstore()
+    retriever = store.as_retriever(
+        search_type="similarity_score_threshold",
+        search_kwargs={"score_threshold": score_threshold},
+    )
+    assert retriever.search_kwargs["score_threshold"] == score_threshold
+
+
+@pytest.mark.parametrize(
+    "score_threshold", [None, -3.0, -0.1, 1.1, 3.0, 3, True, False, "0.5"]
+)
+def test_retriever_rejects_invalid_score_threshold(score_threshold: Any) -> None:
+    store = CustomAddTextsVectorstore()
+    with pytest.raises(ValueError, match="score_threshold"):
+        store.as_retriever(
+            search_type="similarity_score_threshold",
+            search_kwargs={"score_threshold": score_threshold},
+        )
