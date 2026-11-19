@@ -1641,7 +1641,8 @@ class ChatAnthropic(BaseChatModel):
     `"drop_block"` (with the `thinking-binding-controls-2026-08-01` beta), so
     the API drops those blocks instead. Requests that set their own
     `thinking.block_binding` are left as-is. Set to `False` to keep the API's
-    default behavior.
+    default behavior, or if `base_url` points at a proxy or Anthropic-compatible
+    endpoint that rejects the beta or `thinking.block_binding`.
     """
 
     reuse_last_container: bool | None = None
