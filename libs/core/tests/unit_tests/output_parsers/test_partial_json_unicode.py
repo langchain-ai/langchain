@@ -33,7 +33,7 @@ from langchain_core.utils.json import parse_partial_json
 def test_streamed_unicode_escape_preserves_existing_field(
     domain: str, field: str, value: str
 ) -> None:
-    """Any partial \uXXXX escape must not erase previously streamed content."""
+    r"""Any partial \uXXXX escape must not erase previously streamed content."""
     # ensure_ascii=True models providers that serialize non-ASCII as JSON escapes.
     encoded = json.dumps({field: value}, ensure_ascii=True)
     assert "\\u" in encoded, domain
