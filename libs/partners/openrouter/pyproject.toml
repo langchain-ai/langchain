@@ -19,10 +19,10 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-version = "0.2.9"
+version = "0.3.0"
 requires-python = ">=3.11.0,<4.0.0"
 dependencies = [
-    "langchain-core>=1.5.5,<2.0.0",
+    "langchain-core>=1.8.3,<2.0.0",
     "openrouter>=0.9.2",
 ]
 
