@@ -468,6 +468,18 @@ async def ahandle_event(
         **kwargs: The keyword arguments to pass to the event handler.
 
     """
+    if not handlers:
+        return
+    if len(handlers) == 1:
+        # Fast path: a single handler is the common case (e.g. a lone tracer
+        # during `astream_events`). Awaiting it directly avoids the
+        # `asyncio.gather` task/future machinery that would otherwise be
+        # created for every dispatched event (notably `on_llm_new_token`,
+        # which fires once per streamed token).
+        await _ahandle_event_for_handler(
+            handlers[0], event_name, ignore_condition_name, *args, **kwargs
+        )
+        return
     for handler in [h for h in handlers if h.run_inline]:
         await _ahandle_event_for_handler(
             handler, event_name, ignore_condition_name, *args, **kwargs
