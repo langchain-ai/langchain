@@ -19,6 +19,7 @@ The standard `ChatOpenAI` (API-key) flow is untouched.
 from __future__ import annotations
 
 import os
+import uuid
 import warnings
 from typing import TYPE_CHECKING, Any
 
@@ -51,6 +52,13 @@ env var.
 """
 ORIGINATOR_ENV_VAR = "LANGCHAIN_CODEX_ORIGINATOR"
 ACCOUNT_ID_HEADER = "ChatGPT-Account-Id"
+SESSION_ID_HEADER = "session-id"
+"""Header the ChatGPT backend keys its prompt cache on.
+
+Requests that share a `session-id` can reuse each other's cached prompt
+prefix; without it, nothing is cached. `prompt_cache_key` in the body has no
+effect on this backend.
+"""
 _CODEX_HEADERS_KWARG = "_codex_headers"
 """Private kwarg used to hand pre-built Codex headers to `_get_request_payload`.
 
@@ -240,7 +248,7 @@ class _ChatOpenAICodex(ChatOpenAI):
         # explicit `token_provider`.
         login_chatgpt()
         model = _ChatOpenAICodex(
-            model="gpt-5.5",
+            model="gpt-6.2-sol",
             instructions="You are a senior Python reviewer. Be terse.",
         )
         response = model.invoke("hello")
@@ -253,6 +261,14 @@ class _ChatOpenAICodex(ChatOpenAI):
         keeps zero-config use working, but most callers should override it via
         the constructor (above) or a `SystemMessage`. See the field's
         docstring for the full resolution rules.
+
+    !!! tip "Set `session_id` per conversation"
+
+        The ChatGPT backend only caches across requests that share a
+        `session-id` header. Each instance gets a random one by default; when
+        one instance serves several conversations, pass each conversation's
+        id per call (`model.invoke(..., session_id=thread_id)`) so unrelated
+        conversations don't share a cache key.
 
     !!! note
 
@@ -297,6 +313,19 @@ class _ChatOpenAICodex(ChatOpenAI):
     default never resolves to `None`.
     """
 
+    session_id: str | None = Field(default_factory=lambda: str(uuid.uuid4()))
+    """Value sent in the `session-id` request header, or `None` to omit it.
+
+    The ChatGPT backend keys its prompt cache on this header: turns that
+    share a `session-id` can be served the cached prompt prefix, and turns
+    without one are never cached. Defaults to a random UUID per instance, so
+    every turn sent through the same instance shares a cache key.
+
+    Override per call with `model.invoke(..., session_id=...)`, e.g. with a
+    thread or conversation id when one instance serves many conversations.
+    A per-call `extra_headers={"session-id": ...}` wins over both.
+    """
+
     instructions: str = Field(default=DEFAULT_INSTRUCTIONS)
     """Default system prompt, sent as the leading `developer` message in `input`.
 
@@ -321,7 +350,7 @@ class _ChatOpenAICodex(ChatOpenAI):
 
     ```python
     model = _ChatOpenAICodex(
-        model="gpt-5.5",
+        model="gpt-6.2-sol",
         instructions="You are a senior Python reviewer. Be terse.",
     )
     model.invoke("review this diff…")
@@ -442,6 +471,7 @@ class _ChatOpenAICodex(ChatOpenAI):
         here and again there.
         """
         codex_headers = kwargs.pop(_CODEX_HEADERS_KWARG, None)
+        session_id = kwargs.pop("session_id", self.session_id)
         payload_input: LanguageModelInput = input_
         developer_prompt = self.instructions
         if _maybe_has_system_messages(input_):
@@ -470,6 +500,8 @@ class _ChatOpenAICodex(ChatOpenAI):
         headers = (
             codex_headers if codex_headers is not None else self._codex_headers_sync()
         )
+        if session_id:
+            headers = {**headers, SESSION_ID_HEADER: session_id}
         return self._merge_codex_headers(payload, headers)
 
     async def _agenerate(

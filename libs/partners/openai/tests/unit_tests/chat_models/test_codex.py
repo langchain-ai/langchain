@@ -19,6 +19,7 @@ from langchain_openai.chat_models.codex import (
     ORIGINATOR_ENV_VAR,
     ORIGINATOR_HEADER,
     ORIGINATOR_VALUE,
+    SESSION_ID_HEADER,
     _ChatOpenAICodex,
     _SyncTokenCallable,
 )
@@ -171,9 +172,67 @@ def test_request_payload_omits_account_id_when_unknown() -> None:
 def test_request_payload_can_disable_originator_header() -> None:
     """`originator=None` omits the header entirely."""
     provider = FakeTokenProvider(account_id=None)
-    model = _build_model(token_provider=provider, originator=None)
+    model = _build_model(token_provider=provider, originator=None, session_id=None)
     payload = model._get_request_payload([HumanMessage("hi")])
     assert "extra_headers" not in payload
+
+
+def test_session_id_header_is_stable_per_instance() -> None:
+    """Every turn on one instance shares a `session-id`, so it can be cached."""
+    model = _build_model()
+    first = model._get_request_payload([HumanMessage("hi")])
+    second = model._get_request_payload([HumanMessage("hi again")])
+    session_id = first["extra_headers"][SESSION_ID_HEADER]
+    assert session_id
+    assert second["extra_headers"][SESSION_ID_HEADER] == session_id
+    assert "session_id" not in first
+
+
+def test_session_id_defaults_differ_across_instances() -> None:
+    first = _build_model()._get_request_payload([HumanMessage("hi")])
+    second = _build_model()._get_request_payload([HumanMessage("hi")])
+    assert (
+        first["extra_headers"][SESSION_ID_HEADER]
+        != second["extra_headers"][SESSION_ID_HEADER]
+    )
+
+
+def test_constructor_session_id_is_sent() -> None:
+    model = _build_model(session_id="thread-1")
+    payload = model._get_request_payload([HumanMessage("hi")])
+    assert payload["extra_headers"][SESSION_ID_HEADER] == "thread-1"
+
+
+def test_per_call_session_id_overrides_field_and_stays_out_of_body() -> None:
+    model = _build_model(session_id="thread-1")
+    payload = model._get_request_payload([HumanMessage("hi")], session_id="thread-2")
+    assert payload["extra_headers"][SESSION_ID_HEADER] == "thread-2"
+    assert "session_id" not in payload
+
+
+def test_session_id_none_omits_header() -> None:
+    model = _build_model(session_id=None)
+    payload = model._get_request_payload([HumanMessage("hi")])
+    assert SESSION_ID_HEADER not in payload["extra_headers"]
+
+
+def test_caller_extra_headers_override_session_id() -> None:
+    model = _build_model(session_id="thread-1")
+    payload = model._get_request_payload(
+        [HumanMessage("hi")], extra_headers={SESSION_ID_HEADER: "call-session"}
+    )
+    assert payload["extra_headers"][SESSION_ID_HEADER] == "call-session"
+
+
+def test_session_id_is_added_to_prebuilt_async_headers() -> None:
+    """The async paths hand in prebuilt headers; `session-id` must still ride."""
+    provider = AsyncOnlyTokenProvider(account_id=None)
+    model = _build_model(token_provider=provider, originator=None)
+    payload = model._get_request_payload(
+        [HumanMessage("hi")], _codex_headers={}, session_id="thread-async"
+    )
+    assert payload["extra_headers"] == {SESSION_ID_HEADER: "thread-async"}
+    assert provider.calls == 0
 
 
 def test_constructor_originator_overrides_default() -> None:
