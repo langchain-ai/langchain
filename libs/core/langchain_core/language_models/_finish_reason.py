@@ -44,10 +44,10 @@ _ANTHROPIC: dict[str, FinishReason] = {
 _GEMINI: dict[str, FinishReason] = {
     "stop": "stop",
     "max_tokens": "length",
-    "safety": "content_filter",
+    "safety": "refusal",
     "recitation": "content_filter",
-    "blocklist": "content_filter",
-    "prohibited_content": "content_filter",
+    "blocklist": "refusal",
+    "prohibited_content": "refusal",
     "spii": "content_filter",
     "language": "content_filter",
     "image_safety": "content_filter",
