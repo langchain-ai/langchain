@@ -9,7 +9,14 @@ from __future__ import annotations
 from typing import Any, Literal
 
 FinishReason = Literal[
-    "stop", "length", "tool_call", "content_filter", "error", "other"
+    "stop",
+    "length",
+    "tool_call",
+    "content_filter",
+    "refusal",
+    "context_exceeded",
+    "error",
+    "other",
 ]
 """Provider-agnostic reason a model stopped generating."""
 
@@ -29,8 +36,8 @@ _ANTHROPIC: dict[str, FinishReason] = {
     "stop_sequence": "stop",
     "max_tokens": "length",
     "tool_use": "tool_call",
-    "refusal": "content_filter",
-    "model_context_window_exceeded": "length",
+    "refusal": "refusal",
+    "model_context_window_exceeded": "context_exceeded",
     "pause_turn": "other",
 }
 
