@@ -1777,6 +1777,7 @@ class BaseChatOpenAI(BaseChatModel):
                 has_reasoning = False
                 item_output_indices: dict[str, int] = {}
                 function_call_arguments: dict[str, str] = {}
+                function_call_indices: dict[str, int] = {}
                 for chunk in response:
                     metadata = headers if is_first_chunk else {}
                     (
@@ -1795,6 +1796,7 @@ class BaseChatOpenAI(BaseChatModel):
                         output_version=self.output_version,
                         item_output_indices=item_output_indices,
                         function_call_arguments=function_call_arguments,
+                        function_call_indices=function_call_indices,
                     )
                     if generation_chunk:
                         if is_first_chunk and base_generation_info:
@@ -1851,6 +1853,7 @@ class BaseChatOpenAI(BaseChatModel):
                 has_reasoning = False
                 item_output_indices: dict[str, int] = {}
                 function_call_arguments: dict[str, str] = {}
+                function_call_indices: dict[str, int] = {}
                 async for chunk in _astream_with_chunk_timeout(
                     response,
                     self.stream_chunk_timeout,
@@ -1873,6 +1876,7 @@ class BaseChatOpenAI(BaseChatModel):
                         output_version=self.output_version,
                         item_output_indices=item_output_indices,
                         function_call_arguments=function_call_arguments,
+                        function_call_indices=function_call_indices,
                     )
                     if generation_chunk:
                         if is_first_chunk and base_generation_info:
@@ -5574,24 +5578,14 @@ def _coerce_chunk_response(resp: Any) -> Any:
 
 
 def _remaining_function_call_arguments(
-    chunk: Any, function_call_arguments: dict[str, str]
+    item_id: str, arguments: str, function_call_arguments: dict[str, str]
 ) -> str:
-    """Return the part of a completed function call's arguments not yet streamed.
-
-    Args:
-        chunk: A `response.function_call_arguments.done` event.
-        function_call_arguments: Arguments streamed so far, keyed by item ID. Updated
-            in place to the completed arguments.
-
-    Returns:
-        The missing suffix, or an empty string if nothing is missing or the streamed
-        arguments are not a prefix of the completed ones.
-    """
-    streamed = function_call_arguments.get(chunk.item_id, "")
-    arguments = chunk.arguments or ""
-    function_call_arguments[chunk.item_id] = arguments
+    """Return the completed arguments' missing suffix and update streamed state."""
+    streamed = function_call_arguments.get(item_id, "")
+    arguments = arguments or ""
     if not arguments.startswith(streamed):
         return ""
+    function_call_arguments[item_id] = arguments
     return arguments[len(streamed) :]
 
 
@@ -5606,6 +5600,7 @@ def _convert_responses_chunk_to_generation_chunk(
     output_version: str | None = None,
     item_output_indices: dict[str, int] | None = None,  # item id -> `output_index`
     function_call_arguments: dict[str, str] | None = None,  # item id -> args so far
+    function_call_indices: dict[str, int] | None = None,
 ) -> tuple[int, int, int, ChatGenerationChunk | None]:
     # After several built-in tool calls the API can report a later `output_index` on
     # an item's `done` events than on its `added` event. Pin each item to the first
@@ -5666,6 +5661,12 @@ def _convert_responses_chunk_to_generation_chunk(
             current_sub_index = sub_idx
         current_output_index = output_idx
 
+    def _function_call_index(item_id: str, output_index: int) -> int:
+        if function_call_indices is not None and item_id in function_call_indices:
+            return function_call_indices[item_id]
+        _advance(output_index)
+        return current_index
+
     if output_version is None:
         # Sentinel value of None lets us know if output_version is set explicitly.
         # Explicitly setting `output_version="responses/v1"` separately enables the
@@ -5674,6 +5675,22 @@ def _convert_responses_chunk_to_generation_chunk(
 
     content = []
     tool_call_chunks: list = []
+
+    def _append_function_call_arguments(
+        item_id: str, arguments: str, index: int
+    ) -> None:
+        if function_call_arguments is not None and (
+            remaining := _remaining_function_call_arguments(
+                item_id, arguments, function_call_arguments
+            )
+        ):
+            tool_call_chunks.append(
+                {"type": "tool_call_chunk", "args": remaining, "index": index}
+            )
+            content.append(
+                {"type": "function_call", "arguments": remaining, "index": index}
+            )
+
     additional_kwargs: dict = {}
     response_metadata = metadata or {}
     response_metadata["model_provider"] = "openai"
@@ -5731,6 +5748,12 @@ def _convert_responses_chunk_to_generation_chunk(
         raise ValueError(error_msg)
     elif chunk.type in ("response.completed", "response.incomplete"):
         response = _coerce_chunk_response(chunk.response)
+        if function_call_indices is not None:
+            for item in response.output:
+                if item.type == "function_call" and item.id in function_call_indices:
+                    _append_function_call_arguments(
+                        item.id, item.arguments, function_call_indices[item.id]
+                    )
         msg = cast(
             AIMessage,
             (
@@ -5770,6 +5793,8 @@ def _convert_responses_chunk_to_generation_chunk(
         _advance(chunk.output_index)
         if function_call_arguments is not None:
             function_call_arguments[chunk.item.id] = chunk.item.arguments or ""
+        if function_call_indices is not None:
+            function_call_indices[chunk.item.id] = current_index
         tool_call_chunks.append(
             {
                 "type": "tool_call_chunk",
@@ -5796,6 +5821,15 @@ def _convert_responses_chunk_to_generation_chunk(
         if async_flag is not None:
             function_call_content["async"] = async_flag
         content.append(function_call_content)
+    elif (
+        chunk.type == "response.output_item.done"
+        and chunk.item.type == "function_call"
+        and function_call_indices is not None
+        and chunk.item.id in function_call_indices
+    ):
+        _append_function_call_arguments(
+            chunk.item.id, chunk.item.arguments, function_call_indices[chunk.item.id]
+        )
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "compaction",
         "web_search_call",
@@ -5833,34 +5867,20 @@ def _convert_responses_chunk_to_generation_chunk(
             }
         )
     elif chunk.type == "response.function_call_arguments.delta":
-        _advance(chunk.output_index)
+        index = _function_call_index(chunk.item_id, chunk.output_index)
         if function_call_arguments is not None:
             function_call_arguments[chunk.item_id] = (
                 function_call_arguments.get(chunk.item_id, "") + chunk.delta
             )
         tool_call_chunks.append(
-            {"type": "tool_call_chunk", "args": chunk.delta, "index": current_index}
+            {"type": "tool_call_chunk", "args": chunk.delta, "index": index}
         )
         content.append(
-            {"type": "function_call", "arguments": chunk.delta, "index": current_index}
+            {"type": "function_call", "arguments": chunk.delta, "index": index}
         )
-    elif (
-        chunk.type == "response.function_call_arguments.done"
-        and function_call_arguments is not None
-        and (
-            remaining := _remaining_function_call_arguments(
-                chunk, function_call_arguments
-            )
-        )
-    ):
-        # The API can skip some or all argument deltas, so emit what is still missing.
-        _advance(chunk.output_index)
-        tool_call_chunks.append(
-            {"type": "tool_call_chunk", "args": remaining, "index": current_index}
-        )
-        content.append(
-            {"type": "function_call", "arguments": remaining, "index": current_index}
-        )
+    elif chunk.type == "response.function_call_arguments.done":
+        index = _function_call_index(chunk.item_id, chunk.output_index)
+        _append_function_call_arguments(chunk.item_id, chunk.arguments, index)
     elif chunk.type == "response.refusal.done":
         content.append({"type": "refusal", "refusal": chunk.refusal})
     elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
@@ -5920,6 +5940,15 @@ def _convert_responses_chunk_to_generation_chunk(
             }
         )
     else:
+        return current_index, current_output_index, current_sub_index, None
+
+    if (
+        chunk.type
+        in ("response.function_call_arguments.done", "response.output_item.done")
+        and not content
+        and not tool_call_chunks
+    ):
+        # Nothing left to recover from the completed function call.
         return current_index, current_output_index, current_sub_index, None
 
     message = AIMessageChunk(

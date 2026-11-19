@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import logging
+from itertools import zip_longest
 from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
@@ -1265,7 +1266,9 @@ def _function_call_response(status: str, output: list[Any]) -> Response:
 _FUNCTION_CALL_ARGUMENTS = {"fc_1": '{"symbol":"XLK"}', "fc_2": '{"symbol":"XLF"}'}
 
 
-def _function_call_stream(deltas: dict[str, list[str]]) -> list[Any]:
+def _function_call_stream(
+    deltas: dict[str, list[str]], *, final_event: str = "all", interleaved: bool = False
+) -> list[Any]:
     """Build a stream of two function calls with the given argument deltas."""
 
     def _item(item_id: str, arguments: str, status: str) -> Any:
@@ -1337,12 +1340,45 @@ def _function_call_stream(deltas: dict[str, list[str]]) -> list[Any]:
             type="response.completed",
         )
     )
+    if interleaved:
+        added = [
+            event for event in events if event.type == "response.output_item.added"
+        ]
+        argument_deltas = [
+            [
+                event
+                for event in events
+                if event.type == "response.function_call_arguments.delta"
+                and event.item_id == item_id
+            ]
+            for item_id in deltas
+        ]
+        done = [event for event in events if event.type.endswith(".done")]
+        events = [
+            events[0],
+            *added,
+            *(
+                event
+                for group in zip_longest(*argument_deltas)
+                for event in group
+                if event
+            ),
+            *done,
+            events[-1],
+        ]
+    if final_event != "all":
+        omitted = {"response.function_call_arguments.done"}
+        if final_event == "response.completed":
+            omitted.add("response.output_item.done")
+        else:
+            omitted.add("response.completed")
+        events = [event for event in events if event.type not in omitted]
     for sequence_number, event in enumerate(events):
         event.sequence_number = sequence_number
     return events
 
 
-_FUNCTION_CALL_DELTAS = {
+_FUNCTION_CALL_DELTAS: dict[str, dict[str, list[str]]] = {
     "no_deltas": {"fc_1": [], "fc_2": []},
     "partial_deltas": {"fc_1": ['{"symbol":'], "fc_2": []},
     "all_deltas": {"fc_1": ['{"symbol":', '"XLK"}'], "fc_2": ['{"symbol":"XLF"}']},
@@ -1350,6 +1386,8 @@ _FUNCTION_CALL_DELTAS = {
 
 
 def _assert_function_call_arguments(full: AIMessageChunk, output_version: str) -> None:
+    assert not full.invalid_tool_calls
+    assert all(tc["name"] == "get_price" for tc in full.tool_calls)
     assert [(tc["id"], tc["args"]) for tc in full.tool_calls] == [
         ("call_fc_1", {"symbol": "XLK"}),
         ("call_fc_2", {"symbol": "XLF"}),
@@ -1363,14 +1401,23 @@ def _assert_function_call_arguments(full: AIMessageChunk, output_version: str) -
 
 
 @pytest.mark.parametrize("output_version", ["responses/v1", "v1", "v0"])
+@pytest.mark.parametrize("interleaved", [False, True])
+@pytest.mark.parametrize(
+    "final_event", ["all", "response.output_item.done", "response.completed"]
+)
 @pytest.mark.parametrize(
     "deltas", _FUNCTION_CALL_DELTAS.values(), ids=list(_FUNCTION_CALL_DELTAS)
 )
 def test_responses_stream_function_call_arguments_done(
-    deltas: dict[str, list[str]], output_version: str
+    deltas: dict[str, list[str]],
+    output_version: str,
+    final_event: str,
+    interleaved: bool,
 ) -> None:
-    """Arguments missing from deltas are recovered from the `done` event."""
-    stream = _function_call_stream(deltas)
+    """Arguments missing from deltas are recovered from final events."""
+    stream = _function_call_stream(
+        deltas, final_event=final_event, interleaved=interleaved
+    )
     llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version=output_version)
     mock_client = MagicMock()
 
@@ -1387,13 +1434,21 @@ def test_responses_stream_function_call_arguments_done(
     _assert_function_call_arguments(full, output_version)
 
 
+@pytest.mark.parametrize("interleaved", [False, True])
+@pytest.mark.parametrize(
+    "final_event", ["all", "response.output_item.done", "response.completed"]
+)
 @pytest.mark.parametrize(
     "deltas", _FUNCTION_CALL_DELTAS.values(), ids=list(_FUNCTION_CALL_DELTAS)
 )
 async def test_responses_astream_function_call_arguments_done(
     deltas: dict[str, list[str]],
+    final_event: str,
+    interleaved: bool,
 ) -> None:
-    stream = _function_call_stream(deltas)
+    stream = _function_call_stream(
+        deltas, final_event=final_event, interleaved=interleaved
+    )
     llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="responses/v1")
     mock_client = MagicMock()
 
@@ -1408,6 +1463,43 @@ async def test_responses_astream_function_call_arguments_done(
             full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     _assert_function_call_arguments(full, "responses/v1")
+
+
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1", "v0"])
+def test_responses_stream_function_call_done_events_without_new_arguments(
+    output_version: str,
+) -> None:
+    """Final events that add no arguments do not yield chunks."""
+    stream = _function_call_stream(_FUNCTION_CALL_DELTAS["all_deltas"])
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version=output_version)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    with patch.object(llm, "root_client", mock_client):
+        chunks = list(llm.stream("test"))
+    # `response.created`, two `output_item.added`, three deltas, `response.completed`
+    assert len(chunks) == 7
+
+
+async def test_responses_astream_function_call_done_events_without_new_arguments() -> (
+    None
+):
+    stream = _function_call_stream(_FUNCTION_CALL_DELTAS["all_deltas"])
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="responses/v1")
+    mock_client = MagicMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    with patch.object(llm, "root_async_client", mock_client):
+        chunks = [chunk async for chunk in llm.astream("test")]
+    assert len(chunks) == 7
 
 
 def test_responses_stream_tolerates_dict_response_field() -> None:
