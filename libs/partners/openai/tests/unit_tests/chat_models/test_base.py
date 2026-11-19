@@ -94,6 +94,7 @@ from langchain_openai.chat_models._compat import (
 )
 from langchain_openai.chat_models.base import (
     OpenAIRefusalError,
+    OpenAIStreamServerError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
     _convert_dict_to_message,
@@ -5076,6 +5077,143 @@ def test_openai_transport_error_classification() -> None:
 
         assert isinstance(exc_info.value, model_error_type)
         assert exc_info.value.is_retryable is True
+
+
+def _sse_stream(*events: dict[str, Any]) -> httpx.Response:
+    body = "".join(
+        (f"event: {event['type']}\n" if "type" in event else "")
+        + f"data: {json.dumps(event)}\n\n"
+        for event in events
+    )
+    return httpx.Response(
+        200,
+        headers={"content-type": "text/event-stream"},
+        content=f"{body}data: [DONE]\n\n".encode(),
+    )
+
+
+_CHAT_CHUNK = {
+    "id": "chatcmpl-123",
+    "object": "chat.completion.chunk",
+    "created": 1,
+    "model": "gpt-4o-mini",
+    "choices": [{"index": 0, "delta": {"role": "assistant", "content": "partial"}}],
+}
+_RESPONSES_CREATED = {
+    "type": "response.created",
+    "sequence_number": 0,
+    "response": {
+        "id": "resp_123",
+        "object": "response",
+        "created_at": 1,
+        "model": "gpt-4o-mini",
+        "status": "in_progress",
+        "output": [],
+        "parallel_tool_calls": True,
+        "tool_choice": "auto",
+        "tools": [],
+    },
+}
+_SERVER_ERROR = {
+    "message": "An error occurred while processing your request.",
+    "type": "server_error",
+    "param": None,
+    "code": "server_error",
+}
+_INVALID_REQUEST_ERROR = {
+    "message": "Invalid schema for function 'complete'.",
+    "type": "invalid_request_error",
+    "param": None,
+    "code": "invalid_function_parameters",
+}
+
+
+@pytest.mark.parametrize(
+    ("use_responses_api", "events"),
+    [
+        # Chat Completions error chunk; `code` is often null and `type` carries it.
+        (False, [_CHAT_CHUNK, {"error": {**_SERVER_ERROR, "code": None}}]),
+        # Responses `error` event with the error object nested under `error`.
+        (
+            True,
+            [
+                _RESPONSES_CREATED,
+                {"type": "error", "sequence_number": 1, "error": _SERVER_ERROR},
+            ],
+        ),
+    ],
+)
+async def test_openai_in_stream_server_error_is_retryable(
+    use_responses_api: bool, events: list[dict[str, Any]]
+) -> None:
+    """In-stream server errors after HTTP 200 are classified like a 5xx."""
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        return _sse_stream(*events)
+
+    async def arespond(request: httpx.Request) -> httpx.Response:
+        return _sse_stream(*events)
+
+    model = ChatOpenAI(
+        model="gpt-4o-mini",
+        api_key=SecretStr("test"),
+        max_retries=0,
+        use_responses_api=use_responses_api,
+        http_client=httpx.Client(transport=httpx.MockTransport(respond)),
+        http_async_client=httpx.AsyncClient(transport=httpx.MockTransport(arespond)),
+    )
+
+    with pytest.raises(openai.APIError) as sync_exc:
+        list(model.stream("test"))
+    with pytest.raises(openai.APIError) as async_exc:
+        async for _ in model.astream("test"):
+            pass
+
+    for error in (sync_exc.value, async_exc.value):
+        assert isinstance(error, OpenAIStreamServerError)
+        assert isinstance(error, ModelAPIError)
+        assert error.is_retryable is True
+        assert error.message == _SERVER_ERROR["message"]
+        assert type(error.__cause__) is openai.APIError
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+async def test_openai_in_stream_invalid_request_error_is_unchanged(
+    use_responses_api: bool,
+) -> None:
+    """Non-transient in-stream errors still raise the SDK's bare `APIError`."""
+    if use_responses_api:
+        events = [
+            _RESPONSES_CREATED,
+            {"type": "error", "sequence_number": 1, "error": _INVALID_REQUEST_ERROR},
+        ]
+    else:
+        events = [_CHAT_CHUNK, {"error": _INVALID_REQUEST_ERROR}]
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        return _sse_stream(*events)
+
+    async def arespond(request: httpx.Request) -> httpx.Response:
+        return _sse_stream(*events)
+
+    model = ChatOpenAI(
+        model="gpt-4o-mini",
+        api_key=SecretStr("test"),
+        max_retries=0,
+        use_responses_api=use_responses_api,
+        http_client=httpx.Client(transport=httpx.MockTransport(respond)),
+        http_async_client=httpx.AsyncClient(transport=httpx.MockTransport(arespond)),
+    )
+
+    with pytest.raises(openai.APIError) as sync_exc:
+        list(model.stream("test"))
+    with pytest.raises(openai.APIError) as async_exc:
+        async for _ in model.astream("test"):
+            pass
+
+    for error in (sync_exc.value, async_exc.value):
+        assert type(error) is openai.APIError
+        assert error.code == "invalid_function_parameters"
 
 
 def test_metadata_versions() -> None:
