@@ -123,7 +123,8 @@ def normalize_finish_reason(
 
     Returns:
         `(normalized, state)`. Both are `None` when no raw value is present;
-        unknown values map to `"other"`, never `"stop"`.
+        unknown values map to `"other"`, never `"stop"`. `state` is set only
+        for Anthropic (and `pause_turn`).
     """
     metadata = response_metadata or {}
     provider = metadata.get("model_provider")
@@ -133,7 +134,8 @@ def normalize_finish_reason(
     )
 
     normalized: FinishReason | None
-    state: FinishState = "complete"
+    # Only Anthropic can suspend a turn, so only it reports a finish state.
+    state: FinishState | None = "complete" if provider == "anthropic" else None
     if not has_raw_reason:
         normalized = _normalize_responses(metadata) if provider == "openai" else None
     else:
@@ -165,6 +167,8 @@ def add_finish_reason_fields(
     has_refusal: bool = False,
 ) -> None:
     """Add `finish_reason`, `normalized_finish_reason` and `finish_state` in place.
+
+    `finish_state` is added only for Anthropic.
 
     Existing values are kept, so fields set by the streaming path win.
 

@@ -67,7 +67,8 @@ def test_normalize_finish_reason_mapping(
     metadata: dict[str, Any] = {"finish_reason": raw}
     if provider is not None:
         metadata["model_provider"] = provider
-    assert normalize_finish_reason(metadata) == (expected, "complete")
+    state = "complete" if provider == "anthropic" else None
+    assert normalize_finish_reason(metadata) == (expected, state)
 
 
 @pytest.mark.parametrize(
@@ -84,7 +85,8 @@ def test_unknown_finish_reason_maps_to_other(provider: str | None, raw: str) -> 
     metadata: dict[str, Any] = {"finish_reason": raw}
     if provider is not None:
         metadata["model_provider"] = provider
-    assert normalize_finish_reason(metadata) == ("other", "complete")
+    state = "complete" if provider == "anthropic" else None
+    assert normalize_finish_reason(metadata) == ("other", state)
 
 
 @pytest.mark.parametrize(
@@ -99,7 +101,7 @@ def test_unknown_finish_reason_maps_to_other(provider: str | None, raw: str) -> 
 )
 def test_unknown_provider_uses_generic_table(raw: str, expected: str) -> None:
     metadata = {"model_provider": "bedrock_converse", "stop_reason": raw}
-    assert normalize_finish_reason(metadata) == (expected, "complete")
+    assert normalize_finish_reason(metadata) == (expected, None)
 
 
 def test_openai_responses_raw_reason_is_status() -> None:
@@ -135,9 +137,10 @@ def test_stop_with_tool_calls_is_tool_call(provider: str | None, raw: str) -> No
     metadata: dict[str, Any] = {"finish_reason": raw}
     if provider is not None:
         metadata["model_provider"] = provider
+    state = "complete" if provider == "anthropic" else None
     assert normalize_finish_reason(metadata, has_tool_calls=True) == (
         "tool_call",
-        "complete",
+        state,
     )
 
 
@@ -145,7 +148,7 @@ def test_non_stop_reason_not_overridden_by_tool_calls() -> None:
     metadata = {"model_provider": "openai", "finish_reason": "length"}
     assert normalize_finish_reason(metadata, has_tool_calls=True) == (
         "length",
-        "complete",
+        None,
     )
 
 
@@ -181,7 +184,7 @@ def test_openai_responses_status(
     metadata = {**metadata, "model_provider": "openai"}
     assert normalize_finish_reason(metadata, has_tool_calls=has_tool_calls) == (
         expected,
-        "complete",
+        None,
     )
 
 
@@ -241,7 +244,7 @@ def test_chunks_to_events_tool_call_override() -> None:
     finish = _finish_event(list(chunks_to_events(iter(chunks))))
     assert finish["finish_reason"] == "STOP"
     assert finish["normalized_finish_reason"] == "tool_call"
-    assert finish["finish_state"] == "complete"
+    assert "finish_state" not in finish
 
 
 def test_chunks_to_events_omits_normalized_without_raw() -> None:
@@ -261,7 +264,7 @@ def test_message_to_events_sets_finish_fields() -> None:
     finish = _finish_event(list(message_to_events(msg)))
     assert finish["finish_reason"] == "stop"
     assert finish["normalized_finish_reason"] == "tool_call"
-    assert finish["finish_state"] == "complete"
+    assert "finish_state" not in finish
 
 
 class _FinishReasonModel(BaseChatModel):
@@ -373,6 +376,7 @@ def test_invoke_keeps_provider_finish_reason() -> None:
     ).invoke("hi")
     assert msg.response_metadata["finish_reason"] == "STOP"
     assert msg.response_metadata["normalized_finish_reason"] == "tool_call"
+    assert "finish_state" not in msg.response_metadata
 
 
 def test_invoke_without_finish_reason_adds_nothing() -> None:
@@ -385,7 +389,7 @@ def test_invoke_without_finish_reason_adds_nothing() -> None:
 def test_normalize_refusal_overrides_stop() -> None:
     assert normalize_finish_reason(
         {"model_provider": "openai", "finish_reason": "stop"}, has_refusal=True
-    ) == ("refusal", "complete")
+    ) == ("refusal", None)
 
 
 def test_invoke_openai_refusal_is_refusal() -> None:
