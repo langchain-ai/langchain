@@ -3,6 +3,7 @@
 import asyncio
 import inspect
 import sys
+import time
 import uuid
 from collections.abc import AsyncIterator, Callable, Iterable, Iterator, Sequence
 from functools import partial
@@ -17,13 +18,18 @@ from blockbuster import BlockBuster
 from pydantic import BaseModel
 from typing_extensions import override
 
-from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
+from langchain_core.callbacks import (
+    CallbackManagerForLLMRun,
+    CallbackManagerForRetrieverRun,
+    Callbacks,
+)
 from langchain_core.callbacks.manager import (
     adispatch_custom_event,
 )
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.documents import Document
 from langchain_core.language_models import FakeStreamingListLLM, GenericFakeChatModel
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -31,6 +37,7 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
+from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.retrievers import BaseRetriever
@@ -2916,3 +2923,91 @@ async def test_tool_error_event_tool_call_id_is_none_when_not_provided() -> None
     assert error_event["name"] == "failing_tool_no_id"
     assert "tool_call_id" in error_event["data"]
     assert error_event["data"]["tool_call_id"] is None
+
+
+class _TokenStreamingChatModel(BaseChatModel):
+    """Fake chat model streaming one chunk per token, as in the issue #41830 repro."""
+
+    n: int = 1000
+
+    @property
+    def _llm_type(self) -> str:
+        return "fake"
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        raise NotImplementedError
+
+    @override
+    async def _astream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        for i in range(self.n):
+            chunk = ChatGenerationChunk(message=AIMessageChunk(content=f"word{i} "))
+            if run_manager:
+                await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+            yield chunk
+
+
+async def test_astream_events_perf_plain_streaming_chain() -> None:
+    """Regression test for #41830.
+
+    `astream_events` should not be dramatically slower than `astream` for a
+    plain streaming chain. Before the fix, `astream_events` was ~2.6x slower
+    than `astream` on this workload (median of alternating rounds); after
+    the fix it is ~1.7x slower. The threshold is deliberately loose (2.5x)
+    so the test is robust to machine load: both methods are timed in
+    alternating rounds in the same process, and the fastest round of each
+    is compared. The 4,000-token size matches the repro in the issue, so
+    absolute times are large enough that scheduling noise stays small
+    relative to the gap being guarded.
+    """
+    chain = ChatPromptTemplate.from_messages([("human", "{q}")]) | (
+        _TokenStreamingChatModel(n=4000)
+    )
+
+    async def _time(method: str) -> float:
+        start = time.perf_counter()
+        if method == "astream":
+            async for _ in chain.astream({"q": "x"}):
+                pass
+        else:
+            async for _ in chain.astream_events({"q": "x"}, version="v2"):
+                pass
+        return time.perf_counter() - start
+
+    # Warm up, then time alternating rounds. The minimum of each method is
+    # compared: on a loaded machine individual rounds can spike, but the
+    # fastest round of each method reflects its unloaded speed.
+    await _time("astream")
+    await _time("astream_events")
+    astream_times = []
+    events_times = []
+    for _ in range(5):
+        astream_times.append(await _time("astream"))
+        events_times.append(await _time("astream_events"))
+
+    astream_best = min(astream_times)
+    events_best = min(events_times)
+    ratio = events_best / astream_best
+    assert ratio < 2.5, (
+        f"astream_events is {ratio:.2f}x slower than astream "
+        f"({events_best * 1000:.0f}ms vs {astream_best * 1000:.0f}ms); "
+        "see #41830"
+    )
+
+    # The fix must not change the emitted events: one stream event per chunk
+    # from the model plus one from the chain, including the final empty chunk.
+    events = [e async for e in chain.astream_events({"q": "x"}, version="v2")]
+    assert len([e for e in events if e["event"] == "on_chat_model_stream"]) == 4001
+    assert len([e for e in events if e["event"] == "on_chain_stream"]) == 4001
