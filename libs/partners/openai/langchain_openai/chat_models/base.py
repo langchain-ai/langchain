@@ -1954,6 +1954,7 @@ class BaseChatOpenAI(BaseChatModel):
                 context_manager = response
             with context_manager as response:
                 is_first_chunk = True
+                finish_tracker = _StreamFinishTracker()
                 for chunk in response:
                     if not isinstance(chunk, dict):
                         chunk = chunk.model_dump()
@@ -1964,6 +1965,7 @@ class BaseChatOpenAI(BaseChatModel):
                     )
                     if generation_chunk is None:
                         continue
+                    finish_tracker.update(chunk, generation_chunk)
                     default_chunk_class = generation_chunk.message.__class__
                     logprobs = (generation_chunk.generation_info or {}).get("logprobs")
                     if run_manager:
@@ -2195,6 +2197,10 @@ class BaseChatOpenAI(BaseChatModel):
                 generation_info["logprobs"] = res["logprobs"]
             finish_fields = _chat_finish_reason_fields(
                 generation_info["finish_reason"],
+                has_tool_calls=bool(
+                    isinstance(message, AIMessage)
+                    and (message.tool_calls or message.invalid_tool_calls)
+                ),
                 refusal=bool(message.additional_kwargs.get("refusal")),
             )
             gen = ChatGeneration(
@@ -2266,6 +2272,7 @@ class BaseChatOpenAI(BaseChatModel):
                 context_manager = response
             async with context_manager as response:
                 is_first_chunk = True
+                finish_tracker = _StreamFinishTracker()
                 async for chunk in _astream_with_chunk_timeout(
                     response,
                     self.stream_chunk_timeout,
@@ -2280,6 +2287,7 @@ class BaseChatOpenAI(BaseChatModel):
                     )
                     if generation_chunk is None:
                         continue
+                    finish_tracker.update(chunk, generation_chunk)
                     default_chunk_class = generation_chunk.message.__class__
                     logprobs = (generation_chunk.generation_info or {}).get("logprobs")
                     if run_manager:
@@ -5471,7 +5479,10 @@ _RESPONSES_INCOMPLETE_REASONS: dict[str, str] = {
 
 
 def _chat_finish_reason_fields(
-    finish_reason: str | None, *, refusal: bool = False
+    finish_reason: str | None,
+    *,
+    has_tool_calls: bool = False,
+    refusal: bool = False,
 ) -> dict[str, str]:
     """Map a Chat Completions `finish_reason` onto `normalized_finish_reason`."""
     if not finish_reason:
@@ -5480,7 +5491,36 @@ def _chat_finish_reason_fields(
     normalized = (
         "refusal" if refusal else _CHAT_FINISH_REASONS.get(finish_reason, "other")
     )
+    # A forced `tool_choice` ends with `stop` even though the model called a tool.
+    if normalized == "stop" and has_tool_calls:
+        normalized = "tool_call"
     return {"normalized_finish_reason": normalized}
+
+
+class _StreamFinishTracker:
+    """Corrects the final chunk's finish fields using earlier stream chunks."""
+
+    def __init__(self) -> None:
+        self.saw_tool_call = False
+        self.saw_refusal = False
+
+    def update(self, chunk: dict, generation_chunk: ChatGenerationChunk) -> None:
+        message = generation_chunk.message
+        if isinstance(message, AIMessageChunk) and message.tool_call_chunks:
+            self.saw_tool_call = True
+        # Refusal deltas aren't kept on the message chunk, so read the raw delta.
+        choices = chunk.get("choices") or []
+        if choices and (choices[0].get("delta") or {}).get("refusal"):
+            self.saw_refusal = True
+        info = generation_chunk.generation_info
+        if info and info.get("normalized_finish_reason"):
+            info.update(
+                _chat_finish_reason_fields(
+                    info.get("finish_reason"),
+                    has_tool_calls=self.saw_tool_call,
+                    refusal=self.saw_refusal,
+                )
+            )
 
 
 def _responses_finish_reason_fields(

@@ -6247,6 +6247,21 @@ def test_langsmith_gateway_context_headers() -> None:
             {"role": "assistant", "content": None, "refusal": "I can't help."},
             "refusal",
         ),
+        (
+            "stop",
+            {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [
+                    {
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {"name": "search", "arguments": "{}"},
+                    }
+                ],
+            },
+            "tool_call",
+        ),
     ],
 )
 def test_create_chat_result_finish_reason(
@@ -6370,3 +6385,60 @@ def test_responses_finish_reason(response: Response, raw: str, normalized: str) 
     assert metadata["finish_reason"] == raw
     assert metadata["normalized_finish_reason"] == normalized
     assert "finish_state" not in metadata
+
+
+def _stream_chunks(*deltas: tuple[dict, str | None]) -> list[dict]:
+    return [
+        {
+            "model": OPENAI_TEST_MODEL,
+            "choices": [{"index": 0, "delta": delta, "finish_reason": finish}],
+        }
+        for delta, finish in deltas
+    ]
+
+
+def _streamed_message(chunks: list[dict]) -> AIMessageChunk:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    mock_client = MagicMock()
+    mock_client.create.return_value = MockSyncContextManager(chunks)
+    with patch.object(llm, "client", mock_client):
+        message: AIMessageChunk | None = None
+        for chunk in llm.stream("hi"):
+            assert isinstance(chunk, AIMessageChunk)
+            message = chunk if message is None else message + chunk
+    assert message is not None
+    return message
+
+
+def test_stream_forced_tool_call_finish_reason() -> None:
+    message = _streamed_message(
+        _stream_chunks(
+            (
+                {
+                    "role": "assistant",
+                    "tool_calls": [
+                        {
+                            "index": 0,
+                            "id": "call_1",
+                            "type": "function",
+                            "function": {"name": "search", "arguments": "{}"},
+                        }
+                    ],
+                },
+                None,
+            ),
+            ({}, "stop"),
+        )
+    )
+    assert message.response_metadata["finish_reason"] == "stop"
+    assert message.response_metadata["normalized_finish_reason"] == "tool_call"
+
+
+def test_stream_refusal_finish_reason() -> None:
+    message = _streamed_message(
+        _stream_chunks(
+            ({"role": "assistant", "refusal": "I can't help."}, None),
+            ({}, "stop"),
+        )
+    )
+    assert message.response_metadata["normalized_finish_reason"] == "refusal"

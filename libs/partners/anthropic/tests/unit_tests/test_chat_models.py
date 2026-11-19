@@ -6770,7 +6770,7 @@ def test__format_output_finish_reason(
         content=[TextBlock(type="text", text="bar")],
         model="baz",
         role="assistant",
-        stop_reason=stop_reason,
+        stop_reason=cast("Any", stop_reason),
         stop_sequence=None,
         usage=Usage(input_tokens=2, output_tokens=1),
         type="message",
