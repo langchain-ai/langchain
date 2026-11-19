@@ -102,6 +102,15 @@ class _SendStream(Generic[T]):
 
         This is a non-blocking call.
 
+        When called from the reader loop itself (the common case for
+        `astream_events`, where the producer and consumer share a loop),
+        the item is scheduled with `call_soon` instead of
+        `call_soon_threadsafe`. Both append to the loop's callback queue in
+        call order, so events keep their order relative to sends made from
+        other threads, while the thread-safe wakeup (a write to the loop's
+        self-pipe) is avoided. Calls from any other thread or loop keep
+        using the thread-safe path.
+
         Args:
             item: The item to write to the queue.
 
@@ -109,6 +118,13 @@ class _SendStream(Generic[T]):
             RuntimeError: If the event loop is already closed when trying to write to
                 the queue.
         """
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+        if running_loop is self._reader_loop:
+            self._reader_loop.call_soon(self._queue.put_nowait, item)
+            return
         try:
             self._reader_loop.call_soon_threadsafe(self._queue.put_nowait, item)
         except RuntimeError:
