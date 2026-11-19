@@ -2050,7 +2050,8 @@ def test__format_messages_server_tool_use_preserves_caller(output_version: str) 
 
 
 @pytest.mark.parametrize(
-    "block_type", ["web_search_tool_result", "web_fetch_tool_result"]
+    "block_type",
+    ["web_search_tool_result", "web_fetch_tool_result", "tool_search_tool_result"],
 )
 @pytest.mark.parametrize(
     "caller",
