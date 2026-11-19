@@ -82,6 +82,20 @@ class RunInfo(TypedDict):
     tool_call_id: NotRequired[str | None]
     """The tool call ID associated with the run."""
 
+    run_id_str: NotRequired[str]
+    """The string form of the run ID, cached at run start.
+
+    Stream events are emitted once per streamed chunk, so this avoids
+    re-stringifying the run UUID for every event.
+    """
+
+    parent_ids: NotRequired[list[str]]
+    """The parent run IDs as strings, cached at run start.
+
+    The parent chain is fixed once the run starts, so this avoids
+    walking `parent_map` for every emitted event.
+    """
+
 
 def _assign_name(name: str | None, serialized: dict[str, Any] | None) -> str:
     """Assign a name to a run."""
@@ -205,22 +219,39 @@ class _AstreamEventsCallbackHandler(
             return
         if tap is sentinel:
             # if we are the first to tap, issue stream events
-            event: StandardStreamEvent = {
-                "event": f"on_{run_info['run_type']}_stream",
-                "run_id": str(run_id),
-                "name": run_info["name"],
-                "tags": run_info["tags"],
-                "metadata": run_info["metadata"],
-                "data": {},
-                "parent_ids": self._get_parent_ids(run_id),
-            }
-            self._send({**event, "data": {"chunk": first}}, run_info["run_type"])
+            event_name = f"on_{run_info['run_type']}_stream"
+            run_id_str = run_info["run_id_str"]
+            parent_ids = run_info["parent_ids"]
+            run_type = run_info["run_type"]
+            name = run_info["name"]
+            tags = run_info["tags"]
+            metadata = run_info["metadata"]
+            self._send(
+                {
+                    "event": event_name,
+                    "run_id": run_id_str,
+                    "name": name,
+                    "tags": tags,
+                    "metadata": metadata,
+                    "data": {"chunk": first},
+                    "parent_ids": parent_ids,
+                },
+                run_type,
+            )
             yield cast("T", first)
             # consume the rest of the output
             async for chunk in output:
                 self._send(
-                    {**event, "data": {"chunk": chunk}},
-                    run_info["run_type"],
+                    {
+                        "event": event_name,
+                        "run_id": run_id_str,
+                        "name": name,
+                        "tags": tags,
+                        "metadata": metadata,
+                        "data": {"chunk": chunk},
+                        "parent_ids": parent_ids,
+                    },
+                    run_type,
                 )
                 yield chunk
         else:
@@ -255,22 +286,39 @@ class _AstreamEventsCallbackHandler(
             return
         if tap is sentinel:
             # if we are the first to tap, issue stream events
-            event: StandardStreamEvent = {
-                "event": f"on_{run_info['run_type']}_stream",
-                "run_id": str(run_id),
-                "name": run_info["name"],
-                "tags": run_info["tags"],
-                "metadata": run_info["metadata"],
-                "data": {},
-                "parent_ids": self._get_parent_ids(run_id),
-            }
-            self._send({**event, "data": {"chunk": first}}, run_info["run_type"])
+            event_name = f"on_{run_info['run_type']}_stream"
+            run_id_str = run_info["run_id_str"]
+            parent_ids = run_info["parent_ids"]
+            run_type = run_info["run_type"]
+            name = run_info["name"]
+            tags = run_info["tags"]
+            metadata = run_info["metadata"]
+            self._send(
+                {
+                    "event": event_name,
+                    "run_id": run_id_str,
+                    "name": name,
+                    "tags": tags,
+                    "metadata": metadata,
+                    "data": {"chunk": first},
+                    "parent_ids": parent_ids,
+                },
+                run_type,
+            )
             yield cast("T", first)
             # consume the rest of the output
             for chunk in output:
                 self._send(
-                    {**event, "data": {"chunk": chunk}},
-                    run_info["run_type"],
+                    {
+                        "event": event_name,
+                        "run_id": run_id_str,
+                        "name": name,
+                        "tags": tags,
+                        "metadata": metadata,
+                        "data": {"chunk": chunk},
+                        "parent_ids": parent_ids,
+                    },
+                    run_type,
                 )
                 yield chunk
         else:
@@ -312,6 +360,11 @@ class _AstreamEventsCallbackHandler(
 
         self.run_map[run_id] = info
         self.parent_map[run_id] = parent_run_id
+        # The parent chain is fixed once the run starts, so cache the
+        # stringified run ID and parent IDs: every streamed chunk emits an
+        # event carrying both.
+        info["run_id_str"] = str(run_id)
+        info["parent_ids"] = self._get_parent_ids(run_id)
 
     @override
     async def on_chat_model_start(
@@ -350,7 +403,7 @@ class _AstreamEventsCallbackHandler(
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
-                "parent_ids": self._get_parent_ids(run_id),
+                "parent_ids": self.run_map[run_id]["parent_ids"],
             },
             run_type,
         )
@@ -394,7 +447,7 @@ class _AstreamEventsCallbackHandler(
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
-                "parent_ids": self._get_parent_ids(run_id),
+                "parent_ids": self.run_map[run_id]["parent_ids"],
             },
             run_type,
         )
@@ -475,11 +528,11 @@ class _AstreamEventsCallbackHandler(
                 "data": {
                     "chunk": chunk_,
                 },
-                "run_id": str(run_id),
+                "run_id": run_info["run_id_str"],
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
-                "parent_ids": self._get_parent_ids(run_id),
+                "parent_ids": run_info["parent_ids"],
             },
             run_info["run_type"],
         )
@@ -536,11 +589,11 @@ class _AstreamEventsCallbackHandler(
             {
                 "event": event,
                 "data": {"output": output, "input": inputs_},
-                "run_id": str(run_id),
+                "run_id": run_info["run_id_str"],
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
-                "parent_ids": self._get_parent_ids(run_id),
+                "parent_ids": run_info["parent_ids"],
             },
             run_info["run_type"],
         )
@@ -588,7 +641,7 @@ class _AstreamEventsCallbackHandler(
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
-                "parent_ids": self._get_parent_ids(run_id),
+                "parent_ids": self.run_map[run_id]["parent_ids"],
             },
             run_type_,
         )
@@ -619,11 +672,11 @@ class _AstreamEventsCallbackHandler(
             {
                 "event": event,
                 "data": data,
-                "run_id": str(run_id),
+                "run_id": run_info["run_id_str"],
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
-                "parent_ids": self._get_parent_ids(run_id),
+                "parent_ids": run_info["parent_ids"],
             },
             run_type,
         )
@@ -688,7 +741,7 @@ class _AstreamEventsCallbackHandler(
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
-                "parent_ids": self._get_parent_ids(run_id),
+                "parent_ids": self.run_map[run_id]["parent_ids"],
             },
             "tool",
         )
@@ -718,11 +771,11 @@ class _AstreamEventsCallbackHandler(
                 "input": inputs,
                 "tool_call_id": tool_call_id,
             },
-            "run_id": str(run_id),
+            "run_id": run_info["run_id_str"],
             "name": run_info["name"],
             "tags": run_info["tags"],
             "metadata": run_info["metadata"],
-            "parent_ids": self._get_parent_ids(run_id),
+            "parent_ids": run_info["parent_ids"],
         }
         self._send(event, "tool")
 
@@ -738,11 +791,11 @@ class _AstreamEventsCallbackHandler(
                     "output": output,
                     "input": inputs,
                 },
-                "run_id": str(run_id),
+                "run_id": run_info["run_id_str"],
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
-                "parent_ids": self._get_parent_ids(run_id),
+                "parent_ids": run_info["parent_ids"],
             },
             "tool",
         )
@@ -786,7 +839,7 @@ class _AstreamEventsCallbackHandler(
                 "tags": tags or [],
                 "run_id": str(run_id),
                 "metadata": metadata or {},
-                "parent_ids": self._get_parent_ids(run_id),
+                "parent_ids": self.run_map[run_id]["parent_ids"],
             },
             run_type,
         )
@@ -805,11 +858,11 @@ class _AstreamEventsCallbackHandler(
                     "output": documents,
                     "input": run_info.get("inputs"),
                 },
-                "run_id": str(run_id),
+                "run_id": run_info["run_id_str"],
                 "name": run_info["name"],
                 "tags": run_info["tags"],
                 "metadata": run_info["metadata"],
-                "parent_ids": self._get_parent_ids(run_id),
+                "parent_ids": run_info["parent_ids"],
             },
             run_info["run_type"],
         )
