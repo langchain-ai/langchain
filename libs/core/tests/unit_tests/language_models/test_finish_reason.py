@@ -325,6 +325,7 @@ async def test_astream_events_v3_carries_finish_fields() -> None:
 class _InvokeModel(BaseChatModel):
     response_metadata: dict[str, Any]
     tool_calls: list[dict[str, Any]] = Field(default_factory=list)
+    refusal: str | None = None
 
     @property
     def _llm_type(self) -> str:
@@ -340,6 +341,7 @@ class _InvokeModel(BaseChatModel):
         del messages, stop, run_manager, kwargs
         message = AIMessage(
             content="hi",
+            additional_kwargs={"refusal": self.refusal} if self.refusal else {},
             response_metadata=dict(self.response_metadata),
             tool_calls=cast("Any", self.tool_calls),
         )
@@ -378,3 +380,51 @@ def test_invoke_without_finish_reason_adds_nothing() -> None:
     assert "finish_reason" not in msg.response_metadata
     assert "normalized_finish_reason" not in msg.response_metadata
     assert "finish_state" not in msg.response_metadata
+
+
+def test_normalize_refusal_overrides_stop() -> None:
+    assert normalize_finish_reason(
+        {"model_provider": "openai", "finish_reason": "stop"}, has_refusal=True
+    ) == ("refusal", "complete")
+
+
+def test_invoke_openai_refusal_is_refusal() -> None:
+    model = _InvokeModel(
+        response_metadata={"model_provider": "openai", "finish_reason": "stop"}
+    )
+    model.refusal = "I can't help with that."
+    msg = model.invoke("hi")
+    assert msg.response_metadata["finish_reason"] == "stop"
+    assert msg.response_metadata["normalized_finish_reason"] == "refusal"
+
+
+class _RefusalStreamModel(_FinishReasonModel):
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        del messages, stop, run_manager, kwargs
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                additional_kwargs={"refusal": "I can't help with that."},
+                response_metadata={"model_provider": "openai"},
+            )
+        )
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="", response_metadata={"finish_reason": "stop"}
+            )
+        )
+
+
+def test_stream_events_v3_openai_refusal_is_refusal() -> None:
+    stream = _RefusalStreamModel().stream_events("hi", version="v3")
+    msg = stream.output
+    finish = _finish_event(list(stream))
+    assert finish["finish_reason"] == "stop"
+    assert finish["normalized_finish_reason"] == "refusal"
+    assert msg.response_metadata["normalized_finish_reason"] == "refusal"

@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from langchain_protocol.protocol import FinishReason, FinishState
 
+    from langchain_core.messages import BaseMessage
+
 
 _OPENAI_CHAT: dict[str, FinishReason] = {
     "stop": "stop",
@@ -105,6 +107,7 @@ def normalize_finish_reason(
     response_metadata: dict[str, Any] | None,
     *,
     has_tool_calls: bool = False,
+    has_refusal: bool = False,
 ) -> tuple[FinishReason | None, FinishState | None]:
     """Map a message's raw finish value onto `FinishReason`.
 
@@ -114,6 +117,9 @@ def normalize_finish_reason(
             `stop_reason` (or `status` for the OpenAI Responses API).
         has_tool_calls: Whether the message carries tool calls. A stop-like
             value is reported as `"tool_call"` when `True`.
+        has_refusal: Whether the message carries a `refusal` content block.
+            Reported as `"refusal"` when `True`, since OpenAI refuses with a
+            normal `stop` / `completed` value.
 
     Returns:
         `(normalized, state)`. Both are `None` when no raw value is present;
@@ -145,13 +151,18 @@ def normalize_finish_reason(
 
     if normalized is None:
         return None, None
+    if has_refusal:
+        return "refusal", state
     if normalized == "stop" and has_tool_calls:
         normalized = "tool_call"
     return normalized, state
 
 
 def add_finish_reason_fields(
-    response_metadata: dict[str, Any], *, has_tool_calls: bool
+    response_metadata: dict[str, Any],
+    *,
+    has_tool_calls: bool,
+    has_refusal: bool = False,
 ) -> None:
     """Add `finish_reason`, `normalized_finish_reason` and `finish_state` in place.
 
@@ -160,10 +171,11 @@ def add_finish_reason_fields(
     Args:
         response_metadata: The message's response metadata.
         has_tool_calls: Whether the message carries tool calls.
+        has_refusal: Whether the message carries a `refusal` content block.
     """
     raw = get_raw_finish_reason(response_metadata)
     normalized, state = normalize_finish_reason(
-        response_metadata, has_tool_calls=has_tool_calls
+        response_metadata, has_tool_calls=has_tool_calls, has_refusal=has_refusal
     )
     if raw is not None:
         response_metadata.setdefault("finish_reason", raw)
@@ -171,3 +183,8 @@ def add_finish_reason_fields(
         response_metadata.setdefault("normalized_finish_reason", normalized)
     if state is not None:
         response_metadata.setdefault("finish_state", state)
+
+
+def has_refusal_block(message: BaseMessage) -> bool:
+    """Return whether a message's content blocks include a `refusal` block."""
+    return any(block.get("type") == "refusal" for block in message.content_blocks)

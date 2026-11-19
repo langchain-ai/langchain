@@ -56,6 +56,7 @@ from langchain_protocol.protocol import (
 
 from langchain_core.language_models._finish_reason import (
     get_raw_finish_reason,
+    has_refusal_block,
     normalize_finish_reason,
 )
 from langchain_core.messages import AIMessageChunk, BaseMessage
@@ -547,6 +548,7 @@ def _build_message_finish(
     response_metadata: dict[str, Any] | None,
     additional_kwargs: dict[str, Any] | None = None,
     has_tool_calls: bool = False,
+    has_refusal: bool = False,
 ) -> MessageFinishData:
     # Protocol 0.0.9 removed the top-level `reason` field from
     # `MessageFinishData`; the provider's raw `finish_reason` /
@@ -554,7 +556,7 @@ def _build_message_finish(
     finish_data: dict[str, Any] = {"event": "message-finish"}
     raw_reason = get_raw_finish_reason(response_metadata or {})
     normalized, finish_state = normalize_finish_reason(
-        response_metadata, has_tool_calls=has_tool_calls
+        response_metadata, has_tool_calls=has_tool_calls, has_refusal=has_refusal
     )
     if raw_reason is not None:
         finish_data["finish_reason"] = raw_reason
@@ -582,6 +584,10 @@ def _build_message_finish(
 
 def _has_tool_calls(blocks: Iterable[CompatBlock]) -> bool:
     return any(b.get("type") in {"tool_call", "tool_call_chunk"} for b in blocks)
+
+
+def _has_refusal(blocks: Iterable[CompatBlock]) -> bool:
+    return any(b.get("type") == "refusal" for b in blocks)
 
 
 def _finalize_and_build_finish(
@@ -705,6 +711,7 @@ def chunks_to_events(
         response_metadata=response_metadata,
         additional_kwargs=additional_kwargs,
         has_tool_calls=_has_tool_calls(block for _, block in blocks.values()),
+        has_refusal=_has_refusal(block for _, block in blocks.values()),
     )
 
 
@@ -785,6 +792,7 @@ async def achunks_to_events(
         response_metadata=response_metadata,
         additional_kwargs=additional_kwargs,
         has_tool_calls=_has_tool_calls(block for _, block in blocks.values()),
+        has_refusal=_has_refusal(block for _, block in blocks.values()),
     )
 
 
@@ -839,6 +847,7 @@ def message_to_events(
         usage=getattr(msg, "usage_metadata", None),
         response_metadata=response_metadata,
         has_tool_calls=bool(getattr(msg, "tool_calls", None)),
+        has_refusal=has_refusal_block(msg),
     )
 
 
