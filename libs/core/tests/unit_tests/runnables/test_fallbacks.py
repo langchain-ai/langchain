@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import override
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import BaseCallbackHandler, CallbackManagerForLLMRun
 from langchain_core.language_models import (
     BaseChatModel,
     FakeListLLM,
@@ -263,6 +263,109 @@ async def test_abatch() -> None:
 
     expected = ["first", "second", RuntimeError()]
     _assert_potential_error(actual, expected)
+
+
+
+
+class _FallbackRootRunTracker(BaseCallbackHandler):
+    """Track only the root run for each input in a fallback batch."""
+
+    def __init__(self) -> None:
+        self.started: dict[Any, int] = {}
+        self.ended: set[Any] = set()
+        self.errors: dict[Any, BaseException] = {}
+
+    def on_chain_start(
+        self,
+        serialized: dict[str, Any] | None,
+        inputs: Any,
+        *,
+        run_id: Any,
+        **kwargs: Any,
+    ) -> None:
+        if kwargs.get("name") == "RunnableWithFallbacks":
+            value = inputs.get("input", inputs) if isinstance(inputs, dict) else inputs
+            self.started[run_id] = value
+
+    def on_chain_end(self, outputs: Any, *, run_id: Any, **kwargs: Any) -> None:
+        if run_id in self.started:
+            self.ended.add(run_id)
+
+    def on_chain_error(
+        self, error: BaseException, *, run_id: Any, **kwargs: Any
+    ) -> None:
+        if run_id in self.started:
+            self.errors[run_id] = error
+
+
+def _mixed_fallback_chain() -> RunnableWithFallbacks[int, int]:
+    def primary(value: int) -> int:
+        if value == 1:
+            raise ValueError("fallback eligible")
+        if value == 2:
+            raise KeyError("unhandled")
+        return value
+
+    return RunnableLambda(primary).with_fallbacks(
+        [RunnableLambda(lambda value: value * 10)],
+        exceptions_to_handle=(ValueError,),
+    )
+
+
+def _assert_mixed_root_runs_closed(tracker: _FallbackRootRunTracker) -> None:
+    assert len(tracker.started) == 3
+    assert len(tracker.ended) == 1
+    assert len(tracker.errors) == 2
+    assert len(tracker.ended | tracker.errors.keys()) == 3
+    for run_id, value in tracker.started.items():
+        if value == 0:
+            assert run_id in tracker.ended
+        elif value == 1:
+            assert isinstance(tracker.errors[run_id], ValueError)
+        else:
+            assert value == 2
+            assert isinstance(tracker.errors[run_id], KeyError)
+
+
+def test_batch_closes_root_runs_before_unhandled_raise() -> None:
+    chain = _mixed_fallback_chain()
+    tracker = _FallbackRootRunTracker()
+    with pytest.raises(KeyError, match="unhandled"):
+        chain.batch([0, 1, 2], {"callbacks": [tracker]})
+    _assert_mixed_root_runs_closed(tracker)
+
+    # The return_exceptions path still allows eligible inputs to use fallbacks.
+    returning_tracker = _FallbackRootRunTracker()
+    result = chain.batch(
+        [0, 1, 2],
+        {"callbacks": [returning_tracker]},
+        return_exceptions=True,
+    )
+    assert result[:2] == [0, 10]
+    assert isinstance(result[2], KeyError)
+    assert len(returning_tracker.started) == 3
+    assert len(returning_tracker.ended) == 2
+    assert len(returning_tracker.errors) == 1
+
+
+async def test_abatch_closes_root_runs_before_unhandled_raise() -> None:
+    chain = _mixed_fallback_chain()
+    tracker = _FallbackRootRunTracker()
+    with pytest.raises(KeyError, match="unhandled"):
+        await chain.abatch([0, 1, 2], {"callbacks": [tracker]})
+    _assert_mixed_root_runs_closed(tracker)
+
+    returning_tracker = _FallbackRootRunTracker()
+    result = await chain.abatch(
+        [0, 1, 2],
+        {"callbacks": [returning_tracker]},
+        return_exceptions=True,
+    )
+    assert result[:2] == [0, 10]
+    assert isinstance(result[2], KeyError)
+    assert len(returning_tracker.started) == 3
+    assert len(returning_tracker.ended) == 2
+    assert len(returning_tracker.errors) == 1
 
 
 def _generate(_: Iterator[Any]) -> Iterator[str]:
