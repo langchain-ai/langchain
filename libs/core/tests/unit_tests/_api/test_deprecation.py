@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from langchain_core._api.deprecation import (
     LangChainDeprecationWarning,
+    LangChainPendingDeprecationWarning,
     deprecated,
     rename_parameter,
     suppress_langchain_deprecation_warning,
@@ -73,6 +74,58 @@ def test_warn_deprecated(kwargs: dict[str, Any], expected_message: str) -> None:
         assert len(warning_list) == 1
         warning = warning_list[0].message
         assert str(warning) == expected_message
+
+
+@pytest.mark.parametrize("stacklevel", [None, 2, 3, 4])
+@pytest.mark.parametrize("pending", [False, True])
+def test_warn_deprecated_stacklevel(stacklevel: int | None, *, pending: bool) -> None:
+    def emit() -> int:
+        if stacklevel is None:
+            warn_deprecated("1.0", name="old", pending=pending)
+            return 0
+        line = sys._getframe().f_lineno + 1
+        warn_deprecated("1.0", name="old", pending=pending, stacklevel=stacklevel)
+        return line
+
+    def helper() -> tuple[int, int]:
+        line = sys._getframe().f_lineno + 1
+        return emit(), line
+
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always")
+        line = sys._getframe().f_lineno + 1
+        emit_line, helper_line = helper()
+
+    assert len(recorded) == 1
+    warning = recorded[0]
+    assert warning.filename == __file__
+    assert (
+        warning.lineno
+        == {2: emit_line, 3: helper_line, 4: line}[
+            4 if stacklevel is None else stacklevel
+        ]
+    )
+    assert warning.category is (
+        LangChainPendingDeprecationWarning if pending else LangChainDeprecationWarning
+    )
+    assert str(warning.message) == (
+        "`old` will be deprecated in a future version"
+        if pending
+        else "`old` was deprecated in LangChain 1.0"
+    )
+
+
+@pytest.mark.parametrize("pending", [False, True])
+def test_warn_deprecated_stacklevel_preserves_warning_policy(*, pending: bool) -> None:
+    category = (
+        LangChainPendingDeprecationWarning if pending else LangChainDeprecationWarning
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category)
+        with suppress_langchain_deprecation_warning():
+            warn_deprecated("1.0", message="deprecated", pending=pending, stacklevel=2)
+        with pytest.raises(category, match=r"^deprecated$"):
+            warn_deprecated("1.0", message="deprecated", pending=pending, stacklevel=2)
 
 
 def test_warn_deprecated_without_removal() -> None:

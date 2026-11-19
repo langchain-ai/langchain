@@ -935,6 +935,11 @@ def _format_messages(
                                         "tool_use_id",
                                         "cache_control",
                                     )
+                                    or (
+                                        k == "caller"
+                                        and v
+                                        and v.get("type") != "direct"
+                                    )
                                 },
                             ),
                         )

@@ -20,7 +20,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
-version = "1.8.2"
+version = "1.8.3"
 requires-python = ">=3.11.0,<4.0.0"
 dependencies = [
     "langsmith>=0.14.9,<1.0.0",
@@ -83,8 +83,7 @@ test_integration = []
 [tool.uv]
 constraint-dependencies = [
     "pygments>=2.20.0",  # CVE-2026-4539
-    # Tornado 6.6 requires Python 3.11; Python 3.10 retains the affected fallback.
-    "tornado>=6.6; python_version >= '3.11'",
+    "tornado>=6.6.1",
 ]
 
 [tool.uv.sources]
