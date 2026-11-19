@@ -109,6 +109,100 @@ def test_finalize_block_server_tool_call_chunk_invalid_json() -> None:
     assert invalid.get("error") is not None
 
 
+def test_finalize_block_missing_tool_ids_are_distinct_across_types() -> None:
+    """Missing provider IDs get distinct values without changing their type."""
+    tool = _finalize_block(
+        {"type": "tool_call_chunk", "id": None, "name": "search", "args": "{}"}
+    )
+    server = _finalize_block(
+        {"type": "server_tool_call_chunk", "id": None, "name": "search", "args": "{}"}
+    )
+    assert tool["type"] == "tool_call"
+    assert server["type"] == "server_tool_call"
+    assert tool["id"]
+    assert server["id"]
+    assert tool["id"] != server["id"]
+
+
+def test_finalize_block_preserves_provider_ids_across_types() -> None:
+    """A shared provider ID is not mutated; the block type distinguishes it."""
+    for block_type, expected_type in (
+        ("tool_call_chunk", "tool_call"),
+        ("server_tool_call_chunk", "server_tool_call"),
+    ):
+        block = _finalize_block(
+            {"type": block_type, "id": "shared_id", "name": "search", "args": "{}"}
+        )
+        assert (block["type"], block["id"]) == (expected_type, "shared_id")
+
+
+def test_chunks_to_events_separates_types_with_same_source_index() -> None:
+    """Type and source index together identify the streaming block."""
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "text",
+                        "text": "hello",
+                        "index": 0,
+                    },
+                ]
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=[
+                    {
+                        "type": "reasoning",
+                        "reasoning": "thinking",
+                        "index": 0,
+                    },
+                ]
+            )
+        ),
+    ]
+    events = list(chunks_to_events(iter(chunks), message_id="msg"))
+    finishes = [event for event in events if event["event"] == "content-block-finish"]
+    assert len(finishes) == 2
+    assert {event["content"]["type"] for event in finishes} == {"text", "reasoning"}
+
+
+def test_chunks_to_events_parallel_idless_tool_calls() -> None:
+    """Parallel tool calls without provider IDs remain distinguishable."""
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                tool_call_chunks=[
+                    {
+                        "type": "tool_call_chunk",
+                        "id": None,
+                        "name": "search",
+                        "args": '{"q": "first"}',
+                        "index": 0,
+                    },
+                    {
+                        "type": "tool_call_chunk",
+                        "id": None,
+                        "name": "search",
+                        "args": '{"q": "second"}',
+                        "index": 1,
+                    },
+                ],
+            )
+        )
+    ]
+    stream = ChatModelStream()
+    for event in chunks_to_events(iter(chunks), message_id="msg"):
+        stream.dispatch(event)
+    calls = stream.output.tool_calls
+    assert len(calls) == 2
+    assert calls[0]["id"] and calls[1]["id"]
+    assert calls[0]["id"] != calls[1]["id"]
+    assert [call["args"]["q"] for call in calls] == ["first", "second"]
+
+
 def test_isolate_usage_present() -> None:
     usage: UsageInfo = {"input_tokens": 10, "output_tokens": 20, "total_tokens": 30}
     result = _isolate_usage(usage)
