@@ -85,6 +85,8 @@ def test_streamed_tool_call_retains_field_during_unicode_escape() -> None:
 
 def test_malformed_hex_does_not_consume_following_quote() -> None:
     # An invalid Unicode digit must not leave the string-state machine open.
-    # Existing best-effort recovery may discard malformed data; it must not crash.
+    # A malformed completed escape remains invalid JSON; do not silently
+    # reinterpret it as a successfully decoded Unicode character.
     malformed = '{"city": "M\\u00Z", "country": "DE"}'
-    assert parse_partial_json(malformed) is not None
+    with pytest.raises(json.JSONDecodeError):
+        parse_partial_json(malformed)
