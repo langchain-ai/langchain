@@ -283,6 +283,39 @@ def _build_commands(
     return commands
 
 
+class _ModelCallRecorder:
+    """Run the innermost model call and remember which models it went to.
+
+    A class rather than a closure inside the model node: LangGraph disassembles
+    node functions, including nested ones, on every compile to find subgraphs, so
+    inner defs there add to every `create_agent` call.
+    """
+
+    __slots__ = ("_execute", "executed")
+
+    def __init__(self, execute: Callable[[ModelRequest[Any]], ModelResponse]) -> None:
+        self._execute = execute
+        self.executed: list[BaseChatModel] = []
+
+    def __call__(self, request: ModelRequest[Any]) -> ModelResponse:
+        self.executed.append(request.model)
+        return self._execute(request)
+
+
+class _AsyncModelCallRecorder:
+    """Async counterpart of `_ModelCallRecorder`."""
+
+    __slots__ = ("_execute", "executed")
+
+    def __init__(self, execute: Callable[[ModelRequest[Any]], Awaitable[ModelResponse]]) -> None:
+        self._execute = execute
+        self.executed: list[BaseChatModel] = []
+
+    async def __call__(self, request: ModelRequest[Any]) -> ModelResponse:
+        self.executed.append(request.model)
+        return await self._execute(request)
+
+
 def _record_model_selection(
     commands: list[Command[Any]],
     state: AgentState[Any],
@@ -1554,11 +1587,7 @@ def create_agent(
         )
 
         has_structured_output = initial_response_format is not None
-        executed: list[BaseChatModel] = []
-
-        def execute(model_request: ModelRequest[ContextT]) -> ModelResponse:
-            executed.append(model_request.model)
-            return _execute_model_sync(model_request)
+        execute = _ModelCallRecorder(_execute_model_sync)
 
         if wrap_model_call_handler is None:
             model_response = execute(request)
@@ -1575,7 +1604,7 @@ def create_agent(
                 has_structured_output=has_structured_output,
                 repaired_messages=messages if messages != state["messages"] else None,
             )
-        return _record_model_selection(commands, state, executed)
+        return _record_model_selection(commands, state, execute.executed)
 
     async def _execute_model_async(request: ModelRequest[ContextT]) -> ModelResponse:
         """Execute model asynchronously and return response.
@@ -1620,11 +1649,7 @@ def create_agent(
         )
 
         has_structured_output = initial_response_format is not None
-        executed: list[BaseChatModel] = []
-
-        async def execute(model_request: ModelRequest[ContextT]) -> ModelResponse:
-            executed.append(model_request.model)
-            return await _execute_model_async(model_request)
+        execute = _AsyncModelCallRecorder(_execute_model_async)
 
         if awrap_model_call_handler is None:
             model_response = await execute(request)
@@ -1641,7 +1666,7 @@ def create_agent(
                 has_structured_output=has_structured_output,
                 repaired_messages=messages if messages != state["messages"] else None,
             )
-        return _record_model_selection(commands, state, executed)
+        return _record_model_selection(commands, state, execute.executed)
 
     # Use sync or async based on model capabilities
     graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))
