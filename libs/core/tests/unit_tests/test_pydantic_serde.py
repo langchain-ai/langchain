@@ -10,6 +10,8 @@ of the models (i.e., not necessarily from loading or dumping JSON).
 import pytest
 from pydantic import RootModel, ValidationError
 
+from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.documents import Document
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -63,3 +65,31 @@ def test_serde_any_message() -> None:
     with pytest.raises((TypeError, ValidationError)):
         # Make sure that specifically validation error is raised
         model.model_validate({})
+
+
+def test_serde_document_first_union_does_not_raise_type_error() -> None:
+    """Test that union validation can continue past `Document`."""
+    model = RootModel[Document | HumanMessage]
+
+    human_payload = HumanMessage(content="human").model_dump()
+    parsed = model.model_validate(human_payload)
+
+    assert type(parsed.root) is HumanMessage
+
+
+def test_document_missing_page_content_raises_validation_error() -> None:
+    """Test that missing `page_content` uses pydantic validation errors."""
+    model = RootModel[Document | HumanMessage]
+
+    with pytest.raises(ValidationError):
+        model.model_validate({"type": "Document"})
+
+
+def test_serde_agent_union_does_not_raise_type_error() -> None:
+    """Test that union validation can continue past agent schema types."""
+    model = RootModel[AgentFinish | AgentAction | HumanMessage]
+
+    human_payload = HumanMessage(content="human").model_dump()
+    parsed = model.model_validate(human_payload)
+
+    assert type(parsed.root) is HumanMessage
