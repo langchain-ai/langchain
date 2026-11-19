@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
@@ -19,6 +19,7 @@ from langchain_openai.chat_models.codex import (
     ORIGINATOR_ENV_VAR,
     ORIGINATOR_HEADER,
     ORIGINATOR_VALUE,
+    SESSION_ID_HEADER,
     _ChatOpenAICodex,
     _SyncTokenCallable,
 )
@@ -43,7 +44,7 @@ class FakeTokenProvider:
         return _ChatGPTToken(
             access_token=self.access_token,
             refresh_token="rt",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
             account_id=self.account_id,
         )
 
@@ -72,7 +73,7 @@ class AsyncOnlyTokenProvider(FakeTokenProvider):
         return _ChatGPTToken(
             access_token=self.access_token,
             refresh_token="rt",
-            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
             account_id=self.account_id,
         )
 
@@ -171,9 +172,67 @@ def test_request_payload_omits_account_id_when_unknown() -> None:
 def test_request_payload_can_disable_originator_header() -> None:
     """`originator=None` omits the header entirely."""
     provider = FakeTokenProvider(account_id=None)
-    model = _build_model(token_provider=provider, originator=None)
+    model = _build_model(token_provider=provider, originator=None, session_id=None)
     payload = model._get_request_payload([HumanMessage("hi")])
     assert "extra_headers" not in payload
+
+
+def test_session_id_header_is_stable_per_instance() -> None:
+    """Every turn on one instance shares a `session-id`, so it can be cached."""
+    model = _build_model()
+    first = model._get_request_payload([HumanMessage("hi")])
+    second = model._get_request_payload([HumanMessage("hi again")])
+    session_id = first["extra_headers"][SESSION_ID_HEADER]
+    assert session_id
+    assert second["extra_headers"][SESSION_ID_HEADER] == session_id
+    assert "session_id" not in first
+
+
+def test_session_id_defaults_differ_across_instances() -> None:
+    first = _build_model()._get_request_payload([HumanMessage("hi")])
+    second = _build_model()._get_request_payload([HumanMessage("hi")])
+    assert (
+        first["extra_headers"][SESSION_ID_HEADER]
+        != second["extra_headers"][SESSION_ID_HEADER]
+    )
+
+
+def test_constructor_session_id_is_sent() -> None:
+    model = _build_model(session_id="thread-1")
+    payload = model._get_request_payload([HumanMessage("hi")])
+    assert payload["extra_headers"][SESSION_ID_HEADER] == "thread-1"
+
+
+def test_per_call_session_id_overrides_field_and_stays_out_of_body() -> None:
+    model = _build_model(session_id="thread-1")
+    payload = model._get_request_payload([HumanMessage("hi")], session_id="thread-2")
+    assert payload["extra_headers"][SESSION_ID_HEADER] == "thread-2"
+    assert "session_id" not in payload
+
+
+def test_session_id_none_omits_header() -> None:
+    model = _build_model(session_id=None)
+    payload = model._get_request_payload([HumanMessage("hi")])
+    assert SESSION_ID_HEADER not in payload["extra_headers"]
+
+
+def test_caller_extra_headers_override_session_id() -> None:
+    model = _build_model(session_id="thread-1")
+    payload = model._get_request_payload(
+        [HumanMessage("hi")], extra_headers={SESSION_ID_HEADER: "call-session"}
+    )
+    assert payload["extra_headers"][SESSION_ID_HEADER] == "call-session"
+
+
+def test_session_id_is_added_to_prebuilt_async_headers() -> None:
+    """The async paths hand in prebuilt headers; `session-id` must still ride."""
+    provider = AsyncOnlyTokenProvider(account_id=None)
+    model = _build_model(token_provider=provider, originator=None)
+    payload = model._get_request_payload(
+        [HumanMessage("hi")], _codex_headers={}, session_id="thread-async"
+    )
+    assert payload["extra_headers"] == {SESSION_ID_HEADER: "thread-async"}
+    assert provider.calls == 0
 
 
 def test_constructor_originator_overrides_default() -> None:
@@ -290,7 +349,7 @@ def test_request_payload_sends_store_false_and_stream_true() -> None:
 
 
 def test_request_payload_with_store_false_drops_reasoning_item_references() -> None:
-    model = _build_model()
+    model = _build_model(instructions="")
     payload = model._get_request_payload(
         [
             HumanMessage("Explain recursive file search."),
@@ -331,7 +390,7 @@ def test_request_payload_with_store_false_drops_reasoning_item_references() -> N
 
 
 def test_request_payload_with_store_false_drops_image_call_references() -> None:
-    model = _build_model()
+    model = _build_model(instructions="")
     payload = model._get_request_payload(
         [
             HumanMessage("Draw a word."),
@@ -372,61 +431,96 @@ def test_request_payload_with_store_false_drops_image_call_references() -> None:
     assert "id" not in payload["input"][2]
 
 
-def test_request_payload_sets_default_instructions() -> None:
-    """The Codex backend 400s without `instructions`; default must be injected."""
+def _developer_message(content: str) -> dict[str, Any]:
+    return {"type": "message", "role": "developer", "content": content}
+
+
+def test_request_payload_sends_default_prompt_as_developer_message() -> None:
+    """The default prompt leads `input` so GPT-6.2+ can prompt-cache it."""
     model = _build_model()
     payload = model._get_request_payload([HumanMessage("hi")])
-    assert payload["instructions"] == DEFAULT_INSTRUCTIONS
+    assert "instructions" not in payload
+    assert payload["input"][0] == _developer_message(DEFAULT_INSTRUCTIONS)
+    assert [entry.get("role") for entry in payload["input"]] == [
+        "developer",
+        "user",
+    ]
 
 
-def test_request_payload_respects_constructor_instructions() -> None:
+def test_request_payload_sends_constructor_instructions_as_developer_message() -> None:
     model = _build_model(instructions="custom system prompt")
     payload = model._get_request_payload([HumanMessage("hi")])
-    assert payload["instructions"] == "custom system prompt"
+    assert "instructions" not in payload
+    assert payload["input"][0] == _developer_message("custom system prompt")
 
 
-def test_request_payload_respects_per_call_instructions_override() -> None:
-    """An `instructions` kwarg at invoke time wins over the model default."""
+def test_request_payload_with_empty_constructor_instructions_sends_no_prompt() -> None:
+    model = _build_model(instructions="")
+    payload = model._get_request_payload([HumanMessage("hi")])
+    assert "instructions" not in payload
+    assert [entry.get("role") for entry in payload["input"]] == ["user"]
+
+
+def test_request_payload_with_string_input_leads_with_developer_message() -> None:
+    model = _build_model(instructions="model-level")
+    payload = model._get_request_payload("hi")
+    assert payload["input"][0] == _developer_message("model-level")
+    assert payload["input"][1]["role"] == "user"
+
+
+def test_per_call_instructions_are_sent_alongside_developer_prompt() -> None:
+    """A per-call `instructions` kwarg is turn-only guidance, not a replacement."""
     model = _build_model(instructions="model-level")
     payload = model._get_request_payload(
         [HumanMessage("hi")], instructions="call-level"
     )
     assert payload["instructions"] == "call-level"
+    assert payload["input"][0] == _developer_message("model-level")
 
 
 def test_request_payload_preserves_explicit_empty_instructions() -> None:
-    """An explicit empty `instructions=""` must not be overwritten silently.
-
-    The backend will reject it, but silently replacing it with the default
-    would hide the caller's bug.
-    """
+    """An explicit empty `instructions=""` is passed through verbatim."""
     model = _build_model(instructions="model-level")
     payload = model._get_request_payload([HumanMessage("hi")], instructions="")
     assert payload["instructions"] == ""
 
 
-def test_system_message_is_lifted_into_top_level_instructions() -> None:
-    """`SystemMessage` content overrides the constructor `instructions`.
+def test_system_message_is_sent_as_leading_developer_message() -> None:
+    """`SystemMessage` content replaces the constructor prompt.
 
-    Codex rejects `SystemMessage` chat turns (400 "System messages are
-    not allowed"), so `_ChatOpenAICodex` lifts their content into the
-    top-level `instructions` field and strips them from the input list.
+    Codex rejects `system`-role input entries (400 "System messages are not
+    allowed"), and GPT-6.2+ does not cache top-level `instructions`, so the
+    content is sent as the first `developer` message in `input`.
     """
     model = _build_model(instructions="model-level")
     payload = model._get_request_payload(
         [SystemMessage("from-system-message"), HumanMessage("hi")]
     )
-    assert payload["instructions"] == "from-system-message"
+    assert "instructions" not in payload
     input_messages = payload["input"]
+    assert input_messages[0] == _developer_message("from-system-message")
     assert all(entry.get("role") != "system" for entry in input_messages)
-    assert any(
-        entry.get("role") == "user" and "hi" in str(entry.get("content"))
-        for entry in input_messages
+    assert [entry.get("role") for entry in input_messages] == ["developer", "user"]
+    assert "hi" in str(input_messages[1].get("content"))
+
+
+def test_developer_prompt_is_identical_across_turns() -> None:
+    """The cacheable prefix must stay byte-stable as the conversation grows."""
+    model = _build_model()
+    first = model._get_request_payload([SystemMessage("prompt"), HumanMessage("a")])
+    second = model._get_request_payload(
+        [
+            SystemMessage("prompt"),
+            HumanMessage("a"),
+            AIMessage("b"),
+            HumanMessage("c"),
+        ]
     )
+    assert first["input"][:2] == second["input"][:2]
 
 
 @pytest.mark.parametrize("role", ["system", "developer"])
-def test_chat_message_instruction_roles_are_lifted(role: str) -> None:
+def test_chat_message_instruction_roles_become_developer_message(role: str) -> None:
     model = _build_model(instructions="model-level")
     payload = model._get_request_payload(
         [
@@ -434,9 +528,9 @@ def test_chat_message_instruction_roles_are_lifted(role: str) -> None:
             HumanMessage("hi"),
         ]
     )
-    assert payload["instructions"] == f"from-{role}"
-    assert all(entry.get("role") != role for entry in payload["input"])
-    assert [entry.get("role") for entry in payload["input"]] == ["user"]
+    assert "instructions" not in payload
+    assert payload["input"][0] == _developer_message(f"from-{role}")
+    assert [entry.get("role") for entry in payload["input"]] == ["developer", "user"]
 
 
 def test_back_to_back_system_messages_join_in_input_order() -> None:
@@ -449,17 +543,15 @@ def test_back_to_back_system_messages_join_in_input_order() -> None:
             HumanMessage("hi"),
         ]
     )
-    assert payload["instructions"] == "first\n\nsecond"
+    assert payload["input"][0] == _developer_message("first\n\nsecond")
+    assert len(payload["input"]) == 2
 
 
-def test_interleaved_system_messages_are_still_lifted() -> None:
-    """`SystemMessage`s anywhere in the input are lifted into `instructions`.
+def test_interleaved_system_messages_are_moved_to_the_front() -> None:
+    """`SystemMessage`s anywhere in the input join the leading developer message.
 
-    Codex is stateless per call and has no equivalent of an in-line system
-    turn, so positional intent (e.g., switching persona mid-conversation)
-    can't be preserved. All `SystemMessage`s are concatenated in input
-    order and stripped; the remaining (non-system) messages keep their
-    relative order.
+    All `SystemMessage`s are concatenated in input order and stripped; the
+    remaining (non-system) messages keep their relative order.
     """
     model = _build_model(instructions="model-level")
     payload = model._get_request_payload(
@@ -470,39 +562,24 @@ def test_interleaved_system_messages_are_still_lifted() -> None:
             SystemMessage("tail-system"),
         ]
     )
-    assert payload["instructions"] == "midway-system\n\ntail-system"
-    contents = [entry.get("content") for entry in payload["input"]]
+    assert payload["input"][0] == _developer_message("midway-system\n\ntail-system")
+    contents = [entry.get("content") for entry in payload["input"][1:]]
     assert all(entry.get("role") != "system" for entry in payload["input"])
     assert contents == ["hi", "bye"]
 
 
-def test_explicit_instructions_kwarg_wins_over_system_message() -> None:
-    """A per-call `instructions=` kwarg always beats lifted `SystemMessage`."""
+def test_explicit_instructions_kwarg_keeps_system_message() -> None:
+    """A per-call `instructions=` kwarg no longer discards `SystemMessage`s."""
     model = _build_model(instructions="model-level")
     payload = model._get_request_payload(
         [SystemMessage("from-system-message"), HumanMessage("hi")],
         instructions="from-kwarg",
     )
     assert payload["instructions"] == "from-kwarg"
+    assert payload["input"][0] == _developer_message("from-system-message")
 
 
-def test_explicit_instructions_kwarg_overrides_logs_warning(
-    caplog: pytest.LogCaptureFixture,
-) -> None:
-    """The override path emits a warning so callers can audit the conflict."""
-    model = _build_model(instructions="model-level")
-    with caplog.at_level("WARNING", logger="langchain_openai.chat_models.codex"):
-        model._get_request_payload(
-            [SystemMessage("discarded"), HumanMessage("hi")],
-            instructions="from-kwarg",
-        )
-    assert any(
-        "explicit `instructions=` kwarg wins" in record.getMessage()
-        for record in caplog.records
-    )
-
-
-def test_system_message_with_text_blocks_is_lifted() -> None:
+def test_system_message_with_text_blocks_is_flattened() -> None:
     """List-of-text-blocks `SystemMessage` content flattens cleanly."""
     model = _build_model(instructions="model-level")
     payload = model._get_request_payload(
@@ -516,11 +593,11 @@ def test_system_message_with_text_blocks_is_lifted() -> None:
             HumanMessage("hi"),
         ]
     )
-    assert payload["instructions"] == "part one. part two."
+    assert payload["input"][0] == _developer_message("part one. part two.")
 
 
 def test_system_message_with_non_text_block_raises() -> None:
-    """Non-text content blocks can't be flattened into `instructions`."""
+    """Non-text content blocks can't be flattened into the developer prompt."""
     model = _build_model(instructions="model-level")
     with pytest.raises(ValueError, match="non-text content block"):
         model._get_request_payload(
@@ -670,7 +747,7 @@ def test_ls_params_uses_codex_provider_tag() -> None:
 
 
 def test_profile_declares_no_mid_conversation_capabilities() -> None:
-    """The Codex API takes system text only, as a string `instructions`."""
+    """System text is flattened into one leading developer message."""
     model = _build_model(model="gpt-5.6")
 
     assert model.profile

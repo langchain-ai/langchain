@@ -36,6 +36,7 @@ from langchain_core.runnables import RunnableConfig, RunnableLambda
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
+from langgraph.constants import TAG_NOSTREAM
 from langgraph.graph.message import REMOVE_ALL_MESSAGES, add_messages
 from langgraph.runtime import Runtime
 from langgraph.types import Command
@@ -2470,13 +2471,7 @@ class ConfigCapturingModel(BaseChatModel):
 
 
 @pytest.mark.parametrize("use_async", [False, True], ids=["sync", "async"])
-async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None:  # noqa: FBT001
-    """Test that summary creation passes `lc_source` metadata to the model.
-
-    When called outside a LangGraph runnable context, `get_config()` raises
-    `RuntimeError`. The middleware catches this and still passes the `lc_source`
-    metadata to the model.
-    """
+async def test_create_summary_marks_its_call_internal(use_async: bool) -> None:  # noqa: FBT001
     model = ConfigCapturingModel()
     model.captured_configs = []  # Reset for this test
     middleware = SummarizationMiddleware(model=model, trigger=("tokens", 1000))
@@ -2497,6 +2492,7 @@ async def test_create_summary_passes_lc_source_metadata(use_async: bool) -> None
         config["metadata"][INTERNAL_CALL_METADATA_KEY]
         == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
     )
+    assert TAG_NOSTREAM in config["tags"]
 
 
 class TestSummarizationStreamingEndToEnd:
@@ -2507,14 +2503,16 @@ class TestSummarizationStreamingEndToEnd:
 
         Uses `GenericFakeChatModel` for both the main agent and the
         summarizer (it actually streams via `_astream`, unlike
-        `FakeToolCallingModel`), then asserts `run.messages` surfaces only
-        the agent's real answer.
+        `FakeToolCallingModel`), then asserts `run.messages` carries no
+        stream of the summarizer's own output.
         """
         main_model = GenericFakeChatModel(messages=iter([AIMessage(content="Final answer.")]))
         summarizer_model = GenericFakeChatModel(
             messages=iter([AIMessage(content="Summary of prior turns.")])
         )
-        middleware = SummarizationMiddleware(model=summarizer_model, trigger=("messages", 1))
+        middleware = SummarizationMiddleware(
+            model=summarizer_model, trigger=("messages", 1), keep=("messages", 1)
+        )
 
         agent = create_agent(model=main_model, tools=[], middleware=[middleware])
 
@@ -2536,7 +2534,31 @@ class TestSummarizationStreamingEndToEnd:
                 text += chunk
             texts.append(text)
 
-        assert texts == ["Final answer."]
+        assert "Summary of prior turns." not in texts
+
+
+def test_summary_call_stays_off_the_messages_stream() -> None:
+    summarizer = GenericFakeChatModel(messages=iter([AIMessage(content="SUMMARY-TEXT")]))
+    middleware = SummarizationMiddleware(
+        model=summarizer, trigger=("messages", 3), keep=("messages", 1)
+    )
+    agent = create_agent(
+        model=GenericFakeChatModel(messages=iter([AIMessage(content="Final answer.")])),
+        middleware=[middleware],
+    )
+
+    parts = [
+        part
+        for part, _ in agent.stream(
+            {"messages": [HumanMessage("hi"), AIMessage("hello"), HumanMessage("again")]},
+            stream_mode="messages",
+        )
+    ]
+
+    # The summary message reuses the ID of the first message it replaces, so the
+    # `messages` stream treats it as already seen and does not re-emit it.
+    assert not any("SUMMARY-TEXT" in part.text for part in parts if isinstance(part, BaseMessage))
+    assert "".join(part.text for part in parts if isinstance(part, AIMessage)) == "Final answer."
 
 
 def test_summarizer_replaces_model_call() -> None:
@@ -2588,8 +2610,8 @@ def test_summarizer_receives_trimmed_messages() -> None:
     assert received == [messages[-2:]]
 
 
-def test_summarizer_accepts_runnable_and_gets_summarization_metadata() -> None:
-    """A `Runnable` summarizer is invoked with the summarization metadata."""
+def test_summarizer_accepts_runnable_and_gets_summary_call_config() -> None:
+    """A `Runnable` summarizer is invoked with the summary call's config."""
     configs: list[RunnableConfig] = []
 
     def summarize(messages: list[AnyMessage], config: RunnableConfig) -> str:
@@ -2606,6 +2628,7 @@ def test_summarizer_accepts_runnable_and_gets_summarization_metadata() -> None:
     assert (
         metadata[INTERNAL_CALL_METADATA_KEY] == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
     )
+    assert TAG_NOSTREAM in configs[0]["tags"]
 
 
 async def test_summarizer_async() -> None:

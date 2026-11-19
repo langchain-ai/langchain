@@ -4,14 +4,16 @@ import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
 from contextlib import contextmanager
+from functools import cache
 from importlib.metadata import PackageNotFoundError
-from typing import TYPE_CHECKING, Any, Literal, get_type_hints
-from unittest.mock import patch
+from typing import TYPE_CHECKING, Any, Literal, Self, get_type_hints
+from unittest.mock import MagicMock, patch
 
 import pytest
+from langsmith import Client
 from langsmith.env import get_langchain_env_var_metadata
 from pydantic import Field, model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.callbacks import (
@@ -377,7 +379,7 @@ class FakeTracer(BaseTracer):
 
 class LangChainTracerRunCollector:
     def __init__(self) -> None:
-        self.tracer = LangChainTracer()
+        self.tracer = LangChainTracer(client=MagicMock(spec=Client))
         self.runs: list[Run] = []
 
     @contextmanager
@@ -385,7 +387,13 @@ class LangChainTracerRunCollector:
         def collect_tracer_run(_: LangChainTracer, run: Run) -> None:
             self.runs.append(run)
 
-        with patch.object(LangChainTracer, "_persist_run", new=collect_tracer_run):
+        with (
+            patch.object(LangChainTracer, "_persist_run", new=collect_tracer_run),
+            patch(
+                "langchain_core.tracers.langchain.get_runtime_environment",
+                return_value={},
+            ),
+        ):
             yield self.tracer
 
 
@@ -1502,14 +1510,14 @@ def test_langchain_version_in_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
         raise PackageNotFoundError(pkg)
 
     monkeypatch.setattr("importlib.metadata.version", _fake_version)
-    _get_langchain_version.cache_clear()
-    try:
-        llm = FakeListChatModel(responses=["x"])
-        assert llm.metadata is not None
-        assert llm.metadata["lc_versions"]["langchain"] == "1.2.13"
-        assert "langchain-core" in llm.metadata["lc_versions"]
-    finally:
-        _get_langchain_version.cache_clear()
+    monkeypatch.setattr(
+        "langchain_core.language_models.base._get_langchain_version",
+        cache(_get_langchain_version.__wrapped__),
+    )
+    llm = FakeListChatModel(responses=["x"])
+    assert llm.metadata is not None
+    assert llm.metadata["lc_versions"]["langchain"] == "1.2.13"
+    assert "langchain-core" in llm.metadata["lc_versions"]
 
 
 def test_langchain_version_missing_when_not_installed(
@@ -1525,14 +1533,14 @@ def test_langchain_version_missing_when_not_installed(
         raise PackageNotFoundError(pkg)
 
     monkeypatch.setattr("importlib.metadata.version", _raise_not_found)
-    _get_langchain_version.cache_clear()
-    try:
-        llm = FakeListChatModel(responses=["x"])
-        assert llm.metadata is not None
-        assert "langchain" not in llm.metadata["lc_versions"]
-        assert "langchain-core" in llm.metadata["lc_versions"]
-    finally:
-        _get_langchain_version.cache_clear()
+    monkeypatch.setattr(
+        "langchain_core.language_models.base._get_langchain_version",
+        cache(_get_langchain_version.__wrapped__),
+    )
+    llm = FakeListChatModel(responses=["x"])
+    assert llm.metadata is not None
+    assert "langchain" not in llm.metadata["lc_versions"]
+    assert "langchain-core" in llm.metadata["lc_versions"]
 
 
 def test_version_validator_coexists_with_core_seed() -> None:

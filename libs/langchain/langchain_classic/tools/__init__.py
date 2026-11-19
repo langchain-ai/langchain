@@ -8,6 +8,7 @@ import warnings
 from typing import Any
 
 from langchain_core._api import LangChainDeprecationWarning
+from langchain_core._api.deprecation import _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING
 from langchain_core.tools import (
     BaseTool as BaseTool,
 )
@@ -57,7 +58,10 @@ def __getattr__(name: str) -> Any:
     from langchain_community import tools
 
     # If not in interactive env, raise warning.
-    if not is_interactive_env():
+    if (
+        not is_interactive_env()
+        and not _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get()
+    ):
         warnings.warn(
             "Importing tools from langchain is deprecated. Importing from "
             "langchain will no longer be supported as of langchain==0.2.0. "

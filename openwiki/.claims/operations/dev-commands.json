@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:279dfcc5f1330f338795fa483059f10307bcd8d2baf2bf1720b55ba85551e41c",
+  "pageVersion": "sha256:b5a1d9cb187abbb5922a297116750233bfb7334fc2a4b851fc74263aeb8ea508",
   "claims": [
     {
       "id": "claim_6953198e8c5d4886a865c2f3b32d9b22",
@@ -22,11 +22,11 @@
     },
     {
       "id": "claim_d0fde47d1dcb4d4bb1b9a3eb356352aa",
-      "statement": "Pre-commit hooks in .pre-commit-config.yaml enforce code quality through: standard validation (YAML/TOML syntax, file endings, whitespace), text normalization (curly quotes, non-standard spaces), per-package format/lint via make (local hooks for core, langchain, langchain_v1, standard-tests, text-splitters, and partners), version consistency checks (make check_version for each package), and branch protection (no direct commits to master)",
+      "statement": "Pre-commit hooks in .pre-commit-config.yaml enforce code quality through: standard validation (YAML/TOML syntax, file endings, whitespace), text normalization (curly quotes, non-standard spaces), per-package format/lint via make (local hooks for core, langchain-classic, langchain_v1, standard-tests, text-splitters, and partner packages), version consistency checks (make check_version for each package), and branch protection (no direct commits to master)",
       "evidence": [
         {
-          "resource": "repo://.pre-commit-config.yaml#L1-L120",
-          "version": "repo-lines-v1:sha256:15a259204f0c0ecea47b207597974abc04a222a69f210bc7f372c9497892e736:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YTExMGRiNWE5MzU3Y2RhMWQ3ODIxNmNkYzBiZjhiMjU1ZTMzOGNiYzFmMzI3ZTBkZjA4Y2ZjNzczOTFkZGVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiNDRjNTVkYTg5MjBiYjE3ZGQxMDEyNjExNzAzMjI2ZWU1NzM5ZGJjMThiMDRiNDc5NDQ5Y2I2NDg0MDdmODg3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIyMDYyMWQ3OWI5Y2YwOTMzMzgwNjg3NDhiYmM0ODFlZTVmZWY4NDViOGFiODFmMDQ5YzFhODc1ZmFlNjVhMjg2In0"
+          "resource": "repo://.pre-commit-config.yaml#L1-L257",
+          "version": "repo-lines-v1:sha256:9836d4928d1c589efa89343147da52657dc4a76dc63e9a05d0609586294ecd86:eyJzZWxlY3RlZExpbmVDb3VudCI6MjU3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1YTExMGRiNWE5MzU3Y2RhMWQ3ODIxNmNkYzBiZjhiMjU1ZTMzOGNiYzFmMzI3ZTBkZjA4Y2ZjNzczOTFkZGVmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5MTc4NmJkM2Q0OWJhOTNiMjZjNDQ2ODM1MmQ1ZWIwNzliNWZjZTRmZGZkNjM2ODM4NjQyMWRlZmMyNjcwNGUzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -110,21 +110,21 @@
     },
     {
       "id": "claim_82b6c970b80c4ebc87ebefbc21a9c502",
-      "statement": "Per-package pre-commit local hooks execute make -C libs/<package> format lint for each package directory (core, langchain, langchain_v1, standard-tests, text-splitters, anthropic, chroma, exa, fireworks, groq, huggingface, mistralai, nomic, ollama, openai, qdrant, etc.) with files patterns that trigger on changes to each package's source",
+      "statement": "Per-package pre-commit local hooks execute make -C libs/<package> format lint for core, langchain-classic, langchain_v1, standard-tests, text-splitters, and partner packages (anthropic, chroma, deepseek, exa, fireworks, groq, huggingface, mistralai, nomic, ollama, openai, openrouter, perplexity, qdrant, typesafe, xai) with file patterns that trigger on changes to each package's source",
       "evidence": [
         {
-          "resource": "repo://.pre-commit-config.yaml#L22-L112",
-          "version": "repo-lines-v1:sha256:2a67c2b60e0ca29ad68bb528f2ac4a16e81a913ee3f62994ae9ee05fa8efaec4:eyJzZWxlY3RlZExpbmVDb3VudCI6OTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwNWFjN2E3OGNlODgzZmExOGI3MDdlODJmMzU1ZjRkZDQ0OWNmZWNjNzkyZmVkMWYwZGQyOGFlM2Y2MDk4NTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhNDY2MTI0MjU5ZGM1MmQ1NzUwZGM0NDFhMTZjNjFjYzg5NzU3NzlmZjFhNDdiNjQxOTU0M2Y2ZDU4ZWUwMTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI2OWZiNTExYTU3YWRhNGZlYzg5ZTRkNGRhZjE0Y2I4ODU4MDRlMDllY2Q1NTY2NTkxMmRlN2E3MmFjZTFmYTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMDVkYWUxZDY5NDAxZDlmOTNlYWUzOTcwZjQ1NmFkZTA3MWIxNjk5YTQ4NWY1MDZhMjMwNGY1MGM3NGQwYTYifQ"
+          "resource": "repo://.pre-commit-config.yaml#L24-L149",
+          "version": "repo-lines-v1:sha256:b2bb8e1645a25c894cae8b827ce743377add24731958f73566ae9e189cfe95f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNjc0NjJkOTk3NmNlZTVjOGYxYmIxNWE5YTgxOTg4MWI0YmQ3ODkwNzRjNGIzNGI1M2U1ODRjMDNiNWUyNTBlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5MTc4NmJkM2Q0OWJhOTNiMjZjNDQ2ODM1MmQ1ZWIwNzliNWZjZTRmZGZkNjM2ODM4NjQyMWRlZmMyNjcwNGUzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzMThiMWJkN2RmOGNjOWQ5MjQ0NmRiNTlmMjQwZjQ2MzM5OGM1YWU2YjVjYWU0YzVmYWEzYjFmYjkwMDM0NmU3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhZmVhNmI1MGNkMDJlMDc4NDExMTFmMjRiY2FhODMwNjk4ZTFlZGEyNzgzMTA5Y2MyYjcwMjBiYTZiOTg0MDA3In0"
         }
       ]
     },
     {
       "id": "claim_a0dba6055f2c4e709372dc9c6c2abc92",
-      "statement": "Pre-commit version consistency hooks check that pyproject.toml version matches source code version files (e.g., langchain_core/version.py, langchain/__init__.py, langchain_anthropic/_version.py) by running make check_version for each package that requires it",
+      "statement": "Pre-commit version consistency hooks check that pyproject.toml version matches source code version files (e.g., langchain_core/version.py, langchain/__init__.py, langchain_anthropic/_version.py) by running make check_version for each package that requires it (core, langchain_v1, and all partner packages)",
       "evidence": [
         {
-          "resource": "repo://.pre-commit-config.yaml#L114-L215",
-          "version": "repo-lines-v1:sha256:60a60a2c48cde1b7fa504c573c9e5abcf9c5a737bdb3f333300761cfe8e3394c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjZjUyYzZjYzM2Nzk3M2ViNTFkODgyNjliOGVmMDA0M2Q3NjU1N2M5YzViYjNiNDA2MzAzMTA2NDY1ZTc2YmIzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5MTc4NmJkM2Q0OWJhOTNiMjZjNDQ2ODM1MmQ1ZWIwNzliNWZjZTRmZGZkNjM2ODM4NjQyMWRlZmMyNjcwNGUzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmYzgxZTYwMDE4NjhjMTcxMWNhMmQ5OTU3ZWYzN2IyODBlZGRmNzk4MjFmODcxYTcyMjU1NTg4ZmNjNTQ1MzVlIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://.pre-commit-config.yaml#L150-L257",
+          "version": "repo-lines-v1:sha256:b3438731e9153148b94ee740355db685b677a351addf2e15d15f197650ca4bb9:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjZjUyYzZjYzM2Nzk3M2ViNTFkODgyNjliOGVmMDA0M2Q3NjU1N2M5YzViYjNiNDA2MzAzMTA2NDY1ZTc2YmIzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI5MTc4NmJkM2Q0OWJhOTNiMjZjNDQ2ODM1MmQ1ZWIwNzliNWZjZTRmZGZkNjM2ODM4NjQyMWRlZmMyNjcwNGUzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0NzdmZTdmMmU5ZDQ1ZjRlMTAyMWQyY2FjMWJmOWFmZDc2MWFhMzlkNjcxYjcxMmQ5ZDFiNWZiYWI3OTFhYjIwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -163,6 +163,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-10-29T08:20:01.046Z"
+    "at": "2026-11-18T08:17:15.497Z"
   }
 }

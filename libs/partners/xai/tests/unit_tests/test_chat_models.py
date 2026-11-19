@@ -1,6 +1,8 @@
 import json
+from contextlib import nullcontext
 
 import pytest  # type: ignore[import-not-found]
+from langchain_core.load import dumpd
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -9,6 +11,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
+from langchain_core.utils._gateway import langsmith_gateway
 from langchain_openai.chat_models.base import (
     _convert_dict_to_message,
     _convert_message_to_dict,
@@ -20,7 +23,7 @@ from openai.types.completion_usage import (
     CompletionTokensDetails,
     CompletionUsage,
 )
-from pydantic import SecretStr
+from pydantic import BaseModel, SecretStr
 
 from langchain_xai import ChatXAI
 
@@ -368,3 +371,116 @@ def test_convert_chunk_recomputes_total_tokens_for_reasoning() -> None:
     assert usage_metadata["output_tokens"] == 14  # 9 completion + 5 reasoning
     assert usage_metadata["total_tokens"] == 46  # 32 + 14, invariant holds
     assert usage_metadata["output_token_details"]["reasoning"] == 5
+
+
+# --- LangSmith gateway ---
+
+
+@pytest.fixture
+def _gateway_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for var in (
+        "LANGSMITH_GATEWAY",
+        "LANGSMITH_GATEWAY_API_KEY",
+        "LANGSMITH_API_KEY",
+        "XAI_API_BASE",
+        "XAI_API_KEY",
+    ):
+        monkeypatch.delenv(var, raising=False)
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    llm = ChatXAI(model="grok-4")
+    assert llm.xai_api_base == "https://gateway.smith.langchain.com/xai/v1"
+    assert llm.xai_api_key is not None
+    assert llm.xai_api_key.get_secret_value() == "gateway-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("XAI_API_KEY", "provider-key")
+    llm = ChatXAI(model="grok-4")
+    assert llm.xai_api_base == "https://api.x.ai/v1/"
+    assert llm.xai_api_key is not None
+    assert llm.xai_api_key.get_secret_value() == "provider-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_provider_env_base_url_wins(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("XAI_API_BASE", "https://proxy.example.com/v1")
+    monkeypatch.setenv("XAI_API_KEY", "provider-key")
+    llm = ChatXAI(model="grok-4")
+    assert llm.xai_api_base == "https://proxy.example.com/v1"
+    assert llm.xai_api_key is not None
+    assert llm.xai_api_key.get_secret_value() == "provider-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_context_overrides_explicit_values() -> None:
+    gateway = pytest.importorskip("langchain_core.utils._gateway")
+    if not hasattr(gateway, "langsmith_gateway"):
+        pytest.skip("Requires a langchain-core release with `langsmith_gateway`.")
+    with gateway.langsmith_gateway(api_key="service-key"):
+        llm = ChatXAI(
+            model="grok-4",
+            base_url="https://other.example.com/v1",
+            api_key=SecretStr("user-key"),
+        )
+    assert llm.xai_api_base == "https://gateway.smith.langchain.com/xai/v1"
+    assert llm.xai_api_key is not None
+    assert llm.xai_api_key.get_secret_value() == "service-key"
+
+
+def test_langsmith_gateway_context_headers() -> None:
+    """Gateway headers reach the client but are never serialized."""
+    with langsmith_gateway(api_key="placeholder", headers={"X-Service-Key": "svc-key"}):
+        llm = ChatXAI(
+            model="grok-4",
+            api_key=SecretStr("user-key"),
+            default_headers={"x-service-key": "forged", "X-Custom": "kept"},
+        )
+    sent = llm.root_client.default_headers
+    assert sent["X-Service-Key"] == "svc-key"
+    assert sent["X-Custom"] == "kept"
+    assert "svc-key" not in json.dumps(dumpd(llm))
+
+
+@pytest.mark.parametrize("initial_gateway", [False, True])
+def test_langsmith_gateway_headers_survive_revalidation(
+    *, initial_gateway: bool
+) -> None:
+    context = (
+        langsmith_gateway(
+            api_key="original-api-secret", headers={"X-Service-Key": "original-secret"}
+        )
+        if initial_gateway
+        else nullcontext()
+    )
+    with context:
+        llm = ChatXAI(model=MODEL_NAME, api_key=SecretStr("user-key"))
+    original_clients = llm.root_client, llm.root_async_client
+    headers = {"x-service-key": "forged", "X-Other-Key": "kept"}
+    with langsmith_gateway(
+        api_key="other-api-secret", headers={"X-Other-Key": "other-secret"}
+    ):
+        assert ChatXAI.model_validate(llm) is llm
+
+        class Wrapper(BaseModel):
+            model: ChatXAI
+
+        assert Wrapper(model=llm).model is llm
+    assert (llm.root_client, llm.root_async_client) == original_clients
+    expected_headers = {"X-Other-Key": "kept"} if initial_gateway else headers
+    payload = llm._get_request_payload("hello", extra_headers=headers)
+    assert payload["extra_headers"] == expected_headers
+    for client in original_clients:
+        assert client.default_headers.get("X-Service-Key") == (
+            "original-secret" if initial_gateway else None
+        )
+        assert "X-Other-Key" not in client.default_headers

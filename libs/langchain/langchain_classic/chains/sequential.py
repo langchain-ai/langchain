@@ -1,6 +1,6 @@
 """Chain pipeline where the outputs of one step feed directly into next."""
 
-from typing import Any
+from typing import Any, Self
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForChainRun,
@@ -8,7 +8,6 @@ from langchain_core.callbacks import (
 )
 from langchain_core.utils.input import get_color_mapping
 from pydantic import ConfigDict, model_validator
-from typing_extensions import Self
 
 from langchain_classic.chains.base import Chain
 

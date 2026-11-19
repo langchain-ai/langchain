@@ -5,10 +5,10 @@ import json
 import logging
 import operator
 from collections.abc import Sequence
-from typing import Any, Literal, cast, overload
+from typing import Any, Literal, NotRequired, Self, cast, overload
 
 from pydantic import Field, model_validator
-from typing_extensions import NotRequired, Self, TypedDict, override
+from typing_extensions import TypedDict, override
 
 from langchain_core.messages import content as types
 from langchain_core.messages.base import (

@@ -2,7 +2,7 @@
 
 import functools
 import logging
-from enum import Enum
+from enum import StrEnum
 from importlib import util
 from typing import Any
 
@@ -72,7 +72,7 @@ def _embedding_factory() -> Embeddings:
     return OpenAIEmbeddings()
 
 
-class EmbeddingDistance(str, Enum):
+class EmbeddingDistance(StrEnum):
     """Embedding Distance Metric.
 
     Attributes:

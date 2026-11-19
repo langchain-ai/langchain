@@ -11,7 +11,7 @@ import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Final, Literal, TypeGuard, cast
+from typing import Any, Final, Literal, NotRequired, Self, TypeGuard, cast
 
 import anthropic
 from langchain_core.callbacks import (
@@ -67,7 +67,10 @@ from langchain_core.utils import from_env, get_pydantic_field_names
 from langchain_core.utils._gateway import (
     GATEWAY_METADATA_RESPONSE_KEY,
     _apply_gateway_config,
+    _gateway_headers,
+    _langsmith_gateway_active,
     _parse_gateway_metadata,
+    _with_gateway_headers,
 )
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
@@ -75,8 +78,15 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import NotRequired, Self, TypedDict
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    SecretStr,
+    model_validator,
+)
+from typing_extensions import TypedDict
 
 from langchain_anthropic import __version__
 from langchain_anthropic._client_utils import (
@@ -925,6 +935,11 @@ def _format_messages(
                                         "tool_use_id",
                                         "cache_control",
                                     )
+                                    or (
+                                        k == "caller"
+                                        and v
+                                        and v.get("type") != "direct"
+                                    )
                                 },
                             ),
                         )
@@ -1166,7 +1181,13 @@ def _reasoning_effort_levels(profile: object) -> tuple[str, ...]:
 def _supports_forced_tool_choice(model: str) -> bool:
     """Return whether the model accepts `tool_choice` types `any` and `tool`."""
     return not model.startswith(
-        ("claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5")
+        (
+            "claude-fable-5-1",
+            "claude-fable-5-2",
+            "claude-mythos-5-2",
+            "claude-opus-5-5",
+            "claude-sonnet-5-5",
+        )
     )
 
 
@@ -1456,6 +1477,9 @@ class ChatAnthropic(BaseChatModel):
     default_headers: Mapping[str, str] | None = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
+    _langsmith_gateway_headers: dict[str, str] | None = PrivateAttr(default=None)
+    """Headers from `langsmith_gateway`, sent by the client but never serialized."""
+
     betas: list[str] | None = None
     """List of beta features to enable. If specified, invocations will be routed
     through `client.beta.messages.create`.
@@ -1719,6 +1743,13 @@ class ChatAnthropic(BaseChatModel):
         self._add_version("langchain-anthropic", __version__)
         return self
 
+    @model_validator(mode="after")
+    def _set_langsmith_gateway_headers(self) -> Self:
+        """Keep `langsmith_gateway` headers for the lazily built clients."""
+        if self._langsmith_gateway_headers is None:
+            self._langsmith_gateway_headers = _gateway_headers()
+        return self
+
     @model_validator(mode="before")
     @classmethod
     def _resolve_gateway(cls, values: Any) -> Any:
@@ -1732,6 +1763,8 @@ class ChatAnthropic(BaseChatModel):
         when the gateway is enabled.
         """
         if isinstance(values, dict):
+            if _langsmith_gateway_active():
+                values["anthropic_proxy"] = None
             _apply_gateway_config(
                 values,
                 cls,
@@ -1753,9 +1786,18 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _client_params(self) -> dict[str, Any]:
         # Merge User-Agent with user-provided headers (user headers take precedence)
-        default_headers = {"User-Agent": _USER_AGENT}
+        default_headers = {
+            "User-Agent": _USER_AGENT,
+            "anthropic-version": "2023-06-01",
+        }
         if self.default_headers:
             default_headers.update(self.default_headers)
+        default_headers = dict(
+            _with_gateway_headers(
+                default_headers, self._langsmith_gateway_headers or {}
+            )
+            or {}
+        )
 
         client_params: dict[str, Any] = {
             "api_key": self.anthropic_api_key.get_secret_value(),
@@ -1820,7 +1862,7 @@ class ChatAnthropic(BaseChatModel):
         if effort:
             output_config["effort"] = effort
 
-        is_fable_model = self.model.startswith("claude-fable-5")
+        is_fable_model = self.model.startswith(("claude-fable-5", "claude-mythos-5-2"))
         is_sonnet_55 = self.model.startswith("claude-sonnet-5-5")
         if is_fable_model or is_sonnet_55:
             top_k = request_config.get("top_k", self.top_k)
@@ -1973,7 +2015,7 @@ class ChatAnthropic(BaseChatModel):
             payload["thinking"] = self.thinking
         if self.inference_geo is not None:
             payload["inference_geo"] = self.inference_geo
-        if self.model.startswith("claude-fable-5"):
+        if self.model.startswith(("claude-fable-5", "claude-mythos-5-2")):
             payload.pop("temperature", None)
             payload.pop("top_k", None)
             payload.pop("top_p", None)
@@ -2180,8 +2222,22 @@ class ChatAnthropic(BaseChatModel):
                 payload["betas"] = [required_beta]
 
         return _route_unsupported_sampling_params(
-            {k: v for k, v in payload.items() if v is not None}
+            self._filter_gateway_headers(
+                {k: v for k, v in payload.items() if v is not None}
+            )
         )
+
+    def _filter_gateway_headers(self, params: dict[str, Any]) -> dict[str, Any]:
+        if self._langsmith_gateway_headers and isinstance(
+            params.get("extra_headers"), Mapping
+        ):
+            protected = {name.lower() for name in self._langsmith_gateway_headers}
+            params["extra_headers"] = {
+                name: value
+                for name, value in params["extra_headers"].items()
+                if name.lower() not in protected
+            }
+        return params
 
     def _create(self, payload: dict) -> Any:
         try:
@@ -2226,6 +2282,7 @@ class ChatAnthropic(BaseChatModel):
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
+                and not self.model.startswith(("claude-fable-5", "claude-mythos-5-2"))
                 and not _compact_in_params(payload)
             )
             block_start_event = None
@@ -2276,6 +2333,7 @@ class ChatAnthropic(BaseChatModel):
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
+                and not self.model.startswith(("claude-fable-5", "claude-mythos-5-2"))
                 and not _compact_in_params(payload)
             )
             block_start_event = None
@@ -2424,13 +2482,14 @@ class ChatAnthropic(BaseChatModel):
                             content_block.pop("citations", None)
                         message_chunk = AIMessageChunk(content=[content_block])
             else:  # thinking
-                thinking = getattr(event.content_block, "thinking", "") or ""
-                signature = getattr(event.content_block, "signature", "") or ""
-                if thinking or signature:
-                    content_block = event.content_block.model_dump()
-                    content_block["index"] = event.index
-                    content_block["type"] = "thinking"
-                    message_chunk = AIMessageChunk(content=[content_block])
+                # Emitted even when empty: under `display: "omitted"` no thinking
+                # text streams, so this start is the first sign of reasoning.
+                content_block = event.content_block.model_dump()
+                if not content_block.get("signature"):
+                    content_block.pop("signature", None)
+                content_block["index"] = event.index
+                content_block["type"] = "thinking"
+                message_chunk = AIMessageChunk(content=[content_block])
 
         # Process incremental content updates
         elif event.type == "content_block_delta":
@@ -3139,6 +3198,7 @@ class ChatAnthropic(BaseChatModel):
         if self.context_management is not None:
             kwargs["context_management"] = self.context_management
 
+        kwargs = self._filter_gateway_headers(kwargs)
         if self.betas is not None:
             beta_response = self._client.beta.messages.count_tokens(
                 betas=self.betas,

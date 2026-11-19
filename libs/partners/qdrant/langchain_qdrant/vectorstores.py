@@ -1441,7 +1441,7 @@ class Qdrant(VectorStore):
         https: bool | None = None,  # noqa: FBT001
         api_key: str | None = None,
         prefix: str | None = None,
-        timeout: int | None = None,
+        timeout: int | None = None,  # noqa: ASYNC109
         host: str | None = None,
         path: str | None = None,
         collection_name: str | None = None,
@@ -1788,7 +1788,7 @@ class Qdrant(VectorStore):
         https: bool | None = None,  # noqa: FBT001
         api_key: str | None = None,
         prefix: str | None = None,
-        timeout: int | None = None,
+        timeout: int | None = None,  # noqa: ASYNC109
         host: str | None = None,
         path: str | None = None,
         collection_name: str | None = None,

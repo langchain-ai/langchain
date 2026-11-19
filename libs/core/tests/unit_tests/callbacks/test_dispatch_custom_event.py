@@ -1,4 +1,3 @@
-import sys
 import uuid
 from typing import Any
 from uuid import UUID
@@ -60,10 +59,6 @@ async def test_async_custom_event_root_dispatch() -> None:
         await adispatch_custom_event("event1", {"x": 1})
 
 
-IS_GTE_3_11 = sys.version_info >= (3, 11)
-
-
-@pytest.mark.skipif(not IS_GTE_3_11, reason="Requires Python >=3.11")
 async def test_async_custom_event_implicit_config() -> None:
     """Test dispatch without passing config explicitly."""
     callback = AsyncCustomCallbackHandler()

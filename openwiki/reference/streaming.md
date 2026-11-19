@@ -5,7 +5,7 @@ description: Core streaming APIs for incremental output delivery via BaseChatMod
 tags: [streaming, token-streaming, api-reference, chat-models, callbacks, AIMessageChunk, ChatModelStream]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-29T08:20:01.046Z
+    at: 2026-11-13T08:16:35.902Z
 sources:
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py
@@ -15,7 +15,7 @@ sources:
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
   - id: openwiki-source-77dc1fb726463969f9d53658
     resource: repo://libs/core/langchain_core/messages/ai.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 ---
 
 ## Overview
@@ -231,7 +231,7 @@ Routes a protocol event (`message-start`, `content-block-start`, `content-block-
 
 **Typed Projections** (replaying subsets of events):
 
-Streaming builds four typed accumulators as protocol events arrive. Each projection supports both delta iteration and final value consumption:
+Streaming builds three typed accumulators as protocol events arrive. Each projection supports both delta iteration and final value consumption:
 
 - **`.text`**: `SyncTextProjection`
   - Iterates text deltas: `for delta in stream.text: print(delta, end="")`
@@ -244,9 +244,9 @@ Streaming builds four typed accumulators as protocol events arrive. Each project
   - Iterates finalized tool call chunks: `for chunk in stream.tool_calls: ...`
   - Drains to final list: `calls = stream.tool_calls.get()`
 
-- **`.output`**: `SyncProjection[AIMessage]`
-  - Iterates finalized content blocks: `for block in stream.output: ...`
-  - Drains to final `AIMessage`: `msg = stream.output.get()`
+- **`.output`**: `AIMessage`
+  - Blocks until stream finishes, then returns the assembled message
+  - Usage metadata available via `msg.usage_metadata`
 
 **Usage Pattern**:
 
@@ -260,7 +260,7 @@ for token in stream.text:
 # Or drain for final values
 final_text = stream.text.get()
 final_calls = stream.tool_calls.get()
-final_message = stream.output.get()
+final_message = stream.output  # Blocks until stream finishes
 
 # Or collect all events for replay
 for event in stream:
@@ -290,8 +290,9 @@ Asynchronous variant of `ChatModelStream`. Returned by `BaseChatModel.astream_ev
   - Await final: `calls = await stream.tool_calls`
 
 - **`.output`**: `AsyncProjection[AIMessage]`
-  - Iterate: `async for block in stream.output: ...`
-  - Await final: `msg = await stream.output`
+  - Iterate finalized content blocks: `async for block in stream.output: ...`
+  - Await final message: `msg = await stream.output`
+  - Usage metadata available via `msg.usage_metadata`
 
 **Usage Pattern**:
 

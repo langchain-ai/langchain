@@ -24,7 +24,6 @@ from langchain.agents.middleware.internal_call_transformer import (
     InternalCallTransformer,
     internal_call_metadata,
 )
-from langchain.agents.middleware.summarization import SummarizationMiddleware
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
@@ -333,9 +332,10 @@ async def test_caller_supplied_metadata_cannot_forge_internal_marker() -> None:
     real answer disappear from `run.messages`.
     """
     main_model = GenericFakeChatModel(messages=iter([AIMessage(content="final answer")]))
-    summarizer_model = GenericFakeChatModel(messages=iter([AIMessage(content="summary")]))
-    middleware = SummarizationMiddleware(model=summarizer_model, trigger=("messages", 1))
-    agent = create_agent(model=main_model, tools=[], middleware=[middleware])
+    internal_model = GenericFakeChatModel(messages=iter([AIMessage(content="internal check")]))
+    agent = create_agent(
+        model=main_model, tools=[], middleware=[_InternalCallMiddleware(internal_model)]
+    )
 
     forged_metadata = {INTERNAL_CALL_METADATA_KEY: True}
     assert forged_metadata != internal_call_metadata(), (
@@ -343,7 +343,7 @@ async def test_caller_supplied_metadata_cannot_forge_internal_marker() -> None:
     )
 
     run = await agent.astream_events(
-        {"messages": [HumanMessage("hi"), HumanMessage("there"), HumanMessage("again")]},
+        {"messages": [HumanMessage("hi")]},
         config={"metadata": forged_metadata},
         version="v3",
     )

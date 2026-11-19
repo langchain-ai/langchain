@@ -206,6 +206,16 @@ mid_conversation_tools = true
 mid_conversation_system_messages = true
 mid_conversation_tools = true
 
+[overrides."gpt-6.2-astra"]
+reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
+mid_conversation_system_messages = true
+mid_conversation_tools = true
+
+[overrides."gpt-6.2-sol"]
+reasoning_effort_levels = ["low", "medium", "high", "xhigh", "max"]
+mid_conversation_system_messages = true
+mid_conversation_tools = true
+
 [overrides."o3"]
 mid_conversation_system_messages = true
 mid_conversation_tools = true

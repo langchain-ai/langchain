@@ -26,15 +26,13 @@ from langchain_core.messages.utils import (
 )
 from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
 from langchain_core.runnables.base import coerce_to_runnable
+from langgraph.constants import TAG_NOSTREAM
 from langgraph.runtime import Runtime
 from langgraph.types import Command
 from typing_extensions import override
 
 from langchain.agents.middleware._retry import default_retry_on
-from langchain.agents.middleware.internal_call_transformer import (
-    InternalCallTransformer,
-    internal_call_metadata,
-)
+from langchain.agents.middleware.internal_call_transformer import internal_call_metadata
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -141,7 +139,10 @@ _LS_PROVIDER_ALIASES: dict[str, frozenset[str]] = {
 
 def _summary_config() -> RunnableConfig:
     """Config for summary model calls."""
-    return {"metadata": {"lc_source": "summarization", **internal_call_metadata()}}
+    return {
+        "metadata": {"lc_source": "summarization", **internal_call_metadata()},
+        "tags": [TAG_NOSTREAM],
+    }
 
 
 def _check_summary(summary: object) -> str:
@@ -408,13 +409,6 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
     The agent also records its model in state under `model_selection` (see
     [`ModelSelection`][langchain.agents.middleware.types.ModelSelection]). That
     record is informational: it is never used to choose the summarization model.
-    """
-
-    transformers = (InternalCallTransformer,)
-    """Keeps the summarization model call's tokens out of `run.messages`.
-
-    Registered only when this middleware is used — see
-    `InternalCallTransformer` for why the call needs tagging and filtering.
     """
 
     def __init__(

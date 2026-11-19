@@ -20,16 +20,18 @@ sources:
     resource: repo://libs/core/langchain_core/messages/content.py
   - id: openwiki-source-8bb392f5dbc1fe7faaf52430
     resource: repo://libs/core/langchain_core/messages/human.py
+  - id: openwiki-source-56c6ea6a11f04b5c0e01aa7b
+    resource: repo://libs/core/langchain_core/messages/notification.py
   - id: openwiki-source-dad8cfeb38a829e03e165986
     resource: repo://libs/core/langchain_core/messages/system.py
   - id: openwiki-source-9861ba5cf0c42c142cf732f9
     resource: repo://libs/core/langchain_core/messages/tool.py
   - id: openwiki-source-498a9586e021b126ab8a8b42
     resource: repo://libs/core/langchain_core/messages/utils.py
-generated: { by: "openwiki/0.5.0", at: "2026-09-08T08:27:09.597Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 ## Overview
@@ -88,6 +90,12 @@ Legacy/specialized message types. `ChatMessage` is generic with a `role` field; 
 
 **`RemoveMessage`** (`repo://libs/core/langchain_core/messages/modifier.py#L8-L33`)  
 A special message type for deleting other messages from conversation history. Takes only an `id` parameter (the message ID to remove) and no content. Used in agentic workflows to prune previous turns.
+
+**Notification Metadata** (`repo://libs/core/langchain_core/messages/notification.py`)  
+Functions to mark and retrieve metadata for messages added by the agent harness (background tasks, summaries, etc.):
+- **`add_notification_metadata(message, source, data=None)`**: Marks a `HumanMessage` as added by a feature, storing source and optional feature-specific data in `additional_kwargs["lc_source"]` and `additional_kwargs["lc_data"]`. Chat model integrations omit these keys when sending to the model.
+- **`get_notification_metadata(message)`**: Retrieves the metadata, returning a `NotificationMetadata` dict with `source` (string) and optional `data` (dict if present in `additional_kwargs["lc_data"]`), or `None` if no metadata exists.
+- **`NotificationMetadata`**: TypedDict with `source` (required, e.g., `"async_subagent"`) and optional `data` dict.
 
 ### Message Chunks and Streaming
 
@@ -149,6 +157,18 @@ Plain text output from a model. Annotations enable citations pointing to source 
 }
 ```
 Chain-of-thought or intermediate reasoning from models like o1, o3, etc. Often extracted from `<think>` tags or provider-specific fields in `additional_kwargs`.
+
+**RefusalContentBlock**  
+```python
+{
+    "type": "refusal",
+    "refusal": str,
+    "id": str (optional),
+    "index": int | str (optional),
+    "extras": dict (optional),
+}
+```
+An explicit refusal reported by the model provider. OpenAI returns refusal content blocks; Anthropic reports refusals via stop reason. Both are normalized as refusal blocks so applications can detect refusals without provider-specific code. Refusals written as ordinary text are not automatically detected.
 
 **ToolCall**  
 ```python
@@ -264,7 +284,7 @@ Holds provider-specific content that doesn't map to standard block types. Block 
 
 LangChain defines the following standard block types:
 
-- **Text output**: `TextContentBlock` (`type: "text"`), `ReasoningContentBlock` (`type: "reasoning"` for chain-of-thought)
+- **Text output**: `TextContentBlock` (`type: "text"`), `ReasoningContentBlock` (`type: "reasoning"` for chain-of-thought), `RefusalContentBlock` (`type: "refusal"` for provider refusals)
 - **Tool invocation**: `ToolCall` (`type: "tool_call"`), `ToolCallChunk` (`type: "tool_call_chunk"` for streaming), `InvalidToolCall` (`type: "invalid_tool_call"` for parsing failures)
 - **Server-side tools**: `ServerToolCall` (`type: "server_tool_call"`), `ServerToolCallChunk` (`type: "server_tool_call_chunk"`), `ServerToolResult` (`type: "server_tool_result"`)
 - **Multimodal data**: `ImageContentBlock` (`type: "image"`), `AudioContentBlock` (`type: "audio"`), `VideoContentBlock` (`type: "video"`), `FileContentBlock` (`type: "file"`), `PlainTextContentBlock` (`type: "text-plain"`)

@@ -582,15 +582,6 @@ def _attempt_infer_model_provider(model_name: str) -> str | None:
 
     # Google models — prefix is ambiguous (Vertex AI vs the GenAI/AI Studio API).
     if model_lower.startswith("gemini"):
-        warnings.warn(
-            f"Inferred `model_provider='google_vertexai'` from {model_name!r}. "
-            "This default will change to 'google_genai' in the next major release."
-            "To keep current behavior, pass `model_provider='google_vertexai'` "
-            f"(or use the prefix form, e.g. 'google_vertexai:{model_name}'); "
-            "for AI Studio / Gemini API, use 'google_genai' instead.",
-            DeprecationWarning,
-            stacklevel=5,
-        )
         return "google_vertexai"
 
     # AWS Bedrock models
@@ -632,7 +623,18 @@ def _parse_model(model: str, model_provider: str | None) -> tuple[str, str]:
         model = ":".join(model.split(":")[1:])
 
     # Attempt to infer provider if not specified
-    model_provider = model_provider or _attempt_infer_model_provider(model)
+    if not model_provider:
+        model_provider = _attempt_infer_model_provider(model)
+        if model_provider == "google_vertexai":
+            warnings.warn(
+                f"Inferred `model_provider='google_vertexai'` from {model!r}. "
+                "This default will change to 'google_genai' in the next major release."
+                "To keep current behavior, pass `model_provider='google_vertexai'` "
+                f"(or use the prefix form, e.g. 'google_vertexai:{model}'); "
+                "for AI Studio / Gemini API, use 'google_genai' instead.",
+                DeprecationWarning,
+                stacklevel=4,
+            )
 
     if not model_provider:
         # Enhanced error message with suggestions

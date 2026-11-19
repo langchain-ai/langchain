@@ -38,6 +38,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    Self,
     TypeAlias,
     TypeVar,
     cast,
@@ -122,8 +123,11 @@ from langchain_core.tools.base import _stringify
 from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils._gateway import (
     GATEWAY_METADATA_RESPONSE_KEY,
+    _gateway_headers,
+    _langsmith_gateway_active,
     _parse_gateway_metadata,
     _resolve_gateway_config,
+    _with_gateway_headers,
 )
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
@@ -139,13 +143,13 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     SecretStr,
     ValidationError,
     field_validator,
     model_validator,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
-from typing_extensions import Self
 
 from langchain_openai._version import __version__
 from langchain_openai.chat_models._client_utils import (
@@ -681,6 +685,28 @@ class OpenAITimeoutError(openai.APITimeoutError, ModelTimeoutError):
     """OpenAI timeout error classified as a LangChain model error."""
 
 
+class OpenAIStreamServerError(openai.APIError, ModelAPIError):
+    """OpenAI server error reported inside a stream, classified as retryable.
+
+    OpenAI can accept a streaming request with HTTP 200 and then fail partway
+    through by sending an error event. The SDK raises these as a bare
+    `openai.APIError` with no status code, so this class carries the same
+    `ModelAPIError` classification an HTTP 5xx gets without fabricating an
+    HTTP response.
+    """
+
+
+class OpenAIResponsesServerError(ValueError, ModelAPIError):
+    """Responses API `response.failed` or `error` event with a server error code.
+
+    Subclasses `ValueError`, which these stream events raise for other codes.
+    """
+
+
+_TRANSIENT_STREAM_ERROR_CODES = frozenset({"server_error"})
+"""In-band stream error codes/types that indicate a transient backend failure."""
+
+
 def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
     if (
         "context_length_exceeded" in str(e)
@@ -746,6 +772,14 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
         raise OpenAITimeoutError(e.request) from e
     if isinstance(e, openai.APIConnectionError):
         raise OpenAIConnectionError(message=e.message, request=e.request) from e
+    # The SDK raises the exact `APIError` for an error event inside a stream that
+    # already returned HTTP 200; subclasses carry their own status-based verdicts.
+    if type(e) is openai.APIError and not _TRANSIENT_STREAM_ERROR_CODES.isdisjoint(
+        (e.code, e.type)
+    ):
+        raise OpenAIStreamServerError(
+            message=e.message, request=e.request, body=e.body
+        ) from e
     raise
 
 
@@ -812,7 +846,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
     openai_api_key: (
-        SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]]
+        SecretStr | Callable[[], str] | Callable[[], Awaitable[str]] | None
     ) = Field(alias="api_key", default=None)
     """API key to use.
 
@@ -1018,6 +1052,9 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     default_headers: Mapping[str, str] | None = None
+
+    _langsmith_gateway_headers: dict[str, str] | None = PrivateAttr(default=None)
+    """Headers from `langsmith_gateway`, sent by the client but never serialized."""
 
     default_query: Mapping[str, object] | None = None
 
@@ -1431,6 +1468,10 @@ class BaseChatOpenAI(BaseChatModel):
         self.openai_api_base = _gateway_config.base_url
         self.openai_api_key = _gateway_config.api_key
         _base_url_from_gateway = _gateway_config.base_url_from_gateway
+        if _langsmith_gateway_active():
+            self.openai_proxy = None
+        if self._langsmith_gateway_headers is None:
+            self._langsmith_gateway_headers = _gateway_headers()
 
         # Enable stream_usage by default if using default base URL and client,
         # or when the base URL was set by the LangSmith gateway (which proxies
@@ -1468,7 +1509,9 @@ class BaseChatOpenAI(BaseChatModel):
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
-            "default_headers": self.default_headers,
+            "default_headers": _with_gateway_headers(
+                self.default_headers, self._langsmith_gateway_headers
+            ),
             "default_query": self.default_query,
         }
         if self.max_retries is not None:
@@ -1732,6 +1775,7 @@ class BaseChatOpenAI(BaseChatModel):
                 current_sub_index = -1
                 has_reasoning = False
                 item_output_indices: dict[str, int] = {}
+                function_call_arguments: dict[str, str] = {}
                 for chunk in response:
                     metadata = headers if is_first_chunk else {}
                     (
@@ -1749,6 +1793,7 @@ class BaseChatOpenAI(BaseChatModel):
                         has_reasoning=has_reasoning,
                         output_version=self.output_version,
                         item_output_indices=item_output_indices,
+                        function_call_arguments=function_call_arguments,
                     )
                     if generation_chunk:
                         if is_first_chunk and base_generation_info:
@@ -1804,6 +1849,7 @@ class BaseChatOpenAI(BaseChatModel):
                 current_sub_index = -1
                 has_reasoning = False
                 item_output_indices: dict[str, int] = {}
+                function_call_arguments: dict[str, str] = {}
                 async for chunk in _astream_with_chunk_timeout(
                     response,
                     self.stream_chunk_timeout,
@@ -1825,6 +1871,7 @@ class BaseChatOpenAI(BaseChatModel):
                         has_reasoning=has_reasoning,
                         output_version=self.output_version,
                         item_output_indices=item_output_indices,
+                        function_call_arguments=function_call_arguments,
                     )
                     if generation_chunk:
                         if is_first_chunk and base_generation_info:
@@ -2061,6 +2108,15 @@ class BaseChatOpenAI(BaseChatModel):
                 else _convert_message_to_dict(m)
                 for m in messages
             ]
+        if self._langsmith_gateway_headers and isinstance(
+            payload.get("extra_headers"), Mapping
+        ):
+            protected = {name.lower() for name in self._langsmith_gateway_headers}
+            payload["extra_headers"] = {
+                name: value
+                for name, value in payload["extra_headers"].items()
+                if name.lower() not in protected
+            }
         return payload
 
     def _create_chat_result(
@@ -5405,6 +5461,28 @@ def _coerce_chunk_response(resp: Any) -> Any:
     return resp
 
 
+def _remaining_function_call_arguments(
+    chunk: Any, function_call_arguments: dict[str, str]
+) -> str:
+    """Return the part of a completed function call's arguments not yet streamed.
+
+    Args:
+        chunk: A `response.function_call_arguments.done` event.
+        function_call_arguments: Arguments streamed so far, keyed by item ID. Updated
+            in place to the completed arguments.
+
+    Returns:
+        The missing suffix, or an empty string if nothing is missing or the streamed
+        arguments are not a prefix of the completed ones.
+    """
+    streamed = function_call_arguments.get(chunk.item_id, "")
+    arguments = chunk.arguments or ""
+    function_call_arguments[chunk.item_id] = arguments
+    if not arguments.startswith(streamed):
+        return ""
+    return arguments[len(streamed) :]
+
+
 def _convert_responses_chunk_to_generation_chunk(
     chunk: Any,
     current_index: int,  # index in content
@@ -5415,6 +5493,7 @@ def _convert_responses_chunk_to_generation_chunk(
     has_reasoning: bool = False,
     output_version: str | None = None,
     item_output_indices: dict[str, int] | None = None,  # item id -> `output_index`
+    function_call_arguments: dict[str, str] | None = None,  # item id -> args so far
 ) -> tuple[int, int, int, ChatGenerationChunk | None]:
     # After several built-in tool calls the API can report a later `output_index` on
     # an item's `done` events than on its `added` event. Pin each item to the first
@@ -5523,10 +5602,20 @@ def _convert_responses_chunk_to_generation_chunk(
         response_metadata["id"] = response.id  # Backwards compatibility
     elif chunk.type == "response.failed":
         response = _coerce_chunk_response(chunk.response)
-        error_msg = str(response.error or f"Response {response.id} failed.")
+        error = response.error
+        error_msg = str(error or f"Response {response.id} failed.")
+        code = (
+            error.get("code")
+            if isinstance(error, dict)
+            else getattr(error, "code", None)
+        )
+        if code in _TRANSIENT_STREAM_ERROR_CODES:
+            raise OpenAIResponsesServerError(error_msg)
         raise ValueError(error_msg)
     elif chunk.type == "error":
         error_msg = f"{chunk.code}: {chunk.message}" if chunk.code else chunk.message
+        if chunk.code in _TRANSIENT_STREAM_ERROR_CODES:
+            raise OpenAIResponsesServerError(error_msg)
         raise ValueError(error_msg)
     elif chunk.type in ("response.completed", "response.incomplete"):
         response = _coerce_chunk_response(chunk.response)
@@ -5567,6 +5656,8 @@ def _convert_responses_chunk_to_generation_chunk(
         and chunk.item.type == "function_call"
     ):
         _advance(chunk.output_index)
+        if function_call_arguments is not None:
+            function_call_arguments[chunk.item.id] = chunk.item.arguments or ""
         tool_call_chunks.append(
             {
                 "type": "tool_call_chunk",
@@ -5631,11 +5722,32 @@ def _convert_responses_chunk_to_generation_chunk(
         )
     elif chunk.type == "response.function_call_arguments.delta":
         _advance(chunk.output_index)
+        if function_call_arguments is not None:
+            function_call_arguments[chunk.item_id] = (
+                function_call_arguments.get(chunk.item_id, "") + chunk.delta
+            )
         tool_call_chunks.append(
             {"type": "tool_call_chunk", "args": chunk.delta, "index": current_index}
         )
         content.append(
             {"type": "function_call", "arguments": chunk.delta, "index": current_index}
+        )
+    elif (
+        chunk.type == "response.function_call_arguments.done"
+        and function_call_arguments is not None
+        and (
+            remaining := _remaining_function_call_arguments(
+                chunk, function_call_arguments
+            )
+        )
+    ):
+        # The API can skip some or all argument deltas, so emit what is still missing.
+        _advance(chunk.output_index)
+        tool_call_chunks.append(
+            {"type": "tool_call_chunk", "args": remaining, "index": current_index}
+        )
+        content.append(
+            {"type": "function_call", "arguments": remaining, "index": current_index}
         )
     elif chunk.type == "response.refusal.done":
         content.append({"type": "refusal", "refusal": chunk.refusal})

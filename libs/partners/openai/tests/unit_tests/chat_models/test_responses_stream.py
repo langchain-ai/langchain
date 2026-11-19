@@ -6,6 +6,7 @@ from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
+from langchain_core.exceptions import ModelAPIError
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
 from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 from openai.types.responses import (
@@ -51,6 +52,7 @@ from openai.types.shared.response_format_text import ResponseFormatText
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import (
+    OpenAIResponsesServerError,
     _convert_responses_chunk_to_generation_chunk,
 )
 from tests.unit_tests.chat_models.test_base import (
@@ -1127,7 +1129,7 @@ def test_responses_stream_function_call_preserves_namespace() -> None:
             sequence_number=4,
             type="response.function_call_arguments.delta",
         ),
-        ResponseFunctionCallArgumentsDoneEvent(
+        ResponseFunctionCallArgumentsDoneEvent.model_construct(
             arguments='{"query":"test"}',
             item_id="fc_123",
             name="search_tool",
@@ -1226,6 +1228,186 @@ def test_responses_stream_function_call_preserves_namespace() -> None:
     assert first_block.get("namespace") == "my_namespace", (
         f"Expected namespace 'my_namespace', got {first_block.get('namespace')}"
     )
+
+
+def _function_call_response(status: str, output: list[Any]) -> Response:
+    return Response(
+        id="resp_fc",
+        created_at=1749734255.0,
+        error=None,
+        incomplete_details=None,
+        instructions=None,
+        metadata={},
+        model=MODEL,
+        object="response",
+        output=output,
+        parallel_tool_calls=True,
+        temperature=1.0,
+        tool_choice="auto",
+        tools=[],
+        top_p=1.0,
+        status=status,  # type: ignore[arg-type]
+        text=ResponseTextConfig(format=ResponseFormatText(type="text")),
+        truncation="disabled",
+        usage=ResponseUsage(
+            input_tokens=10,
+            input_tokens_details=InputTokensDetails(
+                cache_write_tokens=0, cached_tokens=0
+            ),
+            output_tokens=20,
+            output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
+            total_tokens=30,
+        ),
+        user=None,
+    )
+
+
+_FUNCTION_CALL_ARGUMENTS = {"fc_1": '{"symbol":"XLK"}', "fc_2": '{"symbol":"XLF"}'}
+
+
+def _function_call_stream(deltas: dict[str, list[str]]) -> list[Any]:
+    """Build a stream of two function calls with the given argument deltas."""
+
+    def _item(item_id: str, arguments: str, status: str) -> Any:
+        return ResponseFunctionToolCallItem(
+            id=item_id,
+            arguments=arguments,
+            call_id=f"call_{item_id}",
+            name="get_price",
+            type="function_call",
+            status=status,  # type: ignore[arg-type]
+        )
+
+    events: list[Any] = [
+        ResponseCreatedEvent(
+            response=_function_call_response("in_progress", []),
+            sequence_number=0,
+            type="response.created",
+        )
+    ]
+    for output_index, (item_id, arguments) in enumerate(
+        _FUNCTION_CALL_ARGUMENTS.items()
+    ):
+        events.append(
+            ResponseOutputItemAddedEvent(
+                item=_item(item_id, "", "in_progress"),
+                output_index=output_index,
+                sequence_number=0,
+                type="response.output_item.added",
+            )
+        )
+        events.extend(
+            ResponseFunctionCallArgumentsDeltaEvent(
+                delta=delta,
+                item_id=item_id,
+                output_index=output_index,
+                sequence_number=0,
+                type="response.function_call_arguments.delta",
+            )
+            for delta in deltas[item_id]
+        )
+        events.extend(
+            [
+                ResponseFunctionCallArgumentsDoneEvent.model_construct(
+                    arguments=arguments,
+                    item_id=item_id,
+                    name="get_price",
+                    output_index=output_index,
+                    sequence_number=0,
+                    type="response.function_call_arguments.done",
+                ),
+                ResponseOutputItemDoneEvent(
+                    item=_item(item_id, arguments, "completed"),
+                    output_index=output_index,
+                    sequence_number=0,
+                    type="response.output_item.done",
+                ),
+            ]
+        )
+    events.append(
+        ResponseCompletedEvent(
+            response=_function_call_response(
+                "completed",
+                [
+                    _item(item_id, arguments, "completed")
+                    for item_id, arguments in _FUNCTION_CALL_ARGUMENTS.items()
+                ],
+            ),
+            sequence_number=0,
+            type="response.completed",
+        )
+    )
+    for sequence_number, event in enumerate(events):
+        event.sequence_number = sequence_number
+    return events
+
+
+_FUNCTION_CALL_DELTAS = {
+    "no_deltas": {"fc_1": [], "fc_2": []},
+    "partial_deltas": {"fc_1": ['{"symbol":'], "fc_2": []},
+    "all_deltas": {"fc_1": ['{"symbol":', '"XLK"}'], "fc_2": ['{"symbol":"XLF"}']},
+}
+
+
+def _assert_function_call_arguments(full: AIMessageChunk, output_version: str) -> None:
+    assert [(tc["id"], tc["args"]) for tc in full.tool_calls] == [
+        ("call_fc_1", {"symbol": "XLK"}),
+        ("call_fc_2", {"symbol": "XLF"}),
+    ]
+    if output_version == "responses/v1":
+        assert [
+            block["arguments"]  # type: ignore[index]
+            for block in full.content
+            if isinstance(block, dict) and block.get("type") == "function_call"
+        ] == list(_FUNCTION_CALL_ARGUMENTS.values())
+
+
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1", "v0"])
+@pytest.mark.parametrize(
+    "deltas", _FUNCTION_CALL_DELTAS.values(), ids=list(_FUNCTION_CALL_DELTAS)
+)
+def test_responses_stream_function_call_arguments_done(
+    deltas: dict[str, list[str]], output_version: str
+) -> None:
+    """Arguments missing from deltas are recovered from the `done` event."""
+    stream = _function_call_stream(deltas)
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version=output_version)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("test"):
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    _assert_function_call_arguments(full, output_version)
+
+
+@pytest.mark.parametrize(
+    "deltas", _FUNCTION_CALL_DELTAS.values(), ids=list(_FUNCTION_CALL_DELTAS)
+)
+async def test_responses_astream_function_call_arguments_done(
+    deltas: dict[str, list[str]],
+) -> None:
+    stream = _function_call_stream(deltas)
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="responses/v1")
+    mock_client = MagicMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_async_client", mock_client):
+        async for chunk in llm.astream("test"):
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    _assert_function_call_arguments(full, "responses/v1")
 
 
 def test_responses_stream_tolerates_dict_response_field() -> None:
@@ -1401,3 +1583,50 @@ async def test_responses_astream_raises_on_failure(
     ):
         async for _ in llm.astream("test"):
             pass
+
+
+@pytest.mark.parametrize(
+    "failure_event",
+    [
+        _failed_event(ResponseError(code="server_error", message="Model failed.")),
+        ResponseErrorEvent(
+            type="error",
+            code="server_error",
+            message="An error occurred while processing your request.",
+            param=None,
+            sequence_number=1,
+        ),
+    ],
+)
+async def test_responses_stream_server_error_is_retryable(failure_event: Any) -> None:
+    """Server-error failure events are classified like a 5xx and stay `ValueError`."""
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager([responses_stream[0], failure_event])
+
+    mock_client.responses.create = mock_create
+
+    async def mock_acreate(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager([responses_stream[0], failure_event])
+
+    mock_async_client = MagicMock()
+    mock_async_client.responses.create = mock_acreate
+
+    with (
+        patch.object(llm, "root_client", mock_client),
+        pytest.raises(OpenAIResponsesServerError) as sync_exc,
+    ):
+        list(llm.stream("test"))
+    with (
+        patch.object(llm, "root_async_client", mock_async_client),
+        pytest.raises(OpenAIResponsesServerError) as async_exc,
+    ):
+        async for _ in llm.astream("test"):
+            pass
+
+    for error in (sync_exc.value, async_exc.value):
+        assert isinstance(error, ValueError)
+        assert isinstance(error, ModelAPIError)
+        assert error.is_retryable is True

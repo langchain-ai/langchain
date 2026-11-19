@@ -13,6 +13,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    Self,
     cast,
 )
 
@@ -73,6 +74,7 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_pydantic_field_names, secret_from_env
+from langchain_core.utils._gateway import _apply_gateway_config
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
@@ -83,7 +85,6 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
-from typing_extensions import Self
 
 from langchain_mistralai._compat import _convert_from_v1_to_mistral
 from langchain_mistralai._version import __version__
@@ -346,6 +347,15 @@ async def acompletion_with_retry(
     return await _completion_with_retry(**kwargs)
 
 
+def _is_empty_chunk(chunk: AIMessageChunk) -> bool:
+    return (
+        not chunk.content
+        and not chunk.tool_call_chunks
+        and not chunk.usage_metadata
+        and "finish_reason" not in chunk.response_metadata
+    )
+
+
 def _convert_chunk_to_message_chunk(
     chunk: dict,
     default_class: type[BaseMessageChunk],
@@ -357,8 +367,9 @@ def _convert_chunk_to_message_chunk(
     _delta = _choice["delta"]
     role = _delta.get("role")
     content = _delta.get("content") or ""
-    if output_version == "v1" and isinstance(content, str):
-        content = [{"type": "text", "text": content}]
+    # Once a stream has sent list content, keep later string deltas as text blocks
+    if isinstance(content, str) and (output_version == "v1" or index_type):
+        content = [{"type": "text", "text": content}] if content else []
     content = _normalize_mistral_content(content)
     if isinstance(content, list):
         for block in content:
@@ -666,6 +677,16 @@ class ChatMistralAI(BaseChatModel):
 
     safe_mode: bool | None = None
 
+    reasoning_effort: str | None = None
+    """Reasoning effort.
+
+    Forwarded as the `reasoning_effort` request field. Supported values vary by
+    model (e.g. `'none'` or `'high'`).
+
+    Can also be passed at call time, e.g.
+    `model.invoke(..., reasoning_effort="high")`.
+    """
+
     streaming: bool = False
 
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
@@ -693,6 +714,7 @@ class ChatMistralAI(BaseChatModel):
             "top_p": self.top_p,
             "random_seed": self.random_seed,
             "safe_prompt": self.safe_mode,
+            "reasoning_effort": self.reasoning_effort,
             **self.model_kwargs,
         }
         return {k: v for k, v in defaults.items() if v is not None}
@@ -769,6 +791,27 @@ class ChatMistralAI(BaseChatModel):
         """Set package version in metadata."""
         self._add_version("langchain-mistralai", __version__)
         return self
+
+    @model_validator(mode="before")
+    @classmethod
+    def _apply_mistralai_gateway_config(cls, values: Any) -> Any:
+        """Resolve the base URL and API key, applying LangSmith gateway settings.
+
+        Routes through the gateway when `LANGSMITH_GATEWAY` is set or the model is
+        built inside `langsmith_gateway`. See `langchain_core.utils._gateway` for
+        precedence.
+        """
+        if isinstance(values, dict):
+            _apply_gateway_config(
+                values,
+                cls,
+                base_url_field="endpoint",
+                api_key_field="mistral_api_key",
+                provider_path="mistral/v1",
+                base_url_env="MISTRAL_BASE_URL",
+                api_key_env="MISTRAL_API_KEY",
+            )
+        return values
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
@@ -895,6 +938,8 @@ class ChatMistralAI(BaseChatModel):
             )
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
+            if isinstance(new_chunk, AIMessageChunk) and _is_empty_chunk(new_chunk):
+                continue
             gen_chunk = ChatGenerationChunk(message=new_chunk)
             if run_manager:
                 run_manager.on_llm_new_token(
@@ -925,6 +970,8 @@ class ChatMistralAI(BaseChatModel):
             )
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
+            if isinstance(new_chunk, AIMessageChunk) and _is_empty_chunk(new_chunk):
+                continue
             gen_chunk = ChatGenerationChunk(message=new_chunk)
             if run_manager:
                 await run_manager.on_llm_new_token(
@@ -1024,7 +1071,9 @@ class ChatMistralAI(BaseChatModel):
                     [function-calling feature](https://docs.mistral.ai/capabilities/function_calling/).
                 - `'json_schema'`:
                     Uses Mistral's
-                    [structured output feature](https://docs.mistral.ai/capabilities/structured-output/custom_structured_output/).
+                    [structured output feature](https://docs.mistral.ai/inference/conversations/structured-output/custom).
+                    Recommended. Some models (e.g. reasoning models) do not reliably
+                    follow the forced tool choice used by `'function_calling'`.
                 - `'json_mode'`:
                     Uses Mistral's
                     [JSON mode](https://docs.mistral.ai/capabilities/structured-output/json_mode/).
