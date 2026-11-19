@@ -1378,7 +1378,7 @@ def _function_call_stream(
     return events
 
 
-_FUNCTION_CALL_DELTAS = {
+_FUNCTION_CALL_DELTAS: dict[str, dict[str, list[str]]] = {
     "no_deltas": {"fc_1": [], "fc_2": []},
     "partial_deltas": {"fc_1": ['{"symbol":'], "fc_2": []},
     "all_deltas": {"fc_1": ['{"symbol":', '"XLK"}'], "fc_2": ['{"symbol":"XLF"}']},
@@ -1463,6 +1463,43 @@ async def test_responses_astream_function_call_arguments_done(
             full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     _assert_function_call_arguments(full, "responses/v1")
+
+
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1", "v0"])
+def test_responses_stream_function_call_done_events_without_new_arguments(
+    output_version: str,
+) -> None:
+    """Final events that add no arguments do not yield chunks."""
+    stream = _function_call_stream(_FUNCTION_CALL_DELTAS["all_deltas"])
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version=output_version)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    with patch.object(llm, "root_client", mock_client):
+        chunks = list(llm.stream("test"))
+    # `response.created`, two `output_item.added`, three deltas, `response.completed`
+    assert len(chunks) == 7
+
+
+async def test_responses_astream_function_call_done_events_without_new_arguments() -> (
+    None
+):
+    stream = _function_call_stream(_FUNCTION_CALL_DELTAS["all_deltas"])
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="responses/v1")
+    mock_client = MagicMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    with patch.object(llm, "root_async_client", mock_client):
+        chunks = [chunk async for chunk in llm.astream("test")]
+    assert len(chunks) == 7
 
 
 def test_responses_stream_tolerates_dict_response_field() -> None:

@@ -5830,6 +5830,15 @@ def _convert_responses_chunk_to_generation_chunk(
     else:
         return current_index, current_output_index, current_sub_index, None
 
+    if (
+        chunk.type
+        in ("response.function_call_arguments.done", "response.output_item.done")
+        and not content
+        and not tool_call_chunks
+    ):
+        # Nothing left to recover from the completed function call.
+        return current_index, current_output_index, current_sub_index, None
+
     message = AIMessageChunk(
         content=content,  # type: ignore[arg-type]
         tool_call_chunks=tool_call_chunks,
