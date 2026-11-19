@@ -7,15 +7,14 @@ them and applies two provider-agnostic corrections.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    from langchain_core.messages import BaseMessage
+from langchain_core.messages import AIMessageChunk, BaseMessageChunk
 
 _FINISH_KEYS = ("finish_reason", "normalized_finish_reason", "finish_state")
 
 
-def finish_fields(
+def _finish_fields(
     response_metadata: dict[str, Any] | None,
     *,
     has_tool_calls: bool = False,
@@ -48,6 +47,33 @@ def finish_fields(
     return fields
 
 
-def has_refusal_block(message: BaseMessage) -> bool:
-    """Return whether a message's content blocks include a `refusal` block."""
-    return any(block.get("type") == "refusal" for block in message.content_blocks)
+class _StreamFinishCorrector:
+    """Applies the corrections to the final chunk of a `stream()` call.
+
+    The finish reason arrives on the last chunk, after any tool calls or refusal.
+    """
+
+    def __init__(self) -> None:
+        self._saw_tool_call = False
+        self._saw_refusal = False
+
+    def update(self, message: BaseMessageChunk) -> None:
+        if isinstance(message, AIMessageChunk) and message.tool_call_chunks:
+            self._saw_tool_call = True
+        if message.additional_kwargs.get("refusal") or (
+            isinstance(message.content, list)
+            and any(
+                isinstance(block, dict) and block.get("type") == "refusal"
+                for block in message.content
+            )
+        ):
+            self._saw_refusal = True
+        metadata = message.response_metadata
+        if metadata.get("normalized_finish_reason"):
+            metadata.update(
+                _finish_fields(
+                    metadata,
+                    has_tool_calls=self._saw_tool_call,
+                    has_refusal=self._saw_refusal,
+                )
+            )

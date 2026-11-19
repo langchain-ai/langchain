@@ -32,6 +32,7 @@ from langchain_core.language_models._compat_bridge import (
     chunks_to_events,
     message_to_events,
 )
+from langchain_core.language_models._finish_reason import _StreamFinishCorrector
 from langchain_core.language_models._utils import (
     _filter_invocation_params_for_tracing,
     _normalize_messages,
@@ -834,10 +835,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 yielded = False
                 index = -1
                 index_type = ""
+                finish_corrector = _StreamFinishCorrector()
                 for chunk in self._stream(input_messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
                         chunk.message.id = run_id
                     chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
+                    finish_corrector.update(chunk.message)
                     if self.output_version == "v1":
                         # Overwrite .content with .content_blocks
                         chunk.message = _update_message_content_to_blocks(
@@ -967,6 +970,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             yielded = False
             index = -1
             index_type = ""
+            finish_corrector = _StreamFinishCorrector()
             async for chunk in self._astream(
                 input_messages,
                 stop=stop,
@@ -975,6 +979,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 if chunk.message.id is None:
                     chunk.message.id = run_id
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
+                finish_corrector.update(chunk.message)
                 if self.output_version == "v1":
                     # Overwrite .content with .content_blocks
                     chunk.message = _update_message_content_to_blocks(
@@ -2021,8 +2026,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             yielded = False
             index = -1
             index_type = ""
+            finish_corrector = _StreamFinishCorrector()
             for chunk in self._stream(messages, stop=stop, **kwargs):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
+                finish_corrector.update(chunk.message)
                 if self.output_version == "v1":
                     # Overwrite .content with .content_blocks
                     chunk.message = _update_message_content_to_blocks(
@@ -2176,8 +2183,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             yielded = False
             index = -1
             index_type = ""
+            finish_corrector = _StreamFinishCorrector()
             async for chunk in self._astream(messages, stop=stop, **kwargs):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
+                finish_corrector.update(chunk.message)
                 if self.output_version == "v1":
                     # Overwrite .content with .content_blocks
                     chunk.message = _update_message_content_to_blocks(

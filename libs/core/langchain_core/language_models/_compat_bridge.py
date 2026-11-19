@@ -54,10 +54,7 @@ from langchain_protocol.protocol import (
     UsageInfo,
 )
 
-from langchain_core.language_models._finish_reason import (
-    finish_fields,
-    has_refusal_block,
-)
+from langchain_core.language_models._finish_reason import _finish_fields
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 from langchain_core.utils._merge import merge_dicts
@@ -554,7 +551,7 @@ def _build_message_finish(
     # `stop_reason` still rides inside `metadata` for backward compat.
     finish_data: dict[str, Any] = {
         "event": "message-finish",
-        **finish_fields(
+        **_finish_fields(
             response_metadata, has_tool_calls=has_tool_calls, has_refusal=has_refusal
         ),
     }
@@ -841,7 +838,7 @@ def message_to_events(
         usage=getattr(msg, "usage_metadata", None),
         response_metadata=response_metadata,
         has_tool_calls=bool(getattr(msg, "tool_calls", None)),
-        has_refusal=has_refusal_block(msg),
+        has_refusal=any(b["type"] == "refusal" for b in msg.content_blocks),
     )
 
 

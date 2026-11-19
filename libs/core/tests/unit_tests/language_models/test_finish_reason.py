@@ -10,7 +10,7 @@ from langchain_core.language_models._compat_bridge import (
     chunks_to_events,
     message_to_events,
 )
-from langchain_core.language_models._finish_reason import finish_fields
+from langchain_core.language_models._finish_reason import _finish_fields
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
@@ -31,7 +31,7 @@ def test_finish_fields_passes_through() -> None:
         "normalized_finish_reason": "other",
         "finish_state": "suspended",
     }
-    assert finish_fields(metadata) == {
+    assert _finish_fields(metadata) == {
         "finish_reason": "pause_turn",
         "normalized_finish_reason": "other",
         "finish_state": "suspended",
@@ -39,31 +39,31 @@ def test_finish_fields_passes_through() -> None:
 
 
 def test_finish_fields_empty_without_provider_fields() -> None:
-    assert finish_fields(None) == {}
-    assert finish_fields({"stop_reason": "end_turn"}) == {}
+    assert _finish_fields(None) == {}
+    assert _finish_fields({"stop_reason": "end_turn"}) == {}
 
 
 def test_finish_fields_raw_only() -> None:
-    assert finish_fields({"finish_reason": "stop"}) == {"finish_reason": "stop"}
-    assert finish_fields({"finish_reason": "stop"}, has_refusal=True) == {
+    assert _finish_fields({"finish_reason": "stop"}) == {"finish_reason": "stop"}
+    assert _finish_fields({"finish_reason": "stop"}, has_refusal=True) == {
         "finish_reason": "stop"
     }
 
 
 def test_finish_fields_stop_with_tool_calls_is_tool_call() -> None:
-    fields = finish_fields(_STOP, has_tool_calls=True)
+    fields = _finish_fields(_STOP, has_tool_calls=True)
     assert fields["normalized_finish_reason"] == "tool_call"
     assert fields["finish_reason"] == "stop"
 
 
 def test_finish_fields_length_with_tool_calls_is_kept() -> None:
     metadata = {"finish_reason": "length", "normalized_finish_reason": "length"}
-    fields = finish_fields(metadata, has_tool_calls=True)
+    fields = _finish_fields(metadata, has_tool_calls=True)
     assert fields["normalized_finish_reason"] == "length"
 
 
 def test_finish_fields_refusal_overrides() -> None:
-    fields = finish_fields(_STOP, has_refusal=True)
+    fields = _finish_fields(_STOP, has_refusal=True)
     assert fields["normalized_finish_reason"] == "refusal"
 
 
@@ -225,3 +225,43 @@ def test_invoke_leaves_response_metadata_alone() -> None:
     assert msg.response_metadata["finish_reason"] == "stop"
     assert "normalized_finish_reason" not in msg.response_metadata
     assert "finish_state" not in msg.response_metadata
+
+
+_TOOL_CALL_CHUNK = {
+    "tool_call_chunks": [
+        {
+            "type": "tool_call_chunk",
+            "id": "call_1",
+            "name": "search",
+            "args": "{}",
+            "index": 0,
+        }
+    ]
+}
+
+
+def test_stream_corrects_stop_after_tool_call() -> None:
+    chunks = list(_StreamModel(first=_TOOL_CALL_CHUNK, last=_STOP).stream("hi"))
+    full = chunks[0]
+    for chunk in chunks[1:]:
+        full += chunk
+    assert full.response_metadata["finish_reason"] == "stop"
+    assert full.response_metadata["normalized_finish_reason"] == "tool_call"
+
+
+async def test_astream_corrects_refusal() -> None:
+    model = _StreamModel(
+        first={"additional_kwargs": {"refusal": "I can't help with that."}},
+        last=_STOP,
+    )
+    chunks = [chunk async for chunk in model.astream("hi")]
+    full = chunks[0]
+    for chunk in chunks[1:]:
+        full += chunk
+    assert full.response_metadata["normalized_finish_reason"] == "refusal"
+
+
+def test_streaming_invoke_corrects_stop_after_tool_call() -> None:
+    model = _StreamModel(first=_TOOL_CALL_CHUNK, last=_STOP, disable_streaming=False)
+    msg = model.invoke("hi", stream=True)
+    assert msg.response_metadata["normalized_finish_reason"] == "tool_call"
