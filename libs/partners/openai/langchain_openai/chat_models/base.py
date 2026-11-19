@@ -5549,6 +5549,12 @@ def _convert_responses_chunk_to_generation_chunk(
             current_sub_index = sub_idx
         current_output_index = output_idx
 
+    def _function_call_index(item_id: str, output_index: int) -> int:
+        if function_call_indices is not None and item_id in function_call_indices:
+            return function_call_indices[item_id]
+        _advance(output_index)
+        return current_index
+
     if output_version is None:
         # Sentinel value of None lets us know if output_version is set explicitly.
         # Explicitly setting `output_version="responses/v1"` separately enables the
@@ -5749,20 +5755,20 @@ def _convert_responses_chunk_to_generation_chunk(
             }
         )
     elif chunk.type == "response.function_call_arguments.delta":
-        _advance(chunk.output_index)
+        index = _function_call_index(chunk.item_id, chunk.output_index)
         if function_call_arguments is not None:
             function_call_arguments[chunk.item_id] = (
                 function_call_arguments.get(chunk.item_id, "") + chunk.delta
             )
         tool_call_chunks.append(
-            {"type": "tool_call_chunk", "args": chunk.delta, "index": current_index}
+            {"type": "tool_call_chunk", "args": chunk.delta, "index": index}
         )
         content.append(
-            {"type": "function_call", "arguments": chunk.delta, "index": current_index}
+            {"type": "function_call", "arguments": chunk.delta, "index": index}
         )
     elif chunk.type == "response.function_call_arguments.done":
-        _advance(chunk.output_index)
-        _append_function_call_arguments(chunk.item_id, chunk.arguments, current_index)
+        index = _function_call_index(chunk.item_id, chunk.output_index)
+        _append_function_call_arguments(chunk.item_id, chunk.arguments, index)
     elif chunk.type == "response.refusal.done":
         content.append({"type": "refusal", "refusal": chunk.refusal})
     elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
