@@ -1711,6 +1711,7 @@ class BaseChatOpenAI(BaseChatModel):
 
         if finish_reason := choice.get("finish_reason"):
             generation_info["finish_reason"] = finish_reason
+            generation_info.update(_chat_finish_reason_fields(finish_reason))
             if model_name := chunk.get("model"):
                 generation_info["model_name"] = model_name
             if system_fingerprint := chunk.get("system_fingerprint"):
@@ -1953,6 +1954,7 @@ class BaseChatOpenAI(BaseChatModel):
                 context_manager = response
             with context_manager as response:
                 is_first_chunk = True
+                finish_tracker = _StreamFinishTracker()
                 for chunk in response:
                     if not isinstance(chunk, dict):
                         chunk = chunk.model_dump()
@@ -1963,6 +1965,7 @@ class BaseChatOpenAI(BaseChatModel):
                     )
                     if generation_chunk is None:
                         continue
+                    finish_tracker.update(chunk, generation_chunk)
                     default_chunk_class = generation_chunk.message.__class__
                     logprobs = (generation_chunk.generation_info or {}).get("logprobs")
                     if run_manager:
@@ -2192,7 +2195,17 @@ class BaseChatOpenAI(BaseChatModel):
             )
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
-            gen = ChatGeneration(message=message, generation_info=generation_info)
+            finish_fields = _chat_finish_reason_fields(
+                generation_info["finish_reason"],
+                has_tool_calls=bool(
+                    isinstance(message, AIMessage)
+                    and (message.tool_calls or message.invalid_tool_calls)
+                ),
+                refusal=bool(message.additional_kwargs.get("refusal")),
+            )
+            gen = ChatGeneration(
+                message=message, generation_info={**generation_info, **finish_fields}
+            )
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
@@ -2259,6 +2272,7 @@ class BaseChatOpenAI(BaseChatModel):
                 context_manager = response
             async with context_manager as response:
                 is_first_chunk = True
+                finish_tracker = _StreamFinishTracker()
                 async for chunk in _astream_with_chunk_timeout(
                     response,
                     self.stream_chunk_timeout,
@@ -2273,6 +2287,7 @@ class BaseChatOpenAI(BaseChatModel):
                     )
                     if generation_chunk is None:
                         continue
+                    finish_tracker.update(chunk, generation_chunk)
                     default_chunk_class = generation_chunk.message.__class__
                     logprobs = (generation_chunk.generation_info or {}).get("logprobs")
                     if run_manager:
@@ -5423,6 +5438,17 @@ def _construct_lc_result_from_responses_api(
         except json.JSONDecodeError:
             pass
 
+    response_metadata.update(
+        _responses_finish_reason_fields(
+            response_metadata.get("status"),
+            response_metadata.get("incomplete_details"),
+            has_tool_calls=bool(tool_calls or invalid_tool_calls),
+            refusal=any(
+                isinstance(block, dict) and block.get("type") == "refusal"
+                for block in content_blocks
+            ),
+        )
+    )
     message = AIMessage(
         content=content_blocks,
         id=response.id,
@@ -5436,6 +5462,92 @@ def _construct_lc_result_from_responses_api(
         message = _convert_to_v03_ai_message(message)
 
     return ChatResult(generations=[ChatGeneration(message=message)])
+
+
+_CHAT_FINISH_REASONS: dict[str, str] = {
+    "stop": "stop",
+    "length": "length",
+    "tool_calls": "tool_call",
+    "content_filter": "content_filter",
+}
+
+_RESPONSES_INCOMPLETE_REASONS: dict[str, str] = {
+    "max_output_tokens": "length",
+    "content_filter": "content_filter",
+}
+
+
+def _chat_finish_reason_fields(
+    finish_reason: str | None,
+    *,
+    has_tool_calls: bool = False,
+    refusal: bool = False,
+) -> dict[str, str]:
+    """Map a Chat Completions `finish_reason` onto `normalized_finish_reason`."""
+    if not finish_reason:
+        return {}
+    # OpenAI refuses with a normal `stop`; the refusal is the signal.
+    normalized = (
+        "refusal" if refusal else _CHAT_FINISH_REASONS.get(finish_reason, "other")
+    )
+    # A forced `tool_choice` ends with `stop` even though the model called a tool.
+    if normalized == "stop" and has_tool_calls:
+        normalized = "tool_call"
+    return {"normalized_finish_reason": normalized}
+
+
+class _StreamFinishTracker:
+    """Corrects the final chunk's finish fields using earlier stream chunks."""
+
+    def __init__(self) -> None:
+        self.saw_tool_call = False
+        self.saw_refusal = False
+
+    def update(self, chunk: dict, generation_chunk: ChatGenerationChunk) -> None:
+        message = generation_chunk.message
+        if isinstance(message, AIMessageChunk) and message.tool_call_chunks:
+            self.saw_tool_call = True
+        # Refusal deltas aren't kept on the message chunk, so read the raw delta.
+        choices = chunk.get("choices") or []
+        if choices and (choices[0].get("delta") or {}).get("refusal"):
+            self.saw_refusal = True
+        info = generation_chunk.generation_info
+        if info and info.get("normalized_finish_reason"):
+            info.update(
+                _chat_finish_reason_fields(
+                    info.get("finish_reason"),
+                    has_tool_calls=self.saw_tool_call,
+                    refusal=self.saw_refusal,
+                )
+            )
+
+
+def _responses_finish_reason_fields(
+    status: str | None,
+    incomplete_details: Any,
+    *,
+    has_tool_calls: bool,
+    refusal: bool,
+) -> dict[str, str]:
+    """Map a Responses API `status` onto the shared finish fields."""
+    if not status:
+        return {}
+    if refusal:
+        normalized = "refusal"
+    elif status == "completed":
+        normalized = "tool_call" if has_tool_calls else "stop"
+    elif status == "incomplete":
+        reason = (
+            incomplete_details.get("reason")
+            if isinstance(incomplete_details, dict)
+            else None
+        )
+        normalized = _RESPONSES_INCOMPLETE_REASONS.get(str(reason), "other")
+    elif status == "failed":
+        normalized = "error"
+    else:
+        normalized = "other"
+    return {"finish_reason": status, "normalized_finish_reason": normalized}
 
 
 def _coerce_chunk_response(resp: Any) -> Any:

@@ -45,6 +45,8 @@ if TYPE_CHECKING:
         UsageInfo,
     )
 
+_FINISH_REASON_KEYS = ("finish_reason", "normalized_finish_reason", "finish_state")
+
 
 # ---------------------------------------------------------------------------
 # Tool-call chunk helpers (shared by tool_call_chunk and server_tool_call_chunk)
@@ -607,6 +609,7 @@ class _ChatModelStreamBase:
         self._finish_metadata: dict[str, Any] | None = None
         self._generation_info: dict[str, Any] = {}
         self._additional_kwargs: dict[str, Any] | None = None
+        self._finish_reason_fields: dict[str, Any] = {}
         self._done: bool = False
         self._error: BaseException | None = None
         self._output_message: AIMessage | None = None
@@ -1054,6 +1057,11 @@ class _ChatModelStreamBase:
             "dict[str, Any] | None",
             cast("dict[str, Any]", data).get("additional_kwargs"),
         )
+        self._finish_reason_fields = {
+            key: value
+            for key in _FINISH_REASON_KEYS
+            if (value := data.get(key)) is not None
+        }
 
         # Finalize any unswept chunks — both client- and server-side.
         _sweep_chunk_store(
@@ -1139,6 +1147,8 @@ class _ChatModelStreamBase:
                 response_metadata["model_name"] = self._start_metadata["model"]
         if self._finish_metadata:
             response_metadata.update(self._finish_metadata)
+        # The event's fields carry the tool-call and refusal corrections.
+        response_metadata.update(self._finish_reason_fields)
         # Pin `output_version` last: `stream_events(version="v3")` always
         # assembles content as v1 protocol blocks, regardless of the
         # provider's configured output format.

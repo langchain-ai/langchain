@@ -6218,3 +6218,227 @@ def test_langsmith_gateway_context_headers() -> None:
     assert sent["X-Custom"] == "kept"
     assert "svc-key" not in json.dumps(dumpd(llm))
     assert llm.openai_proxy is None
+
+
+@pytest.mark.parametrize(
+    ("finish_reason", "message", "normalized"),
+    [
+        ("stop", {"role": "assistant", "content": "hi"}, "stop"),
+        ("length", {"role": "assistant", "content": "hi"}, "length"),
+        ("content_filter", {"role": "assistant", "content": ""}, "content_filter"),
+        ("something_new", {"role": "assistant", "content": "hi"}, "other"),
+        (
+            "tool_calls",
+            {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [
+                    {
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {"name": "search", "arguments": "{}"},
+                    }
+                ],
+            },
+            "tool_call",
+        ),
+        (
+            "stop",
+            {"role": "assistant", "content": None, "refusal": "I can't help."},
+            "refusal",
+        ),
+        (
+            "stop",
+            {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [
+                    {
+                        "id": "call_1",
+                        "type": "function",
+                        "function": {"name": "search", "arguments": "{}"},
+                    }
+                ],
+            },
+            "tool_call",
+        ),
+    ],
+)
+def test_create_chat_result_finish_reason(
+    finish_reason: str, message: dict, normalized: str
+) -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    result = llm._create_chat_result(
+        {
+            "model": OPENAI_TEST_MODEL,
+            "choices": [{"message": message, "finish_reason": finish_reason}],
+        }
+    )
+    generation = result.generations[0]
+    assert generation.generation_info is not None
+    assert generation.generation_info["finish_reason"] == finish_reason
+    assert generation.generation_info["normalized_finish_reason"] == normalized
+    assert "finish_state" not in generation.generation_info
+
+
+def test_stream_chunk_finish_reason() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL)
+    chunk = llm._convert_chunk_to_generation_chunk(
+        {
+            "model": OPENAI_TEST_MODEL,
+            "choices": [{"delta": {"content": ""}, "finish_reason": "length"}],
+        },
+        AIMessageChunk,
+        None,
+    )
+    assert chunk is not None
+    assert chunk.generation_info is not None
+    assert chunk.generation_info["finish_reason"] == "length"
+    assert chunk.generation_info["normalized_finish_reason"] == "length"
+
+
+def _finish_response(**kwargs: Any) -> Response:
+    return Response(
+        id="resp_123",
+        created_at=1234567890,
+        model=OPENAI_TEST_MODEL,
+        object="response",
+        parallel_tool_calls=True,
+        tools=[],
+        tool_choice="auto",
+        **kwargs,
+    )
+
+
+def _text_output(content: Any) -> ResponseOutputMessage:
+    return ResponseOutputMessage(
+        type="message",
+        id="msg_123",
+        content=[content],
+        role="assistant",
+        status="completed",
+    )
+
+
+@pytest.mark.parametrize(
+    ("response", "raw", "normalized"),
+    [
+        (
+            _finish_response(
+                status="completed",
+                output=[
+                    _text_output(
+                        ResponseOutputText(
+                            type="output_text", text="hi", annotations=[]
+                        )
+                    )
+                ],
+            ),
+            "completed",
+            "stop",
+        ),
+        (
+            _finish_response(
+                status="completed",
+                output=[
+                    ResponseFunctionToolCall(
+                        type="function_call",
+                        id="fc_1",
+                        call_id="call_1",
+                        name="search",
+                        arguments="{}",
+                    )
+                ],
+            ),
+            "completed",
+            "tool_call",
+        ),
+        (
+            _finish_response(
+                status="incomplete",
+                incomplete_details=IncompleteDetails(reason="max_output_tokens"),
+                output=[],
+            ),
+            "incomplete",
+            "length",
+        ),
+        (
+            _finish_response(
+                status="completed",
+                output=[
+                    _text_output(
+                        ResponseOutputRefusal(type="refusal", refusal="I can't help.")
+                    )
+                ],
+            ),
+            "completed",
+            "refusal",
+        ),
+    ],
+)
+def test_responses_finish_reason(response: Response, raw: str, normalized: str) -> None:
+    metadata = (
+        _construct_lc_result_from_responses_api(response)
+        .generations[0]
+        .message.response_metadata
+    )
+    assert metadata["finish_reason"] == raw
+    assert metadata["normalized_finish_reason"] == normalized
+    assert "finish_state" not in metadata
+
+
+def _stream_chunks(*deltas: tuple[dict, str | None]) -> list[dict]:
+    return [
+        {
+            "model": OPENAI_TEST_MODEL,
+            "choices": [{"index": 0, "delta": delta, "finish_reason": finish}],
+        }
+        for delta, finish in deltas
+    ]
+
+
+def _streamed_message(chunks: list[dict]) -> AIMessageChunk:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, api_key=SecretStr("test"))
+    mock_client = MagicMock()
+    mock_client.create.return_value = MockSyncContextManager(chunks)
+    with patch.object(llm, "client", mock_client):
+        message: AIMessageChunk | None = None
+        for chunk in llm.stream("hi"):
+            assert isinstance(chunk, AIMessageChunk)
+            message = chunk if message is None else message + chunk
+    assert message is not None
+    return message
+
+
+def test_stream_forced_tool_call_finish_reason() -> None:
+    message = _streamed_message(
+        _stream_chunks(
+            (
+                {
+                    "role": "assistant",
+                    "tool_calls": [
+                        {
+                            "index": 0,
+                            "id": "call_1",
+                            "type": "function",
+                            "function": {"name": "search", "arguments": "{}"},
+                        }
+                    ],
+                },
+                None,
+            ),
+            ({}, "stop"),
+        )
+    )
+    assert message.response_metadata["finish_reason"] == "stop"
+    assert message.response_metadata["normalized_finish_reason"] == "tool_call"
+
+
+def test_stream_refusal_finish_reason() -> None:
+    message = _streamed_message(
+        _stream_chunks(
+            ({"role": "assistant", "refusal": "I can't help."}, None),
+            ({}, "stop"),
+        )
+    )
+    assert message.response_metadata["normalized_finish_reason"] == "refusal"

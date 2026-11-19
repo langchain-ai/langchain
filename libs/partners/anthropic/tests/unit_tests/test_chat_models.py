@@ -6748,3 +6748,63 @@ def test_langsmith_gateway_context_headers() -> None:
     assert sent["X-Custom"] == "kept"
     assert "svc-key" not in json.dumps(dumpd(llm))
     assert llm.anthropic_proxy is None
+
+
+@pytest.mark.parametrize(
+    ("stop_reason", "normalized", "state"),
+    [
+        ("end_turn", "stop", "complete"),
+        ("max_tokens", "length", "complete"),
+        ("tool_use", "tool_call", "complete"),
+        ("refusal", "refusal", "complete"),
+        ("model_context_window_exceeded", "context_exceeded", "complete"),
+        ("pause_turn", "other", "suspended"),
+        ("something_new", "other", "complete"),
+    ],
+)
+def test__format_output_finish_reason(
+    stop_reason: str, normalized: str, state: str
+) -> None:
+    anthropic_msg = Message.model_construct(
+        id="foo",
+        content=[TextBlock(type="text", text="bar")],
+        model="baz",
+        role="assistant",
+        stop_reason=cast("Any", stop_reason),
+        stop_sequence=None,
+        usage=Usage(input_tokens=2, output_tokens=1),
+        type="message",
+    )
+    llm = ChatAnthropic(model=MODEL_NAME, anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
+    metadata = (
+        llm._format_output(anthropic_msg).generations[0].message.response_metadata
+    )
+    assert metadata["finish_reason"] == stop_reason
+    assert metadata["normalized_finish_reason"] == normalized
+    assert metadata["finish_state"] == state
+
+
+def test_message_delta_finish_reason() -> None:
+    from anthropic.types import MessageDeltaUsage
+
+    delta = MagicMock()
+    delta.stop_reason = "pause_turn"
+    delta.stop_sequence = None
+    delta.model_dump.return_value = {}
+    event = MagicMock()
+    event.type = "message_delta"
+    event.usage = MessageDeltaUsage(output_tokens=1)
+    event.delta = delta
+    event.context_management = None
+    delta.container = None
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chunk, _ = llm._make_message_chunk_from_anthropic_event(
+        event,
+        stream_usage=True,
+        coerce_content_to_string=True,
+        block_start_event=None,
+    )
+    assert chunk is not None
+    assert chunk.response_metadata["finish_reason"] == "pause_turn"
+    assert chunk.response_metadata["normalized_finish_reason"] == "other"
+    assert chunk.response_metadata["finish_state"] == "suspended"

@@ -54,12 +54,13 @@ from langchain_protocol.protocol import (
     UsageInfo,
 )
 
+from langchain_core.language_models._finish_reason import _finish_fields
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 from langchain_core.utils._merge import merge_dicts
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator
+    from collections.abc import AsyncIterator, Iterable, Iterator
 
     from langchain_protocol.protocol import (
         ContentBlockDelta,
@@ -542,12 +543,18 @@ def _build_message_finish(
     usage: UsageInfo | None,
     response_metadata: dict[str, Any] | None,
     additional_kwargs: dict[str, Any] | None = None,
+    has_tool_calls: bool = False,
+    has_refusal: bool = False,
 ) -> MessageFinishData:
     # Protocol 0.0.9 removed the top-level `reason` field from
     # `MessageFinishData`; the provider's raw `finish_reason` /
-    # `stop_reason` now rides inside `metadata` alongside other
-    # response metadata. Pass it through unchanged.
-    finish_data: dict[str, Any] = {"event": "message-finish"}
+    # `stop_reason` still rides inside `metadata` for backward compat.
+    finish_data: dict[str, Any] = {
+        "event": "message-finish",
+        **_finish_fields(
+            response_metadata, has_tool_calls=has_tool_calls, has_refusal=has_refusal
+        ),
+    }
     usage_info = _isolate_usage(usage)
     if usage_info is not None:
         finish_data["usage"] = usage_info
@@ -564,6 +571,14 @@ def _build_message_finish(
     if additional_kwargs:
         finish_data["additional_kwargs"] = dict(additional_kwargs)
     return cast("MessageFinishData", finish_data)
+
+
+def _has_tool_calls(blocks: Iterable[CompatBlock]) -> bool:
+    return any(b.get("type") in {"tool_call", "tool_call_chunk"} for b in blocks)
+
+
+def _has_refusal(blocks: Iterable[CompatBlock]) -> bool:
+    return any(b.get("type") == "refusal" for b in blocks)
 
 
 def _finalize_and_build_finish(
@@ -686,6 +701,8 @@ def chunks_to_events(
         usage=usage,
         response_metadata=response_metadata,
         additional_kwargs=additional_kwargs,
+        has_tool_calls=_has_tool_calls(block for _, block in blocks.values()),
+        has_refusal=_has_refusal(block for _, block in blocks.values()),
     )
 
 
@@ -765,6 +782,8 @@ async def achunks_to_events(
         usage=usage,
         response_metadata=response_metadata,
         additional_kwargs=additional_kwargs,
+        has_tool_calls=_has_tool_calls(block for _, block in blocks.values()),
+        has_refusal=_has_refusal(block for _, block in blocks.values()),
     )
 
 
@@ -818,6 +837,8 @@ def message_to_events(
     yield _build_message_finish(
         usage=getattr(msg, "usage_metadata", None),
         response_metadata=response_metadata,
+        has_tool_calls=bool(getattr(msg, "tool_calls", None)),
+        has_refusal=any(b["type"] == "refusal" for b in msg.content_blocks),
     )
 
 
