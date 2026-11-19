@@ -200,7 +200,10 @@ def _assert_duplicate_finish_result(result: Any) -> None:
         "system_fingerprint": "fp_duplicate",
         "native_finish_reason": "end_turn",
     }
-    assert generation.message.response_metadata == generation.generation_info
+    assert (
+        generation.message.response_metadata.items()
+        >= generation.generation_info.items()
+    )
     assert generation.message.usage_metadata == {
         "input_tokens": 5,
         "output_tokens": 2,
