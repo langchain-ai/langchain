@@ -6,22 +6,11 @@ alongside; this only adds a portable view of it.
 
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any
 
-FinishReason = Literal[
-    "stop",
-    "length",
-    "tool_call",
-    "content_filter",
-    "refusal",
-    "context_exceeded",
-    "error",
-    "other",
-]
-"""Provider-agnostic reason a model stopped generating."""
+if TYPE_CHECKING:
+    from langchain_protocol.protocol import FinishReason, FinishState
 
-FinishState = Literal["complete", "suspended"]
-"""Whether the turn is done or the caller must continue it (e.g. `pause_turn`)."""
 
 _OPENAI_CHAT: dict[str, FinishReason] = {
     "stop": "stop",

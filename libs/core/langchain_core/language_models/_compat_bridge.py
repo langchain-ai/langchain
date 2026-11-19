@@ -552,7 +552,6 @@ def _build_message_finish(
     # `MessageFinishData`; the provider's raw `finish_reason` /
     # `stop_reason` still rides inside `metadata` for backward compat.
     finish_data: dict[str, Any] = {"event": "message-finish"}
-    # Off-spec until `MessageFinishData` declares them (protocol PR pending).
     raw_reason = get_raw_finish_reason(response_metadata or {})
     normalized, finish_state = normalize_finish_reason(
         response_metadata, has_tool_calls=has_tool_calls

@@ -1057,11 +1057,10 @@ class _ChatModelStreamBase:
             "dict[str, Any] | None",
             cast("dict[str, Any]", data).get("additional_kwargs"),
         )
-        # Off-spec until `MessageFinishData` declares them (protocol PR pending).
         self._finish_reason_fields = {
             key: value
             for key in _FINISH_REASON_KEYS
-            if (value := cast("dict[str, Any]", data).get(key)) is not None
+            if (value := data.get(key)) is not None
         }
 
         # Finalize any unswept chunks — both client- and server-side.
