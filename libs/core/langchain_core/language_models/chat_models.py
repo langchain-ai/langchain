@@ -32,6 +32,9 @@ from langchain_core.language_models._compat_bridge import (
     chunks_to_events,
     message_to_events,
 )
+from langchain_core.language_models._finish_reason import (
+    add_finish_reason_fields,
+)
 from langchain_core.language_models._utils import (
     _filter_invocation_params_for_tracing,
     _normalize_messages,
@@ -2087,6 +2090,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 **result.llm_output,
                 **result.generations[0].message.response_metadata,
             }
+        for generation in result.generations:
+            if isinstance(generation.message, AIMessage):
+                add_finish_reason_fields(
+                    generation.message.response_metadata,
+                    has_tool_calls=bool(generation.message.tool_calls),
+                )
         if check_cache and llm_cache is not None:
             llm_cache.update(prompt, llm_string, result.generations)
         return result
@@ -2244,6 +2253,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 **result.llm_output,
                 **result.generations[0].message.response_metadata,
             }
+        for generation in result.generations:
+            if isinstance(generation.message, AIMessage):
+                add_finish_reason_fields(
+                    generation.message.response_metadata,
+                    has_tool_calls=bool(generation.message.tool_calls),
+                )
         if check_cache and llm_cache is not None:
             await llm_cache.aupdate(prompt, llm_string, result.generations)
         return result

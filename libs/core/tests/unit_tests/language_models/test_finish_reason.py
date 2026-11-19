@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, cast
 
 import pytest
+from pydantic import Field
 
 from langchain_core.language_models._compat_bridge import (
     chunks_to_events,
@@ -16,7 +17,7 @@ from langchain_core.language_models._finish_reason import (
 )
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk
-from langchain_core.outputs import ChatGenerationChunk, ChatResult
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -319,3 +320,61 @@ async def test_astream_events_v3_carries_finish_fields() -> None:
     assert finish["normalized_finish_reason"] == "length"
     assert msg.response_metadata["normalized_finish_reason"] == "length"
     assert msg.response_metadata["finish_state"] == "complete"
+
+
+class _InvokeModel(BaseChatModel):
+    response_metadata: dict[str, Any]
+    tool_calls: list[dict[str, Any]] = Field(default_factory=list)
+
+    @property
+    def _llm_type(self) -> str:
+        return "invoke-model"
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        del messages, stop, run_manager, kwargs
+        message = AIMessage(
+            content="hi",
+            response_metadata=dict(self.response_metadata),
+            tool_calls=cast("Any", self.tool_calls),
+        )
+        return ChatResult(generations=[ChatGeneration(message=message)])
+
+
+def test_invoke_adds_finish_fields() -> None:
+    msg = _InvokeModel(
+        response_metadata={"model_provider": "anthropic", "stop_reason": "refusal"}
+    ).invoke("hi")
+    assert msg.response_metadata["stop_reason"] == "refusal"
+    assert msg.response_metadata["finish_reason"] == "refusal"
+    assert msg.response_metadata["normalized_finish_reason"] == "refusal"
+    assert msg.response_metadata["finish_state"] == "complete"
+
+
+async def test_ainvoke_adds_finish_fields() -> None:
+    msg = await _InvokeModel(
+        response_metadata={"model_provider": "anthropic", "stop_reason": "pause_turn"}
+    ).ainvoke("hi")
+    assert msg.response_metadata["normalized_finish_reason"] == "other"
+    assert msg.response_metadata["finish_state"] == "suspended"
+
+
+def test_invoke_keeps_provider_finish_reason() -> None:
+    msg = _InvokeModel(
+        response_metadata={"model_provider": "google_genai", "finish_reason": "STOP"},
+        tool_calls=[{"name": "search", "args": {}, "id": "call_1"}],
+    ).invoke("hi")
+    assert msg.response_metadata["finish_reason"] == "STOP"
+    assert msg.response_metadata["normalized_finish_reason"] == "tool_call"
+
+
+def test_invoke_without_finish_reason_adds_nothing() -> None:
+    msg = _InvokeModel(response_metadata={"model_provider": "anthropic"}).invoke("hi")
+    assert "finish_reason" not in msg.response_metadata
+    assert "normalized_finish_reason" not in msg.response_metadata
+    assert "finish_state" not in msg.response_metadata

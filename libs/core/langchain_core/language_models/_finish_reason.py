@@ -159,3 +159,26 @@ def normalize_finish_reason(
     if normalized == "stop" and has_tool_calls:
         normalized = "tool_call"
     return normalized, state
+
+
+def add_finish_reason_fields(
+    response_metadata: dict[str, Any], *, has_tool_calls: bool
+) -> None:
+    """Add `finish_reason`, `normalized_finish_reason` and `finish_state` in place.
+
+    Existing values are kept, so fields set by the streaming path win.
+
+    Args:
+        response_metadata: The message's response metadata.
+        has_tool_calls: Whether the message carries tool calls.
+    """
+    raw = get_raw_finish_reason(response_metadata)
+    normalized, state = normalize_finish_reason(
+        response_metadata, has_tool_calls=has_tool_calls
+    )
+    if raw is not None:
+        response_metadata.setdefault("finish_reason", raw)
+    if normalized is not None:
+        response_metadata.setdefault("normalized_finish_reason", normalized)
+    if state is not None:
+        response_metadata.setdefault("finish_state", state)
