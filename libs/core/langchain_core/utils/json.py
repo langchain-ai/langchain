@@ -56,6 +56,8 @@ def _custom_parser(multiline_string: str | bytes | bytearray) -> str:
 # Adapted from https://github.com/KillianLucas/open-interpreter/blob/5b6080fae1f8c68938a1e4fa8667e3744084ee21/interpreter/utils/parse_partial_json.py
 # MIT License
 
+_HEX_DIGITS = frozenset("0123456789abcdefABCDEF")
+
 
 def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     """Parse a JSON string that may be missing closing braces.
@@ -78,21 +80,31 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     stack = []
     is_inside_string = False
     escaped = False
+    pending_unicode = 0
 
     # Process each character in the string one at a time.
     for char in s:
         new_char = char
         if is_inside_string:
-            if char == '"' and not escaped:
-                is_inside_string = False
-            elif char == "\n" and not escaped:
-                new_char = (
-                    "\\n"  # Replace the newline character with the escape sequence.
-                )
-            elif char == "\\":
-                escaped = not escaped
-            else:
+            if pending_unicode and char in _HEX_DIGITS:
+                # Consume one of the four digits in a JSON \uXXXX escape.
+                pending_unicode -= 1
                 escaped = False
+            else:
+                # An invalid hex digit ends escape tracking. Process this
+                # character normally: it might close the string.
+                pending_unicode = 0
+                if char == "u" and escaped:
+                    pending_unicode = 4
+                    escaped = False
+                elif char == '"' and not escaped:
+                    is_inside_string = False
+                elif char == "\n" and not escaped:
+                    new_char = "\\n"
+                elif char == "\\":
+                    escaped = not escaped
+                else:
+                    escaped = False
         elif char == '"':
             is_inside_string = True
             escaped = False
@@ -115,6 +127,9 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     if is_inside_string:
         if escaped:  # Remove unterminated escape character
             new_chars.pop()
+        elif pending_unicode:
+            # Only discard the incomplete \uXXXX escape, preserving the field.
+            del new_chars[-(6 - pending_unicode):]
         new_chars.append('"')
 
     # Reverse the stack to get the closing characters.
