@@ -16,7 +16,7 @@ from collections.abc import Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, NamedTuple
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from pydantic import SecretStr
 
@@ -143,6 +143,17 @@ def _with_gateway_headers(
     return {**kept, **gateway_headers}
 
 
+def _join_gateway_url(base_url: str, provider_path: str) -> str:
+    """Append a provider path segment to a base URL, preserving query and fragment."""
+    parsed = urlsplit(base_url)
+    clean_path = parsed.path.rstrip("/")
+    sub_path = provider_path.lstrip("/")
+    new_path = f"{clean_path}/{sub_path}" if clean_path else f"/{sub_path}"
+    return urlunsplit(
+        (parsed.scheme, parsed.netloc, new_path, parsed.query, parsed.fragment)
+    )
+
+
 def _override_base_url(
     override: _GatewayOverride, base_url: str | None, provider_path: str
 ) -> str:
@@ -154,9 +165,20 @@ def _override_base_url(
     is replaced with the provider path on the gateway, so a model cannot send
     the gateway key to another host.
     """
-    if isinstance(base_url, str) and base_url.startswith(f"{override.base_url}/"):
-        return base_url
-    return f"{override.base_url}/{provider_path}"
+    candidate = _join_gateway_url(override.base_url, provider_path)
+    if isinstance(base_url, str):
+        parsed_base = urlsplit(base_url)
+        parsed_override = urlsplit(override.base_url)
+        if (
+            parsed_base.scheme == parsed_override.scheme
+            and parsed_base.netloc == parsed_override.netloc
+            and (
+                parsed_base.path.startswith(f"{parsed_override.path.rstrip('/')}/")
+                or base_url.startswith(f"{override.base_url}/")
+            )
+        ):
+            return base_url
+    return candidate
 
 
 _TRUE_VALUES = ("true", "1", "yes")
@@ -225,7 +247,7 @@ def _resolve_gateway_base_url(provider_path: str) -> str | None:
         if raw.lower() in _TRUE_VALUES
         else raw.rstrip("/")
     )
-    return f"{base}/{provider_path}"
+    return _join_gateway_url(base, provider_path)
 
 
 def _same_origin(first: str, second: str) -> bool:
