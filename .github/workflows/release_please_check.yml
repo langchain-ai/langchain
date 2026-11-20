@@ -1,0 +1,35 @@
+name: Validate release automation
+
+on:
+  pull_request:
+    paths:
+      - '.github/release-please/**'
+      - '.github/scripts/release-please*'
+      - '.github/workflows/release-please.yml'
+      - '.github/workflows/release_please_check.yml'
+      - '.github/workflows/_release.yml'
+      - 'release-please-config.json'
+      - '.release-please-manifest.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115
+        with:
+          package_json_file: .github/release-please/package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: "24"
+      - run: pnpm install --dir .github/release-please --frozen-lockfile --ignore-scripts
+      - run: pnpm --dir .github/release-please run lint
+      - run: node --check .github/scripts/release-please.js
+      - run: node --test .github/scripts/release-please*.test.* .github/release-please/*.test.mjs

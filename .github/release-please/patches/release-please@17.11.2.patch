@@ -1,0 +1,28 @@
+diff --git a/build/src/util/commit-exclude.js b/build/src/util/commit-exclude.js
+index ff87b2222aeb8ac3299db70a6ed4a0e87722c56e..10961a6ae80c6aa3aa253e85daa2274d3981b2b6 100644
+--- a/build/src/util/commit-exclude.js
++++ b/build/src/util/commit-exclude.js
+@@ -42,7 +42,9 @@ class CommitExclude {
+                 .every(file => excludePaths.some(path => this.isRelevant(file, path))));
+     }
+     isRelevant(file, path) {
+-        return path === manifest_1.ROOT_PROJECT_PATH || file.indexOf(`${path}/`) === 0;
++        return (path === manifest_1.ROOT_PROJECT_PATH ||
++            file === path ||
++            file.indexOf(`${path}/`) === 0);
+     }
+ }
+ exports.CommitExclude = CommitExclude;
+diff --git a/build/src/util/tag-name.js b/build/src/util/tag-name.js
+index 469d46b9a3a762e8a18de427cae219d8d1a7117a..94b7696d7d7c2ae0b52fa10d204a512e2433838a 100644
+--- a/build/src/util/tag-name.js
++++ b/build/src/util/tag-name.js
+@@ -15,7 +15,7 @@
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.TagName = void 0;
+ const version_1 = require("../version");
+-const TAG_PATTERN = /^((?<component>.*)(?<separator>[^a-zA-Z0-9]))?(?<v>v)?(?<version>\d+\.\d+\.\d+.*)$/;
++const TAG_PATTERN = /^((?<component>.*[a-zA-Z0-9])(?<separator>[^a-zA-Z0-9]+))?(?<v>v)?(?<version>\d+\.\d+\.\d+.*)$/;
+ const DEFAULT_SEPARATOR = '-';
+ class TagName {
+     constructor(version, component, separator = DEFAULT_SEPARATOR, includeV = true) {

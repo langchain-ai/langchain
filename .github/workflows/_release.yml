@@ -31,6 +31,11 @@ on:
         type: string
         default: ""
         description: "Expected package version. If provided, must match pyproject.toml."
+      release-sha:
+        required: false
+        type: string
+        default: ""
+        description: "Exact commit SHA to build, test, publish, and tag. Defaults to the workflow commit."
       allow-prereleases:
         required: false
         type: boolean
@@ -104,6 +109,11 @@ on:
         type: boolean
         default: false
         description: "Release from a non-master branch (danger!) - Only use for hotfixes"
+      release-sha:
+        required: false
+        type: string
+        default: ""
+        description: "Exact commit SHA to build, test, publish, and tag. Defaults to the workflow commit."
       allow-prereleases:
         required: false
         type: boolean
@@ -162,11 +172,32 @@ jobs:
       pkg-name: ${{ steps.check-version.outputs.pkg-name }}
       version: ${{ steps.check-version.outputs.version }}
       dist-sha256sums: ${{ steps.dist-checksums.outputs.sha256sums }}
+      release-sha: ${{ steps.release-target.outputs.sha }}
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
+          ref: ${{ inputs.release-sha || github.sha }}
+          fetch-depth: 0
+          filter: blob:none
           persist-credentials: false
+
+      - name: Validate release target
+        id: release-target
+        env:
+          RELEASE_SHA: ${{ inputs.release-sha || github.sha }}
+          NONMASTER_RELEASE: ${{ inputs.dangerous-nonmaster-release }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ ]]; then
+            echo '::error::release-sha must be an exact commit SHA.'
+            exit 1
+          fi
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          if [ "$NONMASTER_RELEASE" != 'true' ]; then
+            git merge-base --is-ancestor "$RELEASE_SHA" origin/master
+          fi
+          echo "sha=$RELEASE_SHA" >> "$GITHUB_OUTPUT"
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
@@ -324,7 +355,7 @@ jobs:
           path: langchain
           sparse-checkout: | # this only grabs files for relevant dir
             ${{ env.EFFECTIVE_WORKING_DIR }}
-          ref: ${{ github.ref }} # this scopes to just ref'd branch
+          ref: ${{ inputs.release-sha || github.sha }}
           fetch-depth: 0 # this fetches entire commit history
           persist-credentials: false
       - name: Check tags
@@ -424,6 +455,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
+          ref: ${{ inputs.release-sha || github.sha }}
           persist-credentials: false
 
       # We explicitly *don't* set up caching here. This ensures our tests are
@@ -609,6 +641,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
+          ref: ${{ inputs.release-sha || github.sha }}
           persist-credentials: false
 
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
@@ -668,6 +701,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
+          ref: ${{ inputs.release-sha || github.sha }}
           persist-credentials: false
 
       # We implement this conditional as Github Actions does not have good support
@@ -848,6 +882,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
           path: langchain
+          ref: ${{ inputs.release-sha || github.sha }}
           persist-credentials: false
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
@@ -916,6 +951,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
+          ref: ${{ inputs.release-sha || github.sha }}
           persist-credentials: false
 
       - name: Set up Python + uv
@@ -976,6 +1012,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
         with:
+          ref: ${{ inputs.release-sha || github.sha }}
           persist-credentials: false
 
       - name: Set up Python + uv
@@ -1001,5 +1038,28 @@ jobs:
           generateReleaseNotes: false
           tag: ${{needs.build.outputs.pkg-name}}==${{ needs.build.outputs.version }}
           body: ${{ needs.release-notes.outputs.release-body }}
-          commit: ${{ github.sha }}
+          commit: ${{ needs.build.outputs.release-sha }}
           makeLatest: ${{ needs.build.outputs.pkg-name == 'langchain-core'}}
+
+  finalize-release-pr:
+    name: Finalize release-please labels
+    needs: [build, mark-release]
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: master
+          persist-credentials: false
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+        env:
+          PACKAGE_NAME: ${{ needs.build.outputs.pkg-name }}
+          RELEASE_VERSION: ${{ needs.build.outputs.version }}
+        with:
+          script: |
+            await require('./.github/scripts/release-please.js').finalizeRelease({github, context});
