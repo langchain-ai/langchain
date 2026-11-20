@@ -1474,8 +1474,11 @@ def create_agent(
                     )
                     raise ValueError(msg)
 
-            # Force tool use if we have structured output tools
-            tool_choice = "any" if structured_output_tools else request.tool_choice
+            # Use the strategy's choice by default, while allowing middleware to
+            # override it for this request.
+            tool_choice = request.tool_choice
+            if tool_choice is None and structured_output_tools:
+                tool_choice = effective_response_format.tool_choice
             return (
                 request.model.bind_tools(
                     final_tools, tool_choice=tool_choice, **request.model_settings

@@ -209,6 +209,9 @@ class ToolStrategy(Generic[SchemaT]):
     an artificial structured output tool.
     """
 
+    tool_choice: str | None
+    """The tool choice to use when binding structured output tools. Defaults to `"any"`."""
+
     handle_errors: (
         bool | str | type[Exception] | tuple[type[Exception], ...] | Callable[[Exception], str]
     )
@@ -237,6 +240,7 @@ class ToolStrategy(Generic[SchemaT]):
         schema: type[SchemaT] | UnionType | dict[str, Any],
         *,
         tool_message_content: str | None = None,
+        tool_choice: str | None = "any",
         handle_errors: bool
         | str
         | type[Exception]
@@ -247,9 +251,17 @@ class ToolStrategy(Generic[SchemaT]):
 
         Initialize `ToolStrategy` with schemas, tool message content, and error handling
         strategy.
+
+        Args:
+            schema: The schema for the structured response.
+            tool_message_content: Optional content for the tool message returned after a
+                structured output tool call.
+            tool_choice: The tool choice to use when binding structured output tools.
+            handle_errors: The error handling strategy for invalid structured output.
         """
         self.schema = schema
         self.tool_message_content = tool_message_content
+        self.tool_choice = tool_choice
         self.handle_errors = handle_errors
 
         def _iter_variants(schema: Any) -> Iterable[Any]:

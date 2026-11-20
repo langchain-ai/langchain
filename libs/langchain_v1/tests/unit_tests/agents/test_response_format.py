@@ -232,6 +232,91 @@ class TestResponseFormatAsModel:
 
 
 class TestResponseFormatAsToolStrategy:
+    def test_tool_choice(self) -> None:
+        """Test the configured tool choice is used when binding structured output tools."""
+
+        class RecordingModel(GenericFakeChatModel):
+            tool_choices: list[str | None] = Field(default_factory=list)
+
+            @override
+            def bind_tools(
+                self,
+                tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
+                **kwargs: Any,
+            ) -> Runnable[LanguageModelInput, AIMessage]:
+                self.tool_choices.append(kwargs.get("tool_choice"))
+                return self
+
+        model = RecordingModel(
+            messages=iter(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "WeatherBaseModel", "id": "1", "args": WEATHER_DATA}
+                        ],
+                    ),
+                ]
+            )
+        )
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(WeatherBaseModel, tool_choice="auto"),
+        )
+
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+        assert model.tool_choices == ["auto"]
+
+    def test_middleware_tool_choice_overrides_strategy(self) -> None:
+        """Test middleware can override the strategy's configured tool choice."""
+
+        class RecordingModel(GenericFakeChatModel):
+            tool_choices: list[str | None] = Field(default_factory=list)
+
+            @override
+            def bind_tools(
+                self,
+                tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
+                **kwargs: Any,
+            ) -> Runnable[LanguageModelInput, AIMessage]:
+                self.tool_choices.append(kwargs.get("tool_choice"))
+                return self
+
+        class AutoToolChoiceMiddleware(AgentMiddleware):
+            def wrap_model_call(
+                self,
+                request: ModelRequest,
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> ModelCallResult:
+                return handler(request.override(tool_choice="auto"))
+
+        model = RecordingModel(
+            messages=iter(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "WeatherBaseModel", "id": "1", "args": WEATHER_DATA}
+                        ],
+                    ),
+                ]
+            )
+        )
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(WeatherBaseModel),
+            middleware=[AutoToolChoiceMiddleware()],
+        )
+
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+        assert model.tool_choices == ["auto"]
+
     def test_pydantic_model(self) -> None:
         """Test response_format as ToolStrategy with Pydantic model."""
         tool_calls = [
