@@ -1180,7 +1180,8 @@ def _reasoning_effort_levels(profile: object) -> tuple[str, ...]:
 
 def _supports_forced_tool_choice(model: str) -> bool:
     """Return whether the model accepts `tool_choice` types `any` and `tool`."""
-    return not model.startswith(
+    # Bedrock IDs such as `us.anthropic.claude-sonnet-5-5` name the same models.
+    return not model.rpartition("anthropic.")[2].startswith(
         (
             "claude-fable-5-1",
             "claude-fable-5-2",

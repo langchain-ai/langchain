@@ -3162,9 +3162,13 @@ _ANTHROPIC_TOOL_SCHEMA = {
     "model",
     [
         "claude-opus-5-5",
+        "claude-sonnet-5-5",
         "claude-fable-5-1",
         "claude-fable-5-2",
         "claude-mythos-5-2",
+        "anthropic.claude-opus-5-5",
+        "us.anthropic.claude-sonnet-5-5",
+        "global.anthropic.claude-opus-5-5",
     ],
 )
 @pytest.mark.parametrize("schema", [_Person, _ANTHROPIC_TOOL_SCHEMA])
