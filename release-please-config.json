@@ -1,0 +1,374 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "label": "auto:release-pending",
+  "release-label": "auto:release-tagged",
+  "skip-github-release": true,
+  "draft-pull-request": true,
+  "separate-pull-requests": true,
+  "changelog-sections": [
+    {
+      "type": "feat",
+      "section": "Features"
+    },
+    {
+      "type": "fix",
+      "section": "Bug Fixes"
+    },
+    {
+      "type": "perf",
+      "section": "Performance Improvements"
+    },
+    {
+      "type": "revert",
+      "section": "Reverted Changes"
+    },
+    {
+      "type": "docs",
+      "section": "Documentation",
+      "hidden": true
+    },
+    {
+      "type": "style",
+      "hidden": true
+    },
+    {
+      "type": "chore",
+      "hidden": true
+    },
+    {
+      "type": "refactor",
+      "hidden": true
+    },
+    {
+      "type": "test",
+      "hidden": true
+    },
+    {
+      "type": "ci",
+      "hidden": true
+    },
+    {
+      "type": "hotfix",
+      "hidden": true
+    }
+  ],
+  "pull-request-title-pattern": "release(${component}): ${version}",
+  "component-no-space": true,
+  "tag-separator": "==",
+  "include-component-in-tag": true,
+  "include-v-in-tag": false,
+  "versioning": "langchain",
+  "pull-request-header": "> [!CAUTION]\n> Merging this PR will automatically publish to **PyPI** and create a **GitHub release**.\n\nReview the version and changelog before merging. See [the release process](https://github.com/langchain-ai/langchain/blob/master/.github/RELEASING.md).\n",
+  "packages": {
+    "libs/core": {
+      "release-type": "python",
+      "package-name": "langchain-core",
+      "component": "langchain-core",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_core/version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/core/tests",
+        "libs/core/uv.lock"
+      ]
+    },
+    "libs/langchain": {
+      "release-type": "python",
+      "package-name": "langchain-classic",
+      "component": "langchain-classic",
+      "extra-files": [
+        "pyproject.toml"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/langchain/tests",
+        "libs/langchain/uv.lock"
+      ]
+    },
+    "libs/langchain_v1": {
+      "release-type": "python",
+      "package-name": "langchain",
+      "component": "langchain",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain/__init__.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/langchain_v1/tests",
+        "libs/langchain_v1/uv.lock"
+      ]
+    },
+    "libs/text-splitters": {
+      "release-type": "python",
+      "package-name": "langchain-text-splitters",
+      "component": "langchain-text-splitters",
+      "extra-files": [
+        "pyproject.toml"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/text-splitters/tests",
+        "libs/text-splitters/uv.lock"
+      ]
+    },
+    "libs/standard-tests": {
+      "release-type": "python",
+      "package-name": "langchain-tests",
+      "component": "langchain-tests",
+      "extra-files": [
+        "pyproject.toml"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/standard-tests/tests",
+        "libs/standard-tests/uv.lock"
+      ]
+    },
+    "libs/model-profiles": {
+      "release-type": "python",
+      "package-name": "langchain-model-profiles",
+      "component": "langchain-model-profiles",
+      "extra-files": [
+        "pyproject.toml"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/model-profiles/tests",
+        "libs/model-profiles/uv.lock"
+      ],
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
+    },
+    "libs/partners/anthropic": {
+      "release-type": "python",
+      "package-name": "langchain-anthropic",
+      "component": "langchain-anthropic",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_anthropic/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/anthropic/tests",
+        "libs/partners/anthropic/uv.lock"
+      ]
+    },
+    "libs/partners/chroma": {
+      "release-type": "python",
+      "package-name": "langchain-chroma",
+      "component": "langchain-chroma",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_chroma/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/chroma/tests",
+        "libs/partners/chroma/uv.lock"
+      ]
+    },
+    "libs/partners/deepseek": {
+      "release-type": "python",
+      "package-name": "langchain-deepseek",
+      "component": "langchain-deepseek",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_deepseek/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/deepseek/tests",
+        "libs/partners/deepseek/uv.lock"
+      ]
+    },
+    "libs/partners/exa": {
+      "release-type": "python",
+      "package-name": "langchain-exa",
+      "component": "langchain-exa",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_exa/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/exa/tests",
+        "libs/partners/exa/uv.lock"
+      ]
+    },
+    "libs/partners/fireworks": {
+      "release-type": "python",
+      "package-name": "langchain-fireworks",
+      "component": "langchain-fireworks",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_fireworks/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/fireworks/tests",
+        "libs/partners/fireworks/uv.lock"
+      ]
+    },
+    "libs/partners/groq": {
+      "release-type": "python",
+      "package-name": "langchain-groq",
+      "component": "langchain-groq",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_groq/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/groq/tests",
+        "libs/partners/groq/uv.lock"
+      ]
+    },
+    "libs/partners/huggingface": {
+      "release-type": "python",
+      "package-name": "langchain-huggingface",
+      "component": "langchain-huggingface",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_huggingface/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/huggingface/tests",
+        "libs/partners/huggingface/uv.lock"
+      ]
+    },
+    "libs/partners/mistralai": {
+      "release-type": "python",
+      "package-name": "langchain-mistralai",
+      "component": "langchain-mistralai",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_mistralai/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/mistralai/tests",
+        "libs/partners/mistralai/uv.lock"
+      ]
+    },
+    "libs/partners/nomic": {
+      "release-type": "python",
+      "package-name": "langchain-nomic",
+      "component": "langchain-nomic",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_nomic/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/nomic/tests",
+        "libs/partners/nomic/uv.lock"
+      ]
+    },
+    "libs/partners/ollama": {
+      "release-type": "python",
+      "package-name": "langchain-ollama",
+      "component": "langchain-ollama",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_ollama/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/ollama/tests",
+        "libs/partners/ollama/uv.lock"
+      ]
+    },
+    "libs/partners/openai": {
+      "release-type": "python",
+      "package-name": "langchain-openai",
+      "component": "langchain-openai",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_openai/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/openai/tests",
+        "libs/partners/openai/uv.lock"
+      ]
+    },
+    "libs/partners/openrouter": {
+      "release-type": "python",
+      "package-name": "langchain-openrouter",
+      "component": "langchain-openrouter",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_openrouter/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/openrouter/tests",
+        "libs/partners/openrouter/uv.lock"
+      ],
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
+    },
+    "libs/partners/perplexity": {
+      "release-type": "python",
+      "package-name": "langchain-perplexity",
+      "component": "langchain-perplexity",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_perplexity/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/perplexity/tests",
+        "libs/partners/perplexity/uv.lock"
+      ]
+    },
+    "libs/partners/qdrant": {
+      "release-type": "python",
+      "package-name": "langchain-qdrant",
+      "component": "langchain-qdrant",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_qdrant/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/qdrant/tests",
+        "libs/partners/qdrant/uv.lock"
+      ]
+    },
+    "libs/partners/typesafe": {
+      "release-type": "python",
+      "package-name": "langchain-typesafe",
+      "component": "langchain-typesafe",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_typesafe/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/typesafe/tests",
+        "libs/partners/typesafe/uv.lock"
+      ],
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true
+    },
+    "libs/partners/xai": {
+      "release-type": "python",
+      "package-name": "langchain-xai",
+      "component": "langchain-xai",
+      "extra-files": [
+        "pyproject.toml",
+        "langchain_xai/_version.py"
+      ],
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [
+        "libs/partners/xai/tests",
+        "libs/partners/xai/uv.lock"
+      ]
+    }
+  }
+}

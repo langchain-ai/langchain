@@ -1,0 +1,17 @@
+{
+  "name": "langchain-release-please",
+  "private": true,
+  "description": "Pinned, patched runner for per-package release pull requests.",
+  "scripts": {
+    "test": "node --test ../scripts/release-please-history.test.mjs ./*.test.mjs",
+    "lint": "node --check run.mjs && node --check history.mjs && node --check strategies.mjs && node --check run.test.mjs && node --check ../scripts/release-please-history.test.mjs"
+  },
+  "type": "module",
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "release-please": "17.11.2"
+  }
+}
