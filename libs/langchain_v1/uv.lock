@@ -2704,7 +2704,7 @@ wheels = [
 
 [[package]]
 name = "langchain-tests"
-version = "1.1.9"
+version = "1.2.0"
 source = { editable = "../standard-tests" }
 dependencies = [
     { name = "httpx" },
