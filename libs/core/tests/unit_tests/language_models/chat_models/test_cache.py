@@ -481,6 +481,24 @@ def test_token_costs_are_zeroed_out() -> None:
     assert second_response.usage_metadata["total_cost"] == 0  # type: ignore[typeddict-item]
 
 
+def test_cache_hit_without_usage_metadata_remains_none() -> None:
+    # If the model reported no usage, cache hit should not set invalid usage_metadata
+    local_cache = InMemoryCache()
+    messages = [
+        AIMessage(content="Hello, how are you?"),
+    ]
+    model = GenericFakeChatModel(messages=iter(messages), cache=local_cache)
+    first_response = model.invoke("Hello")
+    assert isinstance(first_response, AIMessage)
+    assert first_response.usage_metadata is None
+
+    second_response = model.invoke("Hello")
+    assert isinstance(second_response, AIMessage)
+    assert second_response.usage_metadata is None
+    # Must be valid when dumped/validated
+    AIMessage.model_validate(second_response.model_dump())
+
+
 def test_cache_key_ignores_message_id_sync() -> None:
     """Test that message IDs are stripped from cache keys (sync).
 

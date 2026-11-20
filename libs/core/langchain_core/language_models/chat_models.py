@@ -1475,14 +1475,15 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 # Already a ChatGeneration or other expected type
                 if hasattr(gen, "message") and isinstance(gen.message, AIMessage):
                     # We zero out cost on cache hits
-                    gen.message = gen.message.model_copy(
-                        update={
-                            "usage_metadata": {
-                                **(gen.message.usage_metadata or {}),
-                                "total_cost": 0,
+                    if gen.message.usage_metadata is not None:
+                        gen.message = gen.message.model_copy(
+                            update={
+                                "usage_metadata": {
+                                    **gen.message.usage_metadata,
+                                    "total_cost": 0,
+                                }
                             }
-                        }
-                    )
+                        )
                 converted_generations.append(gen)
         return converted_generations
 
