@@ -58,7 +58,7 @@ dev = []
 [tool.uv]
 constraint-dependencies = [
     "pygments>=2.20.0",
-    "pillow>=13.0.0; python_version >= '3.11'",
+    "pillow>=13.0.0",
 ]
 
 [tool.uv.sources]

@@ -2,7 +2,6 @@
 
 import asyncio
 import inspect
-import sys
 import uuid
 from collections.abc import AsyncIterator, Callable, Iterable, Iterator, Sequence
 from functools import partial
@@ -629,7 +628,7 @@ async def test_astream_with_model_in_chain() -> None:
 
     @RunnableLambda
     def i_dont_stream(value: Any, config: RunnableConfig) -> Any:
-        return model.invoke(value, config if sys.version_info >= (3, 11) else None)
+        return model.invoke(value, config)
 
     events = await _collect_events(i_dont_stream.astream_events("hello", version="v2"))
     _assert_events_equal_allow_superset_metadata(
@@ -743,9 +742,7 @@ async def test_astream_with_model_in_chain() -> None:
 
     @RunnableLambda
     async def ai_dont_stream(value: Any, config: RunnableConfig) -> Any:
-        return await model.ainvoke(
-            value, config if sys.version_info >= (3, 11) else None
-        )
+        return await model.ainvoke(value, config)
 
     events = await _collect_events(ai_dont_stream.astream_events("hello", version="v2"))
     _assert_events_equal_allow_superset_metadata(

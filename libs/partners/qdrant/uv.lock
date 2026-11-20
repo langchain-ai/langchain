@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.11.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -11,9 +11,8 @@ resolution-markers = [
 
 [manifest]
 constraints = [
-    { name = "filelock", marker = "python_full_version < '3.11'", specifier = "==3.20.3" },
-    { name = "filelock", marker = "python_full_version >= '3.11'", specifier = ">=4.2.1" },
-    { name = "pillow", marker = "python_full_version >= '3.11'", specifier = ">=13.0.0" },
+    { name = "filelock", specifier = ">=4.2.1" },
+    { name = "pillow", specifier = ">=13.0.0" },
     { name = "pygments", specifier = ">=2.20.0" },
 ]
 
@@ -675,7 +674,7 @@ typing = [
 
 [package.metadata]
 requires-dist = [
-    { name = "fastembed", marker = "python_full_version >= '3.9' and python_full_version < '3.13' and extra == 'fastembed'", specifier = ">=0.8.0" },
+    { name = "fastembed", marker = "python_full_version < '3.13' and extra == 'fastembed'", specifier = ">=0.8.0" },
     { name = "langchain-core", editable = "../../core" },
     { name = "pydantic", specifier = ">=2.7.4" },
     { name = "qdrant-client", specifier = ">=1.15.1,<1.16.0" },

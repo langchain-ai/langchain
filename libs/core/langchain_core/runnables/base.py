@@ -73,7 +73,6 @@ from langchain_core.runnables.utils import (
     Output,
     accepts_config,
     accepts_run_manager,
-    coro_with_context,
     gated_coro,
     gather_with_concurrency,
     get_function_first_arg_dict_keys,
@@ -2404,7 +2403,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 coro = acall_func_with_variable_args(
                     func, input_, config, run_manager, **kwargs
                 )
-                output: Output = await coro_with_context(coro, context)
+                output: Output = await asyncio.create_task(coro, context=context)  # type: ignore[arg-type]
         except BaseException as e:
             await run_manager.on_chain_error(e)
             raise
@@ -2705,7 +2704,10 @@ class Runnable(ABC, Generic[Input, Output]):
                     iterator = iterator_
                 try:
                     while True:
-                        chunk = await coro_with_context(anext(iterator), context)
+                        chunk: Output = await asyncio.create_task(
+                            anext(iterator),  # type: ignore[arg-type]
+                            context=context,
+                        )
                         yield chunk
                         final_output.add(chunk)
                 except StopAsyncIteration:
@@ -3512,7 +3514,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
                         part = functools.partial(step.ainvoke, input_, config, **kwargs)
                     else:
                         part = functools.partial(step.ainvoke, input_, config)
-                    input_ = await coro_with_context(part(), context, create_task=True)
+                    input_ = await asyncio.create_task(part(), context=context)
             # finish the root run
         except BaseException as e:
             await run_manager.on_chain_error(e)
@@ -4240,8 +4242,8 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                 callbacks=run_manager.get_child(f"map:key:{key}"),
             )
             with set_config_context(child_config) as context:
-                return await coro_with_context(
-                    step.ainvoke(input_, child_config), context, create_task=True
+                return await asyncio.create_task(
+                    step.ainvoke(input_, child_config), context=context
                 )
 
         # gather results from all steps

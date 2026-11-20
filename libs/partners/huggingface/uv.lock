@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.11.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -10,10 +10,9 @@ resolution-markers = [
 
 [manifest]
 constraints = [
-    { name = "filelock", marker = "python_full_version < '3.11'", specifier = "==3.20.3" },
-    { name = "filelock", marker = "python_full_version >= '3.11'", specifier = ">=4.2.1" },
+    { name = "filelock", specifier = ">=4.2.1" },
     { name = "pygments", specifier = ">=2.20.0" },
-    { name = "tornado", marker = "python_full_version >= '3.11'", specifier = ">=6.6" },
+    { name = "tornado", specifier = ">=6.6" },
 ]
 
 [[package]]

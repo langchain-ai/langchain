@@ -1,15 +1,9 @@
 """Get minimum versions of dependencies from a pyproject.toml file."""
 
-import sys
-from collections import defaultdict
-
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    # For Python 3.10 and below, which doesnt have stdlib tomllib
-    import tomli as tomllib
-
 import re
+import sys
+import tomllib
+from collections import defaultdict
 from typing import List
 
 import requests
