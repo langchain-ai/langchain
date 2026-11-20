@@ -303,6 +303,25 @@ class AIMessage(BaseMessage):
 
         return blocks
 
+    @model_validator(mode="after")
+    def _backwards_compat_refusal(self) -> Self:
+        """Expose OpenAI refusal text for integrations predating standard blocks."""
+        if isinstance(self.content, list) and self.response_metadata.get(
+            "model_provider"
+        ) in (None, "openai"):
+            for block in self.content:
+                if (
+                    isinstance(block, dict)
+                    and block.get("type") == "refusal"
+                    and (refusal := block.get("refusal"))
+                ):
+                    self.additional_kwargs = {
+                        "refusal": refusal,
+                        **self.additional_kwargs,
+                    }
+                    break
+        return self
+
     # TODO: remove this logic if possible, reducing breaking nature of changes
     @model_validator(mode="before")
     @classmethod
