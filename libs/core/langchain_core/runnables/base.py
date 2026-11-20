@@ -1452,7 +1452,10 @@ class Runnable(ABC, Generic[Input, Output]):
         A `StreamEvent` is a dictionary with the following schema:
 
         - `event`: Event names are of the format:
-            `on_[runnable_type]_(start|stream|end)`.
+            `on_[runnable_type]_(start|stream|end|error)`. In v2, a run that raises
+            ends with `error` instead of `end`, with the exception in
+            `data["error"]`. That includes exceptions used for control flow, such
+            as an interrupt or a cancellation.
         - `name`: The name of the `Runnable` that generated the event.
         - `run_id`: Randomly generated ID associated with the given execution of the
             `Runnable` that emitted the event. A child `Runnable` that gets invoked as
