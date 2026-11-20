@@ -101,6 +101,19 @@ class _MCPToolExecutionError(ToolException):
         self.tool_content = tool_content
 
 
+class _MCPStructuredTool(StructuredTool):
+    """Structured tool that preserves MCP arguments named like run controls."""
+
+    def _run(self, *args: Any, **kwargs: Any) -> Any:
+        msg = "MCP tools do not support synchronous invocation."
+        raise NotImplementedError(msg)
+
+    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
+        if self.coroutine is not None:
+            return await self.coroutine(*args, **kwargs)
+        return await super()._arun(*args, **kwargs)
+
+
 def _handle_mcp_tool_error(error: ToolException) -> list[ToolMessageContentBlock]:
     """Surface an MCP execution error to the model as failed tool output.
 
@@ -290,10 +303,12 @@ async def as_langchain_tool(
                 result = await _call_tool_with_interrupts(client, tool.name, arguments)
             else:
                 # Preserve MCP error results for conversion into failed tool messages.
-                result = await client.call_tool(tool.name, arguments, raise_on_error=False)
+                result = await client.call_tool(
+                    tool.name, arguments, raise_on_error=False
+                )
         return _convert_call_tool_result(result)
 
-    return StructuredTool(
+    return _MCPStructuredTool(
         name=tool.name,
         description=tool.description or "",
         args_schema=_normalize_mcp_schema(tool.input_schema),

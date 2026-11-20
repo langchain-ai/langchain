@@ -36,7 +36,9 @@ class _VideoResource:
 
 def _blocks_without_ids(content: Any) -> list[dict[str, Any]]:
     """Drop the generated block ids so content can be compared literally."""
-    return [{key: value for key, value in block.items() if key != "id"} for block in content]
+    return [
+        {key: value for key, value in block.items() if key != "id"} for block in content
+    ]
 
 
 async def _one_tool(
@@ -85,7 +87,9 @@ async def test_text_result_becomes_content_blocks_and_structured_artifact() -> N
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("elicitation", [None, "interrupt"], ids=["fastmcp", "interrupt"])
+@pytest.mark.parametrize(
+    "elicitation", [None, "interrupt"], ids=["fastmcp", "interrupt"]
+)
 async def test_tool_error_reaches_the_model_as_failed_output(
     elicitation: Literal["interrupt"] | None,
 ) -> None:
@@ -127,7 +131,9 @@ async def test_client_failure_raises_instead_of_becoming_tool_output(
     monkeypatch.setattr(client, "call_tool", AsyncMock(side_effect=RuntimeError(msg)))
 
     with pytest.raises(RuntimeError, match=msg):
-        await tool.ainvoke({"name": "ping", "args": {}, "id": "call-1", "type": "tool_call"})
+        await tool.ainvoke(
+            {"name": "ping", "args": {}, "id": "call-1", "type": "tool_call"}
+        )
 
 
 def test_result_without_structured_content_has_no_artifact() -> None:
@@ -176,7 +182,12 @@ async def test_annotations_and_meta_are_kept_under_the_mcp_namespace() -> None:
 
     # Annotations are snake_case (no wire aliases) and grouped under `mcp.tool`.
     assert tool.metadata == {
-        "mcp": {"tool": {"annotations": {"destructive_hint": True}, "_meta": {"origin": "crm"}}}
+        "mcp": {
+            "tool": {
+                "annotations": {"destructive_hint": True},
+                "_meta": {"origin": "crm"},
+            }
+        }
     }
 
 
@@ -188,6 +199,49 @@ async def test_tool_without_annotations_or_meta_has_no_metadata() -> None:
 
     assert tool.metadata is None
     assert tool.description == ""
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("argument_name", ["callbacks", "config", "run_manager"])
+async def test_reserved_argument_names_reach_the_mcp_server(argument_name: str) -> None:
+    """LangChain invocation controls must not consume MCP-owned arguments."""
+    server: FastMCP[None] = FastMCP("reserved-arguments")
+
+    if argument_name == "callbacks":
+
+        @server.tool(name="echo")
+        def echo_callbacks(callbacks: str, query: str) -> dict[str, str]:
+            """Return the supplied arguments."""
+            return {"callbacks": callbacks, "query": query}
+
+    elif argument_name == "config":
+
+        @server.tool(name="echo")
+        def echo_config(config: str, query: str) -> dict[str, str]:
+            """Return the supplied arguments."""
+            return {"config": config, "query": query}
+
+    else:
+
+        @server.tool(name="echo")
+        def echo_run_manager(run_manager: str, query: str) -> dict[str, str]:
+            """Return the supplied arguments."""
+            return {"run_manager": run_manager, "query": query}
+
+    tool, _ = await _one_tool(server)
+
+    message = await tool.ainvoke(
+        {
+            "name": "echo",
+            "args": {argument_name: "user-value", "query": "hello"},
+            "id": "call-1",
+            "type": "tool_call",
+        }
+    )
+
+    assert message.artifact == {
+        "structured_content": {argument_name: "user-value", "query": "hello"}
+    }
 
 
 @pytest.mark.asyncio
@@ -212,7 +266,9 @@ async def test_server_identity_is_kept_under_the_mcp_namespace() -> None:
 
 
 def test_image_content_becomes_an_image_block() -> None:
-    block = _convert_content_block(ImageContent(type="image", data="AAAA", mimeType="image/png"))
+    block = _convert_content_block(
+        ImageContent(type="image", data="AAAA", mimeType="image/png")
+    )
 
     assert block["type"] == "image"
     assert block["base64"] == "AAAA"
@@ -271,7 +327,9 @@ def test_embedded_blob_resource_type_follows_its_mime_type(
     block = _convert_content_block(
         EmbeddedResource(
             type="resource",
-            resource=BlobResourceContents(uri="file:///blob", blob="AAAA", mimeType=mime_type),
+            resource=BlobResourceContents(
+                uri="file:///blob", blob="AAAA", mimeType=mime_type
+            ),
         )
     )
 
@@ -282,7 +340,9 @@ def test_embedded_blob_resource_type_follows_its_mime_type(
 
 def test_audio_content_is_not_yet_supported() -> None:
     with pytest.raises(NotImplementedError, match="audio"):
-        _convert_content_block(AudioContent(type="audio", data="AAAA", mimeType="audio/wav"))
+        _convert_content_block(
+            AudioContent(type="audio", data="AAAA", mimeType="audio/wav")
+        )
 
 
 def test_an_unknown_content_type_names_itself_rather_than_asserting() -> None:
@@ -305,5 +365,7 @@ def test_an_unknown_embedded_resource_type_names_itself() -> None:
     # Bypass validation to stand in for a resource kind the SDK might add later.
     object.__setattr__(embedded, "resource", cast("Any", _VideoResource()))
 
-    with pytest.raises(ValueError, match="Unknown embedded resource type: _VideoResource"):
+    with pytest.raises(
+        ValueError, match="Unknown embedded resource type: _VideoResource"
+    ):
         _convert_content_block(embedded)
