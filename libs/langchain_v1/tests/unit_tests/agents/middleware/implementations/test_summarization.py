@@ -2923,13 +2923,20 @@ def test_default_follows_model_swapped_in_by_other_middleware(use_async: bool) -
     ]
 
 
-def test_pinned_model_drives_thresholds_and_summary() -> None:
-    """A pinned model drives thresholds and the summary, whatever the call goes to."""
+@pytest.mark.parametrize(("call_model", "warns"), [(_large, True), (_small, False)])
+def test_pinned_model_drives_thresholds_and_summary(
+    call_model: Any,
+    warns: bool,  # noqa: FBT001
+) -> None:
+    """A pinned model drives everything, warning when the call goes elsewhere."""
     middleware = _middleware(model=_small())
 
-    text = _summary_text(middleware, _large())
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        text = _summary_text(middleware, call_model())
 
     assert text == "Here is a summary of the conversation to date:\n\nsmall summary"
+    assert any("summarizer=" in str(w.message) for w in caught) is warns
 
 
 @pytest.mark.parametrize("model_form", ["default", "pinned"])
