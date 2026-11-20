@@ -39,7 +39,11 @@ def test_unsupported_configuration(model: str, kwargs: dict[str, Any]) -> None:
 def test_request(model: str) -> None:
     llm = ChatAnthropic(model=model, reasoning_effort="xhigh")
     payload = llm._get_request_payload("Hello", speed="fast")
-    assert payload["thinking"] == {"type": "adaptive", "display": "summarized"}
+    assert payload["thinking"] == {
+        "type": "adaptive",
+        "display": "summarized",
+        "block_binding": {"prefix_mismatch_behavior": "drop_block"},
+    }
     assert payload["output_config"] == {"effort": "xhigh"}
     assert payload["speed"] == "fast"
     assert not {"temperature", "top_p", "top_k"} & payload.keys()

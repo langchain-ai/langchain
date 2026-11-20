@@ -134,6 +134,7 @@ def test_profile_and_defaults() -> None:
     assert llm._get_request_payload("hello", effort="medium")["thinking"] == {
         "type": "adaptive",
         "display": "summarized",
+        "block_binding": {"prefix_mismatch_behavior": "drop_block"},
     }
 
 
