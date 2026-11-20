@@ -1,0 +1,149 @@
+name: "⚠️ (Automated) Release Please"
+
+on:
+  push:
+    branches: [master]
+  workflow_run:
+    workflows: ["🚀 Package Release"]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch-release:
+    if: github.repository == 'langchain-ai/langchain'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event_name == 'push' && github.sha || 'master' }}
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+        with:
+          script: |
+            await require('./.github/scripts/release-please.js').dispatchRelease({github, context, core});
+
+  release-please:
+    needs: dispatch-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: release-please
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+    outputs:
+      prs: ${{ steps.release.outputs.prs }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: master
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+      - name: Defer while a merged release awaits publication
+        id: pending
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3
+        with:
+          script: |
+            await require('./.github/scripts/release-please.js').guardPending({github, context, core});
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115
+        if: steps.pending.outputs.skip == 'false'
+        with:
+          package_json_file: .github/release-please/package.json
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        if: steps.pending.outputs.skip == 'false'
+        with:
+          node-version: "24"
+      - name: Install pinned, patched release-please
+        if: steps.pending.outputs.skip == 'false'
+        run: pnpm install --dir .github/release-please --frozen-lockfile --ignore-scripts
+      - name: Generate release App token
+        if: steps.pending.outputs.skip == 'false'
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510
+        with:
+          client-id: ${{ secrets.ORG_MEMBERSHIP_APP_CLIENT_ID }}
+          private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: langchain
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+      - name: Create or refresh draft release PRs
+        if: steps.pending.outputs.skip == 'false'
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: node .github/release-please/run.mjs
+
+  update-lockfiles:
+    needs: release-please
+    if: needs.release-please.outputs.prs != '' && needs.release-please.outputs.prs != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: release-lockfiles-${{ matrix.pr.headBranchName }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        pr: ${{ fromJSON(needs.release-please.outputs.prs) }}
+    steps:
+      - name: Generate release App token
+        id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510
+        with:
+          client-id: ${{ secrets.ORG_MEMBERSHIP_APP_CLIENT_ID }}
+          private-key: ${{ secrets.ORG_MEMBERSHIP_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: langchain
+          permission-contents: write
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ matrix.pr.headBranchName }}
+          token: ${{ steps.app-token.outputs.token }}
+      - uses: ./.github/actions/uv_setup
+        with:
+          python-version: "3.12"
+          enable-cache: "false"
+      - name: Refresh package lockfiles
+        env:
+          RELEASE_BRANCH: ${{ matrix.pr.headBranchName }}
+        run: |
+          set -euo pipefail
+          case "$RELEASE_BRANCH" in
+            release-please--branches--master--components--*) ;;
+            *) echo "::error::Unexpected release branch"; exit 1 ;;
+          esac
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3; do
+            while IFS= read -r lockfile; do
+              uv lock --directory "$(dirname "$lockfile")" --python 3.12
+            done < <(git ls-files '**/uv.lock')
+            git add -- '**/uv.lock'
+            if git diff --cached --quiet; then
+              exit 0
+            fi
+            git commit -m 'chore(infra): refresh release lockfiles'
+            if git push origin "HEAD:$RELEASE_BRANCH"; then
+              exit 0
+            fi
+            git fetch origin "$RELEASE_BRANCH"
+            git reset --hard FETCH_HEAD
+          done
+          echo '::error::Release branch kept changing; rerun the lockfile job.'
+          exit 1
