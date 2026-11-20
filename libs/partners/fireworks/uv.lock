@@ -884,7 +884,7 @@ typing = [
 
 [[package]]
 name = "langchain-fireworks"
-version = "1.7.3"
+version = "1.8.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
