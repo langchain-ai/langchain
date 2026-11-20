@@ -5961,6 +5961,194 @@ def test_configuration_update_block_without_text() -> None:
     }
 
 
+_JSON_FORMAT = {
+    "type": "json_schema",
+    "name": "answer",
+    "schema": {"type": "object", "properties": {"a": {"type": "string"}}},
+    "strict": True,
+}
+
+
+def _configuration_update_history() -> list:
+    return [
+        HumanMessage(
+            [
+                {
+                    "type": "configuration_update",
+                    "reasoning": {"effort": "high"},
+                    "text": {"format": _JSON_FORMAT},
+                },
+                {"type": "text", "text": "First question"},
+            ]
+        ),
+        AIMessage("First answer", response_metadata={"id": "resp_123"}),
+        HumanMessage(
+            [
+                {"type": "configuration_update", "reasoning": {"effort": "low"}},
+                {"type": "text", "text": "Second question"},
+            ]
+        ),
+    ]
+
+
+@pytest.mark.parametrize(
+    "model", ["gpt-6-astra", "gpt-6.2-sol", "gpt-7", "gpt-6-luna-2026-01-01"]
+)
+def test_configuration_update_supported_models(model: str) -> None:
+    llm = ChatOpenAI(model=model, use_responses_api=True, reasoning_effort="medium")
+    payload = llm._get_request_payload(_configuration_update_history())
+
+    assert payload["reasoning"] == {"effort": "medium"}
+    assert "text" not in payload
+    assert [item["type"] for item in payload["input"]] == [
+        "configuration_update",
+        "message",
+        "message",
+        "configuration_update",
+        "message",
+    ]
+
+
+def test_configuration_update_fallback_merges_updates() -> None:
+    """Unsupported models get the latest effort and format as request params.
+
+    Effort and format merge independently: the second update lowers the effort
+    but leaves the format set by the first one in place.
+    """
+    llm = ChatOpenAI(
+        model="gpt-5.4",
+        use_responses_api=True,
+        reasoning={"effort": "medium", "summary": "auto"},
+        verbosity="low",
+    )
+    payload = llm._get_request_payload(_configuration_update_history())
+
+    assert payload["reasoning"] == {"effort": "low", "summary": "auto"}
+    assert payload["text"] == {"format": _JSON_FORMAT, "verbosity": "low"}
+    assert all(item["type"] != "configuration_update" for item in payload["input"])
+    assert [item.get("role") for item in payload["input"]] == [
+        "user",
+        "assistant",
+        "user",
+    ]
+
+
+def test_configuration_update_fallback_overrides_call_kwargs() -> None:
+    """An update supersedes request-level effort passed at call time too."""
+    llm = ChatOpenAI(model="gpt-5.4", use_responses_api=True)
+    payload = llm._get_request_payload(
+        _configuration_update_history(), reasoning_effort="xhigh"
+    )
+
+    assert payload["reasoning"] == {"effort": "low"}
+    assert "reasoning_effort" not in payload
+
+
+def test_configuration_update_fallback_keeps_response_format() -> None:
+    """Explicit structured output wins over an update's format."""
+    llm = ChatOpenAI(model="gpt-5.4", use_responses_api=True)
+    response_format = {**_JSON_FORMAT, "name": "explicit"}
+    payload = llm._get_request_payload(
+        _configuration_update_history(),
+        response_format={
+            "type": "json_schema",
+            "json_schema": {k: v for k, v in response_format.items() if k != "type"},
+        },
+    )
+
+    assert payload["text"]["format"] == response_format
+    assert payload["reasoning"] == {"effort": "low"}
+
+
+def test_configuration_update_fallback_drops_update_only_message() -> None:
+    llm = ChatOpenAI(model="gpt-5.4", use_responses_api=True)
+    messages = [
+        HumanMessage("Question"),
+        AIMessage("Answer"),
+        HumanMessage(
+            [{"type": "configuration_update", "reasoning": {"effort": "low"}}]
+        ),
+    ]
+    payload = llm._get_request_payload(messages)
+
+    assert payload["reasoning"] == {"effort": "low"}
+    assert [item.get("role") for item in payload["input"]] == ["user", "assistant"]
+    assert messages[-1].content == [
+        {"type": "configuration_update", "reasoning": {"effort": "low"}}
+    ]
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"reasoning": {"effort": "medium", "mode": "pro"}},
+        {"truncation": "auto"},
+    ],
+)
+def test_configuration_update_fallback_on_unsupported_request(
+    kwargs: dict,
+) -> None:
+    """Pro mode and automatic truncation reject the item even on GPT-6."""
+    llm = ChatOpenAI(model="gpt-6-astra", use_responses_api=True, **kwargs)
+    payload = llm._get_request_payload(_configuration_update_history())
+
+    assert payload["reasoning"]["effort"] == "low"
+    assert all(item["type"] != "configuration_update" for item in payload["input"])
+
+
+def test_configuration_update_fallback_with_previous_response_id() -> None:
+    """Updates before the previous response still count toward the fallback."""
+    llm = ChatOpenAI(
+        model="gpt-5.4", use_responses_api=True, use_previous_response_id=True
+    )
+    messages = [*_configuration_update_history()[:2], HumanMessage("Follow-up")]
+    payload = llm._get_request_payload(messages)
+
+    assert payload["previous_response_id"] == "resp_123"
+    assert payload["reasoning"] == {"effort": "high"}
+    assert payload["text"] == {"format": _JSON_FORMAT}
+    assert len(payload["input"]) == 1
+
+
+def test_configuration_update_fallback_chat_completions() -> None:
+    """Chat Completions has no such item, even on GPT-6."""
+    llm = ChatOpenAI(
+        model="gpt-6-astra", use_responses_api=False, reasoning_effort="medium"
+    )
+    payload = llm._get_request_payload(_configuration_update_history())
+
+    assert payload["reasoning_effort"] == "low"
+    assert payload["response_format"] == {
+        "type": "json_schema",
+        "json_schema": {k: v for k, v in _JSON_FORMAT.items() if k != "type"},
+    }
+    assert payload["messages"][-1] == {
+        "role": "user",
+        "content": [{"type": "text", "text": "Second question"}],
+    }
+
+
+def test_configuration_update_fallback_chat_completions_plain_text() -> None:
+    """Returning to plain text needs no `response_format` on Chat Completions."""
+    llm = ChatOpenAI(model="gpt-5.4", use_responses_api=False)
+    payload = llm._get_request_payload(
+        [
+            HumanMessage(
+                [
+                    {
+                        "type": "configuration_update",
+                        "text": {"format": {"type": "text"}},
+                    },
+                    {"type": "text", "text": "Hi"},
+                ]
+            )
+        ]
+    )
+
+    assert "response_format" not in payload
+    assert "reasoning_effort" not in payload
+
+
 class _RefusalSchema(BaseModel):
     answer: str
 

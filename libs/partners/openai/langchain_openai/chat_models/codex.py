@@ -554,6 +554,11 @@ class _ChatOpenAICodex(ChatOpenAI):
             profile["mid_conversation_tools"] = False
         return profile
 
+    def _supports_configuration_update(self, payload: dict) -> bool:
+        # The Codex backend's support for the item is unverified, so always fall
+        # back to request-level parameters.
+        return False
+
     @property
     def _llm_type(self) -> str:
         return "openai-codex-chat"
