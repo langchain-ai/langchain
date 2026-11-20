@@ -2760,3 +2760,115 @@ def test_async_summarizer_on_sync_path_raises() -> None:
 
     with pytest.raises(TypeError, match="coroutine function synchronously"):
         middleware._create_summary([HumanMessage(content="hi")])
+
+
+_JSON_FORMAT = {"format": {"type": "json_object"}}
+
+
+def _configuration_update(**settings: Any) -> dict[str, Any]:
+    return {"type": "configuration_update", **settings}
+
+
+def _configured_messages(kept_update: dict[str, Any] | None = None) -> list[AnyMessage]:
+    """Return six messages whose first four are summarized and last two kept."""
+    kept_content: list[str | dict[str, Any]] = [{"type": "text", "text": "4"}]
+    if kept_update is not None:
+        kept_content.insert(0, kept_update)
+    first_update = _configuration_update(reasoning={"effort": "high"}, text=_JSON_FORMAT)
+    return [
+        HumanMessage(content=[first_update, "0"], id="h0"),
+        AIMessage(content="1", id="a1"),
+        HumanMessage(content=[_configuration_update(reasoning={"effort": "low"})], id="h2"),
+        AIMessage(content="3", id="a3"),
+        HumanMessage(content=kept_content, id="h4"),
+        AIMessage(content="5", id="a5"),
+    ]
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_summary_restates_configuration_from_replaced_history(use_async: bool) -> None:  # noqa: FBT001
+    """Settings changed by summarized messages stay in effect after the summary.
+
+    Updates merge per setting with the latest winning. The summarizer never sees
+    the blocks, and a message holding only an update is left out of its input.
+    """
+    received: list[list[AnyMessage]] = []
+
+    def summarizer(messages: list[AnyMessage]) -> str:
+        received.append(messages)
+        return "summary"
+
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("messages", 6), keep=("messages", 2), summarizer=summarizer
+    )
+    state = AgentState[Any](messages=_configured_messages())
+
+    if use_async:
+        result = await middleware.abefore_model(state, Runtime())
+    else:
+        result = middleware.before_model(state, Runtime())
+
+    assert result is not None
+    summary = result["messages"][1]
+    assert summary.content[0] == _configuration_update(
+        reasoning={"effort": "low"}, text=_JSON_FORMAT
+    )
+    assert summary.text.endswith("summary")
+    assert [(m.id, m.content) for m in received[0]] == [("h0", ["0"]), ("a1", "1"), ("a3", "3")]
+
+
+@pytest.mark.parametrize(
+    ("kept_update", "restated"),
+    [
+        (None, _configuration_update(reasoning={"effort": "low"}, text=_JSON_FORMAT)),
+        # Restated in full so the block stays complete; the kept update still wins.
+        (
+            _configuration_update(reasoning={"effort": "medium"}),
+            _configuration_update(reasoning={"effort": "low"}, text=_JSON_FORMAT),
+        ),
+        (
+            _configuration_update(
+                reasoning={"effort": "medium"}, text={"format": {"type": "text"}}
+            ),
+            None,
+        ),
+    ],
+)
+def test_summary_skips_configuration_the_kept_messages_override(
+    kept_update: dict[str, Any] | None,
+    restated: dict[str, Any] | None,
+) -> None:
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("messages", 6), keep=("messages", 2)
+    )
+
+    result = middleware.before_model(
+        AgentState[Any](messages=_configured_messages(kept_update)), Runtime()
+    )
+
+    assert result is not None
+    summary = result["messages"][1]
+    if restated is None:
+        assert isinstance(summary.content, str)
+    else:
+        assert summary.content[0] == restated
+    assert result["messages"][2:] == _configured_messages(kept_update)[4:]
+
+
+def test_chained_summary_keeps_restated_configuration() -> None:
+    """A later summary that replaces an earlier one restates its settings again."""
+    middleware = SummarizationMiddleware(
+        model=MockChatModel(), trigger=("messages", 6), keep=("messages", 2)
+    )
+    first = middleware.before_model(AgentState[Any](messages=_configured_messages()), Runtime())
+    assert first is not None
+
+    later = [HumanMessage(content="6"), AIMessage(content="7"), HumanMessage(content="8")]
+    messages = [*first["messages"][1:], *later]
+    second = middleware.before_model(AgentState[Any](messages=messages), Runtime())
+
+    assert second is not None
+    assert second["messages"][2:] == messages[-2:]
+    assert second["messages"][1].content[0] == _configuration_update(
+        reasoning={"effort": "low"}, text=_JSON_FORMAT
+    )
