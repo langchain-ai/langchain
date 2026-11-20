@@ -492,3 +492,28 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
     assert result.generations[0].message.additional_kwargs["parsed"] == ModelOutput(
         output="Paris"
     )
+
+
+def test_configuration_update_falls_back_on_azure() -> None:
+    """Azure deployments get request-level params, even when named like GPT-6."""
+    llm = AzureChatOpenAI(
+        azure_deployment="gpt-6-astra",
+        model="gpt-6-astra",
+        api_version="2025-04-01-preview",
+        azure_endpoint="my-base-url",
+        api_key=SecretStr("test"),
+        use_responses_api=True,
+    )
+    payload = llm._get_request_payload(
+        [
+            HumanMessage(
+                [
+                    {"type": "configuration_update", "reasoning": {"effort": "high"}},
+                    {"type": "text", "text": "Hello"},
+                ]
+            )
+        ]
+    )
+
+    assert payload["reasoning"] == {"effort": "high"}
+    assert [item["type"] for item in payload["input"]] == ["message"]

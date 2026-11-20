@@ -40,6 +40,7 @@ from typing import (
     Literal,
     Self,
     TypeAlias,
+    TypeGuard,
     TypeVar,
     cast,
 )
@@ -813,6 +814,86 @@ def _model_prefers_responses_api(model_name: str | None) -> bool:
     return model_name.startswith(_RESPONSES_API_ONLY_PREFIXES) or "codex" in model_name
 
 
+def _model_supports_configuration_update(model_name: str | None) -> bool:
+    """Whether OpenAI accepts `configuration_update` input items for this model.
+
+    OpenAI documents the item for GPT-6 and later models only.
+    """
+    match = re.match(r"gpt-(\d+)(?:[.-]|$)", (model_name or "").lower())
+    return match is not None and int(match.group(1)) >= 6
+
+
+def _is_configuration_update(block: Any) -> TypeGuard[dict[str, Any]]:
+    return isinstance(block, dict) and block.get("type") == "configuration_update"
+
+
+def _pop_configuration_updates(
+    messages: list[BaseMessage],
+) -> tuple[list[BaseMessage], dict[str, Any]]:
+    """Strip `configuration_update` blocks and merge them into one configuration.
+
+    Reasoning effort and text format are tracked independently, and a later update
+    overrides an earlier one, matching how OpenAI applies the items natively.
+
+    Returns:
+        The messages without those blocks (a user or system message left with no
+        content is dropped), and the effective `effort` and `format`, when set.
+    """
+    remaining: list[BaseMessage] = []
+    configuration: dict[str, Any] = {}
+    for message in messages:
+        if not isinstance(message.content, list) or not any(
+            _is_configuration_update(block) for block in message.content
+        ):
+            remaining.append(message)
+            continue
+        content = []
+        for block in message.content:
+            if not _is_configuration_update(block):
+                content.append(block)
+                continue
+            reasoning = block.get("reasoning")
+            if isinstance(reasoning, dict) and reasoning.get("effort") is not None:
+                configuration["effort"] = reasoning["effort"]
+            text = block.get("text")
+            if isinstance(text, dict) and text.get("format") is not None:
+                configuration["format"] = text["format"]
+        if content or not isinstance(message, HumanMessage | SystemMessage):
+            remaining.append(message.model_copy(update={"content": content}))
+    return remaining, configuration
+
+
+def _apply_configuration_fallback(
+    payload: dict, configuration: dict[str, Any], *, responses_api: bool
+) -> None:
+    """Apply a merged `configuration_update` as request-level parameters.
+
+    The update supersedes the request-level effort and format, as it would on a
+    model that accepts the item. An explicit `response_format` (structured
+    output) is kept, since the response is parsed against it.
+    """
+    if (effort := configuration.get("effort")) is not None:
+        reasoning = payload.get("reasoning")
+        if isinstance(reasoning, dict):
+            payload["reasoning"] = {**reasoning, "effort": effort}
+        if "reasoning_effort" in payload or not isinstance(reasoning, dict):
+            payload["reasoning_effort"] = effort
+    text_format = configuration.get("format")
+    if text_format is None or "response_format" in payload:
+        return
+    if responses_api:
+        text = payload.get("text")
+        payload["text"] = {
+            **(text if isinstance(text, dict) else {}),
+            "format": text_format,
+        }
+    elif text_format.get("type") == "json_schema":
+        json_schema = {k: v for k, v in text_format.items() if k != "type"}
+        payload["response_format"] = {"type": "json_schema", "json_schema": json_schema}
+    elif text_format.get("type") != "text":
+        payload["response_format"] = text_format
+
+
 _BM = TypeVar("_BM", bound=BaseModel)
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[_BM] | type
 _DictOrPydantic: TypeAlias = dict | _BM
@@ -995,9 +1076,8 @@ class BaseChatOpenAI(BaseChatModel):
         Changing this value part-way through a conversation changes a request-level
         parameter, which invalidates the cached prompt prefix.
 
-        Models that support it (currently GPT-6) can instead carry the new effort
-        in a `configuration_update` item attached to the message that should start
-        using it:
+        Instead, carry the new effort in a `configuration_update` block attached
+        to the message that should start using it:
 
         ```python
         HumanMessage(
@@ -1009,7 +1089,23 @@ class BaseChatOpenAI(BaseChatModel):
         ```
 
         The new effort applies from that message onward, until another update
-        overrides it.
+        overrides it. An update can also set `text.format` (e.g.
+        `{"text": {"format": {"type": "json_schema", ...}}}`); an update to one
+        setting leaves the other unchanged.
+
+        On the Responses API with GPT-6 and later models, the block is sent as a
+        `configuration_update` input item, which keeps the cached prefix intact.
+
+        Elsewhere (earlier models, the Chat Completions API, `pro` reasoning
+        mode, `truncation="auto"`, Azure, and Codex), the blocks are dropped from
+        the request and the latest effort and format across the conversation are
+        sent as request-level `reasoning` / `reasoning_effort` and `text.format` /
+        `response_format` instead. The result is the same, at the cost of a cache
+        miss when the configuration changes. These values replace the request-level
+        effort and format whether they were set on the model or passed at call
+        time, just as an update would natively. The exception is an explicit
+        `response_format` (e.g. from `with_structured_output`), which is kept
+        because the response is parsed against it.
     """
 
     reasoning: dict[str, Any] | None = None
@@ -2086,6 +2182,19 @@ class BaseChatOpenAI(BaseChatModel):
             return True
         return _use_responses_api(payload)
 
+    def _supports_configuration_update(self, payload: dict) -> bool:
+        """Whether this Responses request can carry `configuration_update` items.
+
+        OpenAI accepts them on GPT-6 and later in standard (not `pro`) reasoning
+        mode, and rejects histories containing them under automatic truncation.
+        """
+        reasoning = payload.get("reasoning")
+        return (
+            _model_supports_configuration_update(payload.get("model"))
+            and not (isinstance(reasoning, dict) and reasoning.get("mode") == "pro")
+            and payload.get("truncation") != "auto"
+        )
+
     def _get_request_payload(
         self,
         input_: LanguageModelInput,
@@ -2098,8 +2207,15 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs["stop"] = stop
 
         payload = {**self._default_params, **kwargs}
+        use_responses_api = self._use_responses_api(payload)
 
-        if self._use_responses_api(payload):
+        if not (use_responses_api and self._supports_configuration_update(payload)):
+            messages, configuration = _pop_configuration_updates(messages)
+            _apply_configuration_fallback(
+                payload, configuration, responses_api=use_responses_api
+            )
+
+        if use_responses_api:
             if self.use_previous_response_id:
                 last_messages, previous_response_id = _get_last_messages(messages)
                 payload_to_use = last_messages if previous_response_id else messages

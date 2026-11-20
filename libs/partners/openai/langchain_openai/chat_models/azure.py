@@ -769,6 +769,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
             profile.pop("mid_conversation_tools", None)
         return profile
 
+    def _supports_configuration_update(self, payload: dict) -> bool:
+        # Deployment names don't identify the model, and Azure's support for the
+        # item is unverified, so always fall back to request-level parameters.
+        return False
+
     @property
     def _identifying_params(self) -> dict[str, Any]:
         """Get the identifying parameters."""

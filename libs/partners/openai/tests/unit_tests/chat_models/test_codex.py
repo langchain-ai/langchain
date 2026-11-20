@@ -763,3 +763,20 @@ def test_sync_token_callable_delegates() -> None:
     provider = FakeTokenProvider(access_token="zzz")
     callable_ = _SyncTokenCallable(provider)
     assert callable_() == "zzz"
+
+
+def test_configuration_update_falls_back_to_request_reasoning() -> None:
+    model = _build_model(model="gpt-6-astra")
+    payload = model._get_request_payload(
+        [
+            HumanMessage(
+                [
+                    {"type": "configuration_update", "reasoning": {"effort": "high"}},
+                    {"type": "text", "text": "hi"},
+                ]
+            )
+        ]
+    )
+
+    assert payload["reasoning"] == {"effort": "high"}
+    assert all(item.get("type") != "configuration_update" for item in payload["input"])
