@@ -86,6 +86,28 @@ def _summarize_tool_error(tool_content: list[ToolMessageContentBlock]) -> str:
     return "The MCP tool reported an error with empty content."
 
 
+class _MCPStructuredTool(StructuredTool):
+    """A structured tool whose arguments are all the MCP server's.
+
+    `StructuredTool._arun` reserves `config` and `run_manager` for its own run
+    controls, so a tool argument with either name never reaches the tool body - and
+    callbacks go the same way. An MCP tool's argument names are the server's, and a
+    user cannot rename them, so this variant calls the coroutine with the arguments
+    as given instead (#41981).
+    """
+
+    def _run(self, *args: Any, **kwargs: Any) -> Any:
+        msg = "MCP tools do not support synchronous invocation."
+
+        raise NotImplementedError(msg)
+
+    async def _arun(self, *args: Any, **kwargs: Any) -> Any:
+        if self.coroutine is not None:
+            return await self.coroutine(*args, **kwargs)
+
+        return await super()._arun(*args, **kwargs)
+
+
 class _MCPToolExecutionError(ToolException):
     """An MCP tool that ran and reported failure, as `isError=True`.
 
@@ -293,7 +315,7 @@ async def as_langchain_tool(
                 result = await client.call_tool(tool.name, arguments, raise_on_error=False)
         return _convert_call_tool_result(result)
 
-    return StructuredTool(
+    return _MCPStructuredTool(
         name=tool.name,
         description=tool.description or "",
         args_schema=_normalize_mcp_schema(tool.input_schema),

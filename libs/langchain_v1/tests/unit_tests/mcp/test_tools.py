@@ -181,6 +181,67 @@ async def test_annotations_and_meta_are_kept_under_the_mcp_namespace() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("argument_name", ["callbacks", "config", "run_manager"])
+async def test_an_argument_named_like_a_run_control_reaches_the_server(
+    argument_name: str,
+) -> None:
+    """An MCP tool's argument names are the server's, so none of them may be consumed."""
+    server: FastMCP[None] = FastMCP("reserved-arguments")
+
+    if argument_name == "callbacks":
+
+        @server.tool(name="echo")
+        def echo_callbacks(callbacks: str, query: str) -> str:
+            """Return the arguments the server received."""
+            return f"callbacks={callbacks};query={query}"
+
+    elif argument_name == "config":
+
+        @server.tool(name="echo")
+        def echo_config(config: str, query: str) -> str:
+            """Return the arguments the server received."""
+            return f"config={config};query={query}"
+
+    else:
+
+        @server.tool(name="echo")
+        def echo_run_manager(run_manager: str, query: str) -> str:
+            """Return the arguments the server received."""
+            return f"run_manager={run_manager};query={query}"
+
+    tool, _client = await _one_tool(server)
+
+    message = await tool.ainvoke(
+        {
+            "name": "echo",
+            "args": {argument_name: "user-value", "query": "hello"},
+            "id": "call-1",
+            "type": "tool_call",
+        }
+    )
+
+    assert message.status == "success", message.content
+    assert f"{argument_name}=user-value" in message.content[0]["text"]
+    assert "query=hello" in message.content[0]["text"]
+
+
+@pytest.mark.asyncio
+async def test_an_mcp_tool_refuses_synchronous_invocation() -> None:
+    """The arguments go straight to the coroutine, so there is no synchronous path."""
+    server: FastMCP[None] = FastMCP("sync-refused")
+
+    @server.tool(name="echo")
+    def echo(query: str) -> str:
+        """Return the query."""
+        return query
+
+    tool, _client = await _one_tool(server)
+
+    with pytest.raises(NotImplementedError, match="do not support synchronous"):
+        tool.invoke({"name": "echo", "args": {"query": "x"}, "id": "call-1", "type": "tool_call"})
+
+
+@pytest.mark.asyncio
 async def test_tool_without_annotations_or_meta_has_no_metadata() -> None:
     mcp_tool = Tool(name="noop", inputSchema={"type": "object", "properties": {}})
 
