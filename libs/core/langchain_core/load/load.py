@@ -454,6 +454,13 @@ class Reviver:
             self.allowed_class_paths = _compute_allowed_class_paths(
                 cast("Iterable[AllowedObject]", allowed_objects), self.import_mappings
             )
+        # Secret markers are revived before class paths are checked, so they must
+        # obey the allowlist too: an empty allowlist disallows everything and
+        # 'messages' is documented as safe for untrusted input. Other allowlists
+        # keep the existing explicit-secret behavior.
+        self._secrets_allowed = bool(self.allowed_class_paths) and (
+            allowed_objects != "messages"
+        )
         self.ignore_unserializable_fields = ignore_unserializable_fields
         self.init_validator = init_validator
 
@@ -474,7 +481,8 @@ class Reviver:
                 `ignore_unserializable_fields` is False.
         """
         if (
-            value.get("lc") == 1
+            self._secrets_allowed
+            and value.get("lc") == 1
             and value.get("type") == "secret"
             and value.get("id") is not None
         ):
