@@ -494,3 +494,24 @@ def test_context_replaces_lookalike_gateway_url(base_url: str) -> None:
     with langsmith_gateway(api_key="ctx-key"):
         config = _config(base_url=base_url)
     assert config.base_url == _DEFAULT_GATEWAY
+
+
+def test_context_base_url_preserves_query_parameters() -> None:
+    with langsmith_gateway(
+        api_key="ctx-key",
+        base_url="https://gateway.example.test/proxy?tenant=demo",
+    ):
+        config = _config()
+    assert config.base_url == "https://gateway.example.test/proxy/openai/v1?tenant=demo"
+
+
+def test_env_base_url_preserves_query_parameters(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "LANGSMITH_GATEWAY", "https://gateway.example.test/proxy/?tenant=demo"
+    )
+    assert (
+        _resolve_gateway_base_url(_PATH)
+        == "https://gateway.example.test/proxy/openai/v1?tenant=demo"
+    )

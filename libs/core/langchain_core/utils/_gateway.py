@@ -16,7 +16,7 @@ from collections.abc import Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, NamedTuple
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from pydantic import SecretStr
 
@@ -143,6 +143,15 @@ def _with_gateway_headers(
     return {**kept, **gateway_headers}
 
 
+def _append_provider_path(base_url: str, provider_path: str) -> str:
+    """Append ``provider_path`` to ``base_url``'s path, preserving query/fragment."""
+    split = urlsplit(base_url)
+    base_path = split.path.rstrip("/")
+    suffix = provider_path.lstrip("/")
+    path = f"{base_path}/{suffix}" if suffix else (base_path or "/")
+    return urlunsplit((split.scheme, split.netloc, path, split.query, split.fragment))
+
+
 def _override_base_url(
     override: _GatewayOverride, base_url: str | None, provider_path: str
 ) -> str:
@@ -156,7 +165,7 @@ def _override_base_url(
     """
     if isinstance(base_url, str) and base_url.startswith(f"{override.base_url}/"):
         return base_url
-    return f"{override.base_url}/{provider_path}"
+    return _append_provider_path(override.base_url, provider_path)
 
 
 _TRUE_VALUES = ("true", "1", "yes")
@@ -225,7 +234,7 @@ def _resolve_gateway_base_url(provider_path: str) -> str | None:
         if raw.lower() in _TRUE_VALUES
         else raw.rstrip("/")
     )
-    return f"{base}/{provider_path}"
+    return _append_provider_path(base, provider_path)
 
 
 def _same_origin(first: str, second: str) -> bool:
