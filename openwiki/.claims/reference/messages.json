@@ -1,20 +1,24 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:9b30d4ca85408b5db3c960b7e9afb5577f51a31b9f8a82955f046a0164eb247a",
+  "pageVersion": "sha256:d207bb5b319e55dabfcd02edc414d66b7638deb08c9419616b9d7416f59c5225",
   "claims": [
     {
       "id": "claim_440d269da9d7405796eb025f9a99de80",
       "statement": "The LangChain message system provides a type hierarchy of message classes including BaseMessage, HumanMessage, AIMessage, SystemMessage, ToolMessage, and related variants defined in langchain_core.messages, implementing the fundamental data contract for communication between applications and language models.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain/langchain_classic/schema/messages.py#L1-L23",
-          "version": "repo-lines-v1:sha256:227492d308a6db553ef16d5ee52d126ee27773185b44c9136a232964b6a2c218:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1Y2Y3N2RkZDVhMzllYzk3NGU1ZWQxYmU4YTE4MTNlMzZhNzY5N2ZlNTE0MWU2MTFkZThmMDc3OTY3NzU1NTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVhMTg4ZjQ0MWYzN2I5M2IzYzNmOTA2MTc2OTEwZTgzNTAyMWM5ZGJmODU5YTZmODcyOWQ3OGMyYTI0NGFjZDgifQ"
+          "resource": "repo://libs/core/langchain_core/messages/__init__.py#L1-L140",
+          "version": "repo-lines-v1:sha256:0bab60de361c84af42a6bae61d2e1b8f409539f8a43936a4ed3b63524075399e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0YTAyY2E1ZGJiZDg5ZDAyNjc0OWU2NjcyODlhM2ZhM2NiYzVjMGMyNTM0MGRjNmJlZmU4ZDg4NmZhNzY3NzE1IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmYWZiYTA1MjdjMzk1M2M0YjZlMGU1YjU3MzliYTgzNjEyZjgwNTNiY2RjOTQ2NjczMDE5M2NkMWQ1OTBiNDA4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwOWFlNGVmYmZiYzc3YjY5MzZlZDFjZTY0ZjAzMWI4YWMxOGZiZmRkZmUxZTM5ZWIyNGNhZWZlNWYwNWI0M2YyIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/messages/base.py#L92-L196",
+          "version": "repo-lines-v1:sha256:6c2f5f896e10235ac7375d92d302b9305376d02e497c40934fdda7f068fd43b7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA1LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhNmFhZWIwZDcyZTc1ODQ4YmFlZjA5YjBiYjM1NDA2ODIyYWZhZmE0OGMxMDFlNjQ3OTkxOGI4N2FhYjk1NmIzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmYWJkMmE0NDQwYTg0ZWJlMmVjZDZiMmIzMDkzNjg0ZTAwN2UzMDYzOWJkMzgyNGEyMjVkNmZhOWU5YjU0YTdlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0MjhlZWU0YWM1MGM4MGNiN2U1OWRlMTZhMGVjODI5ZWRlYmI0ZjUyYWQ5MzI5NjczZjdiYjEwODQwYzg5ZDE1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkOWVmNjAwMjMxYjRhMDE5N2I3ZGRmZGYwMDRlNGM0Y2MzMGMzNTliMzU1MmQ3NTFhNzQ5MTZmMjRjYTg4YTZiIn0"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-21T08:14:55.070Z"
   }
 }

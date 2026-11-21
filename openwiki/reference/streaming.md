@@ -3,9 +3,6 @@ type: API Reference
 title: Streaming API Reference
 description: Core streaming APIs for incremental output delivery via BaseChatModel.stream() and astream(), message chunk composition, ChatModelStream projections, and callback integration.
 tags: [streaming, token-streaming, api-reference, chat-models, callbacks, AIMessageChunk, ChatModelStream]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
 sources:
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py
@@ -16,6 +13,9 @@ sources:
   - id: openwiki-source-77dc1fb726463969f9d53658
     resource: repo://libs/core/langchain_core/messages/ai.py
 generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-21T08:14:55.070Z
 ---
 
 ## Overview

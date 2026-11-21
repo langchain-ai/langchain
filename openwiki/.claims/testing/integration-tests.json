@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:0d27031cc8a8369cd3ee3f8d51e01e874adf07ea012db732dfa78f321cce6c67",
+  "pageVersion": "sha256:55e27df9331d0fc47b74f955fccb886db9105b5de5e5c1ac1133799b112885f7",
   "claims": [
     {
       "id": "claim_1d60970c94894e56b803c4a5dd29b5e1",
@@ -273,10 +273,76 @@
           "version": "repo-file-v1:sha256:57f239031cda372f4fb76bd1a27c2e0054ca593a32b6c3f6827802598437f2e7"
         }
       ]
+    },
+    {
+      "id": "claim_dc97a84e4a8c476b9a1e4c357bbfc832",
+      "statement": "Cassette recording scripts (e.g., record_codex_cassettes.sh) automate credential management, cassette snapshots, test execution, post-recording leak scanning, and change reporting. Scripts validate token freshness before long runs, snap cassette mtimes to track changes, and reject recordings if OAuth secrets (JWTs, bearer tokens, API keys) are detected via regex patterns.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/scripts/record_codex_cassettes.sh#L1-L44",
+          "version": "repo-lines-v1:sha256:971f7c4fd95e65a49c4a97cc64e46630218b42c023e996f7f00b51ed672d9688:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFkOTVmYzA0YTgwYzk1MmY0OWNlNDE4ODYyN2M1M2IwZmJlOGM0NDA0MWI5NTJkNTkyYWNkMWRlOTk4NjE0NjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiZDU4MjFlYzRjYTc1MmE3NzEwMmZhNjYxZDU1MDViYTllNGZiYzg4NGY5YjA4NGI5MmQ4MzU2MzY4MTM3NGIifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/scripts/record_codex_cassettes.sh#L129-L163",
+          "version": "repo-lines-v1:sha256:efefaff2da6b3afada72221f39d6c29b171790108c42cf7865311136dbea5a2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxNGIwODYyNjkxMTc0NWFlZTI4MzVkNTRlZjY3NzZiMzQ2YWRkNjNlMzQyNTY2NjgxMTAwYTc2ZjlhMWNlN2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjNjAzNjQ2YTNjZDczMjA2ZTEyZmM0NDQ2MGI4NWRjNmExYzhkODU1YTQ5OTI0YWYxYzc5MDk4NGIyNWVjY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxYmViMWM4ZGY5MTAxNTIxZTc3ZTkxNmQ5YzU2NTBhNDQwYjVjODU0YmZjYTBmNTQ0ZmE2OGM1ZjRiODhhOTYifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/scripts/record_codex_cassettes.sh#L76-L98",
+          "version": "repo-lines-v1:sha256:725c82531d91e5dfe0883a161463fb3502dc9d5c76209bfed28f756ed68d11f0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmMmZlNGVhNjg2ZDEwYjdkMGI3ODg1Y2FkYmE3NWU2ZTMzNzIxOGU1Njc2YjJlNjk0MTk5OWNhMTFhMzllNGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUxYjlhNTM4MmQ0ZjM5YmRhNzNkZjgxNjBhMWZlMmExYTdlNTA0ODA2NDg5M2JjNGQxOTE3NzU5NDA3NzBiNWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkxYmEyNGFjZjgzZWJmOTY5MmEwMTI4NzkwOGQwYWFjNTlkZjk5YTllNzNjOThiZTgzYmVlMmQ5MDIzMzE0ZDIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE1MzhiMzgyN2U5ODk1ZmY2Mjk2ODk2OTY1ZThlMzg4NDFhZmU5YTc4Y2RlNzU5NjIyZWRmZjIwNjU0NzkzMjEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f61ac39c35a45f8afaa4aaf158d08a5",
+      "statement": "Recording scripts perform post-recording leak scans using zgrep on compressed cassettes with ERE patterns for bearer tokens (Bearer ey), JWT shapes (eyJ[A-Za-z0-9_-]{20,}.), urlencoded refresh grants, API keys (sk-[A-Za-z0-9]{20,}), and provider-specific claims (chatgpt_account_id); exit non-zero if leaks found, preventing cassette commit.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/scripts/record_codex_cassettes.sh#L129-L163",
+          "version": "repo-lines-v1:sha256:efefaff2da6b3afada72221f39d6c29b171790108c42cf7865311136dbea5a2d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMxNGIwODYyNjkxMTc0NWFlZTI4MzVkNTRlZjY3NzZiMzQ2YWRkNjNlMzQyNTY2NjgxMTAwYTc2ZjlhMWNlN2EiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFjNjAzNjQ2YTNjZDczMjA2ZTEyZmM0NDQ2MGI4NWRjNmExYzhkODU1YTQ5OTI0YWYxYzc5MDk4NGIyNWVjY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxYmViMWM4ZGY5MTAxNTIxZTc3ZTkxNmQ5YzU2NTBhNDQwYjVjODU0YmZjYTBmNTQ0ZmE2OGM1ZjRiODhhOTYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_63cc6617b3ad4d51b6efc90b6519f172",
+      "statement": "Integration test fixtures inject credentials via environment variables (automatically redacted by VCR), use callable token providers for OAuth flows, and declare cassette-safe deterministic parameters (hardcoded models, zero temperature). Standard test classes inherit fixture properties (chat_model_class, chat_model_params) from langchain_tests base classes.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_codex.py#L104-L107",
+          "version": "repo-lines-v1:sha256:0ba9cc9bd603abffdb335da267e6299fe5c6c937f5c19874140599ff789d6f58:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmIwNjE5NWZiMDQwMGZiYmRkZDAxN2FmMDMwNTI2YTEwNTlkMGViYWNkM2U5OWJkOGQ1M2IwZTZmMDkzNTE0MiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNjc0MzJjMzAwMTExOWM0Y2IyOTNjYTQyZWU5YmQwZDgxMDQyYjgwMGQ1YWYzN2RlNjY0MWE5ZjU2MmFlMGE4ZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDgyNjc2Yzg4OGMxYTRkOWZhNzcyZmNkYzMwMmY3NzNiYzcyOTBlZWJmZjlkYTM2YTM5ZjQ0YzMyMTE5ODM4NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWVjYjAxMGZiYzMwYzYzMTUwNmE1MjkxZmZiMjYwNjUzZTA0YjA5MTliODgzNDk2YzRkYzVmNjlmYjM4MjhlMCJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_codex.py#L49-L52",
+          "version": "repo-lines-v1:sha256:a9cfd428201c5620af861ccb9d31eaa660e744ddbd34400ddc40ec4aa6bc0c91:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDFiOTEyY2M4OWIwMGMzODliYmY4ODk2ZmRlNjhjYzg2NzM5OTJiYzBjYzgyYTYxODAxMTM3NzJmNDYzNTFkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTc5NDEwZDI5YWZmN2Y5NjYwODQ3ZTEzNzZlYzQxN2JlNzE5MTkxZjM3OWVkMDQ1ZjVmMTk0MDNiMjUxOTQzMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDExNzEyNDJmMTM5ODE2ZTljMDAwNzdiMDA4OGZhZGJmMzQ1YzdmNTc0NjIzMjZkMDU5NWE2MTYyYTM5NDFiMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQ2NjFiOGNkMmRmZjRkYmE3NzdiYmFmMmIyNmI3OWQyNGVjNzUwZjM5ZjZmNTA3ZWQ1ZTUwNWU2MDg3NTExOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_ffdb2f53ce0249b9ad2c202845013c27",
+      "statement": "Test modules use pytestmark = pytest.mark.vcr at module level to enable cassette recording/playback for all test functions in that module. Cassette naming convention: function-level tests generate cassettes/test_<func>.yaml.gz; class methods generate cassettes/Test<Class>.test_<method>.yaml.gz. @pytest.mark.default_cassette() overrides auto-generated names for parameterized tests sharing one cassette.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_codex.py#L49-L52",
+          "version": "repo-lines-v1:sha256:a9cfd428201c5620af861ccb9d31eaa660e744ddbd34400ddc40ec4aa6bc0c91:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDFiOTEyY2M4OWIwMGMzODliYmY4ODk2ZmRlNjhjYzg2NzM5OTJiYzBjYzgyYTYxODAxMTM3NzJmNDYzNTFkOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTc5NDEwZDI5YWZmN2Y5NjYwODQ3ZTEzNzZlYzQxN2JlNzE5MTkxZjM3OWVkMDQ1ZjVmMTk0MDNiMjUxOTQzMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDExNzEyNDJmMTM5ODE2ZTljMDAwNzdiMDA4OGZhZGJmMzQ1YzdmNTc0NjIzMjZkMDU5NWE2MTYyYTM5NDFiMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDQ2NjFiOGNkMmRmZjRkYmE3NzdiYmFmMmIyNmI3OWQyNGVjNzUwZjM5ZjZmNTA3ZWQ1ZTUwNWU2MDg3NTExOSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_2a21d584b06c4c0285a54219069d7219",
+      "statement": "Streaming test patterns define _aggregate() and _aaggregate() helper functions that drain sync/async chunk streams and return aggregated AIMessageChunk instances, matching the shape returned by invoke() for assertion equivalence across sync/stream/async paths.",
+      "evidence": [
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_codex.py#L150-L157",
+          "version": "repo-lines-v1:sha256:3c01146b509e8463007acc01122b35465372d2a15a73f707aa5548be1ac44d50:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDE5YzY5ZTBlOTU3Nzg2YTgyZGMwYmI0ZGI3MDRmMzIyZjc0MDNiODRlZGUzMDU2MmRlYTliYzI4MWU5NzViZSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDZiMjIzZTQwYTM3ZTBkZGY4MGNkZGU3NmE1YWJkMWJlMzEzZjFiZjI3ZTYwMmJlODUxMDc0ZjhhNDBlMTc0YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjY3Y2Y2ZDI3ZGJhZjI1Nzg4MjMyYjVjZDkxNDYwZmFiNzRmZTA1ZmUyNmViOWU0MWFlMDljYTRjODUxODc0YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTYyYzE1MTBlZDFkOGE1NTQ3MWZlMmY5ZTI2MDAwODkyOTgzYjUxYWUyZjYwYzdkN2FmNDAxMTI2YzZlNjhhYiJ9"
+        },
+        {
+          "resource": "repo://libs/partners/openai/tests/integration_tests/chat_models/test_codex.py#L73-L96",
+          "version": "repo-lines-v1:sha256:d61e9e3b02dd6c7e694bb8de717a76f5a07c6da15a053132f293c4b7b8c4deba:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2MzQ0YTYxYmMxOTEwZjBjM2RiYzVlMGJkYTRkZDlkYjU4NDI1ZGFlMGFkM2JlNTg5ZmVjYTJjM2NjMDZkN2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyN2YyZjMxNjFjMjlhY2YwNDAwM2I5NWI3MTU0NmQyMTdkYWIxOWJkNDU5ZThiZDlhNWJmODY0ZWI5MzYzYTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2MWFmYWE3OWI3MzJjNmU0NGY4YTBjOWNiODBkZTA3NjMxZmYzNjNjNmU3MmM3ZGU1NDIyZDdiYTk4MjAzZmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNhYzM5ZDU1YjFjNDA5YWVlN2MzMThhZThmZWU0ZjEyOWVlODM1OWViMjczNjU3NWJlYmI4MDcxN2E1Mzk2OWQifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-18T08:17:15.497Z"
+    "at": "2026-11-21T08:14:55.070Z"
   }
 }

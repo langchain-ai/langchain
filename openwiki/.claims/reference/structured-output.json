@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5ce26f93ace6632753fa3fa7da5883946fc764794367ee9b815e53f09dbb6e86",
+  "pageVersion": "sha256:24619c421f973cd1921c0d3938593d5dde66359fc03b49f14a79d51a70381ee6",
   "claims": [
     {
       "id": "claim_302f5ebf43a74fb2a31f7614893cd310",
@@ -127,10 +127,70 @@
           "version": "repo-lines-v1:sha256:42ca8ea665535b713f1ff2651387e04941608ec55a949c4f1cf00b8febc38c66:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyYmRmNGQzMWNjY2QxYzBjYmY1ZWRkZjNlZWMxNDZlNDUwYjExMTdhNjJmZGExZDlhMzBkYTBjMzI2YTI2YTJiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyYzkyOTk3NTc2NmYwNzM5NTNlNTA5YzIyYjI0ODBiNjE0NjQzN2FhZmIzMmYyOWJkNTJjMGM4M2E1Y2ViZjU5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmZjc4ZDc2OWUzNzBlMjA1NmU3MmI2YTU1OTkzMWIzYzVhODNjMGE2YWI2YWFmYjhmZTkzOGE3NTY3Y2Y4ZDNkIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5ZjgxNDM1OTIzMTAwNThkODUzZTY3NzM5YTExNzY2NTkyNjdhODM1MTIxYTc0OWI5Nzk1ODU2M2UyZWU3MmVlIn0"
         }
       ]
+    },
+    {
+      "id": "claim_44ddbfc05e134d4d84ba071469a550c0",
+      "statement": "BaseLLMOutputParser is an abstract base class for all output parsers that work with Generation objects, defining parse_result() and aparse_result() methods as the core parsing interface for converting low-level model outputs into structured types.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/base.py#L34-L72",
+          "version": "repo-lines-v1:sha256:4e5acc35102d624412e7668d9e4d77de0c30c42601b0ff70bdc18b977c90748c:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkZTcxMmMwMzM3NmQ4NjQ1YWY0NTYxMzY4MGRmZjQ5Yjk0MTNlZmI2YWVlNzMyNjVkNTg3MjU4NDFmZTJkMDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk4YTU1YTYzNTJkNTkxMmM1YzE4MjBhN2M4ZjNhYWU4ZTk4YWMxNzRmMTk1MjgyMDIwNDExYjJiYTllNDFiYWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxNzBkNWZmNmMzNWU2OTZkODUxOGFjYmNjMWViMzE0NDJmZTYwNmQwNTlmNmJjZmIwM2E5Yjc5MWYyOGUxNzgifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_5bfcd7e220774cf99f277ebf8245d0d8",
+      "statement": "BaseGenerationOutputParser extends BaseLLMOutputParser with Runnable interface, implements invoke() and ainvoke() methods that wrap string or BaseMessage inputs in Generation objects before calling parse_result(), and infers OutputType from generic parameter T.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/base.py#L74-L138",
+          "version": "repo-lines-v1:sha256:041edb2971d0406881ad064dd5952cdf35c363c3e5e713ab6db99e9eaf499137:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1MjZlMjFhY2VmYWViYmFlOTRmZjllNmJjNzA3NzlhOWJkYjBhMDNiMjQ0NWJjYTA1ZGY1ZjAwMGI3MThkZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk0MGQ5OGY0OTlhZDI1ZGRjNDA1YTllYjYwZDNkNGU3ZDBiNDhlY2UwOWY1NTlhODQyNjE0MmFmNjk0MDhkYTMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNmMDgyYWY3MzNmM2JlZTY3YTBhZTU5MGMzNTU3MTJhYTIyYzY0MjZlMzQ2MDk3NmVjMGM2MWEzZTRiMDIwZWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2e2135287ec74d9c8d300058acd5e9dd",
+      "statement": "BaseOutputParser is a high-level parser class that works directly with text strings rather than raw Generation objects, provides parse() as the core abstract method subclasses override, implements default parse_result() that calls parse(result[0].text), and includes optional parse_with_prompt() and get_format_instructions() methods for prompt engineering.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/base.py#L140-L371",
+          "version": "repo-lines-v1:sha256:bb648f8f3985223a7a823cd0708eccba0b7b7e3e8a81d5d3c587b41477956609:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMyLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1NDI5MDlkZTA0MWI5ZTA0MzRhNGU4OTc1NjcyNzE4MGY2MDRjMzhhYWEzZmEyNjlmYzU3MzFjYTYwOGUzOWNiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2NDEyNGYzOGMzOGIzNmM2MTNhMTgxZWE0YTBlZWJlZTI4MjMyMjg4YTNiNGJkMjUwZWI1ODBmOTU2YTU4MDYwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiM2RmMmFjZjA2ZThjM2YwM2M3MTM1YzZlOGFjNWE5Y2E1NDMyYWJlMDZhNzRhY2EwZmRkOWE1M2EwMDhmOTg3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_9f2da89a6e3f4cea93c1d8b593cae9c1",
+      "statement": "Output parsers form a hierarchy where BaseLLMOutputParser is the foundation for all parsers, BaseGenerationOutputParser and BaseOutputParser are primary subclass points with Runnable interface, and all extend RunnableSerializable to integrate with the LangChain invocation pipeline and support both sync and async execution.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/base.py#L34-L371",
+          "version": "repo-lines-v1:sha256:086979e9d3588c0a534b091b0a3902534558daca9e0e73670d5591d189be8cd2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzM4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIyZGU3MTJjMDMzNzZkODY0NWFmNDU2MTM2ODBkZmY0OWI5NDEzZWZiNmFlZTczMjY1ZDU4NzI1ODQxZmUyZDA3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2NDEyNGYzOGMzOGIzNmM2MTNhMTgxZWE0YTBlZWJlZTI4MjMyMjg4YTNiNGJkMjUwZWI1ODBmOTU2YTU4MDYwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5OGE1NWE2MzUyZDU5MTJjNWMxODIwYTdjOGYzYWFlOGU5OGFjMTc0ZjE5NTI4MjAyMDQxMWIyYmE5ZTQxYmFmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_715ebdc3960f4765ac78527456c70ee7",
+      "statement": "ToolStrategy expands Union types at initialization by decomposing Union[A, B, C] variants into separate _SchemaSpec entries, allowing a single ToolStrategy with Union schema to register multiple tools, one for each variant, enabling the model to call any variant tool.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L254-L269",
+          "version": "repo-lines-v1:sha256:5f84bc15449b507b231049be0aa53c0ddf0365458afa161005c38079a5b1b20d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE2ODgxOGY2ZjVmYjJjYmM3NzJlZmFhNGJiNzYxY2E4MDdmNTVlNTc4NWVkOWU3MGMwMzY1ODMzMjNlNDhlOWIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlhYzU3MzJmZjI4MzhlZmRiNjE5NTdhNmZhMmVmM2ZjMzcxOTQ2YzdmZmJmYmU0MDVhNTVkZThiNGJkZmIzNDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2MTlmYmNkMDIyMzI5NDQ3ODAwMmU4Zjg2ZmNlZWU3ZDgyYjc0OWFhM2M1ZjhhMDZmYjM3Y2JkMjBhOGY5MTQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_0e7224a7c521443fb6a4d2560c25556a",
+      "statement": "ProviderStrategy.to_model_kwargs() converts a _SchemaSpec into OpenAI-style response_format kwargs with structure {response_format: {type: json_schema, json_schema: {name, schema, strict}}}, enabling provider-side schema enforcement when bound to a model.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L297-L316",
+          "version": "repo-lines-v1:sha256:26e4f7532d286422c3517151a4d9398f50285053899d2a41fd15d0fda7aef0e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE4YTliNGE1YjkxOTBmYTUzNDllZjJjY2EwMTFlOWM4NDI2YjEwY2E4M2MzY2ZiMzZkODgyZWFlNGMwYTlmYWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijc0OWFjMzE5MjUyODU3ZWZmMjI0ODc1MmQ3YzVmZWQ3OGZiZDQ3MGY1ZGFmNWUxNzY0ZGZjMGRmNDZkMzMxNGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU2NjUxNjRiZDhjNDc4NTZlMjcwMjVlMWEzNTNkOGJlZGQzNzIxOGYxYjk5MjBlN2I4ZjIyNzZjOWM2M2Y2MWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZjMWYwMmZkN2VjMWQ0NjJjMGNiODE4Yjk0OGZmZTRmNzE1YjJjMmM0MzI2MzBjMjMyZGZlMzRkNDI3NDNmYTkifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-21T08:14:55.070Z"
   }
 }

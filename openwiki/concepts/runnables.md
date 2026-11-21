@@ -14,10 +14,10 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/fallbacks.py
   - id: openwiki-source-7a970e5b49bde2fe4f9be3db
     resource: repo://libs/core/langchain_core/runnables/passthrough.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-21T08:14:55.070Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-18T08:17:15.497Z
+    at: 2026-11-21T08:14:55.070Z
 ---
 
 ## Overview
@@ -586,6 +586,62 @@ def coerce_to_runnable(thing: RunnableLike) -> Runnable:
 
 This enables the intuitive syntax: `prompt | my_function | {"field": another_function}`. Each element is automatically coerced to a Runnable.
 
+## Event Streaming: `astream_events` and `stream_events`
+
+**Location**: `repo://libs/core/langchain_core/runnables/base.py#L1407-L1823`
+
+Beyond basic streaming, Runnables support structured event streaming for observability and debugging. Events capture the full lifecycle of chain execution at each intermediate step.
+
+### `astream_events(input, config, version="v2")`
+
+Asynchronously streams structured events from chain execution:
+
+```python
+async for event in chain.astream_events("hello"):
+    print(event)
+    # {
+    #   "event": "on_llm_start",
+    #   "run_id": "uuid-...",
+    #   "name": "ChatOpenAI",
+    #   "data": {"input": {"messages": [...]}},
+    #   "tags": ["chain"],
+    #   "metadata": {...},
+    # }
+```
+
+**Key features**:
+
+- **Versions**: `v1` (deprecated), `v2` (default), and `v3` (typed, chat model/LangGraph only).
+- **Event types**: Each event follows the pattern `on_[runnable_type]_(start|stream|end)`, e.g., `on_chat_model_start`, `on_llm_stream`, `on_chain_end`.
+- **Event structure**: Contains `event`, `run_id`, `name`, `data`, `tags`, `metadata`, and `parent_ids` (v2+).
+- **Filtering**: Supports `include_names`, `include_types`, `include_tags` and their `exclude_*` counterparts to focus on specific runs.
+- **v2 events**: Include intermediate streaming outputs (`on_*_stream`) from each component, enabling fine-grained observability.
+- **v3 protocol**: Provides typed, content-block-centric streaming on `BaseChatModel` and `langgraph.CompiledGraph` (beta).
+
+**Example with filtering**:
+
+```python
+async for event in chain.astream_events(
+    input,
+    version="v2",
+    include_types=["llm"]  # Only LLM events
+):
+    if event["event"].endswith("_end"):
+        print(f"{event['name']}: {event['data']['output']}")
+```
+
+### `stream_events(input, config, version="v3")`
+
+**Location**: `repo://libs/core/langchain_core/runnables/base.py#L1770-L1822`
+
+Synchronous counterpart to `astream_events` for `version='v3'`. The sync path only supports v3 (typed protocol). For v1/v2, use `astream_events`.
+
+```python
+for event in model.stream_events(input, version="v3"):
+    # Typed events on BaseChatModel and langgraph.CompiledGraph
+    print(event)
+```
+
 ## Callbacks and Observability
 
 Runnables integrate with the callback system via `RunnableConfig`:
@@ -608,9 +664,20 @@ chain.invoke(
 - `on_runnable_end`: When a step completes successfully
 - `on_runnable_error`: When a step fails
 - `on_llm_new_token`: Token-by-token streaming
+- `on_stream_event`: For v3 protocol events (chat models)
 - And many others
 
 This enables real-time monitoring, custom logging, user attribution, and performance tracking. All composition operators (sequence, parallel, branch, fallback, retry) automatically integrate with callbacks, enabling end-to-end tracing of complex chains.
+
+### Integration with LangSmith
+
+When `LANGCHAIN_TRACING_V2=true` is set, a `LangChainTracer` callback handler is automatically added to all executions, sending traces to the configured LangSmith project. This enables:
+
+- **Full chain tracing**: Every component invocation is captured with timing, inputs, outputs, and errors.
+- **Debugging UI**: Inspect intermediate results, step-by-step execution, and performance bottlenecks in LangSmith.
+- **Cost tracking**: Monitor token usage and API costs across runs.
+- **Feedback loops**: Tag runs with feedback labels for evaluation and fine-tuning.
+- **Production monitoring**: Monitor errors, latency, and resource usage in production deployments.
 
 ## Key Design Invariants
 

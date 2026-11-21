@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:f07c24823435a28a39dbed0fe88f73ca677346b2a6f2e428007059579fd6df8e",
+  "pageVersion": "sha256:5e50269ac9b4000688f171a4949038c558260e481d2583ca005343cbad38a818",
   "claims": [
     {
       "id": "claim_a6e2f6dc51a74a52a2a9c237a0424c26",
@@ -197,10 +197,50 @@
           "version": "repo-lines-v1:sha256:bb982c07340c2a71e5737794680e5b81cebf595e76f91dc3cd83fa0fb6957f07:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkYmNlYzlmOGE0NTNiYzMyMGIyZTkwYTg0NjVkNTg1NzIwOTFhNDYzZDJiN2VjZGFkOTg5YzgxY2ZlNTc3MGY2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyMzdiMTFkMDQwMTA4YTc4ZjA1ZjVkMWRmZmRkNmRmNzE1NzI3ZTczYjAyZjJiZWRmZjk4NzJmYWY4YTNkMDc5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiZjU1MzZjOThmMjY0NDZhYmQxNzRkYTUyODJlNDgyM2M5MmE5M2U5NDJiMDA4ODhjOTAxNzRkY2MxMzg2NDY3In0"
         }
       ]
+    },
+    {
+      "id": "claim_1bee447c8b7a47968051d4e59f89dcc2",
+      "statement": "astream_events(input, config, version=\"v2\") streams structured events asynchronously from chain execution. It supports three versions: v1 (deprecated), v2 (default, with intermediate streaming outputs and parent_ids), and v3 (typed, beta, chat models/LangGraph only). Events follow the pattern on_[runnable_type]_(start|stream|end) and include event name, run_id, data, tags, metadata, and parent_ids. Filtering via include_names, include_types, include_tags and their exclude_* counterparts focuses events on specific runs.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1407-L1823",
+          "version": "repo-lines-v1:sha256:010294ff2e7c0b999ec5efbc0c3855a93c9af8a4118b7758dbc33b8e1c79c60a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDE3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwYjA3ZmVmMmJiMGJlNDMwYzhmMWFjODdlMDQ3YjJiYjBkMjU2ZDJhMDJiZjY0YTA2NGU5YmE0YTAwMDI1YzEzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlNjgyMTAwN2E4NjEyYmUwY2Y1MGZjMzc5YjYyM2MzMWQ2OTZjYWU0NTJmZjgyYjJkNzEzZTY5NWNmODE2MjlmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmNTZjZWJlMGZmYTAzOWUzYTA5MTg0ZDU2N2NlZTkwOWZkMjA0MTBmY2IxYTRiMjMwMjgyMGZlYzUyOTJhY2E0In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_acaed9f7d7624f20ac4c1e7415504e52",
+      "statement": "stream_events(input, config, version=\"v3\") is the synchronous counterpart to astream_events, supporting only v3 (typed protocol). The sync path only supports v3 on BaseChatModel and langgraph.CompiledGraph; v1/v2 require astream_events.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1770-L1822",
+          "version": "repo-lines-v1:sha256:744af940433af43d085f73cc2ffeb5e934556d44a1858156b34b1f5b26883d8b:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExOWZlYjhjOTJmOWU5YjcwZmU3ZjJkYTViZjQ0YmJjYjdkNGQyYTczNTliMWVlMGMzNDU5MWI0MWZkNjNlNzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzM2IzNjc5NjdlODc3ZWJhMmRhMTZmNDBmYjljMDgwYzAwZjM3MmNmODE2ZmU2N2MxNjczMWNmMzJlN2FhNGYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjgyM2ViOWI3ZTlmMDUyYzI3M2Q2ZjdkOTVjMTc5MDJhNjJmMTVjNTk1OGJlZjQ1M2MzMmMyNzU4YmRhNTdjMjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJiZmU1YTJmZTJlN2U0YjM0NTY3OTZkODkwNTcwN2I5MjMzYjE3MWNlM2I5OTgyN2EzYjVkZTNhNzEyZDk5NzQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9766bd4e2e4f488eaf3a041ae8309c89",
+      "statement": "When LANGCHAIN_TRACING_V2=true is set, a LangChainTracer callback handler is automatically added to all Runnable executions, sending full traces (component invocations with timing, inputs, outputs, errors) to the configured LangSmith project. This enables debugging, cost tracking, feedback loops, and production monitoring in LangSmith's UI.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L197-L329",
+          "version": "repo-lines-v1:sha256:0fc61d0018b1cfc55713f48b37f8f3976dad338a6308acca0e81f0b18db43343:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMDY2NDAxOWM5MDdkZjg1MGVhOWUwNThmMTJiMTkyMzc0YmViM2ZjY2FiMDYxOTAzMGM2OGU2NTQ4YWQ4MTQ5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhNmE3MTUyNTcyZWU4NGYxMDkwNmM3NGI5ZjJhOTI0MzRkZGFiMGUzYzQyODEzYjA0ZTU5N2VmY2VjOTUxYjI2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzOGFmNGM2Y2M3NWVlMjFhNWM0NDdlMjA5ZjQyNzgyZDAwNmI5MDYzZWM5N2EzMWY0MDhhMDNmMDlmN2NkNGNmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJkMmJmYjM3N2Y5ZDhjNDQxODc5ZGI1MGQ2NTQxYzQzYzQ5NzQ2MWFlMjUzNWJkOThkYjBlNzM5ZDUyNDRjYWRjIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_b1afa38fa54c4fbba1e82330522a1070",
+      "statement": "Runnables emit on_stream_event callback hooks for v3 protocol streaming events on chat models, in addition to standard lifecycle hooks (on_runnable_start, on_runnable_end, on_runnable_error). This enables real-time monitoring and custom logic during streaming.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1407-L1823",
+          "version": "repo-lines-v1:sha256:010294ff2e7c0b999ec5efbc0c3855a93c9af8a4118b7758dbc33b8e1c79c60a:eyJzZWxlY3RlZExpbmVDb3VudCI6NDE3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwYjA3ZmVmMmJiMGJlNDMwYzhmMWFjODdlMDQ3YjJiYjBkMjU2ZDJhMDJiZjY0YTA2NGU5YmE0YTAwMDI1YzEzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlNjgyMTAwN2E4NjEyYmUwY2Y1MGZjMzc5YjYyM2MzMWQ2OTZjYWU0NTJmZjgyYjJkNzEzZTY5NWNmODE2MjlmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmNTZjZWJlMGZmYTAzOWUzYTA5MTg0ZDU2N2NlZTkwOWZkMjA0MTBmY2IxYTRiMjMwMjgyMGZlYzUyOTJhY2E0In0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-18T08:17:15.497Z"
+    "at": "2026-11-21T08:14:55.070Z"
   }
 }

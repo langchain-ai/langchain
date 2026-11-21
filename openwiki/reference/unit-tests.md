@@ -1,12 +1,16 @@
 ---
 type: API Reference
-title: Unit Tests Reference
-description: API reference for pytest fixtures, mock implementations, and test utilities provided by LangChain's test infrastructure.
-tags: [unit-tests, pytest, fixtures, testing, reference, api]
+title: Testing Utilities and Fake Models
+description: API reference for pytest fixtures, fake chat models, embeddings, callbacks, and test utilities provided by LangChain's test infrastructure.
+tags: [unit-tests, pytest, fixtures, testing, reference, api, fake-models, mock]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-21T08:14:55.070Z
 sources:
+  - id: openwiki-source-2b4ae75ade10a0ca5f958352
+    resource: repo://libs/core/langchain_core/embeddings/fake.py
+  - id: openwiki-source-3ea96a388894f130e17311ac
+    resource: repo://libs/core/langchain_core/language_models/fake_chat_models.py
   - id: openwiki-source-727aef6a92fb635fdbb41cd6
     resource: repo://libs/core/tests/unit_tests/conftest.py
   - id: openwiki-source-5e13d2c899eb5925ef28fddf
@@ -19,9 +23,7 @@ sources:
     resource: repo://libs/core/tests/unit_tests/stubs.py
   - id: openwiki-source-09fd21baed875d7f9c53a492
     resource: repo://libs/langchain_v1/tests/unit_tests/agents/conftest.py
-  - id: openwiki-source-6904a2d923d0abd0c1af93bd
-    resource: repo://libs/langchain_v1/tests/unit_tests/agents/model.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-21T08:14:55.070Z" }
 ---
 
 ## Overview
@@ -192,83 +194,19 @@ def anyio_backend() -> str:
     return "asyncio"
 ```
 
-## Fake/Mock Chat Models
+## Fake Chat Models
 
-**Location**: `repo://libs/core/tests/unit_tests/fake/`
+**Location**: `repo://libs/core/langchain_core/language_models/fake_chat_models.py`
 
-Mock implementations enable testing without API calls.
-
-### FakeToolCallingModel
-
-**Location**: `repo://libs/langchain_v1/tests/unit_tests/agents/model.py`
-
-Mock chat model that returns scripted tool calls for testing agent behavior across multiple turns.
-
-```python
-class FakeToolCallingModel(BaseChatModel):
-    tool_calls: list[list[ToolCall]] | list[list[dict[str, Any]]] | None = None
-    structured_response: Any | None = None
-    index: int = 0
-    tool_style: Literal["openai", "anthropic"] = "openai"
-```
-
-**Parameters**:
-
-- `tool_calls`: List of lists, where each inner list contains tool calls for that turn. The model cycles through or increments based on mode.
-- `structured_response`: Response for structured output mode (BaseModel, dataclass, or dict).
-- `index`: Internal counter; auto-increments after each invoke.
-- `tool_style`: Format for bind_tools output ("openai" or "anthropic").
-
-**Usage**:
-
-```python
-# Multi-turn tool calling sequence
-model = FakeToolCallingModel(
-    tool_calls=[
-        [ToolCall(name="get_weather", args={"city": "Paris"}, id="call_1")],
-        [],  # No tool call on second turn (agent finishes)
-    ]
-)
-
-# With structured output
-from pydantic import BaseModel
-
-class WeatherResponse(BaseModel):
-    city: str
-    temperature: int
-
-model = FakeToolCallingModel(
-    structured_response=WeatherResponse(city="Paris", temperature=20)
-)
-result = model.invoke([...], response_format=...)
-```
-
-### GenericFakeChatModel
-
-**Location**: `repo://libs/core/tests/unit_tests/fake/test_fake_chat_model.py`
-
-Cycles through a sequence of AIMessage objects; useful for testing streaming.
-
-```python
-from itertools import cycle
-from langchain_core.language_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage
-
-messages = cycle([AIMessage(content="response1"), AIMessage(content="response2")])
-model = GenericFakeChatModel(messages=messages)
-
-# Invoke returns response1
-response = model.invoke("query")
-# Stream returns character-level chunks
-chunks = list(model.stream("query"))
-```
+Mock implementations enable testing chat models without API calls. All are available from `langchain_core.language_models`.
 
 ### FakeListChatModel
 
-Cycles through a fixed list of string responses.
+Cycles through a fixed list of string responses in order. When the end of the list is reached, loops back to the start.
 
 ```python
 from langchain_core.language_models import FakeListChatModel
+from langchain_core.messages import HumanMessage
 
 model = FakeListChatModel(responses=["Hello", "Hi", "Hey"])
 response = model.invoke("How are you?")
@@ -278,37 +216,148 @@ response = model.invoke("What's up?")
 # Returns AIMessage(content="Hi")
 ```
 
+**Parameters**:
+
+- `responses: list[str]` – Sequence of string responses to cycle through
+- `sleep: float | None` – Optional sleep time (in seconds) between responses, useful for simulating latency
+- `i: int` – Internal counter; auto-incremented after each invocation (default=0)
+- `error_on_chunk_number: int | None` – If set, raises `FakeListChatModelError` on the specified chunk number during streaming
+
+**Streaming**: Supports both sync and async streaming. Streams responses character-by-character, with `chunk_position="last"` on the final chunk.
+
+### FakeMessagesListChatModel
+
+Cycles through a fixed list of `BaseMessage` objects in order. When the end is reached, loops back to the start. Useful for testing with structured message types (AIMessage, HumanMessage, etc.) rather than just strings.
+
+```python
+from langchain_core.language_models import FakeMessagesListChatModel
+from langchain_core.messages import AIMessage, HumanMessage
+
+model = FakeMessagesListChatModel(
+    responses=[
+        AIMessage(content="Response A"),
+        AIMessage(content="Response B"),
+    ]
+)
+
+response = model.invoke([HumanMessage(content="Hi")])
+# Returns AIMessage(content="Response A")
+
+response = model.invoke([HumanMessage(content="Hi")])
+# Returns AIMessage(content="Response B")
+```
+
+**Parameters**:
+
+- `responses: list[BaseMessage]` – Sequence of messages to cycle through
+- `sleep: float | None` – Optional sleep time (in seconds) between responses
+- `i: int` – Internal counter; auto-incremented after each invocation (default=0)
+
+### GenericFakeChatModel
+
+A generic fake chat model that accepts an iterator of `AIMessage` objects or strings, yielding one per invocation. Supports streaming with token-level granularity via whitespace splitting. Useful for testing streaming and callback behavior.
+
+```python
+from itertools import cycle
+from langchain_core.language_models import GenericFakeChatModel
+from langchain_core.messages import AIMessage
+
+messages = cycle([AIMessage(content="response1"), AIMessage(content="response2")])
+model = GenericFakeChatModel(messages=messages)
+
+# Invoke returns next message
+response = model.invoke("query")
+# Returns AIMessage(content="response1")
+
+# Stream returns character-level chunks with whitespace preservation
+chunks = list(model.stream("query"))
+# Returns [AIMessageChunk(content="response1")]
+```
+
+**Parameters**:
+
+- `messages: Iterator[AIMessage | str]` – Iterator over AIMessage objects or strings. Can use `iter()` to convert a list to an iterator, or `itertools.cycle()` for infinite repetition
+
+**Streaming behavior**: 
+- Splits message content on whitespace boundaries while preserving delimiters
+- Each whitespace-delimited token becomes a separate chunk
+- Breaks down `additional_kwargs` (function calls, etc.) into sub-chunks
+- Marks final chunk with `chunk_position="last"`
+- Calls `run_manager.on_llm_new_token()` for each token when available
+
 ### ParrotFakeChatModel
 
-Echoes the input message back as an AIMessage.
+Echoes the last message in the input list back as an `AIMessage`. Useful for testing message passthrough behavior.
 
 ```python
 from langchain_core.language_models import ParrotFakeChatModel
+from langchain_core.messages import HumanMessage
 
 model = ParrotFakeChatModel()
 response = model.invoke("Hello!")
 # Returns AIMessage(content="Hello!")
+
+response = model.invoke([HumanMessage(content="Hi there")])
+# Returns AIMessage(content="Hi there")
 ```
+
+**Behavior**:
+- Requires at least one message in input (raises `ValueError` if empty)
+- Returns the last message unchanged (wrapped as AIMessage)
+- Useful for testing runnable chains and routing logic
+
+## Fake Embeddings
+
+**Location**: `repo://libs/core/langchain_core/embeddings/fake.py`
+
+Fake embeddings for testing without external APIs.
 
 ### FakeEmbeddings
 
-**Location**: Provided by langchain_core
-
-Generates deterministic embeddings based on input hash.
+Generates pseudo-random embeddings by sampling from a normal distribution. Vectors are different each call even for the same input.
 
 ```python
 from langchain_core.embeddings import FakeEmbeddings
 
-embeddings = FakeEmbeddings(model="fake-model", size=1536)
+embeddings = FakeEmbeddings(size=1536)
 
 # Embed a single string
 vector = embeddings.embed_query("hello")
-# Returns list of 1536 float values (deterministic)
+# Returns list of 1536 float values (random, may differ on repeated calls)
 
 # Embed a batch
 vectors = embeddings.embed_documents(["hello", "world"])
-# Returns list of vectors, one per input
+# Returns list of vectors, one per input (all random)
 ```
+
+**Parameters**:
+
+- `size: int` – Dimensionality of the embedding vectors
+
+### DeterministicFakeEmbedding
+
+Generates deterministic embeddings by seeding the random number generator with a hash of the input text. Same input always produces the same embedding vector.
+
+```python
+from langchain_core.embeddings import DeterministicFakeEmbedding
+
+embeddings = DeterministicFakeEmbedding(size=100)
+
+# Same input, same embedding
+vec1 = embeddings.embed_query("hello")
+vec2 = embeddings.embed_query("hello")
+assert vec1 == vec2  # True
+
+# Different input, different embedding
+vec3 = embeddings.embed_query("world")
+assert vec3 != vec1  # True
+```
+
+**Parameters**:
+
+- `size: int` – Dimensionality of the embedding vectors
+
+**How it works**: Uses `hashlib.sha256` to hash the input text, then converts the hash to an integer seed (mod 10^8). This seed initializes `numpy.random.default_rng()` for reproducible sampling.
 
 ## Callback Test Utilities
 
@@ -316,7 +365,7 @@ vectors = embeddings.embed_documents(["hello", "world"])
 
 **Location**: `repo://libs/core/tests/unit_tests/fake/callbacks.py`
 
-Tracks callback events for testing. Maintains counters for all lifecycle events.
+Tracks callback events for testing. Maintains counters for all lifecycle events at fine granularity.
 
 ```python
 class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):

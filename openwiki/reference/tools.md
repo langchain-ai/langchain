@@ -5,7 +5,7 @@ description: "Reference documentation for BaseTool class, schema generation, inp
 tags: ["tools", "api", "schema", "validation", "BaseTool"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-21T08:14:55.070Z
 sources:
   - id: openwiki-source-4ff475d7b00540f962384251
     resource: repo://libs/core/langchain_core/tools/base.py

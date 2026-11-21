@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a15ab627c11bb2f94c0691688f2c631e6015f7c3e7a87c304339fc2b0f8dc8e0",
+  "pageVersion": "sha256:a9ea7170d6bb33de0af3f7b7e675f84f95ce5443463a9a9899f147d9b8a36a5a",
   "claims": [
     {
       "id": "claim_150a5dc8a9c14fc19c3597a746649ba0",
@@ -193,10 +193,40 @@
           "version": "repo-lines-v1:sha256:5dc5210e993db7baf4a03bcd9eba1c00e7bcba0fbac3983f27c5f7c9babe2e5f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgzNzQyYmE5NDI5N2Y0NGZkMzU3YTlkYWU2NzllZmVjY2NiNzE4NGNhOWY2ZjExMTFjMjdhMjM0OTcyYzZmZDMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU1MDMyZTk2NGQwOTMyMzUxZTVkMTg1MjY5MjgxYjE3MWEzYTA5YjA4YjI4NmU2NjFlYTQ3MDMyM2M4MmViNGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyODE2NDcyYWRkNWM2NWU2NTg0ZTk3MmJjMThmZTBiZDc0MTVmYzMxMjBmZTFhYjY4NzY4ZTY3MzNkNWZjYjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiZWUyODBhNWU4M2I3NDk5YTE3YmY1MjAwYjAyMTc5YWQzOTNiMWRjZDBlNTY5M2UxNjIwZGQ1OTMyNTMyYjAifQ"
         }
       ]
+    },
+    {
+      "id": "claim_c49caeddb5654a9bb10d6eaf764480dc",
+      "statement": "BaseOutputParser (in langchain_core.output_parsers.base) is the abstract base for all output parsing; subclasses implement parse_result() to transform model generations into typed objects, support sync/async/batch/streaming execution via RunnableSerializable, and raise OutputParserException on validation failure.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/output_parsers/base.py#L140-L290",
+          "version": "repo-lines-v1:sha256:1376d261dcf79366493ef76b1b95735dbb9e33630a88b91defa15a8aa760f658:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1NDI5MDlkZTA0MWI5ZTA0MzRhNGU4OTc1NjcyNzE4MGY2MDRjMzhhYWEzZmEyNjlmYzU3MzFjYTYwOGUzOWNiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwZjBlODBiMWMxMTQyZDlmOTIzOTVmYjIwNzBjYTFlNjk0ZTEyZDEwMjBlZWU2NWYwN2ZmNGVkZTRmMTQ1ZGY4IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiM2RmMmFjZjA2ZThjM2YwM2M3MTM1YzZlOGFjNWE5Y2E1NDMyYWJlMDZhNzRhY2EwZmRkOWE1M2EwMDhmOTg3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmODkxNDYxMmNlYjM1OWExNDM5MTM0MWQ0MDY1ZjIxMzIzNDU5ODY2ZjY3YWFiODY0YzFiZjQ1YWMwMTE1ZTM5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_687255bd6c3f4a36b79177c76d08743c",
+      "statement": "BaseChatModel.with_structured_output(schema, include_raw=False, **kwargs) wraps a model to enforce structured responses by binding the schema to the provider's native capabilities (tool calling, JSON mode); returns a Runnable that parses responses into schema instances or error dicts if include_raw=True.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/chat_models.py",
+          "version": "repo-file-v1:sha256:6b37dd84a34a49b932983ec92e5dc826fefdd1a047424a014a251a0ed0e2d507"
+        }
+      ]
+    },
+    {
+      "id": "claim_fc05c0184c334afc80aa478d19a4af25",
+      "statement": "Supported schema types for structured output are Pydantic BaseModel, dataclass, TypedDict, and raw JSON schema dict; all are normalized via TypeAdapter to JSON Schema; dict schemas skip validation and are returned as-is to avoid false negatives on incomplete JSON schema definitions.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/structured_output.py#L77-L194",
+          "version": "repo-lines-v1:sha256:3a62bb5add39ccd32f04711bc3eeb36db79355ffed89a89f0550d1ab079d3b5f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTE4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyNWFiYTQyODdjZGI5NTYxZDRlMWIyMjQ1MzhlMjUyYWFiNDA3NGQxNDIyOGI3NjQ0OTIwZmVkNTU4OTdjNTQxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzMjc2ZjExYTc4MGEwODgzYmQxNmMzOWNkZTZlNmUxNzJhNmI4ZGZhZDY5MWQ1MDQxNzNkMDg5NTc5NDA0NzUwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NjE5ZmJjZDAyMjMyOTQ0NzgwMDJlOGY4NmZjZWVlN2Q4MmI3NDlhYTNjNWY4YTA2ZmIzN2NiZDIwYThmOTE0In0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-16T08:30:18.041Z"
+    "at": "2026-11-21T08:14:55.070Z"
   }
 }

@@ -5,7 +5,7 @@ description: "API reference for LangChain prompt template classes, including Bas
 tags: [prompt, template, reference, api, base-class, string-template, chat-template, few-shot]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-21T08:14:55.070Z
 sources:
   - id: openwiki-source-269af2bb49a21bd6c548b3f0
     resource: repo://libs/core/langchain_core/prompt_values.py

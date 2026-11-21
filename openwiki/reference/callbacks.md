@@ -5,13 +5,13 @@ description: Complete API reference for callback handlers, managers, and run man
 tags: [callbacks, API, reference, handlers, managers]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-21T08:14:55.070Z
 sources:
   - id: openwiki-source-c9313cf42f0120d86b20245f
     resource: repo://libs/core/langchain_core/callbacks/base.py
   - id: openwiki-source-1c233fccf5a66b84d0045366
     resource: repo://libs/core/langchain_core/callbacks/manager.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-21T08:14:55.070Z" }
 ---
 
 ## Handler Interfaces
@@ -534,6 +534,28 @@ def on_retriever_start(
     **kwargs: Any,
 ) -> CallbackManagerForRetrieverRun:
     """Start retriever execution, returns retriever run manager."""
+
+def on_custom_event(
+    self,
+    name: str,
+    data: Any,
+    run_id: UUID | None = None,
+    **kwargs: Any,
+) -> None:
+    """Dispatch a custom event to all handlers."""
+
+@classmethod
+def configure(
+    cls,
+    inheritable_callbacks: Callbacks = None,
+    local_callbacks: Callbacks = None,
+    verbose: bool = False,
+    inheritable_tags: list[str] | None = None,
+    local_tags: list[str] | None = None,
+    inheritable_metadata: dict[str, Any] | None = None,
+    local_metadata: dict[str, Any] | None = None,
+) -> CallbackManager:
+    """Create a configured callback manager from callbacks, tags, and metadata."""
 ```
 
 ### AsyncCallbackManager
@@ -550,6 +572,11 @@ async def on_chat_model_start(...) -> list[AsyncCallbackManagerForLLMRun]: ...
 async def on_chain_start(...) -> AsyncCallbackManagerForChainRun: ...
 async def on_tool_start(...) -> AsyncCallbackManagerForToolRun: ...
 async def on_retriever_start(...) -> AsyncCallbackManagerForRetrieverRun: ...
+async def on_custom_event(...) -> None: ...
+
+@classmethod
+def configure(...) -> AsyncCallbackManager:
+    """Create a configured async callback manager."""
 ```
 
 ## Run Managers

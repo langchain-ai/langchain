@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6b7937126bc9be11d899149094027aa480cfe4672c931ef9e7cf310ca788209f",
+  "pageVersion": "sha256:473f021a8eaa2cc36a0c93eb820d46d2731dc8436d61f07101209d360438a4a8",
   "claims": [
     {
       "id": "claim_2bb63455e4bc43e499c3dbb9d5d98f0a",
@@ -11,10 +11,166 @@
           "version": "repo-lines-v1:sha256:28391bc12100849c0c4d67024109dcfe286e26296dc8c6b513b743fd84205bba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMDY2NDAxOWM5MDdkZjg1MGVhOWUwNThmMTJiMTkyMzc0YmViM2ZjY2FiMDYxOTAzMGM2OGU2NTQ4YWQ4MTQ5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzOGFmNGM2Y2M3NWVlMjFhNWM0NDdlMjA5ZjQyNzgyZDAwNmI5MDYzZWM5N2EzMWY0MDhhMDNmMDlmN2NkNGNmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3ZmZhM2IwMzQxNzVmYzU2NzYwNDkzZGNlZDZiMzMxZjFkNGFjOTcwM2RmNzJiYTY0YjQ1MzEwYTRjMDY2N2UzIn0"
         }
       ]
+    },
+    {
+      "id": "claim_58f09fe58b074804ad7a5757156ef589",
+      "statement": "The Runnable abstract base class defines a unified execution interface where invoke is the only abstract method that subclasses must implement; all other execution methods (ainvoke, batch, abatch, stream, astream, transform, atransform) have default implementations that derive from invoke or use thread pool/async executors for parallelism.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L197-L330",
+          "version": "repo-lines-v1:sha256:28391bc12100849c0c4d67024109dcfe286e26296dc8c6b513b743fd84205bba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMDY2NDAxOWM5MDdkZjg1MGVhOWUwNThmMTJiMTkyMzc0YmViM2ZjY2FiMDYxOTAzMGM2OGU2NTQ4YWQ4MTQ5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzOGFmNGM2Y2M3NWVlMjFhNWM0NDdlMjA5ZjQyNzgyZDAwNmI5MDYzZWM5N2EzMWY0MDhhMDNmMDlmN2NkNGNmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3ZmZhM2IwMzQxNzVmYzU2NzYwNDkzZGNlZDZiMzMxZjFkNGFjOTcwM2RmNzJiYTY0YjQ1MzEwYTRjMDY2N2UzIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L949-L970",
+          "version": "repo-lines-v1:sha256:1eff67928434ddfbed49df8733ced09fcdcaed9685752f6d6c2a1cc572f78aae:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZjNzA2NTVhMDI0OTg1MzI0MWVjMjRhMTQzZDNkMWY1ZTY2NTZiODE4YzE0Yzk0Y2E3NDFhNTU1ODkzOGNjOTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZGUyNTg3MTk2MTQ5MjYwNzFjOGZiMTlmZDg2NjE1MDU1NWYxYjAxMzU0ZjhjZDE2MDNhMTA5YTdkZGFlNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNlNWYyYWYyZTU5NmU0ODk1MDBkYTJkMjdkM2IzZGRhOTFhNzQzMmEwMWNlNDQ3YWQ4NGQwM2FkZDliYjA2YjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgxOTA3ZTkyZDRmMDQ5NTU1NzQ1ZjY4ZTU3MDY5Zjg4YzA4ZTIzYTQ2YThiNTcxNGU3ZjUxZTU4ZGU1MDFhNjQifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L972-L993",
+          "version": "repo-lines-v1:sha256:b913e2c72cc2dc393ea9a9a5d0e771107d317467deae11c5429aef7f2919f50f:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhMTRjNmYzN2M0MTFmMWRkOTg2MzIyZWZkNDk3Njg4NDRmZjg1N2ZhNDE3Y2ExZWIzMmM2YmJkM2VjYjdkMjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3OThkYmMxMzk2MDZkNTA1MGI3ZDI1YWRiY2NlY2Q5YzQyOGM3ZWE2ZTQ2ZmVjZGYwYjI3ZmE1NjMyYWI3NTkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImIxNTMzNTI4MTFkZjkzMjhhMWY3YmIzMmNhYTI2OGZhYWVhNzY3ZGVkNjQ4MWVkYzZlZWNlOGRmZTMzOWMzNjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImQwYTU5NTE2MjU1ZDg3ZWViNGM4NDhjNWY3ZDY4MjQyODZlY2MyMWUwYzAyMzRjOGI3ZWM3ZjE1YjY5YzRhZmYifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L995-L1043",
+          "version": "repo-lines-v1:sha256:162e8b332e60ac819bd13d160c07a848461973a135ccbc10cf7ca5337413b062:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwNGJlZWJhNWU0ZDYzMWUxN2IwNTVhNjhhMGEzYTkyNzFjOTcxYjJkMzZkZDA3NDBmYjJmYjY4YzU1MGJhZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2OGY4NmVmZjFlNGIwMmY4NDg2ZDU3N2M3ZjMxMTdkZTA2MjhiZTE5OWJjZDk0M2JkNmYxNGNkOTU4YWM1ZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0NDc4YTFlMTI0YTY1MmEzNDI4YTE3YWRmM2Y3YjUwOTU5ODY3NmYxZDhkNGViNGIyYmJmNTYyOWViYjRlYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjZDM1N2M4NDFjMTcyODdmM2U4MmQyODVhZTgyZDM0YzdiY2ZhM2EzNmIxYjI2MjYxODY2MWM1Nzc0ZTNkMTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_43df48a3a6604c3880d84c7f5403db99",
+      "statement": "RunnableConfig is a dictionary that threads execution context (tags, metadata, callbacks, max_concurrency, run_name, run_id, configurable) through the entire chain, enabling tracing, concurrency control, lifecycle hooks, and dynamic parameter overrides at any composition point.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L39-L66",
+          "version": "repo-lines-v1:sha256:e19505c7353f7c499fd2d63dbcb52bc660faede08e241909e7cb68374679c73c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZhZmJhMDUyN2MzOTUzYzRiNmUwZTViNTczOWJhODM2MTJmODA1M2JjZGM5NDY2NzMwMTkzY2QxZDU5MGI0MDgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImVjOGJhMWNlZTQ2ZmY4MTRiOWRjM2ZhYmY5N2I0YzliM2JmYmQ0OWIzNzg1OWE4NzVlMjVmZGI2YWZkMTc5MzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmZTg1YzlhNWRkYTMyMTEzNDY4YjVlYTgwY2RlOGNlMDQyYzQ2ZDM2YWUzNDJlYjQ5Zjg3NGFhYmZhNzVlMjMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8575806e92184b30be6df66311523c37",
+      "statement": "The batch method uses ThreadPoolExecutor by default for parallelism, calling invoke for each input. Subclasses can override for batching-aware APIs. Single input bypasses executor overhead. Config can be a single RunnableConfig applied to all inputs or a list of configs (one per input). max_concurrency from config limits parallel operations.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1024-L1043",
+          "version": "repo-lines-v1:sha256:4748d5482604acb49da8c80fb6c2d0aef48c054397d59c45eee17144d9843854:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5OThjNzhkYmYzYWFiNDZmYzU5NTQ5OGU2NjBkYmY0NDRiYzQzNmIzNDA3OWM1YThiMTExYTdhNzdjMjk3MTciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2OGY4NmVmZjFlNGIwMmY4NDg2ZDU3N2M3ZjMxMTdkZTA2MjhiZTE5OWJjZDk0M2JkNmYxNGNkOTU4YWM1ZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczZGRhNTJlM2ExNWU2ZDA5Mjg4ODU0MWI5OGI5YzMxZGYwNTc5NDIzNGYyMDAwODk2YThhNmRhNzViMjJmMTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjZDM1N2M4NDFjMTcyODdmM2U4MmQyODVhZTgyZDM0YzdiY2ZhM2EzNmIxYjI2MjYxODY2MWM1Nzc0ZTNkMTIifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L995-L1043",
+          "version": "repo-lines-v1:sha256:162e8b332e60ac819bd13d160c07a848461973a135ccbc10cf7ca5337413b062:eyJzZWxlY3RlZExpbmVDb3VudCI6NDksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwNGJlZWJhNWU0ZDYzMWUxN2IwNTVhNjhhMGEzYTkyNzFjOTcxYjJkMzZkZDA3NDBmYjJmYjY4YzU1MGJhZWUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI2OGY4NmVmZjFlNGIwMmY4NDg2ZDU3N2M3ZjMxMTdkZTA2MjhiZTE5OWJjZDk0M2JkNmYxNGNkOTU4YWM1ZWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI0NDc4YTFlMTI0YTY1MmEzNDI4YTE3YWRmM2Y3YjUwOTU5ODY3NmYxZDhkNGViNGIyYmJmNTYyOWViYjRlYzUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjFjZDM1N2M4NDFjMTcyODdmM2U4MmQyODVhZTgyZDM0YzdiY2ZhM2EzNmIxYjI2MjYxODY2MWM1Nzc0ZTNkMTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_7f6ab56cfc3649c295c7d92d49c312d3",
+      "statement": "The abatch method uses asyncio.gather with optional semaphore gating based on max_concurrency from config. If max_concurrency is not set or None, uses unlimited concurrency. Concurrency limit is derived from the first config item.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1130-L1176",
+          "version": "repo-lines-v1:sha256:b73d0df1686a61b4e167421bba0bc63c64ef368e8d846611a58721b9b6bb2dc4:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImM2MDQyODVkYjcwOTYxMjMwMThmYTUyNjRmNzE0ZTU2ZTdhODM4OTdlYjg5ZGNjOGIzYWZmZjhiZjFmMzRhNzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjYTRhY2ZmMDg5OWQ1OTYzYjM0ZDE1NjE1Yjc4OWEzMzc5ZGMwNGI0YWE4ZDczODExNjUzOGNkOThhNTQyODQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhmNmEzZDRmNGIwNzcyMDVhZmIyZmIxZDFhMzc2NmZkZTdlODNlYWI4NzMwZmMwYzI5NTg2NzVkMzNlN2E0YjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlNzBhNGM0NzkzMzY1OGU1MWQwMThlMGM1NzFiMGIzNTk4MDQ2MmI4YWE2YTczNDUwMDUyY2ZkNDRhNTVkMmEifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1229-L1232",
+          "version": "repo-lines-v1:sha256:1ca9dd814209a13e8e8eb44a1d50d26fde085553352986d158ea334883913db9:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMjYyMWRiOWVjYjc2ZGY4MDkyODIwN2YzYjYyNTgxNzU3YjljMzQ0ZmM1ZDRkOThjZmY3M2M1YjhiZDIyOGFmZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU3NmQwYzI3ZGJmNzM1NWY3YTBlNmExMzQ0MTQ2MDNjZDI5NzI2NDc2MGM0Yzg5NmFiNTVmODY0NjljZGEyOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWU4OTcwNjk2MzQ0NWFjNzQzMjM2NWViMmYzNGM0MzM1NDE2YmVhNTIyY2NmNTliNWU5OTkxYjFiNjhmNTkyNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzE5MmMxZDkwNzFiM2JkNTY3YzljOGEzZWVmNmJmZDBlZjAxNmQ4MGQwYzk1ZjU0M2EyM2MzNWEyZDUzMzE4OSJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_9551b9028b8b4b62929faa5c562b550e",
+      "statement": "The stream method yields partial outputs; default implementation calls invoke once and yields the result. Specialized components (LLMs, parsers) override to yield tokens or partial results progressively. Transform method by default buffers input and calls stream.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1258-L1277",
+          "version": "repo-lines-v1:sha256:23cc3478740b415df53cc79cbb93700be85319defdec671ee846f03b1fd9f5ea:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkMDJmY2NjNWE1YWFkOWQyZmRmNzU2ZmM3ZmU2OTM0MGYxZDM3ODAxNzQwMTY2MzgzMjQwYzNlYTZjMWY0NGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMyMjk1OTY3MTUzNGMyYmE1YjA3NjM2NTZiMTI5YmNkN2E5ZjIxODNjYmQwMGEwMzE0OWNmZDg5YWQyNGQ3MjUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImRmYjIzYTg5OGMzMjkxNWQ3OWNiYzVkOTAxYWYyOGY0YzI3MjUxZDM3Y2RiZDA5OTlkMWZlMmMxZjkzZDFlZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlkMDdlMjcxYjA2OTBlYTNlMWViNGE2MDMzYzY0NmNmZDJjNmFkODcyYTNkNTBiYzliMWY5MGM4MjRhZTUxOWEifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1824-L1861",
+          "version": "repo-lines-v1:sha256:38fa23841ba51534b75041fe2cd9eec541ee2c5017c1c91d51108441a504b9ef:eyJzZWxlY3RlZExpbmVDb3VudCI6MzgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdiYWMwNmM1YzY0Yjc1NzgwYmZjN2ZjZjNmMzE3NjM5MWE3NTkxYTdhNDlkNDIwNWI2Yzc3YzY5NWRhMzcwZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNiMjdmOTI4ZDQ0ZWE0YjQxNGY0YjIzYmU0NzEzYmJhMjk3MzcwMWVjNGY2ZjMyODdiNTc0ZmM2ZDNhYzc3Y2EiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhZTU1YzE5MTYyMzYwM2VmZmM0YmFlNzNhNDI1ZTYxOWU5NDMxZjBiMmZkZDJhYjI4NjhlYzA0NzY0Zjk5NDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBmY2M3ODVlNzNlNjkyOGI3OGE1ZjhmMGNmMjhmN2E2MGEyMjY4ZDEzYmJmNzVjNTA5MmEwZTgwMTE2MjQ1ZWUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_73dec1bb64ad4bb8a76fd790178f3a5c",
+      "statement": "Runnables support declarative composition via the pipe operator (|) which chains runnables sequentially and accepts Runnable instances, callables (auto-wrapped in RunnableLambda), and dict literals (auto-wrapped in RunnableParallel). Composition automatically inherits full sync, async, batch, and streaming support.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L197-L262",
+          "version": "repo-lines-v1:sha256:299733caa67e5f4c3c5c28d1ec7840df50c52f5b56f6c5e63b54681744926ff3:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwNjY0MDE5YzkwN2RmODUwZWE5ZTA1OGYxMmIxOTIzNzRiZWIzZmNjYWIwNjE5MDMwYzY4ZTY1NDhhZDgxNDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM4YWY0YzZjYzc1ZWUyMWE1YzQ0N2UyMDlmNDI3ODJkMDA2YjkwNjNlYzk3YTMxZjQwOGEwM2YwOWY3Y2Q0Y2YiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA2MjBjOTM2ZWE5MTAzMWNmM2RmZGE0YzZhZjg4NzUzZDA2ZTVlZTA3NDJkNmQ1MWEzYTcxYzJiYjI5ZDQ2ZmYifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L712-L737",
+          "version": "repo-lines-v1:sha256:b5be17ef178ed117d371c78e9412265ee7efa288aae872613ebcdd3a241b87cd:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiNjNkN2Y2Y2EzZTVjZWQ5MDg2M2YwMmJhYmQyZDkwOGNiY2ExOTViZTQwNTE0M2UyNmViODA3Y2E0MTRjMzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIxOWY0MzJmNjZjNzA5MTFjMDcyMzg1YzMxMTA1NDkwM2U1ZWQxN2NmNGYxY2FjMjg1OTUzYjI5M2M1MWRjOTUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkyMzEyOTc4NTcyNzU3NzcxMWUxOTFiNmYyZTlkMzA5NjdjMmNhN2JiM2U2Yzg3NGY5YjY4NjU4ODI4MDcyY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmZjllY2NjYWJjYjk2ZGM1YzRkZjIzYzEzMzEwZjI0NjhkZTU2MjBlMDFjYmUwNTUxMDBlNjVjYzlmYjQyZDQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_47cb9740f85242768eb0efd4d9c3bf03",
+      "statement": "Bind operations (bind, with_config, with_listeners, with_alisteners, with_retry, with_fallbacks, map) create new RunnableBinding or specialized wrapper instances without modifying the original runnable. These enable parameter binding, config binding, lifecycle hooks, retry logic, fallback chains, and element-wise mapping.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1903-L1935",
+          "version": "repo-lines-v1:sha256:85d46282b70f39b6d08b362a970c07558c597472b7d54b75adfe239e570f653d:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjIyYmQ5MjQyNzIwNzRiYzYxOGI1ZTJhYTBiYzk1ZjllZTQ4Y2FmYWE2ZjUwOGE3NjA5ZWI4NjQ4MjFlOGI5YzgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmY2MxMzdmMjRlYzliOWY4YTAyYTlkODMyYzMxOTIwM2VjNGIwYjM4NWUyNDIxZjNjZDY5MGRkOGY1OTQ0NDYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU1ODViMDU1MjUzMzA3MjdiZWNlZTM0ZWE1YmVkM2ZmZGQxMmNlOTY5OGZmYTI4ZTg0MGNkNTFlOTdiNDEyOGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVkNWFlM2Y3MDYwOGZmOGQ0NjNiZDZkYjVlMDczYmM4YjlhYmI1OGU4YWRkNGM3N2I5ZjBhNzUyMWI1ZGUwZDYifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1937-L1960",
+          "version": "repo-lines-v1:sha256:428b8f0e145940c869e99d63358f4ed395575271ff5f22609dbbd7b09839cbe1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQwYWQxOTMxNTc4YTVkYTRiY2JjMWRkOWMyNTEyNGZmOGM0N2E0NzU0YzMzYTRjNzU5ZDJjMDRmZTViNDc3N2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjM5YzQzNzY2ZDkzNzE4NjE0NTIwMzFjNmM1MGJhNTNhNmQ5OWRjMGMxM2ViNjRkNWRjOGU4MmMwNjI5NzcxNDAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1YzkyNTJhYTM5ZjZlMTExYWMwMDE2Yzg5MjJhNmI4MWY0Yzc3ZjkxYzU4ZWE0NWQ4ZTNhMGMzNzkyZGMyOTcifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1962-L2032",
+          "version": "repo-lines-v1:sha256:a5cc8d6d8bac25f862be4f871ca8fe9c71c83bf04926d6a6c8a0e079fc9cb29a:eyJzZWxlY3RlZExpbmVDb3VudCI6NzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVmNzgwMGU3OTZkNDYyNDk5MTk3ZTIyMjIxMzM0NGQ2MTBjNzMxY2RkNDRiNTkxNmUwMDUwNDJhMjVlMGRkYmMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmNDZhMjkwYmRiYTZmNzY3ZWJiMGNjOWQ1NTAxZGNhNzdhNmFlZmU3OWZjM2QwNmZkYTJhYmE4NzY3YTUyYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxYjljMDZkMDE3ZjgzMTNjMzdhNWFmNGEwODU4ODE0YjQ3MDZlMTU4YTI3NjczMjU4Yzk5NjEzOWUwMTAwY2MifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L2153-L2218",
+          "version": "repo-lines-v1:sha256:083cd011246b5f1e2fc6b23206cdc744cef8050c7990a8010620a88c71c9544c:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFiNjdhYzRkODE0M2VjY2Q3YjM4YWNmMTdkYzllN2Y2MjY4YTM1YmFkNDgzMzBiYWI5MTY3M2M2ODliMmJmZWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJmNDZhMjkwYmRiYTZmNzY3ZWJiMGNjOWQ1NTAxZGNhNzdhNmFlZmU3OWZjM2QwNmZkYTJhYmE4NzY3YTUyYmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBhNjAxNzY2MzQyYmQzMTIwY2VjODMzY2UxYTA4NDcxYjMzMThkMjBhNTYyODg0NmViYmZjOWVjNDBkZTkyMmYifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L2220-L2241",
+          "version": "repo-lines-v1:sha256:8221dfec56db3ce6ceb4261348137ca5c9b414d06b95b8c29f7f92019333fef6:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkYzM3NWM1Yjc0ODRiYjM3NDVhNWQ4NzVjZGNmYjA2ZjBiNmE2NGEzYTFhNTgzOWMzNGJjOGE2ODRkZDRiZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg3MDY5MjVmOWIyYmQ1MmNhZGU5NzIwOThkZTM5NGY0YzRhODkxZDBkZWI1MTA2NzU5M2M3M2Q3ZWQwYTcxYTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NDYwNTJiYTdlMjg3YzA3MTNiYThjMWY4Y2Q0NDE5NDY1OTBlZTFmMGZmMjUxYjM2ZDAyMjdiZDgwMTVkYzAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijk2YzA4YzRmMGVjNTFmYzUzYzYwOTI2NDgxNjE0MDNjMDI2NGNiNDBkYjk4YWZiOTQxZDg1OGJmZDg5ZjViODIifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L2243-L2319",
+          "version": "repo-lines-v1:sha256:98f8c09434deaeab4fa002aff9e2811f173ab68db004fa38ae7ed50afc6c8c63:eyJzZWxlY3RlZExpbmVDb3VudCI6NzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE5ZjdjYjFlODMyZDUyOGZjNjFkOGU5YTg1NzYyNmVmYWRmNDI1NDlhY2YwMzU0YzVkYjMwYzU1M2E5MzQ5ZTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU5MDlhNTNhNjE4ZDAyOGUxZDMwMDBjMGE3YWJjZWVjYmU1ZmIzN2Y0ZTUxMWVmZTQ2NjQzZmFkNmU2Njg3MmYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjA3ODQ4NzIyMWE5ZGZiYTkxYzJmNjcyY2JkYmNiOGRhZjRlMDBhZjc2ZWM2NjFmNTI3M2NjOTZhMzMxYzNlNjIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM5NTkzNDRiYjIzMGEzZDZiM2M1ZWFhNWMwYzg3NzEyNTFhYzU2YzliZjJjOWVjNmViMmJiYTBiNTEzYjhiZmMifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_824e229b3d6143478a5ac469610e427a",
+      "statement": "Runnables expose schema information via input_schema, output_schema, InputType, OutputType, and config_schema properties and methods. These return Pydantic models or type annotations that enable validation, documentation generation, tool interfaces, and dynamic schema adaptation based on runtime config.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L372-L436",
+          "version": "repo-lines-v1:sha256:5a6941e4ae00986a82805000af109e4ba8e2e4655ec8cfe1c49dd7530b49cd53:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZDAwY2YyNzA5NjRkNDRhMTNkZmFjODc1MmIwOWZjYzQzNWIwZjE5YjMxNmFiY2Y4MWE3YWE2NGJiMTIyZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3Nzg4NDc0OTNjZWI0YTJjNTVlZmJmZjA1MWE4MTQ5NzM5MDk1ZDkzNzE4NDNhOTA1YTc1YWE3Yzk0OWRiYWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1NTU3ZDc3MWVlNWM0ZjQxMTc1YmI4MGIzNjIxMTNiOTRiMzlmYWRjNzkyNGM2MWJkYmY2OTE1NzhmYTk3OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1NTIyNTk0YjI1ZmZhMWFjNzFlOTkwOGVhOTE2MTBiNjY3OThjNmRkZTRlYjJmZDM3NTU5N2JlODIwM2YwYTkifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L438-L591",
+          "version": "repo-lines-v1:sha256:5ec981f299c8c04594debda27c795e8b93f0d5d35da0c9685a24c81323062720:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmM2QwMGNmMjcwOTY0ZDQ0YTEzZGZhYzg3NTJiMDlmY2M0MzViMGYxOWIzMTZhYmNmODFhN2FhNjRiYjEyMmQ2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzMWVkZmVhMTI3NTYyMmY5ZGZlYTNlZTY1ZDg1M2VjMTIzMDc4NzM0M2Y1MmM4MjE2ZDQ0ZTZlM2FjNDQyZWRiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYTNlMmQwMDI0NjE2YWY3NzM2MDNiNWFhZjE1MWMxNjJjNTk3MWFlYmI3NTYzYWEwNGY4OTA2ZjA4M2RlYjIzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI5ZjZiNGRlOTQ4NzFhYzU1ZGQ5MDgyNTI3ZGJkOTY3ZjNjZDA2YzhiOGE3NjAzZmEyODMwYjJhYTg2YzNjNDg4In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_da26e4c1091c400480447ba780a71507",
+      "statement": "The astream_events method streams structured lifecycle events (on_start, on_stream, on_end) from the runnable and child runnables. Events are dictionaries with event name, run_id, parent_ids, tags, metadata, and data keys. Filtering by include/exclude names, types, and tags enables selective event capture. Version v2 (recommended) includes parent_ids and custom events; v1/v3 have different schemas.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1432-L1735",
+          "version": "repo-lines-v1:sha256:948a61a95a4d3d03c57558c35039e58a477495d5ea36a75bf9620a9cc5e62515:eyJzZWxlY3RlZExpbmVDb3VudCI6MzA0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwYjA3ZmVmMmJiMGJlNDMwYzhmMWFjODdlMDQ3YjJiYjBkMjU2ZDJhMDJiZjY0YTA2NGU5YmE0YTAwMDI1YzEzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4Yjc3MTZiZDAzY2Y0ZGE1NDIyOTMxZTdkMzdmNjI4ZTczNmQ1NGNiZmMyY2UwOTFlM2VkOWI5NWE1YTA4MDkwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmOGExOTA0NjMyYTRhY2ZmNmE5ZWYxYTAxZTZkMjdhZGE2MzVjNjhkOWUxZDIwYzRhYTNjN2U5NGE2YjMxMmFhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwMDc2MDdmOWIyZmY3MjNhNWJjOTU0ZmFmYjdjM2Q5N2RjY2U0YmE2NTQ4NjdlOWNkYmFjNjk1NjMyZjk2MmFlIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L1446-L1505",
+          "version": "repo-lines-v1:sha256:013411b268761d421ce68119a0aba43028521cc2d39d5f118c91d026275c0b05:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVmZThiMDhmMGM3N2Y5ZmM2OWU3MThjNjdiZDBhYWM3MmE5NDIyYmRhNWVmMThjMDRmMDQ2NTdlMWFlMDRmYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFlMTc2NzVmZTllZmZmMWU5YWVlY2RmNDFlMTU1ZjkwNTA4NzE2NGYzNDkwOGQ1NTE1ZTUyY2I4ODI3ZjNiOWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjkwODA3NWQxNTllMjk3MjRlNDBlYTZhMmVjMTU5MWFmODQzYjc2M2NlYjcwZmQyOWEyMjc1M2RlODNmNzg3ODgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmNTAwNjVmYmE2ZDY1MDcyNmQxYWY5OWVkYmNkMTg2ZDllZTcwOTY5MjgyNzFiOTU5NmI5M2E2YzUyMTFlNzcifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_93b5c0147d444c98a4785c0f595e3c26",
+      "statement": "Subclasses use helper methods _call_with_config, _acall_with_config, _batch_with_config, _abatch_with_config, and _transform_stream_with_config to automatically manage callback lifecycle, config context, error handling, and run tracing without duplicating infrastructure code.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L2323-L2630",
+          "version": "repo-lines-v1:sha256:7aa166a750f1c9a47445f4cd648cb482531fcf2c57588e6f60a789e204c9c099:eyJzZWxlY3RlZExpbmVDb3VudCI6MzA4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmNjVkYmYwNTJmMDRmZjAxNDFlZjUxOTdiMDRlYjBkMTEyZTRhZjM5ZGYwMjQzMjIzZGM1ODgzYWFmYmQzODQ2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyMjk4NDllYzIxNWZlMTRhNjMwMGE4MWMxYmEwNzIzMWI5OTFkNmVhOWQyMzk0NTRmNmEwMWI1N2M3MTQxYThjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjOTU5MzQ0YmIyMzBhM2Q2YjNjNWVhYTVjMGM4NzcxMjUxYWM1NmM5YmYyYzllYzZlYjJiYmEwYjUxM2I4YmZjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhNmI5MmJkYTI0MDU5MmJkMTEzYzgwZTU4MDM1ZDNjZjNhZWJkODk5MWIyY2QyZThmOTI1NjZlN2JhZmM2YzgzIn0"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-21T08:14:55.070Z"
   }
 }

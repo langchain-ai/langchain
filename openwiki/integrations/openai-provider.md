@@ -4,6 +4,8 @@ title: "OpenAI Provider: ChatOpenAI Implementation"
 description: "Deep dive into the ChatOpenAI implementation: API client setup, message translation, tool handling, structured output, streaming, and Azure support."
 tags: ["chat-model", "openai", "tool-calling", "structured-output", "vision", "streaming", "partner-pattern", "azure"]
 sources:
+  - id: openwiki-source-0077bd234275e9a9de5e3100
+    resource: repo://libs/partners/openai/langchain_openai/chat_models/_client_utils.py
   - id: openwiki-source-738512768ef81ae009b097ac
     resource: repo://libs/partners/openai/langchain_openai/chat_models/base.py
   - id: openwiki-source-b65307f1d05bd74532af2eee
@@ -11,7 +13,7 @@ sources:
 generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-18T08:17:15.497Z
+    at: 2026-11-21T08:14:55.070Z
 ---
 
 # OpenAI Provider Implementation

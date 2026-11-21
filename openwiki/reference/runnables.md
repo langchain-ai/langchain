@@ -1,22 +1,26 @@
 ---
 type: "API Reference"
-title: "Runnable Protocol: Method Reference"
-description: "Complete reference for Runnable protocol methods, lifecycle, and configuration. Documents synchronous and asynchronous execution, batching, streaming, composition operators, and configuration threading."
-tags: [runnable, lcel, api-reference, execution, protocol]
+title: "Runnable: Complete API Reference"
+description: "Complete API reference for the Runnable protocol, covering execution methods (invoke, batch, stream), async variants, composition operators, configuration, and lifecycle management."
+tags: [runnable, lcel, api-reference, execution, protocol, composition]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-21T08:14:55.070Z
 sources:
   - id: openwiki-source-a1981e868973f6fd7f71e12e
     resource: repo://libs/core/langchain_core/runnables/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-21T08:14:55.070Z" }
 ---
 
-# Runnable Protocol: Method Reference
+# Runnable: Complete API Reference
 
-This page provides a detailed API reference for the `Runnable` protocol in LangChain Core. The `Runnable` abstract base class (`repo://libs/core/langchain_core/runnables/base.py#L197-L330`) defines the unified interface for synchronous and asynchronous execution, batching, streaming, and schema introspection that all LangChain components implement.
+The `Runnable` abstract base class (`repo://libs/core/langchain_core/runnables/base.py#L197-L330`) defines the foundational execution interface for all LangChain components. Every Runnable is generic over input and output types (`Runnable[Input, Output]`) and must implement only the abstract `invoke` method; all other execution methods have default implementations that subclasses can override for optimization.
+
+This page documents all methods, configuration options, composition operators, and patterns essential to using and extending the Runnable protocol.
 
 ## Core Execution Methods
+
+The Runnable protocol provides synchronous, asynchronous, batch, and streaming execution. All methods accept an optional `RunnableConfig` parameter that carries execution context (tags, metadata, callbacks, concurrency limits).
 
 ### Synchronous Single Invocation
 
@@ -37,24 +41,26 @@ def invoke(
 **Parameters:**
 - `input`: The data to transform.
 - `config`: Optional `RunnableConfig` dictionary supporting:
-  - `tags`: List of strings for tracing and filtering.
-  - `metadata`: Dictionary of metadata for observability.
+  - `tags`: List of strings for tracing and observability.
+  - `metadata`: Dictionary of metadata for observability and debugging.
   - `callbacks`: List of callback handlers for lifecycle events.
   - `max_concurrency`: Maximum parallel operations (for batch/stream methods).
-  - `run_name`: Custom name for this execution.
-  - `run_id`: Explicitly set run identifier.
+  - `run_name`: Custom name for this execution run.
+  - `run_id`: Explicitly set run identifier (overrides auto-generated ID).
   - `configurable`: Dictionary of configurable parameter overrides.
 - `**kwargs`: Additional keyword arguments passed through to implementation.
 
 **Returns:** Transformed output.
 
-**Requirement:** Must be implemented by all `Runnable` subclasses.
+**Requirement:** Must be implemented by all `Runnable` subclasses. All other methods have default implementations that derive from `invoke`.
+
+**Failure Semantics:** If `invoke` raises an exception, the caller receives it immediately.
 
 ### Asynchronous Single Invocation
 
 **`ainvoke(input, config=None, **kwargs) → Coroutine[Output]`** (`repo://libs/core/langchain_core/runnables/base.py#L972-L993`)
 
-Async variant of `invoke`. Default implementation delegates to `invoke` via `run_in_executor` (thread pool).
+Async variant of `invoke`. Default implementation delegates to `invoke` via `run_in_executor` (thread pool). Subclasses override for native async implementations.
 
 ```python
 async def ainvoke(
@@ -70,7 +76,9 @@ async def ainvoke(
 
 **Returns:** Coroutine yielding transformed output.
 
-**Optimization:** Override for native async implementations (e.g., async HTTP clients).
+**Default Behavior:** Runs `invoke` in a thread pool executor, allowing non-blocking async contexts.
+
+**Optimization:** Override for components with native async I/O (e.g., async HTTP clients, async database drivers).
 
 ### Batch Processing
 
@@ -92,13 +100,15 @@ def batch(
 
 **Parameters:**
 - `inputs`: List of inputs to process.
-- `config`: Single `RunnableConfig` (applied to all inputs) or list matching length of inputs.
-- `return_exceptions`: If `True`, exceptions are returned in output list. If `False` (default), raises on first exception.
+- `config`: Single `RunnableConfig` (applied to all inputs) or list matching length of inputs. If None, uses default config.
+- `return_exceptions`: If `True`, exceptions are returned in output list at corresponding indices. If `False` (default), raises on first exception.
 - `**kwargs`: Additional arguments passed to each `invoke` call.
 
 **Returns:** List of outputs, preserving input order.
 
-**Optimization:** Override for batching-aware backends (e.g., LLM batch APIs).
+**Default Behavior:** Uses `ThreadPoolExecutor` to invoke in parallel. Single input is processed without executor overhead. Empty input list returns empty output list.
+
+**Optimization:** Override for components with batching-aware APIs (e.g., LLM batch endpoints, database bulk operations).
 
 ### Asynchronous Batch Processing
 
@@ -122,13 +132,15 @@ async def abatch(
 
 **Returns:** Coroutine yielding list of outputs.
 
-**Concurrency Control:** `max_concurrency` from the first config limits parallelism. No limit if not set.
+**Concurrency Control:** `max_concurrency` from the first config (or first item if config is a list) limits parallelism. If `max_concurrency` is not set or is None, uses unlimited concurrency via `asyncio.gather`.
+
+**Default Behavior:** Uses `asyncio.gather` with optional semaphore gating based on `max_concurrency`.
 
 ### Batch as Completed (Streaming Results)
 
 **`batch_as_completed(inputs, config=None, *, return_exceptions=False, **kwargs) → Iterator[tuple[int, Output | Exception]]`** (`repo://libs/core/langchain_core/runnables/base.py#L1065-L1129`)
 
-Synchronous batch that yields `(index, output)` tuples as they complete, allowing early processing.
+Synchronous batch that yields `(index, output)` tuples as they complete, allowing early processing without waiting for all inputs.
 
 ```python
 def batch_as_completed(
@@ -142,9 +154,11 @@ def batch_as_completed(
     """Run invoke in parallel, yielding results as they complete."""
 ```
 
-**Yields:** Tuples of `(input_index, output)` in completion order, not input order.
+**Parameters:** Same as `batch`.
 
-**Use Case:** Process results as soon as available without waiting for all inputs.
+**Yields:** Tuples of `(input_index, output)` in completion order, not input order. This allows processing results as soon as they are ready.
+
+**Use Case:** Process results progressively without waiting for the slowest task; useful for display updates, real-time dashboards, or aggregating results incrementally.
 
 ### Asynchronous Batch as Completed
 
@@ -152,7 +166,15 @@ def batch_as_completed(
 
 Async variant of `batch_as_completed`. Yields results as coroutines complete, respecting concurrency limits.
 
+**Parameters:** Same as `batch`.
+
+**Yields:** Tuples of `(input_index, output)` in completion order. Uses `asyncio.as_completed` for iteration.
+
+**Concurrency Control:** Respects `max_concurrency` from config via semaphore gating.
+
 ## Streaming Methods
+
+Streaming methods yield outputs progressively as they are produced. Default implementations yield a single output; specialized components (LLMs, parsers) override to stream tokens or partial results.
 
 ### Synchronous Streaming
 
@@ -170,11 +192,13 @@ def stream(
     """Yield outputs as they are produced."""
 ```
 
-**Returns:** Iterator yielding outputs (typically chunks or intermediate results).
+**Returns:** Iterator yielding outputs. For LLMs, this yields tokens or chunks. For parsers, this yields partial parse results.
 
-**Specialization:** LLMs and parsers override to yield tokens or partial results progressively.
+**Default Behavior:** Calls `invoke` once and yields the single result.
 
-**Transform Method:** Advanced streaming uses `transform(iterator)` to enable output while input is still being generated. Default `transform` buffers input, then calls `stream`. Specialized implementations enable true end-to-end progressive streaming.
+**Specialization:** LLMs and streaming parsers override to yield tokens or intermediate results progressively.
+
+**Use Case:** Display streaming responses in real-time, process large outputs without buffering, or enable progressive results aggregation.
 
 ### Asynchronous Streaming
 
@@ -194,6 +218,8 @@ async def astream(
 
 **Returns:** Async iterator yielding outputs.
 
+**Default Behavior:** Awaits `ainvoke` once and yields the single result.
+
 ### Transform: Iterator-to-Iterator Transformation
 
 **`transform(input, config=None, **kwargs) → Iterator[Output]`** (`repo://libs/core/langchain_core/runnables/base.py#L1824-L1861`)
@@ -210,9 +236,18 @@ def transform(
     """Transform inputs to outputs."""
 ```
 
-**Purpose:** Enables composing streaming chains where downstream runnables receive output chunks as upstream processing produces them.
+**Parameters:**
+- `input`: An iterator of inputs to the runnable.
+- `config`: Configuration for the runnable.
+- `**kwargs`: Additional keyword arguments.
 
-**Override for:** Components that can start processing output before all input is available.
+**Returns:** Iterator of outputs.
+
+**Default Behavior:** Accumulates all input using the `+` operator (via `_ChunkAccumulator`), then calls `stream` on the accumulated value. If input chunks are not addable (don't support `+`), retains only the last chunk.
+
+**Specialization:** Override for components that can start producing output before all input is consumed. For example, a parser that processes streaming input could yield partial results as chunks arrive.
+
+**Purpose:** Enables composing streaming chains where downstream runnables receive output chunks as upstream processing produces them, without buffering entire intermediate results.
 
 ### Async Transform
 
@@ -220,16 +255,22 @@ def transform(
 
 Async variant of `transform`. Maps async iterator of inputs to async iterator of outputs.
 
-## Event Streaming (Advanced)
+**Parameters:** Same as `transform`, with async iterators.
 
-### Stream Events
+**Returns:** Async iterator of outputs.
+
+**Default Behavior:** Accumulates all input, then calls `astream` on the accumulated value.
+
+## Event Streaming (Advanced Observability)
+
+### Async Stream Events
 
 **`astream_events(input, config=None, *, version='v2', include_names=None, include_types=None, include_tags=None, exclude_names=None, exclude_types=None, exclude_tags=None, **kwargs) → AsyncIterator[StreamEvent]`** (`repo://libs/core/langchain_core/runnables/base.py#L1432-L1735`)
 
-Streams lifecycle events from the runnable and its child runnables. Events include start, stream, and end for each component.
+Streams structured lifecycle events from the runnable and its child runnables. Each event provides real-time visibility into execution progress, intermediate results, and errors.
 
 ```python
-def astream_events(
+async def astream_events(
     self,
     input: Any,
     config: RunnableConfig | None = None,
@@ -247,49 +288,67 @@ def astream_events(
 ```
 
 **Parameters:**
-- `version`: Event schema version (`"v2"` recommended; `"v1"` and `"v3"` supported for specific use cases).
-- `include_names/types/tags`: Filter events by runnable name, type, or tags.
-- `exclude_names/types/tags`: Exclude events matching criteria.
+- `version`: Event schema version. `"v2"` (recommended); `"v1"` and `"v3"` supported for specific use cases.
+- `include_names`: Only include events from runnables with matching names (exact match or substring).
+- `include_types`: Only include events from runnables with matching types (e.g., "llm", "prompt", "parser").
+- `include_tags`: Only include events from runnables with matching tags.
+- `exclude_names`: Exclude events from runnables with matching names.
+- `exclude_types`: Exclude events from runnables with matching types.
+- `exclude_tags`: Exclude events from runnables with matching tags.
 
-**Event Format:** Dictionary with keys `event`, `name`, `run_id`, `parent_ids`, `tags`, `metadata`, `data`.
+**Event Format:** Dictionary with keys:
+- `event`: Event name (format: `on_[runnable_type]_(start|stream|end)`).
+- `name`: Name of the runnable that generated the event.
+- `run_id`: Randomly generated ID for this execution (unique per runnable instance).
+- `parent_ids`: List of parent run IDs (v2 only). Root runnable has empty list. Order is root to immediate parent.
+- `tags`: Tags of the runnable that generated the event.
+- `metadata`: Metadata of the runnable.
+- `data`: Event data (contents depend on event type). Contains `input`, `chunk`, or `output` keys.
 
-**Use Case:** Real-time visibility into chain execution, intermediate results, and error tracking.
+**Use Case:** Real-time visibility into chain execution, intermediate results, error tracking, and performance monitoring. Enable dynamic streaming dashboards, debugging, and tracing.
 
 ### Sync Stream Events
 
 **`stream_events(input, config=None, *, version='v2', ...) → Iterator[StreamEvent]`** (`repo://libs/core/langchain_core/runnables/base.py#L1763-L1822`)
 
-Synchronous variant of `astream_events`. Base implementation raises `NotImplementedError` for v1/v2; subclasses implement v3.
+Synchronous variant of `astream_events`. For `version='v3'`, subclasses that implement the v3 streaming protocol (e.g., `BaseChatModel`, `CompiledGraph`) override this method. Versions `'v1'` and `'v2'` are not supported on the sync path and raise `NotImplementedError`.
+
+**Parameters:** Same as `astream_events`.
+
+**Raises:** `NotImplementedError` for unsupported versions or when called on the base `Runnable` class (unless subclass implements v3).
 
 ## Schema Introspection
+
+Runnables expose schema information for validation, tooling, and documentation.
 
 ### Input Schema
 
 **`input_schema: TypeBaseModel`** (property, `repo://libs/core/langchain_core/runnables/base.py#L438-L441`)
 
-Returns a Pydantic model validating expected input shape.
+Returns a Pydantic model for validating expected input shape.
 
-```python
-@property
-def input_schema(self) -> TypeBaseModel:
-    """The type of input this Runnable accepts specified as a Pydantic model."""
-```
-
-**Use:** Validation, documentation, tool interfaces.
+**Use:** Validation, documentation, tool interfaces, schema export.
 
 **`get_input_schema(config=None) → TypeBaseModel`** (`repo://libs/core/langchain_core/runnables/base.py#L443-L482`)
 
 Get input schema for a specific config. Useful for runnables with configurable input schemas.
 
+**Parameters:**
+- `config`: Configuration that may affect input schema (for configurable runnables).
+
+**Returns:** Pydantic model for input validation.
+
 **`get_input_jsonschema(config=None) → dict`** (`repo://libs/core/langchain_core/runnables/base.py#L484-L512`)
 
-Get JSON schema representation of input.
+Get JSON schema representation of input. Useful for API documentation, UI generation.
+
+**Returns:** JSON schema dictionary (dict representation of Pydantic model schema).
 
 ### Output Schema
 
 **`output_schema: TypeBaseModel`** (property, `repo://libs/core/langchain_core/runnables/base.py#L514-L520`)
 
-Returns a Pydantic model validating expected output shape.
+Returns a Pydantic model for validating expected output shape.
 
 **`get_output_schema(config=None) → TypeBaseModel`** (`repo://libs/core/langchain_core/runnables/base.py#L522-L561`)
 
@@ -303,7 +362,9 @@ Get JSON schema representation of output.
 
 **`InputType: type`** (property, `repo://libs/core/langchain_core/runnables/base.py#L372-L405`)
 
-The Python type annotation for accepted input.
+The Python type annotation for accepted input. Extracted from generic parameters or function signatures.
+
+**Raises:** `TypeError` if input type cannot be inferred. Override the property to specify manually.
 
 **`OutputType: type`** (property, `repo://libs/core/langchain_core/runnables/base.py#L407-L436`)
 
@@ -315,6 +376,11 @@ The Python type annotation for produced output.
 
 Returns Pydantic model for configuration options accepted by this runnable.
 
+**Parameters:**
+- `include`: Optional list of configuration field names to include. If None, includes all.
+
+**Returns:** Pydantic model class for config validation.
+
 **`get_config_jsonschema(*, include=None) → dict`** (`repo://libs/core/langchain_core/runnables/base.py#L641-L655`)
 
 Get JSON schema representation of config.
@@ -323,7 +389,9 @@ Get JSON schema representation of config.
 
 List of configurable field specs for runnables using `configurable_fields()` or `configurable_alternatives()`.
 
-## Composition Operators
+## Composition Operators and Methods
+
+Runnables support operators and methods for declarative composition into chains.
 
 ### Pipe Operator
 
@@ -340,17 +408,28 @@ def __or__(
 ```
 
 **Accepts:**
-- `Runnable` instances
-- Callables (converted to `RunnableLambda`)
-- Dict literals (converted to `RunnableParallel`)
+- `Runnable` instances: Chained sequentially.
+- Callables (functions): Automatically wrapped in `RunnableLambda`.
+- Dict literals: Automatically wrapped in `RunnableParallel`. Values are run with shared input.
 
 **Returns:** `RunnableSequence` composing both runnables.
+
+**Example:**
+```python
+chain = prompt | model | parser
+result = chain.invoke({"topic": "AI"})
+```
 
 ### Reverse Pipe Operator
 
 **`__ror__(other) → RunnableSequence`** (`repo://libs/core/langchain_core/runnables/base.py#L761-L786`)
 
-Right-associative pipe: `x | runnable` where `x` is not a `Runnable`.
+Right-associative pipe: `x | runnable` where `x` is not a `Runnable`. Enables piping from non-Runnable objects.
+
+**Example:**
+```python
+chain = {"text": "hello"} | my_runnable  # dict becomes RunnableParallel
+```
 
 ### Pipe Method
 
@@ -358,7 +437,21 @@ Right-associative pipe: `x | runnable` where `x` is not a `Runnable`.
 
 Explicit pipe method: `runnable.pipe(other1, other2, ...)` equivalent to `runnable | other1 | other2 | ...`.
 
+**Parameters:**
+- `*others`: Other `Runnable` or `Runnable`-like objects to compose.
+- `name`: Optional name for the resulting `RunnableSequence`.
+
+**Returns:** New `RunnableSequence`.
+
+**Example:**
+```python
+sequence = runnable_1.pipe(runnable_2, runnable_3)
+# Equivalent to: sequence = runnable_1 | runnable_2 | runnable_3
+```
+
 ## Configuration and Binding
+
+Methods for modifying runnable behavior without creating new subclasses.
 
 ### Bind Arguments
 
@@ -371,9 +464,16 @@ def bind(self, **kwargs: Any) -> Runnable[Input, Output]:
     """Bind arguments to a Runnable."""
 ```
 
-**Use Case:** Pass parameters not in chain input (e.g., `model.bind(temperature=0.5, stop=["\\n"])`).
+**Use Case:** Pass parameters not in chain input (e.g., `model.bind(temperature=0.5, stop=["\\n"])`). Common for LLM parameters, tool options, or parser config.
 
 **Returns:** New `RunnableBinding` wrapping this runnable with bound kwargs.
+
+**Example:**
+```python
+model = ChatOpenAI(model="gpt-4o")
+bound_model = model.bind(temperature=0, top_p=0.5)
+result = (prompt | bound_model | parser).invoke({"query": "..."})
+```
 
 ### Bind Config
 
@@ -390,13 +490,24 @@ def with_config(
     """Bind config to a Runnable."""
 ```
 
-**Use Case:** Add tracing tags, metadata, or callbacks to a chain segment.
+**Use Case:** Add tracing tags, metadata, or callbacks to a chain segment. Control concurrency limits for specific components.
 
 **Returns:** New `RunnableBinding` with bound config.
 
+**Example:**
+```python
+traced_chain = chain.with_config(
+    tags=["chain-v1"],
+    metadata={"environment": "production"},
+    max_concurrency=5
+)
+```
+
 ## Lifecycle and Error Handling
 
-### Listeners
+Methods for adding lifecycle hooks and resilience patterns.
+
+### Listeners (Sync)
 
 **`with_listeners(*, on_start=None, on_end=None, on_error=None) → Runnable[Input, Output]`** (`repo://libs/core/langchain_core/runnables/base.py#L1962-L2032`)
 
@@ -414,21 +525,36 @@ def with_listeners(
 ```
 
 **Parameters:**
-- `on_start`: Called before execution with `Run` object.
+- `on_start`: Called before execution with `Run` object. Receives `(Run)` or `(Run, RunnableConfig)`.
 - `on_end`: Called after successful execution with `Run` object.
-- `on_error`: Called on exception with `Run` object.
+- `on_error`: Called on exception with `Run` object (which contains the error).
+
+**Run Object:** Contains `id`, `type`, `input`, `output`, `error`, `start_time`, `end_time`, `tags`, `metadata`.
 
 **Returns:** New `RunnableBinding` with listener callbacks.
+
+**Example:**
+```python
+def log_start(run: Run) -> None:
+    print(f"Starting run {run.id}")
+
+def log_error(run: Run) -> None:
+    print(f"Error in {run.id}: {run.error}")
+
+chain = my_runnable.with_listeners(on_start=log_start, on_error=log_error)
+```
 
 ### Async Listeners
 
 **`with_alisteners(*, on_start=None, on_end=None, on_error=None) → Runnable[Input, Output]`** (`repo://libs/core/langchain_core/runnables/base.py#L2034-L2135`)
 
-Async variant of `with_listeners` for use in async execution contexts.
+Async variant of `with_listeners` for use in async execution contexts. Callbacks are async callables.
+
+**Parameters:** Same as `with_listeners`, with async callables.
 
 ### Retry Policy
 
-**`with_retry(stop_after_attempt=3, wait_exponential_jitter=True, retry_if_exception_type=(Exception,), exponential_jitter_params=None) → Runnable[Input, Output]`** (`repo://libs/core/langchain_core/runnables/base.py#L2153-L2218`)
+**`with_retry(*, stop_after_attempt=3, wait_exponential_jitter=True, retry_if_exception_type=(Exception,), exponential_jitter_params=None) → Runnable[Input, Output]`** (`repo://libs/core/langchain_core/runnables/base.py#L2153-L2218`)
 
 Binds automatic retry logic to a runnable with exponential backoff.
 
@@ -445,12 +571,20 @@ def with_retry(
 ```
 
 **Parameters:**
-- `stop_after_attempt`: Max retry attempts.
-- `wait_exponential_jitter`: Use exponential backoff with jitter.
-- `retry_if_exception_type`: Tuple of exception types to retry on.
-- `exponential_jitter_params`: Custom backoff parameters.
+- `stop_after_attempt`: Max retry attempts (default 3). Includes initial attempt.
+- `wait_exponential_jitter`: Use exponential backoff with jitter (default True).
+- `retry_if_exception_type`: Tuple of exception types to retry on (default catches all `Exception`). Can be a callable `(Exception) -> bool`.
+- `exponential_jitter_params`: Custom backoff parameters (initial, max, exp_base, jitter).
 
 **Returns:** New `RunnableRetry` wrapper.
+
+**Example:**
+```python
+resilient_chain = unreliable_runnable.with_retry(
+    stop_after_attempt=5,
+    retry_if_exception_type=(TimeoutError, ConnectionError)
+)
+```
 
 ### Fallbacks
 
@@ -471,12 +605,20 @@ def with_fallbacks(
 
 **Parameters:**
 - `fallbacks`: Sequence of runnables to try in order on failure.
-- `exceptions_to_handle`: Exception types to handle.
-- `exception_key`: If set (string), exception is passed to fallbacks under this key in input dict.
+- `exceptions_to_handle`: Exception types to catch and trigger fallback (default all `Exception`).
+- `exception_key`: If set (string), exception is passed to fallbacks under this key in input dict (input must be dict).
 
-**Use Case:** Graceful degradation; try primary method, fall back to alternative.
+**Use Case:** Graceful degradation. Try primary method, fall back to alternative on failure (e.g., try GPT-4, fall back to GPT-3.5-turbo).
 
 **Returns:** New `RunnableWithFallbacks` wrapper.
+
+**Example:**
+```python
+chain = primary_model.with_fallbacks(
+    [fallback_model_1, fallback_model_2],
+    exceptions_to_handle=(RateLimitError, APIError)
+)
+```
 
 ### Map
 
@@ -489,9 +631,16 @@ def map(self) -> Runnable[Sequence[Input], list[Output]]:
     """Return a new Runnable that maps a list of inputs to list of outputs."""
 ```
 
-**Equivalent to:** Calling `invoke` on each element and collecting results.
+**Equivalent to:** Calling `invoke` on each element and collecting results into a list.
 
 **Returns:** New `RunnableEach` wrapper.
+
+**Example:**
+```python
+single_processor = RunnableLambda(lambda x: x + 1)
+batch_processor = single_processor.map()
+result = batch_processor.invoke([1, 2, 3])  # [2, 3, 4]
+```
 
 ## Utility Methods
 
@@ -501,16 +650,13 @@ def map(self) -> Runnable[Sequence[Input], list[Output]]:
 
 Retrieve the runnable's name, used for tracing and debugging.
 
-```python
-def get_name(self, suffix: str | None = None, *, name: str | None = None) -> str:
-    """Get the name of the Runnable."""
-```
-
 **Parameters:**
-- `suffix`: Optional suffix appended to name.
+- `suffix`: Optional suffix appended to name (title-cased for uppercase names, underscore-lowercased for lowercase).
 - `name`: Override with custom name.
 
 **Returns:** String name of runnable.
+
+**Default Behavior:** Returns the runnable's `name` attribute if set, otherwise the class name. Useful for debugging, logging, and tracing.
 
 ### Get Graph
 
@@ -518,7 +664,7 @@ def get_name(self, suffix: str | None = None, *, name: str | None = None) -> str
 
 Returns a graph representation of the runnable's structure.
 
-**Use Case:** Visualization, debugging complex compositions.
+**Use Case:** Visualization, debugging complex compositions. Useful for rendering chain structure diagrams.
 
 ### Get Prompts
 
@@ -526,13 +672,19 @@ Returns a graph representation of the runnable's structure.
 
 Extracts all prompt templates used by this runnable and its children.
 
+**Returns:** List of `BasePromptTemplate` instances.
+
+**Use Case:** Dynamic prompt management, testing prompt variations.
+
 ## Helper Methods for Subclasses
 
-Subclasses override abstract `invoke` and typically implement execution logic using helper methods:
+Subclasses override `invoke` and typically use these helpers to manage config, callbacks, and error handling.
 
 **`_call_with_config(func, input_, config, run_type=None, serialized=None, **kwargs) → Output`** (`repo://libs/core/langchain_core/runnables/base.py#L2323-L2370`)
 
 Wraps a callable with config management, callbacks, and error handling. Use in `invoke` implementations.
+
+**Purpose:** Automatically manages callback lifecycle (on_chain_start, on_chain_end, on_chain_error), config context, and error propagation.
 
 **`_acall_with_config(func, input_, config, run_type=None, serialized=None, **kwargs) → Coroutine[Output]`** (`repo://libs/core/langchain_core/runnables/base.py#L2372-L2413`)
 
@@ -540,7 +692,7 @@ Async variant for `ainvoke` implementations.
 
 **`_batch_with_config(func, inputs, config, *, return_exceptions=False, run_type=None, **kwargs) → list[Output]`** (`repo://libs/core/langchain_core/runnables/base.py#L2415-L2480`)
 
-Wraps batch processing function with callback management.
+Wraps batch processing function with callback management. Use in `batch` implementations.
 
 **`_abatch_with_config(func, inputs, config, *, return_exceptions=False, run_type=None, **kwargs) → Coroutine[list[Output]]`** (`repo://libs/core/langchain_core/runnables/base.py#L2482-L2555`)
 
@@ -548,21 +700,65 @@ Async variant for `abatch` implementations.
 
 **`_transform_stream_with_config(inputs, transformer, config, run_type=None, **kwargs) → Iterator[Output]`** (`repo://libs/core/langchain_core/runnables/base.py#L2557-L2630`)
 
-Wraps streaming transformer function with callback lifecycle.
+Wraps streaming transformer function with callback lifecycle. Use in `stream` and `transform` implementations.
+
+## Implementation Patterns
+
+### Minimal Runnable
+
+Override only `invoke`:
+
+```python
+from langchain_core.runnables import Runnable, RunnableConfig
+from typing import Any
+
+class MyRunnable(Runnable[str, int]):
+    def invoke(
+        self,
+        input: str,
+        config: RunnableConfig | None = None,
+        **kwargs: Any
+    ) -> int:
+        return len(input)
+```
+
+Async, batch, stream, and other methods work automatically with defaults.
+
+### Optimized Runnable
+
+Override methods for efficiency:
+
+```python
+class MyRunnable(Runnable[str, int]):
+    def invoke(self, input: str, config: RunnableConfig | None = None, **kwargs: Any) -> int:
+        return len(input)
+    
+    async def ainvoke(self, input: str, config: RunnableConfig | None = None, **kwargs: Any) -> int:
+        # Native async implementation (not thread pool)
+        return len(input)
+    
+    def batch(self, inputs: list[str], config: RunnableConfig | list[RunnableConfig] | None = None, *, return_exceptions: bool = False, **kwargs: Any) -> list[int]:
+        # Batch optimization
+        if return_exceptions:
+            return [len(inp) for inp in inputs]
+        else:
+            return [len(inp) for inp in inputs]
+    
+    def stream(self, input: str, config: RunnableConfig | None = None, **kwargs: Any):
+        # Streaming: yield chunks
+        for i, char in enumerate(input):
+            yield i  # Example: yield index as we process
+```
 
 ## Composition Primitives (LCEL)
 
-The `Runnable` protocol supports composable primitives for building complex chains:
+The `Runnable` protocol supports composition primitives:
 
-**Sequential (RunnableSequence):** Chain with `|` operator. Output of each becomes input to next.
-
-**Parallel (RunnableParallel):** Use dict literal `{ "key1": runnable1, "key2": runnable2 }` to invoke runnables concurrently with shared input.
-
-**Branching:** Conditional routing using mapping or custom logic.
-
-**Fallback:** Try primary, fall back to secondary on failure (see `with_fallbacks`).
-
-**Retry:** Automatic exponential backoff retry (see `with_retry`).
+- **Sequential (RunnableSequence):** Chain with `|` operator. Output of each becomes input to next.
+- **Parallel (RunnableParallel):** Use dict literal `{ "key1": runnable1, "key2": runnable2 }` to invoke runnables concurrently with shared input.
+- **Branching:** Conditional routing using mapping or custom logic (see `RunnableBranch`).
+- **Fallback:** Try primary, fall back to secondary on failure (see `with_fallbacks`).
+- **Retry:** Automatic exponential backoff retry (see `with_retry`).
 
 All composed chains inherit full sync, async, batch, and streaming support automatically from the protocol.
 
@@ -577,33 +773,7 @@ Runnables thread configuration through compositions. `RunnableConfig` parameters
 
 Configuration is passed from parent to child runnables, allowing uniform control across complex chains.
 
-## Implementation Patterns
+## Relationship to Related Pages
 
-**Minimal Runnable:** Override `invoke` only.
-
-```python
-from langchain_core.runnables import Runnable
-
-class MyRunnable(Runnable[Input, Output]):
-    def invoke(self, input: Input, config: RunnableConfig | None = None, **kwargs: Any) -> Output:
-        return ... # implementation
-```
-
-Async, batch, stream, and other methods work automatically with defaults.
-
-**Optimized Runnable:** Override methods for efficiency.
-
-```python
-class MyRunnable(Runnable[Input, Output]):
-    def invoke(self, input: Input, config: RunnableConfig | None = None, **kwargs: Any) -> Output:
-        return ...
-    
-    async def ainvoke(self, input: Input, config: RunnableConfig | None = None, **kwargs: Any) -> Output:
-        return ... # native async instead of executor
-    
-    def batch(self, inputs: list[Input], config: RunnableConfig | list[RunnableConfig] | None = None, *, return_exceptions: bool = False, **kwargs: Any) -> list[Output]:
-        return ... # batch API support
-    
-    def stream(self, input: Input, config: RunnableConfig | None = None, **kwargs: Any) -> Iterator[Output]:
-        yield from ... # progressive output
-```
+- **[Runnables: Core Execution Abstraction](/openwiki/concepts/runnables.md):** Conceptual overview of Runnables and LCEL.
+- **[Composability: Chaining & Piping Runnables](/openwiki/workflows/composability.md):** Practical composition patterns, composition operators, and design examples.
