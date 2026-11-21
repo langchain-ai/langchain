@@ -1133,6 +1133,63 @@ def test_format_message_content() -> None:
         assert expected == _format_message_content([content])
 
 
+@pytest.mark.parametrize(
+    "block_type",
+    [
+        "server_tool_use",
+        "server_tool_call",
+        "server_tool_result",
+        "web_search_tool_result",
+        "web_fetch_tool_result",
+        "code_execution_tool_result",
+        "mcp_tool_use",
+        "mcp_tool_result",
+    ],
+)
+def test_format_message_content_drops_foreign_server_tool_blocks(
+    block_type: str,
+) -> None:
+    """Server tool blocks from another provider never reach the API."""
+    content: Any = [
+        {"type": "text", "text": "It is sunny in Paris."},
+        {"type": block_type, "id": "srvtoolu_01", "name": "web_search"},
+        {"type": "text", "text": "Anything else?"},
+    ]
+    assert _format_message_content(content) == [
+        {"type": "text", "text": "It is sunny in Paris."},
+        {"type": "text", "text": "Anything else?"},
+    ]
+
+
+def test_chat_completions_payload_drops_replayed_server_tool_blocks() -> None:
+    """A turn replayed from ChatAnthropic is not sent back with its server blocks."""
+    claude_turn = AIMessage(
+        content=[
+            {
+                "type": "server_tool_use",
+                "id": "srvtoolu_01",
+                "name": "web_search",
+                "input": {"query": "weather in Paris"},
+            },
+            {
+                "type": "web_search_tool_result",
+                "tool_use_id": "srvtoolu_01",
+                "content": [],
+            },
+            {"type": "text", "text": "It is sunny in Paris."},
+        ],
+        response_metadata={"model_provider": "anthropic"},
+    )
+    llm = ChatOpenAI(model="gpt-4o-mini", api_key="sk-test", use_responses_api=False)
+    payload = llm._get_request_payload(
+        [HumanMessage("Weather in Paris?"), claude_turn, HumanMessage("And tomorrow?")]
+    )
+    assert payload["messages"][1] == {
+        "role": "assistant",
+        "content": [{"type": "text", "text": "It is sunny in Paris."}],
+    }
+
+
 class GenerateUsername(BaseModel):
     "Get a username based on someone's name and hair color."
 

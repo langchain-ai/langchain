@@ -220,6 +220,27 @@ WellKnownTools = (
 
 _TOOL_EXTRAS_PASSTHROUGH = ("defer_loading", "async")
 
+# Server-executed tool blocks from other providers. They are output only: the
+# request side of Chat Completions has no field for them, and a message replayed
+# from a previous turn of e.g. ChatAnthropic can carry them. Sending them as
+# plain content parts is rejected by the API ("unknown variant"), so they get
+# dropped and the surrounding text is kept.
+_FOREIGN_SERVER_TOOL_BLOCK_TYPES = frozenset(
+    (
+        "server_tool_use",
+        "server_tool_call",
+        "server_tool_result",
+        "web_search_tool_result",
+        "web_fetch_tool_result",
+        "code_execution_tool_result",
+        "bash_code_execution_tool_result",
+        "text_editor_code_execution_tool_result",
+        "mcp_tool_use",
+        "mcp_tool_result",
+        "tool_search_tool_result",
+    )
+)
+
 
 def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     """Convert a dictionary to a LangChain message.
@@ -421,6 +442,7 @@ def _format_message_content(
                         block["type"] in ("function_call", "code_interpreter_call")
                         and api == "chat/completions"
                     )
+                    or block["type"] in _FOREIGN_SERVER_TOOL_BLOCK_TYPES
                 )
             ):
                 continue
