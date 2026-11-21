@@ -494,3 +494,54 @@ def test_context_replaces_lookalike_gateway_url(base_url: str) -> None:
     with langsmith_gateway(api_key="ctx-key"):
         config = _config(base_url=base_url)
     assert config.base_url == _DEFAULT_GATEWAY
+
+
+def test_gateway_base_url_with_query_params_in_context() -> None:
+    with langsmith_gateway(
+        api_key="gateway-key",
+        base_url="https://gateway.example.test/proxy?tenant=demo",
+    ):
+        config = _resolve_gateway_config(
+            base_url=None,
+            api_key=None,
+            provider_path="openai/v1",
+        )
+        assert config.base_url == "https://gateway.example.test/proxy/openai/v1?tenant=demo"
+
+
+def test_gateway_base_url_with_query_params_in_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "LANGSMITH_GATEWAY",
+        "https://gateway.example.test/proxy/?tenant=demo",
+    )
+    assert (
+        _resolve_gateway_base_url("openai/v1")
+        == "https://gateway.example.test/proxy/openai/v1?tenant=demo"
+    )
+
+
+def test_gateway_base_url_root_with_query_params_and_override_keep() -> None:
+    with langsmith_gateway(
+        api_key="gateway-key",
+        base_url="https://gateway.example.test?tenant=demo",
+    ):
+        assert (
+            _resolve_gateway_base_url("anthropic")
+            == "https://gateway.example.test/anthropic?tenant=demo"
+        )
+        # Explicit URL already under the gateway host + query is preserved
+        cfg_keep = _resolve_gateway_config(
+            base_url="https://gateway.example.test/v1?tenant=demo",
+            api_key=None,
+            provider_path="openai/v1",
+        )
+        assert cfg_keep.base_url == "https://gateway.example.test/v1?tenant=demo"
+        # Different host is still replaced with the gateway URL
+        cfg_evil = _resolve_gateway_config(
+            base_url="https://evil.example.test/v1?tenant=demo",
+            api_key=None,
+            provider_path="openai/v1",
+        )
+        assert cfg_evil.base_url == "https://gateway.example.test/openai/v1?tenant=demo"

@@ -16,7 +16,7 @@ from collections.abc import Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, NamedTuple
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit
 
 from pydantic import SecretStr
 
@@ -143,6 +143,30 @@ def _with_gateway_headers(
     return {**kept, **gateway_headers}
 
 
+def _append_provider_path(base_url: str, provider_path: str) -> str:
+    """Append ``provider_path`` to ``base_url``'s path while preserving query/fragment."""
+    parts = urlsplit(base_url)
+    base_path = parts.path.rstrip("/")
+    suffix = provider_path.lstrip("/")
+    joined_path = f"{base_path}/{suffix}" if suffix else base_path
+    return urlunsplit((parts.scheme, parts.netloc, joined_path, parts.query, parts.fragment))
+
+
+def _is_under_gateway(base_url: str, gateway_url: str) -> bool:
+    """Return True if ``base_url`` is on the same scheme/host/path-prefix (and query) as ``gateway_url``."""
+    target = urlsplit(base_url)
+    gw = urlsplit(gateway_url)
+    if target.scheme != gw.scheme or target.netloc != gw.netloc:
+        return False
+    gw_path = gw.path.rstrip("/")
+    if gw_path:
+        if not target.path.startswith(f"{gw_path}/"):
+            return False
+    elif not target.path.startswith("/"):
+        return False
+    return not gw.query or target.query == gw.query
+
+
 def _override_base_url(
     override: _GatewayOverride, base_url: str | None, provider_path: str
 ) -> str:
@@ -154,9 +178,9 @@ def _override_base_url(
     is replaced with the provider path on the gateway, so a model cannot send
     the gateway key to another host.
     """
-    if isinstance(base_url, str) and base_url.startswith(f"{override.base_url}/"):
+    if isinstance(base_url, str) and _is_under_gateway(base_url, override.base_url):
         return base_url
-    return f"{override.base_url}/{provider_path}"
+    return _append_provider_path(override.base_url, provider_path)
 
 
 _TRUE_VALUES = ("true", "1", "yes")
@@ -225,7 +249,7 @@ def _resolve_gateway_base_url(provider_path: str) -> str | None:
         if raw.lower() in _TRUE_VALUES
         else raw.rstrip("/")
     )
-    return f"{base}/{provider_path}"
+    return _append_provider_path(base, provider_path)
 
 
 def _same_origin(first: str, second: str) -> bool:
