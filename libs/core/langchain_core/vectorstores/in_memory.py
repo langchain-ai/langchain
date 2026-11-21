@@ -172,16 +172,31 @@ class InMemoryVectorStore(VectorStore):
     @property
     @override
     def embeddings(self) -> Embeddings:
+        """Return the embedding function used by the vector store."""
         return self.embedding
 
     @override
     def delete(self, ids: Sequence[str] | None = None, **kwargs: Any) -> None:
+        """Delete documents by their IDs.
+
+        Args:
+            ids: IDs of documents to delete. If `None` or empty, nothing is deleted.
+                Missing IDs are ignored.
+            **kwargs: Additional keyword arguments are ignored.
+        """
         if ids:
             for id_ in ids:
                 self.store.pop(id_, None)
 
     @override
     async def adelete(self, ids: Sequence[str] | None = None, **kwargs: Any) -> None:
+        """Async delete documents by their IDs.
+
+        Args:
+            ids: IDs of documents to delete. If `None` or empty, nothing is deleted.
+                Missing IDs are ignored.
+            **kwargs: Additional keyword arguments are ignored.
+        """
         self.delete(ids)
 
     @override
@@ -191,6 +206,21 @@ class InMemoryVectorStore(VectorStore):
         ids: list[str] | None = None,
         **kwargs: Any,
     ) -> list[str]:
+        """Add or update documents in the vector store.
+
+        Args:
+            documents: Documents to embed and store.
+            ids: IDs to use instead of the documents' IDs. If omitted or empty,
+                document IDs are used, with UUIDs generated for missing IDs.
+                Existing IDs are overwritten.
+            **kwargs: Additional keyword arguments are ignored.
+
+        Returns:
+            IDs of the added or updated documents, in input order.
+
+        Raises:
+            ValueError: If a non-empty `ids` list differs in length from `documents`.
+        """
         texts = [doc.page_content for doc in documents]
         vectors = self.embedding.embed_documents(texts)
 
@@ -224,6 +254,21 @@ class InMemoryVectorStore(VectorStore):
     async def aadd_documents(
         self, documents: list[Document], ids: list[str] | None = None, **kwargs: Any
     ) -> list[str]:
+        """Async add or update documents in the vector store.
+
+        Args:
+            documents: Documents to embed and store.
+            ids: IDs to use instead of the documents' IDs. If omitted or empty,
+                document IDs are used, with UUIDs generated for missing IDs.
+                Existing IDs are overwritten.
+            **kwargs: Additional keyword arguments are ignored.
+
+        Returns:
+            IDs of the added or updated documents, in input order.
+
+        Raises:
+            ValueError: If a non-empty `ids` list differs in length from `documents`.
+        """
         texts = [doc.page_content for doc in documents]
         vectors = await self.embedding.aembed_documents(texts)
 
@@ -362,6 +407,18 @@ class InMemoryVectorStore(VectorStore):
         k: int = 4,
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
+        """Return documents most similar to the query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Maximum number of documents to return.
+            **kwargs: Additional search arguments. Supports `filter`, a callable
+                that receives a `Document` and returns whether to include it.
+                Other keyword arguments are ignored.
+
+        Returns:
+            Tuples of documents and cosine similarity scores, highest score first.
+        """
         embedding = self.embedding.embed_query(query)
         return self.similarity_search_with_score_by_vector(
             embedding,
@@ -373,6 +430,18 @@ class InMemoryVectorStore(VectorStore):
     async def asimilarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[tuple[Document, float]]:
+        """Async return documents most similar to the query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Maximum number of documents to return.
+            **kwargs: Additional search arguments. Supports `filter`, a callable
+                that receives a `Document` and returns whether to include it.
+                Other keyword arguments are ignored.
+
+        Returns:
+            Tuples of documents and cosine similarity scores, highest score first.
+        """
         embedding = await self.embedding.aembed_query(query)
         return self.similarity_search_with_score_by_vector(
             embedding,
@@ -387,6 +456,18 @@ class InMemoryVectorStore(VectorStore):
         k: int = 4,
         **kwargs: Any,
     ) -> list[Document]:
+        """Return documents most similar to the embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Maximum number of documents to return.
+            **kwargs: Additional search arguments. Supports `filter`, a callable
+                that receives a `Document` and returns whether to include it.
+                Other keyword arguments are ignored.
+
+        Returns:
+            Documents most similar to the embedding vector, highest similarity first.
+        """
         docs_and_scores = self.similarity_search_with_score_by_vector(
             embedding,
             k,
@@ -398,18 +479,54 @@ class InMemoryVectorStore(VectorStore):
     async def asimilarity_search_by_vector(
         self, embedding: list[float], k: int = 4, **kwargs: Any
     ) -> list[Document]:
+        """Async return documents most similar to the embedding vector.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Maximum number of documents to return.
+            **kwargs: Additional search arguments. Supports `filter`, a callable
+                that receives a `Document` and returns whether to include it.
+                Other keyword arguments are ignored.
+
+        Returns:
+            Documents most similar to the embedding vector, highest similarity first.
+        """
         return self.similarity_search_by_vector(embedding, k, **kwargs)
 
     @override
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[Document]:
+        """Return documents most similar to the query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Maximum number of documents to return.
+            **kwargs: Additional search arguments. Supports `filter`, a callable
+                that receives a `Document` and returns whether to include it.
+                Other keyword arguments are ignored.
+
+        Returns:
+            Documents most similar to the query, highest similarity first.
+        """
         return [doc for doc, _ in self.similarity_search_with_score(query, k, **kwargs)]
 
     @override
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[Document]:
+        """Async return documents most similar to the query.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Maximum number of documents to return.
+            **kwargs: Additional search arguments. Supports `filter`, a callable
+                that receives a `Document` and returns whether to include it.
+                Other keyword arguments are ignored.
+
+        Returns:
+            Documents most similar to the query, highest similarity first.
+        """
         return [
             doc
             for doc, _ in await self.asimilarity_search_with_score(query, k, **kwargs)
@@ -426,6 +543,27 @@ class InMemoryVectorStore(VectorStore):
         filter: Callable[[Document], bool] | None = None,
         **kwargs: Any,
     ) -> list[Document]:
+        """Return documents selected by maximal marginal relevance.
+
+        Maximal marginal relevance balances similarity to the query with diversity
+        among the selected documents.
+
+        Args:
+            embedding: Embedding to look up documents similar to.
+            k: Maximum number of documents to return.
+            fetch_k: Maximum number of similar documents to consider as candidates.
+            lambda_mult: Number between `0` and `1`, with `0` favoring maximum
+                diversity and `1` favoring maximum similarity to the query.
+            filter: A callable that receives a `Document` and returns whether to
+                include it among the candidates.
+            **kwargs: Additional keyword arguments are ignored.
+
+        Returns:
+            Documents selected by maximal marginal relevance.
+
+        Raises:
+            ImportError: If numpy is not installed.
+        """
         prefetch_hits = self._similarity_search_with_score_by_vector(
             embedding=embedding,
             k=fetch_k,
@@ -456,6 +594,27 @@ class InMemoryVectorStore(VectorStore):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> list[Document]:
+        """Return documents selected by maximal marginal relevance.
+
+        Maximal marginal relevance balances similarity to the query with diversity
+        among the selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Maximum number of documents to return.
+            fetch_k: Maximum number of similar documents to consider as candidates.
+            lambda_mult: Number between `0` and `1`, with `0` favoring maximum
+                diversity and `1` favoring maximum similarity to the query.
+            **kwargs: Additional search arguments. Supports `filter`, a callable
+                that receives a `Document` and returns whether to include it
+                among the candidates. Other keyword arguments are ignored.
+
+        Returns:
+            Documents selected by maximal marginal relevance.
+
+        Raises:
+            ImportError: If numpy is not installed.
+        """
         embedding_vector = self.embedding.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
             embedding_vector,
@@ -474,6 +633,27 @@ class InMemoryVectorStore(VectorStore):
         lambda_mult: float = 0.5,
         **kwargs: Any,
     ) -> list[Document]:
+        """Async return documents selected by maximal marginal relevance.
+
+        Maximal marginal relevance balances similarity to the query with diversity
+        among the selected documents.
+
+        Args:
+            query: Text to look up documents similar to.
+            k: Maximum number of documents to return.
+            fetch_k: Maximum number of similar documents to consider as candidates.
+            lambda_mult: Number between `0` and `1`, with `0` favoring maximum
+                diversity and `1` favoring maximum similarity to the query.
+            **kwargs: Additional search arguments. Supports `filter`, a callable
+                that receives a `Document` and returns whether to include it
+                among the candidates. Other keyword arguments are ignored.
+
+        Returns:
+            Documents selected by maximal marginal relevance.
+
+        Raises:
+            ImportError: If numpy is not installed.
+        """
         embedding_vector = await self.embedding.aembed_query(query)
         return self.max_marginal_relevance_search_by_vector(
             embedding_vector,
@@ -492,6 +672,18 @@ class InMemoryVectorStore(VectorStore):
         metadatas: list[dict[str, Any]] | None = None,
         **kwargs: Any,
     ) -> InMemoryVectorStore:
+        """Create an in-memory vector store from texts.
+
+        Args:
+            texts: Texts to embed and store.
+            embedding: Embedding function to use.
+            metadatas: Optional metadata dictionaries associated with the texts.
+            **kwargs: Additional arguments passed to `add_texts`, including
+                an optional `ids` list.
+
+        Returns:
+            An in-memory vector store containing the texts and their embeddings.
+        """
         store = cls(
             embedding=embedding,
         )
@@ -507,6 +699,18 @@ class InMemoryVectorStore(VectorStore):
         metadatas: list[dict[str, Any]] | None = None,
         **kwargs: Any,
     ) -> InMemoryVectorStore:
+        """Async create an in-memory vector store from texts.
+
+        Args:
+            texts: Texts to embed and store.
+            embedding: Embedding function to use.
+            metadatas: Optional metadata dictionaries associated with the texts.
+            **kwargs: Additional arguments passed to `aadd_texts`, including
+                an optional `ids` list.
+
+        Returns:
+            An in-memory vector store containing the texts and their embeddings.
+        """
         store = cls(
             embedding=embedding,
         )
