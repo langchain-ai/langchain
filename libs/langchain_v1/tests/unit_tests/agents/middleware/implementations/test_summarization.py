@@ -1,4 +1,5 @@
 import asyncio
+import json
 import warnings
 from collections.abc import Iterable
 from copy import deepcopy
@@ -32,12 +33,14 @@ from langchain_core.messages import (
 from langchain_core.messages.utils import count_tokens_approximately, get_buffer_string
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableConfig, RunnableLambda
+from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.constants import TAG_NOSTREAM
 from langgraph.graph.message import REMOVE_ALL_MESSAGES, add_messages
 from langgraph.runtime import Runtime
 from langgraph.types import Command
-from pydantic import Field
+from pydantic import Field, SecretStr
 from typing_extensions import override
 
 from langchain.agents import AgentState, create_agent
@@ -46,6 +49,7 @@ from langchain.agents.middleware.internal_call_transformer import (
     internal_call_metadata,
 )
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
+from langchain.agents.middleware.model_selection import model_spec_from_model
 from langchain.agents.middleware.summarization import (
     ContextSize,
     ModelResolution,
@@ -58,6 +62,7 @@ from langchain.agents.middleware.types import (
     ExtendedModelResponse,
     ModelRequest,
     ModelResponse,
+    _merge_model_selection,
 )
 from langchain.chat_models import init_chat_model
 from tests.unit_tests.agents.model import FakeToolCallingModel
@@ -2977,6 +2982,16 @@ def test_summarizer_takes_precedence(model_form: str) -> None:
     assert small.calls == []
 
 
+def test_summarizer_ignores_recorded_model_selection() -> None:
+    """`model_selection` is a record only; thresholds follow the call's model."""
+    small_spec = cast("Any", model_spec_from_model(_small()))
+    state = AgentState[Any](messages=_history(), model_selection={"current": small_spec})
+
+    result = _middleware().wrap_model_call(_request(state, _large()), _respond)
+
+    assert not isinstance(result, ExtendedModelResponse)
+
+
 def test_summarization_run_records_compaction_models() -> None:
     starts: list[dict[str, Any]] = []
 
@@ -3111,3 +3126,56 @@ def test_create_agent_warns_on_model_swaps_after_summarization(
     assert bool(messages) is warns
     if warns:
         assert "List `ModelFallbackMiddleware` before `SummarizationMiddleware`" in messages[0]
+
+
+def test_model_spec_keeps_only_safe_fields() -> None:
+    model = ChatOpenAI(
+        model=OPENAI_TEST_MODEL,
+        api_key=SecretStr("sk-secret"),
+        base_url="https://user:token@example.com/v1",
+        default_headers={"Authorization": "Bearer header-secret"},
+        max_tokens=512,
+    )
+
+    spec = model_spec_from_model(model)
+
+    assert spec is not None
+    assert (spec["provider"], spec["model"]) == ("openai", OPENAI_TEST_MODEL)
+    assert spec.get("init_kwargs") == {"max_tokens": 512}
+    for secret in ("sk-secret", "token@example.com", "header-secret"):
+        assert secret not in json.dumps(spec)
+
+
+def test_model_selection_reducer_tracks_previous() -> None:
+    small, large = model_spec_from_model(_small()), model_spec_from_model(_large())
+    assert small is not None
+    assert large is not None
+
+    first = _merge_model_selection(None, {"current": large})
+    same = _merge_model_selection(first, {"current": large})
+    switched = _merge_model_selection(same, {"current": small})
+
+    assert same == {"current": large}
+    assert switched == {"current": small, "previous": large}
+
+
+def test_agent_records_model_selection_after_each_call() -> None:
+    """The model node records the call's model, through a strict checkpoint serializer."""
+    small, large = _small(), _large()
+    swap = _SwapModel(large)
+    agent = create_agent(
+        model=_NamedModel("builder", max_input=10),
+        middleware=[swap],
+        checkpointer=InMemorySaver(serde=JsonPlusSerializer(allowed_msgpack_modules=None)),
+    )
+    config: RunnableConfig = {"configurable": {"thread_id": "t"}}
+
+    agent.invoke({"messages": [HumanMessage(content="hi")]}, config)
+    swap.swap_to = small
+    result = agent.invoke({"messages": [HumanMessage(content="hi")]}, config)
+
+    assert "model_selection" not in result
+    assert agent.get_state(config).values["model_selection"] == {
+        "current": model_spec_from_model(small),
+        "previous": model_spec_from_model(large),
+    }

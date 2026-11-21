@@ -406,6 +406,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
     model*, which writes the summary: `summarizer` if set, otherwise the context
     model.
 
+    The agent also records its model in state under `model_selection` (see
+    [`ModelSelection`][langchain.agents.middleware.types.ModelSelection]). That
+    record is informational: it is never used to choose the summarization model.
+
     !!! warning "Middleware order"
 
         Middleware listed earlier in `middleware=` wraps middleware listed later, so
