@@ -8,7 +8,14 @@ import hashlib
 import json
 import re
 import warnings
-from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from functools import cached_property
 from operator import itemgetter
 from typing import Any, Final, Literal, NotRequired, Self, TypeGuard, cast
@@ -1465,6 +1472,19 @@ class ChatAnthropic(BaseChatModel):
     `LANGSMITH_GATEWAY_API_KEY` is used instead.
     """
 
+    auth_token_provider: Callable[[], str] | None = None
+    """Callable returning a bearer token, invoked before every request.
+
+    For credentials that expire and refresh themselves, such as Azure Entra ID
+    or any Anthropic-compatible gateway issuing short-lived tokens. A static
+    `api_key` cannot express this, since the value is read once at construction.
+
+    Used for async calls too when `async_auth_token_provider` is not set.
+    """
+
+    async_auth_token_provider: Callable[[], Awaitable[str]] | None = None
+    """Async counterpart to `auth_token_provider`, used by async calls."""
+
     anthropic_proxy: str | None = Field(
         default_factory=from_env("ANTHROPIC_PROXY", default=None)
     )
@@ -2239,7 +2259,24 @@ class ChatAnthropic(BaseChatModel):
             }
         return params
 
+    def _refresh_auth_token(self) -> None:
+        """Pull a fresh bearer token onto the client before a request.
+
+        The SDK reads `auth_token` when it builds auth headers, so assigning it
+        per call is what makes an expiring credential work. The client itself is
+        cached and reused.
+        """
+        if self.auth_token_provider is not None:
+            self._client.auth_token = self.auth_token_provider()
+
+    async def _arefresh_auth_token(self) -> None:
+        if self.async_auth_token_provider is not None:
+            self._async_client.auth_token = await self.async_auth_token_provider()
+        elif self.auth_token_provider is not None:
+            self._async_client.auth_token = self.auth_token_provider()
+
     def _create(self, payload: dict) -> Any:
+        self._refresh_auth_token()
         try:
             if "betas" in payload:
                 return self._client.beta.messages.with_raw_response.create(**payload)
@@ -2249,6 +2286,7 @@ class ChatAnthropic(BaseChatModel):
             raise
 
     async def _acreate(self, payload: dict) -> Any:
+        await self._arefresh_auth_token()
         try:
             if "betas" in payload:
                 return await self._async_client.beta.messages.with_raw_response.create(

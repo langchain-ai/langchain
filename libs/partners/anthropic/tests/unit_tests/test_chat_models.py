@@ -9,7 +9,7 @@ import warnings
 from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any, Literal, cast
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import anthropic
 import pytest
@@ -6808,3 +6808,80 @@ def test_message_delta_finish_reason() -> None:
     assert chunk.response_metadata["finish_reason"] == "pause_turn"
     assert chunk.response_metadata["normalized_finish_reason"] == "other"
     assert chunk.response_metadata["finish_state"] == "suspended"
+
+
+def test_auth_token_provider_called_per_request() -> None:
+    """An expiring credential must be re-read on every call, not cached."""
+    tokens = iter(["token-1", "token-2", "token-3"])
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="placeholder",  # type: ignore[arg-type]
+        auth_token_provider=lambda: next(tokens),
+    )
+    client = MagicMock()
+    seen = []
+
+    with patch.object(
+        ChatAnthropic, "_client", new_callable=PropertyMock
+    ) as mock_client:
+        mock_client.return_value = client
+        for _ in range(3):
+            llm._create({"messages": []})
+            seen.append(client.auth_token)
+
+    assert seen == ["token-1", "token-2", "token-3"]
+
+
+async def test_async_auth_token_provider_awaited() -> None:
+    """The async provider is awaited and applied to the async client."""
+
+    async def provider() -> str:
+        return "async-token"
+
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="placeholder",  # type: ignore[arg-type]
+        async_auth_token_provider=provider,
+    )
+    client = MagicMock()
+
+    with patch.object(
+        ChatAnthropic, "_async_client", new_callable=PropertyMock
+    ) as mock_client:
+        mock_client.return_value = client
+        await llm._arefresh_auth_token()
+
+    assert client.auth_token == "async-token"  # noqa: S105
+
+
+async def test_sync_auth_token_provider_used_on_async_path() -> None:
+    """A sync provider is a valid fallback when no async provider is given."""
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="placeholder",  # type: ignore[arg-type]
+        auth_token_provider=lambda: "sync-token",
+    )
+    client = MagicMock()
+
+    with patch.object(
+        ChatAnthropic, "_async_client", new_callable=PropertyMock
+    ) as mock_client:
+        mock_client.return_value = client
+        await llm._arefresh_auth_token()
+
+    assert client.auth_token == "sync-token"  # noqa: S105
+
+
+def test_no_auth_token_provider_leaves_client_untouched() -> None:
+    """Without a provider nothing is written to the client."""
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="static-key")  # type: ignore[arg-type]
+    client = MagicMock()
+    client.auth_token = "untouched"  # noqa: S105
+
+    with patch.object(
+        ChatAnthropic, "_client", new_callable=PropertyMock
+    ) as mock_client:
+        mock_client.return_value = client
+        llm._refresh_auth_token()
+
+    assert client.auth_token == "untouched"  # noqa: S105
