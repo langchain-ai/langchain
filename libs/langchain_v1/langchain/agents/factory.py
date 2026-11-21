@@ -689,6 +689,7 @@ def _invalid_tool_call_message(tool_call: InvalidToolCall) -> ToolMessage | None
         name=name,
         tool_call_id=tool_call_id,
         status="error",
+        id=f"invalid-tool-call-{tool_call_id}",
     )
 
 
