@@ -143,6 +143,111 @@ def test_isolate_usage_preserves_token_details() -> None:
     assert result["input_token_details"] is not usage["input_token_details"]
 
 
+def test_chunks_to_events_sums_token_details_across_chunks() -> None:
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="hello",
+                usage_metadata={
+                    "input_tokens": 10,
+                    "output_tokens": 0,
+                    "total_tokens": 10,
+                    "input_token_details": {"cache_read": 7, "audio": 2},
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=" world",
+                usage_metadata={
+                    "input_tokens": 0,
+                    "output_tokens": 5,
+                    "total_tokens": 5,
+                    "input_token_details": {"cache_read": 3, "audio": 1},
+                    "output_token_details": {"reasoning": 2, "audio": 1},
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                usage_metadata={
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "total_tokens": 0,
+                    "output_token_details": {"reasoning": 4, "audio": 2},
+                },
+            )
+        ),
+    ]
+
+    events = list(chunks_to_events(iter(chunks)))
+    finish = cast("MessageFinishData", events[-1])
+
+    assert finish["usage"] == {
+        "input_tokens": 10,
+        "output_tokens": 5,
+        "total_tokens": 15,
+        "input_token_details": {"cache_read": 10, "audio": 3},
+        "output_token_details": {"reasoning": 6, "audio": 3},
+    }
+
+
+@pytest.mark.asyncio
+async def test_achunks_to_events_sums_token_details_across_chunks() -> None:
+    chunks = [
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="hello",
+                usage_metadata={
+                    "input_tokens": 10,
+                    "output_tokens": 0,
+                    "total_tokens": 10,
+                    "input_token_details": {"cache_read": 7, "audio": 2},
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content=" world",
+                usage_metadata={
+                    "input_tokens": 0,
+                    "output_tokens": 5,
+                    "total_tokens": 5,
+                    "input_token_details": {"cache_read": 3, "audio": 1},
+                    "output_token_details": {"reasoning": 2, "audio": 1},
+                },
+            )
+        ),
+        ChatGenerationChunk(
+            message=AIMessageChunk(
+                content="",
+                usage_metadata={
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "total_tokens": 0,
+                    "output_token_details": {"reasoning": 4, "audio": 2},
+                },
+            )
+        ),
+    ]
+
+    async def chunk_stream() -> AsyncIterator[ChatGenerationChunk]:
+        for chunk in chunks:
+            yield chunk
+
+    events = [event async for event in achunks_to_events(chunk_stream())]
+    finish = cast("MessageFinishData", events[-1])
+
+    assert finish["usage"] == {
+        "input_tokens": 10,
+        "output_tokens": 5,
+        "total_tokens": 15,
+        "input_token_details": {"cache_read": 10, "audio": 3},
+        "output_token_details": {"reasoning": 6, "audio": 3},
+    }
+
+
 # ---------------------------------------------------------------------------
 # chunks_to_events: streaming lifecycle
 # ---------------------------------------------------------------------------
