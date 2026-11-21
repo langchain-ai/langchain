@@ -27,7 +27,7 @@ from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as Field_v1
 from pydantic.v1 import create_model as create_model_v1
-from typing_extensions import TypedDict, is_typeddict
+from typing_extensions import NotRequired, Required, TypedDict, is_typeddict
 
 from langchain_core._api import beta
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
@@ -280,8 +280,23 @@ def _convert_any_typed_dicts_to_pydantic(
         description, arg_descriptions = _parse_google_docstring(
             docstring, list(annotations_)
         )
+        # Under future annotations, `__required_keys__` misses `Required`/`NotRequired`.
+        # Prefer resolved `get_type_hints` annotations; otherwise use
+        # `__required_keys__`.
+        required_keys = getattr(typed_dict, "__required_keys__", set(annotations_))
         fields: dict[str, Any] = {}
-        for arg, arg_type in annotations_.items():
+        for arg, raw_arg_type in annotations_.items():
+            # `Required`/`NotRequired` only affect requiredness; unwrap them so the
+            # field annotation uses the underlying type.
+            if get_origin(raw_arg_type) is Required:
+                arg_type = get_args(raw_arg_type)[0]
+                is_required = True
+            elif get_origin(raw_arg_type) is NotRequired:
+                arg_type = get_args(raw_arg_type)[0]
+                is_required = False
+            else:
+                arg_type = raw_arg_type
+                is_required = arg in required_keys
             if get_origin(arg_type) in {Annotated, typing_extensions.Annotated}:
                 annotated_args = get_args(arg_type)
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
@@ -299,6 +314,8 @@ def _convert_any_typed_dicts_to_pydantic(
                         f"type {type(field_desc)}."
                     )
                     raise ValueError(msg)
+                if "default" not in field_kwargs:
+                    field_kwargs["default"] = ... if is_required else None
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
                 fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
@@ -306,7 +323,7 @@ def _convert_any_typed_dicts_to_pydantic(
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     arg_type, depth=depth + 1, visited=visited
                 )
-                field_kwargs = {"default": ...}
+                field_kwargs = {"default": ... if is_required else None}
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
                 fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
