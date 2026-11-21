@@ -1,8 +1,8 @@
 ---
 type: "Reference"
-title: "Integration Testing: System-Level Validation"
-description: "Integration testing patterns for multi-component workflows, API interactions, and provider integrations. Covers VCR recording, live API testing, model capability matrices, and standard conformance."
-tags: ["integration-testing", "vcr", "api-testing", "standard-tests", "mocking", "provider-testing"]
+title: "Integration Testing: VCR Cassettes, Fixtures, and Cassette Recording"
+description: "Integration test setup with VCR cassette recording and playback, fixture patterns for model initialization, cassette management workflows, and test recording scripts. Covers cassette security, recording automation, and provider-specific configuration."
+tags: ["integration-testing", "vcr", "cassettes", "fixtures", "api-testing", "provider-testing", "recording-scripts"]
 sources:
   - id: openwiki-source-d8a8900818f4abab719bd1b7
     resource: repo://.github/workflows/_test_vcr.yml
@@ -24,18 +24,22 @@ sources:
     resource: repo://libs/partners/openai/Makefile
   - id: openwiki-source-df762860acfcc6abf0ce804b
     resource: repo://libs/partners/openai/pyproject.toml
+  - id: openwiki-source-e5a79e0cbfb2825555761fd0
+    resource: repo://libs/partners/openai/scripts/record_codex_cassettes.sh
   - id: openwiki-source-ed8ac34fd0216d557729038e
     resource: repo://libs/partners/openai/tests/conftest.py
+  - id: openwiki-source-4e4a9e1e4a8869a3c69e80e1
+    resource: repo://libs/partners/openai/tests/integration_tests/chat_models/test_codex.py
   - id: openwiki-source-bd29e79613d5f366a00068f5
     resource: repo://libs/standard-tests/langchain_tests/base.py
   - id: openwiki-source-db02c1dda8563ab005cd9d62
     resource: repo://libs/standard-tests/langchain_tests/conftest.py
   - id: openwiki-source-025cad4ae99967890152b7e0
     resource: repo://libs/standard-tests/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-21T08:14:55.070Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-18T08:17:15.497Z
+    at: 2026-11-21T08:14:55.070Z
 ---
 
 ## Overview
@@ -135,6 +139,127 @@ OPENAI_API_KEY=sk-fake pytest --record-mode=none -m vcr tests/integration_tests/
 ```
 
 This catches **stale cassettes** (test code changed but cassette wasn't updated) without needing real credentials.
+
+---
+
+## Cassette Recording Scripts and Automation
+
+### Manual Recording Workflow
+
+Partner packages often provide shell scripts to record cassettes against live APIs while automating credential management and post-recording security scans. Example: OpenAI's `record_codex_cassettes.sh`:
+
+**Script responsibilities:**
+1. **Token preflight** — Verify credentials are valid and not expired before starting long test runs
+2. **Cassette snapshot** — Capture pre-recording cassette state (mtime, path) to identify which cassettes changed
+3. **Test execution** — Run pytest with `--record-mode=once` and `-m vcr` to record or reuse cassettes
+4. **Post-recording leak scan** — Grep cassettes for OAuth secrets (JWTs, bearer tokens, refresh tokens, API keys) and reject if any are found
+5. **Change summary** — Report which cassettes were added/modified so developers can inspect diffs
+
+**Example invocation:**
+```bash
+# Record all integration tests
+scripts/record_codex_cassettes.sh
+
+# Record specific test module
+scripts/record_codex_cassettes.sh tests/integration_tests/chat_models/test_codex.py
+
+# Record specific test case
+scripts/record_codex_cassettes.sh tests/integration_tests/chat_models/test_codex.py::test_invoke
+
+# Pass extra pytest args
+PYTEST_EXTRA="-x -k codex" scripts/record_codex_cassettes.sh
+```
+
+**Token-based OAuth recording** (e.g., ChatGPT OAuth subscription):
+```bash
+# Expects $HOME/.langchain/chatgpt-auth.json (or override with $CHATGPT_AUTH_FILE)
+# Script refreshes token before recording; exits if token is invalid or revoked
+export CHATGPT_AUTH_FILE=/path/to/auth.json
+scripts/record_codex_cassettes.sh
+```
+
+### Security: Post-Recording Leak Scans
+
+Recording scripts perform aggressive post-recording scans to prevent credential leaks:
+
+**Scan patterns** (example from OpenAI script):
+- Bearer tokens: `Bearer ey...` (OAuth header form)
+- JWT-shaped payloads: `eyJ[A-Za-z0-9_-]{20,}\.` (access_token, id_token, refresh_token)
+- Urlencoded refresh grants: `refresh_token=[^&*]` (OAuth form-body grant)
+- API keys: `sk-[A-Za-z0-9]{20,}` (OpenAI API key format, >= 20 chars after `sk-`)
+- OAuth-specific claims: `chatgpt_account_id` (extracted from id_token JWT claims)
+
+**Failure behavior:**
+- If leaks detected, script exits with error code and prints matching lines
+- Cassettes are NOT committed; developer must fix the redaction logic
+- Instructions point to `tests/conftest.py` redaction functions to extend coverage
+
+**Example safe scan invocation:**
+```bash
+# `zgrep` with ERE patterns, one cassette file decompressed at a time
+# Multiple patterns in single zgrep pass for performance
+zgrep -aHE \
+  -e 'Bearer ey' \
+  -e 'eyJ[A-Za-z0-9_-]{20,}\.' \
+  -e 'sk-[A-Za-z0-9]{20,}' \
+  tests/cassettes/test_invoke.yaml.gz
+```
+
+### Fixture Patterns for Model Initialization
+
+Integration tests often need model instances with specific credentials or configurations. Common fixture patterns:
+
+**Credential injection via fixtures:**
+```python
+@pytest.fixture
+def model_instance():
+    """Initialize model with environment credentials."""
+    return ChatOpenAI(
+        model="gpt-4",
+        api_key=os.getenv("OPENAI_API_KEY"),  # VCR redacts this automatically
+    )
+```
+
+**OAuth token provider fixture** (for subscription-based auth like ChatGPT):
+```python
+@pytest.fixture
+def oauth_model():
+    """Initialize model with OAuth token refresh provider."""
+    token_file = Path(os.getenv("CHATGPT_AUTH_FILE", "~/.langchain/chatgpt-auth.json"))
+    return _ChatOpenAICodex(
+        model="gpt-6.2-sol",
+        api_key=FileChatGPTOAuthTokenProvider(path=token_file).get_token,
+    )
+```
+
+**Cassette-safe parameters:**
+```python
+# OK: Hardcoded parameters recorded as-is; identical on every playback
+llm = ChatOpenAI(model="gpt-4", instructions="Be concise.")
+
+# OK: Environment variables redacted by VCR before cassette save
+llm = ChatOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# RISKY: Random values cause request mismatch on replay
+# If you need randomness, use @pytest.mark.parametrize or SeededRandom
+llm = ChatOpenAI(temperature=random.random())  # DON'T DO THIS
+```
+
+**Standard test fixture inheritance** (from `langchain-tests`):
+```python
+class TestOpenAIStandard(ChatModelIntegrationTests):
+    @pytest.fixture
+    def chat_model_class(self) -> type[BaseChatModel]:
+        return ChatOpenAI
+    
+    @pytest.fixture
+    def chat_model_params(self) -> dict:
+        """Parameters passed to chat_model_class() in every test."""
+        return {
+            "model": "gpt-4",
+            "temperature": 0.0,  # Deterministic for recording/playback
+        }
+```
 
 ---
 
@@ -539,6 +664,80 @@ git diff tests/cassettes/test_invoke.yaml.gz
 1. Delete cassette and re-record (forces redaction to run)
 2. Or manually edit cassette YAML (decompress with `gzip -d`, redact, re-compress)
 3. Add missing secret patterns to `conftest.py` redaction functions if it's a new provider format
+
+---
+
+## Test Module Organization and Cassette Patterns
+
+### Module-Level VCR Marking
+
+Test modules use `pytestmark = pytest.mark.vcr` to automatically enable cassette recording/playback for all tests in that module:
+
+```python
+# tests/integration_tests/chat_models/test_codex.py
+import pytest
+
+pytestmark = pytest.mark.vcr  # All tests in this module use cassettes
+
+def test_invoke() -> None:
+    llm = _ChatOpenAICodex(model="gpt-6.2-sol")
+    response = llm.invoke("Say hi.")
+    assert isinstance(response, AIMessage)
+
+def test_stream() -> None:
+    llm = _ChatOpenAICodex(model="gpt-6.2-sol")
+    response = _aggregate(llm.stream("Count to three."))
+    assert isinstance(response, AIMessageChunk)
+```
+
+**Naming convention:**
+- Function-level tests: `cassettes/test_<function_name>.yaml.gz`
+- Class+method tests: `cassettes/Test<ClassName>.test_<method_name>.yaml.gz`
+- Example: `test_codex_invoke()` → `cassettes/test_codex_invoke.yaml.gz`
+- Example: `TestChat.test_invoke()` → `cassettes/TestChat.test_invoke.yaml.gz`
+
+### Cassette Naming Overrides
+
+For parameterized tests with multiple cassettes, use `@pytest.mark.default_cassette()` to override the auto-generated name:
+
+```python
+@pytest.mark.vcr
+@pytest.mark.parametrize("model", ["gpt-4", "gpt-3.5-turbo"])
+@pytest.mark.default_cassette("test_multi_model.yaml.gz")
+def test_multi_model(model: str) -> None:
+    """Single cassette for all parameter values."""
+    llm = ChatOpenAI(model=model)
+    response = llm.invoke("Say hi.")
+    assert isinstance(response, AIMessage)
+```
+
+### Response Aggregation Patterns
+
+Streaming tests often aggregate chunks to match expected response shape:
+
+```python
+def _aggregate(stream: Iterator[BaseMessage]) -> AIMessageChunk:
+    """Drain sync stream and aggregate chunks."""
+    aggregated: BaseMessageChunk | None = None
+    for chunk in stream:
+        assert isinstance(chunk, AIMessageChunk)
+        aggregated = chunk if aggregated is None else aggregated + chunk
+    return aggregated
+
+async def _aaggregate(stream: AsyncIterator[BaseMessage]) -> AIMessageChunk:
+    """Drain async stream and aggregate chunks."""
+    aggregated: BaseMessageChunk | None = None
+    async for chunk in stream:
+        assert isinstance(chunk, AIMessageChunk)
+        aggregated = chunk if aggregated is None else aggregated + chunk
+    return aggregated
+
+def test_codex_stream() -> None:
+    llm = _ChatOpenAICodex(model="gpt-6.2-sol")
+    result = _aggregate(llm.stream("Count to three."))
+    assert isinstance(result, AIMessageChunk)
+    assert result.content  # Non-empty response
+```
 
 ---
 

@@ -28,10 +28,10 @@ sources:
     resource: repo://libs/core/langchain_core/messages/tool.py
   - id: openwiki-source-498a9586e021b126ab8a8b42
     resource: repo://libs/core/langchain_core/messages/utils.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-21T08:14:55.070Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-16T08:30:18.041Z
+    at: 2026-11-21T08:14:55.070Z
 ---
 
 ## Overview
@@ -92,10 +92,10 @@ Legacy/specialized message types. `ChatMessage` is generic with a `role` field; 
 A special message type for deleting other messages from conversation history. Takes only an `id` parameter (the message ID to remove) and no content. Used in agentic workflows to prune previous turns.
 
 **Notification Metadata** (`repo://libs/core/langchain_core/messages/notification.py`)  
-Functions to mark and retrieve metadata for messages added by the agent harness (background tasks, summaries, etc.):
-- **`add_notification_metadata(message, source, data=None)`**: Marks a `HumanMessage` as added by a feature, storing source and optional feature-specific data in `additional_kwargs["lc_source"]` and `additional_kwargs["lc_data"]`. Chat model integrations omit these keys when sending to the model.
-- **`get_notification_metadata(message)`**: Retrieves the metadata, returning a `NotificationMetadata` dict with `source` (string) and optional `data` (dict if present in `additional_kwargs["lc_data"]`), or `None` if no metadata exists.
-- **`NotificationMetadata`**: TypedDict with `source` (required, e.g., `"async_subagent"`) and optional `data` dict.
+Functions to mark and retrieve metadata for messages added by the agent harness (background tasks, summaries, generated tool results, etc.):
+- **`NotificationMetadata`**: TypedDict with `source` (required, e.g., `"async_subagent"`) and optional `data` dict holding feature-specific fields.
+- **`add_notification_metadata(message, source, data=None)`**: Returns a copy of a `HumanMessage` or `ToolMessage` marked as added by the agent harness, storing source and optional feature-specific data in `additional_kwargs["lc_source"]` and `additional_kwargs["lc_data"]`. Removes any earlier `lc_source` and `lc_data`. Chat model integrations omit these keys when sending to the model, so the annotation does not affect model behavior. The same `id` is preserved. When messages are merged (e.g., via `merge_message_runs`), the notification metadata and concatenated `lc_source` are retained.
+- **`get_notification_metadata(message)`**: Retrieves notification metadata from any message, returning a `NotificationMetadata` dict with `source` (string) and optional `data` (dict copy if present in `additional_kwargs["lc_data"]`), or `None` if no metadata exists (i.e., if `additional_kwargs["lc_source"]` is not a string).
 
 ### Message Chunks and Streaming
 

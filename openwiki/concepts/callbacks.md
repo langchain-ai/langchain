@@ -5,7 +5,7 @@ description: "Callbacks are an event-driven instrumentation system that enables 
 tags: [callbacks, observability, tracing, langsmith, run_id, instrumentation]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-18T08:17:15.497Z
+    at: 2026-11-21T08:14:55.070Z
 sources:
   - id: openwiki-source-96c73d2c05223b0b46abdbe9
     resource: repo://libs/core/langchain_core/callbacks/__init__.py

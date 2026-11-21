@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:793e033c11fd54e239405e0329f0b8a3c34d3f4ecd0ed7e03240fd92f2b90cca",
+  "pageVersion": "sha256:f4109d312a1198927bfbff4191691a0aeceac4366d948a813ef80956d3969c08",
   "claims": [
     {
       "id": "claim_8d2c3dd85b344c36b68762524e0c4b66",
@@ -18,8 +18,16 @@
     },
     {
       "id": "claim_eb9503764a804b73b3256a209f756370",
-      "statement": "The unit test infrastructure provides mock implementations including FakeToolCallingModel for scripting multi-turn agent behavior with tool calls, GenericFakeChatModel for streaming sequences, FakeListChatModel for cycling responses, and FakeChatModel variants for bypassing API calls. FakeCallbackHandler tracks lifecycle events (starts, ends, errors) at fine granularity (llm_starts, chain_starts, tool_starts) for callback testing.",
+      "statement": "LangChain test infrastructure provides fake chat model implementations (FakeListChatModel, FakeMessagesListChatModel, GenericFakeChatModel, ParrotFakeChatModel) for testing without API calls, plus fake embeddings (FakeEmbeddings with random vectors, DeterministicFakeEmbedding with hash-seeded reproducibility). GenericFakeChatModel implements token-level streaming by splitting on whitespace and invoking run_manager.on_llm_new_token(). FakeCallbackHandler tracks callback lifecycle events at fine granularity (llm_starts, chain_starts, tool_starts, retriever_starts, etc.).",
       "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/embeddings/fake.py",
+          "version": "repo-file-v1:sha256:3c2a71df650f2916737418d50b32c533ea937770aca0b8483354138c219ab21d"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/language_models/fake_chat_models.py",
+          "version": "repo-file-v1:sha256:9b02b80d63c08f6da1d9dc4f9c9954d33fc53d90a62253b8a32ff2bdbef230c4"
+        },
         {
           "resource": "repo://libs/core/tests/unit_tests/fake/callbacks.py",
           "version": "repo-file-v1:sha256:ccf91cc5acefdc15b6e52c09110bc586866d7a704c4a4e0d651fd1c0dc149405"
@@ -27,10 +35,6 @@
         {
           "resource": "repo://libs/core/tests/unit_tests/fake/test_fake_chat_model.py",
           "version": "repo-file-v1:sha256:acf9cde387c94c53607c5239a64798e11798b6061d7e78f5b87c06efe95fcea1"
-        },
-        {
-          "resource": "repo://libs/langchain_v1/tests/unit_tests/agents/model.py",
-          "version": "repo-file-v1:sha256:a2d052706b934bef0fb28ba4f7734aeebf0c383209b30f08c578926bb63e40ac"
         }
       ]
     },
@@ -51,6 +55,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-13T08:16:35.902Z"
+    "at": "2026-11-21T08:14:55.070Z"
   }
 }

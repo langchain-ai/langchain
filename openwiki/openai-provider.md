@@ -16,10 +16,10 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
   - id: openwiki-source-122b01e9aef52272c0a77739
     resource: repo://libs/partners/openai/langchain_openai/decisions/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-21T08:14:55.070Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-16T08:30:18.041Z
+    at: 2026-11-21T08:14:55.070Z
 ---
 
 ## Overview
@@ -40,7 +40,7 @@ The OpenAI integration (`langchain-openai`) provides production-ready chat model
 
 **Package**: `repo://libs/partners/openai/langchain_openai/`
 
-**Main Class**: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L2904-L4266`
+**Main Class**: `repo://libs/partners/openai/langchain_openai/chat_models/base.py#L3003-L4367`
 
 **Exports**: `repo://libs/partners/openai/langchain_openai/__init__.py`
 

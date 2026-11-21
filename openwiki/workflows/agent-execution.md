@@ -5,13 +5,13 @@ description: "Detailed walkthrough of agent lifecycle, execution loops, state ma
 tags: ["agents", "agentic-loop", "middleware", "tool-calling", "state-management", "observability"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-18T08:17:15.497Z
+    at: 2026-11-21T08:14:55.070Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-21T08:14:55.070Z" }
 ---
 
 # Agent Execution: Agentic Loops and State Management
@@ -46,14 +46,14 @@ Every agent operates over an `AgentState` that persists across the execution loo
 class AgentState(TypedDict, Generic[ResponseT]):
     """State schema for the agent."""
     messages: Required[Annotated[list[AnyMessage], add_messages]]
-    jump_to: NotRequired[Annotated[JumpTo | None, EphemeralValue]]
-    structured_response: NotRequired[Annotated[ResponseT, OmitFromOutput]]
+    jump_to: NotRequired[Annotated[JumpTo | None, EphemeralValue, PrivateStateAttr]]
+    structured_response: NotRequired[Annotated[ResponseT, OmitFromInput]]
 ```
 
 **State fields:**
 - **`messages`**: Conversation history, merged via `add_messages` reducer (new messages append, not replace).
-- **`jump_to`**: Ephemeral routing hint set by middleware to override default flow ("tools", "model", or "end").
-- **`structured_response`**: Parsed output when `response_format` is configured (omitted from input schema).
+- **`jump_to`**: Ephemeral routing hint set by middleware to override default flow ("tools", "model", or "end"). Marked as `PrivateStateAttr` to prevent leaking across middleware layers.
+- **`structured_response`**: Parsed output when `response_format` is configured (omitted from input schema via `OmitFromInput`).
 
 Middleware can extend `AgentState` via `state_schema` parameter. When multiple middleware extend state, schemas are merged in order with user-provided `state_schema` winning conflicts.
 

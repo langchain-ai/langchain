@@ -9,7 +9,7 @@ sources:
 generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-21T08:14:55.070Z
 ---
 
 # Chat Models API Reference

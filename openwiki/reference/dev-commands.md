@@ -5,7 +5,7 @@ description: "Complete reference for make targets and uv package management comm
 tags: [development, commands, make, uv, testing, linting, reference]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-21T08:14:55.070Z
 sources:
   - id: openwiki-source-8f1875229ad4a704c8e20a06
     resource: repo://libs/core/Makefile

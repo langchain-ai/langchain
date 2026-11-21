@@ -5,10 +5,12 @@ description: "Complete API reference for LangChain message types, serialization 
 tags: ["messages", "api", "serialization", "notification-metadata", "content-blocks"]
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-13T08:16:35.902Z
+    at: 2026-11-21T08:14:55.070Z
 sources:
-  - id: openwiki-source-85004ebd4eba7aec1e145503
-    resource: repo://libs/langchain/langchain_classic/schema/messages.py
+  - id: openwiki-source-0f6ea1dd09fb4675ff4112b1
+    resource: repo://libs/core/langchain_core/messages/__init__.py
+  - id: openwiki-source-b32b84365d17276620c41ebc
+    resource: repo://libs/core/langchain_core/messages/base.py
 generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
 ---
 

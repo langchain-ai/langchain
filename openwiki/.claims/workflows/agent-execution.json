@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:749c5b8a9dc54f98b0e558c8a60ea05b9e8e69a523520501f718ad77d6b7b4a5",
+  "pageVersion": "sha256:ee92684da08937bc680f265ae617089b8ed5e5eff69cda04c4680e3b805705e1",
   "claims": [
     {
       "id": "claim_0240415bda374dfcaaea98d68fe5e7b4",
-      "statement": "AgentState is a TypedDict defining agent execution state with three fields: `messages` (required, merged via add_messages reducer), `jump_to` (ephemeral routing hint), and `structured_response` (optional parsed output). The state persists across the agentic loop and middleware can extend it via state_schema parameter.",
+      "statement": "AgentState is a TypedDict defining agent execution state with three fields: `messages` (required, merged via add_messages reducer), `jump_to` (ephemeral routing hint marked as PrivateStateAttr to prevent leaking across middleware), and `structured_response` (optional parsed output omitted from input schema via OmitFromInput). The state persists across the agentic loop and middleware can extend it via state_schema parameter.",
       "evidence": [
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L1226-L1234",
-          "version": "repo-lines-v1:sha256:79c59a206dc67c41cff7e2895b104673b0bf154adb4e716a7f0eb051aa756b95:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiY2JkZjE5OGNiYzcwODIzNWMwMTEzMzdjZjY0MzZlNjE3MTc5MDAzODg4MjA4NzY2NTY2ZmFkMGU1MGY1M2FiZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWU4OGFjNGI4NWI5N2FiYWUwZWRjYTg2MDcyM2U3ZDE2M2M5Yzc5NDQ1NDVhM2M3YzViNzNkOGZhZDdlYzg3YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmFhN2Q3ZTQ5YTE5ZTM4NjhlODE2OWY0ZDk3ODA5NzlkMjYwZTAxODkxYjk4MTJjODhiYjEzNzU1ZmMwZTEyYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZjJmMzA1NDI5M2U4OWU5ODE1NDRkYmNmMjdiNjY5YzhkNzA5YTNmOThhN2U1NDQxZDA1OWIyNmJkNjIyOWU1MSJ9"
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L341-L348",
+          "version": "repo-lines-v1:sha256:bd193a5b58bf31dc6d415966f405eea80559d566028e59a7e7ed0c51a0aedf5f:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGRmNDg1ZTE4YWJlNjMxYjI4NzFkMmY5NjQ0NWFiM2Y1ZTE2MGFjMmY0ZWViMzdiYzllMzU2OTc1NmFkNGUwMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGI1YjBkNTQ3M2JlYWI2MDY4YzYzNTM5NmMyNjAxNzRhMjUyODQ5YzA0OWY5MTYzNWUxNGIzN2UzZGY5ZTdlYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjYyMGM3MzhjMGFhMmY3MjNiZGQ2OWY0ZDc3NTliZGJkOGY2ZGU1NzBhOTczOTJmYjZmZTc1NDBjNjgyN2ZiOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDU1ZTI4MDdkYzcwZDJjYmM0OWQ2MTkyZjg2YzZkNTBmMmMwZDQ0MzM0ODE2N2Q0ZDUxNDc0ZDEzYzgzMzQzZSJ9"
         },
         {
-          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L349-L354",
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L351-L356",
           "version": "repo-lines-v1:sha256:c995df23d29c623277091b5c9a18504b94c75d83702467cccbe504b1ac99b777:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNGFjZWQyZjg0ZWIyYWYyZTEwM2QyMGNiMDBjY2ZmYzlmNzI3NmJlMWU3ZTc3ZDdlNzQ2M2U4ZjVjN2RhNjMxNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMGIzOTE4NzQ3OTQ1N2E1YjMzYjc0ZWU2Yjk2YjM4OWFmYWUwYTYyZmRjMDkzMjljZjhhZTgyMWQzNDc3MmE1ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDU1MDllNzI0MjBmNWM3NGRkY2MyYmE2YmY5NzI2Y2Y4Mjc4MDYzOWIzMTdlNTIzMDY4ODNiN2YyNDkyNjJlMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWE2ZDczZWY1MTNjNDcwNmU4YzA5MDNhOWI4OTdmZmQxZDdlYTU1NjNhMDYzZWQ5NTJlNThjMDM3NmQ4NWZjNiJ9"
         }
       ]
@@ -339,6 +339,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-18T08:17:15.497Z"
+    "at": "2026-11-21T08:14:55.070Z"
   }
 }
