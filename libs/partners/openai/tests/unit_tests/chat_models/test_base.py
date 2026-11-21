@@ -1133,6 +1133,297 @@ def test_format_message_content() -> None:
         assert expected == _format_message_content([content])
 
 
+# Content blocks `ChatAnthropic` keeps in `AIMessage.content` that have no Chat
+# Completions equivalent.
+_ANTHROPIC_ONLY_BLOCKS: list[dict] = [
+    {
+        "type": "server_tool_use",
+        "id": "srvtoolu_1",
+        "name": "web_search",
+        "input": {"query": "weather in Paris"},
+    },
+    {"type": "web_search_tool_result", "tool_use_id": "srvtoolu_1", "content": []},
+    {"type": "web_fetch_tool_result", "tool_use_id": "srvtoolu_2", "content": {}},
+    {"type": "code_execution_tool_result", "tool_use_id": "srvtoolu_3", "content": {}},
+    {
+        "type": "bash_code_execution_tool_result",
+        "tool_use_id": "srvtoolu_4",
+        "content": {},
+    },
+    {
+        "type": "mcp_tool_use",
+        "id": "mcptoolu_1",
+        "name": "f",
+        "server_name": "s",
+        "input": {},
+    },
+    {
+        "type": "text_editor_code_execution_tool_result",
+        "tool_use_id": "srvtoolu_5",
+        "content": {},
+    },
+    {"type": "tool_search_tool_result", "tool_use_id": "srvtoolu_6", "content": {}},
+    {"type": "advisor_tool_result", "tool_use_id": "srvtoolu_7", "content": {}},
+    {"type": "mcp_tool_result", "tool_use_id": "mcptoolu_1", "content": []},
+    {"type": "redacted_thinking", "data": "abc"},
+    {"type": "container_upload", "file_id": "file_1"},
+    {"type": "compaction", "content": "summary"},
+]
+
+_GEMINI_CODE_EXECUTION_BLOCKS: list[dict] = [
+    {"type": "executable_code", "executable_code": "print(1)", "language": "PYTHON"},
+    {
+        "type": "code_execution_result",
+        "code_execution_result": "1",
+        "outcome": "OUTCOME_OK",
+    },
+]
+
+
+def _cc_llm() -> ChatOpenAI:
+    return ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=False)
+
+
+@pytest.mark.parametrize(
+    ("provider", "block"),
+    [("anthropic", b) for b in _ANTHROPIC_ONLY_BLOCKS]
+    + [("google_genai", b) for b in _GEMINI_CODE_EXECUTION_BLOCKS],
+    ids=lambda x: x["type"] if isinstance(x, dict) else x,
+)
+def test_get_request_payload_drops_foreign_blocks(provider: str, block: dict) -> None:
+    """Blocks from another provider's turn with no Chat Completions form are dropped."""
+    llm = _cc_llm()
+    foreign_turn = AIMessage(
+        content=[block, {"type": "text", "text": "Sunny."}],
+        response_metadata={"model_provider": provider},
+    )
+    messages = [HumanMessage("Weather?"), foreign_turn, HumanMessage("Thanks!")]
+    expected = {"role": "assistant", "content": [{"type": "text", "text": "Sunny."}]}
+
+    payload = llm._get_request_payload(messages)
+    assert payload["messages"][1] == expected
+
+    # Same turn with `output_version="v1"`: the block becomes a `server_tool_call`,
+    # `server_tool_result` or `non_standard` block.
+    foreign_turn_v1 = AIMessage(
+        content=[dict(b) for b in foreign_turn.content_blocks],
+        response_metadata={"model_provider": provider, "output_version": "v1"},
+    )
+    assert {b["type"] for b in foreign_turn_v1.content_blocks} - {"text"}
+    messages[1] = foreign_turn_v1
+
+    payload = llm._get_request_payload(messages)
+    assert payload["messages"][1] == expected
+
+
+def test_get_request_payload_keeps_foreign_text_and_refusal() -> None:
+    """Text and refusals from a foreign turn are kept, without provider-only keys."""
+    llm = _cc_llm()
+    claude_turn = AIMessage(
+        content=[
+            {
+                "type": "text",
+                "text": "It is sunny.",
+                "citations": [
+                    {
+                        "type": "web_search_result_location",
+                        "url": "https://example.com",
+                        "title": "Paris weather",
+                        "cited_text": "Sunny",
+                        "encrypted_index": "abc",
+                    }
+                ],
+            },
+            {"type": "refusal", "refusal": "I can't help with that.", "id": "r_1"},
+        ],
+        response_metadata={"model_provider": "anthropic"},
+    )
+    payload = llm._get_request_payload(
+        [HumanMessage("Weather?"), claude_turn, HumanMessage("Thanks!")]
+    )
+    assert payload["messages"][1]["content"] == [
+        {"type": "text", "text": "It is sunny."},
+        {"type": "refusal", "refusal": "I can't help with that."},
+    ]
+
+
+def test_get_request_payload_drops_blocks_from_aggregated_foreign_chunk() -> None:
+    """Streamed foreign turns, aggregated, lose their tool blocks and `index` keys."""
+    llm = _cc_llm()
+    chunks = [
+        AIMessageChunk(
+            content=[
+                {
+                    "type": "server_tool_use",
+                    "id": "srvtoolu_1",
+                    "name": "web_search",
+                    "input": {},
+                    "index": 0,
+                }
+            ],
+            response_metadata={"model_provider": "anthropic"},
+        ),
+        AIMessageChunk(
+            content=[{"type": "text", "text": "Sun", "index": 1}],
+            response_metadata={"model_provider": "anthropic"},
+        ),
+        AIMessageChunk(
+            content=[{"type": "text", "text": "ny.", "index": 1}],
+            response_metadata={"model_provider": "anthropic"},
+        ),
+    ]
+    aggregated = chunks[0] + chunks[1] + chunks[2]
+    payload = llm._get_request_payload(
+        [HumanMessage("Weather?"), aggregated, HumanMessage("Thanks!")]
+    )
+    assert payload["messages"][1]["content"] == [{"type": "text", "text": "Sunny."}]
+
+    # v1 stream: partial `server_tool_call_chunk` blocks.
+    chunk_v1 = AIMessageChunk(
+        content=[
+            {
+                "type": "server_tool_call_chunk",
+                "name": "web_search",
+                "args": '{"query": "wea',
+                "id": "srvtoolu_1",
+                "index": 0,
+            },
+            {"type": "text", "text": "Sunny.", "index": 1},
+        ],
+        response_metadata={"model_provider": "anthropic", "output_version": "v1"},
+    )
+    payload = llm._get_request_payload(
+        [HumanMessage("Weather?"), chunk_v1, HumanMessage("Thanks!")]
+    )
+    assert payload["messages"][1]["content"] == [{"type": "text", "text": "Sunny."}]
+
+
+def test_get_request_payload_keeps_tool_calls_from_foreign_turn() -> None:
+    """Tool calls on a foreign turn are still sent; only the content is filtered."""
+    llm = _cc_llm()
+    tool_call = {"name": "get_weather", "args": {"city": "Paris"}, "id": "toolu_1"}
+    expected_tool_calls = [
+        {
+            "type": "function",
+            "id": "toolu_1",
+            "function": {"name": "get_weather", "arguments": '{"city": "Paris"}'},
+        }
+    ]
+    server_tool_use = _ANTHROPIC_ONLY_BLOCKS[0]
+    tool_use = {"type": "tool_use", **tool_call, "input": tool_call["args"]}
+
+    claude_turn = AIMessage(
+        content=[server_tool_use, {"type": "text", "text": "Checking."}, tool_use],
+        tool_calls=[tool_call],
+        response_metadata={"model_provider": "anthropic"},
+    )
+    messages = [
+        HumanMessage("Weather?"),
+        claude_turn,
+        ToolMessage("Sunny", tool_call_id="toolu_1"),
+    ]
+    payload = llm._get_request_payload(messages)
+    assert payload["messages"][1] == {
+        "role": "assistant",
+        "content": [{"type": "text", "text": "Checking."}],
+        "tool_calls": expected_tool_calls,
+    }
+
+    # With nothing left in content, it is sent as null like any tool-call turn.
+    messages[1] = AIMessage(
+        content=[server_tool_use, tool_use],
+        tool_calls=[tool_call],
+        response_metadata={"model_provider": "anthropic"},
+    )
+    payload = llm._get_request_payload(messages)
+    assert payload["messages"][1] == {
+        "role": "assistant",
+        "content": None,
+        "tool_calls": expected_tool_calls,
+    }
+
+
+def test_get_request_payload_foreign_turn_left_empty() -> None:
+    """A foreign turn holding only dropped blocks is sent with empty content.
+
+    This matches what already happens to a turn holding only blocks the formatter
+    removes for every provider, such as Anthropic `thinking`.
+    """
+    llm = _cc_llm()
+    claude_turn = AIMessage(
+        content=[_ANTHROPIC_ONLY_BLOCKS[0], _ANTHROPIC_ONLY_BLOCKS[1]],
+        response_metadata={"model_provider": "anthropic"},
+    )
+    payload = llm._get_request_payload(
+        [HumanMessage("Weather?"), claude_turn, HumanMessage("Thanks!")]
+    )
+    assert payload["messages"][1] == {"role": "assistant", "content": []}
+
+
+def test_get_request_payload_keeps_foreign_string_content() -> None:
+    llm = _cc_llm()
+    claude_turn = AIMessage("Sunny.", response_metadata={"model_provider": "anthropic"})
+    payload = llm._get_request_payload(
+        [HumanMessage("Weather?"), claude_turn, HumanMessage("Thanks!")]
+    )
+    assert payload["messages"][1] == {"role": "assistant", "content": "Sunny."}
+
+
+def test_get_request_payload_converts_foreign_image_blocks() -> None:
+    """Foreign blocks that already have a Chat Completions mapping still use it."""
+    llm = _cc_llm()
+    claude_turn = AIMessage(
+        content=[
+            {
+                "type": "image",
+                "source": {"type": "url", "url": "https://example.com/a.png"},
+            }
+        ],
+        response_metadata={"model_provider": "anthropic"},
+    )
+    payload = llm._get_request_payload([HumanMessage("Draw"), claude_turn])
+    assert payload["messages"][1]["content"] == [
+        {"type": "image_url", "image_url": {"url": "https://example.com/a.png"}}
+    ]
+
+
+@pytest.mark.parametrize("provider", ["deepseek", "xai", "azure"])
+def test_get_request_payload_keeps_chat_completions_parts_from_other_tags(
+    provider: str,
+) -> None:
+    """OpenAI-compatible providers that tag their own turns keep valid parts."""
+    llm = _cc_llm()
+    content: list[str | dict] = [
+        {"type": "text", "text": "Sunny."},
+        {"type": "refusal", "refusal": "I can't help with that."},
+    ]
+    turn = AIMessage(content=content, response_metadata={"model_provider": provider})
+    payload = llm._get_request_payload(
+        [HumanMessage("Weather?"), turn, HumanMessage("Thanks!")]
+    )
+    assert payload["messages"][1]["content"] == content
+
+
+def test_format_messages_passes_through_unknown_blocks_without_foreign_provider() -> (
+    None
+):
+    """Unknown blocks are still forwarded when no foreign provider is recorded.
+
+    Hand-built messages, OpenAI's own turns and non-AI messages keep the existing
+    pass-through, so this formatter does not need to know every block type
+    OpenAI-compatible servers accept.
+    """
+    llm = _cc_llm()
+    new_block = {"type": "some_future_block", "data": "x"}
+    for message in (
+        AIMessage(content=[new_block]),
+        AIMessage(content=[new_block], response_metadata={"model_provider": "openai"}),
+        HumanMessage(content=[new_block]),
+    ):
+        payload = llm._get_request_payload([message])
+        assert payload["messages"][0]["content"] == [new_block]
+
+
 class GenerateUsername(BaseModel):
     "Get a username based on someone's name and hair color."
 

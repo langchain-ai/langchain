@@ -492,3 +492,38 @@ def test_create_chat_result_avoids_parsed_model_dump_warning() -> None:
     assert result.generations[0].message.additional_kwargs["parsed"] == ModelOutput(
         output="Paris"
     )
+
+
+def test_get_request_payload_keeps_own_turns_unfiltered() -> None:
+    """Turns AzureChatOpenAI produces are tagged `openai`, so none are dropped."""
+    llm = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-base-url",
+        api_key=SecretStr("test"),
+    )
+    raw_response = mock.MagicMock()
+    raw_response.headers = {}
+    raw_response.parse.return_value = {
+        "id": "chatcmpl-1",
+        "object": "chat.completion",
+        "created": 0,
+        "model": "gpt-4o-mini",
+        "choices": [
+            {
+                "index": 0,
+                "finish_reason": "stop",
+                "message": {"role": "assistant", "content": "Sunny."},
+            }
+        ],
+    }
+    client = mock.MagicMock()
+    client.with_raw_response.create.return_value = raw_response
+    with mock.patch.object(llm, "client", client):
+        own_turn = llm.invoke("Weather?")
+    assert own_turn.response_metadata["model_provider"] == "openai"
+
+    new_block = {"type": "some_future_block", "data": "x"}
+    own_turn.content = [{"type": "text", "text": "Sunny."}, new_block]
+    payload = llm._get_request_payload([HumanMessage("Weather?"), own_turn])
+    assert payload["messages"][1]["content"] == own_turn.content

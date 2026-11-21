@@ -386,10 +386,24 @@ def _raise_if_additional_tools(content: Any, reason: str) -> None:
             raise ValueError(msg)
 
 
+def _is_from_other_provider(message: BaseMessage) -> bool:
+    """Return whether an AI message records a provider other than OpenAI.
+
+    Messages with no `model_provider` (hand-built, or from integrations that do
+    not set it) are not treated as foreign.
+    """
+    if not isinstance(message, AIMessage):
+        return False
+    model_provider = message.response_metadata.get("model_provider")
+    return model_provider is not None and model_provider != "openai"
+
+
 def _format_message_content(
     content: Any,
     api: Literal["chat/completions", "responses"] = "chat/completions",
     role: str | None = None,
+    *,
+    from_other_provider: bool = False,
 ) -> Any:
     """Format message content."""
     if _is_ai_role(role):
@@ -469,6 +483,17 @@ def _format_message_content(
                     )
                 else:
                     continue
+            elif (
+                from_other_provider
+                and isinstance(block, dict)
+                and block.get("type") not in ("text", "refusal")
+            ):
+                # A block type not handled above, from a turn another provider
+                # generated (e.g. an Anthropic `server_tool_use`, or a v1
+                # `server_tool_call` / `non_standard` block). Chat Completions
+                # only accepts text and refusal parts in assistant content, so
+                # drop it rather than fail the request.
+                continue
             else:
                 formatted_content.append(block)
     else:
@@ -483,7 +508,14 @@ def _convert_message_to_dict(
 ) -> dict:
     """Convert a LangChain message to dictionary format expected by OpenAI."""
     message_dict: dict[str, Any] = {
-        "content": _format_message_content(message.content, api=api, role=message.type)
+        "content": _format_message_content(
+            message.content,
+            api=api,
+            role=message.type,
+            from_other_provider=(
+                api == "chat/completions" and _is_from_other_provider(message)
+            ),
+        )
     }
     if (name := message.name or message.additional_kwargs.get("name")) is not None:
         message_dict["name"] = name
