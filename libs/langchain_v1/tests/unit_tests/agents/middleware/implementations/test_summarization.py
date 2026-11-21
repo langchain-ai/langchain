@@ -48,6 +48,7 @@ from langchain.agents.middleware.internal_call_transformer import (
 from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.summarization import (
     ContextSize,
+    ModelResolution,
     SummarizationMiddleware,
     TriggerClause,
     _provider_matches,
@@ -2939,10 +2940,35 @@ def test_pinned_model_drives_thresholds_and_summary(
     assert any("summarizer=" in str(w.message) for w in caught) is warns
 
 
-@pytest.mark.parametrize("model_form", ["default", "pinned"])
+def test_callable_model_chooses_context_model() -> None:
+    small = _small()
+    seen: list[ModelResolution[Any]] = []
+
+    def pick(resolution: ModelResolution[Any]) -> BaseChatModel:
+        seen.append(resolution)
+        return small
+
+    middleware = _middleware(model=pick)
+    call_model = _large()
+
+    text = _summary_text(middleware, call_model)
+
+    assert text == "Here is a summary of the conversation to date:\n\nsmall summary"
+    assert seen[0].request is not None
+    assert seen[0].request.model is call_model
+
+
+def test_callable_returning_string_raises() -> None:
+    middleware = _middleware(model=lambda _: "openai:gpt-5.5")
+
+    with pytest.raises(TypeError, match="returned the string"):
+        _summary_text(middleware, _small())
+
+
+@pytest.mark.parametrize("model_form", ["default", "pinned", "callable"])
 def test_summarizer_takes_precedence(model_form: str) -> None:
     small = _small()
-    model: Any = {"default": None, "pinned": small}[model_form]
+    model: Any = {"default": None, "pinned": small, "callable": lambda _: small}[model_form]
     middleware = _middleware(model=model, summarizer=_NamedModel("cheap", max_input=10**6))
 
     text = _summary_text(middleware, small)
