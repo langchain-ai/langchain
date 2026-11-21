@@ -487,9 +487,16 @@ def convert_to_openai_function(
             raise ValueError(msg)
         oai_function["strict"] = strict
         if strict:
-            oai_function["parameters"] = _recursive_set_additional_properties_false(
-                oai_function["parameters"]
-            )
+            if oai_function.get("parameters") is not None:
+                oai_function["parameters"] = _recursive_set_additional_properties_false(
+                    oai_function["parameters"]
+                )
+            else:
+                oai_function["parameters"] = {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": False,
+                }
     return oai_function
 
 
@@ -846,19 +853,29 @@ def _recursive_set_additional_properties_false(
             schema["additionalProperties"] = False
 
         # Recursively check 'properties' and 'items' if they exist
-        if "anyOf" in schema:
+        if "anyOf" in schema and isinstance(schema["anyOf"], list):
             for sub_schema in schema["anyOf"]:
+                _recursive_set_additional_properties_false(sub_schema)
+        if "oneOf" in schema and isinstance(schema["oneOf"], list):
+            for sub_schema in schema["oneOf"]:
                 _recursive_set_additional_properties_false(sub_schema)
         # Pydantic <2.9 wraps a referenced model field in 'allOf' when it has
         # sibling keys (e.g. 'description'), instead of merging them directly.
-        if "allOf" in schema:
+        if "allOf" in schema and isinstance(schema["allOf"], list):
             for sub_schema in schema["allOf"]:
                 _recursive_set_additional_properties_false(sub_schema)
-        if "properties" in schema:
+        if "properties" in schema and isinstance(schema["properties"], dict):
             for sub_schema in schema["properties"].values():
                 _recursive_set_additional_properties_false(sub_schema)
+        if "prefixItems" in schema and isinstance(schema["prefixItems"], list):
+            for sub_schema in schema["prefixItems"]:
+                _recursive_set_additional_properties_false(sub_schema)
         if "items" in schema:
-            _recursive_set_additional_properties_false(schema["items"])
+            if isinstance(schema["items"], list):
+                for sub_schema in schema["items"]:
+                    _recursive_set_additional_properties_false(sub_schema)
+            elif isinstance(schema["items"], dict):
+                _recursive_set_additional_properties_false(schema["items"])
         # Raw JSON schemas may keep nested objects in `$defs` and reference them via
         # `$ref`; walk those definitions too so they're made strict.
         for defs_key in ("$defs", "definitions"):

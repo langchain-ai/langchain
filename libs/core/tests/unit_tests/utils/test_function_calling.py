@@ -1,11 +1,12 @@
 import typing
 from collections.abc import Callable, Iterable, Mapping, MutableMapping, Sequence
-from typing import Annotated as ExtensionsAnnotated
 from typing import (
+    Annotated,
     Any,
     Literal,
     TypeAlias,
 )
+from typing import Annotated as ExtensionsAnnotated
 from typing import TypedDict as TypingTypedDict
 
 import pytest
@@ -1502,3 +1503,114 @@ def test_convert_to_openai_function_without_tools_module_imported(
     result = convert_to_openai_function(my_func)
 
     assert result["name"] == "my_func"
+
+
+def test_convert_to_openai_tool_strict_oneof_and_prefixitems() -> None:
+    """Test convert_to_openai_tool strict=True with oneOf and prefixItems (#41866)."""
+
+    class Cat(BaseModel):
+        pet_type: Literal["cat"]
+        meows: int
+
+    class Dog(BaseModel):
+        pet_type: Literal["dog"]
+        barks: int
+
+    class ToolInput(BaseModel):
+        pet: Annotated[Cat | Dog, Field(discriminator="pet_type")]
+        pair: tuple[Cat, Dog]
+
+    tool = convert_to_openai_tool(ToolInput, strict=True)
+    props = tool["function"]["parameters"]["properties"]
+
+    # Verify oneOf branches have additionalProperties: False and required fields
+    one_of = props["pet"]["oneOf"]
+    assert len(one_of) == 2
+    for branch in one_of:
+        assert branch["additionalProperties"] is False
+        expected_field = (
+            "meows" if branch["properties"]["pet_type"]["const"] == "cat" else "barks"
+        )
+        assert set(branch["required"]) == {"pet_type", expected_field}
+
+    # Verify prefixItems branches have additionalProperties: False and required fields
+    prefix_items = props["pair"]["prefixItems"]
+    assert len(prefix_items) == 2
+    for branch in prefix_items:
+        assert branch["additionalProperties"] is False
+        expected_field = (
+            "meows" if branch["properties"]["pet_type"]["const"] == "cat" else "barks"
+        )
+        assert set(branch["required"]) == {"pet_type", expected_field}
+
+
+def test_convert_to_openai_function_strict_propertyless_schema_dict() -> None:
+    """Test convert_to_openai_function with propertyless schema and strict=True.
+
+    Addresses #41866.
+    """
+    schema = {"title": "Ping", "description": "No args", "type": "object"}
+    actual = convert_to_openai_function(schema, strict=True)
+    assert actual == {
+        "name": "Ping",
+        "description": "No args",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": False,
+        },
+        "strict": True,
+    }
+
+    tool = convert_to_openai_tool(schema, strict=True)
+    assert tool == {
+        "type": "function",
+        "function": {
+            "name": "Ping",
+            "description": "No args",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "additionalProperties": False,
+            },
+            "strict": True,
+        },
+    }
+
+    schema_name_only = {"name": "Ping"}
+    actual_name_only = convert_to_openai_function(schema_name_only, strict=True)
+    assert actual_name_only == {
+        "name": "Ping",
+        "parameters": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": False,
+        },
+        "strict": True,
+    }
+
+
+def test_convert_to_openai_function_strict_list_items() -> None:
+    """Test convert_to_openai_function with list items (tuples) and strict=True.
+
+    Addresses #41866.
+    """
+    schema = {
+        "title": "TupleTool",
+        "type": "object",
+        "properties": {
+            "tuple_arg": {
+                "type": "array",
+                "items": [
+                    {"type": "object", "properties": {"a": {"type": "string"}}},
+                    {"type": "object", "properties": {"b": {"type": "integer"}}},
+                ],
+            }
+        },
+    }
+    actual = convert_to_openai_function(schema, strict=True)
+    items = actual["parameters"]["properties"]["tuple_arg"]["items"]
+    assert items[0]["additionalProperties"] is False
+    assert items[0]["required"] == ["a"]
+    assert items[1]["additionalProperties"] is False
+    assert items[1]["required"] == ["b"]
