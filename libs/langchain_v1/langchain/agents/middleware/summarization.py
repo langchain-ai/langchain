@@ -351,6 +351,30 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
     token counting, provider-reported token checks and trimming, and one *summary
     model*, which writes the summary: `summarizer` if set, otherwise the context
     model.
+
+    !!! warning "Middleware order"
+
+        Middleware listed earlier in `middleware=` wraps middleware listed later, so
+        this middleware only sees model swaps made by middleware listed *before* it.
+        Put model-switching middleware such as
+        [`ModelFallbackMiddleware`][langchain.agents.middleware.model_fallback.ModelFallbackMiddleware],
+        [`ModelRouterMiddleware`][langchain.agents.middleware.model_router.ModelRouterMiddleware]
+        or a custom `/model` command ahead of `SummarizationMiddleware`:
+
+        ```python
+        create_agent(
+            model="openai:gpt-6-sol",
+            middleware=[
+                ModelFallbackMiddleware("openai:gpt-6-luna"),
+                SummarizationMiddleware(trigger=("fraction", 0.8)),
+            ],
+        )
+        ```
+
+        Listed after it, they swap the model only after summarization has already
+        sized the history for the original model. `create_agent` warns when
+        `ModelFallbackMiddleware` or `ModelRouterMiddleware` comes after a
+        `SummarizationMiddleware` that follows each call's model.
     """
 
     def __init__(
@@ -375,8 +399,8 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                 summaries unless `summarizer` is set.
 
                 - `None`: use the model each call goes to (`request.model`),
-                    including models swapped in by earlier `wrap_model_call`
-                    middleware. Recommended.
+                    including models swapped in by middleware listed before this
+                    one (see "Middleware order" above). Recommended.
                 - A chat model, or a model string resolved with `init_chat_model`:
                     pin the context model, whatever model a call goes to.
 

@@ -1,4 +1,5 @@
 import asyncio
+import warnings
 from collections.abc import Iterable
 from copy import deepcopy
 from pathlib import Path
@@ -44,6 +45,7 @@ from langchain.agents.middleware.internal_call_transformer import (
     INTERNAL_CALL_METADATA_KEY,
     internal_call_metadata,
 )
+from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.summarization import (
     ContextSize,
     SummarizationMiddleware,
@@ -3046,3 +3048,33 @@ def test_summary_removes_patched_invalid_tool_call_results() -> None:
         "HumanMessage",
         "AIMessage",
     ]
+
+
+@pytest.mark.parametrize(
+    ("order", "pinned", "warns"),
+    [
+        ("fallback_last", False, True),
+        ("fallback_first", False, False),
+        ("fallback_last", True, False),
+    ],
+)
+def test_create_agent_warns_on_model_swaps_after_summarization(
+    order: str,
+    pinned: bool,  # noqa: FBT001
+    warns: bool,  # noqa: FBT001
+) -> None:
+    """Built-in model switches listed after a model-following summarizer go unseen."""
+    summarization = _middleware(model=_small() if pinned else None)
+    fallback = ModelFallbackMiddleware(_large())
+    middleware = (
+        [summarization, fallback] if order == "fallback_last" else [fallback, summarization]
+    )
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        create_agent(model=_small(), middleware=middleware)
+
+    messages = [str(w.message) for w in caught if "is listed after" in str(w.message)]
+    assert bool(messages) is warns
+    if warns:
+        assert "List `ModelFallbackMiddleware` before `SummarizationMiddleware`" in messages[0]
