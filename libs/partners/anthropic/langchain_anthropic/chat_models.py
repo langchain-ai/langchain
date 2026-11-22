@@ -1480,6 +1480,10 @@ class ChatAnthropic(BaseChatModel):
     `api_key` cannot express this, since the value is read once at construction.
 
     Used for async calls too when `async_auth_token_provider` is not set.
+
+    Exceptions are not caught: if the provider raises, that error propagates
+    from the invocation instead of an Anthropic API error, and no request is
+    sent. Handle retries and refresh failures inside the provider.
     """
 
     async_auth_token_provider: Callable[[], Awaitable[str]] | None = None

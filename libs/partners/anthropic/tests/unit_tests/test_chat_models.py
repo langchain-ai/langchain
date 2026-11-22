@@ -6885,3 +6885,30 @@ def test_no_auth_token_provider_leaves_client_untouched() -> None:
         llm._refresh_auth_token()
 
     assert client.auth_token == "untouched"  # noqa: S105
+
+
+def test_auth_token_provider_error_propagates_without_request() -> None:
+    """A failing provider surfaces its own error and sends no request."""
+
+    class RefreshFailedError(RuntimeError):
+        pass
+
+    def provider() -> str:
+        msg = "token endpoint unreachable"
+        raise RefreshFailedError(msg)
+
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="placeholder",  # type: ignore[arg-type]
+        auth_token_provider=provider,
+    )
+    client = MagicMock()
+
+    with patch.object(
+        ChatAnthropic, "_client", new_callable=PropertyMock
+    ) as mock_client:
+        mock_client.return_value = client
+        with pytest.raises(RefreshFailedError):
+            llm._create({"messages": []})
+
+    client.messages.with_raw_response.create.assert_not_called()
