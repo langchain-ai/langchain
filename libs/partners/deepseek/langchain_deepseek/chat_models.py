@@ -410,6 +410,24 @@ class ChatDeepSeek(BaseChatOpenAI):
         if self._is_azure_endpoint and isinstance(payload.get("tool_choice"), dict):
             payload["tool_choice"] = "required"
 
+        # DeepSeek's thinking models run with thinking enabled by default and
+        # reject a `tool_choice` while thinking is on, so default the request
+        # to thinking off when one is set. Explicit `thinking` or
+        # `reasoning_effort` settings are left as provided.
+        if payload.get("tool_choice") is not None:
+            model_profile = self._resolve_model_profile()
+            if (
+                model_profile
+                and model_profile.get("reasoning_output")
+                and payload.get("reasoning_effort") is None
+            ):
+                extra_body = dict(payload.get("extra_body") or {})
+                if "thinking" not in extra_body:
+                    payload["extra_body"] = {
+                        **extra_body,
+                        "thinking": {"type": "disabled"},
+                    }
+
         return payload
 
     def _create_chat_result(

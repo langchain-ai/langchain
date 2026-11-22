@@ -10,6 +10,7 @@ from unittest.mock import MagicMock
 import pytest
 from langchain_core.load import dumpd
 from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
+from langchain_core.runnables import RunnableBinding
 from langchain_core.utils._gateway import langsmith_gateway
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
@@ -511,6 +512,106 @@ class TestChatDeepSeekAzureToolChoice:
         llm = self._get_azure_model()
         bound_model = llm.bind_tools([SampleTool], strict=True)
         assert bound_model is not None
+
+
+class TestChatDeepSeekThinkingDefault:
+    """Tests for defaulting `thinking` off when `tool_choice` is set.
+
+    DeepSeek's thinking models (the ones whose model profile has
+    `reasoning_output`) run with thinking enabled by default, and the API
+    rejects a `tool_choice` while thinking is on. The default request for
+    such models therefore carries `thinking: {"type": "disabled"}` when
+    `tool_choice` is present. Explicit `thinking` or `reasoning_effort`
+    settings are left as provided, and requests without `tool_choice` are
+    unchanged.
+    """
+
+    def _get_model(self, model_name: str = "deepseek-v4-pro") -> ChatDeepSeek:
+        """Build a model instance with credentials that are never used."""
+        return ChatDeepSeek(model=model_name, api_key=SecretStr("test_key"))
+
+    @pytest.mark.parametrize("model_name", ["deepseek-v4-pro", "deepseek-flash"])
+    def test_tool_choice_payload_defaults_thinking_off(self, model_name: str) -> None:
+        """A forced `tool_choice` on a thinking model disables thinking by default."""
+        llm = self._get_model(model_name)
+        bound = llm.bind_tools([SampleTool], tool_choice="SampleTool")
+        payload = llm._get_request_payload(
+            [("user", "test")],
+            **bound.kwargs,  # type: ignore[attr-defined]
+        )
+        assert payload.get("tool_choice") == {
+            "type": "function",
+            "function": {"name": "SampleTool"},
+        }
+        assert payload["extra_body"]["thinking"] == {"type": "disabled"}
+
+    def test_with_structured_output_defaults_thinking_off(self) -> None:
+        """The default-settings `with_structured_output` request sends thinking off."""
+        llm = self._get_model()
+        structured = llm.with_structured_output(SampleTool)
+        binding = structured.first  # type: ignore[attr-defined]
+        assert isinstance(binding, RunnableBinding)
+        assert isinstance(binding.kwargs.get("tool_choice"), dict)
+        payload = llm._get_request_payload(
+            [("user", "test")],
+            **binding.kwargs,
+        )
+        assert payload["extra_body"]["thinking"] == {"type": "disabled"}
+
+    def test_payload_without_tool_choice_keeps_thinking_default(self) -> None:
+        """Plain requests carry no `thinking` override."""
+        llm = self._get_model()
+        payload = llm._get_request_payload([("user", "test")])
+        assert "thinking" not in (payload.get("extra_body") or {})
+
+    def test_tools_without_tool_choice_keep_thinking_default(self) -> None:
+        """`bind_tools` without `tool_choice` is unchanged."""
+        llm = self._get_model()
+        bound = llm.bind_tools([SampleTool])
+        payload = llm._get_request_payload(
+            [("user", "test")],
+            **bound.kwargs,  # type: ignore[attr-defined]
+        )
+        assert "thinking" not in (payload.get("extra_body") or {})
+
+    def test_explicit_thinking_wins_over_default(self) -> None:
+        """An explicit `thinking` setting in `extra_body` is preserved."""
+        llm = ChatDeepSeek(
+            model="deepseek-v4-pro",
+            api_key=SecretStr("test_key"),
+            extra_body={"thinking": {"type": "enabled"}},
+        )
+        bound = llm.bind_tools([SampleTool], tool_choice="SampleTool")
+        payload = llm._get_request_payload(
+            [("user", "test")],
+            **bound.kwargs,  # type: ignore[attr-defined]
+        )
+        assert payload["extra_body"]["thinking"] == {"type": "enabled"}
+
+    def test_explicit_reasoning_effort_wins_over_default(self) -> None:
+        """An explicit `reasoning_effort` is not combined with a `thinking` default."""
+        llm = ChatDeepSeek(
+            model="deepseek-v4-pro",
+            api_key=SecretStr("test_key"),
+            reasoning_effort="none",
+        )
+        bound = llm.bind_tools([SampleTool], tool_choice="SampleTool")
+        payload = llm._get_request_payload(
+            [("user", "test")],
+            **bound.kwargs,  # type: ignore[attr-defined]
+        )
+        assert payload.get("reasoning_effort") == "none"
+        assert "thinking" not in (payload.get("extra_body") or {})
+
+    def test_unprofiled_model_payload_is_unchanged(self) -> None:
+        """Models without a profile (e.g. `deepseek-chat`) are unaffected."""
+        llm = self._get_model("deepseek-chat")
+        bound = llm.bind_tools([SampleTool], tool_choice="SampleTool")
+        payload = llm._get_request_payload(
+            [("user", "test")],
+            **bound.kwargs,  # type: ignore[attr-defined]
+        )
+        assert "extra_body" not in payload
 
 
 PROMPT_TOKENS = 100
