@@ -307,3 +307,51 @@ def test_an_unknown_embedded_resource_type_names_itself() -> None:
 
     with pytest.raises(ValueError, match="Unknown embedded resource type: _VideoResource"):
         _convert_content_block(embedded)
+
+
+@pytest.mark.asyncio
+async def test_tool_arg_named_config_reaches_server() -> None:
+    """An MCP tool argument named ``config`` must not be swallowed by the framework."""
+    server: FastMCP[None] = FastMCP("demo")
+    received: dict[str, Any] = {}
+
+    @server.tool
+    def update_settings(config: str) -> str:
+        """Apply a configuration."""
+        received["config"] = config
+        return f"applied {config!r}"
+
+    tool, _ = await _one_tool(server)
+    await tool.ainvoke(
+        {
+            "name": "update_settings",
+            "args": {"config": "dark-mode"},
+            "id": "call-1",
+            "type": "tool_call",
+        }
+    )
+    assert received["config"] == "dark-mode"
+
+
+@pytest.mark.asyncio
+async def test_tool_arg_named_run_manager_reaches_server() -> None:
+    """An MCP tool argument named ``run_manager`` must not be swallowed."""
+    server: FastMCP[None] = FastMCP("demo")
+    received: dict[str, Any] = {}
+
+    @server.tool
+    def set_run_manager(run_manager: str) -> str:
+        """Set the run manager."""
+        received["run_manager"] = run_manager
+        return f"set {run_manager!r}"
+
+    tool, _ = await _one_tool(server)
+    await tool.ainvoke(
+        {
+            "name": "set_run_manager",
+            "args": {"run_manager": "alice"},
+            "id": "call-2",
+            "type": "tool_call",
+        }
+    )
+    assert received["run_manager"] == "alice"

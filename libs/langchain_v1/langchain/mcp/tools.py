@@ -231,6 +231,28 @@ def _normalize_mcp_schema(schema: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
+class _MCPTool(StructuredTool):
+    """A ``StructuredTool`` that keeps MCP arguments isolated from framework params.
+
+    ``BaseTool.arun`` unpacks tool input into keyword arguments and then
+    injects framework parameters (``config``, ``run_manager``) into the same
+    dict before calling ``_arun``.  If an MCP tool declares a parameter with
+    one of those names the user's value is silently overwritten.
+
+    This subclass overrides ``_to_args_and_kwargs`` to pack the entire tool
+    input into a single positional argument, so the tool's own keys never
+    collide with framework kwargs.
+    """
+
+    def _to_args_and_kwargs(
+        self, tool_input: str | dict[str, Any], tool_call_id: str | None
+    ) -> tuple[tuple[Any, ...], dict[str, Any]]:
+        parsed = self._parse_input(tool_input, tool_call_id)
+        if isinstance(parsed, str):
+            parsed = {"input": parsed}
+        return (parsed,), {}
+
+
 async def as_langchain_tool(
     tool: Tool,
     client: Client[Any] | ClientGroup,
@@ -281,7 +303,7 @@ async def as_langchain_tool(
     drives_interrupts = _drives_interrupts(requesting_client)
 
     async def call_tool(
-        **arguments: Any,
+        arguments: dict[str, Any], **_kwargs: Any,
     ) -> tuple[list[ToolMessageContentBlock], MCPToolArtifact | None]:
         """Call the captured MCP tool and convert its result."""
         result: _ToolCallResult
@@ -289,11 +311,10 @@ async def as_langchain_tool(
             if drives_interrupts:
                 result = await _call_tool_with_interrupts(client, tool.name, arguments)
             else:
-                # Preserve MCP error results for conversion into failed tool messages.
                 result = await client.call_tool(tool.name, arguments, raise_on_error=False)
         return _convert_call_tool_result(result)
 
-    return StructuredTool(
+    return _MCPTool(
         name=tool.name,
         description=tool.description or "",
         args_schema=_normalize_mcp_schema(tool.input_schema),
