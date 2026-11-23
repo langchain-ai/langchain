@@ -1045,14 +1045,15 @@ class ChildTool(BaseTool):
         Raises:
             ToolException: If an error occurs during tool execution.
         """
-        #  FIX: inherit callbacks/tags/metadata from Runnable config
+        # Fall back to the parent runnable's config so that tools called directly
+        # inside a runnable (e.g. a `RunnableLambda`) report to its callbacks.
         config = ensure_config(config)
-        callbacks = config.get("callbacks") if callbacks is None else callbacks
+        if callbacks is None:
+            callbacks = config.get("callbacks")
         if tags is None:
             tags = config.get("tags")
         if metadata is None:
             metadata = config.get("metadata")
-
         callback_manager = CallbackManager.configure(
             callbacks,
             self.callbacks,
@@ -1181,7 +1182,8 @@ class ChildTool(BaseTool):
         Raises:
             ToolException: If an error occurs during tool execution.
         """
-        # FIX: inherit callbacks/tags/metadata from Runnable config
+        # Fall back to the parent runnable's config so that tools called directly
+        # inside a runnable (e.g. a `RunnableLambda`) report to its callbacks.
         config = ensure_config(config)
         if callbacks is None:
             callbacks = config.get("callbacks")
@@ -1189,7 +1191,6 @@ class ChildTool(BaseTool):
             tags = config.get("tags")
         if metadata is None:
             metadata = config.get("metadata")
-
         callback_manager = AsyncCallbackManager.configure(
             callbacks,
             self.callbacks,

@@ -4931,3 +4931,35 @@ def test_structured_tool_subclass_can_override_json_serializers() -> None:
     dumped = my_tool.model_dump(mode="json")
     assert dumped["func"] == "custom-func"
     assert dumped["args_schema"] == {"custom": "schema"}
+
+
+def test_tool_run_inherits_callbacks_from_parent_runnable() -> None:
+    """Calling `tool.run` inside a runnable should report to the parent's handlers."""
+    echo = Tool.from_function(func=lambda x: x, name="echo", description="Echo.")
+    handler = FakeCallbackHandler()
+
+    def call_tool(x: str) -> Any:
+        return echo.run(x)
+
+    chain = RunnableLambda(call_tool)
+    assert chain.invoke("hello", config={"callbacks": [handler]}) == "hello"
+
+    assert handler.chain_starts == 1
+    assert handler.tool_starts == 1
+    assert handler.tool_ends == 1
+
+
+async def test_tool_arun_inherits_callbacks_from_parent_runnable() -> None:
+    """Calling `tool.arun` inside a runnable should report to the parent's handlers."""
+    echo = Tool.from_function(func=lambda x: x, name="echo", description="Echo.")
+    handler = FakeCallbackHandler()
+
+    async def call_tool(x: str) -> Any:
+        return await echo.arun(x)
+
+    chain = RunnableLambda(call_tool)
+    assert await chain.ainvoke("hello", config={"callbacks": [handler]}) == "hello"
+
+    assert handler.chain_starts == 1
+    assert handler.tool_starts == 1
+    assert handler.tool_ends == 1
