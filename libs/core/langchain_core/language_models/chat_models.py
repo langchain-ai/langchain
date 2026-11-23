@@ -96,7 +96,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from langchain_core.utils.utils import LC_ID_PREFIX, from_env
+from langchain_core.utils.utils import LC_AUTO_PREFIX, LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
     import uuid
@@ -107,6 +107,17 @@ if TYPE_CHECKING:
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.runnables.schema import StreamEvent
     from langchain_core.tools import BaseTool
+
+
+def _provider_message_id(message_id: str | None) -> str | None:
+    """Return `message_id` if the provider assigned it, else `None`.
+
+    The OpenAI Responses API sends its id on the first chunk only; streams reuse
+    it so every chunk matches the merged message's id.
+    """
+    if message_id and not message_id.startswith((LC_ID_PREFIX, LC_AUTO_PREFIX)):
+        return message_id
+    return None
 
 
 def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
@@ -831,12 +842,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             try:
                 input_messages = _normalize_messages(messages)
                 run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
+                provider_id: str | None = None
                 yielded = False
                 index = -1
                 index_type = ""
                 for chunk in self._stream(input_messages, stop=stop, **kwargs):
+                    provider_id = provider_id or _provider_message_id(chunk.message.id)
                     if chunk.message.id is None:
-                        chunk.message.id = run_id
+                        chunk.message.id = provider_id or run_id
                     chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                     if self.output_version == "v1":
                         # Overwrite .content with .content_blocks
@@ -867,7 +880,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         "" if isinstance(chunk.message.content, str) else []
                     )
                     msg_chunk = AIMessageChunk(
-                        content=empty_content, chunk_position="last", id=run_id
+                        content=empty_content,
+                        chunk_position="last",
+                        id=provider_id or run_id,
                     )
                     run_manager.on_llm_new_token(
                         "", chunk=ChatGenerationChunk(message=msg_chunk)
@@ -964,6 +979,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         try:
             input_messages = _normalize_messages(messages)
             run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
+            provider_id: str | None = None
             yielded = False
             index = -1
             index_type = ""
@@ -972,8 +988,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 stop=stop,
                 **kwargs,
             ):
+                provider_id = provider_id or _provider_message_id(chunk.message.id)
                 if chunk.message.id is None:
-                    chunk.message.id = run_id
+                    chunk.message.id = provider_id or run_id
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if self.output_version == "v1":
                     # Overwrite .content with .content_blocks
@@ -1003,7 +1020,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     "" if isinstance(chunk.message.content, str) else []
                 )
                 msg_chunk = AIMessageChunk(
-                    content=empty_content, chunk_position="last", id=run_id
+                    content=empty_content,
+                    chunk_position="last",
+                    id=provider_id or run_id,
                 )
                 await run_manager.on_llm_new_token(
                     "", chunk=ChatGenerationChunk(message=msg_chunk)
@@ -2020,6 +2039,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             run_id: str | None = (
                 f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
             )
+            provider_id: str | None = None
             yielded = False
             index = -1
             index_type = ""
@@ -2038,9 +2058,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                             index += 1
                         if "index" not in block:
                             block["index"] = index
+                provider_id = provider_id or _provider_message_id(chunk.message.id)
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = run_id
+                        chunk.message.id = provider_id or run_id
                     run_manager.on_llm_new_token(chunk.message.content, chunk=chunk)
                 chunks.append(chunk)
                 yielded = True
@@ -2056,7 +2077,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 )
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
-                        content=empty_content, chunk_position="last", id=run_id
+                        content=empty_content,
+                        chunk_position="last",
+                        id=provider_id or run_id,
                     )
                 )
                 if run_manager:
@@ -2175,6 +2198,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             run_id: str | None = (
                 f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
             )
+            provider_id: str | None = None
             yielded = False
             index = -1
             index_type = ""
@@ -2193,9 +2217,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                             index += 1
                         if "index" not in block:
                             block["index"] = index
+                provider_id = provider_id or _provider_message_id(chunk.message.id)
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = run_id
+                        chunk.message.id = provider_id or run_id
                     await run_manager.on_llm_new_token(
                         chunk.message.content, chunk=chunk
                     )
@@ -2213,7 +2238,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 )
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
-                        content=empty_content, chunk_position="last", id=run_id
+                        content=empty_content,
+                        chunk_position="last",
+                        id=provider_id or run_id,
                     )
                 )
                 if run_manager:
