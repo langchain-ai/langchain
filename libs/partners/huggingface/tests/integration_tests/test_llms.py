@@ -19,7 +19,7 @@ def test_huggingface_pipeline_streaming() -> None:
 
     for chunk in generator:
         assert isinstance(chunk, str)
-        stream_results_string = chunk
+        stream_results_string += chunk
     assert len(stream_results_string.strip()) > 0
 
 
