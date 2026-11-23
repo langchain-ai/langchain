@@ -68,6 +68,16 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
             model, my_adder_tool=my_adder_tool
         )
 
+    @pytest.mark.xfail(
+        reason=(
+            "Novita's gpt-oss-120b intermittently returns malformed arguments for "
+            "no-argument tools (e.g. '{\"\": {}}' instead of '{}')"
+        ),
+        strict=False,
+    )
+    def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
+        super().test_tool_calling_with_no_arguments(model)
+
     @property
     def has_tool_choice(self) -> bool:
         return False
