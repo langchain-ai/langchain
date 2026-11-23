@@ -6484,3 +6484,37 @@ async def test_streaming_a_reasoning_block_then_text_adds_the_text_once(
     content = [{"type": "thinking", "thinking": "hmm"}, "Hello world"]
     assert received == [content]
     assert model_output.content == content
+
+
+async def test_runnable_parallel_ainvoke_cancels_remaining_on_error() -> None:
+    """RunnableParallel.ainvoke cancels remaining concurrent steps on failure."""
+    slow_cancelled = False
+    slow_completed = False
+
+    async def failing_step(_: Any) -> Any:
+        await asyncio.sleep(0.01)
+        msg = "failing step error"
+        raise ValueError(msg)
+
+    async def slow_step(_: Any) -> Any:
+        nonlocal slow_cancelled, slow_completed
+        try:
+            await asyncio.sleep(0.5)
+            slow_completed = True
+        except asyncio.CancelledError:
+            slow_cancelled = True
+            raise
+        else:
+            return "done"
+
+    chain = RunnableParallel(
+        bad=RunnableLambda(failing_step), slow=RunnableLambda(slow_step)
+    )
+
+    with pytest.raises(ValueError, match="failing step error"):
+        await chain.ainvoke("test")
+
+    await asyncio.sleep(0.1)
+    assert slow_cancelled is True
+    assert slow_completed is False
+

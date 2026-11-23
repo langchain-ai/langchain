@@ -4254,8 +4254,8 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         try:
             # copy to avoid issues from the caller mutating the steps during invoke()
             steps = dict(self.steps__)
-            results = await asyncio.gather(
-                *(
+            tasks = [
+                asyncio.create_task(
                     _ainvoke_step(
                         step,
                         input,
@@ -4263,9 +4263,17 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
                         config,
                         key,
                     )
-                    for key, step in steps.items()
                 )
-            )
+                for key, step in steps.items()
+            ]
+            try:
+                results = await asyncio.gather(*tasks)
+            except BaseException:
+                for task in tasks:
+                    if not task.done():
+                        task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+                raise
             output = dict(zip(steps, results, strict=False))
         # finish the root run
         except BaseException as e:
