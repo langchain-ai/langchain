@@ -10,7 +10,7 @@ from langchain_core.outputs import LLMResult
 from langchain_anthropic import AnthropicLLM
 from tests.unit_tests._utils import FakeCallbackHandler
 
-MODEL = "claude-sonnet-4-5-20250929"
+MODEL = "claude-sonnet-5-5"
 
 # The deprecated `AnthropicLLM` class has no LangSmith gateway support, so it
 # cannot authenticate when requests are routed through the gateway. Skip the

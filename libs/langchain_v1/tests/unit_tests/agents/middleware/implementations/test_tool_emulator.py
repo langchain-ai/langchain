@@ -492,9 +492,7 @@ class TestLLMToolEmulatorModelConfiguration:
             emulator = LLMToolEmulator(tools=["get_weather"])
 
         assert emulator.model is fake_model
-        init_chat_model_mock.assert_called_once_with(
-            "anthropic:claude-sonnet-4-5-20250929", temperature=1
-        )
+        init_chat_model_mock.assert_called_once_with("anthropic:claude-sonnet-5-5", temperature=1)
 
 
 class TestLLMToolEmulatorAsync:
@@ -832,3 +830,29 @@ def test_emulation_call_stays_off_the_messages_stream() -> None:
 
     assert [part.text for part in parts if isinstance(part, ToolMessage)] == ["EMULATED-WEATHER"]
     assert "".join(part.text for part in parts if isinstance(part, AIMessage)) == "Done."
+
+
+def test_emulated_tool_message_keeps_only_text_blocks() -> None:
+    """Reasoning blocks from the emulator model must not leak into the tool result."""
+    agent_model = FakeToolCallingModel(
+        tool_calls=[[{"name": "get_weather", "args": {"location": "NYC"}, "id": "tc1"}], []]
+    )
+    emulator_model = GenericFakeChatModel(
+        messages=iter(
+            [
+                AIMessage(
+                    content=[
+                        {"type": "thinking", "thinking": "", "signature": "sig"},
+                        {"type": "text", "text": "Sunny, 72F"},
+                    ]
+                )
+            ]
+        )
+    )
+    emulator = LLMToolEmulator(tools=["get_weather"], model=emulator_model)
+    agent = create_agent(model=agent_model, tools=[get_weather], middleware=[emulator])
+
+    result = agent.invoke({"messages": [HumanMessage("Weather in NYC?")]})
+
+    tool_messages = [msg for msg in result["messages"] if isinstance(msg, ToolMessage)]
+    assert [msg.content for msg in tool_messages] == ["Sunny, 72F"]

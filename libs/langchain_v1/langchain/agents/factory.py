@@ -1037,7 +1037,7 @@ def create_agent(
 
 
         graph = create_agent(
-            model="anthropic:claude-sonnet-4-5-20250929",
+            model="anthropic:claude-sonnet-5-5",
             tools=[check_weather],
             system_prompt="You are a helpful assistant",
         )

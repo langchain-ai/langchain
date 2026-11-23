@@ -153,8 +153,8 @@ def init_chat_model(
             as a prefix on `model`.
 
             Equivalent to the prefix form — e.g.,
-            `model='claude-sonnet-4-5', model_provider='anthropic'` behaves
-            the same as `model='anthropic:claude-sonnet-4-5'`.
+            `model='claude-sonnet-5-5', model_provider='anthropic'` behaves
+            the same as `model='anthropic:claude-sonnet-5-5'`.
 
             Prefer the prefix form on `model` for most usage. Reach for this
             kwarg when:

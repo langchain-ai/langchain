@@ -28,7 +28,7 @@ class _AnthropicCommon(BaseLanguageModel):
 
     async_client: Any = None
 
-    model: str = Field(default="claude-sonnet-4-5", alias="model_name")
+    model: str = Field(default="claude-sonnet-5-5", alias="model_name")
     """Model name to use."""
 
     max_tokens: int = Field(default=1024, alias="max_tokens_to_sample")
@@ -145,7 +145,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         ```python
         from langchain_anthropic import AnthropicLLM
 
-        model = AnthropicLLM(model="claude-sonnet-4-5")
+        model = AnthropicLLM(model="claude-sonnet-5-5")
         ```
     """
 
@@ -286,7 +286,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             stop_sequences=stop if stop else None,
             **params,
         )
-        return response.content[0].text
+        return "".join(block.text for block in response.content if block.type == "text")
 
     def convert_prompt(self, prompt: PromptValue) -> str:
         """Convert a `PromptValue` to a string."""
@@ -323,7 +323,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
             stop_sequences=stop if stop else None,
             **params,
         )
-        return response.content[0].text
+        return "".join(block.text for block in response.content if block.type == "text")
 
     def _stream(
         self,

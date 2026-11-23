@@ -29,9 +29,7 @@ if TYPE_CHECKING:
 def _get_model(provider: str) -> Any:
     """Get chat model for the specified provider."""
     if provider == "anthropic":
-        return pytest.importorskip("langchain_anthropic").ChatAnthropic(
-            model="claude-sonnet-4-5-20250929"
-        )
+        return pytest.importorskip("langchain_anthropic").ChatAnthropic(model="claude-sonnet-5-5")
     if provider == "openai":
         # Matches the model reported in the originating issue (langchain-ai/langchain#33787).
         return pytest.importorskip("langchain_openai").ChatOpenAI(model="gpt-5-nano")

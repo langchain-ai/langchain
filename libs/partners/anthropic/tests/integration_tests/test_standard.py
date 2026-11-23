@@ -161,7 +161,7 @@ def _invoke(llm: ChatAnthropic, input_: list, stream: bool) -> AIMessage:  # noq
 class NativeStructuredOutputTests(TestAnthropicStandard):
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "claude-sonnet-4-5"}
+        return {"model": "claude-sonnet-5-5"}
 
     @property
     def structured_output_kwargs(self) -> dict:
