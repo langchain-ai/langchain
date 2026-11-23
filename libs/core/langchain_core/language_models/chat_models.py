@@ -1368,6 +1368,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             `version="v3"` is deprecated. Use `stream()` / `astream()` or
             `astream_events(version="v2")` instead. The v2 API remains supported.
 
+            This deprecation is documentation-only. Calls still emit
+            `LangChainBetaWarning`, not `LangChainDeprecationWarning`.
+
         !!! note "v3 always produces v1-shaped content"
 
             `ChatModelStream.output.content` is always a list of v1
