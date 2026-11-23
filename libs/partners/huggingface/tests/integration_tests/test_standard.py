@@ -20,7 +20,7 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
         llm = HuggingFaceEndpoint(  # type: ignore[call-arg]
             repo_id="openai/gpt-oss-120b",
             task="conversational",
-            provider="together",
+            provider="novita",
             max_new_tokens=4096,
             temperature=0,
         )
