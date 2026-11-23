@@ -1363,18 +1363,17 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         `ChatModelStream` exposing typed projections (`.text`,
         `.reasoning`, `.tool_calls`, `.output`).
 
-        !!! warning "Beta"
+        !!! warning "Deprecated v3 streaming API"
 
-            `version="v3"` is in beta. The protocol shape, return type,
-            and surface area may change in future releases. Calling it
-            emits a `LangChainBetaWarning` at runtime.
+            `version="v3"` is deprecated. Use `stream()` / `astream()` or
+            `astream_events(version="v2")` instead. The v2 API remains supported.
 
         !!! note "v3 always produces v1-shaped content"
 
             `ChatModelStream.output.content` is always a list of v1
             content blocks (text / reasoning / tool_call / image / …),
             regardless of the model's `output_version` attribute. The
-            setting only affects the legacy `stream()` / `astream()` /
+            setting only affects the `stream()` / `astream()` /
             `invoke()` paths. If you're mixing
             `stream_events(version="v3")` with those paths in the same
             pipeline and need a consistent output shape across them,
