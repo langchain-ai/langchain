@@ -1,5 +1,6 @@
+from collections.abc import AsyncIterator
 from typing import Any
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
@@ -206,7 +207,10 @@ def test_bind_tools_errors(
         assert expected_message in str(excinfo.value)
 
 
-def test_bind_tools(chat_hugging_face: Any) -> None:
+@pytest.mark.parametrize(
+    "tool_choice", ["auto", "none", "required", "any", "test_tool"]
+)
+def test_bind_tools(chat_hugging_face: Any, tool_choice: str) -> None:
     tools = [MagicMock(spec=BaseTool)]
     with (
         patch(
@@ -217,11 +221,66 @@ def test_bind_tools(chat_hugging_face: Any) -> None:
             "langchain_core.language_models.chat_models.BaseChatModel.bind"
         ) as mock_super_bind,
     ):
-        chat_hugging_face.bind_tools(tools, tool_choice="auto")
+        chat_hugging_face.bind_tools(tools, tool_choice=tool_choice)
         mock_super_bind.assert_called_once()
         _, kwargs = mock_super_bind.call_args
         assert kwargs["tools"] == tools
-        assert kwargs["tool_choice"] == "auto"
+        expected: Any = tool_choice
+        if tool_choice == "any":
+            expected = "required"
+        elif tool_choice == "test_tool":
+            expected = {"type": "function", "function": {"name": "test_tool"}}
+        assert kwargs["tool_choice"] == expected
+
+
+@pytest.mark.parametrize("mode", ["sync", "async"])
+@pytest.mark.parametrize("usage_location", ["none", "final", "content", "cumulative"])
+async def test_stream_usage_reported_once(
+    chat_hugging_face: Any, mode: str, usage_location: str
+) -> None:
+    usage = {"prompt_tokens": 82, "completion_tokens": 3, "total_tokens": 85}
+    responses: list[dict[str, Any]] = [
+        {"choices": [{"delta": {"content": text}, "finish_reason": None}]}
+        for text in ["Hel", "lo"]
+    ]
+    if usage_location == "content":
+        responses[-1]["usage"] = usage
+    elif usage_location in ("final", "cumulative"):
+        if usage_location == "cumulative":
+            responses[0]["usage"] = {
+                "prompt_tokens": 82,
+                "completion_tokens": 1,
+                "total_tokens": 83,
+            }
+            responses[-1]["usage"] = usage
+        responses.append({"choices": [], "usage": usage})
+
+    async def async_responses() -> AsyncIterator[dict[str, Any]]:
+        for response in responses:
+            yield response
+
+    chat_hugging_face.llm.client = Mock()
+    chat_hugging_face.llm.client.chat_completion.return_value = iter(responses)
+    chat_hugging_face.llm.async_client = Mock()
+    chat_hugging_face.llm.async_client.chat_completion = AsyncMock(
+        return_value=async_responses()
+    )
+    messages = [HumanMessage("Hello")]
+    if mode == "sync":
+        chunks = list(chat_hugging_face._stream(messages, stream_usage=True))
+    else:
+        chunks = [
+            chunk
+            async for chunk in chat_hugging_face._astream(messages, stream_usage=True)
+        ]
+    assert "".join(chunk.text for chunk in chunks) == "Hello"
+    reported_usage = [
+        chunk.message.usage_metadata for chunk in chunks if chunk.message.usage_metadata
+    ]
+    expected = {"input_tokens": 82, "output_tokens": 3, "total_tokens": 85}
+    assert reported_usage == ([] if usage_location == "none" else [expected])
+    if reported_usage:
+        assert chunks[-1].message.usage_metadata == expected
 
 
 def test_property_inheritance_integration(chat_hugging_face: Any) -> None:
