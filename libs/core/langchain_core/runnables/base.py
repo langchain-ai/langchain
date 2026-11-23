@@ -1622,9 +1622,10 @@ class Runnable(ABC, Generic[Input, Output]):
                 protocol and is only supported on `Runnable` subclasses that
                 implement it (currently `BaseChatModel` and
                 `langgraph.CompiledGraph`); on a generic `Runnable` it raises
-                `NotImplementedError`. The `'v3'` API is in beta and may
-                change. See the subclass override (e.g.
-                `BaseChatModel.astream_events`) for the v3 return shape.
+                `NotImplementedError`. The `'v3'` API is deprecated; use
+                `astream()` or `astream_events(version="v2")` instead.
+                See the subclass override (e.g. `BaseChatModel.astream_events`)
+                for the v3 return shape.
 
                 `'v1'` is retained for backwards compatibility and will be
                 deprecated in `0.4.0`. Custom events are only surfaced in
@@ -1780,6 +1781,11 @@ class Runnable(ABC, Generic[Input, Output]):
         that implement the v3 streaming protocol (`BaseChatModel`, `CompiledGraph`)
         override this method. All other versions and base-class calls raise
         `NotImplementedError`.
+
+        !!! warning "Deprecated v3 streaming API"
+
+            `version="v3"` is deprecated. Use `stream()` or
+            `astream_events(version="v2")` instead.
 
         Args:
             input: The input to the `Runnable`.
