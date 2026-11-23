@@ -1260,6 +1260,42 @@ async def test_ainvoke_with_streaming_callback_reuses_provider_id(
     assert recorder.chunk_ids == [result.id] * len(recorder.chunk_ids)
 
 
+@_OUTPUT_VERSIONS
+@pytest.mark.parametrize("method", ["stream", "astream", "invoke", "ainvoke"])
+async def test_late_provider_id(method: str, output_version: str | None) -> None:
+    chunks = [
+        AIMessageChunk(content="Hello"),
+        AIMessageChunk(content="", id="resp_1"),
+        AIMessageChunk(content=" world"),
+    ]
+    llm = _AnotherFakeChatModel(
+        responses=iter([]), chunks=iter(chunks), output_version=output_version
+    )
+    recorder = _ChunkIdRecorder()
+    run_id = uuid.uuid4()
+    config: RunnableConfig = {"run_id": run_id, "callbacks": [recorder]}
+    result: BaseMessage
+    expected_ids = [f"lc_run--{run_id}", "resp_1", "resp_1", "resp_1"]
+    if method in ("stream", "astream"):
+        streamed = (
+            list(llm.stream("hi", config=config))
+            if method == "stream"
+            else [chunk async for chunk in llm.astream("hi", config=config)]
+        )
+        assert streamed[-1].chunk_position == "last"
+        assert [chunk.id for chunk in streamed] == expected_ids
+        final = streamed[0]
+        for chunk in streamed[1:]:
+            final += chunk
+        result = final
+    elif method == "invoke":
+        result = llm.invoke("hi", config=config)
+    else:
+        result = await llm.ainvoke("hi", config=config)
+    assert result.id == "resp_1"
+    assert recorder.chunk_ids == expected_ids
+
+
 def test_output_version_stream(monkeypatch: Any) -> None:
     messages = [AIMessage("foo bar")]
 
