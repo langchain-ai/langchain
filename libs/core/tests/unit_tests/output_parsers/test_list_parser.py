@@ -160,6 +160,26 @@ def test_markdown_list() -> None:
         assert list(parser.transform(iter([text]))) == expectedlist
 
 
+def test_markdown_list_empty_item() -> None:
+    """Empty bullet lines must not swallow the next item's bullet marker."""
+    parser = MarkdownListOutputParser()
+
+    # An empty bullet followed by items: the "\s" after the marker used to
+    # match the newline, capturing "- apple" as the first item.
+    assert parser.parse("-\n- apple\n- banana") == ["apple", "banana"]
+    assert parser.parse("*\n* apple\n* banana") == ["apple", "banana"]
+
+    # Extra spaces after the marker used to leak into the captured item.
+    assert parser.parse("-  foo\n-  bar") == ["foo", "bar"]
+
+    # Normal and indented lists are unaffected.
+    assert parser.parse("Items:\n- apple\n     - banana\n- cherry") == [
+        "apple",
+        "banana",
+        "cherry",
+    ]
+
+
 T = TypeVar("T")
 
 
