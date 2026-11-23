@@ -1,16 +1,36 @@
 from __future__ import annotations
 
-import pytest
+import os
+from typing import (
+    TYPE_CHECKING,
+    Any,
+)
+from unittest.mock import MagicMock
 
-# Skip this test since langgraph.prebuilt.responses is not available
-pytest.skip("langgraph.prebuilt.responses not available", allow_module_level=True)
+import httpx
+import pytest
+from langchain_core.messages import HumanMessage
+from langchain_core.tools import tool
+from pydantic import BaseModel, create_model
+
+from langchain.agents import create_agent
+from langchain.agents.structured_output import (
+    ToolStrategy,
+)
+from tests.unit_tests.agents.utils import BaseSchema, load_spec
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 
 try:
     from langchain_openai import ChatOpenAI
 except ImportError:
     skip_openai_integration_tests = True
 else:
-    skip_openai_integration_tests = False
+    skip_openai_integration_tests = "OPENAI_API_KEY" not in os.environ
+
+OPENAI_TEST_MODEL = "gpt-5.5"
 
 AGENT_PROMPT = "You are an HR assistant."
 
@@ -30,8 +50,8 @@ class AssertionByInvocation(BaseSchema):
 
 class TestCase(BaseSchema):
     name: str
-    response_format: Union[Dict[str, Any], List[Dict[str, Any]]]
-    assertions_by_invocation: List[AssertionByInvocation]
+    response_format: dict[str, Any] | list[dict[str, Any]]
+    assertions_by_invocation: list[AssertionByInvocation]
 
 
 class Employee(BaseModel):
@@ -49,12 +69,12 @@ EMPLOYEES: list[Employee] = [
 TEST_CASES = load_spec("responses", as_model=TestCase)
 
 
-def _make_tool(fn, *, name: str, description: str):
+def _make_tool(fn: Callable[..., str | None], *, name: str, description: str) -> dict[str, Any]:
     mock = MagicMock(side_effect=lambda *, name: fn(name=name))
     input_model = create_model(f"{name}_input", name=(str, ...))
 
     @tool(name, description=description, args_schema=input_model)
-    def _wrapped(name: str):
+    def _wrapped(name: str) -> Any:
         return mock(name=name)
 
     return {"tool": _wrapped, "mock": mock}
@@ -98,7 +118,7 @@ def test_responses_integration_matrix(case: TestCase) -> None:
     # Unwrap nested schema objects
     response_format_spec = [item.get("schema", item) for item in response_format_spec]
     if len(response_format_spec) == 1:
-        tool_output = ToolStrategy(response_format_spec[0])
+        tool_output = ToolStrategy[Any](response_format_spec[0])
     else:
         tool_output = ToolStrategy({"oneOf": response_format_spec})
 
@@ -106,7 +126,7 @@ def test_responses_integration_matrix(case: TestCase) -> None:
 
     for assertion in case.assertions_by_invocation:
 
-        def on_request(request: httpx.Request) -> None:
+        def on_request(_request: httpx.Request) -> None:
             nonlocal llm_request_count
             llm_request_count += 1
 
@@ -115,7 +135,7 @@ def test_responses_integration_matrix(case: TestCase) -> None:
         )
 
         model = ChatOpenAI(
-            model="gpt-4o",
+            model=OPENAI_TEST_MODEL,
             temperature=0,
             http_client=http_client,
         )
@@ -123,7 +143,7 @@ def test_responses_integration_matrix(case: TestCase) -> None:
         agent = create_agent(
             model,
             tools=[role_tool["tool"], dept_tool["tool"]],
-            prompt=AGENT_PROMPT,
+            system_prompt=AGENT_PROMPT,
             response_format=tool_output,
         )
 

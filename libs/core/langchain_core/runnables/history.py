@@ -1,4 +1,4 @@
-"""Runnable that manages chat message history for another Runnable."""
+"""`Runnable` that manages chat message history for another `Runnable`."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from typing import (
 from pydantic import BaseModel
 from typing_extensions import override
 
+from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -23,6 +24,7 @@ from langchain_core.runnables.utils import (
     Output,
     get_unique_config_specs,
 )
+from langchain_core.utils._signature import _signature_parameters
 from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
@@ -35,7 +37,7 @@ MessagesOrDictWithMessages = Sequence["BaseMessage"] | dict[str, Any]
 GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 
-class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
+class RunnableWithMessageHistory(RunnableBindingBase[Any, Any]):  # type: ignore[no-redef]
     """`Runnable` that manages chat message history for another `Runnable`.
 
     A chat message history is a sequence of messages that represent a conversation.
@@ -135,7 +137,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             ]
         )
 
-        chain = prompt | ChatAnthropic(model="claude-2")
+        chain = prompt | ChatAnthropic(model="claude-sonnet-5")
 
         chain_with_history = RunnableWithMessageHistory(
             chain,
@@ -188,7 +190,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             ]
         )
 
-        chain = prompt | ChatAnthropic(model="claude-2")
+        chain = prompt | ChatAnthropic(model="claude-sonnet-5")
 
         with_message_history = RunnableWithMessageHistory(
             chain,
@@ -320,7 +322,15 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                 `RunnableBindingBase` init.
 
         """
-        history_chain: Runnable = RunnableLambda(
+        warn_deprecated(
+            since="1.3.3",
+            message=(
+                "RunnableWithMessageHistory is deprecated. "
+                "Use LangGraph's built-in persistence instead."
+            ),
+            removal="2.0.0",
+        )
+        history_chain: Runnable[Any, Any] = RunnableLambda(
             self._enter_history, self._aenter_history
         ).with_config(run_name="load_history")
         messages_key = history_messages_key or input_messages_key
@@ -329,16 +339,16 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                 **{messages_key: history_chain}
             ).with_config(run_name="insert_history")
 
-        runnable_sync: Runnable = runnable.with_listeners(on_end=self._exit_history)
-        runnable_async: Runnable = runnable.with_alisteners(on_end=self._aexit_history)
+        runnable_sync = runnable.with_listeners(on_end=self._exit_history)
+        runnable_async = runnable.with_alisteners(on_end=self._aexit_history)
 
-        def _call_runnable_sync(_input: Any) -> Runnable:
+        def _call_runnable_sync(_input: Any) -> Runnable[Any, Any]:
             return runnable_sync
 
-        async def _call_runnable_async(_input: Any) -> Runnable:
+        async def _call_runnable_async(_input: Any) -> Runnable[Any, Any]:
             return runnable_async
 
-        bound: Runnable = (
+        bound = (
             history_chain
             | RunnableLambda(
                 _call_runnable_sync,
@@ -382,7 +392,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
 
     @override
     def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
-        fields: dict = {}
+        fields: dict[str, Any] = {}
         if self.input_messages_key and self.history_messages_key:
             fields[self.input_messages_key] = (
                 str | BaseMessage | Sequence[BaseMessage],
@@ -441,7 +451,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         )
 
     def _get_input_messages(
-        self, input_val: str | BaseMessage | Sequence[BaseMessage] | dict
+        self, input_val: str | BaseMessage | Sequence[BaseMessage] | dict[str, Any]
     ) -> list[BaseMessage]:
         # If dictionary, try to pluck the single key representing messages
         if isinstance(input_val, dict):
@@ -479,7 +489,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         raise ValueError(msg)
 
     def _get_output_messages(
-        self, output_val: str | BaseMessage | Sequence[BaseMessage] | dict
+        self, output_val: str | BaseMessage | Sequence[BaseMessage] | dict[str, Any]
     ) -> list[BaseMessage]:
         # If dictionary, try to pluck the single key representing messages
         if isinstance(output_val, dict):
@@ -539,7 +549,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
 
         # Get the input messages
-        inputs = load(run.inputs, allowed_objects="all")
+        inputs = load(run.inputs, allowed_objects="messages")
         input_messages = self._get_input_messages(inputs)
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
@@ -548,7 +558,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             input_messages = input_messages[len(historic_messages) :]
 
         # Get the output messages
-        output_val = load(run.outputs, allowed_objects="all")
+        output_val = load(run.outputs, allowed_objects="messages")
         output_messages = self._get_output_messages(output_val)
         hist.add_messages(input_messages + output_messages)
 
@@ -556,7 +566,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
 
         # Get the input messages
-        inputs = load(run.inputs, allowed_objects="all")
+        inputs = load(run.inputs, allowed_objects="messages")
         input_messages = self._get_input_messages(inputs)
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
@@ -565,7 +575,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             input_messages = input_messages[len(historic_messages) :]
 
         # Get the output messages
-        output_val = load(run.outputs, allowed_objects="all")
+        output_val = load(run.outputs, allowed_objects="messages")
         output_messages = self._get_output_messages(output_val)
         await hist.aadd_messages(input_messages + output_messages)
 
@@ -618,5 +628,4 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
 
 def _get_parameter_names(callable_: GetSessionHistoryCallable) -> list[str]:
     """Get the parameter names of the `Callable`."""
-    sig = inspect.signature(callable_)
-    return list(sig.parameters.keys())
+    return list(_signature_parameters(callable_))

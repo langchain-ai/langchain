@@ -1,13 +1,17 @@
 """Unit tests for Anthropic text editor and memory tool middleware."""
 
+import tempfile
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 from langchain_core.messages import SystemMessage, ToolMessage
+from langgraph.prebuilt import ToolRuntime
 from langgraph.types import Command
 
 from langchain_anthropic.middleware.anthropic_tools import (
     AnthropicToolsState,
+    FilesystemClaudeTextEditorMiddleware,
     StateClaudeMemoryMiddleware,
     StateClaudeTextEditorMiddleware,
     _validate_path,
@@ -61,6 +65,33 @@ class TestPathValidation:
 
         with pytest.raises(ValueError, match="Path must start with"):
             _validate_path("/other/notes.txt", allowed_prefixes=["/memories"])
+
+    def test_prefix_boundary_bypass_blocked(self) -> None:
+        """Test that sibling directories sharing a textual prefix are rejected.
+
+        Regression test: a raw `str.startswith` check is not segment-aware, so a
+        path like `/memories2/evil.txt` would slip past a `/memories` prefix even
+        though it lives outside the intended directory.
+        """
+        # Sibling directory sharing the textual prefix must be rejected.
+        with pytest.raises(ValueError, match="Path must start with"):
+            _validate_path("/memories2/evil.txt", allowed_prefixes=["/memories"])
+
+        # A genuine descendant of the prefix is accepted.
+        assert (
+            _validate_path("/memories/ok.txt", allowed_prefixes=["/memories"])
+            == "/memories/ok.txt"
+        )
+
+        # The prefix directory itself is accepted (exact match).
+        assert (
+            _validate_path("/memories", allowed_prefixes=["/memories"]) == "/memories"
+        )
+
+    def test_prefix_boundary_traversal_still_blocked(self) -> None:
+        """Test that traversal within an allowed prefix is still rejected."""
+        with pytest.raises(ValueError, match="Path traversal not allowed"):
+            _validate_path("/memories/../escape", allowed_prefixes=["/memories"])
 
 
 class TestTextEditorMiddleware:
@@ -281,6 +312,85 @@ class TestFileOperations:
         # New path has the file data
         assert files.get("/memories/new.txt") is not None
         assert files["/memories/new.txt"]["content"] == ["line1"]
+
+    def test_rename_via_tool_dispatch(self) -> None:
+        """End-to-end: renaming through the actual `file_tool` dispatch.
+
+        Regression test for the dispatch building `args` with the source path
+        under `"path"` while `_handle_rename` read `args["old_path"]`, which
+        raised `KeyError` on every rename command.
+        """
+        middleware = StateClaudeTextEditorMiddleware()
+        state: AnthropicToolsState = {
+            "messages": [],
+            "text_editor_files": {
+                "/notes/old.txt": {
+                    "content": ["hello"],
+                    "created_at": "2025-01-01T00:00:00",
+                    "modified_at": "2025-01-01T00:00:00",
+                }
+            },
+        }
+        (file_tool,) = middleware.tools
+
+        result = file_tool.invoke(
+            {
+                "command": "rename",
+                "path": "/notes/old.txt",
+                "new_path": "/notes/new.txt",
+                "runtime": ToolRuntime(
+                    context=None,
+                    state=state,
+                    config={},
+                    stream_writer=lambda _: None,
+                    tool_call_id="tc-1",
+                    store=None,
+                ),
+            }
+        )
+
+        assert isinstance(result, Command)
+        assert result.update is not None
+        files = result.update["text_editor_files"]
+        assert files["/notes/old.txt"] is None
+        assert files["/notes/new.txt"]["content"] == ["hello"]
+        message = result.update["messages"][0]
+        assert isinstance(message, ToolMessage)
+        assert "renamed" in message.content
+
+
+class TestFilesystemRenameViaToolDispatch:
+    """End-to-end tests for filesystem-backed rename through `file_tool`."""
+
+    def test_rename_via_tool_dispatch(self) -> None:
+        """Regression test mirroring `TestFileOperations.test_rename_via_tool_dispatch`
+        for the filesystem-backed middleware, which has its own dispatch closure
+        and `_handle_rename` implementation.
+        """
+        with tempfile.TemporaryDirectory() as root:
+            (Path(root) / "old.txt").write_text("hello")
+            middleware = FilesystemClaudeTextEditorMiddleware(root_path=root)
+            (file_tool,) = middleware.tools
+
+            result = file_tool.invoke(
+                {
+                    "command": "rename",
+                    "path": "/old.txt",
+                    "new_path": "/new.txt",
+                    "runtime": ToolRuntime(
+                        context=None,
+                        state={},
+                        config={},
+                        stream_writer=lambda _: None,
+                        tool_call_id="tc-2",
+                        store=None,
+                    ),
+                }
+            )
+
+            assert isinstance(result, Command)
+            assert not (Path(root) / "old.txt").exists()
+            assert (Path(root) / "new.txt").read_text() == "hello"
 
 
 class TestSystemMessageHandling:

@@ -113,7 +113,36 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
+!.env.example
 .envrc
+*.pem
+*.key
+*.crt
+credentials.json
+# SSH private keys (no file extension, so *.key never matches them)
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+*_rsa
+*_dsa
+*_ecdsa
+*_ed25519
+!*.pub
+
+# Keystores
+*.p12
+*.pfx
+*.jks
+
+# Tokens, cookie jars, and git credential stores
+token.json
+Cookies
+Cookies.db
+cookies.sqlite
+cookies.txt
+.git-credentials
 .venv*
 venv*
 env/

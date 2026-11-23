@@ -1,11 +1,13 @@
 name: "\U0001F41B Bug Report"
-description: Report a bug in LangChain. To report a security issue, please instead use the security option below. For questions, please use the LangChain forum.
+description: Report a bug in LangChain. To report a security issue, please instead use the security option (below). For questions, please use the LangChain forum (below).
 labels: ["bug"]
 type: bug
 body:
   - type: markdown
     attributes:
       value: |
+        > **All contributions must be in English.** See the [language policy](https://docs.langchain.com/oss/python/contributing/overview#language-policy).
+
         Thank you for taking the time to file a bug report.
 
         For usage questions, feature requests and general design questions, please use the [LangChain Forum](https://forum.langchain.com/).
@@ -20,7 +22,7 @@ body:
   - type: checkboxes
     id: checks
     attributes:
-      label: Checked other resources
+      label: Submission checklist
       description: Please confirm and check all the following options.
       options:
         - label: This is a bug, not a usage question.
@@ -37,6 +39,18 @@ body:
           required: true
         - label: I posted a self-contained, minimal, reproducible example. A maintainer can copy it and run it AS IS.
           required: true
+  - type: dropdown
+    id: discovery
+    attributes:
+      label: How did you discover this issue?
+      description: Select one. If you select "Other", please explain in the Description field below.
+      multiple: false
+      options:
+        - While building or running a project that uses LangChain
+        - Through source-code inspection or automated scanning, rather than use in a project
+        - Other — please explain
+    validations:
+      required: true
   - type: checkboxes
     id: package
     attributes:
@@ -53,7 +67,6 @@ body:
         - label: langchain-anthropic
         - label: langchain-classic
         - label: langchain-core
-        - label: langchain-cli
         - label: langchain-model-profiles
         - label: langchain-tests
         - label: langchain-text-splitters
@@ -66,17 +79,28 @@ body:
         - label: langchain-mistralai
         - label: langchain-nomic
         - label: langchain-ollama
+        - label: langchain-openrouter
         - label: langchain-perplexity
-        - label: langchain-prompty
         - label: langchain-qdrant
+        - label: langchain-typesafe
         - label: langchain-xai
         - label: Other / not sure / general
+  - type: textarea
+    id: related
+    validations:
+      required: false
+    attributes:
+      label: Related Issues / PRs
+      description: |
+        If this bug is related to any existing issues or pull requests, please link them here.
+      placeholder: |
+        * e.g. #123, #456
   - type: textarea
     id: reproduction
     validations:
       required: true
     attributes:
-      label: Example Code (Python)
+      label: Reproduction Steps / Example Code (Python)
       description: |
         Please add a self-contained, [minimal, reproducible, example](https://stackoverflow.com/help/minimal-reproducible-example) with your use case.
 
@@ -140,3 +164,14 @@ body:
         python -m langchain_core.sys_info
     validations:
       required: true
+  - type: textarea
+    id: social-handles
+    attributes:
+      label: Social handles (optional)
+      description: |
+        If you'd like a shoutout on release, add your socials below.
+      placeholder: |
+        Twitter: @
+        LinkedIn: https://linkedin.com/in/
+    validations:
+      required: false

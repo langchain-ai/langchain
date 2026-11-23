@@ -9,14 +9,14 @@ This module is only relevant for LangChain developers, not for users.
 
 """
 
-from .deprecation import (
+from langchain_classic._api.deprecation import (
     LangChainDeprecationWarning,
     deprecated,
     suppress_langchain_deprecation_warning,
     surface_langchain_deprecation_warnings,
     warn_deprecated,
 )
-from .module_import import create_importer
+from langchain_classic._api.module_import import create_importer
 
 __all__ = [
     "LangChainDeprecationWarning",

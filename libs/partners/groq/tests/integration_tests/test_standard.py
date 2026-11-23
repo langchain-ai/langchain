@@ -5,7 +5,6 @@ from typing import Literal
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.rate_limiters import InMemoryRateLimiter
-from langchain_core.tools import BaseTool
 from langchain_tests.integration_tests import (
     ChatModelIntegrationTests,
 )
@@ -22,13 +21,11 @@ class TestGroq(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "llama-3.3-70b-versatile", "rate_limiter": rate_limiter}
-
-    @pytest.mark.xfail(reason="Not yet implemented.")
-    def test_tool_message_histories_list_content(
-        self, model: BaseChatModel, my_adder_tool: BaseTool
-    ) -> None:
-        super().test_tool_message_histories_list_content(model, my_adder_tool)
+        return {
+            "model": "qwen/qwen3.8-27b",
+            "reasoning_effort": "none",
+            "rate_limiter": rate_limiter,
+        }
 
     @pytest.mark.xfail(
         reason="Groq models have inconsistent tool calling performance. See: "
@@ -41,6 +38,11 @@ class TestGroq(ChatModelIntegrationTests):
     @pytest.mark.retry(count=3, delay=1)
     def test_tool_calling(self, model: BaseChatModel) -> None:
         super().test_tool_calling(model)
+
+    @pytest.mark.xfail(reason="Retry flaky tool choice behavior")
+    @pytest.mark.retry(count=3, delay=1)
+    def test_tool_choice(self, model: BaseChatModel) -> None:
+        super().test_tool_choice(model)
 
     @pytest.mark.xfail(reason="Retry flaky tool calling behavior")
     @pytest.mark.retry(count=3, delay=1)

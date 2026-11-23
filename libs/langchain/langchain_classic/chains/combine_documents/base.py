@@ -167,11 +167,13 @@ class BaseCombineDocumentsChain(Chain, ABC):
 
 @deprecated(
     since="0.2.7",
-    alternative=(
-        "example in API reference with more detail: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.combine_documents.base.AnalyzeDocumentChain.html"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build new RAG flows with `create_agent`, a retrieval tool, and an "
+        "appropriate text splitter. See "
+        "https://docs.langchain.com/oss/python/langchain/rag"
     ),
-    removal="1.0",
 )
 class AnalyzeDocumentChain(Chain):
     """Chain that splits documents, then analyzes it in pieces.

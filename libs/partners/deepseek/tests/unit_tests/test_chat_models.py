@@ -2,17 +2,28 @@
 
 from __future__ import annotations
 
+import json
+from contextlib import nullcontext
 from typing import Any, Literal
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessageChunk, ToolMessage
+import pytest
+from langchain_core.load import dumpd
+from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
+from langchain_core.utils._gateway import langsmith_gateway
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
-from openai.types.chat import ChatCompletionMessage
+from openai.types import CompletionUsage
+from openai.types.chat import ChatCompletion, ChatCompletionMessage
+from openai.types.chat.chat_completion import Choice
 from pydantic import BaseModel as PydanticBaseModel
 from pydantic import Field, SecretStr
 
-from langchain_deepseek.chat_models import DEFAULT_API_BASE, ChatDeepSeek
+from langchain_deepseek.chat_models import (
+    DEFAULT_API_BASE,
+    DEFAULT_BETA_API_BASE,
+    ChatDeepSeek,
+)
 
 MODEL_NAME = "deepseek-chat"
 
@@ -103,6 +114,15 @@ class TestChatDeepSeekUnit(ChatModelUnitTests):
 
 class TestChatDeepSeekCustomUnit:
     """Custom tests specific to DeepSeek chat model."""
+
+    def test_base_url_alias(self) -> None:
+        """Test that `base_url` is accepted as an alias for `api_base`."""
+        chat_model = ChatDeepSeek(
+            model=MODEL_NAME,
+            api_key=SecretStr("api_key"),
+            base_url="http://example.test/v1",
+        )
+        assert chat_model.api_base == "http://example.test/v1"
 
     def test_create_chat_result_with_reasoning_content(self) -> None:
         """Test that reasoning_content is properly extracted from response."""
@@ -251,6 +271,29 @@ class SampleTool(PydanticBaseModel):
     value: str = Field(description="A test value")
 
 
+_MAX_RUNNABLE_DEPTH = 6
+
+
+def _find_chat_model(runnable: Any, depth: int = 0) -> ChatDeepSeek | None:
+    """Walk a composed runnable and return the first `ChatDeepSeek` found."""
+    if isinstance(runnable, ChatDeepSeek):
+        return runnable
+    if depth > _MAX_RUNNABLE_DEPTH:
+        return None
+    for attr in ("bound", "first", "last", "runnable", "steps", "steps__"):
+        value = getattr(runnable, attr, None)
+        if value is None:
+            continue
+        candidates = value if isinstance(value, (list, tuple)) else [value]
+        if isinstance(value, dict):
+            candidates = list(value.values())
+        for candidate in candidates:
+            found = _find_chat_model(candidate, depth + 1)
+            if found is not None:
+                return found
+    return None
+
+
 class TestChatDeepSeekStrictMode:
     """Tests for DeepSeek strict mode support.
 
@@ -272,10 +315,36 @@ class TestChatDeepSeekStrictMode:
         # Bind tools with strict=True
         bound_model = llm.bind_tools([SampleTool], strict=True)
 
-        # The bound model should have its internal model using beta endpoint
-        # We can't directly access the internal model, but we can verify the behavior
-        # by checking that the binding operation succeeds
-        assert bound_model is not None
+        # The bound model must target the beta endpoint, and so must the client
+        # that actually issues the request — updating `api_base` alone leaves
+        # the inherited `openai` clients pointing at the default base URL.
+        beta_model = _find_chat_model(bound_model)
+        assert beta_model is not None
+        assert beta_model.api_base == DEFAULT_BETA_API_BASE
+        assert str(beta_model.root_client.base_url).startswith(DEFAULT_BETA_API_BASE)
+        assert str(beta_model.root_async_client.base_url).startswith(
+            DEFAULT_BETA_API_BASE
+        )
+
+        # The original model is left untouched
+        assert llm.api_base == DEFAULT_API_BASE
+        assert str(llm.root_client.base_url).startswith(DEFAULT_API_BASE)
+
+    def test_beta_copy_rebuilds_clients(self) -> None:
+        """The beta copy must use new clients."""
+        llm = ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("test_key"),
+        )
+
+        beta_model = llm._with_beta_api_base()
+
+        assert beta_model.root_client is not llm.root_client
+        assert beta_model.root_async_client is not llm.root_async_client
+        assert str(beta_model.root_client.base_url).startswith(DEFAULT_BETA_API_BASE)
+        assert str(beta_model.root_async_client.base_url).startswith(
+            DEFAULT_BETA_API_BASE
+        )
 
     def test_bind_tools_without_strict_mode_uses_default_endpoint(self) -> None:
         """Test bind_tools without strict or with strict=False uses default endpoint."""
@@ -292,6 +361,19 @@ class TestChatDeepSeekStrictMode:
         bound_model_none = llm.bind_tools([SampleTool])
         assert bound_model_none is not None
 
+    def test_strict_mode_preserves_custom_api_base(self) -> None:
+        """A custom API base must bypass the DeepSeek beta endpoint."""
+        llm = ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("test_key"),
+            base_url="https://proxy.example/v1",
+        )
+
+        bound_model = llm.bind_tools([SampleTool], strict=True)
+
+        assert _find_chat_model(bound_model) is llm
+        assert str(llm.root_client.base_url).startswith("https://proxy.example/v1")
+
     def test_with_structured_output_strict_mode_uses_beta_endpoint(self) -> None:
         """Test that with_structured_output with strict=True uses beta endpoint."""
         llm = ChatDeepSeek(
@@ -305,12 +387,462 @@ class TestChatDeepSeekStrictMode:
         # Create structured output with strict=True
         structured_model = llm.with_structured_output(SampleTool, strict=True)
 
-        # The structured model should work with beta endpoint
-        assert structured_model is not None
+        # Walk the resulting runnable to the underlying model and assert that
+        # the client it would call is pointed at the beta endpoint.
+        beta_model = _find_chat_model(structured_model)
+        assert beta_model is not None
+        assert beta_model.api_base == DEFAULT_BETA_API_BASE
+        assert str(beta_model.root_client.base_url).startswith(DEFAULT_BETA_API_BASE)
+
+        # The original model is left untouched
+        assert llm.api_base == DEFAULT_API_BASE
+        assert str(llm.root_client.base_url).startswith(DEFAULT_API_BASE)
+
+
+class TestChatDeepSeekAzureToolChoice:
+    """Tests for Azure-hosted DeepSeek tool_choice compatibility.
+
+    Azure-hosted DeepSeek does not support the dict/object form of tool_choice
+    (e.g. {"type": "function", "function": {"name": "..."}}) and returns a 422
+    error. Only string values ("none", "auto", "required") are accepted.
+
+    The fix converts the unsupported dict form to "required" at the payload
+    level in _get_request_payload, which is the last stop before the API call.
+    String values are preserved as-is.
+    """
+
+    def _get_azure_model(
+        self,
+        endpoint: str = "https://my-resource.openai.azure.com/",
+    ) -> ChatDeepSeek:
+        """Create a ChatDeepSeek instance pointed at an Azure endpoint."""
+        return ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("test_key"),
+            base_url=endpoint,
+        )
+
+    def test_is_azure_endpoint_detection(self) -> None:
+        """Test that _is_azure_endpoint correctly identifies Azure URLs."""
+        azure_endpoints = [
+            "https://my-resource.openai.azure.com/",
+            "https://my-resource.openai.azure.com/openai/deployments/deepseek",
+            "https://RESOURCE.OPENAI.AZURE.COM/",  # case insensitivity
+            "https://test.services.ai.azure.com/",
+        ]
+        for endpoint in azure_endpoints:
+            llm = self._get_azure_model(endpoint)
+            assert llm._is_azure_endpoint, f"Expected Azure for {endpoint}"
+
+        non_azure_endpoints = [
+            DEFAULT_API_BASE,
+            "https://api.openai.com/v1",
+            "https://custom-endpoint.com/api",
+            "https://evil-azure.com/v1",  # hostname bypass attempt
+            "https://notazure.com.evil.com/",  # subdomain bypass attempt
+            "https://example.com/azure.com",  # path bypass attempt
+        ]
+        for endpoint in non_azure_endpoints:
+            llm = ChatDeepSeek(
+                model="deepseek-chat",
+                api_key=SecretStr("test_key"),
+                base_url=endpoint,
+            )
+            assert not llm._is_azure_endpoint, f"Expected non-Azure for {endpoint}"
+
+    def test_payload_converts_dict_tool_choice_on_azure(self) -> None:
+        """Test that dict-form tool_choice is converted to 'required' in payload."""
+        llm = self._get_azure_model()
+        # Simulate with_structured_output flow: bind_tools converts a tool name
+        # string into the dict form {"type": "function", "function": {"name": ...}}
+        bound = llm.bind_tools([SampleTool], tool_choice="SampleTool")
+        messages = [("user", "test")]
+        bound_kwargs = bound.kwargs  # type: ignore[attr-defined]
+
+        # At bind_tools level, the parent converts the tool name to dict form
+        assert isinstance(bound_kwargs.get("tool_choice"), dict)
+
+        # But _get_request_payload should convert it to "required"
+        request_payload = llm._get_request_payload(messages, **bound_kwargs)
+        assert request_payload.get("tool_choice") == "required"
+
+    def test_payload_preserves_string_tool_choice_on_azure(self) -> None:
+        """Test that valid string tool_choice values are NOT overridden on Azure."""
+        llm = self._get_azure_model()
+        messages = [("user", "test")]
+
+        for choice in ("auto", "none", "required"):
+            bound = llm.bind_tools([SampleTool], tool_choice=choice)
+            request_payload = llm._get_request_payload(
+                messages,
+                **bound.kwargs,  # type: ignore[attr-defined]
+            )
+            assert request_payload.get("tool_choice") == choice, (
+                f"Expected '{choice}' to be preserved, got "
+                f"{request_payload.get('tool_choice')!r}"
+            )
+
+    def test_payload_preserves_dict_tool_choice_on_non_azure(self) -> None:
+        """Test that dict-form tool_choice is NOT converted on non-Azure endpoints."""
+        llm = ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("test_key"),
+        )
+        bound = llm.bind_tools([SampleTool], tool_choice="SampleTool")
+        messages = [("user", "test")]
+        request_payload = llm._get_request_payload(
+            messages,
+            **bound.kwargs,  # type: ignore[attr-defined]
+        )
+        # On non-Azure, the dict form should be preserved
+        assert isinstance(request_payload.get("tool_choice"), dict)
+
+    def test_with_structured_output_on_azure(self) -> None:
+        """Test that with_structured_output works on Azure (the original bug)."""
+        llm = self._get_azure_model()
+
+        # with_structured_output internally calls bind_tools with the schema
+        # name as tool_choice, which gets converted to the dict form.
+        structured = llm.with_structured_output(SampleTool)
+        assert structured is not None
+
+    def test_bind_tools_azure_with_strict_mode(self) -> None:
+        """Test Azure endpoint with strict mode enabled."""
+        llm = self._get_azure_model()
+        bound_model = llm.bind_tools([SampleTool], strict=True)
+        assert bound_model is not None
+
+
+PROMPT_TOKENS = 100
+COMPLETION_TOKENS = 10
+TOTAL_TOKENS = 110
+CACHE_HIT_TOKENS = 64
+CACHE_MISS_TOKENS = 36
+GATEWAY_CACHED_TOKENS = 50
+
+
+class TestChatDeepSeekPromptCacheUsage:
+    """Tests for DeepSeek's top-level prompt-cache token counts.
+
+    DeepSeek reports context-cache usage as top-level `prompt_cache_hit_tokens`
+    and `prompt_cache_miss_tokens` fields on `usage`, rather than OpenAI's nested
+    `prompt_tokens_details.cached_tokens`. The base class reads only the nested
+    form, so the counts are dropped unless `ChatDeepSeek` maps them explicitly.
+
+    Only cache hits are mapped: DeepSeek defines
+    `prompt_tokens = prompt_cache_hit_tokens + prompt_cache_miss_tokens`, so a
+    miss is an ordinary uncached input token rather than a cache write.
+    """
+
+    def _get_model(self) -> ChatDeepSeek:
+        """Build a model instance with credentials that are never used."""
+        return ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("api_key"))
+
+    @staticmethod
+    def _usage(**overrides: Any) -> dict[str, Any]:
+        """Build a usage payload mirroring DeepSeek's documented response."""
+        return {
+            "prompt_tokens": PROMPT_TOKENS,
+            "completion_tokens": COMPLETION_TOKENS,
+            "total_tokens": TOTAL_TOKENS,
+            "prompt_cache_hit_tokens": CACHE_HIT_TOKENS,
+            "prompt_cache_miss_tokens": CACHE_MISS_TOKENS,
+            **overrides,
+        }
+
+    @staticmethod
+    def _completion(usage: dict[str, Any]) -> ChatCompletion:
+        """Wrap a usage payload in an otherwise ordinary completion."""
+        return ChatCompletion(
+            id="chatcmpl-test",
+            created=0,
+            model=MODEL_NAME,
+            object="chat.completion",
+            choices=[
+                Choice(
+                    finish_reason="stop",
+                    index=0,
+                    message=ChatCompletionMessage(role="assistant", content="Hi"),
+                ),
+            ],
+            usage=CompletionUsage(**usage),
+        )
+
+    def test_cache_hit_tokens_mapped_to_cache_read(self) -> None:
+        """Test that `prompt_cache_hit_tokens` populates `cache_read`."""
+        response = self._completion(self._usage())
+
+        result = self._get_model()._create_chat_result(response)
+
+        message = result.generations[0].message
+        assert isinstance(message, AIMessage)
+        assert message.usage_metadata is not None
+        assert message.usage_metadata["input_tokens"] == PROMPT_TOKENS
+        assert (
+            message.usage_metadata["input_token_details"]["cache_read"]
+            == CACHE_HIT_TOKENS
+        )
+
+    def test_full_cache_miss_reports_zero_cache_read(self) -> None:
+        """Test that a total cache miss is reported as zero, not omitted."""
+        response = self._completion(
+            self._usage(
+                prompt_cache_hit_tokens=0,
+                prompt_cache_miss_tokens=PROMPT_TOKENS,
+            ),
+        )
+
+        result = self._get_model()._create_chat_result(response)
+
+        message = result.generations[0].message
+        assert isinstance(message, AIMessage)
+        assert message.usage_metadata is not None
+        assert message.usage_metadata["input_token_details"]["cache_read"] == 0
+
+    def test_cache_miss_tokens_not_mapped_to_cache_creation(self) -> None:
+        """Test that misses are not counted as cache writes."""
+        response = self._completion(self._usage())
+
+        result = self._get_model()._create_chat_result(response)
+
+        message = result.generations[0].message
+        assert isinstance(message, AIMessage)
+        assert message.usage_metadata is not None
+        assert "cache_creation" not in message.usage_metadata["input_token_details"]
+
+    def test_usage_without_cache_fields_is_unaffected(self) -> None:
+        """Test that responses lacking the DeepSeek cache fields still work."""
+        response = self._completion(
+            {
+                "prompt_tokens": PROMPT_TOKENS,
+                "completion_tokens": COMPLETION_TOKENS,
+                "total_tokens": TOTAL_TOKENS,
+            },
+        )
+
+        result = self._get_model()._create_chat_result(response)
+
+        message = result.generations[0].message
+        assert isinstance(message, AIMessage)
+        assert message.usage_metadata is not None
+        assert message.usage_metadata["input_tokens"] == PROMPT_TOKENS
+        assert "cache_read" not in message.usage_metadata["input_token_details"]
+
+    def test_nested_cached_tokens_take_precedence(self) -> None:
+        """Test that an OpenAI-style nested count is not overwritten.
+
+        DeepSeek served through an OpenAI-compatible gateway may report the
+        nested form instead, which the base class already handles correctly.
+        """
+        response = self._completion(
+            self._usage(
+                prompt_tokens_details={"cached_tokens": GATEWAY_CACHED_TOKENS},
+            ),
+        )
+
+        result = self._get_model()._create_chat_result(response)
+
+        message = result.generations[0].message
+        assert isinstance(message, AIMessage)
+        assert message.usage_metadata is not None
+        assert (
+            message.usage_metadata["input_token_details"]["cache_read"]
+            == GATEWAY_CACHED_TOKENS
+        )
+
+    def test_streaming_usage_only_chunk_maps_cache_read(self) -> None:
+        """Test that the trailing usage-only chunk carries `cache_read`.
+
+        DeepSeek sends token usage in a final chunk with no choices, so the
+        mapping cannot depend on a choices entry being present.
+        """
+        chunk: dict[str, Any] = {"choices": [], "usage": self._usage()}
+
+        generation_chunk = self._get_model()._convert_chunk_to_generation_chunk(
+            chunk,
+            AIMessageChunk,
+            None,
+        )
+
+        assert generation_chunk is not None
+        message = generation_chunk.message
+        assert isinstance(message, AIMessageChunk)
+        assert message.usage_metadata is not None
+        assert (
+            message.usage_metadata["input_token_details"]["cache_read"]
+            == CACHE_HIT_TOKENS
+        )
+
+    def test_streaming_usage_alongside_choices_maps_cache_read(self) -> None:
+        """Test that usage delivered with a content delta is also mapped."""
+        chunk: dict[str, Any] = {
+            "choices": [{"delta": {"content": "Hi"}}],
+            "usage": self._usage(),
+        }
+
+        generation_chunk = self._get_model()._convert_chunk_to_generation_chunk(
+            chunk,
+            AIMessageChunk,
+            None,
+        )
+
+        assert generation_chunk is not None
+        message = generation_chunk.message
+        assert isinstance(message, AIMessageChunk)
+        assert message.usage_metadata is not None
+        assert (
+            message.usage_metadata["input_token_details"]["cache_read"]
+            == CACHE_HIT_TOKENS
+        )
+
+    def test_streaming_content_chunk_without_usage_is_unaffected(self) -> None:
+        """Test that ordinary content chunks carry no usage metadata."""
+        chunk: dict[str, Any] = {"choices": [{"delta": {"content": "Hi"}}]}
+
+        generation_chunk = self._get_model()._convert_chunk_to_generation_chunk(
+            chunk,
+            AIMessageChunk,
+            None,
+        )
+
+        assert generation_chunk is not None
+        message = generation_chunk.message
+        assert isinstance(message, AIMessageChunk)
+        assert message.usage_metadata is None
 
 
 def test_profile() -> None:
     """Test that model profile is loaded correctly."""
-    model = ChatDeepSeek(model="deepseek-reasoner", api_key=SecretStr("test_key"))
+    model = ChatDeepSeek(model="deepseek-v4-pro", api_key=SecretStr("test_key"))
     assert model.profile is not None
     assert model.profile["reasoning_output"]
+
+
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    llm = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("test_key"))
+    assert llm.metadata is not None
+    versions = llm.metadata["lc_versions"]
+    assert "langchain-core" in versions
+    assert "langchain-deepseek" in versions
+    assert "langchain-openai" in versions
+
+
+# --- LangSmith gateway ---
+
+
+@pytest.fixture
+def _gateway_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for var in (
+        "LANGSMITH_GATEWAY",
+        "LANGSMITH_GATEWAY_API_KEY",
+        "LANGSMITH_API_KEY",
+        "DEEPSEEK_API_BASE",
+        "DEEPSEEK_API_KEY",
+    ):
+        monkeypatch.delenv(var, raising=False)
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`LANGSMITH_GATEWAY` routes to the gateway with the gateway key."""
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    llm = ChatDeepSeek(model="deepseek-chat")
+    assert llm.api_base == "https://gateway.smith.langchain.com/deepseek/v1"
+    assert llm.api_key is not None
+    assert llm.api_key.get_secret_value() == "gateway-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Without the gateway, the provider key and default URL are used."""
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "provider-key")
+    llm = ChatDeepSeek(model="deepseek-chat")
+    assert llm.api_base == "https://api.deepseek.com/v1"
+    assert llm.api_key is not None
+    assert llm.api_key.get_secret_value() == "provider-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_provider_env_base_url_wins(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A provider base URL env var wins over `LANGSMITH_GATEWAY`."""
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("DEEPSEEK_API_BASE", "https://proxy.example.com/v1")
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "provider-key")
+    llm = ChatDeepSeek(model="deepseek-chat")
+    assert llm.api_base == "https://proxy.example.com/v1"
+    assert llm.api_key is not None
+    assert llm.api_key.get_secret_value() == "provider-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_context_overrides_explicit_values() -> None:
+    """`langsmith_gateway` overrides an explicit base URL and API key."""
+    gateway = pytest.importorskip("langchain_core.utils._gateway")
+    if not hasattr(gateway, "langsmith_gateway"):
+        pytest.skip("Requires a langchain-core release with `langsmith_gateway`.")
+    with gateway.langsmith_gateway(api_key="service-key"):
+        llm = ChatDeepSeek(
+            model="deepseek-chat",
+            base_url="https://other.example.com/v1",
+            api_key=SecretStr("user-key"),
+        )
+    assert llm.api_base == "https://gateway.smith.langchain.com/deepseek/v1"
+    assert llm.api_key is not None
+    assert llm.api_key.get_secret_value() == "service-key"
+
+
+def test_langsmith_gateway_context_headers() -> None:
+    """Gateway headers reach the client but are never serialized."""
+    with langsmith_gateway(api_key="placeholder", headers={"X-Service-Key": "svc-key"}):
+        llm = ChatDeepSeek(
+            model="deepseek-chat",
+            api_key=SecretStr("user-key"),
+            default_headers={"x-service-key": "forged", "X-Custom": "kept"},
+        )
+    sent = llm.root_client.default_headers
+    assert sent["X-Service-Key"] == "svc-key"
+    assert sent["X-Custom"] == "kept"
+    assert "svc-key" not in json.dumps(dumpd(llm))
+
+
+@pytest.mark.usefixtures("_gateway_env")
+@pytest.mark.parametrize(
+    "initial_headers", [None, {}, {"X-Service-Key": "original-secret"}]
+)
+def test_langsmith_gateway_headers_survive_revalidation(
+    initial_headers: dict[str, str] | None,
+) -> None:
+    """Revalidation preserves the clients' original gateway header snapshot."""
+    context = (
+        langsmith_gateway(api_key="original-api-secret", headers=initial_headers)
+        if initial_headers is not None
+        else nullcontext()
+    )
+    with context:
+        llm = ChatDeepSeek(model=MODEL_NAME, api_key=SecretStr("user-key"))
+    original_clients = llm.root_client, llm.root_async_client
+    headers = {"x-service-key": "forged", "X-Other-Key": "kept"}
+    with langsmith_gateway(
+        api_key="other-api-secret", headers={"X-Other-Key": "other-secret"}
+    ):
+        assert ChatDeepSeek.model_validate(llm) is llm
+
+        class Wrapper(PydanticBaseModel):
+            model: ChatDeepSeek
+
+        assert Wrapper(model=llm).model is llm
+    assert (llm.root_client, llm.root_async_client) == original_clients
+    assert llm._langsmith_gateway_headers == (initial_headers or {})
+    expected_headers = {"X-Other-Key": "kept"} if initial_headers else headers
+    payload = llm._get_request_payload("hello", extra_headers=headers)
+    assert payload["extra_headers"] == expected_headers
+    for client in original_clients:
+        assert client.default_headers.get("X-Service-Key") == (
+            (initial_headers or {}).get("X-Service-Key")
+        )
+        assert "X-Other-Key" not in client.default_headers

@@ -1,0 +1,146 @@
+# Block PRs whose head ref is `main` (or `master`) from a fork. This topology
+# (`<fork>:master -> langchain-ai/langchain:master`) lets contributors click
+# "Update branch" on the PR, producing a `Merge branch 'master' into master`
+# commit on the source side that — under admin merge override — can land
+# directly on `master` as a 2-parent merge commit, bypassing the repo's
+# squash-only policy and polluting the changelog.
+#
+# `pull_request_target` is required so the job receives a token scoped to
+# write PR labels/comments on fork PRs (the standard `pull_request` token is
+# read-only for forks). This also means the job MUST NOT check out PR code —
+# see the inline warning in the trigger block below.
+#
+# Maintainer bypass: add the `bypass-fork-main-check` label to the PR.
+
+name: Block fork main PRs
+
+on:
+  pull_request_target:
+    # NEVER CHECK OUT UNTRUSTED CODE FROM A PR's HEAD IN A pull_request_target JOB.
+    # Doing so would allow attackers to execute arbitrary code in the context of your repository.
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    if: >-
+      github.repository_owner == 'langchain-ai' &&
+      github.event.pull_request.head.repo.fork == true &&
+      (github.event.pull_request.head.ref == 'main' || github.event.pull_request.head.ref == 'master') &&
+      !contains(github.event.pull_request.labels.*.name, 'bypass-fork-main-check')
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Close PR and post guidance
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const prNumber = context.payload.pull_request.number;
+            const headRef = context.payload.pull_request.head.ref;
+            const marker = '<!-- block-fork-main -->';
+
+            // Ensure the warning label exists and apply it
+            const labelName = 'fork-main-head';
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: labelName });
+            } catch (e) {
+              if (e.status !== 404) {
+                throw new Error(`getLabel(${labelName}) failed: ${e.message}`);
+              }
+              try {
+                await github.rest.issues.createLabel({
+                  owner, repo, name: labelName, color: 'b76e79',
+                });
+              } catch (createErr) {
+                // A 422 with code `already_exists` means a race created the
+                // label between getLabel and createLabel — safe to ignore.
+                // Any other 422 (bad color, name too long) indicates a real
+                // bug introduced by editing this step, so rethrow.
+                const alreadyExists =
+                  createErr.status === 422 &&
+                  Array.isArray(createErr.errors) &&
+                  createErr.errors.some(e => e.code === 'already_exists');
+                if (!alreadyExists) throw createErr;
+              }
+            }
+            await github.rest.issues.addLabels({
+              owner, repo, issue_number: prNumber, labels: [labelName],
+            });
+
+            const defaultBranch = context.payload.repository.default_branch;
+            const lines = [
+              marker,
+              `**This PR has been automatically closed** because its head branch is \`${headRef}\` on a fork.`,
+              '',
+              'PRs opened from a fork\'s `main` (or `master`) branch can produce a `Merge branch \'main\' into main` commit on the source side. Under an admin merge override that commit can land directly on this repo\'s default branch, bypassing the squash-only policy and polluting the changelog.',
+              '',
+              'To fix:',
+              `1. Sync your fork's \`${defaultBranch}\` first (\`git fetch upstream && git switch ${defaultBranch} && git merge --ff-only upstream/${defaultBranch}\`)`,
+              '2. Create a feature branch: `git switch -c feat/my-change`',
+              '3. Push it: `git push -u origin feat/my-change`',
+              `4. Open a new PR from \`feat/my-change\` → \`langchain-ai/langchain:${defaultBranch}\``,
+              '',
+              '*Maintainers: add the `bypass-fork-main-check` label to override.*',
+            ];
+            const body = lines.join('\n');
+
+            // Dedup: update existing marker comment instead of stacking.
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number: prNumber, per_page: 100 },
+            );
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+
+            if (!existing) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: prNumber, body,
+              });
+            } else if (existing.body !== body) {
+              await github.rest.issues.updateComment({
+                owner, repo, comment_id: existing.id, body,
+              });
+            }
+
+            if (context.payload.pull_request.state === 'open') {
+              await github.rest.pulls.update({
+                owner, repo, pull_number: prNumber, state: 'closed',
+              });
+            }
+
+            // Cancel still-queued/in-progress checks on this PR head.
+            // Best-effort: new runs may still queue after this loop (e.g., other
+            // pull_request triggers fanning out). The PR is already closed above,
+            // so leftover runs are wasted compute, not a correctness issue.
+            // We track the cancel ratio so a wholesale failure (token-scope
+            // regression making EVERY cancel return 403) is surfaced rather
+            // than silently producing N warnings + green job.
+            const headSha = context.payload.pull_request.head.sha;
+            let attempted = 0;
+            let cancelled = 0;
+            for (const status of ['in_progress', 'queued']) {
+              const runs = await github.paginate(
+                github.rest.actions.listWorkflowRunsForRepo,
+                { owner, repo, head_sha: headSha, status, per_page: 100 },
+              );
+              for (const run of runs) {
+                if (run.id === context.runId) continue;
+                attempted++;
+                try {
+                  await github.rest.actions.cancelWorkflowRun({
+                    owner, repo, run_id: run.id,
+                  });
+                  cancelled++;
+                } catch (err) {
+                  core.warning(`Could not cancel run ${run.id}: ${err.message}`);
+                }
+              }
+            }
+            if (attempted > 0 && cancelled === 0) {
+              core.warning(`Attempted to cancel ${attempted} run(s) on head ${headSha} but none succeeded — check token scope.`);
+            }
+
+            core.setFailed(`PR head ref is \`${headRef}\` on a fork — open from a feature branch instead.`);

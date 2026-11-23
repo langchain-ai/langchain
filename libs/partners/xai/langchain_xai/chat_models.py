@@ -2,18 +2,26 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
+import warnings
+from typing import TYPE_CHECKING, Any, Literal, Self, TypeAlias, cast
 
 import openai
 from langchain_core.messages import AIMessageChunk
-from langchain_core.utils import secret_from_env
+from langchain_core.utils import from_env, secret_from_env
+from langchain_core.utils._gateway import (
+    _apply_gateway_config,
+    _gateway_headers,
+    _with_gateway_headers,
+)
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
 
+from langchain_xai._version import __version__
 from langchain_xai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator
+
     from langchain_core.language_models import (
         ModelProfile,
         ModelProfileRegistry,
@@ -35,6 +43,23 @@ _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     default = _MODEL_PROFILES.get(model_name) or {}
     return default.copy()
+
+
+def _model_rejects_stop(model_name: str) -> bool:
+    """Whether an *unprofiled* xAI model rejects the `stop` parameter.
+
+    Used only as a fallback when no model profile is available; profiled models
+    defer to their `reasoning_output` flag, which is authoritative. The flag and
+    the name cannot be reconciled by string matching alone: the API accepts
+    `stop` for `grok-4.20-0309-non-reasoning` but rejects it for
+    `grok-4-fast-non-reasoning`, despite both containing `non-reasoning`.
+
+    Every current `grok-3`, `grok-4`, and `grok-code-fast` model that is not in
+    the generated profiles rejects `stop`, so the fallback drops it for those
+    families. Dropping a `stop` the API would reject degrades more gracefully
+    than letting the request fail outright.
+    """
+    return model_name.startswith(("grok-3", "grok-4")) or "grok-code-fast" in model_name
 
 
 class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
@@ -336,30 +361,12 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         )
         ```
 
-    Live Search:
-        xAI supports a [Live Search](https://docs.x.ai/docs/guides/live-search)
-        feature that enables Grok to ground its answers using results from web searches.
-
-        ```python
-        from langchain_xai import ChatXAI
-
-        model = ChatXAI(
-            model="grok-4",
-            search_parameters={
-                "mode": "auto",
-                # Example optional parameters below:
-                "max_search_results": 3,
-                "from_date": "2025-05-26",
-                "to_date": "2025-05-27",
-            },
-        )
-
-        model.invoke("Provide me a digest of world news in the last 24 hours.")
-        ```
-
-        !!! note
-            [Citations](https://docs.x.ai/docs/guides/live-search#returning-citations)
-            are only available in [Grok 3](https://docs.x.ai/docs/models/grok-3).
+    Web search:
+        **Live Search** (the legacy `search_parameters` option) has been deprecated by xAI.
+        Use `bind_tools` with compatible tool definitions when using the OpenAI-compatible
+        Responses API instead. If you pass `search_parameters` to `ChatXAI`, a
+        `DeprecationWarning` is emitted and the parameter is ignored; requests otherwise
+        succeed without search.
 
     Token usage:
         ```python
@@ -412,6 +419,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     model_name: str = Field(default="grok-4", alias="model")
     """Model name to use."""
+
     xai_api_key: SecretStr | None = Field(
         alias="api_key",
         default_factory=secret_from_env("XAI_API_KEY", default=None),
@@ -420,12 +428,26 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
     Automatically read from env variable `XAI_API_KEY` if not provided.
     """
-    xai_api_base: str = Field(default="https://api.x.ai/v1/")
-    """Base URL path for API requests."""
+
+    xai_api_base: str = Field(
+        alias="base_url",
+        default_factory=from_env("XAI_API_BASE", default="https://api.x.ai/v1/"),
+    )
+    """Base URL path for API requests.
+
+    Automatically read from env variable `XAI_API_BASE` if not provided.
+    """
+
     search_parameters: dict[str, Any] | None = None
-    """Parameters for search requests. Example: `{"mode": "auto"}`."""
+    """**Deprecated.** Use web search tools instead:
+
+    ```python
+    ChatXAI(model="...").bind_tools([{"type": "web_search"}])
+    ```
+    """
 
     openai_api_key: SecretStr | None = None
+
     openai_api_base: str | None = None
 
     model_config = ConfigDict(
@@ -449,19 +471,6 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         """
         return ["langchain_xai", "chat_models"]
 
-    @property
-    def lc_attributes(self) -> dict[str, Any]:
-        """List of attribute names that should be included in the serialized kwargs.
-
-        These attributes must be accepted by the constructor.
-        """
-        attributes: dict[str, Any] = {}
-
-        if self.xai_api_base:
-            attributes["xai_api_base"] = self.xai_api_base
-
-        return attributes
-
     @classmethod
     def is_lc_serializable(cls) -> bool:
         """Return whether this model can be serialized by LangChain."""
@@ -475,7 +484,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
     def _get_ls_params(
         self,
         stop: list[str] | None = None,
-        **kwargs: Any,  # noqa: ANN401
+        **kwargs: Any,
     ) -> LangSmithParams:
         """Get the parameters used to invoke the model."""
         params = super()._get_ls_params(stop=stop, **kwargs)
@@ -483,8 +492,55 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         return params
 
     @model_validator(mode="after")
+    def _set_xai_version(self) -> Self:
+        """Set package version in metadata.
+
+        Named uniquely to avoid shadowing `BaseChatOpenAI._set_openai_chat_version`;
+        Pydantic replaces same-named validators rather than chaining them.
+        """
+        self._add_version("langchain-xai", __version__)
+        return self
+
+    @model_validator(mode="after")
+    def _warn_search_parameters_deprecated(self) -> Self:
+        """Emit deprecation warning if search_parameters (Live Search) is used."""
+        if self.search_parameters:
+            warnings.warn(
+                "search_parameters (Live Search) is deprecated by xAI and is ignored. "
+                'Use `ChatXAI(model="...").bind_tools([{"type": "web_search"}])` '
+                "instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return self
+
+    @model_validator(mode="before")
+    @classmethod
+    def _apply_xai_gateway_config(cls, values: Any) -> Any:
+        """Resolve the base URL and API key, applying LangSmith gateway settings.
+
+        Routes through the gateway when `LANGSMITH_GATEWAY` is set or the model is
+        built inside `langsmith_gateway`. See `langchain_core.utils._gateway` for
+        precedence.
+        """
+        if isinstance(values, dict):
+            _apply_gateway_config(
+                values,
+                cls,
+                base_url_field="xai_api_base",
+                api_key_field="xai_api_key",
+                provider_path="xai/v1",
+                base_url_env="XAI_API_BASE",
+                api_key_env="XAI_API_KEY",
+                default_base_url="https://api.x.ai/v1/",
+            )
+        return values
+
+    @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
+        if self._langsmith_gateway_headers is None:
+            self._langsmith_gateway_headers = _gateway_headers()
         if self.n is not None and self.n < 1:
             msg = "n must be at least 1."
             raise ValueError(msg)
@@ -498,7 +554,9 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             ),
             "base_url": self.xai_api_base,
             "timeout": self.request_timeout,
-            "default_headers": self.default_headers,
+            "default_headers": _with_gateway_headers(
+                self.default_headers, self._langsmith_gateway_headers
+            ),
             "default_query": self.default_query,
         }
         if self.max_retries is not None:
@@ -526,26 +584,66 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 **client_params,
                 **async_specific,
             )
+
+        # Enable streaming usage metadata by default
+        if self.stream_usage is not False:
+            self.stream_usage = True
+
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model_name)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model_name) or None
 
-    @property
-    def _default_params(self) -> dict[str, Any]:
-        """Get default parameters."""
-        params = super()._default_params
-        if self.search_parameters:
-            if "extra_body" in params:
-                params["extra_body"]["search_parameters"] = self.search_parameters
-            else:
-                params["extra_body"] = {"search_parameters": self.search_parameters}
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> dict:
+        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        if payload.get("stop") is not None:
+            # xAI rejects `stop` for reasoning models. The model profile is
+            # authoritative when available (it correctly distinguishes models
+            # that only differ from each other by profile, not by name); the
+            # name-based check is a fallback for aliases absent from the
+            # generated profiles.
+            model_profile = self._resolve_model_profile()
+            rejects_stop = (
+                bool(model_profile.get("reasoning_output"))
+                if model_profile is not None
+                else _model_rejects_stop(self.model_name)
+            )
+            if rejects_stop:
+                payload.pop("stop", None)
 
-        return params
+        # xAI expects `reasoning_effort` in `extra_body`, not as a top-level field.
+        # Move it there so it reaches the API.
+        reasoning_effort = payload.pop("reasoning_effort", None)
+        if reasoning_effort is not None:
+            extra_body = payload.get("extra_body")
+            if not isinstance(extra_body, dict):
+                extra_body = {}
+            payload["extra_body"] = {**extra_body, "reasoning_effort": reasoning_effort}
+
+        return payload
+
+    def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
+        """Route to Chat Completions or Responses API."""
+        if self._use_responses_api({**kwargs, **self.model_kwargs}):
+            return super()._stream_responses(*args, **kwargs)
+        return super()._stream(*args, **kwargs)
+
+    async def _astream(
+        self, *args: Any, **kwargs: Any
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        """Route to Chat Completions or Responses API."""
+        if self._use_responses_api({**kwargs, **self.model_kwargs}):
+            async for chunk in super()._astream_responses(*args, **kwargs):
+                yield chunk
+        else:
+            async for chunk in super()._astream(*args, **kwargs):
+                yield chunk
 
     def _create_chat_result(
         self,
@@ -568,6 +666,26 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         if hasattr(response, "citations"):
             rtn.generations[0].message.additional_kwargs["citations"] = (
                 response.citations
+            )
+
+        # Unlike OpenAI, xAI reports reasoning tokens < completion tokens. So we assume
+        # they are not counted in output tokens, and we add them here.
+        if (
+            (not self._use_responses_api({}))
+            and (usage_metadata := rtn.generations[0].message.usage_metadata)  # type: ignore[attr-defined]
+            and (
+                reasoning_tokens := usage_metadata.get("output_token_details", {}).get(
+                    "reasoning"
+                )
+            )
+        ):
+            rtn.generations[0].message.usage_metadata["output_tokens"] += (  # type: ignore[attr-defined]
+                reasoning_tokens
+            )
+            # Keep the documented UsageMetadata invariant
+            # total_tokens == input_tokens + output_tokens (gh #39634).
+            usage_metadata["total_tokens"] = (
+                usage_metadata["input_tokens"] + usage_metadata["output_tokens"]
             )
 
         return rtn
@@ -600,9 +718,28 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             (citations := chunk.get("citations"))
             and generation_chunk
             and isinstance(generation_chunk.message, AIMessageChunk)
+            and not chunk.get("usage")  # citations are repeated in final usage chunk
         ):
             generation_chunk.message.additional_kwargs["citations"] = citations
 
+        # Unlike OpenAI, xAI reports reasoning tokens < completion tokens. So we assume
+        # they are not counted in output tokens, and we add them here.
+        if (
+            generation_chunk
+            and (not self._use_responses_api({}))
+            and (usage_metadata := generation_chunk.message.usage_metadata)  # type: ignore[attr-defined]
+            and (
+                reasoning_tokens := usage_metadata.get("output_token_details", {}).get(
+                    "reasoning"
+                )
+            )
+        ):
+            generation_chunk.message.usage_metadata["output_tokens"] += reasoning_tokens  # type: ignore[attr-defined]
+            # Keep the documented UsageMetadata invariant
+            # total_tokens == input_tokens + output_tokens (gh #39634).
+            usage_metadata["total_tokens"] = (
+                usage_metadata["input_tokens"] + usage_metadata["output_tokens"]
+            )
         return generation_chunk
 
     def with_structured_output(
@@ -614,7 +751,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         ] = "function_calling",
         include_raw: bool = False,
         strict: bool | None = None,
-        **kwargs: Any,  # noqa: ANN401
+        **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
@@ -660,7 +797,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             strict:
                 - `True`:
                     Model output is guaranteed to exactly match the schema.
-                    The input schema will also be validated according to the [supported schemas](https://platform.openai.com/docs/guides/structured-outputs/supported-schemas?api-mode=responses#supported-schemas).
+                    The input schema will also be validated according to the [supported schemas](https://docs.x.ai/docs/guides/structured-outputs).
                 - `False`:
                     Input schema will not be validated and model output will not be
                     validated.

@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import warnings
+from typing import TYPE_CHECKING, Any, Generic
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage, ToolMessage
+from langgraph.constants import TAG_NOSTREAM
 
-from langchain.agents.middleware.types import AgentMiddleware
+from langchain.agents.middleware.internal_call_transformer import internal_call_metadata
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT
 from langchain.chat_models.base import init_chat_model
 
 if TYPE_CHECKING:
@@ -18,8 +21,10 @@ if TYPE_CHECKING:
     from langchain.agents.middleware.types import ToolCallRequest
     from langchain.tools import BaseTool
 
+_DEFAULT_EMULATOR_MODEL = "anthropic:claude-sonnet-4-5-20250929"
 
-class LLMToolEmulator(AgentMiddleware):
+
+class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[ContextT]):
     """Emulates specified tools using an LLM instead of executing them.
 
     This middleware allows selective emulation of tools for testing purposes.
@@ -36,7 +41,7 @@ class LLMToolEmulator(AgentMiddleware):
             middleware = LLMToolEmulator()
 
             agent = create_agent(
-                model="openai:gpt-4o",
+                model="openai:gpt-5.5",
                 tools=[get_weather, get_user_location, calculator],
                 middleware=[middleware],
             )
@@ -79,7 +84,14 @@ class LLMToolEmulator(AgentMiddleware):
                 If empty list, no tools will be emulated.
             model: Model to use for emulation.
 
-                Defaults to `'anthropic:claude-sonnet-4-5-20250929'`.
+                Defaults to `'anthropic:claude-sonnet-4-5-20250929'`, which requires
+                `langchain-anthropic` to be installed.
+
+                !!! warning "Deprecated"
+                    Relying on the implicit default is deprecated and will be
+                    removed in a future release, since it makes this middleware
+                    depend on `langchain-anthropic` even when unspecified. Pass
+                    `model` explicitly instead.
 
                 Can be a model identifier string or `BaseChatModel` instance.
         """
@@ -90,7 +102,7 @@ class LLMToolEmulator(AgentMiddleware):
         self.emulate_all = tools is None
         self.tools_to_emulate: set[str] = set()
 
-        if not self.emulate_all and tools is not None:
+        if tools is not None:
             for tool in tools:
                 if isinstance(tool, str):
                     self.tools_to_emulate.add(tool)
@@ -100,7 +112,22 @@ class LLMToolEmulator(AgentMiddleware):
 
         # Initialize emulator model
         if model is None:
-            self.model = init_chat_model("anthropic:claude-sonnet-4-5-20250929", temperature=1)
+            warnings.warn(
+                "LLMToolEmulator's default model "
+                f"({_DEFAULT_EMULATOR_MODEL!r}) is deprecated and will be removed "
+                "in a future release. Pass `model` explicitly instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            try:
+                self.model = init_chat_model(_DEFAULT_EMULATOR_MODEL, temperature=1)
+            except ImportError as e:
+                msg = (
+                    "LLMToolEmulator's default model requires `langchain-anthropic` "
+                    "to be installed. Install it with `pip install langchain-anthropic`, "
+                    "or pass `model=...` explicitly to use a different provider."
+                )
+                raise ImportError(msg) from e
         elif isinstance(model, BaseChatModel):
             self.model = model
         else:
@@ -109,8 +136,8 @@ class LLMToolEmulator(AgentMiddleware):
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command],
-    ) -> ToolMessage | Command:
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
         """Emulate tool execution using LLM if tool should be emulated.
 
         Args:
@@ -147,7 +174,13 @@ class LLMToolEmulator(AgentMiddleware):
         )
 
         # Get emulated response from LLM
-        response = self.model.invoke([HumanMessage(prompt)])
+        response = self.model.invoke(
+            [HumanMessage(prompt)],
+            config={
+                "metadata": {"lc_source": "tool_emulation", **internal_call_metadata()},
+                "tags": [TAG_NOSTREAM],
+            },
+        )
 
         # Short-circuit: return emulated result without executing real tool
         return ToolMessage(
@@ -159,8 +192,8 @@ class LLMToolEmulator(AgentMiddleware):
     async def awrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
-    ) -> ToolMessage | Command:
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+    ) -> ToolMessage | Command[Any]:
         """Async version of `wrap_tool_call`.
 
         Emulate tool execution using LLM if tool should be emulated.
@@ -199,7 +232,13 @@ class LLMToolEmulator(AgentMiddleware):
         )
 
         # Get emulated response from LLM (using async invoke)
-        response = await self.model.ainvoke([HumanMessage(prompt)])
+        response = await self.model.ainvoke(
+            [HumanMessage(prompt)],
+            config={
+                "metadata": {"lc_source": "tool_emulation", **internal_call_metadata()},
+                "tags": [TAG_NOSTREAM],
+            },
+        )
 
         # Short-circuit: return emulated result without executing real tool
         return ToolMessage(

@@ -1,3 +1,6 @@
+import signal
+import sys
+
 import pytest
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
@@ -79,3 +82,30 @@ def test_final_answer_after_parsable_action() -> None:
         "Parsing LLM output produced both a final answer and a parse-able action"
         in exception_info.value.args[0]
     )
+
+
+def _timeout_handler(_signum: int, _frame: object) -> None:
+    msg = "ReDoS: regex took too long"
+    raise TimeoutError(msg)
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="SIGALRM is not available on Windows"
+)
+def test_mrkl_output_parser_no_redos() -> None:
+    """Regression test for ReDoS caused by catastrophic backtracking."""
+    malicious = "Action: " + " \t" * 1000 + "Action "
+    old = signal.signal(signal.SIGALRM, _timeout_handler)
+    signal.alarm(2)
+    try:
+        try:
+            mrkl_output_parser.parse(malicious)
+        except OutputParserException:
+            pass
+        except TimeoutError:
+            pytest.fail(
+                "ReDoS detected: MRKLOutputParser.parse() hung on crafted input"
+            )
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old)

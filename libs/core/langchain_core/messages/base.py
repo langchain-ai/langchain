@@ -8,16 +8,15 @@ from pydantic import ConfigDict, Field
 
 from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.load.serializable import Serializable
+from langchain_core.messages import content as types
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from typing import Self
 
-    from typing_extensions import Self
-
-    from langchain_core.messages import content as types
     from langchain_core.prompts.chat import ChatPromptTemplate
 
 
@@ -100,10 +99,10 @@ class BaseMessage(Serializable):
     [`SystemMessage`][langchain.messages.SystemMessage].
     """
 
-    content: str | list[str | dict]
+    content: str | list[str | dict[Any, Any]]
     """The contents of the message."""
 
-    additional_kwargs: dict = Field(default_factory=dict)
+    additional_kwargs: dict[Any, Any] = Field(default_factory=dict)
     """Reserved for additional payload data associated with the message.
 
     For example, for a message from an AI, this could include tool calls as
@@ -111,7 +110,7 @@ class BaseMessage(Serializable):
 
     """
 
-    response_metadata: dict = Field(default_factory=dict)
+    response_metadata: dict[Any, Any] = Field(default_factory=dict)
     """Examples: response headers, logprobs, token counts, model name."""
 
     type: str
@@ -146,21 +145,21 @@ class BaseMessage(Serializable):
     @overload
     def __init__(
         self,
-        content: str | list[str | dict],
+        content: str | list[str | dict[Any, Any]],
         **kwargs: Any,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        content: str | list[str | dict] | None = None,
+        content: str | list[str | dict[Any, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
     def __init__(
         self,
-        content: str | list[str | dict] | None = None,
+        content: str | list[str | dict[Any, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -204,7 +203,6 @@ class BaseMessage(Serializable):
 
         """
         # Needed here to avoid circular import, as these classes import BaseMessages
-        from langchain_core.messages import content as types  # noqa: PLC0415
         from langchain_core.messages.block_translators.anthropic import (  # noqa: PLC0415
             _convert_to_v1_from_anthropic_input,
         )
@@ -266,6 +264,9 @@ class BaseMessage(Serializable):
 
         Can be used as both property (`message.text`) and method (`message.text()`).
 
+        Handles both string and list content types (e.g. for content blocks). Only
+        extracts blocks with `type: 'text'`; other block types are ignored.
+
         !!! deprecated
             As of `langchain-core` 1.0.0, calling `.text()` as a method is deprecated.
             Use `.text` as a property instead. This method will be removed in 2.0.0.
@@ -277,7 +278,7 @@ class BaseMessage(Serializable):
         if isinstance(self.content, str):
             text_value = self.content
         else:
-            # must be a list
+            # Must be a list
             blocks = [
                 block
                 for block in self.content
@@ -317,7 +318,22 @@ class BaseMessage(Serializable):
         Returns:
             A pretty representation of the message.
 
-        """
+        Example:
+            ```python
+            from langchain_core.messages import HumanMessage
+
+            msg = HumanMessage(content="What is the capital of France?")
+            print(msg.pretty_repr())
+            ```
+
+            Results in:
+
+            ```txt
+            ================================ Human Message =================================
+
+            What is the capital of France?
+            ```
+        """  # noqa: E501
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
         # TODO: handle non-string content.
         if self.name is not None:
@@ -325,14 +341,31 @@ class BaseMessage(Serializable):
         return f"{title}\n\n{self.content}"
 
     def pretty_print(self) -> None:
-        """Print a pretty representation of the message."""
+        """Print a pretty representation of the message.
+
+        Example:
+            ```python
+            from langchain_core.messages import AIMessage
+
+            msg = AIMessage(content="The capital of France is Paris.")
+            msg.pretty_print()
+            ```
+
+            Results in:
+
+            ```txt
+            ================================== Ai Message ==================================
+
+            The capital of France is Paris.
+            ```
+        """  # noqa: E501
         print(self.pretty_repr(html=is_interactive_env()))  # noqa: T201
 
 
 def merge_content(
-    first_content: str | list[str | dict],
-    *contents: str | list[str | dict],
-) -> str | list[str | dict]:
+    first_content: str | list[str | dict[Any, Any]],
+    *contents: str | list[str | dict[Any, Any]],
+) -> str | list[str | dict[Any, Any]]:
     """Merge multiple message contents.
 
     Args:
@@ -343,8 +376,11 @@ def merge_content(
         The merged content.
 
     """
-    merged: str | list[str | dict]
+    merged: str | list[str | dict[Any, Any]]
     merged = "" if first_content is None else first_content
+    if isinstance(merged, list):
+        # The branches below append to it, which would change the first message.
+        merged = merged.copy()
 
     for content in contents:
         # If current is a string
@@ -357,7 +393,7 @@ def merge_content(
                 merged = [merged, *content]
         elif isinstance(content, list):
             # If both are lists
-            merged = merge_lists(cast("list", merged), content)  # type: ignore[assignment]
+            merged = merge_lists(merged, content)  # type: ignore[assignment]
         # If the first content is a list, and the second content is a string
         # If the last element of the first content is a string
         # Add the second content to the last element
@@ -437,7 +473,7 @@ class BaseMessageChunk(BaseMessage):
         raise TypeError(msg)
 
 
-def message_to_dict(message: BaseMessage) -> dict:
+def message_to_dict(message: BaseMessage) -> dict[str, Any]:
     """Convert a Message to a dictionary.
 
     Args:
@@ -451,7 +487,7 @@ def message_to_dict(message: BaseMessage) -> dict:
     return {"type": message.type, "data": message.model_dump()}
 
 
-def messages_to_dict(messages: Sequence[BaseMessage]) -> list[dict]:
+def messages_to_dict(messages: Sequence[BaseMessage]) -> list[dict[str, Any]]:
     """Convert a sequence of Messages to a list of dictionaries.
 
     Args:

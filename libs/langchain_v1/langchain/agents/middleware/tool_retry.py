@@ -5,18 +5,20 @@ from __future__ import annotations
 import asyncio
 import time
 import warnings
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.messages import ToolMessage
+from langgraph.errors import GraphBubbleUp
 
 from langchain.agents.middleware._retry import (
     OnFailure,
     RetryOn,
     calculate_delay,
+    default_retry_on,
     should_retry_exception,
     validate_retry_params,
 )
-from langchain.agents.middleware.types import AgentMiddleware
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -27,7 +29,7 @@ if TYPE_CHECKING:
     from langchain.tools import BaseTool
 
 
-class ToolRetryMiddleware(AgentMiddleware):
+class ToolRetryMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Middleware that automatically retries failed tool calls with configurable backoff.
 
     Supports retrying on specific exceptions and exponential backoff.
@@ -56,12 +58,15 @@ class ToolRetryMiddleware(AgentMiddleware):
 
         !!! example "Custom exception filtering"
 
+            Exceptions for which the callable returns `False` propagate to the caller.
+            They are not passed to `on_failure`.
+
             ```python
             from requests.exceptions import HTTPError
 
 
             def should_retry(exc: Exception) -> bool:
-                # Only retry on 5xx errors
+                # Retry 5xx; anything else propagates
                 if isinstance(exc, HTTPError):
                     return 500 <= exc.status_code < 600
                 return False
@@ -130,7 +135,7 @@ class ToolRetryMiddleware(AgentMiddleware):
         *,
         max_retries: int = 2,
         tools: list[BaseTool | str] | None = None,
-        retry_on: RetryOn = (Exception,),
+        retry_on: RetryOn = default_retry_on,
         on_failure: OnFailure = "continue",
         backoff_factor: float = 2.0,
         initial_delay: float = 1.0,
@@ -151,7 +156,9 @@ class ToolRetryMiddleware(AgentMiddleware):
             retry_on: Either a tuple of exception types to retry on, or a callable
                 that takes an exception and returns `True` if it should be retried.
 
-                Default is to retry on all exceptions.
+                By default, retryable model errors and all unclassified exceptions are
+                retried. Exceptions that do not match propagate immediately and are not
+                handled by `on_failure`.
             on_failure: Behavior when all retries are exhausted.
 
                 Options:
@@ -189,14 +196,14 @@ class ToolRetryMiddleware(AgentMiddleware):
 
         # Handle backwards compatibility for deprecated on_failure values
         if on_failure == "raise":  # type: ignore[comparison-overlap]
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 "on_failure='raise' is deprecated and will be removed in a future version. "
                 "Use on_failure='error' instead."
             )
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
             on_failure = "error"
         elif on_failure == "return_message":  # type: ignore[comparison-overlap]
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 "on_failure='return_message' is deprecated and will be removed "
                 "in a future version. Use on_failure='continue' instead."
             )
@@ -233,7 +240,8 @@ class ToolRetryMiddleware(AgentMiddleware):
             return True
         return tool_name in self._tool_filter
 
-    def _format_failure_message(self, tool_name: str, exc: Exception, attempts_made: int) -> str:
+    @staticmethod
+    def _format_failure_message(tool_name: str, exc: Exception, attempts_made: int) -> str:
         """Format the failure message when retries are exhausted.
 
         Args:
@@ -287,8 +295,8 @@ class ToolRetryMiddleware(AgentMiddleware):
     def wrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], ToolMessage | Command],
-    ) -> ToolMessage | Command:
+        handler: Callable[[ToolCallRequest], ToolMessage | Command[Any]],
+    ) -> ToolMessage | Command[Any]:
         """Intercept tool execution and retry on failure.
 
         Args:
@@ -297,6 +305,11 @@ class ToolRetryMiddleware(AgentMiddleware):
 
         Returns:
             `ToolMessage` or `Command` (the final result).
+
+        Raises:
+            Exception: Any exception not matched by `retry_on` is re-raised immediately,
+                without being passed to `on_failure`.
+            RuntimeError: If the retry loop completes without returning. This should not happen.
         """
         tool_name = request.tool.name if request.tool else request.tool_call["name"]
 
@@ -310,13 +323,17 @@ class ToolRetryMiddleware(AgentMiddleware):
         for attempt in range(self.max_retries + 1):
             try:
                 return handler(request)
+            except GraphBubbleUp:
+                # Control-flow signals (interrupts, parent commands) must
+                # propagate, not be retried or converted to error messages.
+                raise
             except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
                 # Check if we should retry this exception
                 if not should_retry_exception(exc, self.retry_on):
-                    # Exception is not retryable, handle failure immediately
-                    return self._handle_failure(tool_name, tool_call_id, exc, attempts_made)
+                    # Exception is not retryable, re-raise immediately
+                    raise
 
                 # Check if we have more retries left
                 if attempt < self.max_retries:
@@ -342,17 +359,21 @@ class ToolRetryMiddleware(AgentMiddleware):
     async def awrap_tool_call(
         self,
         request: ToolCallRequest,
-        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command]],
-    ) -> ToolMessage | Command:
+        handler: Callable[[ToolCallRequest], Awaitable[ToolMessage | Command[Any]]],
+    ) -> ToolMessage | Command[Any]:
         """Intercept and control async tool execution with retry logic.
 
         Args:
             request: Tool call request with call `dict`, `BaseTool`, state, and runtime.
-            handler: Async callable to execute the tool and returns `ToolMessage` or
-                `Command`.
+            handler: Async callable to execute the tool and returns `ToolMessage` or `Command`.
 
         Returns:
             `ToolMessage` or `Command` (the final result).
+
+        Raises:
+            Exception: Any exception not matched by `retry_on` is re-raised immediately,
+                without being passed to `on_failure`.
+            RuntimeError: If the retry loop completes without returning. This should not happen.
         """
         tool_name = request.tool.name if request.tool else request.tool_call["name"]
 
@@ -366,13 +387,17 @@ class ToolRetryMiddleware(AgentMiddleware):
         for attempt in range(self.max_retries + 1):
             try:
                 return await handler(request)
+            except GraphBubbleUp:
+                # Control-flow signals (interrupts, parent commands) must
+                # propagate, not be retried or converted to error messages.
+                raise
             except Exception as exc:
                 attempts_made = attempt + 1  # attempt is 0-indexed
 
                 # Check if we should retry this exception
                 if not should_retry_exception(exc, self.retry_on):
-                    # Exception is not retryable, handle failure immediately
-                    return self._handle_failure(tool_name, tool_call_id, exc, attempts_made)
+                    # Exception is not retryable, re-raise immediately
+                    raise
 
                 # Check if we have more retries left
                 if attempt < self.max_retries:

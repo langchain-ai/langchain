@@ -1,4 +1,5 @@
 import asyncio
+import json
 import re
 import sys
 import time
@@ -13,13 +14,16 @@ from collections.abc import (
 )
 from functools import partial
 from operator import itemgetter
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
 import pytest
 from freezegun import freeze_time
 from packaging import version
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import Field as FieldV1
+from pydantic.v1 import ValidationError as ValidationErrorV1
 from pytest_mock import MockerFixture
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import TypedDict, override
@@ -27,12 +31,14 @@ from typing_extensions import TypedDict, override
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
+    CallbackManagerForLLMRun,
     CallbackManagerForRetrieverRun,
     atrace_as_chain_group,
     trace_as_chain_group,
 )
 from langchain_core.documents import Document
 from langchain_core.language_models import (
+    BaseChatModel,
     FakeListChatModel,
     FakeListLLM,
     FakeStreamingListLLM,
@@ -42,12 +48,14 @@ from langchain_core.load import dumpd, dumps
 from langchain_core.load.load import loads
 from langchain_core.messages import AIMessageChunk, HumanMessage, SystemMessage
 from langchain_core.messages.base import BaseMessage
+from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import (
     BaseOutputParser,
     CommaSeparatedListOutputParser,
     StrOutputParser,
 )
-from langchain_core.outputs.chat_generation import ChatGeneration
+from langchain_core.outputs.chat_generation import ChatGeneration, ChatGenerationChunk
+from langchain_core.outputs.chat_result import ChatResult
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.prompt_values import ChatPromptValue, StringPromptValue
 from langchain_core.prompts import (
@@ -78,7 +86,11 @@ from langchain_core.runnables import (
     add,
     chain,
 )
-from langchain_core.runnables.base import RunnableMap, RunnableSerializable
+from langchain_core.runnables.base import (
+    RunnableMap,
+    RunnableSerializable,
+    _ChunkAccumulator,
+)
 from langchain_core.runnables.utils import Input, Output
 from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers import (
@@ -88,13 +100,41 @@ from langchain_core.tracers import (
     RunLog,
     RunLogPatch,
 )
+from langchain_core.tracers._compat import pydantic_copy
 from langchain_core.tracers.context import collect_runs
-from langchain_core.utils.pydantic import PYDANTIC_VERSION
-from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
+from langchain_core.utils.json import parse_partial_json
+from langchain_core.utils.pydantic import (
+    PYDANTIC_VERSION,
+    TypeBaseModel,
+    model_validate,
+)
+from langchain_core.version import VERSION
+from tests.unit_tests.pydantic_utils import (
+    _normalize_schema,
+    _schema,
+    skip_if_no_pydantic_v1,
+)
 from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
+
+if TYPE_CHECKING:
+    from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
+
+# Several tests assert the legacy `RunLog` / `RunLogPatch` output produced by
+# `astream_log`, which cannot be replaced by `astream` without losing coverage.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:astream_log is deprecated. Use astream instead.:"
+    "langchain_core._api.deprecation.LangChainDeprecationWarning"
+)
 
 PYDANTIC_VERSION_AT_LEAST_29 = version.parse("2.9") <= PYDANTIC_VERSION
 PYDANTIC_VERSION_AT_LEAST_210 = version.parse("2.10") <= PYDANTIC_VERSION
+
+
+def _normalize_lc_version(value: str) -> str:
+    return value.replace(
+        f"'langchain-core': '{VERSION}'",
+        "'langchain-core': '<version>'",
+    )
 
 
 class FakeTracer(BaseTracer):
@@ -147,19 +187,18 @@ class FakeTracer(BaseTracer):
             new_dotted_order = ".".join(processed_levels)
         else:
             new_dotted_order = None
-        return run.copy(
-            update={
-                "id": self._replace_uuid(run.id),
-                "parent_run_id": (
-                    self.uuids_map[run.parent_run_id] if run.parent_run_id else None
-                ),
-                "child_runs": [self._copy_run(child) for child in run.child_runs],
-                "trace_id": self._replace_uuid(run.trace_id) if run.trace_id else None,
-                "dotted_order": new_dotted_order,
-                "inputs": self._replace_message_id(run.inputs),
-                "outputs": self._replace_message_id(run.outputs),
-            }
-        )
+        update_dict = {
+            "id": self._replace_uuid(run.id),
+            "parent_run_id": (
+                self.uuids_map[run.parent_run_id] if run.parent_run_id else None
+            ),
+            "child_runs": [self._copy_run(child) for child in run.child_runs],
+            "trace_id": self._replace_uuid(run.trace_id) if run.trace_id else None,
+            "dotted_order": new_dotted_order,
+            "inputs": self._replace_message_id(run.inputs),
+            "outputs": self._replace_message_id(run.outputs),
+        }
+        return pydantic_copy(run, update=update_dict)
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
@@ -296,7 +335,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     async def typed_async_lambda_impl(x: str) -> int:
         return len(x)
 
-    typed_async_lambda: Runnable = RunnableLambda(typed_async_lambda_impl)  # str -> int
+    typed_async_lambda = RunnableLambda(typed_async_lambda_impl)  # str -> int
 
     assert typed_async_lambda.get_input_jsonschema() == {
         "title": "typed_async_lambda_impl_input",
@@ -320,6 +359,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "associated metadata.\n"
                 "\n"
                 "!!! note\n"
+                "\n"
                 "    `Document` is for **retrieval workflows**, not chat I/O. For "
                 "sending text\n"
                 "    to an LLM in a conversation, use message types from "
@@ -440,7 +480,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "title": "CommaSeparatedListOutputParserOutput",
     }
 
-    router: Runnable = RouterRunnable({})
+    router = RouterRunnable[Any]({})
 
     assert _schema(router.input_schema) == {
         "$ref": "#/definitions/RouterInput",
@@ -460,7 +500,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     }
     assert router.get_output_jsonschema() == {"title": "RouterRunnableOutput"}
 
-    seq_w_map: Runnable = (
+    seq_w_map = (
         prompt
         | fake_llm
         | {
@@ -497,7 +537,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
 
     foo_ = RunnableLambda(foo)
 
-    assert foo_.assign(bar=lambda _: "foo").get_output_schema().model_json_schema() == {
+    assert foo_.assign(bar=lambda _: "foo").get_output_jsonschema() == {
         "properties": {"bar": {"title": "Bar"}, "root": {"title": "Root"}},
         "required": ["root", "bar"],
         "title": "RunnableAssignOutput",
@@ -529,7 +569,7 @@ def test_passthrough_assign_schema() -> None:
 
     invalid_seq_w_assign = (
         RunnablePassthrough.assign(context=itemgetter("question") | retriever)
-        | fake_llm
+        | fake_llm  # type: ignore[operator]
     )
 
     # fallback to RunnableAssign.input_schema if next runnable doesn't have
@@ -616,9 +656,7 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
         }
 
     assert _normalize_schema(
-        RunnableLambda(
-            aget_values_typed  # type: ignore[arg-type]
-        ).get_input_jsonschema()
+        RunnableLambda(aget_values_typed).get_input_jsonschema()
     ) == _normalize_schema(
         {
             "$defs": {
@@ -642,7 +680,7 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
 
     if PYDANTIC_VERSION_AT_LEAST_29:
         assert _normalize_schema(
-            RunnableLambda(aget_values_typed).get_output_jsonschema()  # type: ignore[arg-type]
+            RunnableLambda(aget_values_typed).get_output_jsonschema()
         ) == snapshot(name="schema8")
 
 
@@ -666,7 +704,7 @@ def test_with_types_with_type_generics() -> None:
 
 def test_schema_with_itemgetter() -> None:
     """Test runnable with itemgetter."""
-    foo: Runnable = RunnableLambda(itemgetter("hello"))
+    foo = RunnableLambda(itemgetter("hello"))
     assert _schema(foo.input_schema) == {
         "properties": {"hello": {"title": "Hello"}},
         "required": ["hello"],
@@ -674,7 +712,7 @@ def test_schema_with_itemgetter() -> None:
         "type": "object",
     }
     prompt = ChatPromptTemplate.from_template("what is {language}?")
-    chain: Runnable = {"language": itemgetter("language")} | prompt
+    chain = {"language": itemgetter("language")} | prompt
     assert _schema(chain.input_schema) == {
         "properties": {"language": {"title": "Language"}},
         "required": ["language"],
@@ -691,13 +729,13 @@ def test_schema_complex_seq() -> None:
 
     model = FakeListChatModel(responses=[""])
 
-    chain1: Runnable = RunnableSequence(
+    chain1 = RunnableSequence[dict[str, Any], str](
         prompt1, model, StrOutputParser(), name="city_chain"
     )
 
     assert chain1.name == "city_chain"
 
-    chain2: Runnable = (
+    chain2 = (
         {"city": chain1, "language": itemgetter("language")}
         | prompt2
         | model
@@ -841,7 +879,7 @@ def test_configurable_fields(snapshot: SnapshotAssertion) -> None:
         "required": ["lang", "name"],
     }
 
-    chain_with_map_configurable: Runnable = prompt_configurable | {
+    chain_with_map_configurable = prompt_configurable | {
         "llm1": fake_llm_configurable | StrOutputParser(),
         "llm2": fake_llm_configurable | StrOutputParser(),
         "llm3": fake_llm.configurable_fields(
@@ -1163,7 +1201,7 @@ async def test_with_config_metadata_passthrough(mocker: MockerFixture) -> None:
             "callbacks": None,
             "recursion_limit": 25,
             "configurable": {"hello": "there", "__secret_key": "nahnah"},
-            "metadata": {"hello": "there", "bye": "now"},
+            "metadata": {"bye": "now"},
         },
     )
     spy.reset_mock()
@@ -1709,7 +1747,7 @@ def test_with_listener_propagation(mocker: MockerFixture) -> None:
         + "{question}"
     )
     chat = FakeListChatModel(responses=["foo"])
-    chain: Runnable = prompt | chat
+    chain = prompt | chat
     mock_start = mocker.Mock()
     mock_end = mocker.Mock()
     chain_with_listeners = chain.with_listeners(on_start=mock_start, on_end=mock_end)
@@ -1723,9 +1761,7 @@ def test_with_listener_propagation(mocker: MockerFixture) -> None:
     mock_start.reset_mock()
     mock_end.reset_mock()
 
-    chain_with_listeners.with_types(output_type=str).invoke(
-        {"question": "Who are you?"}
-    )
+    chain_with_listeners.invoke({"question": "Who are you?"})
 
     assert mock_start.call_count == 1
     assert mock_start.call_args[0][0].name == "RunnableSequence"
@@ -1783,12 +1819,12 @@ def test_prompt_with_chat_model(
 
     chain = prompt | chat
 
-    assert repr(chain) == snapshot
+    assert _normalize_lc_version(repr(chain)) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == []
     assert chain.last == chat
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "invoke")
@@ -1889,12 +1925,12 @@ async def test_prompt_with_chat_model_async(
 
     chain = prompt | chat
 
-    assert repr(chain) == snapshot
+    assert _normalize_lc_version(repr(chain)) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == []
     assert chain.last == chat
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "ainvoke")
@@ -2007,7 +2043,7 @@ async def test_prompt_with_llm(
     assert chain.first == prompt
     assert chain.middle == []
     assert chain.last == llm
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "ainvoke")
@@ -2150,7 +2186,11 @@ async def test_prompt_with_llm(
                 "value": {
                     "end_time": None,
                     "final_output": None,
-                    "metadata": {"ls_model_type": "llm", "ls_provider": "fakelist"},
+                    "metadata": {
+                        "ls_model_type": "llm",
+                        "ls_provider": "fakelist",
+                        "lc_versions": {"langchain-core": VERSION},
+                    },
                     "name": "FakeListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
                     "streamed_output": [],
@@ -2204,7 +2244,7 @@ async def test_prompt_with_llm_parser(
     assert chain.first == prompt
     assert chain.middle == [llm]
     assert chain.last == parser
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "ainvoke")
@@ -2364,6 +2404,7 @@ async def test_prompt_with_llm_parser(
                     "metadata": {
                         "ls_model_type": "llm",
                         "ls_provider": "fakestreaminglist",
+                        "lc_versions": {"langchain-core": VERSION},
                     },
                     "name": "FakeStreamingListLLM",
                     "start_time": "2023-01-01T00:00:00.000+00:00",
@@ -2474,7 +2515,7 @@ async def test_stream_log_retriever() -> None:
     )
     llm = FakeListLLM(responses=["foo", "bar"])
 
-    chain: Runnable = (
+    chain = (
         {"documents": FakeRetriever(), "question": itemgetter("question")}
         | prompt
         | {"one": llm, "two": llm}
@@ -2596,7 +2637,7 @@ async def test_prompt_with_llm_and_async_lambda(
     assert chain.first == prompt
     assert chain.middle == [llm]
     assert chain.last == RunnableLambda(func=passthrough)
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "ainvoke")
@@ -2637,7 +2678,7 @@ def test_prompt_with_chat_model_and_parser(
     assert chain.first == prompt
     assert chain.middle == [chat]
     assert chain.last == parser
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "invoke")
@@ -2677,7 +2718,7 @@ def test_combining_sequences(
     assert chain.first == prompt
     assert chain.middle == [chat]
     assert chain.last == parser
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     prompt2 = (
         SystemMessagePromptTemplate.from_template("You are a nicer assistant.")
@@ -2685,19 +2726,19 @@ def test_combining_sequences(
     )
     chat2 = FakeListChatModel(responses=["baz, qux"])
     parser2 = CommaSeparatedListOutputParser()
-    input_formatter: RunnableLambda[list[str], dict[str, Any]] = RunnableLambda(
+    input_formatter = RunnableLambda[list[str], dict[str, Any]](
         lambda x: {"question": x[0] + x[1]}
     )
 
-    chain2 = cast("RunnableSequence", input_formatter | prompt2 | chat2 | parser2)
+    chain2 = input_formatter | prompt2 | chat2 | parser2
 
     assert isinstance(chain2, RunnableSequence)
     assert chain2.first == input_formatter
     assert chain2.middle == [prompt2, chat2]
     assert chain2.last == parser2
-    assert dumps(chain2, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain2, pretty=True)) == snapshot
 
-    combined_chain = cast("RunnableSequence", chain | chain2)
+    combined_chain = chain | chain2
 
     assert isinstance(combined_chain, RunnableSequence)
     assert combined_chain.first == prompt
@@ -2709,7 +2750,7 @@ def test_combining_sequences(
         chat2,
     ]
     assert combined_chain.last == parser2
-    assert dumps(combined_chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(combined_chain, pretty=True)) == snapshot
 
     # Test invoke
     tracer = FakeTracer()
@@ -2741,7 +2782,7 @@ Question:
 
     parser = CommaSeparatedListOutputParser()
 
-    chain: Runnable = (
+    chain = (
         {
             "question": RunnablePassthrough[str]() | passthrough,
             "documents": passthrough | retriever,
@@ -2752,12 +2793,12 @@ Question:
         | parser
     )
 
-    assert repr(chain) == snapshot
+    assert _normalize_lc_version(repr(chain)) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert isinstance(chain.first, RunnableParallel)
     assert chain.middle == [prompt, chat]
     assert chain.last == parser
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "invoke")
@@ -2823,12 +2864,12 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
         }
     )
 
-    assert repr(chain) == snapshot
+    assert _normalize_lc_version(repr(chain)) == snapshot
     assert isinstance(chain, RunnableSequence)
     assert chain.first == prompt
     assert chain.middle == [RunnableLambda(passthrough)]
     assert isinstance(chain.last, RunnableParallel)
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "invoke")
@@ -2871,11 +2912,11 @@ def test_router_runnable(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
         "You are an english major. Answer the question: {question}"
     ) | FakeListLLM(responses=["2"])
     router = RouterRunnable({"math": chain1, "english": chain2})
-    chain: Runnable = {
+    chain = {
         "key": lambda x: x["key"],
         "input": {"question": lambda x: x["question"]},
     } | router
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     result = chain.invoke({"key": "math", "question": "2 + 2"})
     assert result == "4"
@@ -2915,7 +2956,7 @@ async def test_router_runnable_async() -> None:
         "You are an english major. Answer the question: {question}"
     ) | FakeListLLM(responses=["2"])
     router = RouterRunnable({"math": chain1, "english": chain2})
-    chain: Runnable = {
+    chain = {
         "key": lambda x: x["key"],
         "input": {"question": lambda x: x["question"]},
     } | router
@@ -2947,7 +2988,7 @@ def test_higher_order_lambda_runnable(
         input={"question": lambda x: x["question"]},
     )
 
-    def router(params: dict[str, Any]) -> Runnable:
+    def router(params: dict[str, Any]) -> Runnable[dict[str, Any], str]:
         if params["key"] == "math":
             return itemgetter("input") | math_chain
         if params["key"] == "english":
@@ -2955,8 +2996,8 @@ def test_higher_order_lambda_runnable(
         msg = f"Unknown key: {params['key']}"
         raise ValueError(msg)
 
-    chain: Runnable = input_map | router
-    assert dumps(chain, pretty=True) == snapshot
+    chain = input_map | router
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     result = chain.invoke({"key": "math", "question": "2 + 2"})
     assert result == "4"
@@ -3003,7 +3044,7 @@ async def test_higher_order_lambda_runnable_async(mocker: MockerFixture) -> None
         input={"question": lambda x: x["question"]},
     )
 
-    def router(value: dict[str, Any]) -> Runnable:
+    def router(value: dict[str, Any]) -> Runnable[dict[str, Any], str]:
         if value["key"] == "math":
             return itemgetter("input") | math_chain
         if value["key"] == "english":
@@ -3011,7 +3052,7 @@ async def test_higher_order_lambda_runnable_async(mocker: MockerFixture) -> None
         msg = f"Unknown key: {value['key']}"
         raise ValueError(msg)
 
-    chain: Runnable = input_map | router
+    chain = input_map | router
 
     result = await chain.ainvoke({"key": "math", "question": "2 + 2"})
     assert result == "4"
@@ -3025,7 +3066,7 @@ async def test_higher_order_lambda_runnable_async(mocker: MockerFixture) -> None
     assert result2 == ["4", "2"]
 
     # Test ainvoke
-    async def arouter(params: dict[str, Any]) -> Runnable:
+    async def arouter(params: dict[str, Any]) -> Runnable[dict[str, Any], str]:
         if params["key"] == "math":
             return itemgetter("input") | math_chain
         if params["key"] == "english":
@@ -3033,7 +3074,7 @@ async def test_higher_order_lambda_runnable_async(mocker: MockerFixture) -> None
         msg = f"Unknown key: {params['key']}"
         raise ValueError(msg)
 
-    achain: Runnable = input_map | arouter
+    achain = input_map | arouter
     math_spy = mocker.spy(math_chain.__class__, "ainvoke")
     tracer = FakeTracer()
     assert (
@@ -3086,7 +3127,7 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
     assert isinstance(chain.last, RunnableParallel)
 
     if PYDANTIC_VERSION_AT_LEAST_210:
-        assert dumps(chain, pretty=True) == snapshot
+        assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
 
     # Test invoke
     prompt_spy = mocker.spy(prompt.__class__, "invoke")
@@ -3140,7 +3181,7 @@ def test_map_stream() -> None:
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
-    chain: Runnable = prompt | {
+    chain = prompt | {
         "chat": chat.bind(stop=["Thought:"]),
         "llm": llm,
         "passthrough": RunnablePassthrough(),
@@ -3151,6 +3192,7 @@ def test_map_stream() -> None:
     final_value = None
     streamed_chunks = []
     for chunk in stream:
+        assert isinstance(chunk, AddableDict)
         streamed_chunks.append(chunk)
         if final_value is None:
             final_value = chunk
@@ -3165,7 +3207,9 @@ def test_map_stream() -> None:
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
-    assert final_value.get("chat").content == "i'm a chatbot"
+    chat_message = final_value.get("chat")
+    assert chat_message is not None
+    assert chat_message.content == "i'm a chatbot"
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == prompt.invoke(
         {"question": "What is your name?"}
@@ -3178,19 +3222,19 @@ def test_map_stream() -> None:
         "type": "string",
     }
 
-    stream = chain_pick_one.stream({"question": "What is your name?"})
+    stream_picked = chain_pick_one.stream({"question": "What is your name?"})
 
     final_value = None
-    streamed_chunks = []
-    for chunk in stream:
-        streamed_chunks.append(chunk)
+    streamed_chunks_picked = []
+    for chunk in stream_picked:
+        streamed_chunks_picked.append(chunk)
         if final_value is None:
             final_value = chunk
         else:
             final_value += chunk
 
-    assert streamed_chunks[0] == "i"
-    assert len(streamed_chunks) == len(llm_res)
+    assert streamed_chunks_picked[0] == "i"
+    assert len(streamed_chunks_picked) == len(llm_res)
 
     chain_pick_two = chain.assign(hello=RunnablePick("llm").pipe(llm)).pick(
         [
@@ -3209,30 +3253,30 @@ def test_map_stream() -> None:
         "required": ["llm", "hello"],
     }
 
-    stream = chain_pick_two.stream({"question": "What is your name?"})
+    stream_picked = chain_pick_two.stream({"question": "What is your name?"})
 
     final_value = None
-    streamed_chunks = []
-    for chunk in stream:
-        streamed_chunks.append(chunk)
+    streamed_chunks_picked = []
+    for chunk in stream_picked:
+        streamed_chunks_picked.append(chunk)
         if final_value is None:
             final_value = chunk
         else:
             final_value += chunk
 
-    assert streamed_chunks[0] in [
+    assert streamed_chunks_picked[0] in [
         {"llm": "i"},
         {"chat": _any_id_ai_message_chunk(content="i")},
     ]
     if not (
         # TODO: Rewrite properly the statement above
-        streamed_chunks[0] == {"llm": "i"}
+        streamed_chunks_picked[0] == {"llm": "i"}
         or {"chat": _any_id_ai_message_chunk(content="i")}
     ):
-        msg = f"Got an unexpected chunk: {streamed_chunks[0]}"
+        msg = f"Got an unexpected chunk: {streamed_chunks_picked[0]}"
         raise AssertionError(msg)
 
-    assert len(streamed_chunks) == len(llm_res) + len(chat_res)
+    assert len(streamed_chunks_picked) == len(llm_res) + len(chat_res)
 
 
 def test_map_stream_iterator_input() -> None:
@@ -3249,7 +3293,7 @@ def test_map_stream_iterator_input() -> None:
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
-    chain: Runnable = (
+    chain = (
         prompt
         | llm
         | {
@@ -3264,6 +3308,7 @@ def test_map_stream_iterator_input() -> None:
     final_value = None
     streamed_chunks = []
     for chunk in stream:
+        assert isinstance(chunk, AddableDict)
         streamed_chunks.append(chunk)
         if final_value is None:
             final_value = chunk
@@ -3278,7 +3323,9 @@ def test_map_stream_iterator_input() -> None:
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + len(llm_res)
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
-    assert final_value.get("chat").content == "i'm a chatbot"
+    chat_message = final_value.get("chat")
+    assert chat_message is not None
+    assert chat_message.content == "i'm a chatbot"
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == "i'm a textbot"
 
@@ -3297,7 +3344,7 @@ async def test_map_astream() -> None:
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
-    chain: Runnable = prompt | {
+    chain = prompt | {
         "chat": chat.bind(stop=["Thought:"]),
         "llm": llm,
         "passthrough": RunnablePassthrough(),
@@ -3308,6 +3355,7 @@ async def test_map_astream() -> None:
     final_value = None
     streamed_chunks = []
     async for chunk in stream:
+        assert isinstance(chunk, AddableDict)
         streamed_chunks.append(chunk)
         if final_value is None:
             final_value = chunk
@@ -3322,8 +3370,10 @@ async def test_map_astream() -> None:
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + 1
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
-    assert final_value.get("chat").content == "i'm a chatbot"
-    final_value["chat"].id = AnyStr()
+    chat_message = final_value.get("chat")
+    assert chat_message is not None
+    assert chat_message.content == "i'm a chatbot"
+    chat_message.id = AnyStr()
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == prompt.invoke(
         {"question": "What is your name?"}
@@ -3333,12 +3383,12 @@ async def test_map_astream() -> None:
 
     final_state = None
     streamed_ops = []
-    async for chunk in chain.astream_log({"question": "What is your name?"}):
-        streamed_ops.extend(chunk.ops)
+    async for patch in chain.astream_log({"question": "What is your name?"}):
+        streamed_ops.extend(patch.ops)
         if final_state is None:
-            final_state = chunk
+            final_state = patch
         else:
-            final_state += chunk
+            final_state += patch
     final_state = cast("RunLog", final_state)
 
     assert final_state.state["final_output"] == final_value
@@ -3366,13 +3416,13 @@ async def test_map_astream() -> None:
 
     # Test astream_log with include filters
     final_state = None
-    async for chunk in chain.astream_log(
+    async for patch in chain.astream_log(
         {"question": "What is your name?"}, include_names=["FakeListChatModel"]
     ):
         if final_state is None:
-            final_state = chunk
+            final_state = patch
         else:
-            final_state += chunk
+            final_state += patch
     final_state = cast("RunLog", final_state)
 
     assert final_state.state["final_output"] == final_value
@@ -3382,13 +3432,13 @@ async def test_map_astream() -> None:
 
     # Test astream_log with exclude filters
     final_state = None
-    async for chunk in chain.astream_log(
+    async for patch in chain.astream_log(
         {"question": "What is your name?"}, exclude_names=["FakeListChatModel"]
     ):
         if final_state is None:
-            final_state = chunk
+            final_state = patch
         else:
-            final_state += chunk
+            final_state += patch
     final_state = cast("RunLog", final_state)
 
     assert final_state.state["final_output"] == final_value
@@ -3426,7 +3476,7 @@ async def test_map_astream_iterator_input() -> None:
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
-    chain: Runnable = (
+    chain = (
         prompt
         | llm
         | {
@@ -3441,6 +3491,7 @@ async def test_map_astream_iterator_input() -> None:
     final_value = None
     streamed_chunks = []
     async for chunk in stream:
+        assert isinstance(chunk, AddableDict)
         streamed_chunks.append(chunk)
         if final_value is None:
             final_value = chunk
@@ -3455,12 +3506,14 @@ async def test_map_astream_iterator_input() -> None:
     assert len(streamed_chunks) == len(chat_res) + len(llm_res) + len(llm_res)
     assert all(len(c.keys()) == 1 for c in streamed_chunks)
     assert final_value is not None
-    assert final_value.get("chat").content == "i'm a chatbot"
+    chat_message = final_value.get("chat")
+    assert chat_message is not None
+    assert chat_message.content == "i'm a chatbot"
     assert final_value.get("llm") == "i'm a textbot"
     assert final_value.get("passthrough") == llm_res
 
     simple_map = RunnableMap(passthrough=RunnablePassthrough())
-    assert loads(dumps(simple_map)) == simple_map
+    assert loads(dumps(simple_map), allowed_objects="core") == simple_map
 
 
 def test_with_config_with_config() -> None:
@@ -3556,11 +3609,11 @@ def test_deep_stream_assign() -> None:
     )
     llm = FakeStreamingListLLM(responses=["foo-lish"])
 
-    chain: Runnable = prompt | llm | {"str": StrOutputParser()}
+    chain = prompt | llm | {"str": StrOutputParser()}
 
     stream = chain.stream({"question": "What up"})
 
-    chunks = list(stream)
+    chunks = [chunk for chunk in stream if isinstance(chunk, AddableDict)]
 
     assert len(chunks) == len("foo-lish")
     assert add(chunks) == {"str": "foo-lish"}
@@ -3678,14 +3731,16 @@ async def test_deep_astream_assign() -> None:
     )
     llm = FakeStreamingListLLM(responses=["foo-lish"])
 
-    chain: Runnable = prompt | llm | {"str": StrOutputParser()}
+    chain = prompt | llm | {"str": StrOutputParser()}
 
     stream = chain.astream({"question": "What up"})
 
-    chunks = [chunk async for chunk in stream]
+    chunks: list[AddableDict] = [
+        chunk async for chunk in stream if isinstance(chunk, AddableDict)
+    ]
 
     assert len(chunks) == len("foo-lish")
-    assert add(chunks) == {"str": "foo-lish"}
+    assert add(chunks) == AddableDict({"str": "foo-lish"})
 
     chain_with_assign = chain.assign(
         hello=itemgetter("str") | llm,
@@ -3759,9 +3814,11 @@ async def test_deep_astream_assign() -> None:
         "required": ["str", "hello"],
     }
 
-    chunks = []
-    async for chunk in chain_with_assign_shadow.astream({"question": "What up"}):
-        chunks.append(chunk)
+    chunks = [
+        chunk
+        async for chunk in chain_with_assign_shadow.astream({"question": "What up"})
+        if isinstance(chunk, AddableDict)
+    ]
 
     assert len(chunks) == len("foo-lish") + 1
     assert add(chunks) == {"str": "shadow", "hello": "foo-lish"}
@@ -3769,6 +3826,41 @@ async def test_deep_astream_assign() -> None:
         "str": "shadow",
         "hello": "foo-lish",
     }
+
+
+def _empty_mapper_assign() -> RunnableAssign:
+    """Build an assign whose mapper yields zero chunks.
+
+    The map output stream is started with `next(map_output, None)` /
+    `anext(map_output, None)`, so `None` is the exhaustion sentinel rather than
+    a real chunk. Both `stream` and `astream` must guard against yielding that
+    sentinel into the output stream.
+    """
+
+    def empty_gen(it: Iterator[Any]) -> Iterator[dict[str, Any]]:
+        for _ in it:
+            pass
+        yield from ()  # consume input, yield nothing
+
+    async def aempty_gen(it: AsyncIterator[Any]) -> AsyncIterator[dict[str, Any]]:
+        async for _ in it:
+            pass
+        return
+        # make this an async generator function
+        yield  # type: ignore[unreachable]  # pragma: no cover
+
+    return RunnablePassthrough.assign(foo=RunnableGenerator(empty_gen, aempty_gen))
+
+
+def test_stream_assign_empty_mapper() -> None:
+    """An assign whose mapper yields no chunks must not emit `None` (sync)."""
+    assert list(_empty_mapper_assign().stream({"a": 1})) == [{"a": 1}]
+
+
+async def test_astream_assign_empty_mapper() -> None:
+    """An assign whose mapper yields no chunks must not emit `None` (async)."""
+    chunks = [chunk async for chunk in _empty_mapper_assign().astream({"a": 1})]
+    assert chunks == [{"a": 1}]
 
 
 def test_runnable_sequence_transform() -> None:
@@ -3827,6 +3919,8 @@ def test_each_simple() -> None:
         [["a", "b"], ["c"]],
         [["c", "e"]],
     ]
+    # `.map()` accepts any `Sequence`, not just `list` (e.g. a tuple).
+    assert parser.map().invoke(("a, b", "c")) == [["a", "b"], ["c"]]
 
 
 def test_each(snapshot: SnapshotAssertion) -> None:
@@ -3840,7 +3934,7 @@ def test_each(snapshot: SnapshotAssertion) -> None:
 
     chain = prompt | first_llm | parser | second_llm.map()
 
-    assert dumps(chain, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(chain, pretty=True)) == snapshot
     output = chain.invoke({"question": "What up"})
     assert output == ["this", "is", "a"]
 
@@ -3851,10 +3945,10 @@ def test_each(snapshot: SnapshotAssertion) -> None:
 
 
 def test_recursive_lambda() -> None:
-    def _simple_recursion(x: int) -> int | Runnable:
+    def _simple_recursion(x: int) -> Runnable[Any, int]:
         if x < 10:
             return RunnableLambda(lambda *_: _simple_recursion(x + 1))
-        return x
+        return RunnableLambda(lambda *_: x)
 
     runnable = RunnableLambda(_simple_recursion)
     assert runnable.invoke(5) == 10
@@ -4043,6 +4137,60 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     assert isinstance(output[1], RuntimeError)
     assert output[2] == 0
     lambda_mock.reset_mock()
+
+
+def _retry_value_errors(exc: BaseException) -> bool:
+    return isinstance(exc, ValueError)
+
+
+def test_retrying_with_predicate(mocker: MockerFixture) -> None:
+    def _lambda(x: int) -> int:
+        if x == 1:
+            msg = "x is 1"
+            raise ValueError(msg)
+        msg = "x is 2"
+        raise RuntimeError(msg)
+
+    lambda_mock = mocker.Mock(side_effect=_lambda)
+    runnable = RunnableLambda(lambda_mock).with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=_retry_value_errors,
+    )
+
+    with pytest.raises(ValueError, match="x is 1"):
+        runnable.invoke(1)
+    assert lambda_mock.call_count == 2  # retried
+    lambda_mock.reset_mock()
+
+    with pytest.raises(RuntimeError, match="x is 2"):
+        runnable.invoke(2)
+    assert lambda_mock.call_count == 1  # did not retry
+
+
+async def test_async_retrying_with_predicate(mocker: MockerFixture) -> None:
+    def _lambda(x: int) -> int:
+        if x == 1:
+            msg = "x is 1"
+            raise ValueError(msg)
+        msg = "x is 2"
+        raise RuntimeError(msg)
+
+    lambda_mock = mocker.Mock(side_effect=_lambda)
+    runnable = RunnableLambda(lambda_mock).with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=_retry_value_errors,
+    )
+
+    with pytest.raises(ValueError, match="x is 1"):
+        await runnable.ainvoke(1)
+    assert lambda_mock.call_count == 2  # retried
+    lambda_mock.reset_mock()
+
+    with pytest.raises(RuntimeError, match="x is 2"):
+        await runnable.ainvoke(2)
+    assert lambda_mock.call_count == 1  # did not retry
 
 
 def test_runnable_lambda_stream() -> None:
@@ -4459,8 +4607,8 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
 
 def test_runnable_branch_init() -> None:
     """Verify that runnable branch gets initialized properly."""
-    add = RunnableLambda(lambda x: x + 1)
-    condition = RunnableLambda(lambda x: x > 0)
+    add = RunnableLambda[int, int](lambda x: x + 1)
+    condition = RunnableLambda[int, bool](lambda x: x > 0)
 
     # Test failure with less than 2 branches
     with pytest.raises(
@@ -4512,9 +4660,9 @@ def test_runnable_branch_init_coercion(branches: Sequence[Any]) -> None:
 def test_runnable_branch_invoke_call_counts(mocker: MockerFixture) -> None:
     """Verify that runnables are invoked only when necessary."""
     # Test with single branch
-    add = RunnableLambda(lambda x: x + 1)
-    sub = RunnableLambda(lambda x: x - 1)
-    condition = RunnableLambda(lambda x: x > 0)
+    add = RunnableLambda[int, int](lambda x: x + 1)
+    sub = RunnableLambda[int, int](lambda x: x - 1)
+    condition = RunnableLambda[int, bool](lambda x: x > 0)
     spy = mocker.spy(condition, "invoke")
     add_spy = mocker.spy(add, "invoke")
 
@@ -4801,7 +4949,7 @@ async def test_runnable_branch_astream_with_callbacks() -> None:
 
 def test_representation_of_runnables() -> None:
     """Test representation of runnables."""
-    runnable = RunnableLambda(lambda x: x * 2)
+    runnable = RunnableLambda[int, int](lambda x: x * 2)
     assert repr(runnable) == "RunnableLambda(lambda x: x * 2)"
 
     def f(_: int) -> int:
@@ -4985,11 +5133,6 @@ def test_runnable_gen_context_config() -> None:
     assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="Python 3.10 and below don't support running "
-    "async tasks in a specific context",
-)
 async def test_runnable_gen_context_config_async() -> None:
     """Test generator runnable config propagation.
 
@@ -5116,11 +5259,6 @@ def test_runnable_iter_context_config() -> None:
     assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="Python 3.10 and below don't support running "
-    "async tasks in a specific context",
-)
 async def test_runnable_iter_context_config_async() -> None:
     """Test generator runnable config propagation.
 
@@ -5243,11 +5381,6 @@ def test_runnable_lambda_context_config() -> None:
     assert [(r.outputs or {})["output"] for r in tracer.runs[1].child_runs] == [1, 2, 3]
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 11),
-    reason="Python 3.10 and below don't support running "
-    "async tasks in a specific context",
-)
 async def test_runnable_lambda_context_config_async() -> None:
     """Test function runnable config propagation.
 
@@ -5321,8 +5454,8 @@ async def test_runnable_gen_transform() -> None:
         async for i in ints:
             yield i + 1
 
-    chain: Runnable = RunnableGenerator(gen_indexes, agen_indexes) | plus_one
-    achain: Runnable = RunnableGenerator(gen_indexes, agen_indexes) | aplus_one
+    chain = RunnableGenerator(gen_indexes, agen_indexes) | plus_one
+    achain = RunnableGenerator(gen_indexes, agen_indexes) | aplus_one
 
     assert chain.get_input_jsonschema() == {
         "title": "gen_indexes_input",
@@ -5360,22 +5493,22 @@ async def test_ainvoke_on_returned_runnable() -> None:
     be runthroughaasync path (issue #13407).
     """
 
-    def idchain_sync(_input: dict, /) -> bool:
+    def idchain_sync(_input: dict[str, Any], /) -> bool:
         return False
 
-    async def idchain_async(_input: dict, /) -> bool:
+    async def idchain_async(_input: dict[str, Any], /) -> bool:
         return True
 
     idchain = RunnableLambda(func=idchain_sync, afunc=idchain_async)
 
-    def func(_input: dict, /) -> Runnable:
+    def func(_input: dict[str, Any], /) -> Runnable[dict[str, Any], bool]:
         return idchain
 
-    assert await RunnableLambda[dict, bool](func).ainvoke({})
+    assert await RunnableLambda(func).ainvoke({})
 
 
 def test_invoke_stream_passthrough_assign_trace() -> None:
-    def idchain_sync(_input: dict, /) -> bool:
+    def idchain_sync(_input: dict[str, Any], /) -> bool:
         return False
 
     chain = RunnablePassthrough.assign(urls=idchain_sync)
@@ -5395,7 +5528,7 @@ def test_invoke_stream_passthrough_assign_trace() -> None:
 
 
 async def test_ainvoke_astream_passthrough_assign_trace() -> None:
-    def idchain_sync(_input: dict, /) -> bool:
+    def idchain_sync(_input: dict[str, Any], /) -> bool:
         return False
 
     chain = RunnablePassthrough.assign(urls=idchain_sync)
@@ -5489,7 +5622,7 @@ async def test_atransform_of_runnable_lambda_with_dicts() -> None:
         """Return x."""
         return x
 
-    runnable = RunnableLambda[dict[str, str], dict[str, str]](identity)
+    runnable = RunnableLambda(identity)
 
     async def chunk_iterator() -> AsyncIterator[dict[str, str]]:
         yield {"foo": "a"}
@@ -5734,22 +5867,24 @@ def test_runnable_assign() -> None:
     assert result == {"input": 5, "add_step": {"added": 15}}
 
 
+class _Foo(TypedDict):
+    foo: str
+
+
+class _InputData(_Foo):
+    bar: str
+
+
 def test_runnable_typed_dict_schema() -> None:
     """Testing that the schema is generated properly(not empty) when using TypedDict.
 
     subclasses to annotate the arguments of a RunnableParallel children.
     """
 
-    class Foo(TypedDict):
-        foo: str
-
-    class InputData(Foo):
-        bar: str
-
-    def forward_foo(input_data: InputData) -> str:
+    def forward_foo(input_data: _InputData) -> str:
         return input_data["foo"]
 
-    def transform_input(input_data: InputData) -> dict[str, str]:
+    def transform_input(input_data: _InputData) -> dict[str, str]:
         foo = input_data["foo"]
         bar = input_data["bar"]
 
@@ -5763,6 +5898,589 @@ def test_runnable_typed_dict_schema() -> None:
         other=other_runnable,
     )
     assert (
-        repr(parallel.input_schema.model_validate({"foo": "Y", "bar": "Z"}))
+        repr(model_validate(parallel.input_schema, {"foo": "Y", "bar": "Z"}))
         == "RunnableParallel<foo,other>Input(root={'foo': 'Y', 'bar': 'Z'})"
     )
+
+
+class _RunnableWithInputSchema(Runnable[Any, Any]):
+    def __init__(self, input_schema: TypeBaseModel) -> None:
+        self._input_schema = input_schema
+
+    @property
+    @override
+    def InputType(self) -> Any:
+        return self._input_schema
+
+    @override
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
+        _ = config
+        return self._input_schema
+
+    @override
+    def invoke(
+        self,
+        input: Any,
+        config: RunnableConfig | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        return input
+
+
+@skip_if_no_pydantic_v1
+def test_runnable_parallel_preserves_required_v1_input_fields() -> None:
+    class InputModel(BaseModelV1):
+        a: int
+        b: int = 2
+
+    parallel = RunnableParallel(foo=_RunnableWithInputSchema(InputModel))
+
+    schema = cast("type[BaseModel]", parallel.input_schema)
+    assert schema.model_json_schema()["required"] == ["a"]
+    with pytest.raises(ValidationError):
+        schema.model_validate({})
+
+    model = schema.model_validate({"a": 1})
+    assert model.model_dump() == {"a": 1, "b": 2}
+
+
+@skip_if_no_pydantic_v1
+def test_runnable_parallel_uses_base_schema_for_v1_root_model() -> None:
+    class InputModel(BaseModelV1):
+        __root__: dict[str, int]
+
+    parallel = RunnableParallel(foo=_RunnableWithInputSchema(InputModel))
+
+    schema = parallel.input_schema
+    assert schema is InputModel
+    assert schema.schema() == {
+        "additionalProperties": {"type": "integer"},
+        "title": "InputModel",
+        "type": "object",
+    }
+    assert schema.parse_obj({"a": 1}).__root__ == {"a": 1}
+    with pytest.raises(ValidationErrorV1):
+        schema.parse_obj({"a": "not an int"})
+
+
+@skip_if_no_pydantic_v1
+def test_runnable_sequence_v1_input_schema() -> None:
+    """A `RunnableSequence` exposes a Pydantic v1 first-step input schema.
+
+    Regression test: deriving the sequence schema previously assumed Pydantic v2.
+    """
+
+    class InputModel(BaseModelV1):
+        a: int
+
+    sequence = _RunnableWithInputSchema(InputModel) | RunnableLambda(lambda x: x)
+
+    assert sequence.get_input_jsonschema()["properties"] == {
+        "a": {"title": "A", "type": "integer"}
+    }
+
+
+@skip_if_no_pydantic_v1
+def test_runnable_branch_v1_input_schema() -> None:
+    """A `RunnableBranch` exposes a Pydantic v1 input schema.
+
+    Regression test: `get_input_schema` previously assumed Pydantic v2 when
+    inspecting each branch's schema.
+    """
+
+    class InputModel(BaseModelV1):
+        a: int
+
+    branch = RunnableBranch(
+        (lambda _: True, _RunnableWithInputSchema(InputModel)),
+        _RunnableWithInputSchema(InputModel),
+    )
+
+    assert branch.get_input_jsonschema()["properties"] == {
+        "a": {"title": "A", "type": "integer"}
+    }
+
+
+@skip_if_no_pydantic_v1
+def test_runnable_parallel_preserves_v1_default_factory() -> None:
+    """A v1 `default_factory` field keeps its factory in the derived schema.
+
+    Regression test for `_get_schema_field_definition`: without the dedicated
+    `default_factory` branch the factory is dropped and the field defaults to
+    `None` instead of producing the factory's value.
+    """
+
+    class InputModel(BaseModelV1):
+        a: int
+        items: list[int] = FieldV1(default_factory=list)
+
+    parallel = RunnableParallel(foo=_RunnableWithInputSchema(InputModel))
+
+    schema = cast("type[BaseModel]", parallel.input_schema)
+    # The factory field is optional, so only `a` is required.
+    assert schema.model_json_schema()["required"] == ["a"]
+
+    # The factory runs when omitted, yielding `[]` rather than `None`.
+    assert schema.model_validate({"a": 1}).model_dump() == {"a": 1, "items": []}
+
+
+@skip_if_no_pydantic_v1
+def test_runnable_sequence_v1_output_schema_with_assign() -> None:
+    """A sequence ending in `RunnableAssign` derives a v1 upstream output schema.
+
+    Regression test: `_seq_output_schema` previously read `.model_fields` on the
+    upstream schema (v2-only) and translated required v1 fields as optional.
+    """
+
+    class InputModel(BaseModelV1):
+        a: int
+
+    sequence = _RunnableWithInputSchema(InputModel) | RunnableAssign(
+        RunnableParallel(bar=RunnableLambda(lambda _: "bar"))
+    )
+
+    schema = sequence.get_output_jsonschema()
+    assert set(schema["properties"]) == {"a", "bar"}
+    # The required v1 field survives as required rather than becoming optional.
+    assert "a" in schema["required"]
+
+
+@skip_if_no_pydantic_v1
+def test_runnable_sequence_v1_output_schema_with_pick() -> None:
+    """A sequence ending in `RunnablePick` derives a v1 upstream output schema.
+
+    Regression test: `_seq_output_schema` previously read `.model_fields` on the
+    upstream schema (v2-only) for the `RunnablePick` branch.
+    """
+
+    class InputModel(BaseModelV1):
+        a: int
+        b: int
+
+    sequence = _RunnableWithInputSchema(InputModel) | RunnablePick(["a"])
+
+    schema = sequence.get_output_jsonschema()
+    assert set(schema["properties"]) == {"a"}
+    assert "a" in schema["required"]
+
+
+class _RootRunOutput(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.output: Any = None
+
+    @override
+    def on_chain_end(
+        self,
+        outputs: Any,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        if parent_run_id is None:
+            self.output = outputs
+
+
+def test_stream_gives_callbacks_the_chunks_added_up() -> None:
+    chunks = [
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                tool_call_chunk(name="search", args="", id="call_a", index=0)
+            ],
+            usage_metadata={"input_tokens": 3, "output_tokens": 1, "total_tokens": 4},
+        ),
+        AIMessageChunk(
+            content="Hello ",
+            tool_call_chunks=[
+                tool_call_chunk(name="fetch", args='{"url": ', id="call_b", index=1)
+            ],
+        ),
+        AIMessageChunk(
+            content="world",
+            tool_call_chunks=[
+                tool_call_chunk(name=None, args='{"q": "x"}', id=None, index=0),
+                tool_call_chunk(name=None, args='"a"}', id=None, index=1),
+            ],
+            usage_metadata={"input_tokens": 0, "output_tokens": 2, "total_tokens": 2},
+        ),
+    ]
+    added_up = chunks[0]
+    for chunk in chunks[1:]:
+        added_up += chunk
+
+    def model(_: Iterator[Any]) -> Iterator[AIMessageChunk]:
+        yield from chunks
+
+    root_output = _RootRunOutput()
+    list(RunnableGenerator(model).stream("hi", {"callbacks": [root_output]}))
+
+    assert root_output.output == added_up
+
+
+class _InvokeOnly(Runnable[Any, Any]):
+    @override
+    def invoke(
+        self, input: Any, config: RunnableConfig | None = None, **kwargs: Any
+    ) -> Any:
+        return input
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+@pytest.mark.parametrize(
+    "next_step", ["generator", "lambda", "generator lambda", "invoke only"]
+)
+async def test_streaming_a_long_tool_call_parses_its_args_in_linear_time(
+    monkeypatch: pytest.MonkeyPatch, *, use_async: bool, next_step: str
+) -> None:
+    args = json.dumps({"content": "x" * 5_000})
+    chunks = [
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                tool_call_chunk(
+                    name="write_file" if i == 0 else None,
+                    args=args[i : i + 10],
+                    id="call_1" if i == 0 else None,
+                    index=0,
+                )
+            ],
+        )
+        for i in range(0, len(args), 10)
+    ]
+    parsed_chars = 0
+
+    def counting_parse_partial_json(s: str, *, strict: bool = False) -> Any:
+        nonlocal parsed_chars
+        parsed_chars += len(s)
+        return parse_partial_json(s, strict=strict)
+
+    monkeypatch.setattr(
+        "langchain_core.messages.ai.parse_partial_json", counting_parse_partial_json
+    )
+
+    def model(_: Iterator[Any]) -> Iterator[AIMessageChunk]:
+        yield from chunks
+
+    async def amodel(_: AsyncIterator[Any]) -> AsyncIterator[AIMessageChunk]:
+        for chunk in chunks:
+            yield chunk
+
+    def passthrough(
+        messages: Iterator[AIMessageChunk],
+    ) -> Iterator[AIMessageChunk]:
+        yield from messages
+
+    async def apassthrough(
+        messages: AsyncIterator[AIMessageChunk],
+    ) -> AsyncIterator[AIMessageChunk]:
+        async for message in messages:
+            yield message
+
+    def regenerate(_: AIMessageChunk) -> Iterator[AIMessageChunk]:
+        yield from chunks
+
+    async def aregenerate(_: AIMessageChunk) -> AsyncIterator[AIMessageChunk]:
+        for chunk in chunks:
+            yield chunk
+
+    next_steps: dict[str, Runnable[Any, Any]] = {
+        "generator": RunnableGenerator(passthrough, apassthrough),
+        "lambda": RunnableLambda(lambda message: message),
+        "generator lambda": RunnableLambda(regenerate, aregenerate),
+        "invoke only": _InvokeOnly(),
+    }
+    chain = RunnableGenerator(model, amodel) | next_steps[next_step]
+    root_output = _RootRunOutput()
+    config: RunnableConfig = {"callbacks": [root_output]}
+    if use_async:
+        streamed = [chunk async for chunk in chain.astream("hi", config)]
+    else:
+        streamed = list(chain.stream("hi", config))
+
+    assert streamed
+    assert root_output.output.tool_calls == [
+        {
+            "name": "write_file",
+            "args": {"content": "x" * 5_000},
+            "id": "call_1",
+            "type": "tool_call",
+        }
+    ]
+    assert parsed_chars < 10 * len(args), (
+        f"parsed {parsed_chars} characters for {len(args)} characters of arguments"
+    )
+
+
+def _add_one_at_a_time(chunks: list[Any], *, stop_after_unaddable: bool) -> Any:
+    value = None
+    addable = True
+    for chunk in chunks:
+        if value is None or not addable:
+            value = chunk
+            continue
+        try:
+            value = value + chunk
+        except TypeError:
+            value = chunk
+            addable = not stop_after_unaddable
+    return value
+
+
+# Chunk sequences whose sum differs between merging leading AIMessageChunks at
+# once and adding one at a time, if the merge ever falls short.
+@pytest.mark.parametrize(
+    "chunks",
+    [
+        pytest.param([], id="empty"),
+        pytest.param(
+            [AIMessageChunk(content="a"), AIMessageChunk(content="b")], id="messages"
+        ),
+        pytest.param(
+            [
+                AIMessageChunk(content="a", response_metadata={"t": 1.5}),
+                AIMessageChunk(content="b", response_metadata={"t": 2.5}),
+                AIMessageChunk(content="c"),
+            ],
+            id="messages that can't be added",
+        ),
+        pytest.param(
+            [
+                AIMessageChunk(content="x"),
+                None,
+                AIMessageChunk(content="y"),
+                AIMessageChunk(content="z"),
+            ],
+            id="a None between messages",
+        ),
+        pytest.param(
+            [AIMessageChunk(content="x"), "s", AIMessageChunk(content="y")],
+            id="a string between messages",
+        ),
+        pytest.param(["a", "b", 1, "c"], id="strings and an int"),
+        pytest.param([{"a": 1}, {"b": 2}], id="plain dicts"),
+    ],
+)
+@pytest.mark.parametrize("stop_after_unaddable", [True, False])
+def test_chunk_accumulator_sums_like_adding_one_at_a_time(
+    chunks: list[Any], *, stop_after_unaddable: bool
+) -> None:
+    accumulated = _ChunkAccumulator(stop_after_unaddable=stop_after_unaddable)
+    for chunk in chunks:
+        accumulated.add(chunk)
+
+    assert accumulated.value == _add_one_at_a_time(
+        chunks, stop_after_unaddable=stop_after_unaddable
+    )
+
+
+class _RootRunError(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.error: BaseException | None = None
+
+    @override
+    def on_chain_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: UUID,
+        parent_run_id: UUID | None = None,
+        **kwargs: Any,
+    ) -> None:
+        if parent_run_id is None:
+            self.error = error
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_a_merge_that_raises_after_the_stream_still_ends_the_run(
+    *, use_async: bool
+) -> None:
+    usage: UsageMetadata = {
+        "input_tokens": 1,
+        "output_tokens": 1,
+        "total_tokens": 2,
+        "input_token_details": cast("InputTokenDetails", {"unknown": 0.5}),
+    }
+    chunks = [AIMessageChunk(content="x", usage_metadata=usage) for _ in range(2)]
+
+    def model(_: Iterator[Any]) -> Iterator[AIMessageChunk]:
+        yield from chunks
+
+    async def amodel(_: AsyncIterator[Any]) -> AsyncIterator[AIMessageChunk]:
+        for chunk in chunks:
+            yield chunk
+
+    root_error = _RootRunError()
+    generator = RunnableGenerator(model, amodel)
+    config: RunnableConfig = {"callbacks": [root_error]}
+
+    async def consume() -> None:
+        if use_async:
+            _ = [chunk async for chunk in generator.astream("hi", config)]
+        else:
+            _ = list(generator.stream("hi", config))
+
+    with pytest.raises(ValueError, match="Unknown value types"):
+        await consume()
+
+    assert isinstance(root_error.error, ValueError)
+
+
+class _ChainErrors(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.errors: list[BaseException] = []
+
+    @override
+    def on_chain_error(self, error: BaseException, **kwargs: Any) -> None:
+        self.errors.append(error)
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_an_unmergeable_input_does_not_replace_an_upstream_error(
+    *, use_async: bool
+) -> None:
+    usage: UsageMetadata = {
+        "input_tokens": 1,
+        "output_tokens": 1,
+        "total_tokens": 2,
+        "input_token_details": cast("InputTokenDetails", {"unknown": 0.5}),
+    }
+    chunks = [AIMessageChunk(content="x", usage_metadata=usage) for _ in range(2)]
+
+    class UpstreamError(Exception):
+        pass
+
+    def up(_: Iterator[Any]) -> Iterator[AIMessageChunk]:
+        yield from chunks
+        raise UpstreamError
+
+    async def aup(_: AsyncIterator[Any]) -> AsyncIterator[AIMessageChunk]:
+        for chunk in chunks:
+            yield chunk
+        raise UpstreamError
+
+    def down(it: Iterator[Any]) -> Iterator[Any]:
+        yield next(it)
+
+    async def adown(it: AsyncIterator[Any]) -> AsyncIterator[Any]:
+        yield await anext(it)
+
+    errors = _ChainErrors()
+    chain = RunnableGenerator(up, aup) | RunnableGenerator(down, adown)
+    config: RunnableConfig = {"callbacks": [errors]}
+
+    async def consume() -> None:
+        if use_async:
+            _ = [chunk async for chunk in chain.astream("hi", config)]
+        else:
+            _ = list(chain.stream("hi", config))
+
+    with pytest.raises(UpstreamError):
+        await consume()
+
+    # Every run that saw the error ended with it, not with the merge error.
+    assert errors.errors
+    assert all(isinstance(error, UpstreamError) for error in errors.errors)
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_tracing_and_a_lambda_handle_a_none_between_messages_as_before(
+    *, use_async: bool
+) -> None:
+    chunks = [
+        AIMessageChunk(content="x"),
+        None,
+        AIMessageChunk(content="y"),
+        AIMessageChunk(content="z"),
+    ]
+
+    def model(_: Iterator[Any]) -> Iterator[Any]:
+        yield from chunks
+
+    async def amodel(_: AsyncIterator[Any]) -> AsyncIterator[Any]:
+        for chunk in chunks:
+            yield chunk
+
+    received: list[Any] = []
+
+    def record(message: Any) -> Any:
+        received.append(message.content)
+        return message
+
+    root_output = _RootRunOutput()
+    generator = RunnableGenerator(model, amodel)
+    chain = generator | RunnableLambda(record)
+    config: RunnableConfig = {"callbacks": [root_output]}
+    if use_async:
+        _ = [chunk async for chunk in generator.astream("hi", config)]
+        _ = [chunk async for chunk in chain.astream("hi")]
+    else:
+        _ = list(generator.stream("hi", config))
+        _ = list(chain.stream("hi"))
+
+    assert root_output.output.content == "z"
+    assert received == ["yz"]
+
+
+class _ReasonsThenAnswers(BaseChatModel):
+    @property
+    def _llm_type(self) -> str:
+        return "reasons-then-answers"
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        raise NotImplementedError
+
+    @override
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        yield ChatGenerationChunk(
+            message=AIMessageChunk(content=[{"type": "thinking", "thinking": "hmm"}])
+        )
+        for text in ["Hel", "lo", " world"]:
+            yield ChatGenerationChunk(message=AIMessageChunk(content=text))
+
+
+class _ModelOutput(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.content: Any = None
+
+    @override
+    def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
+        generation = response.generations[0][0]
+        assert isinstance(generation, ChatGeneration)
+        self.content = generation.message.content
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_streaming_a_reasoning_block_then_text_adds_the_text_once(
+    *, use_async: bool
+) -> None:
+    received: list[Any] = []
+
+    def record(message: BaseMessage) -> BaseMessage:
+        received.append(message.content)
+        return message
+
+    chain = _ReasonsThenAnswers() | RunnableLambda(record)
+    model_output = _ModelOutput()
+    config: RunnableConfig = {"callbacks": [model_output]}
+    if use_async:
+        _ = [chunk async for chunk in chain.astream("hi", config)]
+    else:
+        _ = list(chain.stream("hi", config))
+
+    content = [{"type": "thinking", "thinking": "hmm"}, "Hello world"]
+    assert received == [content]
+    assert model_output.content == content

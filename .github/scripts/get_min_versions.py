@@ -19,16 +19,20 @@ from packaging.version import Version, parse
 
 MIN_VERSION_LIBS = [
     "langchain-core",
+    "langchain-openai",
     "langchain",
     "langchain-text-splitters",
     "numpy",
     "SQLAlchemy",
+    "anthropic",
+    "openai",
 ]
 
 # some libs only get checked on release because of simultaneous changes in
 # multiple libs
 SKIP_IF_PULL_REQUEST = [
     "langchain-core",
+    "langchain-openai",
     "langchain-text-splitters",
     "langchain",
 ]
@@ -48,7 +52,7 @@ def get_pypi_versions(package_name: str) -> List[str]:
         KeyError: If package not found or response format unexpected
     """
     pypi_url = f"https://pypi.org/pypi/{package_name}/json"
-    response = requests.get(pypi_url)
+    response = requests.get(pypi_url, timeout=10.0)
     response.raise_for_status()
     return list(response.json()["releases"].keys())
 
@@ -124,6 +128,15 @@ def get_min_version_from_toml(
         requirement = Requirement(dep)
         dependencies[requirement.name].append(requirement)
 
+    # Optional extras only contribute floors for libs not already required, and
+    # only when they declare a version range to take a minimum from.
+    required = set(dependencies)
+    for deps in toml_data["project"].get("optional-dependencies", {}).values():
+        for dep in deps:
+            requirement = Requirement(dep)
+            if requirement.name not in required and requirement.specifier:
+                dependencies[requirement.name].append(requirement)
+
     # Initialize a dictionary to store the minimum versions
     min_versions = {}
 
@@ -195,5 +208,21 @@ if __name__ == "__main__":
 
     # Call the function to get the minimum versions
     min_versions = get_min_version_from_toml(toml_file, versions_for, python_version)
+
+    # A `None` value means no *published* version on PyPI satisfies the declared
+    # constraint, e.g. a `release(...)` PR bumped a minimum pin to a version that
+    # has not shipped yet. Emitting `pkg==None` would be passed verbatim to
+    # `uv pip install` in the release workflow's minimum-version test step,
+    # producing a cryptic install failure, so fail loudly here instead.
+    unresolved = [lib for lib, version in min_versions.items() if version is None]
+    if unresolved:
+        print(
+            "ERROR: no published version on PyPI satisfies the declared constraint "
+            f"for: {', '.join(sorted(unresolved))}. A release likely pinned a "
+            "dependency to a version that is not yet published. Release the "
+            "dependency first, or relax the pin.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     print(" ".join([f"{lib}=={version}" for lib, version in min_versions.items()]))

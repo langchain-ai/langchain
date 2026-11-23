@@ -2,6 +2,7 @@ import re
 from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
+    Any,
     Literal,
     TypedDict,
     TypeVar,
@@ -14,8 +15,23 @@ from langchain_core.messages.content import (
 )
 
 
+def _filter_invocation_params_for_tracing(params: dict[str, Any]) -> dict[str, Any]:
+    """Filter out large/inappropriate fields from invocation params for tracing.
+
+    Removes fields like tools, functions, messages, response_format that can be large.
+
+    Args:
+        params: The invocation parameters to filter.
+
+    Returns:
+        The filtered parameters with large fields removed.
+    """
+    excluded_keys = {"tools", "functions", "messages", "response_format"}
+    return {k: v for k, v in params.items() if k not in excluded_keys}
+
+
 def is_openai_data_block(
-    block: dict, filter_: Literal["image", "audio", "file"] | None = None
+    block: dict[str, Any], filter_: Literal["image", "audio", "file"] | None = None
 ) -> bool:
     """Check whether a block contains multimodal data in OpenAI Chat Completions format.
 
@@ -302,7 +318,7 @@ def _ensure_message_copy(message: T, formatted_message: T) -> T:
 
 
 def _update_content_block(
-    formatted_message: "BaseMessage", idx: int, new_block: ContentBlock | dict
+    formatted_message: "BaseMessage", idx: int, new_block: ContentBlock | dict[str, Any]
 ) -> None:
     """Update a content block at the given index, handling type issues."""
     # Type ignore needed because:

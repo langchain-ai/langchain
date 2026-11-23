@@ -1,4 +1,4 @@
-"""**Retriever** class returns Documents given a text **query**.
+"""**Retriever** class returns `Document` objects given a text **query**.
 
 It is more general than a vector store. A retriever does not need to be able to
 store documents, only to return (or retrieve) it. Vector stores can be used as
@@ -8,11 +8,10 @@ the backbone of a retriever, but there are other types of retrievers as well.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from inspect import signature
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 from pydantic import ConfigDict
-from typing_extensions import Self, TypedDict, override
+from typing_extensions import TypedDict, override
 
 from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain_core.documents import Document
@@ -23,6 +22,7 @@ from langchain_core.runnables import (
     ensure_config,
 )
 from langchain_core.runnables.config import run_in_executor
+from langchain_core.utils._signature import _signature_parameters
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import (
@@ -41,10 +41,13 @@ class LangSmithRetrieverParams(TypedDict, total=False):
 
     ls_retriever_name: str
     """Retriever name."""
+
     ls_vector_store_provider: str | None
     """Vector store provider."""
+
     ls_embedding_provider: str | None
     """Embedding provider."""
+
     ls_embedding_model: str | None
     """Embedding model."""
 
@@ -116,7 +119,9 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     )
 
     _new_arg_supported: bool = False
+
     _expects_other_args: bool = False
+
     tags: list[str] | None = None
     """Optional list of tags associated with the retriever.
 
@@ -126,6 +131,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     You can use these to eg identify a specific instance of a retriever with its
     use case.
     """
+
     metadata: dict[str, Any] | None = None
     """Optional metadata associated with the retriever.
 
@@ -139,7 +145,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
     @override
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
-        parameters = signature(cls._get_relevant_documents).parameters
+        parameters = _signature_parameters(cls._get_relevant_documents)
         cls._new_arg_supported = parameters.get("run_manager") is not None
         if (
             not cls._new_arg_supported

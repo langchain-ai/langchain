@@ -13,27 +13,19 @@ This module consolidates all system message and dynamic prompt tests:
 These tests replicate functionality from langchainjs PR #9459.
 """
 
-from typing import cast
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, TextContentBlock
 from langgraph.runtime import Runtime
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
 
-
-def _fake_runtime(context: dict | None = None) -> Runtime:
-    """Create a fake runtime with optional context."""
-    if context:
-        # Create a simple object with context
-        class FakeRuntime:
-            def __init__(self):
-                self.context = type("Context", (), context)()
-
-        return cast("Runtime", FakeRuntime())
-    return cast("Runtime", object())
+OPENAI_TEST_MODEL = "gpt-5.5"
 
 
 def _make_request(
@@ -50,8 +42,8 @@ def _make_request(
         tool_choice=None,
         tools=[],
         response_format=None,
-        state=cast("AgentState", {"messages": []}),  # type: ignore[name-defined]
-        runtime=_fake_runtime(),
+        state=AgentState(messages=[]),
+        runtime=Runtime(),
         model_settings={},
     )
 
@@ -81,7 +73,11 @@ class TestModelRequestSystemMessage:
         ],
     )
     def test_create_with_various_system_inputs(
-        self, system_message, system_prompt, expected_msg, expected_prompt
+        self,
+        system_message: SystemMessage | None,
+        system_prompt: str | None,
+        expected_msg: SystemMessage | None,
+        expected_prompt: str | None,
     ) -> None:
         """Test creating ModelRequest with various system message inputs."""
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
@@ -94,13 +90,14 @@ class TestModelRequestSystemMessage:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state={},
+            state=AgentState(messages=[]),
             runtime=None,
         )
 
         if expected_msg is None:
             assert request.system_message is None
         else:
+            assert request.system_message is not None
             assert request.system_message.content == expected_msg.content
         assert request.system_prompt == expected_prompt
 
@@ -116,7 +113,7 @@ class TestModelRequestSystemMessage:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state={},
+            state=AgentState(messages=[]),
             runtime=None,
         )
 
@@ -130,7 +127,7 @@ class TestModelRequestSystemMessage:
             ("system_prompt", "New prompt"),
         ],
     )
-    def test_override_methods(self, override_with, expected_text) -> None:
+    def test_override_methods(self, override_with: str, expected_text: str) -> None:
         """Test override() with system_message and system_prompt parameters."""
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
         original_msg = SystemMessage(content="Original")
@@ -142,14 +139,15 @@ class TestModelRequestSystemMessage:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state={},
+            state=AgentState(messages=[]),
             runtime=None,
         )
 
         if override_with == "system_message":
             new_request = original_request.override(system_message=SystemMessage(content="New"))
         else:  # system_prompt
-            new_request = original_request.override(system_prompt="New prompt")
+            # system_prompt is deprecated but supported at runtime for backward compatibility
+            new_request = original_request.override(system_prompt="New prompt")  # type: ignore[call-arg]
 
         assert isinstance(new_request.system_message, SystemMessage)
         assert new_request.system_prompt == expected_text
@@ -166,11 +164,12 @@ class TestModelRequestSystemMessage:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state={},
+            state=AgentState(messages=[]),
             runtime=None,
         )
 
-        new_request = original_request.override(system_prompt=None)
+        # system_prompt is deprecated but supported at runtime for backward compatibility
+        new_request = original_request.override(system_prompt=None)  # type: ignore[call-arg]
 
         assert new_request.system_message is None
         assert new_request.system_prompt is None
@@ -180,7 +179,9 @@ class TestModelRequestSystemMessage:
         [True, False],
         ids=["constructor", "override"],
     )
-    def test_cannot_set_both_system_prompt_and_system_message(self, use_constructor) -> None:
+    def test_cannot_set_both_system_prompt_and_system_message(
+        self, *, use_constructor: bool
+    ) -> None:
         """Test that setting both system_prompt and system_message raises error."""
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
 
@@ -194,7 +195,7 @@ class TestModelRequestSystemMessage:
                     tool_choice=None,
                     tools=[],
                     response_format=None,
-                    state={},
+                    state=AgentState(messages=[]),
                     runtime=None,
                 )
         else:
@@ -205,11 +206,12 @@ class TestModelRequestSystemMessage:
                 tool_choice=None,
                 tools=[],
                 response_format=None,
-                state={},
+                state=AgentState(messages=[]),
                 runtime=None,
             )
             with pytest.raises(ValueError, match="Cannot specify both"):
-                request.override(
+                # system_prompt is deprecated but supported at runtime for backward compatibility
+                request.override(  # type: ignore[call-arg]
                     system_prompt="String prompt",
                     system_message=SystemMessage(content="Message prompt"),
                 )
@@ -221,7 +223,9 @@ class TestModelRequestSystemMessage:
             (None, True),
         ],
     )
-    def test_setattr_system_prompt_deprecated(self, new_value, should_be_none) -> None:
+    def test_setattr_system_prompt_deprecated(
+        self, new_value: str | None, *, should_be_none: bool
+    ) -> None:
         """Test that setting system_prompt via setattr raises deprecation warning."""
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
 
@@ -232,19 +236,19 @@ class TestModelRequestSystemMessage:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state={},
+            state=AgentState(messages=[]),
             runtime=None,
         )
 
         with pytest.warns(DeprecationWarning, match="system_prompt is deprecated"):
-            request.system_prompt = new_value
+            request.system_prompt = new_value  # type: ignore[misc]
 
         if should_be_none:
             assert request.system_message is None
             assert request.system_prompt is None
         else:
             assert isinstance(request.system_message, SystemMessage)
-            assert request.system_message.content_blocks[0]["text"] == new_value
+            assert request.system_message.content_blocks[0].get("text") == new_value
 
     def test_system_message_with_complex_content(self) -> None:
         """Test SystemMessage with complex content (list of dicts)."""
@@ -263,10 +267,11 @@ class TestModelRequestSystemMessage:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state={},
+            state=AgentState(messages=[]),
             runtime=None,
         )
 
+        assert request.system_message is not None
         assert isinstance(request.system_message.content_blocks, list)
         assert len(request.system_message.content_blocks) == 2
         assert request.system_message.content_blocks[1].get("cache_control") == {
@@ -284,7 +289,7 @@ class TestModelRequestSystemMessage:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state={},
+            state=AgentState(messages=[]),
             runtime=None,
         )
 
@@ -316,7 +321,7 @@ class TestCreateAgentSystemMessage:
             SystemMessage(
                 content="You are a helpful assistant",
                 additional_kwargs={"role": "system_admin", "priority": "high"},
-                response_metadata={"model": "gpt-4", "temperature": 0.7},
+                response_metadata={"model": OPENAI_TEST_MODEL, "temperature": 0.7},
             ),
             SystemMessage(
                 content=[
@@ -337,7 +342,9 @@ class TestCreateAgentSystemMessage:
             "system_message_with_complex_content",
         ],
     )
-    def test_create_agent_with_various_system_prompts(self, system_prompt) -> None:
+    def test_create_agent_with_various_system_prompts(
+        self, system_prompt: SystemMessage | str | None
+    ) -> None:
         """Test create_agent accepts various system_prompt formats."""
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
 
@@ -362,7 +369,7 @@ class TestSystemMessageUpdateViaMiddleware:
 
         def set_system_message_middleware(
             request: ModelRequest,
-            handler,
+            handler: Callable[[ModelRequest], ModelResponse],
         ) -> ModelResponse:
             """Middleware that sets initial system message."""
             new_request = request.override(
@@ -378,11 +385,11 @@ class TestSystemMessageUpdateViaMiddleware:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state=cast("AgentState", {"messages": []}),  # type: ignore[name-defined]
-            runtime=_fake_runtime(),
+            state=AgentState(messages=[]),
+            runtime=Runtime(),
         )
 
-        captured_request = None
+        captured_request: ModelRequest | None = None
 
         def mock_handler(req: ModelRequest) -> ModelResponse:
             nonlocal captured_request
@@ -394,14 +401,14 @@ class TestSystemMessageUpdateViaMiddleware:
         assert captured_request is not None
         assert captured_request.system_message is not None
         assert len(captured_request.system_message.content_blocks) == 1
-        assert captured_request.system_message.content_blocks[0]["text"] == "Set by middleware"
+        assert captured_request.system_message.content_blocks[0].get("text") == "Set by middleware"
 
     def test_middleware_can_update_via_system_message_object(self) -> None:
         """Test middleware updating system message using SystemMessage objects."""
 
         def append_with_metadata_middleware(
             request: ModelRequest,
-            handler,
+            handler: Callable[[ModelRequest], ModelResponse],
         ) -> ModelResponse:
             """Append using SystemMessage to preserve metadata."""
             base_content = request.system_message.text if request.system_message else ""
@@ -424,11 +431,11 @@ class TestSystemMessageUpdateViaMiddleware:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state=cast("AgentState", {"messages": []}),  # type: ignore[name-defined]
-            runtime=_fake_runtime(),
+            state=AgentState(messages=[]),
+            runtime=Runtime(),
         )
 
-        captured_request = None
+        captured_request: ModelRequest | None = None
 
         def mock_handler(req: ModelRequest) -> ModelResponse:
             nonlocal captured_request
@@ -438,6 +445,7 @@ class TestSystemMessageUpdateViaMiddleware:
         append_with_metadata_middleware(request, mock_handler)
 
         assert captured_request is not None
+        assert captured_request.system_message is not None
         assert captured_request.system_message.text == "Base prompt Additional instructions."
         assert captured_request.system_message.additional_kwargs["base"] == "value"
         assert captured_request.system_message.additional_kwargs["middleware"] == "applied"
@@ -449,7 +457,9 @@ class TestMultipleMiddlewareChaining:
     def test_multiple_middleware_can_chain_modifications(self) -> None:
         """Test that multiple middleware can modify system message sequentially."""
 
-        def first_middleware(request: ModelRequest, handler) -> ModelResponse:
+        def first_middleware(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             """First middleware sets base system message."""
             new_request = request.override(
                 system_message=SystemMessage(
@@ -459,8 +469,11 @@ class TestMultipleMiddlewareChaining:
             )
             return handler(new_request)
 
-        def second_middleware(request: ModelRequest, handler) -> ModelResponse:
+        def second_middleware(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             """Second middleware appends to system message."""
+            assert request.system_message is not None
             current_content = request.system_message.text
             current_kwargs = request.system_message.additional_kwargs
 
@@ -472,8 +485,11 @@ class TestMultipleMiddlewareChaining:
             )
             return handler(new_request)
 
-        def third_middleware(request: ModelRequest, handler) -> ModelResponse:
+        def third_middleware(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             """Third middleware appends to system message."""
+            assert request.system_message is not None
             current_content = request.system_message.text
             current_kwargs = request.system_message.additional_kwargs
 
@@ -493,12 +509,13 @@ class TestMultipleMiddlewareChaining:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state=cast("AgentState", {"messages": []}),  # type: ignore[name-defined]
-            runtime=_fake_runtime(),
+            state=AgentState(messages=[]),
+            runtime=Runtime(),
         )
 
         def final_handler(req: ModelRequest) -> ModelResponse:
             # Verify all middleware applied
+            assert req.system_message is not None
             assert req.system_message.text == "Base prompt + middleware 2 + middleware 3"
             assert req.system_message.additional_kwargs["middleware_1"] == "applied"
             assert req.system_message.additional_kwargs["middleware_2"] == "applied"
@@ -514,12 +531,16 @@ class TestMultipleMiddlewareChaining:
     def test_middleware_can_mix_string_and_system_message_updates(self) -> None:
         """Test mixing string and SystemMessage updates across middleware."""
 
-        def string_middleware(request: ModelRequest, handler) -> ModelResponse:
+        def string_middleware(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             """Use string-based update."""
-            new_request = request.override(system_prompt="String prompt")
+            new_request = request.override(system_message=SystemMessage(content="String prompt"))
             return handler(new_request)
 
-        def system_message_middleware(request: ModelRequest, handler) -> ModelResponse:
+        def system_message_middleware(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             """Use SystemMessage-based update."""
             current_content = request.system_message.text if request.system_message else ""
             new_request = request.override(
@@ -538,13 +559,14 @@ class TestMultipleMiddlewareChaining:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state=cast("AgentState", {"messages": []}),  # type: ignore[name-defined]
-            runtime=_fake_runtime(),
+            state=AgentState(messages=[]),
+            runtime=Runtime(),
         )
 
         def final_handler(req: ModelRequest) -> ModelResponse:
+            assert req.system_message is not None
             assert req.system_message.text == "String prompt + SystemMessage"
-            assert req.system_message.additional_kwargs["metadata"] == "added"
+            assert req.system_message.additional_kwargs.get("metadata") == "added"
             return ModelResponse(result=[AIMessage(content="response")])
 
         string_middleware(request, lambda req: system_message_middleware(req, final_handler))
@@ -556,7 +578,9 @@ class TestCacheControlPreservation:
     def test_middleware_can_add_cache_control(self) -> None:
         """Test middleware adding cache control to system message."""
 
-        def cache_control_middleware(request: ModelRequest, handler) -> ModelResponse:
+        def cache_control_middleware(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             """Add cache control to system message."""
             new_message = SystemMessage(
                 content=[
@@ -579,11 +603,11 @@ class TestCacheControlPreservation:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state=cast("AgentState", {"messages": []}),  # type: ignore[name-defined]
-            runtime=_fake_runtime(),
+            state=AgentState(messages=[]),
+            runtime=Runtime(),
         )
 
-        captured_request = None
+        captured_request: ModelRequest | None = None
 
         def mock_handler(req: ModelRequest) -> ModelResponse:
             nonlocal captured_request
@@ -593,15 +617,18 @@ class TestCacheControlPreservation:
         cache_control_middleware(request, mock_handler)
 
         assert captured_request is not None
+        assert captured_request.system_message is not None
         assert isinstance(captured_request.system_message.content_blocks, list)
-        assert captured_request.system_message.content_blocks[1]["cache_control"] == {
+        assert captured_request.system_message.content_blocks[1].get("cache_control") == {
             "type": "ephemeral"
         }
 
     def test_cache_control_preserved_across_middleware(self) -> None:
         """Test that cache control is preserved when middleware modifies message."""
 
-        def first_middleware_with_cache(request: ModelRequest, handler) -> ModelResponse:
+        def first_middleware_with_cache(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             """Set system message with cache control."""
             new_message = SystemMessage(
                 content=[
@@ -615,12 +642,15 @@ class TestCacheControlPreservation:
             new_request = request.override(system_message=new_message)
             return handler(new_request)
 
-        def second_middleware_appends(request: ModelRequest, handler) -> ModelResponse:
+        def second_middleware_appends(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             """Append to system message while preserving cache control."""
+            assert request.system_message is not None
             existing_content = request.system_message.content_blocks
-            new_content = [*existing_content, {"type": "text", "text": "Additional text"}]
+            new_content = [*existing_content, TextContentBlock(type="text", text="Additional text")]
 
-            new_message = SystemMessage(content=new_content)
+            new_message = SystemMessage(content_blocks=new_content)
             new_request = request.override(system_message=new_message)
             return handler(new_request)
 
@@ -632,15 +662,18 @@ class TestCacheControlPreservation:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state=cast("AgentState", {"messages": []}),  # type: ignore[name-defined]
-            runtime=_fake_runtime(),
+            state=AgentState(messages=[]),
+            runtime=Runtime(),
         )
 
         def final_handler(req: ModelRequest) -> ModelResponse:
             # Verify cache control was preserved
+            assert req.system_message is not None
             assert isinstance(req.system_message.content_blocks, list)
             assert len(req.system_message.content_blocks) == 2
-            assert req.system_message.content_blocks[0]["cache_control"] == {"type": "ephemeral"}
+            assert req.system_message.content_blocks[0].get("cache_control") == {
+                "type": "ephemeral"
+            }
             return ModelResponse(result=[AIMessage(content="response")])
 
         first_middleware_with_cache(
@@ -664,15 +697,19 @@ class TestMetadataMerging:
             # response_metadata merging
             (
                 "response_metadata",
-                {"model": "gpt-4", "region": "us-east"},
+                {"model": OPENAI_TEST_MODEL, "region": "us-east"},
                 {"tokens": 100, "region": "eu-west"},
-                {"model": "gpt-4", "tokens": 100, "region": "eu-west"},
+                {"model": OPENAI_TEST_MODEL, "tokens": 100, "region": "eu-west"},
             ),
         ],
         ids=["additional_kwargs", "response_metadata"],
     )
     def test_metadata_merge_across_updates(
-        self, metadata_type, initial_metadata, update_metadata, expected_result
+        self,
+        metadata_type: str,
+        initial_metadata: dict[str, Any],
+        update_metadata: dict[str, Any],
+        expected_result: dict[str, Any],
     ) -> None:
         """Test that metadata merges correctly when updating system message."""
         base_message = SystemMessage(
@@ -680,7 +717,9 @@ class TestMetadataMerging:
             **{metadata_type: initial_metadata},
         )
 
-        def update_middleware(request: ModelRequest, handler) -> ModelResponse:
+        def update_middleware(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             """Update system message, merging metadata."""
             current_metadata = getattr(request.system_message, metadata_type)
             new_metadata = {**current_metadata, **update_metadata}
@@ -698,11 +737,11 @@ class TestMetadataMerging:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state=cast("AgentState", {"messages": []}),  # type: ignore[name-defined]
-            runtime=_fake_runtime(),
+            state=AgentState(messages=[]),
+            runtime=Runtime(),
         )
 
-        captured_request = None
+        captured_request: ModelRequest | None = None
 
         def mock_handler(req: ModelRequest) -> ModelResponse:
             nonlocal captured_request
@@ -726,12 +765,16 @@ class TestDynamicSystemPromptMiddleware:
     def test_middleware_can_return_system_message(self) -> None:
         """Test that middleware can return a SystemMessage with dynamic content."""
 
-        def dynamic_system_prompt_middleware(request: ModelRequest) -> SystemMessage:
+        def dynamic_system_prompt_middleware(request: ModelRequest[Any]) -> SystemMessage:
             """Return a SystemMessage with dynamic content."""
             region = getattr(request.runtime.context, "region", "n/a")
             return SystemMessage(content=f"You are a helpful assistant. Region: {region}")
 
-        runtime = _fake_runtime(context={"region": "EU"})
+        @dataclass
+        class RegionContext:
+            region: str
+
+        runtime = Runtime(context=RegionContext(region="EU"))
         request = ModelRequest(
             model=GenericFakeChatModel(messages=iter([AIMessage(content="response")])),
             system_message=None,
@@ -739,41 +782,34 @@ class TestDynamicSystemPromptMiddleware:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state=cast("AgentState", {"messages": []}),  # type: ignore[name-defined]
+            state=AgentState(messages=[]),
             runtime=runtime,
             model_settings={},
         )
-
         new_system_message = dynamic_system_prompt_middleware(request)
 
         assert isinstance(new_system_message, SystemMessage)
         assert len(new_system_message.content_blocks) == 1
         assert (
-            new_system_message.content_blocks[0]["text"]
+            new_system_message.content_blocks[0].get("text")
             == "You are a helpful assistant. Region: EU"
         )
 
-    def test_middleware_can_use_system_message_with_metadata(self) -> None:
-        """Test middleware creating SystemMessage with additional metadata."""
+    def test_system_message_with_metadata(self) -> None:
+        """Test creating a `SystemMessage` with additional metadata."""
+        system_message = SystemMessage(
+            content="You are a helpful assistant",
+            additional_kwargs={"temperature": 0.7, "model": OPENAI_TEST_MODEL},
+            response_metadata={"region": "us-east"},
+        )
 
-        def metadata_middleware(request: ModelRequest) -> SystemMessage:
-            """Return SystemMessage with metadata."""
-            return SystemMessage(
-                content="You are a helpful assistant",
-                additional_kwargs={"temperature": 0.7, "model": "gpt-4"},
-                response_metadata={"region": "us-east"},
-            )
-
-        request = _make_request()
-        new_system_message = metadata_middleware(request)
-
-        assert len(new_system_message.content_blocks) == 1
-        assert new_system_message.content_blocks[0]["text"] == "You are a helpful assistant"
-        assert new_system_message.additional_kwargs == {
+        assert len(system_message.content_blocks) == 1
+        assert system_message.content_blocks[0].get("text") == "You are a helpful assistant"
+        assert system_message.additional_kwargs == {
             "temperature": 0.7,
-            "model": "gpt-4",
+            "model": OPENAI_TEST_MODEL,
         }
-        assert new_system_message.response_metadata == {"region": "us-east"}
+        assert system_message.response_metadata == {"region": "us-east"}
 
     def test_middleware_handles_none_system_message(self) -> None:
         """Test middleware creating new SystemMessage when none exists."""
@@ -789,31 +825,25 @@ class TestDynamicSystemPromptMiddleware:
 
         assert isinstance(new_system_message, SystemMessage)
         assert len(new_system_message.content_blocks) == 1
-        assert new_system_message.content_blocks[0]["text"] == "Default system prompt"
+        assert new_system_message.content_blocks[0].get("text") == "Default system prompt"
 
-    def test_middleware_with_content_blocks(self) -> None:
-        """Test middleware creating SystemMessage with content blocks."""
+    def test_system_message_with_content_blocks(self) -> None:
+        """Test creating a `SystemMessage` with content blocks."""
+        system_message = SystemMessage(
+            content=[
+                {"type": "text", "text": "Base instructions"},
+                {
+                    "type": "text",
+                    "text": "Cached instructions",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ]
+        )
 
-        def content_blocks_middleware(request: ModelRequest) -> SystemMessage:
-            """Create SystemMessage with content blocks including cache control."""
-            return SystemMessage(
-                content=[
-                    {"type": "text", "text": "Base instructions"},
-                    {
-                        "type": "text",
-                        "text": "Cached instructions",
-                        "cache_control": {"type": "ephemeral"},
-                    },
-                ]
-            )
-
-        request = _make_request()
-        new_system_message = content_blocks_middleware(request)
-
-        assert isinstance(new_system_message.content_blocks, list)
-        assert len(new_system_message.content_blocks) == 2
-        assert new_system_message.content_blocks[0]["text"] == "Base instructions"
-        assert new_system_message.content_blocks[1]["cache_control"] == {"type": "ephemeral"}
+        assert isinstance(system_message.content_blocks, list)
+        assert len(system_message.content_blocks) == 2
+        assert system_message.content_blocks[0].get("text") == "Base instructions"
+        assert system_message.content_blocks[1].get("cache_control") == {"type": "ephemeral"}
 
 
 class TestSystemMessageMiddlewareIntegration:
@@ -832,6 +862,7 @@ class TestSystemMessageMiddlewareIntegration:
 
         def second_middleware(request: ModelRequest) -> ModelRequest:
             """Second middleware appends to system message."""
+            assert request.system_message is not None
             current_content = request.system_message.text
             new_content = current_content + " Be helpful."
 
@@ -850,14 +881,17 @@ class TestSystemMessageMiddlewareIntegration:
 
         # Apply middleware in sequence
         request = first_middleware(request)
+        assert request.system_message is not None
         assert len(request.system_message.content_blocks) == 1
-        assert request.system_message.content_blocks[0]["text"] == "You are an assistant."
+        assert request.system_message.content_blocks[0].get("text") == "You are an assistant."
         assert request.system_message.additional_kwargs["middleware_1"] == "applied"
 
         request = second_middleware(request)
+        assert request.system_message is not None
         assert len(request.system_message.content_blocks) == 1
         assert (
-            request.system_message.content_blocks[0]["text"] == "You are an assistant. Be helpful."
+            request.system_message.content_blocks[0].get("text")
+            == "You are an assistant. Be helpful."
         )
         assert request.system_message.additional_kwargs["middleware_1"] == "applied"
         assert request.system_message.additional_kwargs["middleware_2"] == "applied"
@@ -867,11 +901,12 @@ class TestSystemMessageMiddlewareIntegration:
         base_message = SystemMessage(
             content="Base prompt",
             additional_kwargs={"key1": "value1", "key2": "value2"},
-            response_metadata={"model": "gpt-4"},
+            response_metadata={"model": OPENAI_TEST_MODEL},
         )
 
         def preserving_middleware(request: ModelRequest) -> ModelRequest:
             """Middleware that preserves existing metadata."""
+            assert request.system_message is not None
             new_message = SystemMessage(
                 content=request.system_message.text + " Extended.",
                 additional_kwargs=request.system_message.additional_kwargs,
@@ -882,13 +917,14 @@ class TestSystemMessageMiddlewareIntegration:
         request = _make_request(system_message=base_message)
         new_request = preserving_middleware(request)
 
+        assert new_request.system_message is not None
         assert len(new_request.system_message.content_blocks) == 1
-        assert new_request.system_message.content_blocks[0]["text"] == "Base prompt Extended."
+        assert new_request.system_message.content_blocks[0].get("text") == "Base prompt Extended."
         assert new_request.system_message.additional_kwargs == {
             "key1": "value1",
             "key2": "value2",
         }
-        assert new_request.system_message.response_metadata == {"model": "gpt-4"}
+        assert new_request.system_message.response_metadata == {"model": OPENAI_TEST_MODEL}
 
     def test_backward_compatibility_with_string_system_prompt(self) -> None:
         """Test that middleware still works with string system prompts."""
@@ -897,7 +933,8 @@ class TestSystemMessageMiddlewareIntegration:
             """Middleware using string system prompt (backward compatible)."""
             current_prompt = request.system_prompt or ""
             new_prompt = current_prompt + " Additional instructions."
-            return request.override(system_prompt=new_prompt.strip())
+            # system_prompt is deprecated but supported at runtime for backward compatibility
+            return request.override(system_prompt=new_prompt.strip())  # type: ignore[call-arg]
 
         request = _make_request(system_prompt="Base prompt")
         new_request = string_middleware(request)
@@ -914,7 +951,9 @@ class TestSystemMessageMiddlewareIntegration:
         ],
         ids=["system_message", "string", "none"],
     )
-    def test_middleware_can_switch_between_formats(self, initial_value) -> None:
+    def test_middleware_can_switch_between_formats(
+        self, initial_value: SystemMessage | str | None
+    ) -> None:
         """Test middleware can work with SystemMessage, string, or None."""
 
         def flexible_middleware(request: ModelRequest) -> ModelRequest:
@@ -936,8 +975,9 @@ class TestSystemMessageMiddlewareIntegration:
             expected_text = "[created]"
 
         result = flexible_middleware(request)
+        assert result.system_message is not None
         assert len(result.system_message.content_blocks) == 1
-        assert result.system_message.content_blocks[0]["text"] == expected_text
+        assert result.system_message.content_blocks[0].get("text") == expected_text
 
 
 # =============================================================================
@@ -965,7 +1005,7 @@ class TestEdgeCasesAndErrorHandling:
         ids=["empty_content", "multiple_blocks"],
     )
     def test_system_message_content_variations(
-        self, content, expected_blocks, expected_prompt
+        self, content: str | list[str | dict[str, Any]], expected_blocks: int, expected_prompt: str
     ) -> None:
         """Test SystemMessage with various content variations."""
         system_message = SystemMessage(content=content)
@@ -978,9 +1018,10 @@ class TestEdgeCasesAndErrorHandling:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state=cast("AgentState", {"messages": []}),  # type: ignore[name-defined]
-            runtime=_fake_runtime(),
+            state=AgentState(messages=[]),
+            runtime=Runtime(),
         )
+        assert request.system_message is not None
 
         if isinstance(content, list):
             assert isinstance(request.system_message.content_blocks, list)
@@ -1001,8 +1042,8 @@ class TestEdgeCasesAndErrorHandling:
             tool_choice=None,
             tools=[],
             response_format=None,
-            state=cast("AgentState", {"messages": []}),  # type: ignore[name-defined]
-            runtime=_fake_runtime(),
+            state=AgentState(messages=[]),
+            runtime=Runtime(),
         )
 
         new_request = request.override(system_message=None)

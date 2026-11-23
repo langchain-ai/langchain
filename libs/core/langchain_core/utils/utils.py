@@ -1,7 +1,7 @@
 """Generic utility functions."""
 
 import contextlib
-import datetime
+import datetime as dt
 import functools
 import importlib
 import os
@@ -21,18 +21,17 @@ from langchain_core.utils.pydantic import (
 )
 
 
-def xor_args(*arg_groups: tuple[str, ...]) -> Callable:
+def xor_args(*arg_groups: tuple[str, ...]) -> Callable[..., Any]:
     """Validate specified keyword args are mutually exclusive.
 
     Args:
         *arg_groups: Groups of mutually exclusive keyword args.
 
     Returns:
-        Decorator that validates the specified keyword args
-        are mutually exclusive.
+        Decorator that validates the specified keyword args are mutually exclusive.
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             """Validate exactly one arg in each group is not None."""
@@ -72,7 +71,7 @@ def raise_for_status_with_text(response: Response) -> None:
 
 
 @contextlib.contextmanager
-def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
+def mock_now(dt_value: dt.datetime) -> Iterator[type]:
     """Context manager for mocking out datetime.now() in unit tests.
 
     Args:
@@ -88,12 +87,12 @@ def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
         ```
     """
 
-    class MockDateTime(datetime.datetime):
+    class MockDateTime(dt.datetime):
         """Mock datetime.datetime.now() with a fixed datetime."""
 
         @classmethod
         @override
-        def now(cls, tz: datetime.tzinfo | None = None) -> "MockDateTime":
+        def now(cls, tz: dt.tzinfo | None = None) -> "MockDateTime":
             # Create a copy of dt_value.
             return MockDateTime(
                 dt_value.year,
@@ -106,12 +105,12 @@ def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
                 dt_value.tzinfo,
             )
 
-    real_datetime = datetime.datetime
-    datetime.datetime = MockDateTime  # type: ignore[misc]
+    real_datetime = dt.datetime
+    dt.datetime = MockDateTime  # type: ignore[misc]
     try:
-        yield datetime.datetime
+        yield dt.datetime
     finally:
-        datetime.datetime = real_datetime  # type: ignore[misc]
+        dt.datetime = real_datetime  # type: ignore[misc]
 
 
 def guard_import(
@@ -268,6 +267,7 @@ def build_extra_kwargs(
     """Build extra kwargs from values and extra_kwargs.
 
     !!! danger "DON'T USE"
+
         Kept for backwards-compatibility but should never have been public. Use the
         internal `_build_model_kwargs` function instead.
 
@@ -311,13 +311,13 @@ def build_extra_kwargs(
 
 
 def convert_to_secret_str(value: SecretStr | str) -> SecretStr:
-    """Convert a string to a SecretStr if needed.
+    """Convert a string to a `SecretStr` if needed.
 
     Args:
         value: The value to convert.
 
     Returns:
-        The SecretStr value.
+        The `SecretStr` value.
     """
     if isinstance(value, SecretStr):
         return value
@@ -375,17 +375,19 @@ def from_env(
     """Create a factory method that gets a value from an environment variable.
 
     Args:
-        key: The environment variable to look up. If a list of keys is provided,
-            the first key found in the environment will be used.
-            If no key is found, the default value will be used if set,
+        key: The environment variable to look up.
+
+            If a list of keys is provided, the first key found in the environment will
+            be used. If no key is found, the default value will be used if set,
             otherwise an error will be raised.
         default: The default value to return if the environment variable is not set.
-        error_message: the error message which will be raised if the key is not found
+        error_message: The error message which will be raised if the key is not found
             and no default value is provided.
+
             This will be raised as a ValueError.
 
     Returns:
-        factory method that will look up the value from the environment.
+        Factory method that will look up the value from the environment.
     """
 
     def get_from_env_fn() -> str | None:
@@ -449,12 +451,13 @@ def secret_from_env(
     Args:
         key: The environment variable to look up.
         default: The default value to return if the environment variable is not set.
-        error_message: the error message which will be raised if the key is not found
+        error_message: The error message which will be raised if the key is not found
             and no default value is provided.
-            This will be raised as a ValueError.
+
+            This will be raised as a `ValueError`.
 
     Returns:
-        factory method that will look up the secret from the environment.
+        Factory method that will look up the secret from the environment.
     """
 
     def get_secret_from_env() -> SecretStr | None:
@@ -496,8 +499,9 @@ LC_ID_PREFIX = "lc_run-"
 """Internal tracing/callback system identifier.
 
 Used for:
+
 - Tracing. Every LangChain operation (LLM call, chain execution, tool use, etc.)
-  gets a unique run_id (UUID)
+    gets a unique run_id (UUID)
 - Enables tracking parent-child relationships between operations
 """
 

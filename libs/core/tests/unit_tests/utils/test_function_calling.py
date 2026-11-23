@@ -22,15 +22,19 @@ except ImportError:
 from importlib.metadata import version
 
 from packaging.version import parse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+from pydantic.errors import PydanticInvalidForJsonSchema
 
+import langchain_core
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from langchain_core.runnables import Runnable, RunnableLambda
+from langchain_core.runnables import RunnableLambda
 from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
 from langchain_core.utils.function_calling import (
     _convert_typed_dict_to_openai_function,
+    _parse_google_docstring,
     convert_to_json_schema,
     convert_to_openai_function,
+    convert_to_openai_tool,
     tool_example_to_messages,
 )
 
@@ -47,7 +51,7 @@ def pydantic() -> type[BaseModel]:
 
 
 @pytest.fixture
-def annotated_function() -> Callable:
+def annotated_function() -> Callable[[int, Literal["bar", "baz"]], None]:
     def dummy_function(
         arg1: ExtensionsAnnotated[int, "foo"],
         arg2: ExtensionsAnnotated[Literal["bar", "baz"], "one of 'bar', 'baz'"],
@@ -58,7 +62,7 @@ def annotated_function() -> Callable:
 
 
 @pytest.fixture
-def function() -> Callable:
+def function() -> Callable[[int, Literal["bar", "baz"]], None]:
     def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
         """Dummy function.
 
@@ -71,7 +75,7 @@ def function() -> Callable:
 
 
 @pytest.fixture
-def function_docstring_annotations() -> Callable:
+def function_docstring_annotations() -> Callable[[int, Literal["bar", "baz"]], None]:
     def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
         """Dummy function.
 
@@ -83,13 +87,14 @@ def function_docstring_annotations() -> Callable:
     return dummy_function
 
 
-@pytest.fixture
-def runnable() -> Runnable:
-    class Args(ExtensionsTypedDict):
-        arg1: ExtensionsAnnotated[int, "foo"]
-        arg2: ExtensionsAnnotated[Literal["bar", "baz"], "one of 'bar', 'baz'"]
+class _Args(ExtensionsTypedDict):
+    arg1: ExtensionsAnnotated[int, "foo"]
+    arg2: ExtensionsAnnotated[Literal["bar", "baz"], "one of 'bar', 'baz'"]
 
-    def dummy_function(input_dict: Args) -> None:
+
+@pytest.fixture
+def runnable() -> RunnableLambda[_Args, None]:
+    def dummy_function(input_dict: _Args) -> None:
         pass
 
     return RunnableLambda(dummy_function)
@@ -227,7 +232,7 @@ def dummy_extensions_typed_dict_docstring() -> type:
 
 
 @pytest.fixture
-def json_schema() -> dict:
+def json_schema() -> dict[str, Any]:
     return {
         "title": "dummy_function",
         "description": "Dummy function.",
@@ -245,7 +250,7 @@ def json_schema() -> dict:
 
 
 @pytest.fixture
-def anthropic_tool() -> dict:
+def anthropic_tool() -> dict[str, Any]:
     return {
         "name": "dummy_function",
         "description": "Dummy function.",
@@ -265,7 +270,7 @@ def anthropic_tool() -> dict:
 
 
 @pytest.fixture
-def bedrock_converse_tool() -> dict:
+def bedrock_converse_tool() -> dict[str, Any]:
     return {
         "toolSpec": {
             "name": "dummy_function",
@@ -311,17 +316,17 @@ class DummyWithClassMethod:
 
 def test_convert_to_openai_function(
     pydantic: type[BaseModel],
-    function: Callable,
-    function_docstring_annotations: Callable,
+    function: Callable[[int, Literal["bar", "baz"]], None],
+    function_docstring_annotations: Callable[[int, Literal["bar", "baz"]], None],
     dummy_structured_tool: StructuredTool,
     dummy_structured_tool_args_schema_dict: StructuredTool,
     dummy_tool: BaseTool,
-    json_schema: dict,
-    anthropic_tool: dict,
-    bedrock_converse_tool: dict,
-    annotated_function: Callable,
+    json_schema: dict[str, Any],
+    anthropic_tool: dict[str, Any],
+    bedrock_converse_tool: dict[str, Any],
+    annotated_function: Callable[[int, Literal["bar", "baz"]], None],
     dummy_pydantic: type[BaseModel],
-    runnable: Runnable,
+    runnable: RunnableLambda[_Args, None],
     dummy_typing_typed_dict: type,
     dummy_typing_typed_dict_docstring: type,
     dummy_extensions_typed_dict: type,
@@ -641,7 +646,7 @@ openai_function_no_description_no_params = {
         openai_function_no_description,
     ],
 )
-def test_convert_to_openai_function_no_description(func: dict) -> None:
+def test_convert_to_openai_function_no_description(func: dict[str, Any]) -> None:
     expected = {
         "name": "dummy_function",
         "parameters": {
@@ -668,7 +673,9 @@ def test_convert_to_openai_function_no_description(func: dict) -> None:
         openai_function_no_description_no_params,
     ],
 )
-def test_convert_to_openai_function_no_description_no_params(func: dict) -> None:
+def test_convert_to_openai_function_no_description_no_params(
+    func: dict[str, Any],
+) -> None:
     expected = {
         "name": "dummy_function",
     }
@@ -787,6 +794,24 @@ def test_tool_outputs() -> None:
     response = messages[3]
     assert response.content == "The output is Output1"
     assert not response.tool_calls
+
+
+def test_tool_outputs_fewer_than_tool_calls_raises() -> None:
+    with pytest.raises(ValueError, match="must match"):
+        tool_example_to_messages(
+            input="Extract both values",
+            tool_calls=[FakeCall(data="a"), FakeCall(data="b")],
+            tool_outputs=["only one output"],
+        )
+
+
+def test_tool_outputs_more_than_tool_calls_raises() -> None:
+    with pytest.raises(ValueError, match="must match"):
+        tool_example_to_messages(
+            input="Extract one value",
+            tool_calls=[FakeCall(data="a")],
+            tool_outputs=["output1", "extra output"],
+        )
 
 
 @pytest.mark.parametrize(
@@ -1038,7 +1063,9 @@ def test__convert_typed_dict_to_openai_function(
 @pytest.mark.parametrize("typed_dict", [ExtensionsTypedDict, TypingTypedDict])
 def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
     class Tool(typed_dict):  # type: ignore[misc]
-        arg1: typing.MutableSet  # Pydantic 2 supports this, but pydantic v1 does not.
+        arg1: typing.MutableSet[
+            Any
+        ]  # Pydantic 2 supports this, but pydantic v1 does not.
 
     # Error should be raised since we're using v1 code path here
     with pytest.raises(TypeError):
@@ -1047,8 +1074,9 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
 
 def test_convert_union_type() -> None:
     @tool
-    def magic_function(value: int | str) -> str:  # noqa: ARG001
+    def magic_function(value: int | str) -> str:
         """Compute a magic function."""
+        _ = value
         return ""
 
     result = convert_to_openai_function(magic_function)
@@ -1078,15 +1106,15 @@ def test_convert_to_openai_function_no_args() -> None:
 
 def test_convert_to_json_schema(
     pydantic: type[BaseModel],
-    function: Callable,
-    function_docstring_annotations: Callable,
+    function: Callable[[int, Literal["bar", "baz"]], None],
+    function_docstring_annotations: Callable[[int, Literal["bar", "baz"]], None],
     dummy_structured_tool: StructuredTool,
     dummy_structured_tool_args_schema_dict: StructuredTool,
     dummy_tool: BaseTool,
-    json_schema: dict,
-    anthropic_tool: dict,
-    bedrock_converse_tool: dict,
-    annotated_function: Callable,
+    json_schema: dict[str, Any],
+    anthropic_tool: dict[str, Any],
+    bedrock_converse_tool: dict[str, Any],
+    annotated_function: Callable[[int, Literal["bar", "baz"]], None],
     dummy_pydantic: type[BaseModel],
     dummy_typing_typed_dict: type,
     dummy_typing_typed_dict_docstring: type,
@@ -1120,10 +1148,10 @@ def test_convert_to_json_schema(
 
 
 def test_convert_to_openai_function_nested_strict_2() -> None:
-    def my_function(arg1: dict, arg2: dict | None) -> None:
+    def my_function(arg1: dict[str, Any], arg2: dict[str, Any] | None) -> None:
         """Dummy function."""
 
-    expected: dict = {
+    expected: dict[str, Any] = {
         "name": "my_function",
         "description": "Dummy function.",
         "parameters": {
@@ -1168,3 +1196,309 @@ def test_convert_to_openai_function_strict_required() -> None:
     func = convert_to_openai_function(MyModel, strict=True)
     actual = func["parameters"]["required"]
     assert actual == expected
+
+
+def test_convert_to_openai_function_strict_nested_required() -> None:
+    """Nested objects must also list every property as `required` under strict mode.
+
+    See: https://github.com/langchain-ai/langchain/issues/33869
+    """
+
+    class Inner(BaseModel):
+        """Inner schema."""
+
+        required_field: str = Field(..., description="req")
+        optional_field: str = Field(default="x", description="opt")
+
+    class Outer(BaseModel):
+        """Outer schema."""
+
+        inner: Inner = Field(..., description="nested")
+
+    func = convert_to_openai_function(Outer, strict=True)
+    inner_schema = func["parameters"]["properties"]["inner"]
+    # Pydantic <2.9 wraps a referenced model field with sibling keys (e.g. the
+    # `description` set above) in `allOf` instead of merging them directly.
+    if "allOf" in inner_schema:
+        inner_schema = inner_schema["allOf"][0]
+    assert set(inner_schema["required"]) == {"required_field", "optional_field"}
+    assert inner_schema["additionalProperties"] is False
+
+
+def test_convert_to_openai_function_strict_nested_required_via_defs_ref() -> None:
+    """Object definitions referenced via `$ref`/`$defs` must also be made strict.
+
+    Raw JSON-schema-style tool input can represent nested objects as `$ref`
+    pointers into a top-level `$defs`/`definitions` map instead of inlining
+    them under `properties`. See: https://github.com/langchain-ai/langchain/pull/39306
+    """
+    raw_schema = {
+        "name": "f",
+        "parameters": {
+            "type": "object",
+            "properties": {"inner": {"$ref": "#/$defs/Inner"}},
+            "$defs": {
+                "Inner": {
+                    "type": "object",
+                    "properties": {
+                        "required_field": {"type": "string"},
+                        "optional_field": {"type": "string"},
+                    },
+                }
+            },
+        },
+    }
+
+    # Snapshot the caller's schema before conversion; the strict-mode walk
+    # mutates `required`/`additionalProperties` in place, so `deepcopy` must
+    # shield the original input (see "don't mutate" commit on #39306).
+    original_inner: dict[str, Any] = raw_schema["parameters"]["$defs"]["Inner"]  # type: ignore[index]
+    assert "required" not in original_inner
+    assert "additionalProperties" not in original_inner
+
+    func = convert_to_openai_function(raw_schema, strict=True)
+    inner_def: dict[str, Any] = func["parameters"]["$defs"]["Inner"]
+    assert set(inner_def["required"]) == {"required_field", "optional_field"}
+    assert inner_def["additionalProperties"] is False
+    # The caller's original schema must be left untouched.
+    assert "required" not in original_inner
+    assert "additionalProperties" not in original_inner
+
+
+def test_convert_to_openai_function_arbitrary_type_error() -> None:
+    """Test that a helpful error is raised for non-JSON-serializable types.
+
+    When a Pydantic model contains a custom Python class that cannot be
+    serialized to JSON schema, we should raise a PydanticInvalidForJsonSchema
+    with a helpful error message explaining the issue and suggesting solutions.
+
+    See: https://github.com/langchain-ai/langchain/issues/34371
+    """
+
+    # Define a custom Python class that isn't JSON-serializable
+    class CustomClass:
+        def __init__(self, name: str) -> None:
+            self.name = name
+
+    class SchemaWithArbitraryType(BaseModel):
+        """Schema with arbitrary type."""
+
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+        custom_obj: CustomClass = Field(..., description="A custom object")
+        name: str = Field(..., description="A name")
+
+    with pytest.raises(PydanticInvalidForJsonSchema) as exc_info:
+        convert_to_openai_function(SchemaWithArbitraryType)
+
+    error_message = str(exc_info.value)
+    # Check that the error message contains helpful information
+    assert "SchemaWithArbitraryType" in error_message
+    assert "JSON-serializable" in error_message
+    assert "Pydantic models" in error_message
+
+
+def test_convert_to_openai_function_strict_defaults() -> None:
+    class MyModel(BaseModel):
+        """Dummy schema."""
+
+        arg1: int = Field(default=3, description="foo")
+        arg2: str | None = Field(default=None, description="bar")
+
+    func = convert_to_openai_function(MyModel, strict=True)
+    assert func["parameters"]["additionalProperties"] is False
+
+
+def test_convert_to_openai_function_json_schema_missing_title_with_type() -> None:
+    """Test error for JSON schema with 'type' but no 'title'."""
+    schema_without_title = {
+        "type": "object",
+        "properties": {"arg1": {"type": "string"}},
+    }
+    with pytest.raises(ValueError, match="must have a top-level 'title' key"):
+        convert_to_openai_function(schema_without_title)
+
+
+def test_convert_to_openai_function_json_schema_missing_title_properties() -> None:
+    """Test error for JSON schema with 'properties' but no 'title'."""
+    schema_without_title = {
+        "properties": {"arg1": {"type": "string"}},
+    }
+    with pytest.raises(ValueError, match="must have a top-level 'title' key"):
+        convert_to_openai_function(schema_without_title)
+
+
+def test_convert_to_openai_function_json_schema_missing_title_includes_schema() -> None:
+    """Test that the error message includes the schema for debugging."""
+    schema_without_title = {
+        "type": "object",
+        "properties": {"my_field": {"type": "integer"}},
+    }
+    with pytest.raises(ValueError, match="my_field"):
+        convert_to_openai_function(schema_without_title)
+
+
+class TestParseGoogleDocstring:
+    """Tests for _parse_google_docstring continuation-line handling."""
+
+    def test_continuation_line_with_colon(self) -> None:
+        """Continuation lines containing colons should not be treated as new args."""
+        # inspect.getdoc() returns dedented docstrings, so match that format
+        docstring = (
+            "Search the knowledge base.\n"
+            "\n"
+            "Args:\n"
+            "    query: The search query to use\n"
+            "        for finding things: important ones\n"
+            "    top_k: Number of results to return"
+        )
+        _desc, args = _parse_google_docstring(docstring, ["query", "top_k"])
+        assert "query" in args
+        assert "top_k" in args
+        assert len(args) == 2
+        assert "for finding things: important ones" in args["query"]
+
+    def test_simple_args_still_work(self) -> None:
+        """Basic single-line argument descriptions should still parse correctly."""
+        docstring = "Do something.\n\nArgs:\n    x: The x value\n    y: The y value"
+        _desc, args = _parse_google_docstring(docstring, ["x", "y"])
+        assert args == {"x": "The x value", "y": "The y value"}
+
+    def test_continuation_line_without_colon(self) -> None:
+        """Colon-free continuation lines append to the current arg.
+
+        Documents preserved behavior: this case parsed correctly before the
+        continuation-detection fix (via the colon-free fallback branch) and
+        must continue to.
+        """
+        docstring = (
+            "Do something.\n"
+            "\n"
+            "Args:\n"
+            "    name: A very long description that\n"
+            "        spans multiple lines\n"
+            "    age: The age"
+        )
+        _desc, args = _parse_google_docstring(docstring, ["name", "age"])
+        assert "spans multiple lines" in args["name"]
+        assert args["age"] == "The age"
+
+    def test_multiple_continuation_lines_with_colons(self) -> None:
+        """Multiple continuation lines with colons should all be appended."""
+        docstring = (
+            "Process data.\n"
+            "\n"
+            "Args:\n"
+            "    config: Configuration string in format\n"
+            "        key1: value1\n"
+            "        key2: value2\n"
+            "    verbose: Enable verbose output"
+        )
+        _desc, args = _parse_google_docstring(docstring, ["config", "verbose"])
+        assert "key1: value1" in args["config"]
+        assert "key2: value2" in args["config"]
+        assert args["verbose"] == "Enable verbose output"
+
+    def test_annotated_arg_with_colon_continuation(self) -> None:
+        """A `(type)` annotation strips correctly alongside a colon continuation.
+
+        Exercises both code paths the fix touches at once: the parenthesized
+        type annotation is stripped from the arg name, and the colon-bearing
+        continuation line folds into that arg rather than creating a phantom
+        key (the original bug).
+        """
+        docstring = (
+            "Run a query.\n"
+            "\n"
+            "Args:\n"
+            "    query (str): The query to run\n"
+            "        details: extra info\n"
+            "    k (int): Number of results"
+        )
+        _desc, args = _parse_google_docstring(docstring, ["query", "k"])
+        assert set(args) == {"query", "k"}
+        assert "details: extra info" in args["query"]
+        assert args["k"] == "Number of results"
+
+    def test_returns_section_after_args_excluded(self) -> None:
+        """A well-formed Returns: block after Args: must not leak in as an arg.
+
+        The blank line separating the sections terminates the Args block, so
+        `Returns`/`Raises` and their indented bodies stay out of
+        `arg_descriptions`.
+        """
+        docstring = (
+            "Do work.\n\nArgs:\n    x: The x value\n\nReturns:\n    result: yes\n"
+        )
+        _desc, args = _parse_google_docstring(docstring, ["x"])
+        assert args == {"x": "The x value"}
+
+    def test_same_indent_colon_line_is_new_arg(self) -> None:
+        """A colon line at the base arg indent starts a new arg, not a continuation.
+
+        Pins the `current_indent > arg_indent` boundary: only deeper-indented
+        lines are continuations.
+        """
+        docstring = "Do work.\n\nArgs:\n    a: first\n    b: second"
+        _desc, args = _parse_google_docstring(docstring, ["a", "b"])
+        assert args == {"a": "first", "b": "second"}
+
+    def test_more_indented_second_arg_folds_into_previous(self) -> None:
+        """Non-uniform indentation: a deeper second arg folds into the previous one.
+
+        Documents the intentional trade-off of indentation-based detection.
+        Google style requires uniform argument indentation; when a later arg is
+        indented deeper than the first, it is indistinguishable from a
+        colon-bearing continuation and is merged into the prior arg. This pins
+        that behavior so it stays intentional rather than incidental.
+        """
+        docstring = "Do work.\n\nArgs:\n    x: the x value\n        y: the y value"
+        _desc, args = _parse_google_docstring(docstring, ["x", "y"])
+        assert set(args) == {"x"}
+        assert "y: the y value" in args["x"]
+
+
+def test_convert_to_openai_tool_apply_patch_passthrough() -> None:
+    """Test apply_patch is passed through as an OpenAI built-in tool."""
+    tool = {"type": "apply_patch"}
+
+    result = convert_to_openai_tool(tool)
+
+    assert result == tool
+
+
+def test_convert_to_openai_tool_computer_passthrough() -> None:
+    """Test that the 'computer' tool type is passed through unchanged."""
+    computer_tool = {
+        "type": "computer",
+        "display_width": 1024,
+        "display_height": 768,
+        "environment": "browser",
+    }
+    result = convert_to_openai_tool(computer_tool)
+    assert result == computer_tool
+
+
+def test_convert_to_openai_function_without_tools_module_imported(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test conversion works when `langchain_core.tools` is not bound on the package.
+
+    Regression test: the `BaseTool` check reached the class through
+    `langchain_core.tools.base`, which is only an attribute of `langchain_core` once
+    something imports that submodule. Called from a process that had not, conversion
+    raised `AttributeError: module 'langchain_core' has no attribute 'tools'` instead of
+    converting the callable.
+    """
+    monkeypatch.delattr(langchain_core, "tools", raising=False)
+
+    def my_func(x: int) -> int:
+        """Return the input.
+
+        Args:
+            x: A number.
+        """
+        return x
+
+    result = convert_to_openai_function(my_func)
+
+    assert result["name"] == "my_func"

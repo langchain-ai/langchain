@@ -16,7 +16,10 @@ if TYPE_CHECKING:
 
 
 class StreamingStdOutCallbackHandler(BaseCallbackHandler):
-    """Callback handler for streaming. Only works with LLMs that support streaming."""
+    """Callback handler for streaming.
+
+    !!! warning "Only works with LLMs that support streaming."
+    """
 
     def on_llm_start(
         self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
@@ -44,14 +47,16 @@ class StreamingStdOutCallbackHandler(BaseCallbackHandler):
         """
 
     @override
-    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+    def on_llm_new_token(
+        self, token: str | list[str | dict[str, Any]], **kwargs: Any
+    ) -> None:
         """Run on new LLM token. Only available when streaming is enabled.
 
         Args:
-            token: The new token.
+            token: The new token, or a list of content blocks.
             **kwargs: Additional keyword arguments.
         """
-        sys.stdout.write(token)
+        sys.stdout.write(str(token))
         sys.stdout.flush()
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:

@@ -8,6 +8,7 @@ from time import sleep
 from typing import (
     TYPE_CHECKING,
     Any,
+    Self,
 )
 
 from langchain_core.agents import AgentAction, AgentFinish
@@ -17,11 +18,13 @@ from langchain_core.runnables import RunnableConfig, RunnableSerializable, ensur
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel, Field, model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 if TYPE_CHECKING:
     import openai
-    from openai.types.beta.threads import ThreadMessage  # type: ignore[attr-defined]
+    from openai.types.beta.threads import (  # type: ignore[attr-defined,unused-ignore]
+        ThreadMessage,
+    )
     from openai.types.beta.threads.required_action_function_tool_call import (
         RequiredActionFunctionToolCall,
     )
@@ -148,7 +151,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             instructions="You are a personal math tutor. "
             "Write and run code to answer math questions.",
             tools=[{"type": "code_interpreter"}],
-            model="gpt-4-1106-preview",
+            model="gpt-5.5",
         )
         output = interpreter_assistant.invoke(
             {"content": "What's 10 - 4 raised to the 2.7"}
@@ -168,7 +171,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             instructions="You are a personal math tutor. "
             "Write and run code to answer math questions.",
             tools=tools,
-            model="gpt-4-1106-preview",
+            model="gpt-5.5",
             as_agent=True,
         )
 
@@ -190,7 +193,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             instructions="You are a personal math tutor. "
             "Write and run code to answer math questions.",
             tools=tools,
-            model="gpt-4-1106-preview",
+            model="gpt-5.5",
             as_agent=True,
         )
 
@@ -276,10 +279,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             OpenAIAssistantRunnable configured to run using the created assistant.
         """
         client = client or _get_openai_client()
-        assistant = client.beta.assistants.create(
+        assistant = client.beta.assistants.create(  # type: ignore[deprecated,unused-ignore]
             name=name,
             instructions=instructions,
-            tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore[misc]
+            tools=[_get_assistants_tool(tool) for tool in tools],  # type: ignore[misc,unused-ignore]
             model=model,
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
@@ -409,10 +412,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         """
         async_client = async_client or _get_openai_async_client()
         openai_tools = [_get_assistants_tool(tool) for tool in tools]
-        assistant = await async_client.beta.assistants.create(
+        assistant = await async_client.beta.assistants.create(  # type: ignore[deprecated,unused-ignore]
             name=name,
             instructions=instructions,
-            tools=openai_tools,  # type: ignore[arg-type]
+            tools=openai_tools,  # type: ignore[arg-type,unused-ignore]
             model=model,
         )
         return cls(assistant_id=assistant.id, async_client=async_client, **kwargs)
@@ -617,7 +620,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                     if version_gte_1_14
                     else isinstance(
                         content,
-                        openai.types.beta.threads.MessageContentText,  # type: ignore[attr-defined]
+                        openai.types.beta.threads.MessageContentText,  # type: ignore[attr-defined,unused-ignore]
                     )
                 )
                 for content in answer
@@ -771,7 +774,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                     if version_gte_1_14
                     else isinstance(
                         content,
-                        openai.types.beta.threads.MessageContentText,  # type: ignore[attr-defined]
+                        openai.types.beta.threads.MessageContentText,  # type: ignore[attr-defined,unused-ignore]
                     )
                 )
                 for content in answer

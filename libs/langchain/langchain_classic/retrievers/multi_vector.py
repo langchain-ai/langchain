@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from langchain_core.callbacks import (
@@ -15,7 +15,7 @@ from typing_extensions import override
 from langchain_classic.storage._lc_store import create_kv_docstore
 
 
-class SearchType(str, Enum):
+class SearchType(StrEnum):
     """Enumerator of the types of search to perform."""
 
     similarity = "similarity"
@@ -27,7 +27,20 @@ class SearchType(str, Enum):
 
 
 class MultiVectorRetriever(BaseRetriever):
-    """Retrieve from a set of multiple embeddings for the same document."""
+    """Retriever that supports multiple embeddings per parent document.
+
+    This retriever is designed for scenarios where documents are split into
+    smaller chunks for embedding and vector search, but retrieval returns
+    the original parent documents rather than individual chunks.
+
+    It works by:
+    - Performing similarity (or MMR) search over embedded child chunks
+    - Collecting unique parent document IDs from chunk metadata
+    - Fetching and returning the corresponding parent documents from the docstore
+
+    This pattern is commonly used in RAG pipelines to improve answer grounding
+    while preserving full document context.
+    """
 
     vectorstore: VectorStore
     """The underlying `VectorStore` to use to store small chunks

@@ -7,14 +7,17 @@ import dataclasses
 import functools
 import inspect
 import logging
+import re
+import unicodedata
 import uuid
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import (
     TYPE_CHECKING,
     Any,
     cast,
 )
+from urllib.parse import urlsplit, urlunsplit
 
 from langchain_core._api import warn_deprecated
 from langchain_core.callbacks import Callbacks
@@ -68,6 +71,70 @@ MODEL_OR_CHAIN_FACTORY = (
     | Chain
 )
 MCF = Callable[[], Chain | Runnable] | BaseLanguageModel
+
+_GIT_REMOTE_URL_SCHEMES = {"git", "http", "https", "ssh"}
+_SCP_STYLE_GIT_REMOTE_RE = re.compile(
+    r"^(?:[^@/:\s]+@)?(?P<host>[^@/:\s]+):(?P<path>[^\s:][^\s]*)$"
+)
+
+
+def _sanitize_git_remote_url(remote_url: object) -> str | None:
+    if not isinstance(remote_url, str) or not remote_url:
+        return None
+    if any(
+        character.isspace() or unicodedata.category(character) == "Cc"
+        for character in remote_url
+    ):
+        return None
+
+    if "://" not in remote_url:
+        match = _SCP_STYLE_GIT_REMOTE_RE.fullmatch(remote_url)
+        if match is None:
+            return None
+        host = match.group("host")
+        path = match.group("path")
+        if host.lower() in _GIT_REMOTE_URL_SCHEMES or (
+            len(host) == 1
+            and host.isascii()
+            and host.isalpha()
+            and path.startswith(("/", "\\"))
+        ):
+            return None
+        return f"{host}:{path}"
+
+    try:
+        parsed = urlsplit(remote_url)
+        host = parsed.hostname
+        if (
+            parsed.scheme not in _GIT_REMOTE_URL_SCHEMES
+            or host is None
+            or "%" in host
+            or not parsed.path
+            or parsed.query
+            or parsed.fragment
+        ):
+            return None
+        port = parsed.port
+    except ValueError:
+        return None
+
+    if ":" in host:
+        host = f"[{host}]"
+    netloc = f"{host}:{port}" if port is not None else host
+    return urlunsplit((parsed.scheme, netloc, parsed.path, "", ""))
+
+
+def _format_git_tags(git_info: dict[str, Any]) -> list[str]:
+    tags = []
+    for key, value in git_info.items():
+        if key == "remote_url":
+            sanitized_remote_url = _sanitize_git_remote_url(value)
+            if sanitized_remote_url is None:
+                continue
+            tags.append(f"git:{key}={sanitized_remote_url}")
+        else:
+            tags.append(f"git:{key}={value}")
+    return tags
 
 
 class InputFormatError(Exception):
@@ -198,7 +265,7 @@ def _wrap_in_chain_factory(
                 "Cannot directly evaluate a chain with stateful memory."
                 " To evaluate this chain, pass in a chain constructor"
                 " that initializes fresh memory each time it is called."
-                "  This will safegaurd against information"
+                "  This will safeguard against information"
                 " leakage between dataset examples."
                 "\nFor example:\n\n"
                 "def chain_constructor():\n"
@@ -1134,7 +1201,7 @@ class _DatasetRunContainer:
                 try:
                     result = evaluator(runs_list, self.examples)
                     if isinstance(result, EvaluationResult):
-                        result = result.dict()
+                        result = result.model_dump()
                     aggregate_feedback.append(cast("dict", result))
                     executor.submit(
                         self.client.create_feedback,
@@ -1205,15 +1272,15 @@ class _DatasetRunContainer:
             try:
                 agg_feedback = results.get_aggregate_feedback()
                 _display_aggregate_results(agg_feedback)
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 logger.debug("Failed to print aggregate feedback: %s", e, exc_info=True)
         try:
             # Closing the project permits name changing and metric optimizations
             self.client.update_project(
                 self.project.id,
-                end_time=datetime.now(timezone.utc),
+                end_time=datetime.now(UTC),
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             logger.debug("Failed to close project: %s", e, exc_info=True)
         return results
 
@@ -1247,8 +1314,7 @@ class _DatasetRunContainer:
             dataset_version=dataset_version,
         )
         tags = tags or []
-        for k, v in (project.metadata.get("git") or {}).items():
-            tags.append(f"git:{k}={v}")
+        tags.extend(_format_git_tags(project.metadata.get("git") or {}))
         run_metadata = {"dataset_version": project.metadata["dataset_version"]}
         if revision_id:
             run_metadata["revision_id"] = revision_id

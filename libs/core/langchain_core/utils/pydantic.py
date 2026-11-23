@@ -11,6 +11,7 @@ from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Any,
+    TypeGuard,
     TypeVar,
     cast,
     overload,
@@ -55,7 +56,7 @@ PYDANTIC_VERSION = version.parse(pydantic.__version__)
 def get_pydantic_major_version() -> int:
     """DEPRECATED - Get the major version of Pydantic.
 
-    Use PYDANTIC_VERSION.major instead.
+    Use `PYDANTIC_VERSION.major` instead.
 
     Returns:
         The major version of Pydantic.
@@ -69,8 +70,8 @@ PYDANTIC_MINOR_VERSION = PYDANTIC_VERSION.minor
 IS_PYDANTIC_V1 = False
 IS_PYDANTIC_V2 = True
 
-PydanticBaseModel = BaseModel
-TypeBaseModel = type[BaseModel]
+PydanticBaseModel = BaseModel | BaseModelV1
+TypeBaseModel = type[BaseModel] | type[BaseModelV1]
 
 TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
@@ -84,7 +85,7 @@ def is_pydantic_v1_subclass(cls: type) -> bool:
     return issubclass(cls, BaseModelV1)
 
 
-def is_pydantic_v2_subclass(cls: type) -> bool:
+def is_pydantic_v2_subclass(cls: type) -> TypeGuard[type[BaseModel]]:
     """Check if the given class is Pydantic v2-like.
 
     Returns:
@@ -126,7 +127,9 @@ def is_basemodel_instance(obj: Any) -> bool:
 
 
 # How to type hint this?
-def pre_init(func: Callable) -> Any:
+def pre_init(
+    func: Callable[[Any, dict[str, Any]], Any],
+) -> Callable[[Any, dict[str, Any]], Any]:
     """Decorator to run a function before model initialization.
 
     Args:
@@ -202,9 +205,9 @@ class _IgnoreUnserializable(GenerateJsonSchema):
 def _create_subset_model_v1(
     name: str,
     model: type[BaseModelV1],
-    field_names: list,
+    field_names: list[str],
     *,
-    descriptions: dict | None = None,
+    descriptions: dict[str, str] | None = None,
     fn_description: str | None = None,
 ) -> type[BaseModelV1]:
     """Create a Pydantic model with only a subset of model's fields."""
@@ -233,7 +236,7 @@ def _create_subset_model_v2(
     model: type[BaseModel],
     field_names: list[str],
     *,
-    descriptions: dict | None = None,
+    descriptions: dict[str, str] | None = None,
     fn_description: str | None = None,
 ) -> type[BaseModel]:
     """Create a Pydantic model with a subset of the model fields."""
@@ -242,7 +245,12 @@ def _create_subset_model_v2(
     for field_name in field_names:
         field = model.model_fields[field_name]
         description = descriptions_.get(field_name, field.description)
-        field_info = FieldInfoV2(description=description, default=field.default)
+        field_kwargs: dict[str, Any] = {"description": description}
+        if field.default_factory is not None:
+            field_kwargs["default_factory"] = field.default_factory
+        else:
+            field_kwargs["default"] = field.default
+        field_info = FieldInfoV2(**field_kwargs)
         if field.metadata:
             field_info.metadata = field.metadata
         fields[field_name] = (field.annotation, field_info)
@@ -278,9 +286,9 @@ def _create_subset_model(
     model: TypeBaseModel,
     field_names: list[str],
     *,
-    descriptions: dict | None = None,
+    descriptions: dict[str, str] | None = None,
     fn_description: str | None = None,
-) -> type[BaseModel]:
+) -> TypeBaseModel:
     """Create subset model using the same pydantic version as the input model.
 
     Returns:
@@ -336,7 +344,50 @@ def get_fields(
         return model.model_fields
     if issubclass(model, BaseModelV1):
         return model.__fields__
-    msg = f"Expected a Pydantic model. Got {model}"
+    msg = f"Expected a Pydantic model. Got {model}"  # type: ignore[unreachable]
+    raise TypeError(msg)
+
+
+def model_json_schema(model: TypeBaseModel) -> dict[str, Any]:
+    """Return the JSON schema of a Pydantic model class of either major version.
+
+    Dispatches to the correct method for Pydantic v1 (`schema`) or v2
+    (`model_json_schema`), so callers holding a `TypeBaseModel` don't have to
+    branch on the model's version themselves.
+
+    Args:
+        model: The Pydantic model class.
+
+    Raises:
+        TypeError: If the model is not a Pydantic model class.
+    """
+    if issubclass(model, BaseModel):
+        return model.model_json_schema()
+    if issubclass(model, BaseModelV1):
+        return model.schema()
+    msg = f"Expected a Pydantic model. Got {model}"  # type: ignore[unreachable]
+    raise TypeError(msg)
+
+
+def model_validate(model: TypeBaseModel, obj: Any) -> PydanticBaseModel:
+    """Validate `obj` against a Pydantic model class of either major version.
+
+    Dispatches to the correct method for Pydantic v1 (`parse_obj`) or v2
+    (`model_validate`), so callers holding a `TypeBaseModel` don't have to
+    branch on the model's version themselves.
+
+    Args:
+        model: The Pydantic model class to validate against.
+        obj: The object to validate.
+
+    Raises:
+        TypeError: If the model is not a Pydantic model class.
+    """
+    if issubclass(model, BaseModel):
+        return model.model_validate(obj)
+    if issubclass(model, BaseModelV1):
+        return model.parse_obj(obj)
+    msg = f"Expected a Pydantic model. Got {model}"  # type: ignore[unreachable]
     raise TypeError(msg)
 
 
@@ -392,18 +443,12 @@ def _create_root_model(
 
     if default_ is not NO_DEFAULT:
         base_class_attributes["root"] = default_
-    with warnings.catch_warnings():
-        try:
-            if (
-                isinstance(type_, type)
-                and not isinstance(type_, GenericAlias)
-                and issubclass(type_, BaseModelV1)
-            ):
-                warnings.filterwarnings(
-                    action="ignore", category=PydanticDeprecationWarning
-                )
-        except TypeError:
-            pass
+    is_v1_model = isinstance(type_, type) and issubclass(type_, BaseModelV1)
+    with warnings.catch_warnings() if is_v1_model else nullcontext():
+        if is_v1_model:
+            warnings.filterwarnings(
+                action="ignore", category=PydanticDeprecationWarning
+            )
         custom_root_type = type(name, (RootModel,), base_class_attributes)
     return cast("type[BaseModel]", custom_root_type)
 
@@ -447,6 +492,7 @@ def create_model(
     Args:
         model_name: The name of the model.
         module_name: The name of the module where the model is defined.
+
             This is used by Pydantic to resolve any forward references.
         **field_definitions: The field definitions for the model.
 
@@ -515,13 +561,15 @@ def create_model_v2(
 ) -> type[BaseModel]:
     """Create a Pydantic model with the given field definitions.
 
-    Attention:
-        Please do not use outside of langchain packages. This API
-        is subject to change at any time.
+    !!! warning
+
+        Do not use outside of langchain packages. This API is subject to change at any
+        time.
 
     Args:
         model_name: The name of the model.
         module_name: The name of the module where the model is defined.
+
             This is used by Pydantic to resolve any forward references.
         field_definitions: The field definitions for the model.
         root: Type for a root model (`RootModel`)
@@ -557,25 +605,12 @@ def create_model_v2(
             )
         return named_root_model
 
-    # No root, just field definitions
-    names = set(field_definitions.keys())
-
-    capture_warnings = False
-
-    for name in names:
-        # Also if any non-reserved name is used (e.g., model_id or model_name)
-        if name.startswith("model"):
-            capture_warnings = True
-
-    with warnings.catch_warnings() if capture_warnings else nullcontext():
-        if capture_warnings:
-            warnings.filterwarnings(action="ignore")
-        try:
-            return _create_model_cached(model_name, **field_definitions)
-        except TypeError:
-            # something in field definitions is not hashable
-            return _create_model_base(
-                model_name,
-                __config__=_SchemaConfig,
-                **_remap_field_definitions(field_definitions),
-            )
+    try:
+        return _create_model_cached(model_name, **field_definitions)
+    except TypeError:
+        # something in field definitions is not hashable
+        return _create_model_base(
+            model_name,
+            __config__=_SchemaConfig,
+            **_remap_field_definitions(field_definitions),
+        )

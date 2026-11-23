@@ -1221,11 +1221,11 @@ class Chroma(VectorStore):
         return self.update_documents([document_id], [document])
 
     def update_documents(self, ids: list[str], documents: list[Document]) -> None:
-        """Update a document in the collection.
+        """Update multiple documents in the collection.
 
         Args:
-            ids: List of ids of the document to update.
-            documents: List of documents to update.
+            ids: List of document IDs to update.
+            documents: List of Document objects corresponding to the given IDs.
 
         Raises:
             ValueError: If the embedding function is not provided.

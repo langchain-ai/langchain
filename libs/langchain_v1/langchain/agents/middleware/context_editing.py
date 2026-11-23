@@ -25,9 +25,11 @@ from typing_extensions import Protocol
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
-    ModelCallResult,
+    AgentState,
+    ContextT,
     ModelRequest,
     ModelResponse,
+    ResponseT,
 )
 
 DEFAULT_TOOL_PLACEHOLDER = "[cleared]"
@@ -152,8 +154,8 @@ class ClearToolUsesEdit(ContextEdit):
 
         return
 
+    @staticmethod
     def _build_cleared_tool_input_message(
-        self,
         message: AIMessage,
         tool_call_id: str,
     ) -> AIMessage:
@@ -182,7 +184,7 @@ class ClearToolUsesEdit(ContextEdit):
         )
 
 
-class ContextEditingMiddleware(AgentMiddleware):
+class ContextEditingMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Automatically prune tool results to manage context size.
 
     The middleware applies a sequence of edits when the total input token count exceeds
@@ -194,12 +196,14 @@ class ContextEditingMiddleware(AgentMiddleware):
 
     edits: list[ContextEdit]
     token_count_method: Literal["approximate", "model"]
+    token_counter: TokenCounter | None
 
     def __init__(
         self,
         *,
         edits: Iterable[ContextEdit] | None = None,
         token_count_method: Literal["approximate", "model"] = "approximate",  # noqa: S107
+        token_counter: TokenCounter | None = None,
     ) -> None:
         """Initialize an instance of context editing middleware.
 
@@ -210,32 +214,58 @@ class ContextEditingMiddleware(AgentMiddleware):
             token_count_method: Whether to use approximate token counting
                 (faster, less accurate) or exact counting implemented by the
                 chat model (potentially slower, more accurate).
+
+                Ignored when `token_counter` is provided.
+            token_counter: Optional custom function counting tokens for a
+                sequence of messages. Takes precedence over
+                `token_count_method` when provided, mirroring
+                `SummarizationMiddleware`. Useful when the built-in
+                approximation is inaccurate for a workload (e.g. CJK-heavy
+                conversations) or when a provider-specific tokenizer should
+                be used without implementing
+                `get_num_tokens_from_messages`.
         """
         super().__init__()
         self.edits = list(edits or (ClearToolUsesEdit(),))
         self.token_count_method = token_count_method
+        self.token_counter = token_counter
+
+    def _resolve_token_counter(self, request: ModelRequest[ContextT]) -> TokenCounter:
+        """Select the token counter used to evaluate edit triggers."""
+        if self.token_counter is not None:
+            return self.token_counter
+
+        if self.token_count_method == "approximate":  # noqa: S105
+            return count_tokens_approximately
+
+        system_msg = [request.system_message] if request.system_message else []
+
+        def count_tokens(messages: Sequence[BaseMessage]) -> int:
+            return request.model.get_num_tokens_from_messages(
+                system_msg + list(messages), request.tools
+            )
+
+        return count_tokens
 
     def wrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], ModelResponse],
-    ) -> ModelCallResult:
-        """Apply context edits before invoking the model via handler."""
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
+        """Apply context edits before invoking the model via handler.
+
+        Args:
+            request: Model request to execute (includes state and runtime).
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`.
+
+        Returns:
+            The result of invoking the handler with potentially edited messages.
+        """
         if not request.messages:
             return handler(request)
 
-        if self.token_count_method == "approximate":  # noqa: S105
-
-            def count_tokens(messages: Sequence[BaseMessage]) -> int:
-                return count_tokens_approximately(messages)
-
-        else:
-            system_msg = [request.system_message] if request.system_message else []
-
-            def count_tokens(messages: Sequence[BaseMessage]) -> int:
-                return request.model.get_num_tokens_from_messages(
-                    system_msg + list(messages), request.tools
-                )
+        count_tokens = self._resolve_token_counter(request)
 
         edited_messages = deepcopy(list(request.messages))
         for edit in self.edits:
@@ -245,25 +275,23 @@ class ContextEditingMiddleware(AgentMiddleware):
 
     async def awrap_model_call(
         self,
-        request: ModelRequest,
-        handler: Callable[[ModelRequest], Awaitable[ModelResponse]],
-    ) -> ModelCallResult:
-        """Apply context edits before invoking the model via handler (async version)."""
+        request: ModelRequest[ContextT],
+        handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
+    ) -> ModelResponse[ResponseT] | AIMessage:
+        """Apply context edits before invoking the model via handler.
+
+        Args:
+            request: Model request to execute (includes state and runtime).
+            handler: Async callback that executes the model request and returns
+                `ModelResponse`.
+
+        Returns:
+            The result of invoking the handler with potentially edited messages.
+        """
         if not request.messages:
             return await handler(request)
 
-        if self.token_count_method == "approximate":  # noqa: S105
-
-            def count_tokens(messages: Sequence[BaseMessage]) -> int:
-                return count_tokens_approximately(messages)
-
-        else:
-            system_msg = [request.system_message] if request.system_message else []
-
-            def count_tokens(messages: Sequence[BaseMessage]) -> int:
-                return request.model.get_num_tokens_from_messages(
-                    system_msg + list(messages), request.tools
-                )
+        count_tokens = self._resolve_token_counter(request)
 
         edited_messages = deepcopy(list(request.messages))
         for edit in self.edits:

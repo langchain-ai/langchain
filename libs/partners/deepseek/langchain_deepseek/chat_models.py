@@ -5,7 +5,8 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Iterator, Sequence
 from json import JSONDecodeError
-from typing import Any, Literal, TypeAlias, cast
+from typing import Any, Literal, Self, TypeAlias, cast
+from urllib.parse import urlparse
 
 import openai
 from langchain_core.callbacks import (
@@ -18,14 +19,20 @@ from langchain_core.language_models import (
     ModelProfileRegistry,
 )
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, secret_from_env
+from langchain_core.utils._gateway import (
+    _apply_gateway_config,
+    _gateway_headers,
+    _with_gateway_headers,
+)
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
 
+from langchain_deepseek._version import __version__
 from langchain_deepseek.data._profiles import _PROFILES
 
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
@@ -41,6 +48,67 @@ _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
 def _get_default_model_profile(model_name: str) -> ModelProfile:
     default = _MODEL_PROFILES.get(model_name) or {}
     return default.copy()
+
+
+def _get_prompt_cache_hit_tokens(response: dict | openai.BaseModel) -> int | None:
+    """Read DeepSeek's top-level `prompt_cache_hit_tokens` usage field.
+
+    DeepSeek reports context-cache usage as top-level `prompt_cache_hit_tokens`
+    and `prompt_cache_miss_tokens` fields rather than OpenAI's nested
+    `prompt_tokens_details.cached_tokens`, so the count is not visible to the
+    base class.
+
+    Args:
+        response: A chat completion response or a streaming chunk.
+
+    Returns:
+        The number of prompt tokens served from the context cache, or `None` if
+        the field is absent.
+    """
+    usage: Any = (
+        response.get("usage")
+        if isinstance(response, dict)
+        else getattr(response, "usage", None)
+    )
+    if isinstance(usage, openai.BaseModel):
+        # Fields DeepSeek adds beyond OpenAI's schema are preserved as extras,
+        # which `model_dump` includes.
+        usage = usage.model_dump()
+    if not isinstance(usage, dict):
+        return None
+    cache_hit_tokens = usage.get("prompt_cache_hit_tokens")
+    if not isinstance(cache_hit_tokens, int):
+        return None
+    return cache_hit_tokens
+
+
+def _add_cache_read_tokens(message: BaseMessage, cache_hit_tokens: int) -> None:
+    """Record cached prompt tokens as `cache_read` in a message's usage metadata.
+
+    Only cache hits are recorded. DeepSeek defines `prompt_tokens` as
+    `prompt_cache_hit_tokens + prompt_cache_miss_tokens`, so a miss is an
+    ordinary uncached input token rather than a cache write, and mapping it to
+    `cache_creation` would misreport it.
+
+    An existing `cache_read` count is left untouched, since DeepSeek served
+    through an OpenAI-compatible gateway may report the nested form that the
+    base class already handles.
+
+    Args:
+        message: The message whose `usage_metadata` should be updated.
+        cache_hit_tokens: Prompt tokens served from DeepSeek's context cache.
+    """
+    if not isinstance(message, AIMessage) or message.usage_metadata is None:
+        return
+    input_token_details = message.usage_metadata.get("input_token_details") or {}
+    if "cache_read" in input_token_details:
+        return
+    usage_metadata: dict[str, Any] = dict(message.usage_metadata)
+    usage_metadata["input_token_details"] = cast(
+        "InputTokenDetails",
+        {**input_token_details, "cache_read": cache_hit_tokens},
+    )
+    message.usage_metadata = cast("UsageMetadata", usage_metadata)
 
 
 class ChatDeepSeek(BaseChatOpenAI):
@@ -188,11 +256,21 @@ class ChatDeepSeek(BaseChatOpenAI):
     )
     """DeepSeek API key"""
     api_base: str = Field(
+        alias="base_url",
         default_factory=from_env("DEEPSEEK_API_BASE", default=DEFAULT_API_BASE),
     )
-    """DeepSeek API base URL"""
+    """DeepSeek API base URL.
+
+    Automatically read from env variable `DEEPSEEK_API_BASE` if not provided.
+    """
 
     model_config = ConfigDict(populate_by_name=True)
+
+    @property
+    def _is_azure_endpoint(self) -> bool:
+        """Check if the configured endpoint is an Azure deployment."""
+        hostname = urlparse(self.api_base or "").hostname or ""
+        return hostname == "azure.com" or hostname.endswith(".azure.com")
 
     @property
     def _llm_type(self) -> str:
@@ -214,8 +292,42 @@ class ChatDeepSeek(BaseChatOpenAI):
         return ls_params
 
     @model_validator(mode="after")
+    def _set_deepseek_version(self) -> Self:
+        """Set package version in metadata.
+
+        Named uniquely to avoid shadowing `BaseChatOpenAI._set_openai_chat_version`;
+        Pydantic replaces same-named validators rather than chaining them.
+        """
+        self._add_version("langchain-deepseek", __version__)
+        return self
+
+    @model_validator(mode="before")
+    @classmethod
+    def _apply_deepseek_gateway_config(cls, values: Any) -> Any:
+        """Resolve the base URL and API key, applying LangSmith gateway settings.
+
+        Routes through the gateway when `LANGSMITH_GATEWAY` is set or the model is
+        built inside `langsmith_gateway`. See `langchain_core.utils._gateway` for
+        precedence.
+        """
+        if isinstance(values, dict):
+            _apply_gateway_config(
+                values,
+                cls,
+                base_url_field="api_base",
+                api_key_field="api_key",
+                provider_path="deepseek/v1",
+                base_url_env="DEEPSEEK_API_BASE",
+                api_key_env="DEEPSEEK_API_KEY",
+                default_base_url=DEFAULT_API_BASE,
+            )
+        return values
+
+    @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate necessary environment vars and client params."""
+        if self._langsmith_gateway_headers is None:
+            self._langsmith_gateway_headers = _gateway_headers()
         if self.api_base == DEFAULT_API_BASE and not (
             self.api_key and self.api_key.get_secret_value()
         ):
@@ -228,7 +340,9 @@ class ChatDeepSeek(BaseChatOpenAI):
                 "base_url": self.api_base,
                 "timeout": self.request_timeout,
                 "max_retries": self.max_retries,
-                "default_headers": self.default_headers,
+                "default_headers": _with_gateway_headers(
+                    self.default_headers, self._langsmith_gateway_headers
+                ),
                 "default_query": self.default_query,
             }.items()
             if v is not None
@@ -247,12 +361,21 @@ class ChatDeepSeek(BaseChatOpenAI):
             self.async_client = self.root_async_client.chat.completions
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model_name)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model_name) or None
+
+    def _with_beta_api_base(self) -> Self:
+        """Return a copy of this model that targets DeepSeek's beta endpoint."""
+        beta_model = self.model_copy(
+            update={
+                "api_base": DEFAULT_BETA_API_BASE,
+                "client": None,
+                "async_client": None,
+                "root_client": None,
+                "root_async_client": None,
+            }
+        )
+        return beta_model.validate_environment()  # type: ignore[operator]
 
     def _get_request_payload(
         self,
@@ -276,6 +399,17 @@ class ChatDeepSeek(BaseChatOpenAI):
                     if isinstance(block, dict) and block.get("type") == "text"
                 ]
                 message["content"] = "".join(text_parts) if text_parts else ""
+
+        # Azure-hosted DeepSeek does not support the dict/object form of
+        # tool_choice (e.g. {"type": "function", "function": {"name": "..."}}).
+        # It only accepts string values: "none", "auto", or "required".
+        # Convert the unsupported dict form to "required", which is the closest
+        # string equivalent — it forces the model to call a tool without
+        # constraining which one. In the common with_structured_output() case
+        # only a single tool is bound, so the behavior is effectively identical.
+        if self._is_azure_endpoint and isinstance(payload.get("tool_choice"), dict):
+            payload["tool_choice"] = "required"
+
         return payload
 
     def _create_chat_result(
@@ -284,6 +418,11 @@ class ChatDeepSeek(BaseChatOpenAI):
         generation_info: dict | None = None,
     ) -> ChatResult:
         rtn = super()._create_chat_result(response, generation_info)
+
+        cache_hit_tokens = _get_prompt_cache_hit_tokens(response)
+        if cache_hit_tokens is not None:
+            for generation in rtn.generations:
+                _add_cache_read_tokens(generation.message, cache_hit_tokens)
 
         if not isinstance(response, openai.BaseModel):
             return rtn
@@ -321,6 +460,13 @@ class ChatDeepSeek(BaseChatOpenAI):
             default_chunk_class,
             base_generation_info,
         )
+        # Usage arrives in a trailing chunk that carries no choices, so this
+        # cannot be folded into the choices branch below.
+        if generation_chunk:
+            cache_hit_tokens = _get_prompt_cache_hit_tokens(chunk)
+            if cache_hit_tokens is not None:
+                _add_cache_read_tokens(generation_chunk.message, cache_hit_tokens)
+
         if (choices := chunk.get("choices")) and generation_chunk:
             top = choices[0]
             if isinstance(generation_chunk.message, AIMessageChunk):
@@ -418,7 +564,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         # If strict mode is enabled and using default API base, switch to beta endpoint
         if strict is True and self.api_base == DEFAULT_API_BASE:
             # Create a new instance with beta endpoint
-            beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+            beta_model = self._with_beta_api_base()
             return beta_model.bind_tools(
                 tools,
                 tool_choice=tool_choice,
@@ -524,7 +670,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         # If strict mode is enabled and using default API base, switch to beta endpoint
         if strict is True and self.api_base == DEFAULT_API_BASE:
             # Create a new instance with beta endpoint
-            beta_model = self.model_copy(update={"api_base": DEFAULT_BETA_API_BASE})
+            beta_model = self._with_beta_api_base()
             return beta_model.with_structured_output(
                 schema,
                 method=method,

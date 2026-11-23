@@ -1,0 +1,8 @@
+provider = "xai"
+
+[overrides]
+tool_call_streaming = true
+
+[overrides."grok-4.3"]
+reasoning_effort_levels = ["none", "low", "medium", "high"]
+reasoning_effort_default = "low"

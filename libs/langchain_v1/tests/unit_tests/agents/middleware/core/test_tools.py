@@ -1,14 +1,23 @@
 """Test Middleware handling of tools in agents."""
 
 from collections.abc import Callable
+from typing import Any
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
+from langchain_core.tools.base import BaseTool
 from langgraph.prebuilt.tool_node import ToolNode
 
 from langchain.agents.factory import create_agent
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    InputAgentState,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -30,8 +39,8 @@ def test_model_request_tools_are_base_tools() -> None:
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
             captured_requests.append(request)
             return handler(request)
 
@@ -51,7 +60,15 @@ def test_model_request_tools_are_base_tools() -> None:
     request = captured_requests[0]
     assert isinstance(request.tools, list)
     assert len(request.tools) == 2
-    assert {t.name for t in request.tools} == {"search_tool", "calculator"}
+
+    tools = []
+    for t in request.tools:
+        assert isinstance(t, BaseTool)
+        tools.append(t.name)
+    assert set(tools) == {
+        "search_tool",
+        "calculator",
+    }
 
 
 def test_middleware_can_modify_tools() -> None:
@@ -60,26 +77,33 @@ def test_middleware_can_modify_tools() -> None:
     @tool
     def tool_a(value: str) -> str:
         """Tool A."""
+        _ = value
         return "A"
 
     @tool
     def tool_b(value: str) -> str:
         """Tool B."""
+        _ = value
         return "B"
 
     @tool
     def tool_c(value: str) -> str:
         """Tool C."""
+        _ = value
         return "C"
 
     class ToolFilteringMiddleware(AgentMiddleware):
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
             # Only allow tool_a and tool_b
-            filtered_tools = [t for t in request.tools if t.name in {"tool_a", "tool_b"}]
+            filtered_tools: list[BaseTool | dict[str, Any]] = []
+            for t in request.tools:
+                assert isinstance(t, BaseTool)
+                if t.name in {"tool_a", "tool_b"}:
+                    filtered_tools.append(t)
             return handler(request.override(tools=filtered_tools))
 
     # Model will try to call tool_a
@@ -109,19 +133,21 @@ def test_unknown_tool_raises_error() -> None:
     @tool
     def known_tool(value: str) -> str:
         """A known tool."""
+        _ = value
         return "result"
 
     @tool
     def unknown_tool(value: str) -> str:
         """An unknown tool not passed to create_agent."""
+        _ = value
         return "unknown"
 
     class BadMiddleware(AgentMiddleware):
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
             # Add an unknown tool
             return handler(request.override(tools=[*request.tools, unknown_tool]))
 
@@ -132,7 +158,10 @@ def test_unknown_tool_raises_error() -> None:
         middleware=[BadMiddleware()],
     )
 
-    with pytest.raises(ValueError, match="Middleware returned unknown tool names"):
+    with pytest.raises(
+        ValueError,
+        match=r"(?s)Middleware added tools.*Unknown tools:.*unknown_tool",
+    ):
         agent.invoke({"messages": [HumanMessage("Hello")]})
 
 
@@ -149,7 +178,10 @@ def test_middleware_can_add_and_remove_tools() -> None:
         """Admin-only tool."""
         return f"Admin: {command}"
 
-    class AdminState(AgentState):
+    class AdminState(AgentState[Any]):
+        is_admin: bool
+
+    class AdminInputState(InputAgentState):
         is_admin: bool
 
     class ConditionalToolMiddleware(AgentMiddleware[AdminState]):
@@ -158,11 +190,15 @@ def test_middleware_can_add_and_remove_tools() -> None:
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
             # Remove admin_tool if not admin
             if not request.state.get("is_admin", False):
-                filtered_tools = [t for t in request.tools if t.name != "admin_tool"]
+                filtered_tools: list[BaseTool | dict[str, Any]] = []
+                for t in request.tools:
+                    assert isinstance(t, BaseTool)
+                    if t.name != "admin_tool":
+                        filtered_tools.append(t)
                 request = request.override(tools=filtered_tools)
             return handler(request)
 
@@ -177,11 +213,11 @@ def test_middleware_can_add_and_remove_tools() -> None:
 
     # Test non-admin user - should not have access to admin_tool
     # We can't directly inspect the bound model, but we can verify the agent runs
-    result = agent.invoke({"messages": [HumanMessage("Hello")], "is_admin": False})
+    result = agent.invoke(AdminInputState(messages=[HumanMessage("Hello")], is_admin=False))
     assert "messages" in result
 
     # Test admin user - should have access to all tools
-    result = agent.invoke({"messages": [HumanMessage("Hello")], "is_admin": True})
+    result = agent.invoke(AdminInputState(messages=[HumanMessage("Hello")], is_admin=True))
     assert "messages" in result
 
 
@@ -191,14 +227,15 @@ def test_empty_tools_list_is_valid() -> None:
     @tool
     def some_tool(value: str) -> str:
         """Some tool."""
+        _ = value
         return "result"
 
     class NoToolsMiddleware(AgentMiddleware):
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
             # Remove all tools
             request = request.override(tools=[])
             return handler(request)
@@ -224,27 +261,36 @@ def test_tools_preserved_across_multiple_middleware() -> None:
     @tool
     def tool_a(value: str) -> str:
         """Tool A."""
+        _ = value
         return "A"
 
     @tool
     def tool_b(value: str) -> str:
         """Tool B."""
+        _ = value
         return "B"
 
     @tool
     def tool_c(value: str) -> str:
         """Tool C."""
+        _ = value
         return "C"
 
     class FirstMiddleware(AgentMiddleware):
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
-            modification_order.append([t.name for t in request.tools])
-            # Remove tool_c
-            filtered_tools = [t for t in request.tools if t.name != "tool_c"]
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
+            tools: list[str] = []
+            filtered_tools: list[BaseTool | dict[str, Any]] = []
+            for t in request.tools:
+                assert isinstance(t, BaseTool)
+                tools.append(t.name)
+                # Remove tool_c
+                if t.name != "tool_c":
+                    filtered_tools.append(t)
+            modification_order.append(tools)
             request = request.override(tools=filtered_tools)
             return handler(request)
 
@@ -252,13 +298,19 @@ def test_tools_preserved_across_multiple_middleware() -> None:
         def wrap_model_call(
             self,
             request: ModelRequest,
-            handler: Callable[[ModelRequest], AIMessage],
-        ) -> AIMessage:
-            modification_order.append([t.name for t in request.tools])
-            # Should not see tool_c here
-            assert all(t.name != "tool_c" for t in request.tools)
-            # Remove tool_b
-            filtered_tools = [t for t in request.tools if t.name != "tool_b"]
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
+            tools: list[str] = []
+            filtered_tools: list[BaseTool | dict[str, Any]] = []
+            for t in request.tools:
+                assert isinstance(t, BaseTool)
+                # Should not see tool_c here
+                assert t.name != "tool_c"
+                tools.append(t.name)
+                # Remove tool_b
+                if t.name != "tool_b":
+                    filtered_tools.append(t)
+            modification_order.append(tools)
             request = request.override(tools=filtered_tools)
             return handler(request)
 
@@ -285,11 +337,13 @@ def test_middleware_with_additional_tools() -> None:
     @tool
     def base_tool(value: str) -> str:
         """Base tool."""
+        _ = value
         return "base"
 
     @tool
     def middleware_tool(value: str) -> str:
         """Tool provided by middleware."""
+        _ = value
         return "middleware"
 
     class ToolProvidingMiddleware(AgentMiddleware):
@@ -317,6 +371,7 @@ def test_middleware_with_additional_tools() -> None:
     tool_messages = [m for m in messages if isinstance(m, ToolMessage)]
     assert len(tool_messages) == 1
     assert tool_messages[0].name == "middleware_tool"
+    assert isinstance(tool_messages[0].content, str)
     assert "middleware" in tool_messages[0].content.lower()
 
 
@@ -326,13 +381,14 @@ def test_tool_node_not_accepted() -> None:
     @tool
     def some_tool(value: str) -> str:
         """Some tool."""
+        _ = value
         return "result"
 
     tool_node = ToolNode([some_tool])
 
     with pytest.raises(TypeError, match="'ToolNode' object is not iterable"):
-        create_agent(
+        create_agent(  # type: ignore[call-overload]
             model=FakeToolCallingModel(),
-            tools=tool_node,  # type: ignore[arg-type]
+            tools=tool_node,
             system_prompt="You are a helpful assistant.",
         )

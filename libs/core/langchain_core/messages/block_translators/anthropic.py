@@ -1,7 +1,7 @@
 """Derivations of standard content blocks from Anthropic content."""
 
 import json
-from collections.abc import Iterable
+from collections.abc import Iterator
 from typing import Any, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk
@@ -26,6 +26,10 @@ def _populate_extras(
     return standard_block
 
 
+def _non_standard_block(block: dict[str, Any]) -> types.NonStandardContentBlock:
+    return {"type": "non_standard", "value": block}
+
+
 def _convert_to_v1_from_anthropic_input(
     content: list[types.ContentBlock],
 ) -> list[types.ContentBlock]:
@@ -45,7 +49,7 @@ def _convert_to_v1_from_anthropic_input(
         Updated list with Anthropic blocks converted to v1 format.
     """
 
-    def _iter_blocks() -> Iterable[types.ContentBlock]:
+    def _iter_blocks() -> Iterator[types.ContentBlock]:
         blocks: list[dict[str, Any]] = [
             cast("dict[str, Any]", block)
             if block.get("type") != "non_standard"
@@ -54,87 +58,107 @@ def _convert_to_v1_from_anthropic_input(
         ]
         for block in blocks:
             block_type = block.get("type")
+            source = block.get("source")
 
             if (
                 block_type == "document"
-                and "source" in block
-                and "type" in block["source"]
+                and isinstance(source, dict)
+                and "type" in source
             ):
-                if block["source"]["type"] == "base64":
+                if source["type"] == "base64":
+                    if "data" not in source or "media_type" not in source:
+                        yield _non_standard_block(block)
+                        continue
                     file_block: types.FileContentBlock = {
                         "type": "file",
-                        "base64": block["source"]["data"],
-                        "mime_type": block["source"]["media_type"],
+                        "base64": source["data"],
+                        "mime_type": source["media_type"],
                     }
                     _populate_extras(file_block, block, {"type", "source"})
                     yield file_block
 
-                elif block["source"]["type"] == "url":
+                elif source["type"] == "url":
+                    if "url" not in source:
+                        yield _non_standard_block(block)
+                        continue
                     file_block = {
                         "type": "file",
-                        "url": block["source"]["url"],
+                        "url": source["url"],
                     }
                     _populate_extras(file_block, block, {"type", "source"})
                     yield file_block
 
-                elif block["source"]["type"] == "file":
+                elif source["type"] == "file":
+                    if "file_id" not in source:
+                        yield _non_standard_block(block)
+                        continue
                     file_block = {
                         "type": "file",
-                        "id": block["source"]["file_id"],
+                        "id": source["file_id"],
                     }
                     _populate_extras(file_block, block, {"type", "source"})
                     yield file_block
 
-                elif block["source"]["type"] == "text":
+                elif source["type"] == "text":
+                    if "data" not in source:
+                        yield _non_standard_block(block)
+                        continue
                     plain_text_block: types.PlainTextContentBlock = {
                         "type": "text-plain",
-                        "text": block["source"]["data"],
+                        "text": source["data"],
                         "mime_type": block.get("media_type", "text/plain"),
                     }
                     _populate_extras(plain_text_block, block, {"type", "source"})
                     yield plain_text_block
 
                 else:
-                    yield {"type": "non_standard", "value": block}
+                    yield _non_standard_block(block)
 
             elif (
-                block_type == "image"
-                and "source" in block
-                and "type" in block["source"]
+                block_type == "image" and isinstance(source, dict) and "type" in source
             ):
-                if block["source"]["type"] == "base64":
+                if source["type"] == "base64":
+                    if "data" not in source or "media_type" not in source:
+                        yield _non_standard_block(block)
+                        continue
                     image_block: types.ImageContentBlock = {
                         "type": "image",
-                        "base64": block["source"]["data"],
-                        "mime_type": block["source"]["media_type"],
+                        "base64": source["data"],
+                        "mime_type": source["media_type"],
                     }
                     _populate_extras(image_block, block, {"type", "source"})
                     yield image_block
 
-                elif block["source"]["type"] == "url":
+                elif source["type"] == "url":
+                    if "url" not in source:
+                        yield _non_standard_block(block)
+                        continue
                     image_block = {
                         "type": "image",
-                        "url": block["source"]["url"],
+                        "url": source["url"],
                     }
                     _populate_extras(image_block, block, {"type", "source"})
                     yield image_block
 
-                elif block["source"]["type"] == "file":
+                elif source["type"] == "file":
+                    if "file_id" not in source:
+                        yield _non_standard_block(block)
+                        continue
                     image_block = {
                         "type": "image",
-                        "id": block["source"]["file_id"],
+                        "id": source["file_id"],
                     }
                     _populate_extras(image_block, block, {"type", "source"})
                     yield image_block
 
                 else:
-                    yield {"type": "non_standard", "value": block}
+                    yield _non_standard_block(block)
 
             elif block_type in types.KNOWN_BLOCK_TYPES:
                 yield cast("types.ContentBlock", block)
 
             else:
-                yield {"type": "non_standard", "value": block}
+                yield _non_standard_block(block)
 
     return list(_iter_blocks())
 
@@ -143,6 +167,11 @@ def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
     citation_type = citation.get("type")
 
     if citation_type == "web_search_result_location":
+        if "cited_text" not in citation or "url" not in citation:
+            return {
+                "type": "non_standard_annotation",
+                "value": citation,
+            }
         url_citation: types.Citation = {
             "type": "citation",
             "cited_text": citation["cited_text"],
@@ -165,6 +194,11 @@ def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
         "page_location",
         "search_result_location",
     }:
+        if "cited_text" not in citation:
+            return {
+                "type": "non_standard_annotation",
+                "value": citation,
+            }
         document_citation: types.Citation = {
             "type": "citation",
             "cited_text": citation["cited_text"],
@@ -197,12 +231,13 @@ def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
 
 def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock]:
     """Convert Anthropic message content to v1 format."""
+    content: list[str | dict[str, Any]]
     if isinstance(message.content, str):
-        content: list[str | dict] = [{"type": "text", "text": message.content}]
+        content = [{"type": "text", "text": message.content}]
     else:
         content = message.content
 
-    def _iter_blocks() -> Iterable[types.ContentBlock]:
+    def _iter_blocks() -> Iterator[types.ContentBlock]:
         for block in content:
             if not isinstance(block, dict):
                 continue
@@ -220,6 +255,17 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                 if "index" in block:
                     text_block["index"] = block["index"]
                 yield text_block
+
+            elif block_type == "refusal":
+                refusal_block: types.RefusalContentBlock = {
+                    "type": "refusal",
+                    "refusal": block.get("refusal", ""),
+                }
+                if extras := block.get("extras"):
+                    refusal_block["extras"] = extras
+                if "index" in block:
+                    refusal_block["index"] = block["index"]
+                yield refusal_block
 
             elif block_type == "thinking":
                 reasoning_block: types.ReasoningContentBlock = {
@@ -251,8 +297,9 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                         args=chunk.get("args"),
                         type="tool_call_chunk",
                     )
-                    if "caller" in block:
-                        tool_call_chunk["extras"] = {"caller": block["caller"]}
+                    for key in ("caller", "toolset_name"):
+                        if key in block:
+                            tool_call_chunk.setdefault("extras", {})[key] = block[key]
 
                     index = chunk.get("index")
                     if index is not None:
@@ -287,10 +334,9 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                         }
                     if "index" in block:
                         tool_call_block["index"] = block["index"]
-                    if "caller" in block:
-                        if "extras" not in tool_call_block:
-                            tool_call_block["extras"] = {}
-                        tool_call_block["extras"]["caller"] = block["caller"]
+                    for key in ("caller", "toolset_name"):
+                        if key in block:
+                            tool_call_block.setdefault("extras", {})[key] = block[key]
 
                     yield tool_call_block
 
@@ -449,15 +495,43 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                 yield server_tool_result
 
             else:
-                new_block: types.NonStandardContentBlock = {
-                    "type": "non_standard",
-                    "value": block,
-                }
-                if "index" in new_block["value"]:
-                    new_block["index"] = new_block["value"].pop("index")
+                if "index" in block:
+                    # Copy before lifting `index` off the block: `block` is the
+                    # caller's own dict from `message.content`, and `.pop` would
+                    # otherwise mutate it in place.
+                    value = block.copy()
+                    index = value.pop("index")
+                    new_block: types.NonStandardContentBlock = {
+                        "type": "non_standard",
+                        "value": value,
+                        "index": index,
+                    }
+                else:
+                    new_block = {"type": "non_standard", "value": block}
                 yield new_block
 
-    return list(_iter_blocks())
+    blocks = list(_iter_blocks())
+    if message.response_metadata.get("stop_reason") == "refusal" and not any(
+        block["type"] == "refusal" for block in blocks
+    ):
+        blocks.append(_refusal_from_stop_details(message.response_metadata))
+    return blocks
+
+
+def _refusal_from_stop_details(
+    response_metadata: dict[str, Any],
+) -> types.RefusalContentBlock:
+    """Build a refusal block from Anthropic's response-level refusal fields."""
+    details = response_metadata.get("stop_details")
+    if not isinstance(details, dict):
+        details = {}
+    block: types.RefusalContentBlock = {
+        "type": "refusal",
+        "refusal": details.get("explanation") or "",
+    }
+    if category := details.get("category"):
+        block["extras"] = {"category": category}
+    return block
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import re
-import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping
-from typing import Any
+from typing import Any, Self
 
 import anthropic
+from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -19,7 +19,8 @@ from langchain_core.prompt_values import PromptValue
 from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
 from pydantic import ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
+
+from langchain_anthropic._sdk_compat import _route_unsupported_sampling_params
 
 
 class _AnthropicCommon(BaseLanguageModel):
@@ -93,12 +94,14 @@ class _AnthropicCommon(BaseLanguageModel):
             api_key=self.anthropic_api_key.get_secret_value(),
             timeout=self.default_request_timeout,
             max_retries=self.max_retries,
+            default_headers={"anthropic-version": "2023-06-01"},
         )
         self.async_client = anthropic.AsyncAnthropic(
             base_url=self.anthropic_api_url,
             api_key=self.anthropic_api_key.get_secret_value(),
             timeout=self.default_request_timeout,
             max_retries=self.max_retries,
+            default_headers={"anthropic-version": "2023-06-01"},
         )
         # Keep for backward compatibility but not used in Messages API
         self.HUMAN_PROMPT = getattr(anthropic, "HUMAN_PROMPT", None)
@@ -131,6 +134,7 @@ class _AnthropicCommon(BaseLanguageModel):
         return stop
 
 
+@deprecated(since="0.1.0", removal="2.0.0", alternative="ChatAnthropic")
 class AnthropicLLM(LLM, _AnthropicCommon):
     """Anthropic text completion large language model (legacy LLM).
 
@@ -149,18 +153,6 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         populate_by_name=True,
         arbitrary_types_allowed=True,
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def raise_warning(cls, values: dict) -> Any:
-        """Raise warning that this class is deprecated."""
-        warnings.warn(
-            "This Anthropic LLM is deprecated. "
-            "Please use `from langchain_anthropic import ChatAnthropic` "
-            "instead",
-            stacklevel=2,
-        )
-        return values
 
     @property
     def _llm_type(self) -> str:
@@ -287,6 +279,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
         # Remove parameters not supported by Messages API
         params = {k: v for k, v in params.items() if k != "max_tokens_to_sample"}
+        params = _route_unsupported_sampling_params(params)
 
         response = self.client.messages.create(
             messages=self._format_messages(prompt),
@@ -323,6 +316,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
         # Remove parameters not supported by Messages API
         params = {k: v for k, v in params.items() if k != "max_tokens_to_sample"}
+        params = _route_unsupported_sampling_params(params)
 
         response = await self.async_client.messages.create(
             messages=self._format_messages(prompt),
@@ -363,6 +357,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
         # Remove parameters not supported by Messages API
         params = {k: v for k, v in params.items() if k != "max_tokens_to_sample"}
+        params = _route_unsupported_sampling_params(params)
 
         with self.client.messages.stream(
             messages=self._format_messages(prompt),
@@ -408,6 +403,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
         # Remove parameters not supported by Messages API
         params = {k: v for k, v in params.items() if k != "max_tokens_to_sample"}
+        params = _route_unsupported_sampling_params(params)
 
         async with self.async_client.messages.stream(
             messages=self._format_messages(prompt),

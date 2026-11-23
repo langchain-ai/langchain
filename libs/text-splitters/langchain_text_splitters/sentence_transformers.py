@@ -2,19 +2,12 @@
 
 from __future__ import annotations
 
+from importlib import import_module
 from typing import Any, cast
 
+from typing_extensions import override
+
 from langchain_text_splitters.base import TextSplitter, Tokenizer, split_text_on_tokens
-
-try:
-    # Type ignores needed as long as sentence-transformers doesn't support Python 3.14.
-    from sentence_transformers import (  # type: ignore[import-not-found, unused-ignore]
-        SentenceTransformer,
-    )
-
-    _HAS_SENTENCE_TRANSFORMERS = True
-except ImportError:
-    _HAS_SENTENCE_TRANSFORMERS = False
 
 
 class SentenceTransformersTokenTextSplitter(TextSplitter):
@@ -25,21 +18,39 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         chunk_overlap: int = 50,
         model_name: str = "sentence-transformers/all-mpnet-base-v2",
         tokens_per_chunk: int | None = None,
+        model_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
-        """Create a new TextSplitter."""
+        """Create a new `TextSplitter`.
+
+        Args:
+            chunk_overlap: The number of tokens to overlap between chunks.
+            model_name: The name of the sentence transformer model to use.
+            tokens_per_chunk: The number of tokens per chunk.
+
+                If `None`, uses the maximum tokens allowed by the model.
+            model_kwargs: Additional parameters for model initialization.
+                Parameters of sentence_transformers.SentenceTransformer can be used.
+
+        Raises:
+            ImportError: If the `sentence_transformers` package is not installed.
+            ValueError: If `tokens_per_chunk` exceeds the model's maximum token limit.
+        """
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
 
-        if not _HAS_SENTENCE_TRANSFORMERS:
+        try:
+            sentence_transformers = cast("Any", import_module("sentence_transformers"))
+            sentence_transformer_cls = sentence_transformers.SentenceTransformer
+        except ImportError as err:
             msg = (
                 "Could not import sentence_transformers python package. "
                 "This is needed in order to use SentenceTransformersTokenTextSplitter. "
                 "Please install it with `pip install sentence-transformers`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from err
 
         self.model_name = model_name
-        self._model = SentenceTransformer(self.model_name)
+        self._model = sentence_transformer_cls(self.model_name, **(model_kwargs or {}))
         self.tokenizer = self._model.tokenizer
         self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
 
@@ -47,11 +58,21 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         self.maximum_tokens_per_chunk = self._model.max_seq_length
 
         if tokens_per_chunk is None:
+            if self.maximum_tokens_per_chunk is None:
+                msg = (
+                    "The model does not have a maximum token limit, "
+                    "and tokens_per_chunk was not provided. "
+                    "Please provide a value for tokens_per_chunk."
+                )
+                raise ValueError(msg)
             self.tokens_per_chunk = self.maximum_tokens_per_chunk
         else:
             self.tokens_per_chunk = tokens_per_chunk
 
-        if self.tokens_per_chunk > self.maximum_tokens_per_chunk:
+        if (
+            self.maximum_tokens_per_chunk is not None
+            and self.tokens_per_chunk > self.maximum_tokens_per_chunk
+        ):
             msg = (
                 f"The token limit of the models '{self.model_name}'"
                 f" is: {self.maximum_tokens_per_chunk}."
@@ -60,6 +81,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             )
             raise ValueError(msg)
 
+    @override
     def split_text(self, text: str) -> list[str]:
         """Splits the input text into smaller components by splitting text on tokens.
 
@@ -72,7 +94,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
 
         Returns:
             A list of string components derived from the input text after encoding and
-            processing.
+                processing.
         """
 
         def encode_strip_start_and_stop_token_ids(text: str) -> list[int]:
@@ -97,7 +119,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             text: The input text for which the token count is calculated.
 
         Returns:
-            int: The number of tokens in the encoded text.
+            The number of tokens in the encoded text.
         """
         return len(self._encode(text))
 

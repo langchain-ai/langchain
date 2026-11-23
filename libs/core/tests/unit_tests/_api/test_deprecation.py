@@ -1,4 +1,6 @@
 import inspect
+import subprocess
+import sys
 import warnings
 from typing import Any
 
@@ -6,8 +8,11 @@ import pytest
 from pydantic import BaseModel
 
 from langchain_core._api.deprecation import (
+    LangChainDeprecationWarning,
+    LangChainPendingDeprecationWarning,
     deprecated,
     rename_parameter,
+    suppress_langchain_deprecation_warning,
     warn_deprecated,
 )
 
@@ -23,8 +28,10 @@ from langchain_core._api.deprecation import (
                 "pending": True,
                 "obj_type": "class",
             },
-            "The class `OldClass` will be deprecated in a future version. Use NewClass "
-            "instead.",
+            (
+                "The class `OldClass` will be deprecated in a future version. "
+                "Use NewClass instead."
+            ),
         ),
         (
             {
@@ -50,8 +57,10 @@ from langchain_core._api.deprecation import (
                 "addendum": "Please migrate your code.",
                 "removal": "2.5.0",
             },
-            "`SomeFunction` was deprecated in LangChain 1.5.0 and will be "
-            "removed in 2.5.0 Please migrate your code.",
+            (
+                "`SomeFunction` was deprecated in LangChain 1.5.0 and will be "
+                "removed in 2.5.0 Please migrate your code."
+            ),
         ),
     ],
 )
@@ -67,10 +76,68 @@ def test_warn_deprecated(kwargs: dict[str, Any], expected_message: str) -> None:
         assert str(warning) == expected_message
 
 
-def test_undefined_deprecation_schedule() -> None:
-    """This test is expected to fail until we defined a deprecation schedule."""
-    with pytest.raises(NotImplementedError):
-        warn_deprecated("1.0.0", pending=False)
+@pytest.mark.parametrize("stacklevel", [None, 2, 3, 4])
+@pytest.mark.parametrize("pending", [False, True])
+def test_warn_deprecated_stacklevel(stacklevel: int | None, *, pending: bool) -> None:
+    def emit() -> int:
+        if stacklevel is None:
+            warn_deprecated("1.0", name="old", pending=pending)
+            return 0
+        line = sys._getframe().f_lineno + 1
+        warn_deprecated("1.0", name="old", pending=pending, stacklevel=stacklevel)
+        return line
+
+    def helper() -> tuple[int, int]:
+        line = sys._getframe().f_lineno + 1
+        return emit(), line
+
+    with warnings.catch_warnings(record=True) as recorded:
+        warnings.simplefilter("always")
+        line = sys._getframe().f_lineno + 1
+        emit_line, helper_line = helper()
+
+    assert len(recorded) == 1
+    warning = recorded[0]
+    assert warning.filename == __file__
+    assert (
+        warning.lineno
+        == {2: emit_line, 3: helper_line, 4: line}[
+            4 if stacklevel is None else stacklevel
+        ]
+    )
+    assert warning.category is (
+        LangChainPendingDeprecationWarning if pending else LangChainDeprecationWarning
+    )
+    assert str(warning.message) == (
+        "`old` will be deprecated in a future version"
+        if pending
+        else "`old` was deprecated in LangChain 1.0"
+    )
+
+
+@pytest.mark.parametrize("pending", [False, True])
+def test_warn_deprecated_stacklevel_preserves_warning_policy(*, pending: bool) -> None:
+    category = (
+        LangChainPendingDeprecationWarning if pending else LangChainDeprecationWarning
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category)
+        with suppress_langchain_deprecation_warning():
+            warn_deprecated("1.0", message="deprecated", pending=pending, stacklevel=2)
+        with pytest.raises(category, match=r"^deprecated$"):
+            warn_deprecated("1.0", message="deprecated", pending=pending, stacklevel=2)
+
+
+def test_warn_deprecated_without_removal() -> None:
+    """`removal` is optional; warning omits the removal phrase when not provided."""
+    with warnings.catch_warnings(record=True) as warning_list:
+        warnings.simplefilter("always")
+        warn_deprecated("1.0.0", name="SomeFunction", pending=False)
+
+        assert len(warning_list) == 1
+        message = str(warning_list[0].message)
+        assert message == "`SomeFunction` was deprecated in LangChain 1.0.0"
+        assert "will be removed" not in message
 
 
 @deprecated(since="2.0.0", removal="3.0.0", pending=False)
@@ -116,6 +183,25 @@ class ClassWithDeprecatedMethods:
     def deprecated_property(self) -> str:
         """Original doc."""
         return "This is a deprecated property."
+
+
+def test_suppressed_deprecation_warning_does_not_consume_warning() -> None:
+    """Suppressed calls should not block a later user-visible warning.
+
+    For example, an internal compatibility path may call a deprecated method while
+    saving/loading an object with warnings suppressed. That hidden call should not
+    prevent the user's later direct call from seeing the deprecation warning.
+    """
+
+    @deprecated(since="2.0.0", removal="3.0.0", pending=False)
+    def local_deprecated_function() -> str:
+        return "deprecated"
+
+    with suppress_langchain_deprecation_warning():
+        assert local_deprecated_function() == "deprecated"
+
+    with pytest.warns(LangChainDeprecationWarning):
+        assert local_deprecated_function() == "deprecated"
 
 
 def test_deprecated_function() -> None:
@@ -578,3 +664,43 @@ def test_deprecated_property_has_pep702_attribute() -> None:
     # The __deprecated__ attribute is on the underlying fget function
     assert hasattr(prop.fget, "__deprecated__")
     assert prop.fget.__deprecated__ == "Use new_property instead."
+
+
+def test_importing_deprecation_does_not_load_pydantic_v1() -> None:
+    """`langchain_core._api.deprecation` must not eagerly import `pydantic.v1`.
+
+    Pydantic emits a `UserWarning` from `pydantic/v1/__init__.py` on Python 3.14+,
+    and the module is on the import path for much of `langchain_core`. Run in a
+    fresh subprocess because sibling tests in this process may have already
+    imported `pydantic.v1` transitively.
+    """
+    code = (
+        "import sys\n"
+        "import langchain_core._api.deprecation  # noqa: F401\n"
+        "loaded = sorted(m for m in sys.modules if m.startswith('pydantic.v1'))\n"
+        "assert not loaded, loaded\n"
+    )
+    subprocess.run([sys.executable, "-c", code], check=True)
+
+
+def test_deprecated_pydantic_v1_field_info() -> None:
+    """The lazy v1 `FieldInfo` branch wraps and reconstructs the field correctly.
+
+    Verifies behavior when `pydantic.v1` is loaded by the caller.
+    """
+    from pydantic.v1 import BaseModel as V1Base  # noqa: PLC0415
+    from pydantic.v1.fields import FieldInfo as V1FieldInfo  # noqa: PLC0415
+
+    field = V1FieldInfo(default=1, description="original")
+    wrapped = deprecated(since="2.0.0", name="x", removal="3.0.0")(field)
+
+    assert isinstance(wrapped, V1FieldInfo)
+    assert wrapped.default == 1
+    assert "deprecated" in (wrapped.description or "").lower()
+    assert "original" in (wrapped.description or "")
+
+    # Sanity: still usable as a v1 model field.
+    class M(V1Base):
+        x: int = wrapped  # type: ignore[assignment]
+
+    assert M(x=2).x == 2

@@ -3,7 +3,7 @@
 import json
 from collections.abc import Sequence
 from json import JSONDecodeError
-from typing import Any
+from typing import Any, Self
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
@@ -24,7 +24,6 @@ from langchain_core.prompts.chat import (
 from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.tools import BaseTool
 from pydantic import model_validator
-from typing_extensions import Self
 
 from langchain_classic.agents import BaseMultiActionAgent
 from langchain_classic.agents.format_scratchpad.openai_functions import (
@@ -103,7 +102,7 @@ def _parse_ai_message(message: BaseMessage) -> list[AgentAction] | AgentFinish:
 _NOT_SET = object()
 
 
-@deprecated("0.1.0", alternative="create_openai_tools_agent", removal="1.0")
+@deprecated("0.1.0", alternative="create_openai_tools_agent", removal="2.0.0")
 class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
     """Agent driven by OpenAIs function powered API.
 

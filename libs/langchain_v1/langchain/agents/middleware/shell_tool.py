@@ -15,14 +15,15 @@ import uuid
 import weakref
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
+from typing import TYPE_CHECKING, Annotated, Any, Literal, NotRequired, cast, overload
 
 from langchain_core.messages import ToolMessage
+from langchain_core.runnables import run_in_executor
 from langchain_core.tools.base import ToolException
 from langgraph.channels.untracked_value import UntrackedValue
 from pydantic import BaseModel, model_validator
 from pydantic.json_schema import SkipJsonSchema
-from typing_extensions import NotRequired, override
+from typing_extensions import override
 
 from langchain.agents.middleware._execution import (
     SHELL_TEMP_PREFIX,
@@ -37,7 +38,13 @@ from langchain.agents.middleware._redaction import (
     RedactionRule,
     ResolvedRedactionRule,
 )
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, PrivateStateAttr
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ContextT,
+    PrivateStateAttr,
+    ResponseT,
+)
 from langchain.tools import ToolRuntime, tool
 
 if TYPE_CHECKING:
@@ -78,7 +85,7 @@ class _SessionResources:
     session: ShellSession
     tempdir: tempfile.TemporaryDirectory[str] | None
     policy: BaseExecutionPolicy
-    finalizer: weakref.finalize = field(init=False, repr=False)
+    finalizer: weakref.finalize = field(init=False, repr=False)  # type: ignore[type-arg]
 
     def __post_init__(self) -> None:
         self.finalizer = weakref.finalize(
@@ -90,8 +97,12 @@ class _SessionResources:
         )
 
 
-class ShellToolState(AgentState):
-    """Agent state extension for tracking shell session resources."""
+class ShellToolState(AgentState[ResponseT]):
+    """Agent state extension for tracking shell session resources.
+
+    Type Parameters:
+        ResponseT: The type of the structured response. Defaults to `Any`.
+    """
 
     shell_session_resources: NotRequired[
         Annotated[_SessionResources | None, UntrackedValue, PrivateStateAttr]
@@ -134,7 +145,11 @@ class ShellSession:
         self._terminated = False
 
     def start(self) -> None:
-        """Start the shell subprocess and reader threads."""
+        """Start the shell subprocess and reader threads.
+
+        Raises:
+            RuntimeError: If the shell session pipes cannot be initialized.
+        """
         if self._process and self._process.poll() is None:
             return
 
@@ -388,11 +403,40 @@ class ShellSession:
             return
 
         if hasattr(os, "killpg"):
-            with contextlib.suppress(ProcessLookupError):
-                os.killpg(os.getpgid(self._process.pid), signal.SIGKILL)
-        else:  # pragma: no cover
-            with contextlib.suppress(ProcessLookupError):
-                self._process.kill()
+            try:
+                child_pgid = os.getpgid(self._process.pid)
+                # Only send a group kill when the child has a dedicated process group.
+                # If the child shares our group, killpg would terminate the caller too,
+                # so fall through to the direct kill below. That direct kill reaps only
+                # the immediate child, so any descendants it spawned may be orphaned.
+                # This applies to HostExecutionPolicy(create_process_group=False), the
+                # only policy that runs the shell in the caller's process group.
+                if child_pgid != os.getpgrp():
+                    os.killpg(child_pgid, signal.SIGKILL)
+                    return
+            except ProcessLookupError:
+                # Process already gone; nothing left to kill.
+                return
+            except OSError:
+                # e.g. EPERM while querying or signaling the group. Don't leak the
+                # child silently; fall through to a direct kill.
+                LOGGER.warning(
+                    "Group kill failed; falling back to direct kill.",
+                    exc_info=True,
+                )
+
+        try:
+            self._process.kill()
+        except ProcessLookupError:
+            # Process exited between the check above and this kill; nothing to do.
+            pass
+        except OSError:
+            # The fallback kill can hit the same condition (e.g. EPERM) that routed us
+            # here. Log rather than let it escape the session shutdown path.
+            LOGGER.warning(
+                "Direct kill failed.",
+                exc_info=True,
+            )
 
     def _enqueue_stream(self, stream: Any, label: str) -> None:
         for line in iter(stream.readline, ""):
@@ -471,7 +515,7 @@ class _ShellToolInput(BaseModel):
         return self
 
 
-class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
+class ShellToolMiddleware(AgentMiddleware[ShellToolState[ResponseT], ContextT, ResponseT]):
     """Middleware that registers a persistent shell tool for agents.
 
     The middleware exposes a single long-lived shell session. Use the execution policy
@@ -488,7 +532,7 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
     When no policy is provided the middleware defaults to `HostExecutionPolicy`.
     """
 
-    state_schema = ShellToolState
+    state_schema = ShellToolState  # type: ignore[assignment]
 
     def __init__(
         self,
@@ -519,6 +563,12 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 Defaults to `HostExecutionPolicy` for native execution.
             redaction_rules: Optional redaction rules to sanitize command output before
                 returning it to the model.
+
+                !!! warning
+                    Redaction rules are applied post execution and do not prevent
+                    exfiltration of secrets or sensitive data when using
+                    `HostExecutionPolicy`.
+
             tool_description: Optional override for the registered shell tool
                 description.
             tool_name: Name for the registered shell tool.
@@ -598,23 +648,43 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         normalized: dict[str, str] = {}
         for key, value in env.items():
             if not isinstance(key, str):
-                msg = "Environment variable names must be strings."
+                msg = "Environment variable names must be strings."  # type: ignore[unreachable]
                 raise TypeError(msg)
             normalized[key] = str(value)
         return normalized
 
     @override
-    def before_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
-        """Start the shell session and run startup commands."""
+    def before_agent(
+        self, state: ShellToolState[ResponseT], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
+        """Start the shell session and run startup commands.
+
+        Args:
+            state: The current agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Shell session resources to be stored in the agent state.
+        """
         resources = self._get_or_create_resources(state)
         return {"shell_session_resources": resources}
 
-    async def abefore_agent(self, state: ShellToolState, runtime: Runtime) -> dict[str, Any] | None:
-        """Async start the shell session and run startup commands."""
-        return self.before_agent(state, runtime)
+    async def abefore_agent(
+        self, state: ShellToolState[ResponseT], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
+        """Async start the shell session and run startup commands.
+
+        Args:
+            state: The current agent state.
+            runtime: The runtime context.
+
+        Returns:
+            Shell session resources to be stored in the agent state.
+        """
+        return await run_in_executor(None, self.before_agent, state, runtime)
 
     @override
-    def after_agent(self, state: ShellToolState, runtime: Runtime) -> None:
+    def after_agent(self, state: ShellToolState[ResponseT], runtime: Runtime[ContextT]) -> None:
         """Run shutdown commands and release resources when an agent completes."""
         resources = state.get("shell_session_resources")
         if not isinstance(resources, _SessionResources):
@@ -625,11 +695,13 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
         finally:
             resources.finalizer()
 
-    async def aafter_agent(self, state: ShellToolState, runtime: Runtime) -> None:
+    async def aafter_agent(
+        self, state: ShellToolState[ResponseT], runtime: Runtime[ContextT]
+    ) -> None:
         """Async run shutdown commands and release resources when an agent completes."""
         return self.after_agent(state, runtime)
 
-    def _get_or_create_resources(self, state: ShellToolState) -> _SessionResources:
+    def _get_or_create_resources(self, state: ShellToolState[ResponseT]) -> _SessionResources:
         """Get existing resources from state or create new ones if they don't exist.
 
         This method enables resumability by checking if resources already exist in the state
@@ -715,13 +787,31 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
                 matches_by_type.setdefault(rule.pii_type, []).extend(matches)
         return updated, matches_by_type
 
+    @overload
+    def _run_shell_tool(
+        self,
+        resources: _SessionResources,
+        payload: dict[str, Any],
+        *,
+        tool_call_id: str,
+    ) -> ToolMessage: ...
+
+    @overload
+    def _run_shell_tool(
+        self,
+        resources: _SessionResources,
+        payload: dict[str, Any],
+        *,
+        tool_call_id: None,
+    ) -> str: ...
+
     def _run_shell_tool(
         self,
         resources: _SessionResources,
         payload: dict[str, Any],
         *,
         tool_call_id: str | None,
-    ) -> Any:
+    ) -> ToolMessage | str:
         session = resources.session
 
         if payload.get("restart"):
@@ -809,6 +899,26 @@ class ShellToolMiddleware(AgentMiddleware[ShellToolState, Any]):
             status=final_status,
             artifact=artifact,
         )
+
+    @overload
+    def _format_tool_message(
+        self,
+        content: str,
+        tool_call_id: str,
+        *,
+        status: Literal["success", "error"],
+        artifact: dict[str, Any] | None = None,
+    ) -> ToolMessage: ...
+
+    @overload
+    def _format_tool_message(
+        self,
+        content: str,
+        tool_call_id: None,
+        *,
+        status: Literal["success", "error"],
+        artifact: dict[str, Any] | None = None,
+    ) -> str: ...
 
     def _format_tool_message(
         self,

@@ -1,9 +1,3 @@
-"""Main entrypoint into package."""
+"""Backwards-compatible re-export from `langchain_groq._version`."""
 
-from importlib import metadata
-
-try:
-    __version__ = metadata.version(__package__)
-except metadata.PackageNotFoundError:
-    # Case where package metadata is not available.
-    __version__ = ""
+from langchain_groq._version import __version__  # noqa: F401

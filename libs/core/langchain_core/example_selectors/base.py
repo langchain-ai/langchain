@@ -34,7 +34,7 @@ class BaseExampleSelector(ABC):
         return await run_in_executor(None, self.add_example, example)
 
     @abstractmethod
-    def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    def select_examples(self, input_variables: dict[str, str]) -> list[dict[str, Any]]:
         """Select which examples to use based on the inputs.
 
         Args:
@@ -45,7 +45,9 @@ class BaseExampleSelector(ABC):
             A list of examples.
         """
 
-    async def aselect_examples(self, input_variables: dict[str, str]) -> list[dict]:
+    async def aselect_examples(
+        self, input_variables: dict[str, str]
+    ) -> list[dict[str, Any]]:
         """Async select which examples to use based on the inputs.
 
         Args:

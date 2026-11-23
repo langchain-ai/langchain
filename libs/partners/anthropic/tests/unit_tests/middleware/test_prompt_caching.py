@@ -1,8 +1,9 @@
 """Tests for Anthropic prompt caching middleware."""
 
 import warnings
+from types import ModuleType
 from typing import Any, cast
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from langchain.agents.middleware.types import ModelRequest, ModelResponse
@@ -11,12 +12,16 @@ from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.tools import BaseTool, tool
 from langgraph.runtime import Runtime
 
 from langchain_anthropic.chat_models import ChatAnthropic
-from langchain_anthropic.middleware import AnthropicPromptCachingMiddleware
+from langchain_anthropic.middleware import (
+    AnthropicPromptCachingMiddleware,
+    prompt_caching,
+)
 
 
 class FakeToolCallingModel(BaseChatModel):
@@ -51,6 +56,18 @@ class FakeToolCallingModel(BaseChatModel):
         return "fake-tool-call-model"
 
 
+def test_trace_inputs_are_omitted() -> None:
+    policy = AnthropicPromptCachingMiddleware.trace_policy
+    assert policy.process_inputs is not None
+    assert policy.process_inputs({"messages": [HumanMessage("foo")]}) == {}
+
+
+def test_trace_policy_unsupported_langchain() -> None:
+    old_types = ModuleType("langchain.agents.middleware.types")
+    with patch.dict("sys.modules", {"langchain.agents.middleware.types": old_types}):
+        assert prompt_caching._get_trace_policy() is None
+
+
 def test_anthropic_prompt_caching_middleware_initialization() -> None:
     """Test AnthropicPromptCachingMiddleware initialization."""
     # Test with custom values
@@ -69,6 +86,7 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
 
     # Create a mock ChatAnthropic instance
     mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+    mock_chat_anthropic._llm_type = "anthropic-chat"
 
     fake_request = ModelRequest(
         model=mock_chat_anthropic,
@@ -154,6 +172,7 @@ async def test_anthropic_prompt_caching_middleware_async() -> None:
 
     # Create a mock ChatAnthropic instance
     mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+    mock_chat_anthropic._llm_type = "anthropic-chat"
 
     fake_request = ModelRequest(
         model=mock_chat_anthropic,
@@ -234,9 +253,12 @@ async def test_anthropic_prompt_caching_middleware_async_min_messages() -> None:
     """Test async path respects min_messages_to_cache."""
     middleware = AnthropicPromptCachingMiddleware(min_messages_to_cache=5)
 
+    mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+    mock_chat_anthropic._llm_type = "anthropic-chat"
+
     # Test with fewer messages than minimum
     fake_request = ModelRequest(
-        model=FakeToolCallingModel(),
+        model=mock_chat_anthropic,
         messages=[HumanMessage("Hello")] * 3,
         system_prompt=None,
         tool_choice=None,
@@ -269,6 +291,7 @@ async def test_anthropic_prompt_caching_middleware_async_with_system_prompt() ->
 
     # Create a mock ChatAnthropic instance
     mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+    mock_chat_anthropic._llm_type = "anthropic-chat"
 
     # Test with system prompt: 2 messages + 1 system = 3 total (meets minimum)
     fake_request = ModelRequest(
@@ -306,6 +329,7 @@ async def test_anthropic_prompt_caching_middleware_async_default_values() -> Non
 
     # Create a mock ChatAnthropic instance
     mock_chat_anthropic = MagicMock(spec=ChatAnthropic)
+    mock_chat_anthropic._llm_type = "anthropic-chat"
 
     # Single message should trigger caching with default settings
     fake_request = ModelRequest(
@@ -334,3 +358,333 @@ async def test_anthropic_prompt_caching_middleware_async_default_values() -> Non
     assert modified_request.model_settings == {
         "cache_control": {"type": "ephemeral", "ttl": "5m"}
     }
+
+
+class TestSystemMessageCaching:
+    """Tests for system message cache_control tagging."""
+
+    def _make_request(
+        self,
+        system_message: SystemMessage | None = None,
+        **kwargs: Any,
+    ) -> ModelRequest:
+        mock_model = MagicMock(spec=ChatAnthropic)
+        defaults: dict[str, Any] = {
+            "model": mock_model,
+            "messages": [HumanMessage("Hello")],
+            "system_message": system_message,
+            "tool_choice": None,
+            "tools": [],
+            "response_format": None,
+            "state": {"messages": [HumanMessage("Hello")]},
+            "runtime": cast(Runtime, object()),
+            "model_settings": {},
+        }
+        defaults.update(kwargs)
+        return ModelRequest(**defaults)
+
+    def _run(self, request: ModelRequest) -> ModelRequest:
+        middleware = AnthropicPromptCachingMiddleware()
+        captured: ModelRequest | None = None
+
+        def handler(req: ModelRequest) -> ModelResponse:
+            nonlocal captured
+            captured = req
+            return ModelResponse(result=[AIMessage(content="ok")])
+
+        middleware.wrap_model_call(request, handler)
+        assert captured is not None
+        return captured
+
+    def _get_content_blocks(self, result: ModelRequest) -> list[dict[str, Any]]:
+        assert result.system_message is not None
+        content = result.system_message.content
+        assert isinstance(content, list)
+        return cast("list[dict[str, Any]]", content)
+
+    def test_tags_last_block_of_string_system_message(self) -> None:
+        result = self._run(self._make_request(SystemMessage("Base prompt")))
+        blocks = self._get_content_blocks(result)
+        assert len(blocks) == 1
+        assert blocks[0]["text"] == "Base prompt"
+        assert blocks[0]["cache_control"] == {"type": "ephemeral", "ttl": "5m"}
+
+    def test_tags_only_last_block_of_multi_block_system_message(self) -> None:
+        msg = SystemMessage(
+            content=[
+                {"type": "text", "text": "Block 1"},
+                {"type": "text", "text": "Block 2"},
+                {"type": "text", "text": "Block 3"},
+            ]
+        )
+        blocks = self._get_content_blocks(self._run(self._make_request(msg)))
+        assert len(blocks) == 3
+        assert "cache_control" not in blocks[0]
+        assert "cache_control" not in blocks[1]
+        assert blocks[2]["cache_control"] == {"type": "ephemeral", "ttl": "5m"}
+
+    def test_does_not_mutate_original_system_message(self) -> None:
+        original_content: list[str | dict[str, str]] = [
+            {"type": "text", "text": "Block 1"},
+            {"type": "text", "text": "Block 2"},
+        ]
+        msg = SystemMessage(content=original_content)
+        self._run(self._make_request(msg))
+        assert "cache_control" not in original_content[1]
+
+    def test_passes_through_when_no_system_message(self) -> None:
+        result = self._run(self._make_request(system_message=None))
+        assert result.system_message is None
+
+    def test_passes_through_when_system_message_has_empty_string(self) -> None:
+        msg = SystemMessage(content="")
+        result = self._run(self._make_request(msg))
+        assert result.system_message is not None
+        assert result.system_message.content == ""
+
+    def test_passes_through_when_system_message_has_empty_list(self) -> None:
+        msg = SystemMessage(content=[])
+        result = self._run(self._make_request(msg))
+        assert result.system_message is not None
+        assert result.system_message.content == []
+
+    def test_preserves_non_text_block_types(self) -> None:
+        msg = SystemMessage(
+            content=[
+                {"type": "text", "text": "Prompt"},
+                {"type": "custom_type", "data": "value"},
+            ]
+        )
+        blocks = self._get_content_blocks(self._run(self._make_request(msg)))
+        assert blocks[0] == {"type": "text", "text": "Prompt"}
+        assert blocks[1]["type"] == "custom_type"
+        assert blocks[1]["data"] == "value"
+        assert blocks[1]["cache_control"] == {"type": "ephemeral", "ttl": "5m"}
+
+    def test_respects_custom_ttl(self) -> None:
+        middleware = AnthropicPromptCachingMiddleware(ttl="1h")
+        request = self._make_request(SystemMessage("Prompt"))
+        captured: ModelRequest | None = None
+
+        def handler(req: ModelRequest) -> ModelResponse:
+            nonlocal captured
+            captured = req
+            return ModelResponse(result=[AIMessage(content="ok")])
+
+        middleware.wrap_model_call(request, handler)
+        assert captured is not None
+        blocks = self._get_content_blocks(captured)
+        assert blocks[0]["cache_control"] == {"type": "ephemeral", "ttl": "1h"}
+
+
+class TestToolCaching:
+    """Tests for tool definition cache_control tagging."""
+
+    def _make_request(
+        self,
+        tools: list[Any] | None = None,
+        **kwargs: Any,
+    ) -> ModelRequest:
+        mock_model = MagicMock(spec=ChatAnthropic)
+        defaults: dict[str, Any] = {
+            "model": mock_model,
+            "messages": [HumanMessage("Hello")],
+            "system_message": None,
+            "tool_choice": None,
+            "tools": tools or [],
+            "response_format": None,
+            "state": {"messages": [HumanMessage("Hello")]},
+            "runtime": cast(Runtime, object()),
+            "model_settings": {},
+        }
+        defaults.update(kwargs)
+        return ModelRequest(**defaults)
+
+    def _run(self, request: ModelRequest) -> ModelRequest:
+        middleware = AnthropicPromptCachingMiddleware()
+        captured: ModelRequest | None = None
+
+        def handler(req: ModelRequest) -> ModelResponse:
+            nonlocal captured
+            captured = req
+            return ModelResponse(result=[AIMessage(content="ok")])
+
+        middleware.wrap_model_call(request, handler)
+        assert captured is not None
+        return captured
+
+    def test_tags_only_last_tool_with_cache_control(self) -> None:
+        @tool
+        def get_weather(location: str) -> str:
+            """Get weather for a location."""
+            return "sunny"
+
+        @tool
+        def get_time(timezone: str) -> str:
+            """Get time in a timezone."""
+            return "12:00"
+
+        result = self._run(self._make_request(tools=[get_weather, get_time]))
+        assert result.tools is not None
+        assert len(result.tools) == 2
+        first = result.tools[0]
+        assert isinstance(first, BaseTool)
+        assert first.extras is None or "cache_control" not in first.extras
+        last = result.tools[1]
+        assert isinstance(last, BaseTool)
+        assert last.extras is not None
+        assert last.extras["cache_control"] == {"type": "ephemeral", "ttl": "5m"}
+
+    def test_does_not_mutate_original_tools(self) -> None:
+        @tool
+        def my_tool(x: str) -> str:
+            """A tool."""
+            return x
+
+        original_extras = my_tool.extras
+        self._run(self._make_request(tools=[my_tool]))
+        assert my_tool.extras is original_extras
+
+    def test_preserves_existing_extras(self) -> None:
+        @tool(extras={"defer_loading": True})
+        def my_tool(x: str) -> str:
+            """A tool."""
+            return x
+
+        result = self._run(self._make_request(tools=[my_tool]))
+        assert result.tools is not None
+        t = result.tools[0]
+        assert isinstance(t, BaseTool)
+        assert t.extras is not None
+        assert t.extras["defer_loading"] is True
+        assert t.extras["cache_control"] == {
+            "type": "ephemeral",
+            "ttl": "5m",
+        }
+
+    def test_passes_through_empty_tools(self) -> None:
+        result = self._run(self._make_request(tools=[]))
+        assert result.tools == []
+
+    def test_passes_through_none_tools(self) -> None:
+        result = self._run(self._make_request(tools=None))
+        assert result.tools == []
+
+    def test_respects_custom_ttl(self) -> None:
+        @tool
+        def my_tool(x: str) -> str:
+            """A tool."""
+            return x
+
+        middleware = AnthropicPromptCachingMiddleware(ttl="1h")
+        request = self._make_request(tools=[my_tool])
+        captured: ModelRequest | None = None
+
+        def handler(req: ModelRequest) -> ModelResponse:
+            nonlocal captured
+            captured = req
+            return ModelResponse(result=[AIMessage(content="ok")])
+
+        middleware.wrap_model_call(request, handler)
+        assert captured is not None
+        assert captured.tools is not None
+        t = captured.tools[0]
+        assert isinstance(t, BaseTool)
+        assert t.extras is not None
+        assert t.extras["cache_control"] == {
+            "type": "ephemeral",
+            "ttl": "1h",
+        }
+
+
+class TestBedrockCompatibility:
+    """The middleware applies caching uniformly across transports.
+
+    `model_settings["cache_control"]` is always set; the chat model layer
+    (`ChatAnthropic._get_request_payload`) translates the kwarg to the wire
+    format the active transport accepts — top-level for the direct API,
+    block-level for Bedrock.
+    """
+
+    def _bedrock_model(self) -> Any:
+        mock_model = MagicMock(spec=ChatAnthropic)
+        mock_model._llm_type = "anthropic-bedrock-chat"
+        return mock_model
+
+    def _make_request(self, model: Any, **kwargs: Any) -> ModelRequest:
+        defaults: dict[str, Any] = {
+            "model": model,
+            "messages": [HumanMessage("Hello")],
+            "system_message": None,
+            "tool_choice": None,
+            "tools": [],
+            "response_format": None,
+            "state": {"messages": [HumanMessage("Hello")]},
+            "runtime": cast(Runtime, object()),
+            "model_settings": {},
+        }
+        defaults.update(kwargs)
+        return ModelRequest(**defaults)
+
+    def _capture(self, request: ModelRequest) -> ModelRequest:
+        middleware = AnthropicPromptCachingMiddleware()
+        captured: ModelRequest | None = None
+
+        def handler(req: ModelRequest) -> ModelResponse:
+            nonlocal captured
+            captured = req
+            return ModelResponse(result=[AIMessage(content="ok")])
+
+        middleware.wrap_model_call(request, handler)
+        assert captured is not None
+        return captured
+
+    def test_sets_model_settings_cache_control_for_bedrock(self) -> None:
+        request = self._make_request(self._bedrock_model())
+        captured = self._capture(request)
+        assert captured.model_settings["cache_control"] == {
+            "type": "ephemeral",
+            "ttl": "5m",
+        }
+
+    def test_tags_system_message_for_bedrock(self) -> None:
+        request = self._make_request(
+            self._bedrock_model(),
+            system_message=SystemMessage("Base prompt"),
+        )
+        captured = self._capture(request)
+        assert captured.system_message is not None
+        content = captured.system_message.content
+        assert isinstance(content, list)
+        assert content[-1]["cache_control"] == {"type": "ephemeral", "ttl": "5m"}  # type: ignore[index]
+
+    def test_tags_tools_for_bedrock(self) -> None:
+        @tool
+        def my_tool(x: str) -> str:
+            """A tool."""
+            return x
+
+        request = self._make_request(self._bedrock_model(), tools=[my_tool])
+        captured = self._capture(request)
+        assert captured.tools is not None
+        last = captured.tools[-1]
+        assert isinstance(last, BaseTool)
+        assert last.extras is not None
+        assert last.extras["cache_control"] == {"type": "ephemeral", "ttl": "5m"}
+
+    async def test_sets_model_settings_cache_control_for_bedrock_async(self) -> None:
+        request = self._make_request(self._bedrock_model())
+        middleware = AnthropicPromptCachingMiddleware()
+        captured: ModelRequest | None = None
+
+        async def handler(req: ModelRequest) -> ModelResponse:
+            nonlocal captured
+            captured = req
+            return ModelResponse(result=[AIMessage(content="ok")])
+
+        await middleware.awrap_model_call(request, handler)
+        assert captured is not None
+        assert captured.model_settings["cache_control"] == {
+            "type": "ephemeral",
+            "ttl": "5m",
+        }

@@ -27,12 +27,9 @@ def _get_metadata(result: Any) -> dict[str, Any]:
         "published_date": result.published_date,
         "author": result.author,
     }
-    if getattr(result, "highlights"):
-        metadata["highlights"] = result.highlights
-    if getattr(result, "highlight_scores"):
-        metadata["highlight_scores"] = result.highlight_scores
-    if getattr(result, "summary"):
-        metadata["summary"] = result.summary
+    for attribute in ("highlights", "highlight_scores", "summary"):
+        if value := getattr(result, attribute, None):
+            metadata[attribute] = value
     return metadata
 
 
@@ -55,8 +52,8 @@ class ExaSearchRetriever(BaseRetriever):
     """The end date for when the document was published (in YYYY-MM-DD format)."""
     use_autoprompt: bool | None = None
     """Whether to use autoprompt for the search."""
-    type: str = "neural"
-    """The type of search, 'keyword', 'neural', or 'auto'. Default: neural"""
+    type: str = "auto"
+    """The type of search, 'auto', 'deep', or 'fast'. Default: auto"""
     highlights: HighlightsContentsOptions | bool | None = None
     """Whether to set the page content to the highlights of the results."""
     text_contents_options: TextContentsOptions | dict[str, Any] | Literal[True] = True

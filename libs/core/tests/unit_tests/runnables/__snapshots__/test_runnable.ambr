@@ -97,7 +97,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(responses=['foo, bar'])",
+          "repr": "FakeListChatModel(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['foo, bar'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -227,7 +227,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(responses=['baz, qux'])",
+          "repr": "FakeListChatModel(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['baz, qux'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -346,7 +346,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(responses=['foo, bar'])",
+          "repr": "FakeListChatModel(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['foo, bar'])",
           "name": "FakeListChatModel"
         },
         {
@@ -457,7 +457,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(responses=['baz, qux'])",
+          "repr": "FakeListChatModel(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['baz, qux'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -848,7 +848,7 @@
             "fake",
             "FakeStreamingListLLM"
           ],
-          "repr": "FakeStreamingListLLM(responses=['first item, second item, third item'])",
+          "repr": "FakeStreamingListLLM(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['first item, second item, third item'])",
           "name": "FakeStreamingListLLM"
         },
         {
@@ -884,7 +884,7 @@
               "fake",
               "FakeStreamingListLLM"
             ],
-            "repr": "FakeStreamingListLLM(responses=['this', 'is', 'a', 'test'])",
+            "repr": "FakeStreamingListLLM(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['this', 'is', 'a', 'test'])",
             "name": "FakeStreamingListLLM"
           }
         },
@@ -1009,7 +1009,7 @@
 # name: test_prompt_with_chat_model
   '''
   ChatPromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, template='{question}'), additional_kwargs={})])
-  | FakeListChatModel(responses=['foo'])
+  | FakeListChatModel(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['foo'])
   '''
 # ---
 # name: test_prompt_with_chat_model.1
@@ -1109,7 +1109,7 @@
           "fake_chat_models",
           "FakeListChatModel"
         ],
-        "repr": "FakeListChatModel(responses=['foo'])",
+        "repr": "FakeListChatModel(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['foo'])",
         "name": "FakeListChatModel"
       }
     },
@@ -1220,7 +1220,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(responses=['foo, bar'])",
+          "repr": "FakeListChatModel(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['foo, bar'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -1249,7 +1249,7 @@
 # name: test_prompt_with_chat_model_async
   '''
   ChatPromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, template='{question}'), additional_kwargs={})])
-  | FakeListChatModel(responses=['foo'])
+  | FakeListChatModel(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['foo'])
   '''
 # ---
 # name: test_prompt_with_chat_model_async.1
@@ -1349,7 +1349,7 @@
           "fake_chat_models",
           "FakeListChatModel"
         ],
-        "repr": "FakeListChatModel(responses=['foo'])",
+        "repr": "FakeListChatModel(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['foo'])",
         "name": "FakeListChatModel"
       }
     },
@@ -1459,7 +1459,7 @@
           "fake",
           "FakeListLLM"
         ],
-        "repr": "FakeListLLM(responses=['foo', 'bar'])",
+        "repr": "FakeListLLM(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['foo', 'bar'])",
         "name": "FakeListLLM"
       }
     },
@@ -1576,7 +1576,7 @@
             "fake",
             "FakeListLLM"
           ],
-          "repr": "FakeListLLM(responses=['foo', 'bar'])",
+          "repr": "FakeListLLM(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['foo', 'bar'])",
           "name": "FakeListLLM"
         }
       ],
@@ -1699,7 +1699,7 @@
             "fake",
             "FakeStreamingListLLM"
           ],
-          "repr": "FakeStreamingListLLM(responses=['bear, dog, cat', 'tomato, lettuce, onion'])",
+          "repr": "FakeStreamingListLLM(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['bear, dog, cat', 'tomato, lettuce, onion'])",
           "name": "FakeStreamingListLLM"
         }
       ],
@@ -1867,7 +1867,7 @@
                     "fake",
                     "FakeListLLM"
                   ],
-                  "repr": "FakeListLLM(responses=['4'])",
+                  "repr": "FakeListLLM(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['4'])",
                   "name": "FakeListLLM"
                 }
               },
@@ -1940,7 +1940,7 @@
                     "fake",
                     "FakeListLLM"
                   ],
-                  "repr": "FakeListLLM(responses=['2'])",
+                  "repr": "FakeListLLM(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['2'])",
                   "name": "FakeListLLM"
                 }
               },
@@ -2916,6 +2916,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -2954,9 +2961,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python
@@ -4386,6 +4393,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -4424,9 +4438,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python
@@ -5868,6 +5882,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -5906,9 +5927,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python
@@ -7206,6 +7227,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -7244,9 +7272,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python
@@ -8718,6 +8746,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -8756,9 +8791,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python
@@ -10101,6 +10136,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -10139,9 +10181,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python
@@ -11532,6 +11574,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -11570,9 +11619,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python
@@ -12964,6 +13013,13 @@
           
               This represents a request to call the tool named `'foo'` with arguments
               `{"a": 1}` and an identifier of `'123'`.
+          
+          !!! note "Factory function"
+          
+              `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+              include:
+          
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
@@ -13002,9 +13058,9 @@
         'description': '''
           A chunk of a tool call (yielded when streaming).
           
-          When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-          all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+          string attributes are concatenated. Chunks are only merged if their values of
+          `index` are equal and not `None`.
           
           Example:
           ```python
@@ -13351,7 +13407,7 @@
     just_to_test_lambda: RunnableLambda(...)
   }
   | ChatPromptTemplate(input_variables=['documents', 'question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['documents', 'question'], input_types={}, partial_variables={}, template='Context:\n{documents}\n\nQuestion:\n{question}'), additional_kwargs={})])
-  | FakeListChatModel(responses=['foo, bar'])
+  | FakeListChatModel(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['foo, bar'])
   | CommaSeparatedListOutputParser()
   '''
 # ---
@@ -13554,7 +13610,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(responses=['foo, bar'])",
+          "repr": "FakeListChatModel(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=['foo, bar'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -13580,8 +13636,8 @@
   ChatPromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, template='{question}'), additional_kwargs={})])
   | RunnableLambda(...)
   | {
-      chat: FakeListChatModel(responses=["i'm a chatbot"]),
-      llm: FakeListLLM(responses=["i'm a textbot"])
+      chat: FakeListChatModel(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=["i'm a chatbot"]),
+      llm: FakeListLLM(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=["i'm a textbot"])
     }
   '''
 # ---
@@ -13706,7 +13762,7 @@
                 "fake_chat_models",
                 "FakeListChatModel"
               ],
-              "repr": "FakeListChatModel(responses=[\"i'm a chatbot\"])",
+              "repr": "FakeListChatModel(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=[\"i'm a chatbot\"])",
               "name": "FakeListChatModel"
             },
             "llm": {
@@ -13718,7 +13774,7 @@
                 "fake",
                 "FakeListLLM"
               ],
-              "repr": "FakeListLLM(responses=[\"i'm a textbot\"])",
+              "repr": "FakeListLLM(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=[\"i'm a textbot\"])",
               "name": "FakeListLLM"
             }
           }
@@ -13861,7 +13917,7 @@
                     "fake_chat_models",
                     "FakeListChatModel"
                   ],
-                  "repr": "FakeListChatModel(responses=[\"i'm a chatbot\"])",
+                  "repr": "FakeListChatModel(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=[\"i'm a chatbot\"])",
                   "name": "FakeListChatModel"
                 },
                 "kwargs": {
@@ -13882,7 +13938,7 @@
                 "fake",
                 "FakeListLLM"
               ],
-              "repr": "FakeListLLM(responses=[\"i'm a textbot\"])",
+              "repr": "FakeListLLM(metadata={'lc_versions': {'langchain-core': '<version>'}}, responses=[\"i'm a textbot\"])",
               "name": "FakeListLLM"
             },
             "passthrough": {

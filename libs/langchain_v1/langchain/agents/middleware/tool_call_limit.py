@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal, NotRequired
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.typing import ContextT
-from typing_extensions import NotRequired, override
+from typing_extensions import override
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -26,13 +26,14 @@ ExitBehavior = Literal["continue", "error", "end"]
 - `'continue'`: Block exceeded tools with error messages, let other tools continue
     (default)
 - `'error'`: Raise a `ToolCallLimitExceededError` exception
-- `'end'`: Stop execution immediately, injecting a `ToolMessage` and an `AIMessage` for
-    the single tool call that exceeded the limit. Raises `NotImplementedError` if there
-    are other pending tool calls (due to parallel tool calling).
+- `'end'`: Stop execution immediately, injecting a `ToolMessage` for each tool call
+    that exceeded the limit and an `AIMessage` explaining why. Any other pending tool
+    call on the same `AIMessage` (e.g. from parallel tool calling) also gets an
+    explanatory `ToolMessage` instead of being executed.
 """
 
 
-class ToolCallLimitState(AgentState[ResponseT], Generic[ResponseT]):
+class ToolCallLimitState(AgentState[ResponseT]):
     """State schema for `ToolCallLimitMiddleware`.
 
     Extends `AgentState` with tool call tracking fields.
@@ -40,6 +41,9 @@ class ToolCallLimitState(AgentState[ResponseT], Generic[ResponseT]):
     The count fields are dictionaries mapping tool names to execution counts. This
     allows multiple middleware instances to track different tools independently. The
     special key `'__all__'` is used for tracking all tool calls globally.
+
+    Type Parameters:
+        ResponseT: The type of the structured response. Defaults to `Any`.
     """
 
     thread_tool_call_count: NotRequired[Annotated[dict[str, int], PrivateStateAttr]]
@@ -134,10 +138,7 @@ class ToolCallLimitExceededError(Exception):
         super().__init__(msg)
 
 
-class ToolCallLimitMiddleware(
-    AgentMiddleware[ToolCallLimitState[ResponseT], ContextT],
-    Generic[ResponseT, ContextT],
-):
+class ToolCallLimitMiddleware(AgentMiddleware[ToolCallLimitState[ResponseT], ContextT, ResponseT]):
     """Track tool call counts and enforces limits during agent execution.
 
     This middleware monitors the number of tool calls made and can terminate or
@@ -148,9 +149,9 @@ class ToolCallLimitMiddleware(
         - `exit_behavior`: How to handle when limits are exceeded
             - `'continue'`: Block exceeded tools, let execution continue (default)
             - `'error'`: Raise an exception
-            - `'end'`: Stop immediately with a `ToolMessage` + AI message for the single
-                tool call that exceeded the limit (raises `NotImplementedError` if there
-                are other pending tool calls (due to parallel tool calling).
+            - `'end'`: Stop immediately with a `ToolMessage` for each exceeded tool
+                call, a `ToolMessage` explaining any other pending calls were skipped,
+                and an AI message explaining why execution stopped
 
     Examples:
         !!! example "Continue execution with blocked tools (default)"
@@ -166,7 +167,7 @@ class ToolCallLimitMiddleware(
                 exit_behavior="continue",  # default
             )
 
-            agent = create_agent("openai:gpt-4o", middleware=[limiter])
+            agent = create_agent("openai:gpt-5.5", middleware=[limiter])
             ```
 
         !!! example "Stop immediately when limit exceeded"
@@ -175,7 +176,7 @@ class ToolCallLimitMiddleware(
             # End execution immediately with an AI message
             limiter = ToolCallLimitMiddleware(run_limit=5, exit_behavior="end")
 
-            agent = create_agent("openai:gpt-4o", middleware=[limiter])
+            agent = create_agent("openai:gpt-5.5", middleware=[limiter])
             ```
 
         !!! example "Raise exception on limit"
@@ -186,7 +187,7 @@ class ToolCallLimitMiddleware(
                 tool_name="search", thread_limit=5, exit_behavior="error"
             )
 
-            agent = create_agent("openai:gpt-4o", middleware=[limiter])
+            agent = create_agent("openai:gpt-5.5", middleware=[limiter])
 
             try:
                 result = await agent.invoke({"messages": [HumanMessage("Task")]})
@@ -220,10 +221,11 @@ class ToolCallLimitMiddleware(
                 - `'continue'`: Block exceeded tools with error messages, let other
                     tools continue. Model decides when to end.
                 - `'error'`: Raise a `ToolCallLimitExceededError` exception
-                - `'end'`: Stop execution immediately with a `ToolMessage` + AI message
-                    for the single tool call that exceeded the limit. Raises
-                    `NotImplementedError` if there are multiple parallel tool
-                    calls to other tools or multiple pending tool calls.
+                - `'end'`: Stop execution immediately with a `ToolMessage` for each
+                    tool call that exceeded the limit and an AI message explaining
+                    why. Any other pending tool call on the same `AIMessage` (e.g.
+                    from parallel tool calling) is given an explanatory
+                    `ToolMessage` instead of being executed.
 
         Raises:
             ValueError: If both limits are `None`, if `exit_behavior` is invalid,
@@ -300,8 +302,7 @@ class ToolCallLimitMiddleware(
             run_count: Current run call count.
 
         Returns:
-            Tuple of `(allowed_calls, blocked_calls, final_thread_count,
-                final_run_count)`.
+            Tuple of `(allowed_calls, blocked_calls, final_thread_count, final_run_count)`.
         """
         allowed_calls: list[ToolCall] = []
         blocked_calls: list[ToolCall] = []
@@ -337,13 +338,12 @@ class ToolCallLimitMiddleware(
         Returns:
             State updates with incremented tool call counts. If limits are exceeded
                 and exit_behavior is `'end'`, also includes a jump to end with a
-                `ToolMessage` and AI message for the single exceeded tool call.
+                `ToolMessage` for each exceeded tool call, an explanatory
+                `ToolMessage` for any other pending tool calls, and an AI message.
 
         Raises:
             ToolCallLimitExceededError: If limits are exceeded and `exit_behavior`
                 is `'error'`.
-            NotImplementedError: If limits are exceeded, `exit_behavior` is `'end'`,
-                and there are multiple tool calls.
         """
         # Get the last AIMessage to check for tool calls
         messages = state.get("messages", [])
@@ -420,20 +420,24 @@ class ToolCallLimitMiddleware(
         ]
 
         if self.exit_behavior == "end":
-            # Check if there are tool calls to other tools that would continue executing
-            other_tools = [
-                tc
-                for tc in last_ai_message.tool_calls
-                if self.tool_name is not None and tc["name"] != self.tool_name
+            # Since jumping to `"end"` skips tool execution, add `ToolMessage`s for all
+            # pending calls so none are executed and the message history stays valid.
+            blocked_ids = {tool_call["id"] for tool_call in blocked_calls}
+            pending_tool_calls = [
+                tc for tc in last_ai_message.tool_calls if tc["id"] not in blocked_ids
             ]
-
-            if other_tools:
-                tool_names = ", ".join({tc["name"] for tc in other_tools})
-                msg = (
-                    f"Cannot end execution with other tool calls pending. "
-                    f"Found calls to: {tool_names}. Use 'continue' or 'error' behavior instead."
+            artificial_messages.extend(
+                ToolMessage(
+                    content=(
+                        "Execution stopped before this tool call could run because "
+                        "another tool call in the same batch exceeded the limit."
+                    ),
+                    tool_call_id=tool_call["id"],
+                    name=tool_call.get("name"),
+                    status="error",
                 )
-                raise NotImplementedError(msg)
+                for tool_call in pending_tool_calls
+            )
 
             # Build final AI message content (displayed to user - includes thread/run details)
             # Use hypothetical thread count (what it would have been if call wasn't blocked)
@@ -447,6 +451,10 @@ class ToolCallLimitMiddleware(
                 self.tool_name,
             )
             artificial_messages.append(AIMessage(content=final_msg_content))
+
+            # Since no calls execute after jumping to `"end"`, don't include this batch in
+            # the thread-level count. Only the run-level count tracks attempted calls.
+            thread_counts[count_key] = current_thread_count
 
             return {
                 "thread_tool_call_count": thread_counts,
@@ -477,12 +485,11 @@ class ToolCallLimitMiddleware(
         Returns:
             State updates with incremented tool call counts. If limits are exceeded
                 and exit_behavior is `'end'`, also includes a jump to end with a
-                `ToolMessage` and AI message for the single exceeded tool call.
+                `ToolMessage` for each exceeded tool call, an explanatory
+                `ToolMessage` for any other pending tool calls, and an AI message.
 
         Raises:
             ToolCallLimitExceededError: If limits are exceeded and `exit_behavior`
                 is `'error'`.
-            NotImplementedError: If limits are exceeded, `exit_behavior` is `'end'`,
-                and there are multiple tool calls.
         """
         return self.after_model(state, runtime)

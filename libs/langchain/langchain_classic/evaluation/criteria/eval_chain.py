@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from langchain_core.callbacks import Callbacks
@@ -19,7 +19,7 @@ from langchain_classic.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain_classic.schema import RUN_KEY
 
 
-class Criteria(str, Enum):
+class Criteria(StrEnum):
     """A Criteria to evaluate."""
 
     CONCISENESS = "conciseness"
@@ -205,7 +205,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
     >>> from langchain_openai import ChatOpenAI
     >>> from langchain_classic.evaluation.criteria import LabeledCriteriaEvalChain
-    >>> model = ChatOpenAI(model="gpt-4", temperature=0)
+    >>> model = ChatOpenAI(model="gpt-5.5", temperature=0)
     >>> criteria = "correctness"
     >>> evaluator = LabeledCriteriaEvalChain.from_llm(
     ...     llm=model,

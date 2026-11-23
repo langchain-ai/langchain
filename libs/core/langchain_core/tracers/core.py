@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import traceback
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,6 +16,7 @@ from typing import (
 from langchain_core.exceptions import TracerException
 from langchain_core.load import dumpd
 from langchain_core.tracers.schemas import Run
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 
 if TYPE_CHECKING:
     from collections.abc import Coroutine, Sequence
@@ -36,6 +37,31 @@ logger = logging.getLogger(__name__)
 
 SCHEMA_FORMAT_TYPE = Literal["original", "streaming_events"]
 
+# Key under which gateway metadata is attached to a run's metadata for tracing.
+_GATEWAY_RUN_METADATA_KEY = "ls_gateway_info"
+
+
+def _extract_gateway_metadata(response: LLMResult) -> dict[str, Any] | None:
+    """Extract LangSmith gateway metadata from a model response.
+
+    When a request is routed through the LangSmith gateway, the gateway returns
+    metadata (e.g. the resolved provider and model) that integrations surface on
+    the generation's `generation_info` under `GATEWAY_METADATA_RESPONSE_KEY`.
+
+    Args:
+        response: The `LLMResult` produced by the model.
+
+    Returns:
+        The gateway metadata, or `None` if the response carries none.
+    """
+    for generations in response.generations:
+        for generation in generations:
+            generation_info = getattr(generation, "generation_info", None) or {}
+            gateway_metadata = generation_info.get(GATEWAY_METADATA_RESPONSE_KEY)
+            if isinstance(gateway_metadata, dict):
+                return gateway_metadata
+    return None
+
 
 class _TracerCore(ABC):
     """Abstract base class for tracers.
@@ -51,32 +77,53 @@ class _TracerCore(ABC):
         _schema_format: Literal[
             "original", "streaming_events", "original+chat"
         ] = "original",
+        run_map: dict[str, Run] | None = None,
+        order_map: dict[UUID, tuple[UUID, str]] | None = None,
+        _external_run_ids: dict[str, int] | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the tracer.
 
         Args:
-            _schema_format: Primarily changes how the inputs and outputs are
-                handled. For internal use only. This API will change.
+            _schema_format: Primarily changes how the inputs and outputs are handled.
 
-                - 'original' is the format used by all current tracers.
-                  This format is slightly inconsistent with respect to inputs
-                  and outputs.
-                - 'streaming_events' is used for supporting streaming events,
-                  for internal usage. It will likely change in the future, or
-                  be deprecated entirely in favor of a dedicated async tracer
-                  for streaming events.
-                - 'original+chat' is a format that is the same as 'original'
-                  except it does NOT raise an attribute error on_chat_model_start
-            **kwargs: Additional keyword arguments that will be passed to
-                the superclass.
+                For internal use only. This API will change.
+
+                - `'original'` is the format used by all current tracers.
+
+                    This format is slightly inconsistent with respect to inputs and
+                    outputs.
+                - `'streaming_events'` is used for supporting streaming events, for
+                    internal usage. It will likely change in the future, or be
+                    deprecated entirely in favor of a dedicated async tracer for
+                    streaming events.
+                - `'original+chat'` is a format that is the same as `'original'` except
+                    it does NOT raise an attribute error `on_chat_model_start`
+            run_map: Optional shared map of run ID to run.
+            order_map: Optional shared map of run ID to trace ordering data.
+            _external_run_ids: Optional shared set of externally injected run IDs.
+            **kwargs: Additional keyword arguments that will be passed to the
+                superclass.
         """
         super().__init__(**kwargs)
+
         self._schema_format = _schema_format  # For internal use only API will change.
-        self.run_map: dict[str, Run] = {}
+
+        self.run_map = run_map if run_map is not None else {}
         """Map of run ID to run. Cleared on run end."""
-        self.order_map: dict[UUID, tuple[UUID, str]] = {}
+
+        self.order_map = order_map if order_map is not None else {}
         """Map of run ID to (trace_id, dotted_order). Cleared when tracer GCed."""
+
+        self._external_run_ids: dict[str, int] = (
+            _external_run_ids if _external_run_ids is not None else {}
+        )
+        """Refcount of active children per externally-injected run ID.
+
+        These runs are added to `run_map` so child runs can find their parent,
+        but they are not managed by the tracer's callback lifecycle.  When
+        the last child finishes the entry is evicted to avoid memory leaks.
+        """
 
     @abstractmethod
     def _persist_run(self, run: Run) -> Coroutine[Any, Any, None] | None:
@@ -97,7 +144,7 @@ class _TracerCore(ABC):
         try:
             tb = traceback.format_exception(error)
             return (msg + "\n\n".join(tb)).strip()
-        except:  # noqa: E722
+        except Exception:
             return msg
 
     def _start_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:  # type: ignore[return]
@@ -108,6 +155,9 @@ class _TracerCore(ABC):
                 run.dotted_order += "." + current_dotted_order
                 if parent_run := self.run_map.get(str(run.parent_run_id)):
                     self._add_child_run(parent_run, run)
+                    parent_key = str(run.parent_run_id)
+                    if parent_key in self._external_run_ids:
+                        self._external_run_ids[parent_key] += 1
             else:
                 if self.log_missing_parent:
                     logger.debug(
@@ -123,6 +173,14 @@ class _TracerCore(ABC):
             run.dotted_order = current_dotted_order
         self.order_map[run.id] = (run.trace_id, run.dotted_order)
         self.run_map[str(run.id)] = run
+
+    def _get_run_kwargs(
+        self,
+        parent_run_id: UUID | None,  # noqa: ARG002
+        extra: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Return construction arguments for a run."""
+        return {"extra": extra}
 
     def _get_run(self, run_id: UUID, run_type: str | set[str] | None = None) -> Run:
         try:
@@ -168,7 +226,7 @@ class _TracerCore(ABC):
                 f"for {self._schema_format} format."
             )
             raise NotImplementedError(msg)
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
         return Run(
@@ -176,7 +234,7 @@ class _TracerCore(ABC):
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"messages": [[dumpd(msg) for msg in batch] for batch in messages]},
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             # WARNING: This is valid ONLY for streaming_events.
@@ -184,7 +242,7 @@ class _TracerCore(ABC):
             # Changing this to "chat_model" may break triggering on_llm_start
             run_type="chat_model",
             tags=tags,
-            name=name,  # type: ignore[arg-type]
+            name=name,
         )
 
     def _create_llm_run(
@@ -199,7 +257,7 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         """Create a llm run."""
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
         return Run(
@@ -208,22 +266,23 @@ class _TracerCore(ABC):
             serialized=serialized,
             # TODO: Figure out how to expose kwargs here
             inputs={"prompts": prompts},
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             run_type="llm",
             tags=tags or [],
-            name=name,  # type: ignore[arg-type]
+            name=name,
         )
 
     def _llm_run_with_token_event(
         self,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         run_id: UUID,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
-        parent_run_id: UUID | None = None,  # noqa: ARG002
+        parent_run_id: UUID | None = None,
     ) -> Run:
         """Append token event to LLM run and return the run."""
+        _ = parent_run_id
         llm_run = self._get_run(run_id, run_type={"llm", "chat_model"})
         event_kwargs: dict[str, Any] = {"token": token}
         if chunk:
@@ -231,7 +290,7 @@ class _TracerCore(ABC):
         llm_run.events.append(
             {
                 "name": "new_token",
-                "time": datetime.now(timezone.utc),
+                "time": datetime.now(UTC),
                 "kwargs": event_kwargs,
             },
         )
@@ -260,7 +319,7 @@ class _TracerCore(ABC):
         llm_run.events.append(
             {
                 "name": "retry",
-                "time": datetime.now(timezone.utc),
+                "time": datetime.now(UTC),
                 "kwargs": retry_d,
             },
         )
@@ -281,7 +340,7 @@ class _TracerCore(ABC):
                     output_generation["message"] = dumpd(
                         cast("ChatGeneration", generation).message
                     )
-        llm_run.end_time = datetime.now(timezone.utc)
+        llm_run.end_time = datetime.now(UTC)
         llm_run.events.append({"name": "end", "time": llm_run.end_time})
 
         tool_call_count = 0
@@ -294,7 +353,22 @@ class _TracerCore(ABC):
         if tool_call_count > 0:
             llm_run.extra["tool_call_count"] = tool_call_count
 
+        self._attach_gateway_metadata(llm_run, response)
+
         return llm_run
+
+    def _attach_gateway_metadata(self, run: Run, response: LLMResult) -> None:
+        """Promote LangSmith gateway metadata from the response to run metadata."""
+        gateway_metadata = _extract_gateway_metadata(response)
+        if gateway_metadata is None:
+            return
+        metadata = run.extra.setdefault("metadata", {})
+        metadata[_GATEWAY_RUN_METADATA_KEY] = gateway_metadata
+        # The resolved gateway identity takes precedence over request-time metadata.
+        for source, target in (("model", "ls_model_name"), ("provider", "ls_provider")):
+            value = gateway_metadata.get(source)
+            if isinstance(value, str) and (value := value.strip()):
+                metadata[target] = value
 
     def _errored_llm_run(
         self, error: BaseException, run_id: UUID, response: LLMResult | None = None
@@ -315,7 +389,8 @@ class _TracerCore(ABC):
                         output_generation["message"] = dumpd(
                             cast("ChatGeneration", generation).message
                         )
-        llm_run.end_time = datetime.now(timezone.utc)
+            self._attach_gateway_metadata(llm_run, response)
+        llm_run.end_time = datetime.now(UTC)
         llm_run.events.append({"name": "error", "time": llm_run.end_time})
 
         return llm_run
@@ -333,7 +408,7 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         """Create a chain Run."""
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
         return Run(
@@ -341,12 +416,12 @@ class _TracerCore(ABC):
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs=self._get_chain_inputs(inputs),
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             child_runs=[],
             run_type=run_type or "chain",
-            name=name,  # type: ignore[arg-type]
+            name=name,
             tags=tags or [],
         )
 
@@ -386,7 +461,7 @@ class _TracerCore(ABC):
             cast("dict[str, Any]", chain_run.outputs).update(
                 self._get_chain_outputs(outputs)
             )
-        chain_run.end_time = datetime.now(timezone.utc)
+        chain_run.end_time = datetime.now(UTC)
         chain_run.events.append({"name": "end", "time": chain_run.end_time})
         if inputs is not None:
             chain_run.inputs = self._get_chain_inputs(inputs)
@@ -400,7 +475,7 @@ class _TracerCore(ABC):
     ) -> Run:
         chain_run = self._get_run(run_id)
         chain_run.error = self._get_stacktrace(error)
-        chain_run.end_time = datetime.now(timezone.utc)
+        chain_run.end_time = datetime.now(UTC)
         chain_run.events.append({"name": "error", "time": chain_run.end_time})
         if inputs is not None:
             chain_run.inputs = self._get_chain_inputs(inputs)
@@ -419,12 +494,12 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         """Create a tool run."""
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
 
         if self._schema_format in {"original", "original+chat"}:
-            inputs = {"input": input_str}
+            inputs = inputs if isinstance(inputs, dict) else {"input": input_str}
         elif self._schema_format == "streaming_events":
             inputs = {"input": inputs}
         else:
@@ -437,13 +512,13 @@ class _TracerCore(ABC):
             serialized=serialized,
             # Wrapping in dict since Run requires a dict object.
             inputs=inputs,
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             child_runs=[],
             run_type="tool",
             tags=tags or [],
-            name=name,  # type: ignore[arg-type]
+            name=name,
         )
 
     def _complete_tool_run(
@@ -457,7 +532,7 @@ class _TracerCore(ABC):
             tool_run.outputs = {}
         if not tool_run.extra.get("__omit_auto_outputs", False):
             cast("dict[str, Any]", tool_run.outputs).update({"output": output})
-        tool_run.end_time = datetime.now(timezone.utc)
+        tool_run.end_time = datetime.now(UTC)
         tool_run.events.append({"name": "end", "time": tool_run.end_time})
         return tool_run
 
@@ -469,7 +544,7 @@ class _TracerCore(ABC):
         """Update a tool run with error and end time."""
         tool_run = self._get_run(run_id, run_type="tool")
         tool_run.error = self._get_stacktrace(error)
-        tool_run.end_time = datetime.now(timezone.utc)
+        tool_run.end_time = datetime.now(UTC)
         tool_run.events.append({"name": "error", "time": tool_run.end_time})
         return tool_run
 
@@ -485,7 +560,7 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         """Create a retrieval run."""
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
         return Run(
@@ -494,7 +569,7 @@ class _TracerCore(ABC):
             parent_run_id=parent_run_id,
             serialized=serialized,
             inputs={"query": query},
-            extra=kwargs,
+            **self._get_run_kwargs(parent_run_id, kwargs),
             events=[{"name": "start", "time": start_time}],
             start_time=start_time,
             tags=tags,
@@ -515,7 +590,7 @@ class _TracerCore(ABC):
             cast("dict[str, Any]", retrieval_run.outputs).update(
                 {"documents": documents}
             )
-        retrieval_run.end_time = datetime.now(timezone.utc)
+        retrieval_run.end_time = datetime.now(UTC)
         retrieval_run.events.append({"name": "end", "time": retrieval_run.end_time})
         return retrieval_run
 
@@ -526,11 +601,11 @@ class _TracerCore(ABC):
     ) -> Run:
         retrieval_run = self._get_run(run_id, run_type="retriever")
         retrieval_run.error = self._get_stacktrace(error)
-        retrieval_run.end_time = datetime.now(timezone.utc)
+        retrieval_run.end_time = datetime.now(UTC)
         retrieval_run.events.append({"name": "error", "time": retrieval_run.end_time})
         return retrieval_run
 
-    def __deepcopy__(self, memo: dict) -> _TracerCore:
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> _TracerCore:
         """Return self deepcopied."""
         return self
 
@@ -538,145 +613,162 @@ class _TracerCore(ABC):
         """Return self copied."""
         return self
 
-    def _end_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _end_trace(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """End a trace for a run.
 
         Args:
             run: The run.
         """
+        _ = run
         return None
 
-    def _on_run_create(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_run_create(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process a run upon creation.
 
         Args:
             run: The created run.
         """
+        _ = run
         return None
 
-    def _on_run_update(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_run_update(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process a run upon update.
 
         Args:
             run: The updated run.
         """
+        _ = run
         return None
 
-    def _on_llm_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_llm_start(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the LLM Run upon start.
 
         Args:
             run: The LLM run.
         """
+        _ = run
         return None
 
     def _on_llm_new_token(
         self,
-        run: Run,  # noqa: ARG002
-        token: str,  # noqa: ARG002
-        chunk: GenerationChunk | ChatGenerationChunk | None,  # noqa: ARG002
+        run: Run,
+        token: str | list[str | dict[str, Any]],
+        chunk: GenerationChunk | ChatGenerationChunk | None,
     ) -> Coroutine[Any, Any, None] | None:
         """Process new LLM token.
 
         Args:
             run: The LLM run.
-            token: The new token.
+            token: The new token, or a list of content blocks.
             chunk: Optional chunk.
         """
+        _ = (run, token, chunk)
         return None
 
-    def _on_llm_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_llm_end(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the LLM Run.
 
         Args:
             run: The LLM run.
         """
+        _ = run
         return None
 
-    def _on_llm_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_llm_error(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the LLM Run upon error.
 
         Args:
             run: The LLM run.
         """
+        _ = run
         return None
 
-    def _on_chain_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_chain_start(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Chain Run upon start.
 
         Args:
             run: The chain run.
         """
+        _ = run
         return None
 
-    def _on_chain_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_chain_end(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Chain Run.
 
         Args:
             run: The chain run.
         """
+        _ = run
         return None
 
-    def _on_chain_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_chain_error(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Chain Run upon error.
 
         Args:
             run: The chain run.
         """
+        _ = run
         return None
 
-    def _on_tool_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_tool_start(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Tool Run upon start.
 
         Args:
             run: The tool run.
         """
+        _ = run
         return None
 
-    def _on_tool_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_tool_end(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Tool Run.
 
         Args:
             run: The tool run.
         """
+        _ = run
         return None
 
-    def _on_tool_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_tool_error(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Tool Run upon error.
 
         Args:
             run: The tool run.
         """
+        _ = run
         return None
 
-    def _on_chat_model_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_chat_model_start(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Chat Model Run upon start.
 
         Args:
             run: The chat model run.
         """
+        _ = run
         return None
 
-    def _on_retriever_start(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_retriever_start(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Retriever Run upon start.
 
         Args:
             run: The retriever run.
         """
+        _ = run
         return None
 
-    def _on_retriever_end(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_retriever_end(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Retriever Run.
 
         Args:
             run: The retriever run.
         """
+        _ = run
         return None
 
-    def _on_retriever_error(self, run: Run) -> Coroutine[Any, Any, None] | None:  # noqa: ARG002
+    def _on_retriever_error(self, run: Run) -> Coroutine[Any, Any, None] | None:
         """Process the Retriever Run upon error.
 
         Args:
             run: The retriever run.
         """
+        _ = run
         return None

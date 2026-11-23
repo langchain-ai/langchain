@@ -6,17 +6,46 @@ import contextlib
 import json
 import logging
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
+from contextvars import ContextVar
 from operator import itemgetter
 from typing import (
     Any,
     Literal,
+    NoReturn,
+    Self,
+    TypeAlias,
     cast,
 )
 
-from fireworks.client import AsyncFireworks, Fireworks  # type: ignore[import-untyped]
+import httpx
+from fireworks import (
+    APIConnectionError,
+    APIError,
+    APITimeoutError,
+    AsyncFireworks,
+    AuthenticationError,
+    BadRequestError,
+    Fireworks,
+    FireworksError,
+    InternalServerError,
+    NotFoundError,
+    PermissionDeniedError,
+    RateLimitError,
+)
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
+)
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
 )
 from langchain_core.language_models import (
     LanguageModelInput,
@@ -29,6 +58,7 @@ from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
+from langchain_core.language_models.llms import create_base_retry_decorator
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -46,6 +76,11 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
+    UsageMetadata,
+    is_data_content_block,
+)
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
 )
 from langchain_core.messages.tool import (
     ToolCallChunk,
@@ -67,25 +102,31 @@ from langchain_core.tools import BaseTool
 from langchain_core.utils import (
     get_pydantic_field_names,
 )
+from langchain_core.utils._gateway import _apply_gateway_config
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
+from langchain_core.utils.utils import _build_model_kwargs
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     SecretStr,
     model_validator,
 )
-from typing_extensions import Self
 
 from langchain_fireworks._compat import _convert_from_v1_to_chat_completions
+from langchain_fireworks._version import __version__
 from langchain_fireworks.data._profiles import _PROFILES
 
 logger = logging.getLogger(__name__)
+
+_PROMPT_CACHE_AFFINITY: ContextVar[str | None] = ContextVar(
+    "fireworks_prompt_cache_affinity", default=None
+)
 
 
 _MODEL_PROFILES = cast("ModelProfileRegistry", _PROFILES)
@@ -114,7 +155,10 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         # Also Fireworks returns None for tool invocations
         content = _dict.get("content", "") or ""
         additional_kwargs: dict = {}
-        if reasoning_content := _dict.get("reasoning_content"):
+        if (
+            isinstance(reasoning_content := _dict.get("reasoning_content"), str)
+            and reasoning_content
+        ):
             additional_kwargs["reasoning_content"] = reasoning_content
 
         if function_call := _dict.get("function_call"):
@@ -155,6 +199,173 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     return ChatMessage(content=_dict.get("content", ""), role=role or "")
 
 
+def _allowed_content_part_keys() -> frozenset[str]:
+    """Allowlist of wire-valid keys on a Fireworks content part.
+
+    Derived at import time from the stainless-generated TypedDict so the
+    allowlist tracks the upstream OpenAPI spec as `fireworks-ai` is bumped:
+    new fields widen the allowlist for free, removed/renamed fields shrink it
+    in lockstep. If the SDK reshuffles its module layout the import falls back
+    to a conservative hand-coded set and emits a warning, and the layout test
+    (`test_fireworks_sdk_request_layout_stable`) fails to surface the drift.
+    """
+    try:
+        from typing import get_type_hints
+
+        from fireworks.types.shared_params.chat_message import (
+            ContentUnionMember1,
+        )
+
+        return frozenset(get_type_hints(ContentUnionMember1))
+    except ImportError:
+        logger.warning(
+            "Could not import `fireworks.types.shared_params.chat_message."
+            "ContentUnionMember1`; falling back to a conservative content-part "
+            "key allowlist. Bump `fireworks-ai` or update "
+            "`_allowed_content_part_keys` if the SDK has moved this type.",
+        )
+        return frozenset({"type", "text", "image_url", "video_url"})
+
+
+_ALLOWED_CONTENT_PART_KEYS: frozenset[str] = _allowed_content_part_keys()
+
+
+_DROPPED_CONTENT_BLOCK_TYPES: frozenset[str] = frozenset(
+    {
+        "tool_use",
+        "thinking",
+        "reasoning",
+        "reasoning_content",
+        "function_call",
+        "code_interpreter_call",
+    }
+)
+"""Content block types the chat completions wire format does not carry.
+
+These arise from provider-specific or canonical v1 content (e.g. Anthropic
+`tool_use`/`thinking` blocks, or a `reasoning` block on an AIMessage) that
+reaches `_convert_message_to_dict` as conversation history. Fireworks rejects
+them, so they are dropped rather than forwarded.
+"""
+
+
+def _sanitize_chat_completions_content(content: Any) -> Any:
+    """Strip non-wire keys from content blocks before serializing to Fireworks.
+
+    Fireworks's chat completions endpoint rejects unknown fields on message
+    content parts with `Extra inputs are not permitted, field: 'messages[N]
+    .content.list[ChatMessageContent][i].<key>'`. This surfaces when a
+    conversation accumulates AIMessages from a different provider (e.g.
+    Anthropic's v1 streaming-reassembly `index` marker on text blocks, or the
+    LangChain-internal `caller` key on `tool_use` blocks) and that history is
+    later forwarded to a Fireworks-hosted model.
+
+    For list content:
+        - each block dict is filtered down to keys in
+            `_ALLOWED_CONTENT_PART_KEYS` (sourced from the SDK TypedDict, so it
+            stays in sync with the upstream spec).
+        - if the result is a list of exactly one block that, post-strip, is
+            `{"type": "text", "text": <str>}` and nothing else, it is coerced to
+            a plain string. Fireworks's `content` union lists `str` first
+            (`Input should be a valid string, field: 'messages[N].content.str'`),
+            and the stricter shape avoids the union-validation noise on the
+            server side.
+    Non-list content (strings, None) passes through unchanged.
+    """
+    if not isinstance(content, list):
+        return content
+    sanitized: list[Any] = []
+    for block in content:
+        if isinstance(block, dict):
+            sanitized.append(
+                {k: v for k, v in block.items() if k in _ALLOWED_CONTENT_PART_KEYS}
+            )
+        else:
+            sanitized.append(block)
+    if (
+        len(sanitized) == 1
+        and isinstance(sanitized[0], dict)
+        and set(sanitized[0]) == {"type", "text"}
+        and sanitized[0]["type"] == "text"
+        and isinstance(sanitized[0]["text"], str)
+    ):
+        return sanitized[0]["text"]
+    return sanitized
+
+
+def _format_message_content(content: Any) -> Any:
+    """Format message content for the Fireworks chat completions wire format.
+
+    Adapted from `langchain_openai.chat_models.base._format_message_content`,
+    scoped to the chat completions API: drops content block types the wire
+    format does not carry, translates canonical v0/v1 multimodal data blocks
+    via `convert_to_openai_data_block(block, api="chat/completions")`, and
+    converts legacy Anthropic-shape image blocks (`{"type": "image",
+    "source": {...}}`) to OpenAI `image_url` blocks. String and non-list
+    content are returned unchanged.
+
+    Args:
+        content: The message content. Strings and non-list values are
+            returned as-is; lists are walked block by block.
+
+    Returns:
+        The formatted content, ready to be placed on the chat completions
+        wire. List inputs return a new list with translations applied; other
+        inputs are returned unchanged.
+    """
+    if not isinstance(content, list):
+        return content
+    formatted: list[Any] = []
+    for block in content:
+        if isinstance(block, dict) and "type" in block:
+            btype = block["type"]
+            if btype in _DROPPED_CONTENT_BLOCK_TYPES:
+                continue
+            if is_data_content_block(block):
+                formatted.append(
+                    convert_to_openai_data_block(block, api="chat/completions")
+                )
+                continue
+            if (
+                btype == "image"
+                and (source := block.get("source"))
+                and isinstance(source, dict)
+            ):
+                if (
+                    source.get("type") == "base64"
+                    and (media_type := source.get("media_type"))
+                    and (data := source.get("data"))
+                ):
+                    formatted.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:{media_type};base64,{data}"},
+                        }
+                    )
+                    continue
+                if source.get("type") == "url" and (url := source.get("url")):
+                    formatted.append({"type": "image_url", "image_url": {"url": url}})
+                    continue
+                continue
+        formatted.append(block)
+    return formatted
+
+
+def _format_tool_call_arguments(arguments: str | dict | None) -> str | dict:
+    """Preserve invalid historical arguments inside a JSON object for replay."""
+    if isinstance(arguments, dict):
+        return arguments
+    try:
+        parsed = json.loads(arguments) if arguments is not None else None
+        if isinstance(parsed, dict) and arguments is not None:
+            json.dumps(parsed, allow_nan=False)
+            return arguments
+    except ValueError:
+        logger.debug("Invalid JSON in historical Fireworks tool call arguments")
+    logger.warning("Wrapping invalid historical Fireworks tool call arguments")
+    return json.dumps({"__invalid_tool_call_arguments": arguments}, ensure_ascii=False)
+
+
 def _convert_message_to_dict(message: BaseMessage) -> dict:
     """Convert a LangChain message to a dictionary.
 
@@ -167,14 +378,36 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     """
     message_dict: dict[str, Any]
     if isinstance(message, ChatMessage):
-        message_dict = {"role": message.role, "content": message.content}
+        message_dict = {
+            "role": message.role,
+            "content": _sanitize_chat_completions_content(
+                _format_message_content(message.content)
+            ),
+        }
     elif isinstance(message, HumanMessage):
-        message_dict = {"role": "user", "content": message.content}
+        message_dict = {
+            "role": "user",
+            "content": _sanitize_chat_completions_content(
+                _format_message_content(message.content)
+            ),
+        }
     elif isinstance(message, AIMessage):
         # Translate v1 content
         if message.response_metadata.get("output_version") == "v1":
             message = _convert_from_v1_to_chat_completions(message)
-        message_dict = {"role": "assistant", "content": message.content}
+        message_dict = {
+            "role": "assistant",
+            "content": _sanitize_chat_completions_content(
+                _format_message_content(message.content)
+            ),
+        }
+        # Replay reasoning only when the message is tagged `fireworks` or has no
+        # `model_provider` (hand-built messages, or integrations that don't tag
+        # theirs); reasoning from other tagged providers may not be valid input.
+        if isinstance(
+            reasoning_content := message.additional_kwargs.get("reasoning_content"), str
+        ) and message.response_metadata.get("model_provider") in (None, "fireworks"):
+            message_dict["reasoning_content"] = reasoning_content
         if "function_call" in message.additional_kwargs:
             message_dict["function_call"] = message.additional_kwargs["function_call"]
             # If function call only, content is None not empty string
@@ -189,13 +422,31 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             ]
         elif "tool_calls" in message.additional_kwargs:
             message_dict["tool_calls"] = message.additional_kwargs["tool_calls"]
+        if "tool_calls" in message_dict:
+            message_dict["tool_calls"] = [
+                {
+                    **tool_call,
+                    "function": {
+                        **tool_call["function"],
+                        "arguments": _format_tool_call_arguments(
+                            tool_call["function"]["arguments"]
+                        ),
+                    },
+                }
+                for tool_call in message_dict["tool_calls"]
+            ]
         # If tool calls only, content is None not empty string
         if "tool_calls" in message_dict and message_dict["content"] == "":
             message_dict["content"] = None
         else:
             pass
     elif isinstance(message, SystemMessage):
-        message_dict = {"role": "system", "content": message.content}
+        message_dict = {
+            "role": "system",
+            "content": _sanitize_chat_completions_content(
+                _format_message_content(message.content)
+            ),
+        }
     elif isinstance(message, FunctionMessage):
         message_dict = {
             "role": "function",
@@ -205,7 +456,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     elif isinstance(message, ToolMessage):
         message_dict = {
             "role": "tool",
-            "content": message.content,
+            "content": _sanitize_chat_completions_content(
+                _format_message_content(message.content)
+            ),
             "tool_call_id": message.tool_call_id,
         }
     else:
@@ -216,15 +469,109 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
+def _usage_to_metadata(usage: Mapping[str, Any]) -> UsageMetadata:
+    input_tokens = usage.get("prompt_tokens") or 0
+    output_tokens = usage.get("completion_tokens") or 0
+    usage_metadata: UsageMetadata = {
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": usage.get("total_tokens") or input_tokens + output_tokens,
+    }
+    cached_tokens = (usage.get("prompt_tokens_details") or {}).get("cached_tokens")
+    if cached_tokens is not None:
+        usage_metadata["input_token_details"] = {"cache_read": cached_tokens}
+    reasoning_tokens = (usage.get("completion_tokens_details") or {}).get(
+        "reasoning_tokens"
+    )
+    if reasoning_tokens is not None:
+        usage_metadata["output_token_details"] = {"reasoning": reasoning_tokens}
+    return usage_metadata
+
+
+TokenUsageTree: TypeAlias = "int | dict[str, TokenUsageTree]"
+"""Raw provider token usage: a tree of `int` leaves and nested `dict` nodes
+(e.g. `prompt_tokens_details`).
+
+Modeled as a recursive alias so the merge helper's signature carries the shape
+rather than leaving it to `Any`.
+"""
+
+
+def _update_token_usage(
+    overall_token_usage: TokenUsageTree, new_usage: TokenUsageTree
+) -> TokenUsageTree:
+    """Recursively merge raw provider token usage across generations.
+
+    Token usage is a tree of `int` leaves (summed) and `dict` nodes such as
+    `prompt_tokens_details` (merged key-by-key, skipping `None` values).
+
+    A type mismatch between the accumulator and the incoming value (e.g. an
+    `int` on one side and a `dict` on the other) indicates malformed provider
+    data and is raised rather than silently coerced. An entirely unexpected
+    leaf type (neither `int` nor `dict`) is logged and passed through, so a
+    telemetry anomaly degrades gracefully instead of failing the response.
+    """
+    if isinstance(new_usage, int):
+        if not isinstance(overall_token_usage, int):
+            msg = (
+                "Got different types for token usage: "
+                f"{new_usage!r} ({type(new_usage).__name__}) and "
+                f"{overall_token_usage!r} ({type(overall_token_usage).__name__})"
+            )
+            raise ValueError(msg)
+        return overall_token_usage + new_usage
+    if isinstance(new_usage, dict):
+        if not isinstance(overall_token_usage, dict):
+            msg = (
+                "Got different types for token usage: "
+                f"{new_usage!r} ({type(new_usage).__name__}) and "
+                f"{overall_token_usage!r} ({type(overall_token_usage).__name__})"
+            )
+            raise ValueError(msg)
+        updated_token_usage = dict(overall_token_usage)
+        for key, value in new_usage.items():
+            if value is not None:
+                # Seed a first-seen key with an empty node of the same kind so a
+                # nested `dict` value merges rather than colliding with an `int`.
+                default: TokenUsageTree = {} if isinstance(value, dict) else 0
+                updated_token_usage[key] = _update_token_usage(
+                    overall_token_usage.get(key, default), value
+                )
+        return updated_token_usage
+    logger.warning("Unexpected type for token usage: %s", type(new_usage).__name__)
+    return new_usage
+
+
 def _convert_chunk_to_message_chunk(
     chunk: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
-    choice = chunk["choices"][0]
+    choices = chunk.get("choices") or []
+    response_metadata: dict[str, Any] = {"model_provider": "fireworks"}
+    if not choices:
+        # Final chunk emitted when `stream_options.include_usage=True`:
+        # `choices` is empty and the chunk carries only `usage`.
+        usage = chunk.get("usage")
+        if not usage:
+            logger.debug(
+                "Received stream chunk with no choices and no usage: %s", chunk
+            )
+        usage_metadata = _usage_to_metadata(usage) if usage else None
+        return AIMessageChunk(
+            content="",
+            usage_metadata=usage_metadata,
+            response_metadata=response_metadata,
+        )
+    choice = choices[0]
     _dict = choice["delta"]
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
     additional_kwargs: dict = {}
     tool_call_chunks: list[ToolCallChunk] = []
+    if (
+        isinstance(reasoning_content := _dict.get("reasoning_content"), str)
+        and reasoning_content
+    ):
+        additional_kwargs["reasoning_content"] = reasoning_content
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
         if "name" in function_call and function_call["name"] is None:
@@ -245,22 +592,14 @@ def _convert_chunk_to_message_chunk(
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
     if role == "assistant" or default_class == AIMessageChunk:
-        if usage := chunk.get("usage"):
-            input_tokens = usage.get("prompt_tokens", 0)
-            output_tokens = usage.get("completion_tokens", 0)
-            usage_metadata = {
-                "input_tokens": input_tokens,
-                "output_tokens": output_tokens,
-                "total_tokens": usage.get("total_tokens", input_tokens + output_tokens),
-            }
-        else:
-            usage_metadata = None
+        usage = chunk.get("usage")
+        usage_metadata = _usage_to_metadata(usage) if usage else None
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
             tool_call_chunks=tool_call_chunks,
-            usage_metadata=usage_metadata,  # type: ignore[arg-type]
-            response_metadata={"model_provider": "fireworks"},
+            usage_metadata=usage_metadata,
+            response_metadata=response_metadata,
         )
     if role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
@@ -273,11 +612,391 @@ def _convert_chunk_to_message_chunk(
     return default_class(content=content)  # type: ignore[call-arg]
 
 
-# This is basically a copy and replace for ChatFireworks, except
-# - I needed to gut out tiktoken and some of the token estimation logic
-# (not sure how important it is)
-# - Environment variable is different
-# we should refactor into some OpenAI-like class in the future
+def _format_chunk_for_v1(message_chunk: AIMessageChunk) -> AIMessageChunk:
+    """Convert a stream chunk to v1 content blocks with separate index namespaces.
+
+    Fireworks streams a single text field and a single `reasoning_content` field,
+    but numbers tool calls from 0. Left to core, streaming (`stream`, `astream`,
+    and streaming `invoke`) gives unindexed blocks an integer that increments each
+    time the block type changes, so tool call 0 would be merged into the reasoning
+    block by `merge_lists`, and reasoning interrupted by text would split in two.
+
+    `merge_lists` merges blocks with matching indices only when the index is an int
+    or a string starting with `lc_`; other strings are appended unmerged. The raw
+    `tool_call_chunks` keep the provider's integer indices, which
+    `AIMessageChunk.__add__` relies on to merge tool-call arguments.
+    """
+    blocks: list[dict[str, Any]] = []
+    if reasoning := message_chunk.additional_kwargs.get("reasoning_content"):
+        blocks.append(
+            {"type": "reasoning", "reasoning": reasoning, "index": "lc_reasoning"}
+        )
+    if message_chunk.content:
+        blocks.append(
+            {"type": "text", "text": message_chunk.content, "index": "lc_text"}
+        )
+    for tool_call_chunk in message_chunk.tool_call_chunks:
+        block: dict[str, Any] = {
+            "type": "tool_call_chunk",
+            "id": tool_call_chunk["id"],
+            "name": tool_call_chunk["name"],
+            "args": tool_call_chunk["args"],
+        }
+        if (index := tool_call_chunk["index"]) is not None:
+            block["index"] = f"lc_tc_{index}"
+        blocks.append(block)
+    return message_chunk.model_copy(
+        update={
+            "content": blocks,
+            "response_metadata": {
+                **message_chunk.response_metadata,
+                "output_version": "v1",
+            },
+        }
+    )
+
+
+def _record_usage(previous: UsageMetadata | None, new: UsageMetadata) -> UsageMetadata:
+    """Return the newest usage report, logging when it disagrees with an earlier one."""
+    if previous is not None and previous != new:
+        logger.debug(
+            "Fireworks reported differing usage within one stream; using the "
+            "latest. Previous: %s, latest: %s",
+            previous,
+            new,
+        )
+    return new
+
+
+def _finalize_stream(
+    stream: Iterator[ChatGenerationChunk],
+) -> Iterator[ChatGenerationChunk]:
+    """Supply core's finalization marker when aggregating v1 chunks internally."""
+    yield from stream
+    yield ChatGenerationChunk(message=AIMessageChunk(content="", chunk_position="last"))
+
+
+async def _afinalize_stream(
+    stream: AsyncIterator[ChatGenerationChunk],
+) -> AsyncIterator[ChatGenerationChunk]:
+    """Supply core's finalization marker when aggregating v1 chunks internally."""
+    async for chunk in stream:
+        yield chunk
+    yield ChatGenerationChunk(message=AIMessageChunk(content="", chunk_position="last"))
+
+
+class _RetryableHTTPStatusError(FireworksError):
+    """Internal marker for 5xx `httpx.HTTPStatusError` responses.
+
+    The 1.x SDK wraps every status response into a typed `APIStatusError`
+    subclass, so this path is defense-in-depth: it only fires when a raw
+    `httpx.HTTPStatusError` escapes the SDK (e.g., a custom `http_client` or
+    monkey-patched transport raises one directly). Promoting it here keeps the
+    retryable set expressible as a list of classes for
+    `create_base_retry_decorator`.
+    """
+
+
+_RETRYABLE_ERRORS: tuple[type[BaseException], ...] = (
+    APIConnectionError,
+    InternalServerError,
+    RateLimitError,
+    httpx.TimeoutException,
+    httpx.TransportError,
+    _RetryableHTTPStatusError,
+)
+
+
+def _promote_http_status_error(exc: httpx.HTTPStatusError) -> NoReturn:
+    """Re-raise 5xx `httpx.HTTPStatusError` as a retryable marker."""
+    if exc.response.status_code >= 500:
+        msg = f"Retryable {exc.response.status_code} from Fireworks: {exc}"
+        raise _RetryableHTTPStatusError(msg) from exc
+    raise exc
+
+
+class FireworksContextOverflowError(BadRequestError, ContextOverflowError):
+    """`BadRequestError` raised when input exceeds Fireworks's context limit."""
+
+
+class FireworksAuthenticationError(AuthenticationError, ModelAuthenticationError):
+    """Fireworks authentication error classified as a LangChain model error."""
+
+
+class FireworksPermissionDeniedError(PermissionDeniedError, ModelPermissionDeniedError):
+    """Fireworks permission error classified as a LangChain model error."""
+
+
+class FireworksInvalidRequestError(BadRequestError, ModelInvalidRequestError):
+    """Fireworks bad-request error classified as a LangChain model error."""
+
+
+class FireworksModelNotFoundError(NotFoundError, ModelNotFoundError):
+    """Fireworks not-found error classified as a LangChain model error."""
+
+
+class FireworksRateLimitError(RateLimitError, ModelRateLimitError):
+    """Fireworks rate-limit error classified as a LangChain model error."""
+
+
+class FireworksAPIError(InternalServerError, ModelAPIError):
+    """Fireworks server error classified as a LangChain model error."""
+
+
+class FireworksConnectionError(APIConnectionError, ModelConnectionError):
+    """Fireworks connection error classified as a LangChain model error."""
+
+
+class FireworksTimeoutError(APITimeoutError, ModelTimeoutError):
+    """Fireworks timeout error classified as a LangChain model error."""
+
+
+class FireworksReadTimeoutError(httpx.ReadTimeout, ModelTimeoutError):
+    """Fireworks stream read timeout classified as a retryable model error."""
+
+
+def _handle_stream_read_timeout(error: httpx.ReadTimeout) -> NoReturn:
+    try:
+        request = error.request
+    except RuntimeError:
+        request = None
+    raise FireworksReadTimeoutError(str(error), request=request) from error
+
+
+def _handle_fireworks_invalid_request(e: BadRequestError) -> NoReturn:
+    """Promote prompt-too-long errors to `FireworksContextOverflowError`."""
+    if "prompt is too long" in str(e):
+        raise FireworksContextOverflowError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    raise FireworksInvalidRequestError(str(e), response=e.response, body=e.body) from e
+
+
+def _handle_fireworks_api_error(e: APIError) -> NoReturn:
+    """Re-raise a Fireworks SDK error as its LangChain-classified equivalent."""
+    if isinstance(e, AuthenticationError):
+        raise FireworksAuthenticationError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    if isinstance(e, PermissionDeniedError):
+        raise FireworksPermissionDeniedError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    if isinstance(e, NotFoundError):
+        raise FireworksModelNotFoundError(
+            str(e), response=e.response, body=e.body
+        ) from e
+    if isinstance(e, RateLimitError):
+        raise FireworksRateLimitError(str(e), response=e.response, body=e.body) from e
+    if isinstance(e, InternalServerError):
+        raise FireworksAPIError(str(e), response=e.response, body=e.body) from e
+    # `APITimeoutError` subclasses `APIConnectionError`, so check it first.
+    if isinstance(e, APITimeoutError):
+        raise FireworksTimeoutError(e.request) from e
+    if isinstance(e, APIConnectionError):
+        raise FireworksConnectionError(message=str(e), request=e.request) from e
+    raise e
+
+
+def _raise_empty_stream() -> NoReturn:
+    """Raise a descriptive error when the SDK returns a zero-chunk stream."""
+    msg = "Received empty stream from Fireworks"
+    raise FireworksError(msg)
+
+
+def _create_retry_decorator(
+    llm: ChatFireworks,
+    run_manager: AsyncCallbackManagerForLLMRun | CallbackManagerForLLMRun | None = None,
+) -> Callable[[Any], Any]:
+    """Return a tenacity retry decorator for Fireworks SDK calls.
+
+    Retries live here rather than in the SDK so each attempt is visible to the
+    LangChain `run_manager.on_retry` callback. The SDK's own retry layer is
+    suppressed via `max_retries=0` on the client; see `validate_environment`.
+    """
+    # `max_retries` counts retries *after* the initial attempt (default lives on
+    # the `ChatFireworks.max_retries` field). `create_base_retry_decorator`
+    # forwards its `max_retries` to `stop_after_attempt`, which counts total
+    # attempts — so offset by 1. `None` and `0` both mean "single attempt, no
+    # retries".
+    attempts = (llm.max_retries + 1) if llm.max_retries else 1
+    return create_base_retry_decorator(
+        error_types=list(_RETRYABLE_ERRORS),
+        max_retries=attempts,
+        run_manager=run_manager,
+    )
+
+
+def _prepare_sdk_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Move fields the 1.x SDK does not model into `extra_body`.
+
+    The Stainless-generated `chat.completions.create` signature has a fixed set
+    of typed parameters. Fireworks accepts additional fields on the wire (notably
+    `stream_options.include_usage`) that the SDK schema does not declare. The
+    SDK exposes `extra_body` precisely for this — merge anything that looks
+    extra-body-shaped into it so it lands in the JSON request body.
+
+    If a caller supplies both `extra_body={"stream_options": ...}` and a
+    top-level `stream_options=...`, the value already in `extra_body` wins
+    (callers using `extra_body` are presumed to want explicit control); the
+    discarded top-level value is logged.
+    """
+    if "max_completion_tokens" in kwargs:
+        kwargs.pop("max_tokens", None)
+    extra_body = dict(kwargs.pop("extra_body", None) or {})
+    top_level_stream_options = kwargs.pop("stream_options", None)
+    if top_level_stream_options is not None:
+        if "stream_options" in extra_body:
+            logger.warning(
+                "Both `extra_body['stream_options']` and a top-level "
+                "`stream_options` were supplied; using `extra_body`'s value "
+                "and discarding the top-level value.",
+            )
+        else:
+            extra_body["stream_options"] = top_level_stream_options
+    if extra_body:
+        kwargs["extra_body"] = extra_body
+    return kwargs
+
+
+def _merge_model_headers(llm: ChatFireworks, kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Merge model-local headers only when invoking their owning model."""
+    model_headers = llm.model_kwargs.get("extra_headers")
+    request_headers = kwargs.get("extra_headers")
+    if isinstance(model_headers, Mapping) and isinstance(request_headers, Mapping):
+        # HTTP header names are case-insensitive; retain the request's spelling.
+        headers = {
+            key.lower(): (key, value)
+            for source in (model_headers, request_headers)
+            for key, value in source.items()
+        }
+        return {
+            **kwargs,
+            "extra_headers": dict(headers.values()),
+        }
+    return kwargs
+
+
+def _apply_prompt_cache_affinity(kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Apply the middleware default after the selected model's settings are merged."""
+    affinity = _PROMPT_CACHE_AFFINITY.get()
+    if affinity is None:
+        return kwargs
+
+    # The SDK merges extra_body over top-level fields before sending the request.
+    extra_body = kwargs.get("extra_body")
+    body = {**kwargs, **extra_body} if isinstance(extra_body, Mapping) else kwargs
+    if any(body.get(key) for key in ("user", "prompt_cache_key")):
+        return kwargs
+
+    headers = kwargs.get("extra_headers")
+    if isinstance(headers, Mapping):
+        if any(
+            isinstance(key, str) and key.lower() == "x-session-affinity"
+            for key in headers
+        ):
+            return kwargs
+    elif headers is not None:
+        logger.warning(
+            "Cannot set Fireworks session affinity because extra_headers is %s",
+            type(headers).__name__,
+        )
+        return kwargs
+
+    return {
+        **kwargs,
+        "prompt_cache_key": affinity,
+        "extra_headers": {**(headers or {}), "x-session-affinity": affinity},
+    }
+
+
+def _completion_with_retry(
+    llm: ChatFireworks,
+    run_manager: CallbackManagerForLLMRun | None = None,
+    **kwargs: Any,
+) -> Any:
+    """Retry the sync completion call, including stream setup."""
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+    kwargs = _prepare_sdk_kwargs(
+        _apply_prompt_cache_affinity(_merge_model_headers(llm, kwargs))
+    )
+
+    @retry_decorator
+    def _call() -> Any:
+        try:
+            result = llm.client.create(**kwargs)
+        except httpx.HTTPStatusError as e:
+            _promote_http_status_error(e)
+        if kwargs.get("stream"):
+            # The streaming generator is lazy — advance once so the HTTP
+            # connection and any transport error happen inside the retry
+            # boundary. `_prepend_chunk` then re-yields the consumed chunk
+            # ahead of the rest so callers still see every event.
+            try:
+                iterator = iter(result)
+                first = next(iterator)
+            except StopIteration:
+                _raise_empty_stream()
+            except httpx.HTTPStatusError as e:
+                _promote_http_status_error(e)
+            return _prepend_chunk(first, iterator)
+        return result
+
+    return _call()
+
+
+async def _acompletion_with_retry(
+    llm: ChatFireworks,
+    run_manager: AsyncCallbackManagerForLLMRun | None = None,
+    **kwargs: Any,
+) -> Any:
+    """Retry the async completion call, including stream setup."""
+    retry_decorator = _create_retry_decorator(llm, run_manager=run_manager)
+    kwargs = _prepare_sdk_kwargs(
+        _apply_prompt_cache_affinity(_merge_model_headers(llm, kwargs))
+    )
+
+    @retry_decorator
+    async def _call() -> Any:
+        if kwargs.get("stream"):
+            try:
+                # 1.x async `create()` is a coroutine that resolves to an
+                # `AsyncStream` when `stream=True`. Await it, then advance the
+                # async iterator once inside the retry boundary so transport
+                # errors surface here rather than at first downstream consumer.
+                result = await llm.async_client.create(**kwargs)
+                agen = result.__aiter__()
+                first = await agen.__anext__()
+            except StopAsyncIteration:
+                _raise_empty_stream()
+            except httpx.HTTPStatusError as e:
+                _promote_http_status_error(e)
+            return _aprepend_chunk(first, agen)
+        try:
+            return await llm.async_client.create(**kwargs)
+        except httpx.HTTPStatusError as e:
+            _promote_http_status_error(e)
+
+    return await _call()
+
+
+def _prepend_chunk(first: Any, rest: Iterator[Any]) -> Iterator[Any]:
+    yield first
+    try:
+        yield from rest
+    except httpx.ReadTimeout as e:
+        _handle_stream_read_timeout(e)
+
+
+async def _aprepend_chunk(first: Any, rest: AsyncIterator[Any]) -> AsyncIterator[Any]:
+    yield first
+    try:
+        async for item in rest:
+            yield item
+    except httpx.ReadTimeout as e:
+        _handle_stream_read_timeout(e)
+
+
 class ChatFireworks(BaseChatModel):
     """`Fireworks` Chat large language models API.
 
@@ -291,8 +1010,27 @@ class ChatFireworks(BaseChatModel):
         ```python
         from langchain_fireworks.chat_models import ChatFireworks
 
-        fireworks = ChatFireworks(model_name="accounts/fireworks/models/gpt-oss-120b")
+        model = ChatFireworks(model_name="accounts/fireworks/models/gpt-oss-120b")
         ```
+
+    Fireworks request headers can be passed with `extra_headers`. For prompt
+    caching, `x-session-affinity` pins requests to a replica so related calls can
+    reuse the same prompt-cache session:
+
+    ```python
+    model.invoke(
+        "Hello",
+        extra_headers={"x-session-affinity": "user-42"},
+    )
+    ```
+
+    The Fireworks SDK also accepts a typed `prompt_cache_key` field (passed as a
+    regular keyword argument), which it treats as the preferred alternative to
+    the raw `x-session-affinity` header:
+
+    ```python
+    model.invoke("Hello", prompt_cache_key="user-42")
+    ```
     """
 
     @property
@@ -322,11 +1060,36 @@ class ChatFireworks(BaseChatModel):
         return True
 
     client: Any = Field(default=None, exclude=True)
+    """Internal `fireworks.Fireworks().chat.completions` resource.
+
+    Constructed with `max_retries=0` so retries are owned by
+    `_create_retry_decorator` (which surfaces each attempt to the LangChain
+    `run_manager`). Callers reaching for this directly should set their own
+    retry layer.
+    """
 
     async_client: Any = Field(default=None, exclude=True)
+    """Internal `fireworks.AsyncFireworks().chat.completions` resource.
+
+    Constructed with `max_retries=0`; see `client`.
+    """
+
+    _sdk_client: Any = PrivateAttr(default=None)
+    """Owning `fireworks.Fireworks` instance, retained so `close()` can call
+    into the underlying HTTPX client. The 1.x SDK does not expose lifecycle
+    methods on the `chat.completions` resource itself.
+    """
+
+    _async_sdk_client: Any = PrivateAttr(default=None)
+    """Owning `fireworks.AsyncFireworks` instance; see `_sdk_client`."""
 
     model_name: str = Field(alias="model")
     """Model name to use."""
+
+    @property
+    def model(self) -> str:
+        """Same as model_name."""
+        return self.model_name
 
     temperature: float | None = None
     """What sampling temperature to use."""
@@ -337,27 +1100,20 @@ class ChatFireworks(BaseChatModel):
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
-    fireworks_api_key: SecretStr = Field(
-        alias="api_key",
-        default_factory=secret_from_env(
-            "FIREWORKS_API_KEY",
-            error_message=(
-                "You must specify an api key. "
-                "You can pass it an argument as `api_key=...` or "
-                "set the environment variable `FIREWORKS_API_KEY`."
-            ),
-        ),
-    )
+    fireworks_api_key: SecretStr = Field(default=SecretStr(""), alias="api_key")
     """Fireworks API key.
 
     Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
+
+    If `LANGSMITH_GATEWAY` is enabled and the base URL points at the gateway,
+    `LANGSMITH_GATEWAY_API_KEY` is used instead.
     """
 
-    fireworks_api_base: str | None = Field(
-        alias="base_url", default_factory=from_env("FIREWORKS_API_BASE", default=None)
-    )
+    fireworks_api_base: str | None = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service
     emulator.
+
+    If `LANGSMITH_GATEWAY` is set, it is used as a fallback after `FIREWORKS_API_BASE`.
     """
 
     request_timeout: float | tuple[float, float] | Any | None = Field(
@@ -370,14 +1126,63 @@ class ChatFireworks(BaseChatModel):
     streaming: bool = False
     """Whether to stream the results or not."""
 
+    stream_usage: bool = True
+    """Whether to include usage metadata in streaming output.
+
+    If `True`, a final empty-content chunk carrying `usage_metadata` is emitted
+    during the stream. Set to `False` if the upstream model/proxy rejects
+    `stream_options`, or pass `stream_options` explicitly via `model_kwargs` or
+    a runtime kwarg to override.
+
+    !!! version-added "Added in `langchain-fireworks` 1.2.0"
+
+    !!! warning "Behavior changed in `langchain-fireworks` 1.2.0"
+
+        Streaming now opts into `stream_options.include_usage` by default, and
+        the final empty-`choices` chunk is surfaced as an `AIMessageChunk` with
+        `usage_metadata` instead of being silently dropped.
+    """
+
     n: int = 1
     """Number of chat completions to generate for each prompt."""
 
     max_tokens: int | None = None
-    """Maximum number of tokens to generate."""
+    """Maximum tokens to generate; defaults to `max_output_tokens` in the profile."""
 
-    max_retries: int | None = None
-    """Maximum number of retries to make when generating."""
+    max_retries: int | None = 2
+    """Maximum number of retries after the initial attempt when generating.
+
+    Retries use exponential backoff and trigger on transient errors:
+    `RateLimitError`, `APIConnectionError` (including its `APITimeoutError`
+    subclass), 5xx responses (including those that surface as
+    `httpx.HTTPStatusError` rather than typed SDK errors), and underlying
+    transport errors (`httpx.TimeoutException`, `httpx.TransportError`).
+    A value of `None` or `0` disables retries.
+    """
+
+    service_tier: str | None = None
+    """Service tier for the request.
+
+    Forwarded as the `service_tier` field on the Fireworks chat completions
+    request when set. Pass `'priority'` to opt into Fireworks' priority tier;
+    leave as `None` to use the default tier.
+
+    To use Fireworks' fast mode instead, select a fast-routed `model`; fast mode
+    is not controlled by this field. See Fireworks'
+    [serverless product docs](https://docs.fireworks.ai/guides/serverless-products)
+    for the current list of fast routers and tiers.
+
+    !!! version-added "Added in `langchain-fireworks` 1.3.0"
+    """
+    reasoning_effort: str | None = None
+    """Reasoning effort.
+
+    Forwarded as the `reasoning_effort` request field. Supported values vary by
+    model; see the model's `profile.reasoning_effort_levels`.
+
+    Can also be passed at call time, e.g.
+    `model.invoke(..., reasoning_effort="high")`.
+    """
 
     model_config = ConfigDict(
         populate_by_name=True,
@@ -390,6 +1195,42 @@ class ChatFireworks(BaseChatModel):
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
 
+    @model_validator(mode="before")
+    @classmethod
+    def _resolve_gateway(cls, values: Any) -> Any:
+        """Resolve the base URL and API key, applying LangSmith gateway settings.
+
+        An explicit ``base_url``/``api_key`` always wins. Otherwise the base URL
+        falls back to ``FIREWORKS_API_BASE``, then the LangSmith gateway. The
+        gateway key is preferred only when the base URL came from the gateway;
+        for any other endpoint the provider key wins, and the gateway key is a
+        candidate only when the gateway is enabled.
+        """
+        if isinstance(values, dict):
+            config = _apply_gateway_config(
+                values,
+                cls,
+                base_url_field="fireworks_api_base",
+                api_key_field="fireworks_api_key",
+                provider_path="fireworks",
+                base_url_env="FIREWORKS_API_BASE",
+                api_key_env="FIREWORKS_API_KEY",
+            )
+            if config.api_key is None:
+                msg = (
+                    "You must specify an api key. "
+                    "You can pass it an argument as `api_key=...` or "
+                    "set the environment variable `FIREWORKS_API_KEY`."
+                )
+                raise ValueError(msg)
+        return values
+
+    @model_validator(mode="after")
+    def _set_fireworks_chat_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-fireworks", __version__)
+        return self
+
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
@@ -400,30 +1241,66 @@ class ChatFireworks(BaseChatModel):
             msg = "n must be 1 when streaming."
             raise ValueError(msg)
 
-        client_params = {
-            "api_key": (
-                self.fireworks_api_key.get_secret_value()
-                if self.fireworks_api_key
-                else None
-            ),
-            "base_url": self.fireworks_api_base,
-            "timeout": self.request_timeout,
-        }
-
+        api_key = self.fireworks_api_key.get_secret_value()
+        base_url = self.fireworks_api_base
+        # 0.x accepted a `(connect, read)` tuple. 1.x's SDK only accepts a
+        # float, `httpx.Timeout`, or `None` — normalize so existing user code
+        # keeps working.
+        if isinstance(self.request_timeout, tuple):
+            connect, read = self.request_timeout
+            timeout: Any = httpx.Timeout(read, connect=connect)
+        else:
+            timeout = self.request_timeout
+        # `langchain-fireworks` owns retry/backoff via `_create_retry_decorator`
+        # so the LangChain `run_manager` sees each attempt. Suppress the
+        # SDK's built-in retry layer to avoid double-retrying.
         if not self.client:
-            self.client = Fireworks(**client_params).chat.completions
+            self._sdk_client = Fireworks(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=timeout,
+                max_retries=0,
+            )
+            self.client = self._sdk_client.chat.completions
         if not self.async_client:
-            self.async_client = AsyncFireworks(**client_params).chat.completions
-        if self.max_retries:
-            self.client._max_retries = self.max_retries
-            self.async_client._max_retries = self.max_retries
+            self._async_sdk_client = AsyncFireworks(
+                api_key=api_key,
+                base_url=base_url,
+                timeout=timeout,
+                max_retries=0,
+            )
+            self.async_client = self._async_sdk_client.chat.completions
         return self
 
+    def close(self) -> None:
+        """Close the underlying sync HTTP client.
+
+        After calling, sync invocations on this model will raise. Async
+        invocations remain available until `aclose()` is also called. Safe to
+        call multiple times.
+        """
+        if self._sdk_client is not None:
+            self._sdk_client.close()
+
+    async def aclose(self) -> None:
+        """Close the underlying async HTTP client.
+
+        Releases the aiohttp-backed connector that the 1.x SDK uses by
+        default. Without this, transient `ChatFireworks` instances can leak
+        an `Unclosed connector` warning at GC if the event loop has already
+        stopped. Safe to call multiple times.
+        """
+        if self._async_sdk_client is not None:
+            await self._async_sdk_client.close()
+
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model_name) or None
+
     @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model_name)
+    def _set_default_max_tokens(self) -> Self:
+        """Set default `max_tokens` from the model profile when available."""
+        if self.max_tokens is None and self.profile:
+            self.max_tokens = self.profile.get("max_output_tokens")
         return self
 
     @property
@@ -440,6 +1317,10 @@ class ChatFireworks(BaseChatModel):
             params["temperature"] = self.temperature
         if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
+        if self.service_tier is not None:
+            params["service_tier"] = self.service_tier
+        if self.reasoning_effort is not None:
+            params["reasoning_effort"] = self.reasoning_effort
         return params
 
     def _get_ls_params(
@@ -462,23 +1343,44 @@ class ChatFireworks(BaseChatModel):
     def _combine_llm_outputs(self, llm_outputs: list[dict | None]) -> dict:
         overall_token_usage: dict = {}
         system_fingerprint = None
+        model_name = None
         for output in llm_outputs:
             if output is None:
                 # Happens in streaming
                 continue
-            token_usage = output["token_usage"]
+            token_usage = output.get("token_usage")
             if token_usage is not None:
                 for k, v in token_usage.items():
+                    if v is None:
+                        continue
                     if k in overall_token_usage:
-                        overall_token_usage[k] += v
+                        overall_token_usage[k] = _update_token_usage(
+                            overall_token_usage[k], v
+                        )
                     else:
                         overall_token_usage[k] = v
             if system_fingerprint is None:
                 system_fingerprint = output.get("system_fingerprint")
-        combined = {"token_usage": overall_token_usage, "model_name": self.model_name}
+            if model_name is None:
+                model_name = output.get("model_name") or None
+        combined = {
+            "token_usage": overall_token_usage,
+            "model_name": model_name or self.model_name,
+        }
         if system_fingerprint:
             combined["system_fingerprint"] = system_fingerprint
         return combined
+
+    def _usage_generation_chunk(self, usage: UsageMetadata) -> ChatGenerationChunk:
+        """Build the single chunk that carries a stream's token usage."""
+        message_chunk = AIMessageChunk(
+            content="",
+            usage_metadata=usage,
+            response_metadata={"model_provider": "fireworks"},
+        )
+        if self.output_version == "v1":
+            message_chunk = _format_chunk_for_v1(message_chunk)
+        return ChatGenerationChunk(message=message_chunk)
 
     def _stream(
         self,
@@ -489,22 +1391,53 @@ class ChatFireworks(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        if self.stream_usage and "stream_options" not in params:
+            params["stream_options"] = {"include_usage": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        for chunk in self.client.create(messages=message_dicts, **params):
+        try:
+            stream = _completion_with_retry(
+                self, run_manager=run_manager, messages=message_dicts, **params
+            )
+        except BadRequestError as e:
+            _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
+        response_model = None
+        last_usage: UsageMetadata | None = None
+        for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
-            if len(chunk["choices"]) == 0:
-                continue
-            choice = chunk["choices"][0]
+            response_model = chunk.get("model") or response_model
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
-            generation_info = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-                generation_info["model_name"] = self.model_name
-            logprobs = choice.get("logprobs")
-            if logprobs:
-                generation_info["logprobs"] = logprobs
+            if self.output_version == "v1" and isinstance(
+                message_chunk, AIMessageChunk
+            ):
+                message_chunk = _format_chunk_for_v1(message_chunk)
+            if (
+                isinstance(message_chunk, AIMessageChunk)
+                and message_chunk.usage_metadata
+            ):
+                # Fireworks can report usage on more than one chunk (e.g. the
+                # `finish_reason` chunk and a trailing usage-only chunk). Merging
+                # chunks sums usage, so hold it back and emit the last report once.
+                last_usage = _record_usage(last_usage, message_chunk.usage_metadata)
+                message_chunk.usage_metadata = None
+                if not chunk.get("choices"):
+                    continue
+            generation_info: dict[str, Any] = {}
+            logprobs = None
+            if choices := chunk.get("choices"):
+                choice = choices[0]
+                if finish_reason := choice.get("finish_reason"):
+                    generation_info["finish_reason"] = finish_reason
+                    # Emit once: repeated model names concatenate when chunks merge.
+                    generation_info["model_name"] = response_model or self.model_name
+                    if service_tier := chunk.get("service_tier"):
+                        generation_info["service_tier"] = service_tier
+                logprobs = choice.get("logprobs")
+                if logprobs:
+                    generation_info["logprobs"] = logprobs
             default_chunk_class = message_chunk.__class__
             generation_chunk = ChatGenerationChunk(
                 message=message_chunk, generation_info=generation_info or None
@@ -514,6 +1447,11 @@ class ChatFireworks(BaseChatModel):
                     generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
                 )
             yield generation_chunk
+        if last_usage:
+            usage_chunk = self._usage_generation_chunk(last_usage)
+            if run_manager:
+                run_manager.on_llm_new_token("", chunk=usage_chunk)
+            yield usage_chunk
 
     def _generate(
         self,
@@ -528,6 +1466,8 @@ class ChatFireworks(BaseChatModel):
             stream_iter = self._stream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
+            if self.output_version == "v1":
+                stream_iter = _finalize_stream(stream_iter)
             return generate_from_stream(stream_iter)
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {
@@ -535,7 +1475,14 @@ class ChatFireworks(BaseChatModel):
             **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
-        response = self.client.create(messages=message_dicts, **params)
+        try:
+            response = _completion_with_retry(
+                self, run_manager=run_manager, messages=message_dicts, **params
+            )
+        except BadRequestError as e:
+            _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         return self._create_chat_result(response)
 
     def _create_message_dicts(
@@ -552,16 +1499,17 @@ class ChatFireworks(BaseChatModel):
         if not isinstance(response, dict):
             response = response.model_dump()
         token_usage = response.get("usage", {})
+        model_name = response.get("model") or self.model_name
+        service_tier = response.get("service_tier")
         for res in response["choices"]:
             message = _convert_dict_to_message(res["message"])
-            if token_usage and isinstance(message, AIMessage):
-                message.usage_metadata = {
-                    "input_tokens": token_usage.get("prompt_tokens", 0),
-                    "output_tokens": token_usage.get("completion_tokens", 0),
-                    "total_tokens": token_usage.get("total_tokens", 0),
-                }
-                message.response_metadata["model_provider"] = "fireworks"
-                message.response_metadata["model_name"] = self.model_name
+            if isinstance(message, AIMessage):
+                message.response_metadata["model_name"] = model_name
+                if token_usage:
+                    message.usage_metadata = _usage_to_metadata(token_usage)
+                    message.response_metadata["model_provider"] = "fireworks"
+                if service_tier:
+                    message.response_metadata["service_tier"] = service_tier
             generation_info = {"finish_reason": res.get("finish_reason")}
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
@@ -572,8 +1520,11 @@ class ChatFireworks(BaseChatModel):
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
+            "model_name": model_name,
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
+        if service_tier:
+            llm_output["service_tier"] = service_tier
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _astream(
@@ -585,22 +1536,53 @@ class ChatFireworks(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
+        if self.stream_usage and "stream_options" not in params:
+            params["stream_options"] = {"include_usage": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
-        async for chunk in self.async_client.acreate(messages=message_dicts, **params):
+        try:
+            stream = await _acompletion_with_retry(
+                self, run_manager=run_manager, messages=message_dicts, **params
+            )
+        except BadRequestError as e:
+            _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
+        response_model = None
+        last_usage: UsageMetadata | None = None
+        async for chunk in stream:
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
-            if len(chunk["choices"]) == 0:
-                continue
-            choice = chunk["choices"][0]
+            response_model = chunk.get("model") or response_model
             message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
-            generation_info = {}
-            if finish_reason := choice.get("finish_reason"):
-                generation_info["finish_reason"] = finish_reason
-                generation_info["model_name"] = self.model_name
-            logprobs = choice.get("logprobs")
-            if logprobs:
-                generation_info["logprobs"] = logprobs
+            if self.output_version == "v1" and isinstance(
+                message_chunk, AIMessageChunk
+            ):
+                message_chunk = _format_chunk_for_v1(message_chunk)
+            if (
+                isinstance(message_chunk, AIMessageChunk)
+                and message_chunk.usage_metadata
+            ):
+                # Fireworks can report usage on more than one chunk (e.g. the
+                # `finish_reason` chunk and a trailing usage-only chunk). Merging
+                # chunks sums usage, so hold it back and emit the last report once.
+                last_usage = _record_usage(last_usage, message_chunk.usage_metadata)
+                message_chunk.usage_metadata = None
+                if not chunk.get("choices"):
+                    continue
+            generation_info: dict[str, Any] = {}
+            logprobs = None
+            if choices := chunk.get("choices"):
+                choice = choices[0]
+                if finish_reason := choice.get("finish_reason"):
+                    generation_info["finish_reason"] = finish_reason
+                    # Emit once: repeated model names concatenate when chunks merge.
+                    generation_info["model_name"] = response_model or self.model_name
+                    if service_tier := chunk.get("service_tier"):
+                        generation_info["service_tier"] = service_tier
+                logprobs = choice.get("logprobs")
+                if logprobs:
+                    generation_info["logprobs"] = logprobs
             default_chunk_class = message_chunk.__class__
             generation_chunk = ChatGenerationChunk(
                 message=message_chunk, generation_info=generation_info or None
@@ -612,6 +1594,11 @@ class ChatFireworks(BaseChatModel):
                     logprobs=logprobs,
                 )
             yield generation_chunk
+        if last_usage:
+            usage_chunk = self._usage_generation_chunk(last_usage)
+            if run_manager:
+                await run_manager.on_llm_new_token("", chunk=usage_chunk)
+            yield usage_chunk
 
     async def _agenerate(
         self,
@@ -626,6 +1613,8 @@ class ChatFireworks(BaseChatModel):
             stream_iter = self._astream(
                 messages, stop=stop, run_manager=run_manager, **kwargs
             )
+            if self.output_version == "v1":
+                stream_iter = _afinalize_stream(stream_iter)
             return await agenerate_from_stream(stream_iter)
 
         message_dicts, params = self._create_message_dicts(messages, stop)
@@ -634,7 +1623,14 @@ class ChatFireworks(BaseChatModel):
             **({"stream": stream} if stream is not None else {}),
             **kwargs,
         }
-        response = await self.async_client.acreate(messages=message_dicts, **params)
+        try:
+            response = await _acompletion_with_retry(
+                self, run_manager=run_manager, messages=message_dicts, **params
+            )
+        except BadRequestError as e:
+            _handle_fireworks_invalid_request(e)
+        except APIError as e:
+            _handle_fireworks_api_error(e)
         return self._create_chat_result(response)
 
     @property

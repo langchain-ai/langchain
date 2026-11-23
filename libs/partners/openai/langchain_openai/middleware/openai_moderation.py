@@ -22,7 +22,7 @@ DEFAULT_VIOLATION_TEMPLATE = (
 
 
 class OpenAIModerationError(RuntimeError):
-    """Raised when OpenAI flags content and `exit_behavior` is set to ``"error"``."""
+    """Raised when OpenAI flags content and `exit_behavior` is set to `"error"`."""
 
     def __init__(
         self,
@@ -475,7 +475,7 @@ class OpenAIModerationMiddleware(AgentMiddleware[AgentState[Any], Any]):
         if text_accessor is None:
             return str(message.content)
         text = str(text_accessor)
-        return text if text else None
+        return text or None
 
 
 __all__ = [

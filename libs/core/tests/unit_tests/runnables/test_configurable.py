@@ -1,8 +1,8 @@
-from typing import Any
+from typing import Any, Self
 
 import pytest
 from pydantic import ConfigDict, Field, model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_core.runnables import (
     ConfigurableField,
@@ -43,15 +43,17 @@ class MyRunnable(RunnableSerializable[str, str]):
 
     def my_custom_function_w_config(
         self,
-        config: RunnableConfig | None = None,  # noqa: ARG002
+        config: RunnableConfig | None = None,
     ) -> str:
+        _ = config
         return self.my_property
 
     def my_custom_function_w_kw_config(
         self,
         *,
-        config: RunnableConfig | None = None,  # noqa: ARG002
+        config: RunnableConfig | None = None,
     ) -> str:
+        _ = config
         return self.my_property
 
 
@@ -67,7 +69,8 @@ class MyOtherRunnable(RunnableSerializable[str, str]):
     def my_other_custom_function(self) -> str:
         return self.my_other_property
 
-    def my_other_custom_function_w_config(self, config: RunnableConfig) -> str:  # noqa: ARG002
+    def my_other_custom_function_w_config(self, config: RunnableConfig) -> str:
+        _ = config
         return self.my_other_property
 
 

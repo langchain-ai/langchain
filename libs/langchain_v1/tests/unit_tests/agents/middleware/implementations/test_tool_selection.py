@@ -1,19 +1,30 @@
 """Unit tests for LLM tool selection middleware."""
 
-import typing
+from collections.abc import Callable, Sequence
 from itertools import cycle
 from typing import Any, Literal
 
 import pytest
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import BaseMessage, HumanMessage
-from langchain_core.runnables import Runnable
+from langchain_core.messages import HumanMessage
+from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.tools import BaseTool, tool
-from pydantic import BaseModel
+from langgraph.constants import TAG_NOSTREAM
+from pydantic import BaseModel, Field
+from typing_extensions import override
 
 from langchain.agents import create_agent
-from langchain.agents.middleware import LLMToolSelectorMiddleware, wrap_model_call
+from langchain.agents.middleware import (
+    LLMToolSelectorMiddleware,
+    ModelRequest,
+    ModelResponse,
+    wrap_model_call,
+)
+from langchain.agents.middleware.internal_call_transformer import (
+    INTERNAL_CALL_METADATA_KEY,
+    internal_call_metadata,
+)
 from langchain.agents.middleware.tool_selection import _create_tool_selection_response
 from langchain.messages import AIMessage
 
@@ -39,7 +50,7 @@ def calculate(expression: str) -> str:
 @tool
 def send_email(to: str, subject: str) -> str:
     """Send an email to someone."""
-    return f"Email sent to {to}"
+    return f"Email with subject {subject} sent to {to}"
 
 
 @tool
@@ -51,11 +62,12 @@ def get_stock_price(symbol: str) -> str:
 class FakeModel(GenericFakeChatModel):
     tool_style: Literal["openai", "anthropic"] = "openai"
 
+    @override
     def bind_tools(
         self,
-        tools: typing.Sequence[dict[str, Any] | type[BaseModel] | typing.Callable | BaseTool],
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
+        **_kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         if len(tools) == 0:
             msg = "Must provide at least one tool"
             raise ValueError(msg)
@@ -100,7 +112,9 @@ class TestLLMToolSelectorBasic:
         model_requests = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             """Middleware to select relevant tools based on state/context."""
             # Select a small, relevant subset of tools based on state/context
             model_requests.append(request)
@@ -150,7 +164,10 @@ class TestLLMToolSelectorBasic:
         assert isinstance(response["messages"][-1], AIMessage)
 
         for request in model_requests:
-            selected_tool_names = [tool.name for tool in request.tools] if request.tools else []
+            selected_tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                selected_tool_names.append(tool_.name)
             assert selected_tool_names == ["get_weather", "calculate"]
 
     async def test_async_basic_selection(self) -> None:
@@ -205,7 +222,9 @@ class TestMaxToolsLimiting:
         model_requests = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             model_requests.append(request)
             return handler(request)
 
@@ -251,7 +270,10 @@ class TestMaxToolsLimiting:
         assert len(model_requests) > 0
         for request in model_requests:
             assert len(request.tools) == 2
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
             # Should be first 2 from the selection
             assert tool_names == ["get_weather", "search_web"]
 
@@ -260,7 +282,9 @@ class TestMaxToolsLimiting:
         model_requests = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             model_requests.append(request)
             return handler(request)
 
@@ -305,7 +329,10 @@ class TestMaxToolsLimiting:
         assert len(model_requests) > 0
         for request in model_requests:
             assert len(request.tools) == 4
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
             assert set(tool_names) == {
                 "get_weather",
                 "search_web",
@@ -322,7 +349,9 @@ class TestAlwaysInclude:
         model_requests = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             model_requests.append(request)
             return handler(request)
 
@@ -362,7 +391,10 @@ class TestAlwaysInclude:
         # Both selected and always_include tools should be present
         assert len(model_requests) > 0
         for request in model_requests:
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
             assert "search_web" in tool_names
             assert "send_email" in tool_names
             assert len(tool_names) == 2
@@ -372,7 +404,9 @@ class TestAlwaysInclude:
         model_requests = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             model_requests.append(request)
             return handler(request)
 
@@ -415,7 +449,10 @@ class TestAlwaysInclude:
         assert len(model_requests) > 0
         for request in model_requests:
             assert len(request.tools) == 4
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
             assert "get_weather" in tool_names
             assert "search_web" in tool_names
             assert "send_email" in tool_names
@@ -426,7 +463,9 @@ class TestAlwaysInclude:
         model_requests = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             model_requests.append(request)
             return handler(request)
 
@@ -468,7 +507,10 @@ class TestAlwaysInclude:
         assert len(model_requests) > 0
         for request in model_requests:
             assert len(request.tools) == 4
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
             assert "get_weather" in tool_names
             assert "send_email" in tool_names
             assert "calculate" in tool_names
@@ -483,7 +525,9 @@ class TestDuplicateAndInvalidTools:
         model_requests = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             model_requests.append(request)
             return handler(request)
 
@@ -527,16 +571,21 @@ class TestDuplicateAndInvalidTools:
         # Duplicates should be removed
         assert len(model_requests) > 0
         for request in model_requests:
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
             assert tool_names == ["get_weather", "search_web"]
             assert len(tool_names) == 2
 
     def test_max_tools_with_duplicates(self) -> None:
         """Test that max_tools works correctly with duplicate selections."""
-        model_requests = []
+        model_requests: list[ModelRequest] = []
 
         @wrap_model_call
-        def trace_model_requests(request, handler):
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
             model_requests.append(request)
             return handler(request)
 
@@ -581,7 +630,10 @@ class TestDuplicateAndInvalidTools:
         # Should deduplicate and respect max_tools
         assert len(model_requests) > 0
         for request in model_requests:
-            tool_names = [tool.name for tool in request.tools]
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
             assert len(tool_names) == 2
             assert "get_weather" in tool_names
             assert "search_web" in tool_names
@@ -594,3 +646,361 @@ class TestEdgeCases:
         """Test that empty tools list raises an error in schema creation."""
         with pytest.raises(AssertionError, match="tools must be non-empty"):
             _create_tool_selection_response([])
+
+
+def _malformed_response_model(times: int) -> FakeModel:
+    """A selection model that returns a malformed response `times` times in a row."""
+    malformed = AIMessage(
+        content="", tool_calls=[{"name": "ToolSelectionResponse", "id": "1", "args": {}}]
+    )
+    valid = AIMessage(
+        content="",
+        tool_calls=[
+            {"name": "ToolSelectionResponse", "id": "2", "args": {"tools": ["get_weather"]}}
+        ],
+    )
+    return FakeModel(messages=iter([malformed] * times + [valid]))
+
+
+class TestMalformedSelectionResponse:
+    """Test retry and fallback behavior when the selection model returns malformed output."""
+
+    def test_recovers_within_max_retries(self) -> None:
+        """Test that a malformed response is retried and recovers within `max_retries`."""
+        tool_selection_model = _malformed_response_model(times=1)
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(max_tools=1, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model, tools=[get_weather, search_web], middleware=[tool_selector]
+        )
+
+        response = agent.invoke({"messages": [HumanMessage("test")]})
+
+        assert isinstance(response["messages"][-1], AIMessage)
+
+    def test_default_raises_after_max_retries_exhausted(self) -> None:
+        """Test that the default `on_parsing_failure='error'` raises a clear `ValueError`."""
+        tool_selection_model = _malformed_response_model(times=100)
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(model=tool_selection_model)
+
+        agent = create_agent(
+            model=model, tools=[get_weather, search_web], middleware=[tool_selector]
+        )
+
+        with pytest.raises(ValueError, match="malformed"):
+            agent.invoke({"messages": [HumanMessage("test")]})
+
+    async def test_async_default_raises_after_max_retries_exhausted(self) -> None:
+        """Async counterpart: the default behavior also raises via `awrap_model_call`."""
+        tool_selection_model = _malformed_response_model(times=100)
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(model=tool_selection_model)
+
+        agent = create_agent(
+            model=model, tools=[get_weather, search_web], middleware=[tool_selector]
+        )
+
+        with pytest.raises(ValueError, match="malformed"):
+            await agent.ainvoke({"messages": [HumanMessage("test")]})
+
+    def test_max_retries_zero_gives_up_immediately(self) -> None:
+        """Test that `max_retries=0` doesn't retry before applying `on_parsing_failure`."""
+        tool_selection_model = _malformed_response_model(times=1)
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(max_retries=0, model=tool_selection_model)
+
+        agent = create_agent(
+            model=model, tools=[get_weather, search_web], middleware=[tool_selector]
+        )
+
+        with pytest.raises(ValueError, match="malformed"):
+            agent.invoke({"messages": [HumanMessage("test")]})
+
+    def test_max_retries_negative_rejected_at_construction(self) -> None:
+        """Test that a negative `max_retries` is rejected eagerly."""
+        with pytest.raises(ValueError, match="max_retries must be >= 0"):
+            LLMToolSelectorMiddleware(max_retries=-1)
+
+    def test_on_parsing_failure_none_selects_no_tools(self) -> None:
+        """Test that `on_parsing_failure='none'` selects no tools once retries are exhausted."""
+        model_requests: list[ModelRequest] = []
+
+        @wrap_model_call
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
+            model_requests.append(request)
+            return handler(request)
+
+        tool_selection_model = _malformed_response_model(times=100)
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(
+            on_parsing_failure="none", model=tool_selection_model
+        )
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector, trace_model_requests],
+        )
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        assert len(model_requests) > 0
+        for request in model_requests:
+            assert request.tools == []
+
+    def test_on_parsing_failure_all_ignores_max_tools(self) -> None:
+        """Test that `on_parsing_failure='all'` selects every tool, bypassing `max_tools`."""
+        model_requests: list[ModelRequest] = []
+
+        @wrap_model_call
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
+            model_requests.append(request)
+            return handler(request)
+
+        tool_selection_model = _malformed_response_model(times=100)
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        # max_tools=1 would normally cap a real selection at one tool; the "all"
+        # fallback must not be truncated by it.
+        tool_selector = LLMToolSelectorMiddleware(
+            max_tools=1, on_parsing_failure="all", model=tool_selection_model
+        )
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate],
+            middleware=[tool_selector, trace_model_requests],
+        )
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        assert len(model_requests) > 0
+        for request in model_requests:
+            tool_names = set()
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.add(tool_.name)
+            assert tool_names == {"get_weather", "search_web", "calculate"}
+
+    def test_on_parsing_failure_list_falls_back_to_subset(self) -> None:
+        """Test that a `list[str]` fallback selects exactly that subset."""
+        model_requests: list[ModelRequest] = []
+
+        @wrap_model_call
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
+            model_requests.append(request)
+            return handler(request)
+
+        tool_selection_model = _malformed_response_model(times=100)
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(
+            on_parsing_failure=["calculate"], model=tool_selection_model
+        )
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web, calculate],
+            middleware=[tool_selector, trace_model_requests],
+        )
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        assert len(model_requests) > 0
+        for request in model_requests:
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
+            assert tool_names == ["calculate"]
+
+    def test_on_parsing_failure_callable_receives_response(self) -> None:
+        """Test that a callable fallback receives the last malformed response."""
+        received: list[Any] = []
+
+        def fallback(response: Any) -> list[str]:
+            received.append(response)
+            return ["search_web"]
+
+        model_requests: list[ModelRequest] = []
+
+        @wrap_model_call
+        def trace_model_requests(
+            request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]
+        ) -> ModelResponse:
+            model_requests.append(request)
+            return handler(request)
+
+        tool_selection_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "ToolSelectionResponse", "id": "1", "args": {"oops": True}}
+                        ],
+                    )
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(
+            on_parsing_failure=fallback, model=tool_selection_model
+        )
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector, trace_model_requests],
+        )
+        agent.invoke({"messages": [HumanMessage("test")]})
+
+        assert len(model_requests) > 0
+        for request in model_requests:
+            tool_names = []
+            for tool_ in request.tools:
+                assert isinstance(tool_, BaseTool)
+                tool_names.append(tool_.name)
+            assert tool_names == ["search_web"]
+        assert len(received) == 1
+        assert received[0] == {"oops": True}
+
+
+class ConfigCapturingSelectionModel(FakeModel):
+    """`FakeModel` that records the config passed to invoke/ainvoke."""
+
+    captured_configs: list[RunnableConfig | None] = Field(default_factory=list, exclude=True)
+
+    @override
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return super().invoke(input, config, stop=stop, **kwargs)
+
+    @override
+    async def ainvoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return await super().ainvoke(input, config, stop=stop, **kwargs)
+
+
+class TestLLMToolSelectorInternalCallMetadata:
+    """Test that selection calls are tagged as internal for stream filtering."""
+
+    def test_wrap_model_call_marks_internal_call(self) -> None:
+        """`wrap_model_call` should tag its model call as internal to middleware."""
+        tool_selection_model = ConfigCapturingSelectionModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {"tools": ["get_weather"]},
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+        agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert len(tool_selection_model.captured_configs) == 1
+        config = tool_selection_model.captured_configs[0]
+        assert config is not None
+        assert config["metadata"]["lc_source"] == "tool_selection"
+        assert (
+            config["metadata"][INTERNAL_CALL_METADATA_KEY]
+            == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
+        )
+        assert TAG_NOSTREAM in config["tags"]
+
+    async def test_awrap_model_call_marks_internal_call(self) -> None:
+        """`awrap_model_call` should tag its model call as internal to middleware."""
+        tool_selection_model = ConfigCapturingSelectionModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {
+                                "name": "ToolSelectionResponse",
+                                "id": "1",
+                                "args": {"tools": ["get_weather"]},
+                            }
+                        ],
+                    ),
+                ]
+            )
+        )
+        model = FakeModel(messages=iter([AIMessage(content="Done")]))
+        tool_selector = LLMToolSelectorMiddleware(model=tool_selection_model)
+
+        agent = create_agent(
+            model=model,
+            tools=[get_weather, search_web],
+            middleware=[tool_selector],
+        )
+        await agent.ainvoke({"messages": [HumanMessage("What's the weather?")]})
+
+        assert len(tool_selection_model.captured_configs) == 1
+        config = tool_selection_model.captured_configs[0]
+        assert config is not None
+        assert config["metadata"]["lc_source"] == "tool_selection"
+        assert (
+            config["metadata"][INTERNAL_CALL_METADATA_KEY]
+            == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
+        )
+        assert TAG_NOSTREAM in config["tags"]
+
+
+def test_selection_call_stays_off_the_messages_stream() -> None:
+    selection_call = {
+        "id": "sel1",
+        "type": "function",
+        "function": {"name": "ToolSelectionResponse", "arguments": '{"tools": ["get_weather"]}'},
+    }
+    selection = AIMessage(
+        content="SELECTION-NOTE", additional_kwargs={"tool_calls": [selection_call]}
+    )
+    tool_selection_model = ConfigCapturingSelectionModel(messages=iter([selection]))
+    agent = create_agent(
+        model=FakeModel(messages=iter([AIMessage(content="Done")])),
+        tools=[get_weather, search_web],
+        middleware=[LLMToolSelectorMiddleware(model=tool_selection_model)],
+    )
+
+    parts = [
+        part
+        for part, _ in agent.stream(
+            {"messages": [HumanMessage("What's the weather?")]}, stream_mode="messages"
+        )
+    ]
+
+    assert len(tool_selection_model.captured_configs) == 1
+    assert "".join(part.text for part in parts if isinstance(part, AIMessage)) == "Done"

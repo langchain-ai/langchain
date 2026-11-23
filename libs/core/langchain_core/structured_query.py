@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
@@ -17,6 +17,7 @@ class Visitor(ABC):
 
     allowed_comparators: Sequence[Comparator] | None = None
     """Allowed comparators for the visitor."""
+
     allowed_operators: Sequence[Operator] | None = None
     """Allowed operators for the visitor."""
 
@@ -95,7 +96,7 @@ class Expr(BaseModel):
         )
 
 
-class Operator(str, Enum):
+class Operator(StrEnum):
     """Enumerator of the operations."""
 
     AND = "and"
@@ -103,7 +104,7 @@ class Operator(str, Enum):
     NOT = "not"
 
 
-class Comparator(str, Enum):
+class Comparator(StrEnum):
     """Enumerator of the comparison operators."""
 
     EQ = "eq"
@@ -127,8 +128,10 @@ class Comparison(FilterDirective):
 
     comparator: Comparator
     """The comparator to use."""
+
     attribute: str
     """The attribute to compare."""
+
     value: Any
     """The value to compare to."""
 
@@ -153,6 +156,7 @@ class Operation(FilterDirective):
 
     operator: Operator
     """The operator to use."""
+
     arguments: list[FilterDirective]
     """The arguments to the operator."""
 
@@ -174,8 +178,10 @@ class StructuredQuery(Expr):
 
     query: str
     """Query string."""
+
     filter: FilterDirective | None
     """Filtering expression."""
+
     limit: int | None
     """Limit on the number of results."""
 

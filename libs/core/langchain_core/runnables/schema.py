@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, NotRequired
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -44,6 +44,12 @@ class EventData(TypedDict, total=False):
 
     chunks support addition in general, and adding them up should result
     in the output of the `Runnable` that generated the event.
+    """
+    tool_call_id: NotRequired[str | None]
+    """The tool call ID associated with the tool execution.
+
+    This field is available for the `on_tool_error` event and can be used to
+    link errors to specific tool calls in stateless agent implementations.
     """
 
 

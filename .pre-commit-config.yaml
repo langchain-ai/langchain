@@ -9,6 +9,7 @@ repos:
       - id: check-toml # validate TOML syntax
       - id: end-of-file-fixer # ensure files end with a newline
       - id: trailing-whitespace # remove trailing whitespace from lines
+        exclude: \.ambr$
 
   # Text normalization hooks for consistent formatting
   - repo: https://github.com/sirosen/texthooks
@@ -28,6 +29,12 @@ repos:
         pass_filenames: false
       - id: langchain
         name: format and lint langchain
+        language: system
+        entry: make -C libs/langchain_v1 format lint
+        files: ^libs/langchain_v1/
+        pass_filenames: false
+      - id: langchain-classic
+        name: format and lint langchain-classic
         language: system
         entry: make -C libs/langchain format lint
         files: ^libs/langchain/
@@ -55,6 +62,12 @@ repos:
         language: system
         entry: make -C libs/partners/chroma format lint
         files: ^libs/partners/chroma/
+        pass_filenames: false
+      - id: deepseek
+        name: format and lint partners/deepseek
+        language: system
+        entry: make -C libs/partners/deepseek format lint
+        files: ^libs/partners/deepseek/
         pass_filenames: false
       - id: exa
         name: format and lint partners/exa
@@ -104,15 +117,141 @@ repos:
         entry: make -C libs/partners/openai format lint
         files: ^libs/partners/openai/
         pass_filenames: false
-      - id: prompty
-        name: format and lint partners/prompty
+      - id: openrouter
+        name: format and lint partners/openrouter
         language: system
-        entry: make -C libs/partners/prompty format lint
-        files: ^libs/partners/prompty/
+        entry: make -C libs/partners/openrouter format lint
+        files: ^libs/partners/openrouter/
+        pass_filenames: false
+      - id: perplexity
+        name: format and lint partners/perplexity
+        language: system
+        entry: make -C libs/partners/perplexity format lint
+        files: ^libs/partners/perplexity/
         pass_filenames: false
       - id: qdrant
         name: format and lint partners/qdrant
         language: system
         entry: make -C libs/partners/qdrant format lint
         files: ^libs/partners/qdrant/
+        pass_filenames: false
+      - id: typesafe
+        name: format and lint partners/typesafe
+        language: system
+        entry: make -C libs/partners/typesafe format lint
+        files: ^libs/partners/typesafe/
+        pass_filenames: false
+      - id: xai
+        name: format and lint partners/xai
+        language: system
+        entry: make -C libs/partners/xai format lint
+        files: ^libs/partners/xai/
+        pass_filenames: false
+      - id: core-version
+        name: check core version consistency
+        language: system
+        entry: make -C libs/core check_version
+        files: ^libs/core/(pyproject\.toml|langchain_core/version\.py)$
+        pass_filenames: false
+      - id: langchain-v1-version
+        name: check langchain version consistency
+        language: system
+        entry: make -C libs/langchain_v1 check_version
+        files: ^libs/langchain_v1/(pyproject\.toml|langchain/__init__\.py)$
+        pass_filenames: false
+      - id: anthropic-version
+        name: check anthropic version consistency
+        language: system
+        entry: make -C libs/partners/anthropic check_version
+        files: ^libs/partners/anthropic/(pyproject\.toml|langchain_anthropic/_version\.py)$
+        pass_filenames: false
+      - id: chroma-version
+        name: check chroma version consistency
+        language: system
+        entry: make -C libs/partners/chroma check_version
+        files: ^libs/partners/chroma/(pyproject\.toml|langchain_chroma/_version\.py)$
+        pass_filenames: false
+      - id: deepseek-version
+        name: check deepseek version consistency
+        language: system
+        entry: make -C libs/partners/deepseek check_version
+        files: ^libs/partners/deepseek/(pyproject\.toml|langchain_deepseek/_version\.py)$
+        pass_filenames: false
+      - id: exa-version
+        name: check exa version consistency
+        language: system
+        entry: make -C libs/partners/exa check_version
+        files: ^libs/partners/exa/(pyproject\.toml|langchain_exa/_version\.py)$
+        pass_filenames: false
+      - id: fireworks-version
+        name: check fireworks version consistency
+        language: system
+        entry: make -C libs/partners/fireworks check_version
+        files: ^libs/partners/fireworks/(pyproject\.toml|langchain_fireworks/_version\.py)$
+        pass_filenames: false
+      - id: groq-version
+        name: check groq version consistency
+        language: system
+        entry: make -C libs/partners/groq check_version
+        files: ^libs/partners/groq/(pyproject\.toml|langchain_groq/_version\.py)$
+        pass_filenames: false
+      - id: huggingface-version
+        name: check huggingface version consistency
+        language: system
+        entry: make -C libs/partners/huggingface check_version
+        files: ^libs/partners/huggingface/(pyproject\.toml|langchain_huggingface/_version\.py)$
+        pass_filenames: false
+      - id: mistralai-version
+        name: check mistralai version consistency
+        language: system
+        entry: make -C libs/partners/mistralai check_version
+        files: ^libs/partners/mistralai/(pyproject\.toml|langchain_mistralai/_version\.py)$
+        pass_filenames: false
+      - id: nomic-version
+        name: check nomic version consistency
+        language: system
+        entry: make -C libs/partners/nomic check_version
+        files: ^libs/partners/nomic/(pyproject\.toml|langchain_nomic/_version\.py)$
+        pass_filenames: false
+      - id: ollama-version
+        name: check ollama version consistency
+        language: system
+        entry: make -C libs/partners/ollama check_version
+        files: ^libs/partners/ollama/(pyproject\.toml|langchain_ollama/_version\.py)$
+        pass_filenames: false
+      - id: openai-version
+        name: check openai version consistency
+        language: system
+        entry: make -C libs/partners/openai check_version
+        files: ^libs/partners/openai/(pyproject\.toml|langchain_openai/_version\.py)$
+        pass_filenames: false
+      - id: openrouter-version
+        name: check openrouter version consistency
+        language: system
+        entry: make -C libs/partners/openrouter check_version
+        files: ^libs/partners/openrouter/(pyproject\.toml|langchain_openrouter/_version\.py)$
+        pass_filenames: false
+      - id: perplexity-version
+        name: check perplexity version consistency
+        language: system
+        entry: make -C libs/partners/perplexity check_version
+        files: ^libs/partners/perplexity/(pyproject\.toml|langchain_perplexity/_version\.py)$
+        pass_filenames: false
+      - id: qdrant-version
+        name: check qdrant version consistency
+        language: system
+        entry: make -C libs/partners/qdrant check_version
+        files: ^libs/partners/qdrant/(pyproject\.toml|langchain_qdrant/_version\.py)$
+        pass_filenames: false
+      - id: typesafe-version
+        name: check typesafe version consistency
+        language: system
+        entry: make -C libs/partners/typesafe check_version
+        files: ^libs/partners/typesafe/(pyproject\.toml|langchain_typesafe/_version\.py)$
+        pass_filenames: false
+      - id: xai-version
+        name: check xai version consistency
+        language: system
+        entry: make -C libs/partners/xai check_version
+        files: ^libs/partners/xai/(pyproject\.toml|langchain_xai/_version\.py)$
         pass_filenames: false

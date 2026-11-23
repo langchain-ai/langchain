@@ -20,7 +20,9 @@ class Multiply(BaseModel):
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
 async def test_init_chat_model_chain() -> None:
-    model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
+    model = init_chat_model(
+        "gpt-4.1-mini", configurable_fields="any", config_prefix="bar"
+    )
     model_with_tools = model.bind_tools([Multiply])
 
     model_with_config = model_with_tools.with_config(
@@ -44,7 +46,7 @@ class TestStandard(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "gpt-4o", "configurable_fields": "any"}
+        return {"model": "gpt-4.1-mini", "configurable_fields": "any"}
 
     @property
     def supports_image_inputs(self) -> bool:

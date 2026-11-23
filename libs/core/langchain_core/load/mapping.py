@@ -273,10 +273,20 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat_models",
         "ChatGroq",
     ),
+    ("langchain_openrouter", "chat_models", "ChatOpenRouter"): (
+        "langchain_openrouter",
+        "chat_models",
+        "ChatOpenRouter",
+    ),
     ("langchain_xai", "chat_models", "ChatXAI"): (
         "langchain_xai",
         "chat_models",
         "ChatXAI",
+    ),
+    ("langchain_baseten", "chat_models", "ChatBaseten"): (
+        "langchain_baseten",
+        "chat_models",
+        "ChatBaseten",
     ),
     ("langchain", "chat_models", "fireworks", "ChatFireworks"): (
         "langchain_fireworks",
@@ -299,11 +309,23 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "chat_models",
         "ChatMistralAI",
     ),
+    ("langchain", "chat_models", "anthropic_bedrock", "ChatAnthropicBedrock"): (
+        "langchain_aws",
+        "chat_models",
+        "anthropic",
+        "ChatAnthropicBedrock",
+    ),
     ("langchain", "chat_models", "bedrock", "ChatBedrock"): (
         "langchain_aws",
         "chat_models",
         "bedrock",
         "ChatBedrock",
+    ),
+    ("langchain_aws", "chat_models", "ChatBedrockConverse"): (
+        "langchain_aws",
+        "chat_models",
+        "bedrock_converse",
+        "ChatBedrockConverse",
     ),
     ("langchain_google_genai", "chat_models", "ChatGoogleGenerativeAI"): (
         "langchain_google_genai",
@@ -359,6 +381,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "BaseOpenAI",
     ),
     ("langchain", "llms", "bedrock", "Bedrock"): (
+        "langchain_aws",
+        "llms",
+        "bedrock",
+        "BedrockLLM",
+    ),
+    ("langchain", "llms", "bedrock", "BedrockLLM"): (
         "langchain_aws",
         "llms",
         "bedrock",
@@ -519,6 +547,12 @@ SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "runnables",
         "passthrough",
         "RunnableAssign",
+    ),
+    ("langchain", "schema", "runnable", "RunnablePick"): (
+        "langchain_core",
+        "runnables",
+        "passthrough",
+        "RunnablePick",
     ),
     ("langchain", "schema", "runnable", "RunnableRetry"): (
         "langchain_core",
@@ -935,6 +969,12 @@ OLD_CORE_NAMESPACES_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "passthrough",
         "RunnableAssign",
     ),
+    ("langchain_core", "runnables", "passthrough", "RunnablePick"): (
+        "langchain_core",
+        "runnables",
+        "passthrough",
+        "RunnablePick",
+    ),
     ("langchain_core", "runnables", "retry", "RunnableRetry"): (
         "langchain_core",
         "runnables",
@@ -1003,6 +1043,12 @@ _JS_SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "messages",
         "human",
         "HumanMessageChunk",
+    ),
+    ("langchain_core", "messages", "RemoveMessage"): (
+        "langchain_core",
+        "messages",
+        "modifier",
+        "RemoveMessage",
     ),
     ("langchain_core", "messages", "SystemMessage"): (
         "langchain_core",

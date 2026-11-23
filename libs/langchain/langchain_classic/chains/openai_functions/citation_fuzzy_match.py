@@ -122,7 +122,7 @@ def create_citation_fuzzy_match_runnable(llm: BaseChatModel) -> Runnable:
 
 @deprecated(
     since="0.2.13",
-    removal="1.0",
+    removal="2.0.0",
     alternative="create_citation_fuzzy_match_runnable",
 )
 def create_citation_fuzzy_match_chain(llm: BaseLanguageModel) -> LLMChain:

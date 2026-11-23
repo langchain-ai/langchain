@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Self
 from urllib.parse import urlparse
 
 from langchain_core._api import deprecated
@@ -14,7 +14,6 @@ from langchain_core.callbacks import (
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from pydantic import Field, model_validator
-from typing_extensions import Self
 
 from langchain_classic.chains.api.prompt import API_RESPONSE_PROMPT, API_URL_PROMPT
 from langchain_classic.chains.base import Chain
@@ -58,12 +57,13 @@ try:
 
     @deprecated(
         since="0.2.13",
-        message=(
-            "This class is deprecated and will be removed in langchain 1.0. "
-            "See API reference for replacement: "
-            "https://api.python.langchain.com/en/latest/chains/langchain.chains.api.base.APIChain.html"
+        removal="2.0.0",
+        alternative="langchain.agents.create_agent",
+        addendum=(
+            "Build new agents with `create_agent` and bind a tool that issues "
+            "the HTTP request. See "
+            "https://docs.langchain.com/oss/python/langchain/agents"
         ),
-        removal="1.0",
     )
     class APIChain(Chain):
         """Chain that makes API calls and summarizes the responses to answer a question.

@@ -10,6 +10,8 @@ import random
 from collections.abc import Callable
 from typing import Literal
 
+from langchain_core.exceptions import ModelError
+
 # Type aliases
 RetryOn = tuple[type[Exception], ...] | Callable[[Exception], bool]
 """Type for specifying which exceptions to retry on.
@@ -26,8 +28,10 @@ Can be either:
 - A literal action string (`'error'` or `'continue'`)
     - `'error'`: Re-raise the exception, stopping agent execution.
     - `'continue'`: Inject a message with the error details, allowing the agent to continue.
-       For tool retries, a `ToolMessage` with the error details will be injected.
-       For model retries, an `AIMessage` with the error details will be returned.
+
+        For tool retries, a `ToolMessage` with the error details will be injected.
+
+        For model retries, an `AIMessage` with the error details will be returned.
 - A callable that takes an exception and returns a string for error message content
 """
 
@@ -61,6 +65,15 @@ def validate_retry_params(
     if backoff_factor < 0:
         msg = "backoff_factor must be >= 0"
         raise ValueError(msg)
+
+
+def default_retry_on(exc: BaseException) -> bool:
+    """Return whether an exception should be retried by default."""
+    if not isinstance(exc, Exception):
+        return False
+    if isinstance(exc, ModelError):
+        return exc.is_retryable
+    return True
 
 
 def should_retry_exception(

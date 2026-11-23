@@ -1,29 +1,56 @@
 """Summarization middleware."""
 
+import logging
 import uuid
 import warnings
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Coroutine, Iterable, Mapping
 from functools import partial
-from typing import Any, Literal, cast
+from typing import Any, Literal, TypedDict, cast
 
+from langchain_core.exceptions import ContextOverflowError
 from langchain_core.messages import (
+    AIMessage,
     AnyMessage,
     MessageLikeRepresentation,
     RemoveMessage,
     ToolMessage,
 )
 from langchain_core.messages.human import HumanMessage
-from langchain_core.messages.utils import count_tokens_approximately, trim_messages
+from langchain_core.messages.utils import (
+    count_tokens_approximately,
+    get_buffer_string,
+    trim_messages,
+)
+from langchain_core.runnables import Runnable, RunnableConfig
+from langchain_core.runnables.base import coerce_to_runnable
+from langgraph.constants import TAG_NOSTREAM
 from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
 )
 from langgraph.runtime import Runtime
 from typing_extensions import override
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState
+from langchain.agents.middleware._retry import default_retry_on
+from langchain.agents.middleware.internal_call_transformer import internal_call_metadata
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, ContextT, ResponseT
 from langchain.chat_models import BaseChatModel, init_chat_model
 
+logger = logging.getLogger(__name__)
+
 TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
+
+Summarizer = (
+    str
+    | BaseChatModel
+    | Runnable[list[AnyMessage], str]
+    | Callable[[list[AnyMessage]], str]
+    | Callable[[list[AnyMessage]], Coroutine[Any, Any, str]]
+)
+"""Generates a summary from the messages selected for summarization.
+
+Either a chat model (or model string) prompted with the summary prompt, or a
+`Runnable` or callable taking the messages and returning the summary text.
+"""
 
 DEFAULT_SUMMARY_PROMPT = """<role>
 Context Extraction Assistant
@@ -35,15 +62,34 @@ Your sole objective in this task is to extract the highest quality/most relevant
 
 <objective_information>
 You're nearing the total number of input tokens you can accept, so you must extract the highest quality/most relevant pieces of information from your conversation history.
-This context will then overwrite the conversation history presented below. Because of this, ensure the context you extract is only the most important information to your overall goal.
+This context will then overwrite the conversation history presented below. Because of this, ensure the context you extract is only the most important information to continue working toward your overall goal.
 </objective_information>
 
 <instructions>
-The conversation history below will be replaced with the context you extract in this step. Because of this, you must do your very best to extract and record all of the most important context from the conversation history.
+The conversation history below will be replaced with the context you extract in this step.
 You want to ensure that you don't repeat any actions you've already completed, so the context you extract from the conversation history should be focused on the most important information to your overall goal.
+
+You should structure your summary using the following sections. Each section acts as a checklist - you must populate it with relevant information or explicitly state "None" if there is nothing to report for that section:
+
+## SESSION INTENT
+
+What is the user's primary goal or request? What overall task are you trying to accomplish? This should be concise but complete enough to understand the purpose of the entire session.
+
+## SUMMARY
+
+Extract and record all of the most important context from the conversation history. Include important choices, conclusions, or strategies determined during this conversation. Include the reasoning behind key decisions. Document any rejected options and why they were not pursued.
+
+## ARTIFACTS
+
+What artifacts, files, or resources were created, modified, or accessed during this conversation? For file modifications, list specific file paths and briefly describe the changes made to each. This section prevents silent loss of artifact information.
+
+## NEXT STEPS
+
+What specific tasks remain to be completed to achieve the session intent? What should you do next?
+
 </instructions>
 
-The user will message you with the full message history you'll be extracting context from, to then replace. Carefully read over it all, and think deeply about what information is most important to your overall goal that should be saved:
+The user will message you with the full message history from which you'll extract context to create a replacement. Carefully read through it all and think deeply about what information is most important to your overall goal and should be saved:
 
 With all of this in mind, please carefully read over the entire conversation history, and extract the most important and relevant context to replace it so that you can free up space in the conversation history.
 Respond ONLY with the extracted context. Do not include any additional information, or text before or after the extracted context.
@@ -52,10 +98,60 @@ Respond ONLY with the extracted context. Do not include any additional informati
 Messages to summarize:
 {messages}
 </messages>"""  # noqa: E501
+"""Default prompt used to summarize conversation history.
+
+The `<messages>` marker (on its own line) and the `{messages}` placeholder are
+part of this constant's public contract, not just cosmetic formatting.
+Downstream consumers depend on them: for example, deep agents'
+`SummarizationMiddleware` splices an extra instruction block in immediately
+before the `<messages>` marker via `str.replace`. Removing, renaming, or
+reformatting the marker (or the `{messages}` placeholder) is a breaking change
+for those consumers even though it does not alter any function signature, so
+treat edits to it accordingly.
+"""
 
 _DEFAULT_MESSAGES_TO_KEEP = 20
 _DEFAULT_TRIM_TOKEN_LIMIT = 4000
 _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
+
+# Some providers tag emitted messages with a `model_provider` string that differs from
+# their LangSmith `ls_provider`. The reported-token check below compares the two, so we
+# accept known aliases per `ls_provider`.
+_LS_PROVIDER_ALIASES: dict[str, frozenset[str]] = {
+    "amazon_bedrock": frozenset({"bedrock", "bedrock_converse"}),
+    # ChatOpenAIMantle traces under ls_provider="openai-mantle" but its messages
+    # inherit model_provider="openai" from BaseChatOpenAI.
+    "openai-mantle": frozenset({"openai"}),
+    # ChatAnthropicMantle traces under ls_provider="anthropic-mantle" but its
+    # messages inherit model_provider="anthropic" from BaseChatAnthropic.
+    "anthropic-mantle": frozenset({"anthropic"}),
+}
+
+
+def _summary_config() -> RunnableConfig:
+    """Config for summary model calls."""
+    return {
+        "metadata": {"lc_source": "summarization", **internal_call_metadata()},
+        "tags": [TAG_NOSTREAM],
+    }
+
+
+def _check_summary(summary: object) -> str:
+    """Validate and normalize the text returned by a custom `summarizer`."""
+    if not isinstance(summary, str):
+        msg = f"`summarizer` must return a str, got {type(summary).__name__}."
+        raise TypeError(msg)
+    return summary.strip()
+
+
+def _provider_matches(message_provider: str, model_ls_provider: str | None) -> bool:
+    if model_ls_provider is None:
+        return False
+    if message_provider == model_ls_provider:
+        return True
+    aliases = _LS_PROVIDER_ALIASES.get(model_ls_provider)
+    return aliases is not None and message_provider in aliases
+
 
 ContextFraction = tuple[Literal["fraction"], float]
 """Fraction of model's maximum input tokens.
@@ -119,32 +215,80 @@ Example:
 """
 
 
+class TriggerClause(TypedDict, total=False):
+    """Dictionary-based trigger specification for AND conditions.
+
+    All specified thresholds in a single `TriggerClause` must be met for the clause to
+    trigger summarization (AND semantics). When multiple clauses are provided in a list,
+    summarization triggers if any clause is met (OR semantics).
+
+    Example:
+        ```python
+        # AND: Trigger when tokens >= 4000 AND messages >= 10
+        trigger_clause: TriggerClause = {"tokens": 4000, "messages": 10}
+
+        # Use in a list for OR semantics:
+        trigger_list: list[TriggerClause] = [
+            {"tokens": 5000, "messages": 3},
+            {"tokens": 3000, "messages": 6},
+        ]
+        ```
+    """
+
+    tokens: int
+    """Trigger when the computed (or provider-reported) token count reaches or
+    exceeds this value.
+    """
+
+    messages: int
+    """Trigger when message count reaches or exceeds this value."""
+
+    fraction: float
+    """Trigger when the computed (or provider-reported) token count reaches or
+    exceeds this fraction of the model's maximum input tokens.
+    """
+
+
 def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
     """Tune parameters of approximate token counter based on model type."""
-    if model._llm_type == "anthropic-chat":  # noqa: SLF001
+    if model._llm_type.startswith("anthropic-chat"):  # noqa: SLF001
         # 3.3 was estimated in an offline experiment, comparing with Claude's token-counting
         # API: https://platform.claude.com/docs/en/build-with-claude/token-counting
-        return partial(count_tokens_approximately, chars_per_token=3.3)
-    return count_tokens_approximately
+        return partial(
+            count_tokens_approximately, use_usage_metadata_scaling=True, chars_per_token=3.3
+        )
+    return partial(count_tokens_approximately, use_usage_metadata_scaling=True)
 
 
-class SummarizationMiddleware(AgentMiddleware):
+class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Summarizes conversation history when token limits are approached.
 
     This middleware monitors message token counts and automatically summarizes older
     messages when a threshold is reached, preserving recent messages and maintaining
     context continuity by ensuring AI/Tool message pairs remain together.
+
+    Summary-generation errors are retried in-process, up to 3 attempts total, via
+    `Runnable.with_retry`, unless the error is a `ModelError` marked non-retryable
+    (e.g. authentication or invalid request errors). If the summary prompt exceeds
+    the model's context window (`ContextOverflowError`), the call is retried once with
+    the middle of the history cut out. If a summary call still fails, the
+    underlying error propagates rather than fabricating a summary.
+
+    To generate summaries with something other than a chat model, pass a
+    `summarizer`. The middleware still decides when to summarize and which
+    messages to summarize; only the summary text comes from the summarizer.
     """
 
     def __init__(
         self,
         model: str | BaseChatModel,
         *,
-        trigger: ContextSize | list[ContextSize] | None = None,
+        trigger: (ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None) = None,
         keep: ContextSize = ("messages", _DEFAULT_MESSAGES_TO_KEEP),
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         trim_tokens_to_summarize: int | None = _DEFAULT_TRIM_TOKEN_LIMIT,
+        summarizer: Summarizer | None = None,
         **deprecated_kwargs: Any,
     ) -> None:
         """Initialize summarization middleware.
@@ -155,8 +299,13 @@ class SummarizationMiddleware(AgentMiddleware):
 
                 Provide a single
                 [`ContextSize`][langchain.agents.middleware.summarization.ContextSize]
-                tuple or a list of tuples, in which case summarization runs when any
-                threshold is met.
+                tuple, or a single
+                [`TriggerClause`][langchain.agents.middleware.summarization.TriggerClause]
+                dict, or a list mixing either form.
+
+                A `ContextSize` tuple expresses one threshold. A `TriggerClause` dict
+                expresses multiple thresholds that must *all* be met (AND). When a list is
+                provided, summarization runs if *any* item is met (OR).
 
                 !!! example
 
@@ -170,6 +319,13 @@ class SummarizationMiddleware(AgentMiddleware):
                     # Trigger summarization either when 80% of model's max input tokens
                     # is reached or when 100 messages is reached (whichever comes first)
                     [("fraction", 0.8), ("messages", 100)]
+
+                    # Trigger when tokens >= 4000 AND messages >= 10
+                    {"tokens": 4000, "messages": 10}
+
+                    # Trigger when (tokens >= 5000 AND messages >= 3) OR
+                    # (tokens >= 3000 AND messages >= 6)
+                    [{"tokens": 5000, "messages": 3}, {"tokens": 3000, "messages": 6}]
                     ```
 
                     See [`ContextSize`][langchain.agents.middleware.summarization.ContextSize]
@@ -201,6 +357,47 @@ class SummarizationMiddleware(AgentMiddleware):
                 the summarization call.
 
                 Pass `None` to skip trimming entirely.
+            summarizer: Optional replacement for the summarization model call.
+
+                `model` is still used for its profile (fractional limits) and
+                token counting, but is not called to write summaries.
+
+                - A chat model, or a model string resolved with
+                    `init_chat_model`, writes summaries in place of `model`. It is
+                    prompted with `summary_prompt` and retried like `model` would
+                    be. Use this to summarize with a different model than the one
+                    whose context window you're managing. To summarize with a chat
+                    model, pass its name or a `BaseChatModel` instance; wrapped
+                    models such as `model.with_config(...)` are treated as a
+                    `Runnable` (below).
+                - A `Runnable` or function receives the messages to summarize
+                    (after trimming) and returns the summary text. `summary_prompt`
+                    is not used. Functions may be sync or async; an async function
+                    requires async invocation (e.g. `ainvoke`), and a sync function
+                    runs in a thread pool when invoked asynchronously.
+
+                !!! example
+
+                    ```python
+                    # Manage gpt-6-sol's context window, summarize with gpt-6-luna
+                    SummarizationMiddleware(
+                        model="openai:gpt-6-sol",
+                        trigger=("fraction", 0.8),
+                        summarizer="openai:gpt-6-luna",
+                    )
+
+
+                    # Summarize with a non-LLM service
+                    async def summarize(messages: Sequence[BaseMessage]) -> str:
+                        return await my_summarization_service(get_buffer_string(messages))
+
+
+                    SummarizationMiddleware(
+                        model="openai:gpt-6-luna",
+                        trigger=("fraction", 0.8),
+                        summarizer=summarize,
+                    )
+                    ```
         """
         # Handle deprecated parameters
         if "max_tokens_before_summary" in deprecated_kwargs:
@@ -229,28 +426,43 @@ class SummarizationMiddleware(AgentMiddleware):
             model = init_chat_model(model)
 
         self.model = model
-        if trigger is None:
-            self.trigger: ContextSize | list[ContextSize] | None = None
-            trigger_conditions: list[ContextSize] = []
-        elif isinstance(trigger, list):
-            validated_list = [self._validate_context_size(item, "trigger") for item in trigger]
-            self.trigger = validated_list
-            trigger_conditions = validated_list
-        else:
-            validated = self._validate_context_size(trigger, "trigger")
-            self.trigger = validated
-            trigger_conditions = [validated]
-        self._trigger_conditions = trigger_conditions
+        # Retry up to 3 attempts total, skipping errors marked non-retryable.
+        self._summary_model = self.model.with_retry(retry_if_exception_type=default_retry_on)
+
+        self.trigger: ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None = (
+            self._copy_trigger(trigger)
+        )
+
+        # Canonical trigger representation: AND within a clause, OR across clauses.
+        self._trigger_clauses = self._normalize_trigger(self.trigger)
+        # Legacy compatibility view for private consumers that inspected the previous
+        # tuple-normalized representation. LangChain behavior is driven by
+        # `_trigger_clauses`, not this attribute. Remove in LangChain 2.0.
+        self._trigger_conditions = self._legacy_trigger_conditions(self.trigger)
 
         self.keep = self._validate_context_size(keep, "keep")
         if token_counter is count_tokens_approximately:
             self.token_counter = _get_approximate_token_counter(self.model)
+            self._partial_token_counter: TokenCounter = partial(  # type: ignore[call-arg]
+                self.token_counter, use_usage_metadata_scaling=False
+            )
         else:
             self.token_counter = token_counter
+            self._partial_token_counter = token_counter
         self.summary_prompt = summary_prompt
         self.trim_tokens_to_summarize = trim_tokens_to_summarize
+        if isinstance(summarizer, str):
+            summarizer = init_chat_model(summarizer)
+        # The chat model that writes summaries: `model` unless `summarizer` replaces it.
+        self._summary_chat_model = self.model
+        self.summarizer: Runnable[list[AnyMessage], str] | None = None
+        if isinstance(summarizer, BaseChatModel):
+            self._summary_chat_model = summarizer
+            self._summary_model = summarizer.with_retry(retry_if_exception_type=default_retry_on)
+        elif summarizer is not None:
+            self.summarizer = coerce_to_runnable(summarizer)
 
-        requires_profile = any(condition[0] == "fraction" for condition in self._trigger_conditions)
+        requires_profile = any("fraction" in clause for clause in self._trigger_clauses)
         if self.keep[0] == "fraction":
             requires_profile = True
         if requires_profile and self._get_profile_limits() is None:
@@ -264,8 +476,21 @@ class SummarizationMiddleware(AgentMiddleware):
             raise ValueError(msg)
 
     @override
-    def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-        """Process messages before model invocation, potentially triggering summarization."""
+    def before_model(
+        self, state: AgentState[Any], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
+        """Process messages before model invocation, potentially triggering summarization.
+
+        Args:
+            state: The agent state.
+            runtime: The runtime environment.
+
+        Returns:
+            An updated state with summarized messages if summarization was performed.
+
+        Raises:
+            Exception: If summary generation still fails once retries are exhausted.
+        """
         messages = state["messages"]
         self._ensure_message_ids(messages)
 
@@ -292,8 +517,21 @@ class SummarizationMiddleware(AgentMiddleware):
         }
 
     @override
-    async def abefore_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
-        """Process messages before model invocation, potentially triggering summarization."""
+    async def abefore_model(
+        self, state: AgentState[Any], runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
+        """Process messages before model invocation, potentially triggering summarization.
+
+        Args:
+            state: The agent state.
+            runtime: The runtime environment.
+
+        Returns:
+            An updated state with summarized messages if summarization was performed.
+
+        Raises:
+            Exception: If summary generation still fails once retries are exhausted.
+        """
         messages = state["messages"]
         self._ensure_message_ids(messages)
 
@@ -319,25 +557,184 @@ class SummarizationMiddleware(AgentMiddleware):
             ]
         }
 
+    @staticmethod
+    def _copy_trigger(
+        trigger: ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None,
+    ) -> ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None:
+        """Copy mutable trigger containers so caller mutations do not affect this instance."""
+        if isinstance(trigger, Mapping):
+            return cast("TriggerClause", dict(trigger))
+        if isinstance(trigger, list):
+            return [
+                cast("TriggerClause", dict(item)) if isinstance(item, Mapping) else item
+                for item in trigger
+            ]
+        return trigger
+
+    def _legacy_trigger_conditions(
+        self,
+        trigger: ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None,
+    ) -> list[ContextSize]:
+        """Project tuple-expressible triggers to the legacy private representation."""
+        if trigger is None:
+            return []
+        if isinstance(trigger, tuple):
+            return [self._validate_context_size(trigger, "trigger")]
+        if isinstance(trigger, Mapping):
+            if len(trigger) != 1:
+                return []
+            kind, value = next(iter(trigger.items()))
+            return [self._validate_context_size(cast("ContextSize", (kind, value)), "trigger")]
+
+        conditions: list[ContextSize] = []
+        for item in trigger:
+            if isinstance(item, tuple):
+                conditions.append(self._validate_context_size(item, "trigger"))
+            elif isinstance(item, Mapping) and len(item) == 1:
+                kind, value = next(iter(item.items()))
+                conditions.append(
+                    self._validate_context_size(cast("ContextSize", (kind, value)), "trigger")
+                )
+        return conditions
+
+    def _normalize_trigger(
+        self,
+        trigger: (ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None),
+    ) -> list[TriggerClause]:
+        """Normalize supported trigger inputs into list of Trigger clauses.
+
+        - tuple ("tokens", 3000) -> [{"tokens": 3000}]
+        - dict {"tokens": 4000, "messages": 10} -> [{"tokens": 4000, "messages": 10}]
+        - list of either -> OR across items
+        """
+        if trigger is None:
+            return []
+
+        def _validate_and_convert_tuple(t: ContextSize) -> TriggerClause:
+            kind, value = self._validate_context_size(t, "trigger")
+            return cast("TriggerClause", {kind: value})
+
+        def _validate_mapping(m: Mapping[str, Any]) -> TriggerClause:
+            """Validate and convert a mapping to a TriggerClause.
+
+            Type checks reject silent coercion (booleans, numeric strings, and
+            fractional floats for integer metrics) so a misconfigured clause fails loudly
+            at construction. Range and positivity checks are delegated to
+            `_validate_context_size`, keeping a single source of truth for the rules and
+            error messages shared with the tuple form.
+            """
+            if not m:
+                msg = "trigger clause must specify at least one of 'tokens', 'messages', 'fraction'"
+                raise ValueError(msg)
+            out: dict[str, float | int] = {}
+            for k, v in m.items():
+                if k not in {"tokens", "messages", "fraction"}:
+                    msg = f"Unsupported trigger metric: {k!r}"
+                    raise ValueError(msg)
+                # `bool` is an `int` subclass; reject it so `{"messages": True}` cannot
+                # silently become a threshold of 1. Raise `ValueError` (not `TypeError`)
+                # so every trigger-config error stays one catchable type.
+                if isinstance(v, bool):
+                    msg = f"{k} trigger value must be numeric, got {v!r}"
+                    raise ValueError(msg)  # noqa: TRY004
+                if k == "fraction":
+                    if not isinstance(v, (int, float)):
+                        msg = f"Fraction trigger values must be numeric, got {v!r}"
+                        raise ValueError(msg)
+                elif not isinstance(v, int):
+                    # Reject floats and numeric strings rather than truncating/coercing.
+                    msg = f"{k} trigger values must be integers, got {v!r}"
+                    raise ValueError(msg)
+                # Delegate range/positivity validation so dict and tuple forms share
+                # identical rules and error messages.
+                self._validate_context_size(cast("ContextSize", (k, v)), "trigger")
+                out[k] = v
+            return cast("TriggerClause", out)
+
+        clauses: list[TriggerClause] = []
+        # `trigger` may originate from untyped callers, so dispatch on the runtime type
+        # and raise on anything unsupported.
+        subject: Any = trigger
+        if isinstance(subject, Mapping):
+            clauses.append(_validate_mapping(subject))
+        elif isinstance(subject, tuple):
+            clauses.append(_validate_and_convert_tuple(cast("ContextSize", subject)))
+        elif isinstance(subject, list):
+            for item in subject:
+                if isinstance(item, Mapping):
+                    clauses.append(_validate_mapping(item))
+                elif isinstance(item, tuple):
+                    clauses.append(_validate_and_convert_tuple(cast("ContextSize", item)))
+                else:
+                    msg = f"Unsupported trigger item type: {type(item)}"
+                    raise TypeError(msg)
+        else:
+            msg = f"Unsupported trigger type: {type(subject)}"
+            raise TypeError(msg)
+        return clauses
+
+    def _should_summarize_based_on_reported_tokens(
+        self, messages: list[AnyMessage], threshold: float
+    ) -> bool:
+        """Check if reported token usage from last AIMessage exceeds threshold."""
+        last_ai_message = next(
+            (msg for msg in reversed(messages) if isinstance(msg, AIMessage)),
+            None,
+        )
+        if (  # noqa: SIM103
+            isinstance(last_ai_message, AIMessage)
+            and last_ai_message.usage_metadata is not None
+            and (reported_tokens := last_ai_message.usage_metadata.get("total_tokens", -1))
+            and reported_tokens >= threshold
+            and (message_provider := last_ai_message.response_metadata.get("model_provider"))
+            and _provider_matches(
+                message_provider,
+                self.model._get_ls_params().get("ls_provider"),  # noqa: SLF001
+            )
+        ):
+            return True
+        return False
+
     def _should_summarize(self, messages: list[AnyMessage], total_tokens: int) -> bool:
         """Determine whether summarization should run for the current token usage."""
-        if not self._trigger_conditions:
+        if not self._trigger_clauses:
             return False
 
-        for kind, value in self._trigger_conditions:
-            if kind == "messages" and len(messages) >= value:
+        for clause in self._trigger_clauses:
+            clause_met = True
+            for kind, value in clause.items():
+                if kind == "messages" and len(messages) < cast("int", value):
+                    clause_met = False
+                    break
+                if kind == "tokens":
+                    threshold_tokens = cast("int", value)
+                    # Trigger if total tokens exceed threshold OR reported tokens do
+                    if (
+                        total_tokens < threshold_tokens
+                        and not self._should_summarize_based_on_reported_tokens(
+                            messages, float(threshold_tokens)
+                        )
+                    ):
+                        clause_met = False
+                        break
+                if kind == "fraction":
+                    max_input_tokens = self._get_profile_limits()
+                    if max_input_tokens is None:
+                        clause_met = False
+                        break
+                    threshold = int(max_input_tokens * cast("float", value))
+                    if threshold <= 0:
+                        threshold = 1
+                    if (
+                        total_tokens < threshold
+                        and not self._should_summarize_based_on_reported_tokens(
+                            messages, float(threshold)
+                        )
+                    ):
+                        clause_met = False
+                        break
+            if clause_met:
                 return True
-            if kind == "tokens" and total_tokens >= value:
-                return True
-            if kind == "fraction":
-                max_input_tokens = self._get_profile_limits()
-                if max_input_tokens is None:
-                    continue
-                threshold = int(max_input_tokens * value)
-                if threshold <= 0:
-                    threshold = 1
-                if total_tokens >= threshold:
-                    return True
         return False
 
     def _determine_cutoff_index(self, messages: list[AnyMessage]) -> int:
@@ -384,7 +781,7 @@ class SummarizationMiddleware(AgentMiddleware):
                 break
 
             mid = (left + right) // 2
-            if self.token_counter(messages[mid:]) <= target_token_count:
+            if self._partial_token_counter(messages[mid:]) <= target_token_count:
                 cutoff_candidate = mid
                 right = mid
             else:
@@ -401,10 +798,10 @@ class SummarizationMiddleware(AgentMiddleware):
         # Advance past any ToolMessages to avoid splitting AI/Tool pairs
         return self._find_safe_cutoff_point(messages, cutoff_candidate)
 
-    def _get_profile_limits(self) -> int | None:
-        """Retrieve max input token limit from the model profile."""
+    def _get_profile_limits(self, model: BaseChatModel | None = None) -> int | None:
+        """Retrieve max input token limit from the profile of `model` (default: `self.model`)."""
         try:
-            profile = self.model.profile
+            profile = (model or self.model).profile
         except AttributeError:
             return None
 
@@ -418,7 +815,8 @@ class SummarizationMiddleware(AgentMiddleware):
 
         return max_input_tokens
 
-    def _validate_context_size(self, context: ContextSize, parameter_name: str) -> ContextSize:
+    @staticmethod
+    def _validate_context_size(context: ContextSize, parameter_name: str) -> ContextSize:
         """Validate context configuration tuples."""
         kind, value = context
         if kind == "fraction":
@@ -434,19 +832,24 @@ class SummarizationMiddleware(AgentMiddleware):
             raise ValueError(msg)
         return context
 
-    def _build_new_messages(self, summary: str) -> list[HumanMessage]:
+    @staticmethod
+    def _build_new_messages(summary: str) -> list[HumanMessage]:
         return [
-            HumanMessage(content=f"Here is a summary of the conversation to date:\n\n{summary}")
+            HumanMessage(
+                content=f"Here is a summary of the conversation to date:\n\n{summary}",
+                additional_kwargs={"lc_source": "summarization"},
+            )
         ]
 
-    def _ensure_message_ids(self, messages: list[AnyMessage]) -> None:
+    @staticmethod
+    def _ensure_message_ids(messages: list[AnyMessage]) -> None:
         """Ensure all messages have unique IDs for the add_messages reducer."""
         for msg in messages:
             if msg.id is None:
                 msg.id = str(uuid.uuid4())
 
+    @staticmethod
     def _partition_messages(
-        self,
         conversation_messages: list[AnyMessage],
         cutoff_index: int,
     ) -> tuple[list[AnyMessage], list[AnyMessage]]:
@@ -471,19 +874,55 @@ class SummarizationMiddleware(AgentMiddleware):
         target_cutoff = len(messages) - messages_to_keep
         return self._find_safe_cutoff_point(messages, target_cutoff)
 
-    def _find_safe_cutoff_point(self, messages: list[AnyMessage], cutoff_index: int) -> int:
+    @staticmethod
+    def _find_safe_cutoff_point(messages: list[AnyMessage], cutoff_index: int) -> int:
         """Find a safe cutoff point that doesn't split AI/Tool message pairs.
 
-        If the message at cutoff_index is a ToolMessage, advance until we find
-        a non-ToolMessage. This ensures we never cut in the middle of parallel
-        tool call responses.
+        If the message at `cutoff_index` is a `ToolMessage`, search backward for the
+        `AIMessage` containing the corresponding `tool_calls` and adjust the cutoff to
+        include it. This ensures tool call requests and responses stay together.
+
+        Falls back to advancing forward past `ToolMessage` objects only if no matching
+        `AIMessage` is found (edge case).
         """
-        while cutoff_index < len(messages) and isinstance(messages[cutoff_index], ToolMessage):
-            cutoff_index += 1
-        return cutoff_index
+        if cutoff_index >= len(messages) or not isinstance(messages[cutoff_index], ToolMessage):
+            return cutoff_index
+
+        # Collect tool_call_ids from consecutive ToolMessages at/after cutoff
+        tool_call_ids: set[str] = set()
+        idx = cutoff_index
+        while idx < len(messages) and isinstance(messages[idx], ToolMessage):
+            tool_msg = cast("ToolMessage", messages[idx])
+            if tool_msg.tool_call_id:
+                tool_call_ids.add(tool_msg.tool_call_id)
+            idx += 1
+
+        # Search backward for AIMessage with matching tool_calls
+        for i in range(cutoff_index - 1, -1, -1):
+            msg = messages[i]
+            if isinstance(msg, AIMessage) and msg.tool_calls:
+                ai_tool_call_ids = {tc.get("id") for tc in msg.tool_calls if tc.get("id")}
+                if tool_call_ids & ai_tool_call_ids:
+                    # Found the AIMessage - move cutoff to include it
+                    return i
+
+        # Fallback: no matching AIMessage found, advance past ToolMessages to avoid
+        # orphaned tool responses
+        return idx
 
     def _create_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
-        """Generate summary for the given messages."""
+        """Generate summary for the given messages.
+
+        Args:
+            messages_to_summarize: Messages to summarize.
+
+        Returns:
+            The generated summary.
+
+        Raises:
+            Exception: If the summary model call still fails once retries (see
+                `Runnable.with_retry`) are exhausted.
+        """
         if not messages_to_summarize:
             return "No previous conversation history."
 
@@ -491,14 +930,34 @@ class SummarizationMiddleware(AgentMiddleware):
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
+        if self.summarizer is not None:
+            return _check_summary(
+                self.summarizer.invoke(trimmed_messages, config=_summary_config())
+            )
+
+        prompt = self._format_summary_prompt(trimmed_messages)
         try:
-            response = self.model.invoke(self.summary_prompt.format(messages=trimmed_messages))
-            return response.text.strip()
-        except Exception as e:
-            return f"Error generating summary: {e!s}"
+            response = self._summary_model.invoke(prompt, config=_summary_config())
+        except ContextOverflowError:
+            retry_prompt = self._overflow_retry_prompt(trimmed_messages)
+            if retry_prompt is None:
+                raise
+            response = self._summary_model.invoke(retry_prompt, config=_summary_config())
+        return response.text.strip()
 
     async def _acreate_summary(self, messages_to_summarize: list[AnyMessage]) -> str:
-        """Generate summary for the given messages."""
+        """Generate summary for the given messages.
+
+        Args:
+            messages_to_summarize: Messages to summarize.
+
+        Returns:
+            The generated summary.
+
+        Raises:
+            Exception: If the summary model call still fails once retries (see
+                `Runnable.with_retry`) are exhausted.
+        """
         if not messages_to_summarize:
             return "No previous conversation history."
 
@@ -506,13 +965,59 @@ class SummarizationMiddleware(AgentMiddleware):
         if not trimmed_messages:
             return "Previous conversation was too long to summarize."
 
+        if self.summarizer is not None:
+            summary = await self.summarizer.ainvoke(trimmed_messages, config=_summary_config())
+            return _check_summary(summary)
+
+        prompt = self._format_summary_prompt(trimmed_messages)
         try:
-            response = await self.model.ainvoke(
-                self.summary_prompt.format(messages=trimmed_messages)
-            )
-            return response.text.strip()
-        except Exception as e:
-            return f"Error generating summary: {e!s}"
+            response = await self._summary_model.ainvoke(prompt, config=_summary_config())
+        except ContextOverflowError:
+            retry_prompt = self._overflow_retry_prompt(trimmed_messages)
+            if retry_prompt is None:
+                raise
+            response = await self._summary_model.ainvoke(retry_prompt, config=_summary_config())
+        return response.text.strip()
+
+    def _format_summary_prompt(self, messages: list[AnyMessage]) -> str:
+        """Render the summary prompt for the given messages."""
+        # Serialize as XML so URL-based multimodal blocks remain visible in the summary
+        # prompt while excluding raw message metadata from the token budget.
+        formatted_messages = get_buffer_string(messages, format="xml")
+        return self.summary_prompt.format(messages=formatted_messages).rstrip()
+
+    def _overflow_retry_prompt(self, messages: list[AnyMessage]) -> str | None:
+        """Build a smaller summary prompt after the summary call overflowed.
+
+        Cuts the middle out of the formatted history, keeping its start (where the
+        objective is usually stated) and its most recent part, within half of its
+        token count and 40% of the summary model's `max_input_tokens` when known.
+
+        Returns:
+            The retry prompt, or `None` if nothing fits the budget.
+        """
+        formatted = get_buffer_string(messages, format="xml")
+        tokens = self._partial_token_counter([HumanMessage(content=formatted)])
+        budget = tokens // 2
+        if (max_input_tokens := self._get_profile_limits(self._summary_chat_model)) is not None:
+            # 40% rather than half absorbs up to 1.25x usage-metadata scaling.
+            budget = min(budget, max_input_tokens * 2 // 5)
+        keep_chars = len(formatted) * budget // max(tokens, 1)
+        if keep_chars <= 0:
+            return None
+        head_chars = keep_chars // 4
+        tail_chars = keep_chars - head_chars
+        logger.debug(
+            "Summary prompt exceeded the model's context window; retrying with "
+            "~%d of ~%d history tokens.",
+            budget,
+            tokens,
+        )
+        truncated = (
+            f"{formatted[:head_chars]}\n\n[... middle of conversation omitted ...]\n\n"
+            f"{formatted[-tail_chars:]}"
+        )
+        return self.summary_prompt.format(messages=truncated).rstrip()
 
     def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
         """Trim messages to fit within summary generation limits."""

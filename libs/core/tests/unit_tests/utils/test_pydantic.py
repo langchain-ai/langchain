@@ -2,11 +2,21 @@
 
 import sys
 import warnings
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 from typing import Any
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    GetCoreSchemaHandler,
+    PydanticDeprecationWarning,
+    RootModel,
+)
 from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic_core import core_schema
 
 from langchain_core.utils.pydantic import (
     _create_subset_model_v2,
@@ -14,6 +24,8 @@ from langchain_core.utils.pydantic import (
     get_fields,
     is_basemodel_instance,
     is_basemodel_subclass,
+    model_json_schema,
+    model_validate,
     pre_init,
 )
 
@@ -153,6 +165,56 @@ def test_fields_pydantic_v1_from_2() -> None:
     assert fields == {"x": Foo.__fields__["x"]}
 
 
+def test_model_json_schema_v2() -> None:
+    class Foo(BaseModel):
+        x: int
+
+    assert model_json_schema(Foo) == Foo.model_json_schema()
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
+def test_model_json_schema_v1() -> None:
+    class Foo(BaseModelV1):
+        x: int
+
+    assert model_json_schema(Foo) == Foo.schema()
+
+
+def test_model_json_schema_non_model() -> None:
+    with pytest.raises(TypeError, match="Expected a Pydantic model"):
+        model_json_schema(dict)  # type: ignore[arg-type]
+
+
+def test_model_validate_v2() -> None:
+    class Foo(BaseModel):
+        x: int
+
+    result = model_validate(Foo, {"x": 1})
+    assert isinstance(result, Foo)
+    assert result.x == 1
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
+def test_model_validate_v1() -> None:
+    class Foo(BaseModelV1):
+        x: int
+
+    result = model_validate(Foo, {"x": 1})
+    assert isinstance(result, Foo)
+    assert result.x == 1
+
+
+def test_model_validate_non_model() -> None:
+    with pytest.raises(TypeError, match="Expected a Pydantic model"):
+        model_validate(dict, {"x": 1})  # type: ignore[arg-type]
+
+
 def test_create_model_v2() -> None:
     """Test that create model v2 works as expected."""
     with warnings.catch_warnings(record=True) as record:
@@ -186,3 +248,100 @@ def test_create_model_v2() -> None:
         foo.model_json_schema()
 
     assert list(record) == []
+
+
+@pytest.mark.parametrize(
+    "schema_kind", ["fields", "unhashable_fields", "root", "unhashable_root"]
+)
+def test_create_model_v2_preserves_concurrent_warning_filters(schema_kind: str) -> None:
+    entered = Event()
+    release = Event()
+
+    class PausingType:
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, _source: Any, _handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            entered.set()
+            assert release.wait(timeout=10)
+            return core_schema.list_schema(core_schema.int_schema())
+
+    default: Any = [] if schema_kind.startswith("unhashable") else ...
+    kwargs = (
+        {"root": (PausingType, default)}
+        if schema_kind.endswith("root")
+        else {"field_definitions": {"model_name": (PausingType, default)}}
+    )
+    with warnings.catch_warnings(), ThreadPoolExecutor(max_workers=1) as executor:
+        warnings.simplefilter("error", DeprecationWarning)
+        future = executor.submit(create_model_v2, "ConcurrentSchema", **kwargs)
+        try:
+            assert entered.wait(timeout=10)
+            with pytest.raises(DeprecationWarning, match="unrelated deprecation"):
+                warnings.warn("unrelated deprecation", DeprecationWarning, stacklevel=1)
+            warnings.simplefilter("error", UserWarning)
+        finally:
+            release.set()
+        model = future.result(timeout=10)
+        with pytest.raises(UserWarning, match="concurrent filter update"):
+            warnings.warn("concurrent filter update", UserWarning, stacklevel=1)
+    assert model.__name__ == "ConcurrentSchema"
+    assert model.model_json_schema()["title"] == "ConcurrentSchema"
+
+
+@pytest.mark.parametrize("default", [..., []])
+def test_create_model_v2_preserves_field_names_and_aliases(default: Any) -> None:
+    names = ("model_name", "model_dump", "schema", "_private", "もしもし")
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        model = create_model_v2(
+            "FieldNames", field_definitions=dict.fromkeys(names, (list[int], default))
+        )
+        values = {name: [1] for name in names}
+        assert model.model_validate(values).model_dump(by_alias=True) == values
+        assert set(model.model_json_schema()["properties"]) == set(values)
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
+def test_create_model_v2_preserves_v1_root_warnings() -> None:
+    class LegacyModel(BaseModelV1):
+        value: int
+
+    with warnings.catch_warnings(record=True) as expected:
+        warnings.simplefilter("always")
+        type(
+            "ExpectedLegacyRoot",
+            (RootModel,),
+            {"__annotations__": {"root": LegacyModel}},
+        )
+    with warnings.catch_warnings(record=True) as actual:
+        warnings.simplefilter("always")
+        model = create_model_v2("LegacyRoot", root=LegacyModel)
+    assert [(warning.category, str(warning.message)) for warning in actual] == [
+        (warning.category, str(warning.message))
+        for warning in expected
+        if not issubclass(warning.category, PydanticDeprecationWarning)
+    ]
+    assert model.model_fields["root"].annotation is LegacyModel
+
+
+def test_create_subset_model_v2_preserves_default_factory() -> None:
+    """Fields with default_factory should not be marked as required."""
+
+    class Original(BaseModel):
+        required_field: str
+        names: list[str] = Field(default_factory=list, description="Some names")
+        mapping: dict[str, int] = Field(default_factory=dict, description="A mapping")
+
+    subset = _create_subset_model_v2(
+        "Subset",
+        Original,
+        ["required_field", "names", "mapping"],
+    )
+    schema = subset.model_json_schema()
+    assert schema.get("required") == ["required_field"]
+    assert "names" not in schema.get("required", [])
+    assert "mapping" not in schema.get("required", [])

@@ -1,22 +1,30 @@
 """Unit tests for tool emulator middleware."""
 
-import typing
 from collections.abc import Callable, Sequence
 from itertools import cycle
 from typing import Any, Literal
 
+import pytest
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.runnables import Runnable
+from langchain_core.runnables import Runnable, RunnableConfig
 from langchain_core.tools import BaseTool, tool
-from pydantic import BaseModel
+from langgraph.constants import TAG_NOSTREAM
+from pydantic import BaseModel, Field
+from pytest_mock import MockerFixture
+from typing_extensions import override
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import LLMToolEmulator
-from langchain.messages import AIMessage
+from langchain.agents.middleware.internal_call_transformer import (
+    INTERNAL_CALL_METADATA_KEY,
+    internal_call_metadata,
+)
+from langchain.messages import AIMessage, ToolMessage
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
 @tool
@@ -45,11 +53,12 @@ class FakeModel(GenericFakeChatModel):
 
     tool_style: Literal["openai", "anthropic"] = "openai"
 
+    @override
     def bind_tools(
         self,
-        tools: typing.Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
+        **_kwargs: Any,
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         if len(tools) == 0:
             msg = "Must provide at least one tool"
             raise ValueError(msg)
@@ -89,6 +98,7 @@ class FakeEmulatorModel(BaseChatModel):
     responses: Sequence[str] = ("Emulated response",)
     response_index: int = 0
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -100,6 +110,7 @@ class FakeEmulatorModel(BaseChatModel):
         self.response_index += 1
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content=response))])
 
+    @override
     async def _agenerate(
         self,
         messages: list[BaseMessage],
@@ -114,6 +125,52 @@ class FakeEmulatorModel(BaseChatModel):
     @property
     def _llm_type(self) -> str:
         return "fake_emulator"
+
+
+class ConfigCapturingEmulatorModel(BaseChatModel):
+    """Fake model that captures the config passed to invoke/ainvoke."""
+
+    captured_configs: list[RunnableConfig | None] = Field(default_factory=list, exclude=True)
+
+    @override
+    def invoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return AIMessage(content="Emulated response")
+
+    @override
+    async def ainvoke(
+        self,
+        input: LanguageModelInput,
+        config: RunnableConfig | None = None,
+        *,
+        stop: list[str] | None = None,
+        **kwargs: Any,
+    ) -> AIMessage:
+        self.captured_configs.append(config)
+        return AIMessage(content="Emulated response")
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(
+            generations=[ChatGeneration(message=AIMessage(content="Emulated response"))]
+        )
+
+    @property
+    def _llm_type(self) -> str:
+        return "config-capturing-emulator"
 
 
 class TestLLMToolEmulatorBasic:
@@ -406,17 +463,38 @@ class TestLLMToolEmulatorModelConfiguration:
         # Should use the custom model for emulation
         assert isinstance(result["messages"][-1], AIMessage)
 
-    def test_default_model_used_when_none(self) -> None:
-        """Test that default model is used when model=None."""
-        # Just test that initialization doesn't fail - don't require anthropic package
-        # The actual default model requires langchain_anthropic which may not be installed
-        try:
-            emulator = LLMToolEmulator(tools=["get_weather"], model=None)
-            assert emulator.model is not None
-        except ImportError:
-            # If anthropic isn't installed, that's fine for this unit test
-            # The integration tests will verify the full functionality
-            pass
+    def test_default_model_deprecated_and_missing_langchain_anthropic_raises_clear_error(
+        self,
+    ) -> None:
+        """Test the `model=None` default path without `langchain-anthropic` installed.
+
+        Regression test: omitting `model` used to either silently depend on
+        `langchain-anthropic` or (in an earlier draft of this fix) raise a
+        `TypeError` for a previously-supported call shape. It should instead
+        keep working when a model provider is available, and raise an
+        actionable `ImportError` (plus a `DeprecationWarning`) when it isn't.
+        """
+        with (
+            pytest.warns(DeprecationWarning, match="deprecated"),
+            pytest.raises(ImportError, match="langchain-anthropic"),
+        ):
+            LLMToolEmulator(tools=["get_weather"])
+
+    def test_default_model_used_when_none(self, mocker: MockerFixture) -> None:
+        """Test that the default model is used and a deprecation warning is raised."""
+        fake_model = FakeEmulatorModel(responses=["response"])
+        init_chat_model_mock = mocker.patch(
+            "langchain.agents.middleware.tool_emulator.init_chat_model",
+            return_value=fake_model,
+        )
+
+        with pytest.warns(DeprecationWarning, match="deprecated"):
+            emulator = LLMToolEmulator(tools=["get_weather"])
+
+        assert emulator.model is fake_model
+        init_chat_model_mock.assert_called_once_with(
+            "anthropic:claude-sonnet-4-5-20250929", temperature=1
+        )
 
 
 class TestLLMToolEmulatorAsync:
@@ -622,3 +700,135 @@ class TestLLMToolEmulatorAsync:
         calc_messages = [msg for msg in tool_messages if msg.name == "calculator"]
         assert len(calc_messages) > 0
         assert "Result: 20" in calc_messages[0].content
+
+
+class TestLLMToolEmulatorInternalCallMetadata:
+    """Test that emulation calls are tagged as internal for stream filtering."""
+
+    def test_wrap_tool_call_marks_internal_call(self) -> None:
+        """`wrap_tool_call` should tag its model call as internal to middleware."""
+        model = ConfigCapturingEmulatorModel()
+        emulator = LLMToolEmulator(tools=["get_weather"], model=model)
+
+        agent_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "get_weather", "id": "1", "args": {"location": "NYC"}}
+                        ],
+                    ),
+                    AIMessage(content="Done."),
+                ]
+            )
+        )
+        agent = create_agent(model=agent_model, tools=[get_weather], middleware=[emulator])
+        agent.invoke({"messages": [HumanMessage("Weather in NYC")]})
+
+        assert len(model.captured_configs) == 1
+        config = model.captured_configs[0]
+        assert config is not None
+        assert config["metadata"]["lc_source"] == "tool_emulation"
+        assert (
+            config["metadata"][INTERNAL_CALL_METADATA_KEY]
+            == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
+        )
+        assert TAG_NOSTREAM in config["tags"]
+
+    async def test_awrap_tool_call_marks_internal_call(self) -> None:
+        """`awrap_tool_call` should tag its model call as internal to middleware."""
+        model = ConfigCapturingEmulatorModel()
+        emulator = LLMToolEmulator(tools=["get_weather"], model=model)
+
+        agent_model = FakeModel(
+            messages=cycle(
+                [
+                    AIMessage(
+                        content="",
+                        tool_calls=[
+                            {"name": "get_weather", "id": "1", "args": {"location": "NYC"}}
+                        ],
+                    ),
+                    AIMessage(content="Done."),
+                ]
+            )
+        )
+        agent = create_agent(model=agent_model, tools=[get_weather], middleware=[emulator])
+        await agent.ainvoke({"messages": [HumanMessage("Weather in NYC")]})
+
+        assert len(model.captured_configs) == 1
+        config = model.captured_configs[0]
+        assert config is not None
+        assert config["metadata"]["lc_source"] == "tool_emulation"
+        assert (
+            config["metadata"][INTERNAL_CALL_METADATA_KEY]
+            == internal_call_metadata()[INTERNAL_CALL_METADATA_KEY]
+        )
+        assert TAG_NOSTREAM in config["tags"]
+
+
+class TestLLMToolEmulatorStreamingEndToEnd:
+    """End-to-end: a real emulation call must not leak into `run.messages`."""
+
+    async def test_emulated_tool_call_excluded_from_messages_projection(self) -> None:
+        """Drives `create_agent` with a real streaming emulator model.
+
+        `GenericFakeChatModel` (unlike `FakeEmulatorModel`) actually streams
+        via `_astream`, so this exercises the same token-leak path as a real
+        provider. The agent's own two model turns (deciding to call the
+        tool, then answering) always surface in `run.messages`, so a leak
+        would show up as a *third* stream carrying the emulator's content.
+        """
+        agent_model = FakeToolCallingModel(
+            tool_calls=[[{"name": "get_weather", "args": {"location": "NYC"}, "id": "tc1"}], []]
+        )
+        emulator_model = GenericFakeChatModel(messages=iter([AIMessage(content="XEMULATEDX")]))
+        emulator = LLMToolEmulator(tools=["get_weather"], model=emulator_model)
+
+        agent = create_agent(model=agent_model, tools=[get_weather], middleware=[emulator])
+
+        run = await agent.astream_events(
+            {"messages": [HumanMessage("Weather in NYC?")]}, version="v3"
+        )
+
+        texts: list[str] = []
+        async for msg in run.messages:
+            text = ""
+            async for chunk in msg.text:
+                text += chunk
+            texts.append(text)
+
+        # Exactly the agent's two real turns — no separate stream for the
+        # emulator's own call, and its content is never on its own.
+        assert len(texts) == 2
+        assert "XEMULATEDX" not in texts
+
+
+def test_emulation_call_stays_off_the_messages_stream() -> None:
+    weather_call = {
+        "id": "tc1",
+        "type": "function",
+        "function": {"name": "get_weather", "arguments": '{"location": "NYC"}'},
+    }
+    agent_model = FakeModel(
+        messages=iter(
+            [
+                AIMessage(content="", additional_kwargs={"tool_calls": [weather_call]}),
+                AIMessage(content="Done."),
+            ]
+        )
+    )
+    emulator_model = GenericFakeChatModel(messages=iter([AIMessage(content="EMULATED-WEATHER")]))
+    emulator = LLMToolEmulator(tools=["get_weather"], model=emulator_model)
+    agent = create_agent(model=agent_model, tools=[get_weather], middleware=[emulator])
+
+    parts = [
+        part
+        for part, _ in agent.stream(
+            {"messages": [HumanMessage("Weather in NYC?")]}, stream_mode="messages"
+        )
+    ]
+
+    assert [part.text for part in parts if isinstance(part, ToolMessage)] == ["EMULATED-WEATHER"]
+    assert "".join(part.text for part in parts if isinstance(part, AIMessage)) == "Done."

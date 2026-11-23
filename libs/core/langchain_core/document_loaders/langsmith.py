@@ -1,9 +1,9 @@
 """LangSmith document loader."""
 
-import datetime
+import datetime as dt
 import json
 import uuid
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from typing import Any
 
 from langsmith import Client as LangSmithClient
@@ -11,6 +11,7 @@ from typing_extensions import override
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
+from langchain_core.tracers._compat import pydantic_to_dict
 
 
 class LangSmithLoader(BaseLoader):
@@ -20,7 +21,7 @@ class LangSmithLoader(BaseLoader):
     example into the `Document` metadata. This allows you to easily create few-shot
     example retrievers from the loaded documents.
 
-    ??? note "Lazy loading example"
+    ??? example "Lazy loading"
 
         ```python
         from langchain_core.document_loaders import LangSmithLoader
@@ -42,12 +43,12 @@ class LangSmithLoader(BaseLoader):
         dataset_id: uuid.UUID | str | None = None,
         dataset_name: str | None = None,
         example_ids: Sequence[uuid.UUID | str] | None = None,
-        as_of: datetime.datetime | str | None = None,
+        as_of: dt.datetime | str | None = None,
         splits: Sequence[str] | None = None,
         inline_s3_urls: bool = True,
         offset: int = 0,
         limit: int | None = None,
-        metadata: dict | None = None,
+        metadata: dict[str, Any] | None = None,
         filter: str | None = None,  # noqa: A002
         content_key: str = "",
         format_content: Callable[..., str] | None = None,
@@ -59,33 +60,45 @@ class LangSmithLoader(BaseLoader):
         Args:
             dataset_id: The ID of the dataset to filter by.
             dataset_name: The name of the dataset to filter by.
-            content_key: The inputs key to set as Document page content. `'.'` characters
-                are interpreted as nested keys. E.g. `content_key="first.second"` will
-                result in
+            content_key: The inputs key to set as `Document` page content.
+
+                `'.'` characters are interpreted as nested keys, e.g.
+                `content_key="first.second"` will result in
                 `Document(page_content=format_content(example.inputs["first"]["second"]))`
             format_content: Function for converting the content extracted from the example
-                inputs into a string. Defaults to JSON-encoding the contents.
+                inputs into a string.
+
+                Defaults to JSON-encoding the contents.
             example_ids: The IDs of the examples to filter by.
             as_of: The dataset version tag or timestamp to retrieve the examples as of.
+
                 Response examples will only be those that were present at the time of
                 the tagged (or timestamped) version.
-            splits: A list of dataset splits, which are
-                divisions of your dataset such as `train`, `test`, or `validation`.
+            splits: A list of dataset splits, which are divisions of your dataset such
+                as `train`, `test`, or `validation`.
+
                 Returns examples only from the specified splits.
             inline_s3_urls: Whether to inline S3 URLs.
             offset: The offset to start from.
             limit: The maximum number of examples to return.
             metadata: Metadata to filter by.
             filter: A structured filter string to apply to the examples.
-            client: LangSmith Client. If not provided will be initialized from below args.
-            client_kwargs: Keyword args to pass to LangSmith client init. Should only be
-                specified if `client` isn't.
+            client: LangSmith Client.
+
+                If not provided will be initialized from below args.
+            client_kwargs: Keyword args to pass to LangSmith client init.
+
+                Should only be specified if `client` isn't.
 
         Raises:
             ValueError: If both `client` and `client_kwargs` are provided.
         """  # noqa: E501
         if client and client_kwargs:
-            raise ValueError
+            msg = (
+                "Received both `client` and `client_kwargs`. "
+                "Pass `client_kwargs` only when `client` is not provided."
+            )
+            raise ValueError(msg)
         self._client = client or LangSmithClient(**client_kwargs)
         self.content_key = list(content_key.split(".")) if content_key else []
         self.format_content = format_content or _stringify
@@ -114,15 +127,51 @@ class LangSmithLoader(BaseLoader):
             metadata=self.metadata,
             filter=self.filter,
         ):
-            content: Any = example.inputs
-            for key in self.content_key:
-                content = content[key]
+            content = _get_content_from_inputs(example.inputs, self.content_key)
             content_str = self.format_content(content)
-            metadata = example.dict()
+            metadata = pydantic_to_dict(example)
             # Stringify datetime and UUID types.
             for k in ("dataset_id", "created_at", "modified_at", "source_run_id", "id"):
                 metadata[k] = str(metadata[k]) if metadata[k] else metadata[k]
             yield Document(content_str, metadata=metadata)
+
+
+def _get_content_from_inputs(inputs: Any, content_key: Sequence[str]) -> Any:
+    """Resolve nested example input content for `LangSmithLoader`.
+
+    Args:
+        inputs: Example input payload returned by LangSmith.
+        content_key: Ordered key path used to extract the document content.
+
+    Returns:
+        The extracted content value.
+
+    Raises:
+        ValueError: If a key in `content_key` is missing, or a value along the path
+            (including `inputs` itself) is not a mapping.
+    """
+    content = inputs
+    full_path = ".".join(content_key)
+
+    for i, key in enumerate(content_key):
+        current_path = ".".join(content_key[:i]) or "<root>"
+        if not isinstance(content, Mapping):
+            msg = (
+                f"Could not resolve content_key {full_path!r}: expected a mapping at "
+                f"{current_path!r}, but found {type(content).__name__}."
+            )
+            # A too-deep `content_key` is an invalid-argument error, not a runtime
+            # type bug, so it is unified with the missing-key case as `ValueError`.
+            raise ValueError(msg)  # noqa: TRY004
+        if key not in content:
+            msg = (
+                f"Could not resolve content_key {full_path!r}: missing key {key!r} "
+                f"under {current_path!r}."
+            )
+            raise ValueError(msg)
+        content = content[key]
+
+    return content
 
 
 def _stringify(x: str | dict[str, Any]) -> str:

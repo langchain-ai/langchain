@@ -463,7 +463,7 @@ async def test_runnable_agent() -> None:
         ],
     )
 
-    def fake_parse(_: dict) -> AgentFinish | AgentAction:
+    def fake_parse(_: AIMessage) -> AgentFinish | AgentAction:
         """A parser."""
         return AgentFinish(return_values={"foo": "meow"}, log="hard-coded-message")
 
@@ -570,7 +570,7 @@ async def test_runnable_agent_with_function_calls() -> None:
         ],
     )
 
-    def fake_parse(_: dict) -> AgentFinish | AgentAction:
+    def fake_parse(_: AIMessage) -> AgentFinish | AgentAction:
         """A parser."""
         return cast("AgentFinish | AgentAction", next(parser_responses))
 
@@ -682,7 +682,7 @@ async def test_runnable_with_multi_action_per_step() -> None:
         ],
     )
 
-    def fake_parse(_: dict) -> AgentFinish | AgentAction:
+    def fake_parse(_: AIMessage) -> AgentFinish | AgentAction:
         """A parser."""
         return cast("AgentFinish | AgentAction", next(parser_responses))
 

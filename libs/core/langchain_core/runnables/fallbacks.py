@@ -1,4 +1,4 @@
-"""Runnable that can fallback to other Runnables if it fails."""
+"""`Runnable` that can fallback to other `Runnable` objects if it fails."""
 
 import asyncio
 import inspect
@@ -7,7 +7,7 @@ from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import wraps
 from typing import TYPE_CHECKING, Any, cast
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
 from typing_extensions import override
 
 from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
@@ -28,13 +28,14 @@ from langchain_core.runnables.utils import (
     coro_with_context,
     get_unique_config_specs,
 )
+from langchain_core.utils.pydantic import TypeBaseModel
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.manager import AsyncCallbackManagerForChainRun
 
 
 class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
-    """`Runnable` that can fallback to other `Runnable`s if it fails.
+    """`Runnable` that can fallback to other `Runnable` objects if it fails.
 
     External APIs (e.g., APIs for a language model) may at times experience
     degraded performance or even downtime.
@@ -51,11 +52,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
     Example:
         ```python
-        from langchain_core.chat_models.openai import ChatOpenAI
-        from langchain_core.chat_models.anthropic import ChatAnthropic
+        from langchain_anthropic import ChatAnthropic
+        from langchain_openai import ChatOpenAI
 
-        model = ChatAnthropic(model="claude-3-haiku-20240307").with_fallbacks(
-            [ChatOpenAI(model="gpt-3.5-turbo-0125")]
+        model = ChatAnthropic(model="claude-sonnet-5").with_fallbacks(
+            [ChatOpenAI(model="gpt-5.4-mini")]
         )
         # Will usually use ChatAnthropic, but fallback to ChatOpenAI
         # if ChatAnthropic fails.
@@ -118,13 +119,11 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         return self.runnable.OutputType
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         return self.runnable.get_input_schema(config)
 
     @override
-    def get_output_schema(
-        self, config: RunnableConfig | None = None
-    ) -> type[BaseModel]:
+    def get_output_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         return self.runnable.get_output_schema(config)
 
     @property
@@ -605,16 +604,16 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             from langchain_openai import ChatOpenAI
             from langchain_anthropic import ChatAnthropic
 
-            gpt_4o = ChatOpenAI(model="gpt-4o")
-            claude_3_sonnet = ChatAnthropic(model="claude-sonnet-4-5-20250929")
-            model = gpt_4o.with_fallbacks([claude_3_sonnet])
+            gpt_55 = ChatOpenAI(model="gpt-5.5")
+            claude_3_sonnet = ChatAnthropic(model="claude-sonnet-5")
+            model = gpt_55.with_fallbacks([claude_3_sonnet])
 
             model.model_name
-            # -> "gpt-4o"
+            # -> "gpt-5.5"
 
             # .bind_tools() is called on both ChatOpenAI and ChatAnthropic
             # Equivalent to:
-            # gpt_4o.bind_tools([...]).with_fallbacks([claude_3_sonnet.bind_tools([...])])
+            # gpt_55.bind_tools([...]).with_fallbacks([claude_3_sonnet.bind_tools([...])])
             model.bind_tools([...])
             # -> RunnableWithFallbacks(
                 runnable=RunnableBinding(bound=ChatOpenAI(...), kwargs={"tools": [...]}),

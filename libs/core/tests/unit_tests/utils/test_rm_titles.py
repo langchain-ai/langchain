@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 
 from langchain_core.utils.function_calling import _rm_titles
@@ -229,5 +231,5 @@ output5 = {
         (schema5, output5),
     ],
 )
-def test_rm_titles(schema: dict, output: dict) -> None:
+def test_rm_titles(schema: dict[str, Any], output: dict[str, Any]) -> None:
     assert _rm_titles(schema) == output

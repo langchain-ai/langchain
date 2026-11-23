@@ -12,6 +12,7 @@ from pydantic import (
 )
 from typing_extensions import override
 
+from langchain_core._api import deprecated
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts.chat import BaseChatPromptTemplate
@@ -26,20 +27,23 @@ from langchain_core.prompts.string import (
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    from typing_extensions import Self
+    from typing import Self
 
 
 class _FewShotPromptTemplateMixin(BaseModel):
     """Prompt template that contains few shot examples."""
 
-    examples: list[dict] | None = None
+    examples: list[dict[str, Any]] | None = None
     """Examples to format into the prompt.
-    Either this or example_selector should be provided."""
+
+    Either this or `example_selector` should be provided.
+    """
 
     example_selector: BaseExampleSelector | None = None
-    """ExampleSelector to choose the examples to format into the prompt.
-    Either this or examples should be provided."""
+    """`ExampleSelector` to choose the examples to format into the prompt.
+
+    Either this or `examples` should be provided.
+    """
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -48,8 +52,8 @@ class _FewShotPromptTemplateMixin(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def check_examples_and_selector(cls, values: dict) -> Any:
-        """Check that one and only one of examples/example_selector are provided.
+    def check_examples_and_selector(cls, values: dict[str, Any]) -> Any:
+        """Check that one and only one of `examples`/`example_selector` are provided.
 
         Args:
             values: The values to check.
@@ -58,8 +62,9 @@ class _FewShotPromptTemplateMixin(BaseModel):
             The values if they are valid.
 
         Raises:
-            ValueError: If neither or both examples and example_selector are provided.
-            ValueError: If both examples and example_selector are provided.
+            ValueError: If neither or both `examples` and `example_selector` are
+                provided.
+            ValueError: If both `examples` and `example_selector` are provided.
         """
         examples = values.get("examples")
         example_selector = values.get("example_selector")
@@ -73,7 +78,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
 
         return values
 
-    def _get_examples(self, **kwargs: Any) -> list[dict]:
+    def _get_examples(self, **kwargs: Any) -> list[dict[str, Any]]:
         """Get the examples to use for formatting the prompt.
 
         Args:
@@ -83,7 +88,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
             List of examples.
 
         Raises:
-            ValueError: If neither examples nor example_selector are provided.
+            ValueError: If neither `examples` nor `example_selector` are provided.
         """
         if self.examples is not None:
             return self.examples
@@ -92,7 +97,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
         msg = "One of 'examples' and 'example_selector' should be provided"
         raise ValueError(msg)
 
-    async def _aget_examples(self, **kwargs: Any) -> list[dict]:
+    async def _aget_examples(self, **kwargs: Any) -> list[dict[str, Any]]:
         """Async get the examples to use for formatting the prompt.
 
         Args:
@@ -102,7 +107,7 @@ class _FewShotPromptTemplateMixin(BaseModel):
             List of examples.
 
         Raises:
-            ValueError: If neither examples nor example_selector are provided.
+            ValueError: If neither `examples` nor `example_selector` are provided.
         """
         if self.examples is not None:
             return self.examples
@@ -117,14 +122,14 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return False as this class is not serializable."""
+        """Return `False` as this class is not serializable."""
         return False
 
     validate_template: bool = False
     """Whether or not to try validating the template."""
 
     example_prompt: PromptTemplate
-    """PromptTemplate used to format an individual example."""
+    """`PromptTemplate` used to format an individual example."""
 
     suffix: str
     """A prompt template string to put after the examples."""
@@ -136,7 +141,10 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
     """A prompt template string to put before the examples."""
 
     template_format: Literal["f-string", "jinja2"] = "f-string"
-    """The format of the prompt template. Options are: 'f-string', 'jinja2'."""
+    """The format of the prompt template.
+
+    Options are: `'f-string'`, `'jinja2'`.
+    """
 
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the few shot prompt template."""
@@ -174,7 +182,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         Use this method to generate a string representation of a prompt.
 
         Args:
-            **kwargs: keyword arguments to use for formatting.
+            **kwargs: Keyword arguments to use for formatting.
 
         Returns:
             A string representation of the prompt.
@@ -202,7 +210,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         Use this method to generate a string representation of a prompt.
 
         Args:
-            **kwargs: keyword arguments to use for formatting.
+            **kwargs: Keyword arguments to use for formatting.
 
         Returns:
             A string representation of the prompt.
@@ -229,6 +237,12 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
         """Return the prompt type key."""
         return "few_shot"
 
+    @deprecated(
+        since="1.2.21",
+        removal="2.0.0",
+        alternative="Use `dumpd`/`dumps` from `langchain_core.load` to serialize "
+        "prompts and `load`/`loads` to deserialize them.",
+    )
     def save(self, file_path: Path | str) -> None:
         """Save the prompt template to a file.
 
@@ -236,7 +250,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
             file_path: The path to save the prompt template to.
 
         Raises:
-            ValueError: If example_selector is provided.
+            ValueError: If `example_selector` is provided.
         """
         if self.example_selector:
             msg = "Saving an example selector is not currently supported"
@@ -254,15 +268,22 @@ class FewShotChatMessagePromptTemplate(
 
     This structure enables creating a conversation with intermediate examples like:
 
-        System: You are a helpful AI Assistant
-        Human: What is 2+2?
-        AI: 4
-        Human: What is 2+3?
-        AI: 5
-        Human: What is 4+4?
+    ```txt
+    System: You are a helpful AI Assistant
 
-    This prompt template can be used to generate a fixed list of examples or else
-    to dynamically select examples based on the input.
+    Human: What is 2+2?
+
+    AI: 4
+
+    Human: What is 2+3?
+
+    AI: 5
+
+    Human: What is 4+4?
+    ```
+
+    This prompt template can be used to generate a fixed list of examples or else to
+    dynamically select examples based on the input.
 
     Examples:
         Prompt template with a fixed list of examples (matching the sample
@@ -347,23 +368,24 @@ class FewShotChatMessagePromptTemplate(
         print(final_prompt.format_messages(input="What's 3+3?"))  # noqa: T201
 
         # Use within an LLM
-        from langchain_core.chat_models import ChatAnthropic
+        from langchain_anthropic import ChatAnthropic
 
-        chain = final_prompt | ChatAnthropic(model="claude-3-haiku-20240307")
+        chain = final_prompt | ChatAnthropic(model="claude-sonnet-5")
         chain.invoke({"input": "What's 3+3?"})
         ```
     """
 
     input_variables: list[str] = Field(default_factory=list)
-    """A list of the names of the variables the prompt template will use
-    to pass to the example_selector, if provided."""
+    """A list of the names of the variables the prompt template will use to pass to
+    the `example_selector`, if provided.
+    """
 
     example_prompt: BaseMessagePromptTemplate | BaseChatPromptTemplate
     """The class to format each example."""
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return False as this class is not serializable."""
+        """Return `False` as this class is not serializable."""
         return False
 
     model_config = ConfigDict(
@@ -375,7 +397,7 @@ class FewShotChatMessagePromptTemplate(
         """Format kwargs into a list of messages.
 
         Args:
-            **kwargs: keyword arguments to use for filling in templates in messages.
+            **kwargs: Keyword arguments to use for filling in templates in messages.
 
         Returns:
             A list of formatted messages with all template variables filled in.
@@ -396,7 +418,7 @@ class FewShotChatMessagePromptTemplate(
         """Async format kwargs into a list of messages.
 
         Args:
-            **kwargs: keyword arguments to use for filling in templates in messages.
+            **kwargs: Keyword arguments to use for filling in templates in messages.
 
         Returns:
             A list of formatted messages with all template variables filled in.
@@ -416,13 +438,13 @@ class FewShotChatMessagePromptTemplate(
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with inputs generating a string.
 
-        Use this method to generate a string representation of a prompt consisting
-        of chat messages.
+        Use this method to generate a string representation of a prompt consisting of
+        chat messages.
 
         Useful for feeding into a string-based completion language model or debugging.
 
         Args:
-            **kwargs: keyword arguments to use for formatting.
+            **kwargs: Keyword arguments to use for formatting.
 
         Returns:
             A string representation of the prompt
@@ -433,13 +455,13 @@ class FewShotChatMessagePromptTemplate(
     async def aformat(self, **kwargs: Any) -> str:
         """Async format the prompt with inputs generating a string.
 
-        Use this method to generate a string representation of a prompt consisting
-        of chat messages.
+        Use this method to generate a string representation of a prompt consisting of
+        chat messages.
 
         Useful for feeding into a string-based completion language model or debugging.
 
         Args:
-            **kwargs: keyword arguments to use for formatting.
+            **kwargs: Keyword arguments to use for formatting.
 
         Returns:
             A string representation of the prompt

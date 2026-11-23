@@ -1,12 +1,15 @@
 from langchain_openai import __all__
 
 EXPECTED_ALL = [
+    "__version__",
     "OpenAI",
     "ChatOpenAI",
     "OpenAIEmbeddings",
+    "OpenAIDecisions",
     "AzureOpenAI",
     "AzureChatOpenAI",
     "AzureOpenAIEmbeddings",
+    "StreamChunkTimeoutError",
     "custom_tool",
 ]
 

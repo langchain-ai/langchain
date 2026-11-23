@@ -164,14 +164,16 @@ class ChatParrotLink(BaseChatModel):
         if run_manager:
             # This is optional in newer versions of LangChain
             # The on_llm_new_token will be called automatically
-            run_manager.on_llm_new_token(token, chunk=chunk)
+            run_manager.on_llm_new_token("", chunk=chunk)
         yield chunk
 
+    @override
     @property
     def _llm_type(self) -> str:
         """Get the type of language model used by this chat model."""
         return "echoing-chat-model-advanced"
 
+    @override
     @property
     def _identifying_params(self) -> dict[str, Any]:
         """Return a dictionary of identifying parameters.

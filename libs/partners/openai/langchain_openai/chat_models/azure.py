@@ -5,7 +5,8 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
-from typing import Any, Literal, TypeAlias, TypeVar
+from importlib import import_module
+from typing import TYPE_CHECKING, Any, Literal, Self, TypeAlias, TypeVar
 
 import openai
 from langchain_core.language_models import LanguageModelInput
@@ -15,9 +16,11 @@ from langchain_core.runnables import Runnable
 from langchain_core.utils import from_env, secret_from_env
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, SecretStr, model_validator
-from typing_extensions import Self
 
 from langchain_openai.chat_models.base import BaseChatOpenAI, _get_default_model_profile
+
+if TYPE_CHECKING:
+    from langchain_core.language_models import ModelProfile
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +28,33 @@ logger = logging.getLogger(__name__)
 _BM = TypeVar("_BM", bound=BaseModel)
 _DictOrPydanticClass: TypeAlias = dict[str, Any] | type[_BM] | type
 _DictOrPydantic: TypeAlias = dict | _BM
+_AZURE_OPENAI_SCOPE = "https://cognitiveservices.azure.com/.default"
+_AZURE_WORKLOAD_IDENTITY_ENV_VARS = (
+    "AZURE_CLIENT_ID",
+    "AZURE_TENANT_ID",
+    "AZURE_FEDERATED_TOKEN_FILE",
+)
+
+
+def _get_azure_workload_identity_token_providers() -> tuple[
+    Callable[[], str] | None, Callable[[], Awaitable[str]] | None
+]:
+    if not all(os.getenv(key) for key in _AZURE_WORKLOAD_IDENTITY_ENV_VARS):
+        return None, None
+    try:
+        azure_identity = import_module("azure.identity")
+        azure_identity_aio = import_module("azure.identity.aio")
+    except ImportError:
+        return None, None
+    sync_provider = azure_identity.get_bearer_token_provider(
+        azure_identity.WorkloadIdentityCredential(),
+        _AZURE_OPENAI_SCOPE,
+    )
+    async_provider = azure_identity_aio.get_bearer_token_provider(
+        azure_identity_aio.WorkloadIdentityCredential(),
+        _AZURE_OPENAI_SCOPE,
+    )
+    return sync_provider, async_provider
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -71,7 +101,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             var `OPENAI_ORG_ID`.
         model:
             The name of the underlying OpenAI model. Used for tracing and token
-            counting. Does not affect completion. E.g. `'gpt-4'`, `'gpt-35-turbo'`, etc.
+            counting. Does not affect completion.
         model_version:
             The version of the underlying OpenAI model. Used for tracing and token
             counting. Does not affect completion. E.g., `'0125'`, `'0125-preview'`, etc.
@@ -144,7 +174,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     "prompt_tokens": 28,
                     "total_tokens": 34,
                 },
-                "model_name": "gpt-4",
+                "model_name": "gpt-5.5",
                 "system_fingerprint": "fp_7ec89fabc6",
                 "prompt_filter_results": [
                     {
@@ -192,7 +222,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             content="",
             response_metadata={
                 "finish_reason": "stop",
-                "model_name": "gpt-4",
+                "model_name": "gpt-5.5",
                 "system_fingerprint": "fp_811936bd4f",
             },
             id="run-a6f294d3-0700-4f6a-abc2-c6ef1178c37f",
@@ -212,7 +242,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             content="J'adore la programmation.",
             response_metadata={
                 "finish_reason": "stop",
-                "model_name": "gpt-4",
+                "model_name": "gpt-5.5",
                 "system_fingerprint": "fp_811936bd4f",
             },
             id="run-ba60e41c-9258-44b8-8f3a-2f10599643b3",
@@ -536,12 +566,13 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """
 
     model_name: str | None = Field(default=None, alias="model")  # type: ignore[assignment]
-    """Name of the deployed OpenAI model, e.g. `'gpt-4o'`, `'gpt-35-turbo'`, etc.
+    """Name of the deployed OpenAI model.
 
     Distinct from the Azure deployment name, which is set by the Azure user.
     Used for tracing and token counting.
 
     !!! warning
+
         Does NOT affect completion.
     """
 
@@ -659,6 +690,21 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'
                 )
                 raise ValueError(msg)
+
+        if not any(
+            (
+                self.openai_api_key,
+                self.azure_ad_token,
+                self.azure_ad_token_provider,
+                self.azure_ad_async_token_provider,
+            )
+        ):
+            sync_provider, async_provider = (
+                _get_azure_workload_identity_token_providers()
+            )
+            self.azure_ad_token_provider = sync_provider
+            self.azure_ad_async_token_provider = async_provider
+
         client_params: dict = {
             "api_version": self.openai_api_version,
             "azure_endpoint": self.azure_endpoint,
@@ -674,15 +720,25 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
             "default_headers": {
-                **(self.default_headers or {}),
                 "User-Agent": "langchain-partner-python-azure-openai",
+                **(self.default_headers or {}),
             },
             "default_query": self.default_query,
         }
+        if (
+            self.azure_ad_token
+            or self.azure_ad_token_provider
+            or self.azure_ad_async_token_provider
+        ):
+            client_params["api_key"] = None
         if self.max_retries is not None:
             client_params["max_retries"] = self.max_retries
 
-        if not self.client:
+        if not self.client and (
+            not self.azure_ad_async_token_provider
+            or self.azure_ad_token
+            or self.azure_ad_token_provider
+        ):
             sync_specific = {"http_client": self.http_client}
             self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
@@ -701,12 +757,17 @@ class AzureChatOpenAI(BaseChatOpenAI):
             self.async_client = self.root_async_client.chat.completions
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None and self.deployment_name is not None:
-            self.profile = _get_default_model_profile(self.deployment_name)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        profile: ModelProfile | None = None
+        if self.model_name is not None:
+            profile = _get_default_model_profile(self.model_name) or None
+        if profile is None and self.deployment_name is not None:
+            profile = _get_default_model_profile(self.deployment_name) or None
+        if profile is not None:
+            # The data describes OpenAI's API; `additional_tools` is unverified
+            # on Azure's, so make no claim either way.
+            profile.pop("mid_conversation_tools", None)
+        return profile
 
     @property
     def _identifying_params(self) -> dict[str, Any]:
@@ -743,7 +804,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
         """Get the parameters used to invoke the model."""
         params = super()._get_ls_params(stop=stop, **kwargs)
         params["ls_provider"] = "azure"
-        if self.model_name:
+        if "model" in kwargs:
+            # Honor explicit per-call override resolved by super().
+            pass
+        elif self.model_name:
             if self.model_version and self.model_version not in self.model_name:
                 params["ls_model_name"] = (
                     self.model_name + "-" + self.model_version.lstrip("-")
@@ -762,7 +826,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
         chat_result = super()._create_chat_result(response, generation_info)
 
         if not isinstance(response, dict):
-            response = response.model_dump()
+            # warnings=False due to https://github.com/openai/openai-python/issues/2872
+            response = response.model_dump(warnings=False)
         for res in response["choices"]:
             if res.get("finish_reason", None) == "content_filter":
                 msg = (
@@ -862,8 +927,8 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
                 - `'json_schema'`:
                     Uses OpenAI's [Structured Output API](https://platform.openai.com/docs/guides/structured-outputs).
-                    Supported for `'gpt-4o-mini'`, `'gpt-4o-2024-08-06'`, `'o1'`, and later
-                    models.
+                    Supported only by models listed in OpenAI's Structured Output API
+                    documentation.
                 - `'function_calling'`:
                     Uses OpenAI's tool-calling (formerly called function calling)
                     [API](https://platform.openai.com/docs/guides/function-calling)
@@ -888,6 +953,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+
+                If the model refuses, `ModelRefusalError` is raised, or returned as
+                `'parsing_error'` when `include_raw` is `True`.
             strict:
 
                 - True:
@@ -959,7 +1027,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
 
             model = AzureChatOpenAI(
-                azure_deployment="...", model="gpt-4o", temperature=0
+                azure_deployment="...", model="gpt-5.5", temperature=0
             )
             structured_model = model.with_structured_output(AnswerWithJustification)
 
@@ -992,7 +1060,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
 
             model = AzureChatOpenAI(
-                azure_deployment="...", model="gpt-4o", temperature=0
+                azure_deployment="...", model="gpt-5.5", temperature=0
             )
             structured_model = model.with_structured_output(
                 AnswerWithJustification, method="function_calling"
@@ -1023,7 +1091,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
 
             model = AzureChatOpenAI(
-                azure_deployment="...", model="gpt-4o", temperature=0
+                azure_deployment="...", model="gpt-5.5", temperature=0
             )
             structured_model = model.with_structured_output(
                 AnswerWithJustification, include_raw=True
@@ -1057,7 +1125,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
 
             model = AzureChatOpenAI(
-                azure_deployment="...", model="gpt-4o", temperature=0
+                azure_deployment="...", model="gpt-5.5", temperature=0
             )
             structured_model = model.with_structured_output(AnswerWithJustification)
 
@@ -1089,7 +1157,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
                 model = AzureChatOpenAI(
                     azure_deployment="...",
-                    model="gpt-4o",
+                    model="gpt-5.5",
                     temperature=0,
                 )
                 structured_model = model.with_structured_output(oai_schema)
@@ -1117,7 +1185,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
             model = AzureChatOpenAI(
                 azure_deployment="...",
-                model="gpt-4o",
+                model="gpt-5.5",
                 temperature=0,
             )
             structured_model = model.with_structured_output(

@@ -10,7 +10,7 @@ def strip_think_tags(text: str) -> str:
     """Removes all <think>...</think> tags and their content from text.
 
     This function removes all occurrences of think tags, preserving text
-    before, between, and after the tags. It also handles markdown code fences.
+    before and after the tags. It also handles markdown code fences.
 
     Args:
         text: The input text that may contain think tags.

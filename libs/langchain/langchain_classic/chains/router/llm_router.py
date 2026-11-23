@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any, Self, cast
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -15,7 +15,7 @@ from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.utils.json import parse_and_check_json_markdown
 from pydantic import model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_classic.chains import LLMChain
 from langchain_classic.chains.router.base import RouterChain
@@ -23,11 +23,12 @@ from langchain_classic.chains.router.base import RouterChain
 
 @deprecated(
     since="0.2.12",
-    removal="1.0",
-    message=(
-        "Use RunnableLambda to select from multiple prompt templates. See example "
-        "in API reference: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.router.llm_router.LLMRouterChain.html"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build routing logic with `create_agent` (e.g. with subagents or "
+        "prompt-selection middleware). See "
+        "https://docs.langchain.com/oss/python/langchain/agents"
     ),
 )
 class LLMRouterChain(RouterChain):

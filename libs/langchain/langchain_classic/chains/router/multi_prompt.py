@@ -24,10 +24,12 @@ from langchain_classic.chains.router.multi_prompt_prompt import (
 
 @deprecated(
     since="0.2.12",
-    removal="1.0",
-    message=(
-        "Please see migration guide here for recommended implementation: "
-        "https://python.langchain.com/docs/versions/migrating_chains/multi_prompt_chain/"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build routing logic with `create_agent` (e.g. with subagents or "
+        "prompt-selection middleware). See "
+        "https://docs.langchain.com/oss/python/langchain/agents"
     ),
 )
 class MultiPromptChain(MultiRouteChain):

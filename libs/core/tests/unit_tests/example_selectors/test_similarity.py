@@ -15,7 +15,7 @@ from langchain_core.vectorstores import VectorStore
 class DummyVectorStore(VectorStore):
     def __init__(self, init_arg: str | None = None):
         self.texts: list[str] = []
-        self.metadatas: list[dict] = []
+        self.metadatas: list[dict[str, Any]] = []
         self._embeddings: Embeddings | None = None
         self.init_arg = init_arg
 
@@ -27,7 +27,7 @@ class DummyVectorStore(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: list[dict] | None = None,
+        metadatas: list[dict[str, Any]] | None = None,
         **kwargs: Any,
     ) -> list[str]:
         self.texts.extend(texts)
@@ -66,7 +66,7 @@ class DummyVectorStore(VectorStore):
         cls,
         texts: list[str],
         embedding: Embeddings,
-        metadatas: list[dict] | None = None,
+        metadatas: list[dict[str, Any]] | None = None,
         **kwargs: Any,
     ) -> "DummyVectorStore":
         store = DummyVectorStore(**kwargs)

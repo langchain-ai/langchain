@@ -28,13 +28,16 @@ def create_react_agent(
     (https://arxiv.org/abs/2210.03629)
 
     !!! warning
-       This implementation is based on the foundational ReAct paper but is older and
-       not well-suited for production applications.
-       For a more robust and feature-rich implementation, we recommend using the
-       `create_react_agent` function from the LangGraph library.
-       See the
-       [reference doc](https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent)
-       for more information.
+
+        This implementation is based on the foundational ReAct paper but is older and
+        not well-suited for production applications.
+
+        For a more robust and feature-rich implementation, we recommend using the
+        `create_agent` function from the `langchain` library.
+
+        See the
+        [reference doc](https://reference.langchain.com/python/langchain/agents/)
+        for more information.
 
     Args:
         llm: LLM to use as the agent.

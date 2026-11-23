@@ -1,15 +1,25 @@
 from __future__ import annotations
 
-from typing import Any
+import copy
+import logging
+from itertools import zip_longest
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
+from langchain_core.exceptions import ModelAPIError
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
+from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 from openai.types.responses import (
     ResponseCompletedEvent,
     ResponseContentPartAddedEvent,
     ResponseContentPartDoneEvent,
     ResponseCreatedEvent,
+    ResponseErrorEvent,
+    ResponseFailedEvent,
+    ResponseFunctionCallArgumentsDeltaEvent,
+    ResponseFunctionCallArgumentsDoneEvent,
+    ResponseFunctionToolCallItem,
     ResponseInProgressEvent,
     ResponseOutputItemAddedEvent,
     ResponseOutputItemDoneEvent,
@@ -24,6 +34,7 @@ from openai.types.responses import (
     ResponseTextDoneEvent,
 )
 from openai.types.responses.response import Response
+from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_output_text import ResponseOutputText
 from openai.types.responses.response_reasoning_item import Summary
 from openai.types.responses.response_reasoning_summary_part_added_event import (
@@ -41,7 +52,16 @@ from openai.types.shared.reasoning import Reasoning
 from openai.types.shared.response_format_text import ResponseFormatText
 
 from langchain_openai import ChatOpenAI
-from tests.unit_tests.chat_models.test_base import MockSyncContextManager
+from langchain_openai.chat_models.base import (
+    OpenAIResponsesServerError,
+    _convert_responses_chunk_to_generation_chunk,
+)
+from tests.unit_tests.chat_models.test_base import (
+    MockAsyncContextManager,
+    MockSyncContextManager,
+)
+
+MODEL = "gpt-5.4"
 
 responses_stream = [
     ResponseCreatedEvent(
@@ -52,7 +72,7 @@ responses_stream = [
             incomplete_details=None,
             instructions=None,
             metadata={},
-            model="o4-mini-2025-04-16",
+            model=MODEL,
             object="response",
             output=[],
             parallel_tool_calls=True,
@@ -84,7 +104,7 @@ responses_stream = [
             incomplete_details=None,
             instructions=None,
             metadata={},
-            model="o4-mini-2025-04-16",
+            model=MODEL,
             object="response",
             output=[],
             parallel_tool_calls=True,
@@ -341,6 +361,8 @@ responses_stream = [
             id="rs_234",
             summary=[],
             type="reasoning",
+            # Deliberately populated: pins that the `added` event's encrypted content
+            # is dropped rather than merged with the `done` event's copy below.
             encrypted_content="encrypted-content",
             status=None,
         ),
@@ -530,7 +552,7 @@ responses_stream = [
             incomplete_details=None,
             instructions=None,
             metadata={},
-            model="o4-mini-2025-04-16",
+            model=MODEL,
             object="response",
             output=[
                 ResponseReasoningItem(
@@ -601,7 +623,9 @@ responses_stream = [
             truncation="disabled",
             usage=ResponseUsage(
                 input_tokens=13,
-                input_tokens_details=InputTokensDetails(cached_tokens=0),
+                input_tokens_details=InputTokensDetails(
+                    cache_write_tokens=0, cached_tokens=0
+                ),
                 output_tokens=71,
                 output_tokens_details=OutputTokensDetails(reasoning_tokens=64),
                 total_tokens=84,
@@ -718,9 +742,7 @@ def _strip_none(obj: Any) -> Any:
     ],
 )
 def test_responses_stream(output_version: str, expected_content: list[dict]) -> None:
-    llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, output_version=output_version
-    )
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version=output_version)
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
@@ -758,6 +780,230 @@ def test_responses_stream(output_version: str, expected_content: list[dict]) -> 
         assert dumped == payload["input"][idx]
 
 
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
+def test_responses_stream_encrypted_reasoning_replays_with_store_false(
+    output_version: str,
+) -> None:
+    """Streamed encrypted reasoning survives a stateless (`store=False`) replay.
+
+    Regression test for the round trip users actually hit: with `store=False`,
+    reasoning can only be replayed via its encrypted content, so a reasoning item
+    that carried one must come back with it intact -- exactly once -- while an item
+    that carried none is dropped rather than replayed as an unresolvable item ID.
+    """
+    llm = ChatOpenAI(
+        model=MODEL, use_responses_api=True, output_version=output_version, store=False
+    )
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(responses_stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("test"):
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+
+    payload = llm._get_request_payload([full], store=False)
+    reasoning_items = [
+        item for item in payload["input"] if item.get("type") == "reasoning"
+    ]
+
+    # `rs_123` carried no encrypted content and is dropped; `rs_234` is replayed.
+    assert [item["id"] for item in reasoning_items] == ["rs_234"]
+    assert reasoning_items[0]["encrypted_content"] == "encrypted-content"
+
+
+def test_responses_reasoning_done_without_encrypted_content_emits_no_chunk() -> None:
+    """A reasoning `done` event with no encrypted content yields no chunk at all.
+
+    The event carries nothing the `added` event has not already surfaced, so
+    emitting a chunk for it would mean an extra empty `on_llm_new_token` callback
+    for every reasoning item -- the common case, since encrypted content is only
+    populated when the caller opts into it.
+    """
+    for encrypted_content in (None, ""):
+        event = ResponseOutputItemDoneEvent(
+            item=ResponseReasoningItem(
+                id="rs_123",
+                summary=[Summary(text="reasoning", type="summary_text")],
+                type="reasoning",
+                encrypted_content=encrypted_content,
+                status=None,
+            ),
+            output_index=0,
+            sequence_number=1,
+            type="response.output_item.done",
+        )
+
+        _, _, _, generation_chunk = _convert_responses_chunk_to_generation_chunk(
+            event, 0, 0, 0
+        )
+
+        assert generation_chunk is None, (
+            f"expected no chunk for encrypted_content={encrypted_content!r}"
+        )
+
+
+_OUTPUT_INDEX_DRIFT_TEXT = '{"news_items": []}'
+
+# `output_index` on the `done` events is one higher than on the `added` events.
+_output_index_drift_stream = [
+    ResponseOutputItemAddedEvent(
+        item=ResponseReasoningItem(
+            id="rs_123", summary=[], type="reasoning", status=None
+        ),
+        output_index=0,
+        sequence_number=1,
+        type="response.output_item.added",
+    ),
+    ResponseOutputItemDoneEvent(
+        item=ResponseReasoningItem(
+            id="rs_123",
+            summary=[],
+            type="reasoning",
+            encrypted_content="encrypted-content",
+            status=None,
+        ),
+        output_index=1,
+        sequence_number=2,
+        type="response.output_item.done",
+    ),
+    ResponseOutputItemAddedEvent(
+        item=ResponseOutputMessage(
+            id="msg_123",
+            content=[],
+            role="assistant",
+            status="in_progress",
+            type="message",
+        ),
+        output_index=1,
+        sequence_number=3,
+        type="response.output_item.added",
+    ),
+    ResponseTextDeltaEvent(
+        content_index=0,
+        delta=_OUTPUT_INDEX_DRIFT_TEXT,
+        item_id="msg_123",
+        output_index=1,
+        sequence_number=4,
+        logprobs=[],
+        type="response.output_text.delta",
+    ),
+    ResponseTextDoneEvent(
+        content_index=0,
+        item_id="msg_123",
+        output_index=2,
+        sequence_number=5,
+        text=_OUTPUT_INDEX_DRIFT_TEXT,
+        logprobs=[],
+        type="response.output_text.done",
+    ),
+]
+
+
+def test_responses_stream_output_index_drift() -> None:
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="responses/v1")
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(_output_index_drift_stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("test"):
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.text == _OUTPUT_INDEX_DRIFT_TEXT
+    assert [(block["type"], block["index"]) for block in full.content] == [  # type: ignore[index]
+        ("reasoning", 0),
+        ("text", 1),
+    ]
+
+
+async def test_responses_astream_output_index_drift() -> None:
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="responses/v1")
+    mock_client = MagicMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(_output_index_drift_stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_async_client", mock_client):
+        async for chunk in llm.astream("test"):
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.text == _OUTPUT_INDEX_DRIFT_TEXT
+    assert [(block["type"], block["index"]) for block in full.content] == [  # type: ignore[index]
+        ("reasoning", 0),
+        ("text", 1),
+    ]
+
+
+def test_responses_stream_events_v3_emits_reasoning_lifecycle() -> None:
+    """v3 streaming emits `content-block-finish` events for reasoning blocks.
+
+    Regression test: the protocol bridge should surface the full lifecycle
+    (`content-block-start` / `content-block-delta` / `content-block-finish`)
+    for every reasoning block observed on the wire, not just text blocks.
+    """
+    llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=True, output_version="v1")
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(responses_stream)
+
+    mock_client.responses.create = mock_create
+
+    with patch.object(llm, "root_client", mock_client):
+        events = list(llm.stream_events("test", version="v3"))
+
+    assert_valid_event_stream(events)
+
+    reasoning_starts = [
+        e
+        for e in events
+        if e["event"] == "content-block-start" and e["content"]["type"] == "reasoning"
+    ]
+    reasoning_finishes = [
+        e
+        for e in events
+        if e["event"] == "content-block-finish" and e["content"]["type"] == "reasoning"
+    ]
+
+    # The mock stream carries four reasoning summary parts (two per reasoning
+    # item, across two reasoning items), which surface as four reasoning
+    # content blocks in `output_version="v1"`.
+    assert len(reasoning_starts) == 4, (
+        f"expected 4 reasoning start events, got {len(reasoning_starts)}"
+    )
+    all_finish_types = [
+        e["content"]["type"] for e in events if e["event"] == "content-block-finish"
+    ]
+    assert len(reasoning_finishes) == 4, (
+        f"expected 4 reasoning finish events, got {len(reasoning_finishes)}: "
+        f"all finish events = {all_finish_types}"
+    )
+
+    # Finish events must carry the accumulated reasoning text.
+    reasoning_texts = [
+        cast("dict[str, Any]", f["content"])["reasoning"] for f in reasoning_finishes
+    ]
+    assert reasoning_texts == [
+        "reasoning block one",
+        "another reasoning block",
+        "more reasoning",
+        "still more reasoning",
+    ]
+
+
 def test_responses_stream_with_image_generation_multiple_calls() -> None:
     """Test that streaming with image_generation tool works across multiple calls.
 
@@ -769,7 +1015,7 @@ def test_responses_stream_with_image_generation_multiple_calls() -> None:
         {"type": "function", "name": "my_tool", "parameters": {}},
     ]
     llm = ChatOpenAI(
-        model="gpt-4o",
+        model=MODEL,
         use_responses_api=True,
         streaming=True,
     )
@@ -791,3 +1037,688 @@ def test_responses_stream_with_image_generation_multiple_calls() -> None:
     with patch.object(llm, "root_client", mock_client):
         chunks = list(llm_with_tools.stream("test again"))
         assert len(chunks) > 0
+
+
+def test_responses_stream_function_call_preserves_namespace() -> None:
+    """Test that namespace field is preserved in streaming function_call chunks."""
+    function_call_stream = [
+        ResponseCreatedEvent(
+            response=Response(
+                id="resp_ns",
+                created_at=1749734255.0,
+                error=None,
+                incomplete_details=None,
+                instructions=None,
+                metadata={},
+                model=MODEL,
+                object="response",
+                output=[],
+                parallel_tool_calls=True,
+                temperature=1.0,
+                tool_choice="auto",
+                tools=[],
+                top_p=1.0,
+                background=False,
+                max_output_tokens=None,
+                previous_response_id=None,
+                reasoning=None,
+                service_tier="auto",
+                status="in_progress",
+                text=ResponseTextConfig(format=ResponseFormatText(type="text")),
+                truncation="disabled",
+                usage=None,
+                user=None,
+            ),
+            sequence_number=0,
+            type="response.created",
+        ),
+        ResponseInProgressEvent(
+            response=Response(
+                id="resp_ns",
+                created_at=1749734255.0,
+                error=None,
+                incomplete_details=None,
+                instructions=None,
+                metadata={},
+                model=MODEL,
+                object="response",
+                output=[],
+                parallel_tool_calls=True,
+                temperature=1.0,
+                tool_choice="auto",
+                tools=[],
+                top_p=1.0,
+                background=False,
+                max_output_tokens=None,
+                previous_response_id=None,
+                reasoning=None,
+                service_tier="auto",
+                status="in_progress",
+                text=ResponseTextConfig(format=ResponseFormatText(type="text")),
+                truncation="disabled",
+                usage=None,
+                user=None,
+            ),
+            sequence_number=1,
+            type="response.in_progress",
+        ),
+        ResponseOutputItemAddedEvent(
+            item=ResponseFunctionToolCallItem(
+                id="fc_123",
+                arguments="",
+                call_id="call_123",
+                name="search_tool",
+                type="function_call",
+                namespace="my_namespace",
+                status="in_progress",
+            ),
+            output_index=0,
+            sequence_number=2,
+            type="response.output_item.added",
+        ),
+        ResponseFunctionCallArgumentsDeltaEvent(
+            delta='{"query":',
+            item_id="fc_123",
+            output_index=0,
+            sequence_number=3,
+            type="response.function_call_arguments.delta",
+        ),
+        ResponseFunctionCallArgumentsDeltaEvent(
+            delta='"test"}',
+            item_id="fc_123",
+            output_index=0,
+            sequence_number=4,
+            type="response.function_call_arguments.delta",
+        ),
+        ResponseFunctionCallArgumentsDoneEvent.model_construct(
+            arguments='{"query":"test"}',
+            item_id="fc_123",
+            name="search_tool",
+            output_index=0,
+            sequence_number=5,
+            type="response.function_call_arguments.done",
+        ),
+        ResponseOutputItemDoneEvent(
+            item=ResponseFunctionToolCallItem(
+                id="fc_123",
+                arguments='{"query":"test"}',
+                call_id="call_123",
+                name="search_tool",
+                type="function_call",
+                namespace="my_namespace",
+                status="completed",
+            ),
+            output_index=0,
+            sequence_number=6,
+            type="response.output_item.done",
+        ),
+        ResponseCompletedEvent(
+            response=Response(
+                id="resp_ns",
+                created_at=1749734255.0,
+                error=None,
+                incomplete_details=None,
+                instructions=None,
+                metadata={},
+                model=MODEL,
+                object="response",
+                output=[
+                    ResponseFunctionToolCallItem(
+                        id="fc_123",
+                        arguments='{"query":"test"}',
+                        call_id="call_123",
+                        name="search_tool",
+                        type="function_call",
+                        namespace="my_namespace",
+                        status="completed",
+                    ),
+                ],
+                parallel_tool_calls=True,
+                temperature=1.0,
+                tool_choice="auto",
+                tools=[],
+                top_p=1.0,
+                background=False,
+                max_output_tokens=None,
+                previous_response_id=None,
+                reasoning=None,
+                service_tier="default",
+                status="completed",
+                text=ResponseTextConfig(format=ResponseFormatText(type="text")),
+                truncation="disabled",
+                usage=ResponseUsage(
+                    input_tokens=10,
+                    input_tokens_details=InputTokensDetails(
+                        cache_write_tokens=0, cached_tokens=0
+                    ),
+                    output_tokens=20,
+                    output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
+                    total_tokens=30,
+                ),
+                user=None,
+            ),
+            sequence_number=7,
+            type="response.completed",
+        ),
+    ]
+
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="responses/v1")
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(function_call_stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("test"):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+
+    assert isinstance(full, AIMessageChunk)
+
+    function_call_blocks = [
+        block
+        for block in full.content
+        if isinstance(block, dict) and block.get("type") == "function_call"
+    ]
+    assert len(function_call_blocks) > 0
+
+    first_block = function_call_blocks[0]
+    assert first_block.get("namespace") == "my_namespace", (
+        f"Expected namespace 'my_namespace', got {first_block.get('namespace')}"
+    )
+
+
+def _function_call_response(status: str, output: list[Any]) -> Response:
+    return Response(
+        id="resp_fc",
+        created_at=1749734255.0,
+        error=None,
+        incomplete_details=None,
+        instructions=None,
+        metadata={},
+        model=MODEL,
+        object="response",
+        output=output,
+        parallel_tool_calls=True,
+        temperature=1.0,
+        tool_choice="auto",
+        tools=[],
+        top_p=1.0,
+        status=status,  # type: ignore[arg-type]
+        text=ResponseTextConfig(format=ResponseFormatText(type="text")),
+        truncation="disabled",
+        usage=ResponseUsage(
+            input_tokens=10,
+            input_tokens_details=InputTokensDetails(
+                cache_write_tokens=0, cached_tokens=0
+            ),
+            output_tokens=20,
+            output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
+            total_tokens=30,
+        ),
+        user=None,
+    )
+
+
+_FUNCTION_CALL_ARGUMENTS = {"fc_1": '{"symbol":"XLK"}', "fc_2": '{"symbol":"XLF"}'}
+
+
+def _function_call_stream(
+    deltas: dict[str, list[str]], *, final_event: str = "all", interleaved: bool = False
+) -> list[Any]:
+    """Build a stream of two function calls with the given argument deltas."""
+
+    def _item(item_id: str, arguments: str, status: str) -> Any:
+        return ResponseFunctionToolCallItem(
+            id=item_id,
+            arguments=arguments,
+            call_id=f"call_{item_id}",
+            name="get_price",
+            type="function_call",
+            status=status,  # type: ignore[arg-type]
+        )
+
+    events: list[Any] = [
+        ResponseCreatedEvent(
+            response=_function_call_response("in_progress", []),
+            sequence_number=0,
+            type="response.created",
+        )
+    ]
+    for output_index, (item_id, arguments) in enumerate(
+        _FUNCTION_CALL_ARGUMENTS.items()
+    ):
+        events.append(
+            ResponseOutputItemAddedEvent(
+                item=_item(item_id, "", "in_progress"),
+                output_index=output_index,
+                sequence_number=0,
+                type="response.output_item.added",
+            )
+        )
+        events.extend(
+            ResponseFunctionCallArgumentsDeltaEvent(
+                delta=delta,
+                item_id=item_id,
+                output_index=output_index,
+                sequence_number=0,
+                type="response.function_call_arguments.delta",
+            )
+            for delta in deltas[item_id]
+        )
+        events.extend(
+            [
+                ResponseFunctionCallArgumentsDoneEvent.model_construct(
+                    arguments=arguments,
+                    item_id=item_id,
+                    name="get_price",
+                    output_index=output_index,
+                    sequence_number=0,
+                    type="response.function_call_arguments.done",
+                ),
+                ResponseOutputItemDoneEvent(
+                    item=_item(item_id, arguments, "completed"),
+                    output_index=output_index,
+                    sequence_number=0,
+                    type="response.output_item.done",
+                ),
+            ]
+        )
+    events.append(
+        ResponseCompletedEvent(
+            response=_function_call_response(
+                "completed",
+                [
+                    _item(item_id, arguments, "completed")
+                    for item_id, arguments in _FUNCTION_CALL_ARGUMENTS.items()
+                ],
+            ),
+            sequence_number=0,
+            type="response.completed",
+        )
+    )
+    if interleaved:
+        added = [
+            event for event in events if event.type == "response.output_item.added"
+        ]
+        argument_deltas = [
+            [
+                event
+                for event in events
+                if event.type == "response.function_call_arguments.delta"
+                and event.item_id == item_id
+            ]
+            for item_id in deltas
+        ]
+        done = [event for event in events if event.type.endswith(".done")]
+        events = [
+            events[0],
+            *added,
+            *(
+                event
+                for group in zip_longest(*argument_deltas)
+                for event in group
+                if event
+            ),
+            *done,
+            events[-1],
+        ]
+    if final_event != "all":
+        omitted = {"response.function_call_arguments.done"}
+        if final_event == "response.completed":
+            omitted.add("response.output_item.done")
+        else:
+            omitted.add("response.completed")
+        events = [event for event in events if event.type not in omitted]
+    for sequence_number, event in enumerate(events):
+        event.sequence_number = sequence_number
+    return events
+
+
+_FUNCTION_CALL_DELTAS: dict[str, dict[str, list[str]]] = {
+    "no_deltas": {"fc_1": [], "fc_2": []},
+    "partial_deltas": {"fc_1": ['{"symbol":'], "fc_2": []},
+    "all_deltas": {"fc_1": ['{"symbol":', '"XLK"}'], "fc_2": ['{"symbol":"XLF"}']},
+}
+
+
+def _assert_function_call_arguments(full: AIMessageChunk, output_version: str) -> None:
+    assert not full.invalid_tool_calls
+    assert all(tc["name"] == "get_price" for tc in full.tool_calls)
+    assert [(tc["id"], tc["args"]) for tc in full.tool_calls] == [
+        ("call_fc_1", {"symbol": "XLK"}),
+        ("call_fc_2", {"symbol": "XLF"}),
+    ]
+    if output_version == "responses/v1":
+        assert [
+            block["arguments"]  # type: ignore[index]
+            for block in full.content
+            if isinstance(block, dict) and block.get("type") == "function_call"
+        ] == list(_FUNCTION_CALL_ARGUMENTS.values())
+
+
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1", "v0"])
+@pytest.mark.parametrize("interleaved", [False, True])
+@pytest.mark.parametrize(
+    "final_event", ["all", "response.output_item.done", "response.completed"]
+)
+@pytest.mark.parametrize(
+    "deltas", _FUNCTION_CALL_DELTAS.values(), ids=list(_FUNCTION_CALL_DELTAS)
+)
+def test_responses_stream_function_call_arguments_done(
+    deltas: dict[str, list[str]],
+    output_version: str,
+    final_event: str,
+    interleaved: bool,
+) -> None:
+    """Arguments missing from deltas are recovered from final events."""
+    stream = _function_call_stream(
+        deltas, final_event=final_event, interleaved=interleaved
+    )
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version=output_version)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("test"):
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    _assert_function_call_arguments(full, output_version)
+
+
+@pytest.mark.parametrize("interleaved", [False, True])
+@pytest.mark.parametrize(
+    "final_event", ["all", "response.output_item.done", "response.completed"]
+)
+@pytest.mark.parametrize(
+    "deltas", _FUNCTION_CALL_DELTAS.values(), ids=list(_FUNCTION_CALL_DELTAS)
+)
+async def test_responses_astream_function_call_arguments_done(
+    deltas: dict[str, list[str]],
+    final_event: str,
+    interleaved: bool,
+) -> None:
+    stream = _function_call_stream(
+        deltas, final_event=final_event, interleaved=interleaved
+    )
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="responses/v1")
+    mock_client = MagicMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_async_client", mock_client):
+        async for chunk in llm.astream("test"):
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    _assert_function_call_arguments(full, "responses/v1")
+
+
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1", "v0"])
+def test_responses_stream_function_call_done_events_without_new_arguments(
+    output_version: str,
+) -> None:
+    """Final events that add no arguments do not yield chunks."""
+    stream = _function_call_stream(_FUNCTION_CALL_DELTAS["all_deltas"])
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version=output_version)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    with patch.object(llm, "root_client", mock_client):
+        chunks = list(llm.stream("test"))
+    # `response.created`, two `output_item.added`, three deltas, `response.completed`
+    assert len(chunks) == 7
+
+
+async def test_responses_astream_function_call_done_events_without_new_arguments() -> (
+    None
+):
+    stream = _function_call_stream(_FUNCTION_CALL_DELTAS["all_deltas"])
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True, output_version="responses/v1")
+    mock_client = MagicMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    with patch.object(llm, "root_async_client", mock_client):
+        chunks = [chunk async for chunk in llm.astream("test")]
+    assert len(chunks) == 7
+
+
+def test_responses_stream_tolerates_dict_response_field() -> None:
+    """Regression test for `AttributeError: 'dict' object has no attribute 'id'`.
+
+    The OpenAI SDK types `<event>.response` strictly as `Response`, but raw dicts
+    have been observed in the wild.
+    """
+    stream = copy.deepcopy(responses_stream)
+    first_event = stream[0]
+    assert isinstance(first_event, ResponseCreatedEvent)
+    first_event.response = first_event.response.model_dump(mode="json")  # type: ignore[assignment]
+    assert isinstance(first_event.response, dict)
+
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("test"):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.id == "resp_123"
+
+
+@pytest.mark.parametrize(
+    ("event_index", "event_type"),
+    [(0, ResponseCreatedEvent), (46, ResponseCompletedEvent)],
+)
+def test_responses_stream_validates_in_memory_prompt_cache_retention(
+    event_index: int, event_type: type, caplog: pytest.LogCaptureFixture
+) -> None:
+    """`prompt_cache_retention="in_memory"` from the API must not abort streams.
+
+    The OpenAI SDK accepts the underscore form, so both the `response.created`
+    and `response.completed` handlers should validate it via the strict
+    `Response.model_validate` path -- not the non-validating `model_construct`
+    fallback (which would also complete the stream, masking a regression).
+    """
+    stream = copy.deepcopy(responses_stream)
+    target = stream[event_index]
+    assert isinstance(target, event_type)
+    assert isinstance(target, (ResponseCreatedEvent, ResponseCompletedEvent))
+    dumped = target.response.model_dump(mode="json")
+    dumped["prompt_cache_retention"] = "in_memory"
+    target.response = dumped  # type: ignore[assignment]
+
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with (
+        caplog.at_level(logging.WARNING),
+        patch.object(llm, "root_client", mock_client),
+    ):
+        for chunk in llm.stream("test"):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.id == "resp_123"
+    # `in_memory` must validate cleanly: no fallback to the non-validating
+    # construct. Otherwise this test would pass even if the SDK rejected the
+    # value, giving false confidence in the removed normalization workaround.
+    assert "falling back to non-validating construct" not in caplog.text
+    # The completed event drives usage/metadata aggregation, so assert it
+    # survived coercion when that branch is exercised.
+    if event_type is ResponseCompletedEvent:
+        assert full.usage_metadata is not None
+
+
+def test_responses_stream_tolerates_unknown_literal_drift() -> None:
+    """API drift ahead of SDK Literal declarations must not abort streams.
+
+    When the API returns a value the installed SDK's Literal does not know
+    about, `_coerce_chunk_response` should fall back to a non-validating
+    construct so streaming still completes.
+    """
+    stream = copy.deepcopy(responses_stream)
+    first_event = stream[0]
+    assert isinstance(first_event, ResponseCreatedEvent)
+    dumped = first_event.response.model_dump(mode="json")
+    dumped["status"] = "something_new"
+    first_event.response = dumped  # type: ignore[assignment]
+
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager(stream)
+
+    mock_client.responses.create = mock_create
+
+    full: BaseMessageChunk | None = None
+    with patch.object(llm, "root_client", mock_client):
+        for chunk in llm.stream("test"):
+            assert isinstance(chunk, AIMessageChunk)
+            full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.id == "resp_123"
+
+
+def _failed_event(error: ResponseError | None) -> ResponseFailedEvent:
+    created = responses_stream[0]
+    assert isinstance(created, ResponseCreatedEvent)
+    response = created.response.model_copy(update={"status": "failed", "error": error})
+    return ResponseFailedEvent(
+        response=response, sequence_number=1, type="response.failed"
+    )
+
+
+_FAILURE_CASES = [
+    (
+        _failed_event(ResponseError(code="server_error", message="Model failed.")),
+        "server_error",
+    ),
+    (_failed_event(None), "Response resp_123 failed."),
+    (
+        ResponseErrorEvent(
+            type="error",
+            code="rate_limit_exceeded",
+            message="Rate limit reached.",
+            param=None,
+            sequence_number=1,
+        ),
+        "rate_limit_exceeded: Rate limit reached.",
+    ),
+]
+
+
+@pytest.mark.parametrize(("failure_event", "match"), _FAILURE_CASES)
+def test_responses_stream_raises_on_failure(failure_event: Any, match: str) -> None:
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager([responses_stream[0], failure_event])
+
+    mock_client.responses.create = mock_create
+
+    with (
+        patch.object(llm, "root_client", mock_client),
+        pytest.raises(ValueError, match=match),
+    ):
+        list(llm.stream("test"))
+
+
+@pytest.mark.parametrize(("failure_event", "match"), _FAILURE_CASES)
+async def test_responses_astream_raises_on_failure(
+    failure_event: Any, match: str
+) -> None:
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True)
+    mock_client = MagicMock()
+
+    async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager([responses_stream[0], failure_event])
+
+    mock_client.responses.create = mock_create
+
+    with (
+        patch.object(llm, "root_async_client", mock_client),
+        pytest.raises(ValueError, match=match),
+    ):
+        async for _ in llm.astream("test"):
+            pass
+
+
+@pytest.mark.parametrize(
+    "failure_event",
+    [
+        _failed_event(ResponseError(code="server_error", message="Model failed.")),
+        ResponseErrorEvent(
+            type="error",
+            code="server_error",
+            message="An error occurred while processing your request.",
+            param=None,
+            sequence_number=1,
+        ),
+    ],
+)
+async def test_responses_stream_server_error_is_retryable(failure_event: Any) -> None:
+    """Server-error failure events are classified like a 5xx and stay `ValueError`."""
+    llm = ChatOpenAI(model=MODEL, use_responses_api=True)
+    mock_client = MagicMock()
+
+    def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
+        return MockSyncContextManager([responses_stream[0], failure_event])
+
+    mock_client.responses.create = mock_create
+
+    async def mock_acreate(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
+        return MockAsyncContextManager([responses_stream[0], failure_event])
+
+    mock_async_client = MagicMock()
+    mock_async_client.responses.create = mock_acreate
+
+    with (
+        patch.object(llm, "root_client", mock_client),
+        pytest.raises(OpenAIResponsesServerError) as sync_exc,
+    ):
+        list(llm.stream("test"))
+    with (
+        patch.object(llm, "root_async_client", mock_async_client),
+        pytest.raises(OpenAIResponsesServerError) as async_exc,
+    ):
+        async for _ in llm.astream("test"):
+            pass
+
+    for error in (sync_exc.value, async_exc.value):
+        assert isinstance(error, ValueError)
+        assert isinstance(error, ModelAPIError)
+        assert error.is_retryable is True

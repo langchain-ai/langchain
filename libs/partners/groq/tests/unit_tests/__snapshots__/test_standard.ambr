@@ -16,7 +16,7 @@
       }),
       'max_retries': 2,
       'max_tokens': 100,
-      'model_name': 'llama-3.1-8b-instant',
+      'model_name': 'openai/gpt-oss-20b',
       'n': 1,
       'request_timeout': 60.0,
       'service_tier': 'on_demand',

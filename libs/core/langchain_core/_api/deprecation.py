@@ -1,8 +1,7 @@
 """Helper functions for deprecating parts of the LangChain API.
 
-This module was adapted from matplotlibs _api/deprecation.py module:
-
-https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py
+This module was adapted from matplotlib's [`_api/deprecation.py`](https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py)
+module.
 
 !!! warning
 
@@ -13,19 +12,38 @@ https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecati
 import contextlib
 import functools
 import inspect
+import sys
 import warnings
 from collections.abc import Callable, Generator
+from contextvars import ContextVar
 from typing import (
+    TYPE_CHECKING,
     Any,
     ParamSpec,
+    TypeGuard,
     TypeVar,
     cast,
 )
 
 from pydantic.fields import FieldInfo
-from pydantic.v1.fields import FieldInfo as FieldInfoV1
 
 from langchain_core._api.internal import is_caller_internal
+
+if TYPE_CHECKING:
+    from pydantic.v1.fields import FieldInfo as FieldInfoV1
+
+
+def _is_pydantic_v1_field_info(obj: Any) -> TypeGuard["FieldInfoV1"]:
+    """Check if `obj` is a `pydantic.v1.fields.FieldInfo` without forcing import.
+
+    Avoids importing `pydantic.v1`, which emits a `UserWarning` on Python 3.14+
+    with Pydantic 2.12. A v1 `FieldInfo` can only exist once a caller has imported
+    `pydantic.v1.fields`, so this check consults it only if it is already loaded.
+    """
+    mod = sys.modules.get("pydantic.v1.fields")
+    if mod is None:
+        return False
+    return isinstance(obj, mod.FieldInfo)
 
 
 def _build_deprecation_message(
@@ -57,10 +75,21 @@ class LangChainPendingDeprecationWarning(PendingDeprecationWarning):
     """A class for issuing deprecation warnings for LangChain users."""
 
 
+# Tracks when callers intentionally silence LangChain deprecation warnings.
+# Suppressed warnings should not consume a deprecated callable's one-time
+# warning state; otherwise an internal compatibility path can prevent the first
+# user-visible call from warning.
+_SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING = ContextVar(
+    "_SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING", default=False
+)
+
+
 # PUBLIC API
 
 
-# Last Any should be FieldInfoV1 but this leads to circular imports
+# Bound is `Any` (not `FieldInfoV1`) because importing `pydantic.v1` at module
+# scope emits a `UserWarning` on Python 3.14+; v1 `FieldInfo` support is handled
+# at runtime via `_is_pydantic_v1_field_info`.
 T = TypeVar("T", bound=type | Callable[..., Any] | Any)
 
 
@@ -111,9 +140,9 @@ def deprecated(
     inherited its `__init__` from its own base class, then `@deprecated` would mess up
     `__init__` inheritance when installing its own (deprecation-emitting) `C.__init__`).
 
-    Parameters are the same as for `warn_deprecated`, except that *obj_type* defaults to
-    'class' if decorating a class, 'attribute' if decorating a property, and 'function'
-    otherwise.
+    Parameters are the same as for `warn_deprecated`, except for `stacklevel`;
+    *obj_type* defaults to 'class' if decorating a class, 'attribute' if decorating a
+    property, and 'function' otherwise.
 
     Args:
         since: The release at which this API became deprecated.
@@ -137,9 +166,8 @@ def deprecated(
         addendum: Additional text appended directly to the final message.
         removal: The expected removal version.
 
-            With the default (an empty string), a removal version is automatically
-            computed from since. Set to other Falsy values to not schedule a removal
-            date.
+            With the default (an empty string), no removal version is shown in the
+            warning message.
 
             Cannot be used together with pending.
         package: The package of the deprecated object.
@@ -201,16 +229,20 @@ def deprecated(
             """
             nonlocal warned
             if not warned and not is_caller_internal():
-                warned = True
                 emit_warning()
+                # Only mark the warning as emitted if it was not intentionally
+                # suppressed by `suppress_langchain_deprecation_warning()`.
+                warned = not _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get()
             return wrapped(*args, **kwargs)
 
         async def awarning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
             """Same as warning_emitting_wrapper, but for async functions."""
             nonlocal warned
             if not warned and not is_caller_internal():
-                warned = True
                 emit_warning()
+                # Only mark the warning as emitted if it was not intentionally
+                # suppressed by `suppress_langchain_deprecation_warning()`.
+                warned = not _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get()
             return await wrapped(*args, **kwargs)
 
         _package = _package or obj.__module__.split(".")[0].replace("_", "-")
@@ -222,7 +254,7 @@ def deprecated(
             _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
+            def finalize(_: Callable[..., Any], new_doc: str, /) -> T:
                 """Finalize the deprecation of a class."""
                 # Can't set new_doc on some extension objects.
                 with contextlib.suppress(AttributeError):
@@ -234,8 +266,10 @@ def deprecated(
                     """Warn that the class is in beta."""
                     nonlocal warned
                     if not warned and type(self) is obj and not is_caller_internal():
-                        warned = True
                         emit_warning()
+                        # Only mark the warning as emitted if it was not intentionally
+                        # suppressed by `suppress_langchain_deprecation_warning()`.
+                        warned = not _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get()
                     return wrapped(self, *args, **kwargs)
 
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
@@ -248,7 +282,7 @@ def deprecated(
                 )
                 return obj
 
-        elif isinstance(obj, FieldInfoV1):
+        elif _is_pydantic_v1_field_info(obj):
             wrapped = None
             if not _obj_type:
                 _obj_type = "attribute"
@@ -257,7 +291,9 @@ def deprecated(
                 raise ValueError(msg)
             old_doc = obj.description
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
+            def finalize(_: Callable[..., Any], new_doc: str, /) -> T:
+                from pydantic.v1.fields import FieldInfo as FieldInfoV1  # noqa: PLC0415
+
                 return cast(
                     "T",
                     FieldInfoV1(
@@ -278,7 +314,7 @@ def deprecated(
                 raise ValueError(msg)
             old_doc = obj.description
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
+            def finalize(_: Callable[..., Any], new_doc: str, /) -> T:
                 return cast(
                     "T",
                     FieldInfo(
@@ -294,7 +330,7 @@ def deprecated(
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or cast("type | Callable", obj.fget).__qualname__
+            _name = _name or cast("type", obj.fget).__qualname__
             old_doc = obj.__doc__
 
             class _DeprecatedProperty(property):
@@ -336,7 +372,7 @@ def deprecated(
                     if _name == "<lambda>":
                         _name = set_name
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
+            def finalize(_: Callable[..., Any], new_doc: str, /) -> T:
                 """Finalize the property."""
                 prop = _DeprecatedProperty(
                     fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
@@ -349,7 +385,7 @@ def deprecated(
                 return cast("T", prop)
 
         else:
-            _name = _name or cast("type | Callable", obj).__qualname__
+            _name = _name or cast("type", obj).__qualname__
             if not _obj_type:
                 # edge case: when a function is within another function
                 # within a test, this will call it a "method" not a "function"
@@ -357,7 +393,7 @@ def deprecated(
             wrapped = obj
             old_doc = wrapped.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str, /) -> T:
                 """Wrap the wrapped function using the wrapper and update the docstring.
 
                 Args:
@@ -400,7 +436,7 @@ def deprecated(
         components = [
             _message,
             f"Use {_alternative} instead." if _alternative else "",
-            f"Use `{_alternative_import}` instead." if _alternative_import else "",
+            f"Use {_alternative_import} instead." if _alternative_import else "",
             _addendum,
         ]
         details = " ".join([component.strip() for component in components if component])
@@ -429,11 +465,27 @@ def deprecated(
 
 @contextlib.contextmanager
 def suppress_langchain_deprecation_warning() -> Generator[None, None, None]:
-    """Context manager to suppress `LangChainDeprecationWarning`."""
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", LangChainDeprecationWarning)
-        warnings.simplefilter("ignore", LangChainPendingDeprecationWarning)
+    """Suppress LangChain deprecation warnings within the current context.
+
+    Silences warnings emitted through `warn_deprecated` and `@deprecated`. It does not
+    modify the global `warnings` filters, so calling `warnings.warn` directly with
+    `LangChainDeprecationWarning` is not suppressed; use `warnings.filterwarnings` for
+    that.
+
+    Suppression is stored in a context variable, not a process-wide filter. It
+    applies to the current thread or asyncio task, and to tasks or copied contexts
+    created inside the block (e.g. `asyncio.create_task`, `asyncio.to_thread`),
+    which keep it even after the block exits. Other threads are unaffected.
+    """
+    token = _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.set(True)
+    try:
         yield
+    finally:
+        # Exiting from a different context (e.g. an async generator suspended
+        # inside the block and closed by another task) makes `reset` raise. That
+        # context never saw this block's `set`, so there is nothing to undo.
+        with contextlib.suppress(ValueError):
+            _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.reset(token)
 
 
 def warn_deprecated(
@@ -448,6 +500,7 @@ def warn_deprecated(
     addendum: str = "",
     removal: str = "",
     package: str = "",
+    stacklevel: int = 4,
 ) -> None:
     """Display a standardized deprecation.
 
@@ -473,21 +526,18 @@ def warn_deprecated(
         addendum: Additional text appended directly to the final message.
         removal: The expected removal version.
 
-            With the default (an empty string), a removal version is automatically
-            computed from since. Set to other Falsy values to not schedule a removal
-            date.
+            With the default (an empty string), no removal version is shown in the
+            warning message.
 
             Cannot be used together with pending.
         package: The package of the deprecated object.
+        stacklevel: Warning attribution depth passed to `warnings.warn`; `1` points
+            inside this helper and `2` points to its caller.
     """
-    if not pending:
-        if not removal:
-            removal = f"in {removal}" if removal else "within ?? minor releases"
-            msg = (
-                f"Need to determine which default deprecation schedule to use. "
-                f"{removal}"
-            )
-            raise NotImplementedError(msg)
+    if _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get():
+        return
+
+    if not pending and removal:
         removal = f"in {removal}"
 
     if not message:
@@ -533,7 +583,7 @@ def warn_deprecated(
         LangChainPendingDeprecationWarning if pending else LangChainDeprecationWarning
     )
     warning = warning_cls(message)
-    warnings.warn(warning, category=LangChainDeprecationWarning, stacklevel=4)
+    warnings.warn(warning, category=LangChainDeprecationWarning, stacklevel=stacklevel)
 
 
 def surface_langchain_deprecation_warnings() -> None:

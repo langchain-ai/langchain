@@ -27,6 +27,10 @@ class InMemoryCache(BaseCache):
         """Clear cache."""
         self._cache = {}
 
+    def __len__(self) -> int:
+        """Return the number of cached entries."""
+        return len(self._cache)
+
 
 async def test_local_cache_generate_async() -> None:
     global_cache = InMemoryCache()

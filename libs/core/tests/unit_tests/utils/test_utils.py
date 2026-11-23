@@ -19,7 +19,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
     guard_import,
 )
-from langchain_core.utils._merge import merge_dicts
+from langchain_core.utils._merge import merge_dicts, merge_lists, merge_obj
 from langchain_core.utils.utils import secret_from_env
 
 if TYPE_CHECKING:
@@ -117,10 +117,36 @@ def test_check_package_version(
             {"a": [{"idx": 0, "b": "f"}]},
             {"a": [{"idx": 0, "b": "{"}, {"idx": 0, "b": "f"}]},
         ),
+        # Integer 'index' should be preserved, not summed (tool call identification)
+        ({"index": 1}, {"index": 1}, {"index": 1}),
+        ({"index": 0}, {"index": 1}, {"index": 1}),
+        # 'created' timestamp should be preserved, not summed
+        ({"created": 1700000000}, {"created": 1700000000}, {"created": 1700000000}),
+        ({"created": 1700000000}, {"created": 1700000001}, {"created": 1700000001}),
+        # 'timestamp' should be preserved, not summed
+        ({"timestamp": 100}, {"timestamp": 100}, {"timestamp": 100}),
+        ({"timestamp": 100}, {"timestamp": 200}, {"timestamp": 200}),
+        # Other integer fields should still be summed (e.g., token counts)
+        ({"tokens": 10}, {"tokens": 5}, {"tokens": 15}),
+        ({"count": 1}, {"count": 2}, {"count": 3}),
+        # Differing booleans must not silently coerce to `int` (e.g. `True + False`).
+        (
+            {"a": True},
+            {"a": False},
+            pytest.raises(
+                TypeError,
+                match=(
+                    "Additional kwargs key a already exists in left dict and value "
+                    r"has unsupported type .+bool.+."
+                ),
+            ),
+        ),
     ],
 )
 def test_merge_dicts(
-    left: dict, right: dict, expected: dict | AbstractContextManager
+    left: dict[str, Any],
+    right: dict[str, Any],
+    expected: dict[str, Any] | AbstractContextManager[BaseException],
 ) -> None:
     err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
 
@@ -148,7 +174,9 @@ def test_merge_dicts(
 )
 @pytest.mark.xfail(reason="Refactors to make in 0.3")
 def test_merge_dicts_0_3(
-    left: dict, right: dict, expected: dict | AbstractContextManager
+    left: dict[str, Any],
+    right: dict[str, Any],
+    expected: dict[str, Any] | AbstractContextManager[BaseException],
 ) -> None:
     err = expected if isinstance(expected, AbstractContextManager) else nullcontext()
 
@@ -386,3 +414,116 @@ def test_generation_chunk_addition_type_error() -> None:
     chunk2 = GenerationChunk(text="Non-empty text", generation_info={"len": 14})
     result = chunk1 + chunk2
     assert result == GenerationChunk(text="Non-empty text", generation_info={"len": 14})
+
+
+@pytest.mark.parametrize(
+    ("left", "right", "expected"),
+    [
+        # Both None
+        (None, None, None),
+        # Left None
+        (None, [1, 2], [1, 2]),
+        # Right None
+        ([1, 2], None, [1, 2]),
+        # Simple merge
+        ([1, 2], [3, 4], [1, 2, 3, 4]),
+        # Empty lists
+        ([], [], []),
+        ([], [1], [1]),
+        ([1], [], [1]),
+        # Merge with index handling
+        (
+            [{"index": 0, "text": "hello"}],
+            [{"index": 0, "text": " world"}],
+            [{"index": 0, "text": "hello world"}],
+        ),
+        # Multiple elements with different indexes
+        (
+            [{"index": 0, "a": "x"}],
+            [{"index": 1, "b": "y"}],
+            [{"index": 0, "a": "x"}, {"index": 1, "b": "y"}],
+        ),
+        # Elements without index key
+        (
+            [{"no_index": "a"}],
+            [{"no_index": "b"}],
+            [{"no_index": "a"}, {"no_index": "b"}],
+        ),
+        # A string element whose text happens to contain the literal substring
+        # "index" must not be treated as index-keyed (it isn't a dict).
+        (
+            ["the index is here", {"index": 0, "reference_ids": ["a"]}],
+            [{"index": 0, "reference_ids": ["b"]}],
+            [
+                "the index is here",
+                {"index": 0, "reference_ids": ["a", "b"]},
+            ],
+        ),
+    ],
+)
+def test_merge_lists(
+    left: list[Any] | None, right: list[Any] | None, expected: list[Any] | None
+) -> None:
+    left_copy = deepcopy(left)
+    right_copy = deepcopy(right)
+    actual = merge_lists(left, right)
+    assert actual == expected
+    # Verify no mutation
+    assert left == left_copy
+    assert right == right_copy
+
+
+def test_merge_lists_multiple_others() -> None:
+    """Test `merge_lists` with multiple lists."""
+    result = merge_lists([1], [2], [3])
+    assert result == [1, 2, 3]
+
+
+def test_merge_lists_all_none() -> None:
+    """Test `merge_lists` with all `None` arguments."""
+    result = merge_lists(None, None, None)
+    assert result is None
+
+
+@pytest.mark.parametrize(
+    ("left", "right", "expected"),
+    [
+        # Both None
+        (None, None, None),
+        # Left None
+        (None, "hello", "hello"),
+        # Right None
+        ("hello", None, "hello"),
+        # String merge
+        ("hello", " world", "hello world"),
+        # Dict merge
+        ({"a": 1}, {"b": 2}, {"a": 1, "b": 2}),
+        # List merge
+        ([1, 2], [3], [1, 2, 3]),
+        # Equal values
+        (42, 42, 42),
+        (3.14, 3.14, 3.14),
+        (True, True, True),
+    ],
+)
+def test_merge_obj(left: Any, right: Any, expected: Any) -> None:
+    actual = merge_obj(left, right)
+    assert actual == expected
+
+
+def test_merge_obj_type_mismatch() -> None:
+    """Test `merge_obj` raises `TypeError` on type mismatch."""
+    with pytest.raises(TypeError, match="left and right are of different types"):
+        merge_obj("string", 123)
+
+
+def test_merge_obj_unmergeable_values() -> None:
+    """Test `merge_obj` raises `ValueError` on unmergeable values."""
+    with pytest.raises(ValueError, match="Unable to merge"):
+        merge_obj(1, 2)  # Different integers
+
+
+def test_merge_obj_tuple_raises() -> None:
+    """Test `merge_obj` raises `ValueError` for tuples."""
+    with pytest.raises(ValueError, match="Unable to merge"):
+        merge_obj((1, 2), (3, 4))

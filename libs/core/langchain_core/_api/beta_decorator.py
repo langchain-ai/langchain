@@ -1,8 +1,7 @@
 """Helper functions for marking parts of the LangChain API as beta.
 
-This module was loosely adapted from matplotlibs _api/deprecation.py module:
-
-https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py
+This module was loosely adapted from matplotlib's [`_api/deprecation.py`](https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py)
+module.
 
 !!! warning
 
@@ -15,6 +14,7 @@ import functools
 import inspect
 import warnings
 from collections.abc import Callable, Generator
+from contextvars import ContextVar
 from typing import Any, TypeVar, cast
 
 from langchain_core._api.internal import is_caller_internal
@@ -24,10 +24,15 @@ class LangChainBetaWarning(DeprecationWarning):
     """A class for issuing beta warnings for LangChain users."""
 
 
+_SUPPRESSING_LANGCHAIN_BETA_WARNING = ContextVar(
+    "_SUPPRESSING_LANGCHAIN_BETA_WARNING", default=False
+)
+
+
 # PUBLIC API
 
 
-T = TypeVar("T", bound=Callable[..., Any] | type)
+T = TypeVar("T", bound=Callable[..., Any] | type | property)
 
 
 def beta(
@@ -39,38 +44,34 @@ def beta(
 ) -> Callable[[T], T]:
     """Decorator to mark a function, a class, or a property as beta.
 
-    When marking a classmethod, a staticmethod, or a property, the
-    `@beta` decorator should go *under* `@classmethod` and
-    `@staticmethod` (i.e., `beta` should directly decorate the
-    underlying callable), but *over* `@property`.
+    When marking a classmethod, a staticmethod, or a property, the `@beta` decorator
+    should go *under* `@classmethod` and `@staticmethod` (i.e., `beta` should directly
+    decorate the underlying callable), but *over* `@property`.
 
-    When marking a class `C` intended to be used as a base class in a
-    multiple inheritance hierarchy, `C` *must* define an `__init__` method
-    (if `C` instead inherited its `__init__` from its own base class, then
-    `@beta` would mess up `__init__` inheritance when installing its
-    own (annotation-emitting) `C.__init__`).
+    When marking a class `C` intended to be used as a base class in a multiple
+    inheritance hierarchy, `C` *must* define an `__init__` method (if `C` instead
+    inherited its `__init__` from its own base class, then `@beta` would mess up
+    `__init__` inheritance when installing its own (annotation-emitting) `C.__init__`).
 
     Args:
-        message:
-            Override the default beta message. The %(since)s,
-            %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
-            and %(removal)s format specifiers will be replaced by the
-            values of the respective arguments passed to this function.
-        name:
-            The name of the beta object.
-        obj_type:
-            The object type being beta.
-        addendum:
-            Additional text appended directly to the final message.
+        message: Override the default beta message.
+
+            The %(since)s, %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s, and
+            %(removal)s format specifiers will be replaced by the values of the
+            respective arguments passed to this function.
+        name: The name of the beta object.
+        obj_type: The object type being beta.
+        addendum: Additional text appended directly to the final message.
 
     Returns:
         A decorator which can be used to mark functions or classes as beta.
 
-    ```python
-    @beta
-    def the_function_to_annotate():
-        pass
-    ```
+    Example:
+        ```python
+        @beta
+        def the_function_to_annotate():
+            pass
+        ```
     """
 
     def beta(
@@ -106,16 +107,20 @@ def beta(
             """
             nonlocal warned
             if not warned and not is_caller_internal():
-                warned = True
                 emit_warning()
+                # Only mark the warning as emitted if it was not intentionally
+                # suppressed by `suppress_langchain_beta_warning()`.
+                warned = not _SUPPRESSING_LANGCHAIN_BETA_WARNING.get()
             return wrapped(*args, **kwargs)
 
         async def awarning_emitting_wrapper(*args: Any, **kwargs: Any) -> Any:
             """Same as warning_emitting_wrapper, but for async functions."""
             nonlocal warned
             if not warned and not is_caller_internal():
-                warned = True
                 emit_warning()
+                # Only mark the warning as emitted if it was not intentionally
+                # suppressed by `suppress_langchain_beta_warning()`.
+                warned = not _SUPPRESSING_LANGCHAIN_BETA_WARNING.get()
             return await wrapped(*args, **kwargs)
 
         if isinstance(obj, type):
@@ -125,7 +130,7 @@ def beta(
             _name = _name or obj.__qualname__
             old_doc = obj.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
+            def finalize(_: Callable[..., Any], new_doc: str, /) -> T:
                 """Finalize the annotation of a class."""
                 # Can't set new_doc on some extension objects.
                 with contextlib.suppress(AttributeError):
@@ -137,8 +142,10 @@ def beta(
                     """Warn that the class is in beta."""
                     nonlocal warned
                     if not warned and type(self) is obj and not is_caller_internal():
-                        warned = True
                         emit_warning()
+                        # Only mark the warning as emitted if it was not intentionally
+                        # suppressed by `suppress_langchain_beta_warning()`.
+                        warned = not _SUPPRESSING_LANGCHAIN_BETA_WARNING.get()
                     return wrapped(self, *args, **kwargs)
 
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
@@ -150,27 +157,40 @@ def beta(
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
-            _name = _name or obj.fget.__qualname__
+            _name = _name or (obj.fget and obj.fget.__qualname__) or "<property>"
             old_doc = obj.__doc__
 
+            # `obj.fget`/`fset`/`fdel` are typed `Callable | None`, so the `and`
+            # short-circuits guard the calls for the type checker. Each wrapper is
+            # only installed when its accessor is truthy (see `finalize` below), so
+            # the guards never short-circuit at runtime — do not "simplify" them
+            # away or mypy's `warn_unreachable` will flag the accessor as `None`.
             def _fget(instance: Any) -> Any:
                 if instance is not None:
                     emit_warning()
-                return obj.fget(instance)
+                return obj.fget and obj.fget(instance)
 
             def _fset(instance: Any, value: Any) -> None:
                 if instance is not None:
                     emit_warning()
-                obj.fset(instance, value)
+                obj.fset and obj.fset(instance, value)
 
             def _fdel(instance: Any) -> None:
                 if instance is not None:
                     emit_warning()
-                obj.fdel(instance)
+                obj.fdel and obj.fdel(instance)
 
-            def finalize(_wrapper: Callable[..., Any], new_doc: str) -> Any:
+            def finalize(_: Callable[..., Any], new_doc: str, /) -> T:
                 """Finalize the property."""
-                return property(fget=_fget, fset=_fset, fdel=_fdel, doc=new_doc)
+                return cast(
+                    "T",
+                    property(
+                        fget=_fget if obj.fget else None,
+                        fset=_fset if obj.fset else None,
+                        fdel=_fdel if obj.fdel else None,
+                        doc=new_doc,
+                    ),
+                )
 
         else:
             _name = _name or obj.__qualname__
@@ -181,7 +201,7 @@ def beta(
             wrapped = obj
             old_doc = wrapped.__doc__
 
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:
+            def finalize(wrapper: Callable[..., Any], new_doc: str, /) -> T:
                 """Wrap the wrapped function using the wrapper and update the docstring.
 
                 Args:
@@ -209,10 +229,26 @@ def beta(
 
 @contextlib.contextmanager
 def suppress_langchain_beta_warning() -> Generator[None, None, None]:
-    """Context manager to suppress LangChainDeprecationWarning."""
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", LangChainBetaWarning)
+    """Suppress LangChain beta warnings within the current context.
+
+    Silences warnings emitted through `warn_beta` and `@beta`. It does not modify the
+    global `warnings` filters, so calling `warnings.warn` directly with
+    `LangChainBetaWarning` is not suppressed; use `warnings.filterwarnings` for that.
+
+    Suppression is stored in a context variable, not a process-wide filter. It
+    applies to the current thread or asyncio task, and to tasks or copied contexts
+    created inside the block (e.g. `asyncio.create_task`, `asyncio.to_thread`),
+    which keep it even after the block exits. Other threads are unaffected.
+    """
+    token = _SUPPRESSING_LANGCHAIN_BETA_WARNING.set(True)
+    try:
         yield
+    finally:
+        # Exiting from a different context (e.g. an async generator suspended
+        # inside the block and closed by another task) makes `reset` raise. That
+        # context never saw this block's `set`, so there is nothing to undo.
+        with contextlib.suppress(ValueError):
+            _SUPPRESSING_LANGCHAIN_BETA_WARNING.reset(token)
 
 
 def warn_beta(
@@ -225,18 +261,17 @@ def warn_beta(
     """Display a standardized beta annotation.
 
     Args:
-        message:
-            Override the default beta message. The
-            %(name)s, %(obj_type)s, %(addendum)s
-            format specifiers will be replaced by the
-            values of the respective arguments passed to this function.
-        name:
-            The name of the annotated object.
-        obj_type:
-            The object type being annotated.
-        addendum:
-            Additional text appended directly to the final message.
+        message: Override the default beta message.
+
+            The %(name)s, %(obj_type)s, %(addendum)s format specifiers will be replaced
+            by the values of the respective arguments passed to this function.
+        name: The name of the annotated object.
+        obj_type: The object type being annotated.
+        addendum: Additional text appended directly to the final message.
     """
+    if _SUPPRESSING_LANGCHAIN_BETA_WARNING.get():
+        return
+
     if not message:
         message = ""
 

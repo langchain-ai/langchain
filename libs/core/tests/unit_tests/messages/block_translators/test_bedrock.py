@@ -129,6 +129,42 @@ def test_convert_to_v1_from_bedrock() -> None:
     assert message.content_blocks == expected_content
 
 
+def test_convert_to_v1_from_bedrock_index_no_mutation() -> None:
+    """`bedrock` inherits `_convert_to_v1_from_anthropic`, so it inherits this fix too.
+
+    Regression test: the `else` branch built `non_standard["value"]` from the
+    original block dict (not a copy) and then `.pop("index")`'d off of it, deleting
+    `index` from `message.content` as a side effect of reading `.content_blocks`.
+    """
+    original_block = {"type": "something_else", "foo": "bar", "index": 3}
+    message = AIMessage(
+        content=[dict(original_block)],
+        # model_name must mention "claude" -- translate_content() only routes
+        # through _convert_to_v1_from_bedrock() for Anthropic-backed models,
+        # else it falls back to best-effort parsing.
+        response_metadata={
+            "model_provider": "bedrock",
+            "model_name": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+        },
+    )
+
+    first = message.content_blocks
+    second = message.content_blocks
+
+    assert message.content == [original_block]
+    assert (
+        first
+        == second
+        == [
+            {
+                "type": "non_standard",
+                "value": {"type": "something_else", "foo": "bar"},
+                "index": 3,
+            }
+        ]
+    )
+
+
 def test_convert_to_v1_from_bedrock_chunk() -> None:
     chunks = [
         AIMessageChunk(

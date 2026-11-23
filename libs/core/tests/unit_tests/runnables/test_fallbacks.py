@@ -28,6 +28,14 @@ from langchain_core.runnables import (
     RunnableWithFallbacks,
 )
 from langchain_core.tools import BaseTool
+from langchain_core.version import VERSION
+
+
+def _normalize_lc_version(value: str) -> str:
+    return value.replace(
+        f"'langchain-core': '{VERSION}'",
+        "'langchain-core': '<version>'",
+    )
 
 
 @pytest.fixture
@@ -87,7 +95,7 @@ def test_fallbacks(
     assert runnable.invoke("hello") == "bar"
     assert runnable.batch(["hi", "hey", "bye"]) == ["bar"] * 3
     assert list(runnable.stream("hello")) == ["bar"]
-    assert dumps(runnable, pretty=True) == snapshot
+    assert _normalize_lc_version(dumps(runnable, pretty=True)) == snapshot
 
 
 @pytest.mark.parametrize(
@@ -335,14 +343,16 @@ class FakeStructuredOutputModel(BaseChatModel):
     @override
     def bind_tools(
         self,
-        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
+        tools: Sequence[
+            dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool
+        ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         return self.bind(tools=tools)
 
     @override
     def with_structured_output(
-        self, schema: dict | type[BaseModel], **kwargs: Any
+        self, schema: dict[str, Any] | type[BaseModel], **kwargs: Any
     ) -> Runnable[LanguageModelInput, dict[str, int] | BaseModel]:
         return RunnableLambda(lambda _: {"foo": self.foo})
 
@@ -368,7 +378,9 @@ class FakeModel(BaseChatModel):
     @override
     def bind_tools(
         self,
-        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
+        tools: Sequence[
+            dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool
+        ],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         return self.bind(tools=tools)

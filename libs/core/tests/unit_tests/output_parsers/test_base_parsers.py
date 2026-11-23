@@ -1,15 +1,36 @@
 """Module to test base parser implementations."""
 
+from typing import Any, get_type_hints
+
+import pytest
 from typing_extensions import override
 
+from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import (
     BaseGenerationOutputParser,
+    BaseOutputParser,
     BaseTransformOutputParser,
 )
 from langchain_core.outputs import ChatGeneration, Generation
+
+
+def test_asdict_replaces_deprecated_dict() -> None:
+    class StrInvertCase(BaseTransformOutputParser[str]):
+        def parse(self, text: str) -> str:
+            return text.swapcase()
+
+    parser = StrInvertCase()
+    parser_dict = parser.asdict(exclude_none=True)
+    assert parser_dict == {}
+    with pytest.warns(LangChainDeprecationWarning, match="asdict"):
+        assert parser.dict(exclude_none=True) == parser_dict
+
+
+def test_base_output_parser_type_hints_resolve() -> None:
+    assert get_type_hints(BaseOutputParser.asdict)["return"] == dict[str, Any]
 
 
 def test_base_generation_parser() -> None:

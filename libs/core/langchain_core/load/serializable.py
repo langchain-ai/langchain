@@ -6,13 +6,15 @@ from abc import ABC
 from typing import (
     Any,
     Literal,
+    NotRequired,
     TypedDict,
     cast,
 )
 
 from pydantic import BaseModel, ConfigDict
 from pydantic.fields import FieldInfo
-from typing_extensions import NotRequired, override
+from pydantic_core import PydanticUndefined
+from typing_extensions import override
 
 logger = logging.getLogger(__name__)
 
@@ -70,14 +72,31 @@ def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
     return _try_neq_default(value, field)
 
 
+def _get_field_default(field: FieldInfo) -> Any:
+    # Pydantic 2.14+ returns ``PydanticUndefined`` (rather than ``None``) from
+    # ``get_default()`` for an un-called ``default_factory``. Restore the historical
+    # ``None`` so a factory-defaulted field at its default is still treated as
+    # unchanged. The factory is intentionally not called: ``get_default()`` keeps
+    # ``call_default_factory=False`` precisely because factories may have side effects.
+    default = field.get_default()
+    if default is PydanticUndefined and field.default_factory is not None:
+        return None
+    return default
+
+
 def _try_neq_default(value: Any, field: FieldInfo) -> bool:
     # Handle edge case: inequality of two objects does not evaluate to a bool (e.g. two
     # Pandas DataFrames).
     try:
-        return bool(field.get_default() != value)
+        default = _get_field_default(field)
+    except Exception as _:
+        # A raising default_factory means we cannot compare; treat as non-default.
+        return True
+    try:
+        return bool(default != value)
     except Exception as _:
         try:
-            return all(field.get_default() != value)
+            return all(default != value)
         except Exception as _:
             try:
                 return value is not field.default
@@ -103,6 +122,7 @@ class Serializable(BaseModel, ABC):
         the correct class to instantiate.
 
         Please see the `Reviver` class in `langchain_core.load.load` for more details.
+
         During deserialization an additional mapping is handle classes that have moved
         or been renamed across package versions.
 
@@ -133,12 +153,26 @@ class Serializable(BaseModel, ABC):
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the LangChain object.
 
-        For example, if the class is [`langchain.llms.openai.OpenAI`][langchain_openai.OpenAI],
-        then the namespace is `["langchain", "llms", "openai"]`
+        The default implementation splits `cls.__module__` on `'.'`, e.g.
+        `langchain_openai.chat_models` becomes
+        `["langchain_openai", "chat_models"]`. This value is used by `lc_id` to
+        build the serialization identifier.
+
+        New partner packages should **not** override this method. The default
+        behavior is correct for any class whose module path already reflects
+        its package name. Some older packages (e.g. `langchain-openai`,
+        `langchain-anthropic`) override it to return a legacy-style namespace
+        like `["langchain", "chat_models", "openai"]`, matching the module
+        paths that existed before those integrations were split out of the
+        main `langchain` package. Those overrides are kept for
+        backwards-compatible deserialization; new packages should not copy them.
+
+        Deserialization mapping is handled separately by
+        `SERIALIZABLE_MAPPING` in `langchain_core.load.mapping`.
 
         Returns:
             The namespace.
-        """  # noqa: E501
+        """
         return cls.__module__.split(".")
 
     @property
@@ -150,7 +184,7 @@ class Serializable(BaseModel, ABC):
         return {}
 
     @property
-    def lc_attributes(self) -> dict:
+    def lc_attributes(self) -> dict[str, Any]:
         """List of attribute names that should be included in the serialized kwargs.
 
         These attributes must be accepted by the constructor.

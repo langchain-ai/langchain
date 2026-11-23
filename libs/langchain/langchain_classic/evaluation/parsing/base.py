@@ -149,7 +149,7 @@ class JsonEqualityEvaluator(StringEvaluator):
     def _parse_json(
         self,
         string: Any,
-    ) -> dict | list | None | float | bool | int | str:
+    ) -> dict | list | float | bool | int | str | None:
         if isinstance(string, str):
             return parse_json_markdown(string)
         return string
@@ -176,6 +176,6 @@ class JsonEqualityEvaluator(StringEvaluator):
         if isinstance(label, list):
             if not isinstance(parsed, list):
                 return {"score": 0}
-            parsed = sorted(parsed, key=lambda x: str(x))
-            label = sorted(label, key=lambda x: str(x))
+            parsed = sorted(parsed, key=str)
+            label = sorted(label, key=str)
         return {"score": self.operator(parsed, label)}

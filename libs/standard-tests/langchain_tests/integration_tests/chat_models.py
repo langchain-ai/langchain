@@ -6,13 +6,17 @@ import base64
 import json
 import os
 import warnings
-from typing import TYPE_CHECKING, Annotated, Any, Literal
+from typing import TYPE_CHECKING, Annotated, Any, Literal, cast
 from unittest.mock import MagicMock
 
 import httpx
 import pytest
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
+from langchain_core.language_models.chat_model_stream import (
+    AsyncChatModelStream,
+    ChatModelStream,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -35,6 +39,7 @@ from typing_extensions import TypedDict, override
 
 from langchain_tests.unit_tests.chat_models import ChatModelTests
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
+from langchain_tests.utils.stream_lifecycle import assert_valid_event_stream
 
 if TYPE_CHECKING:
     from pytest_benchmark.fixture import (
@@ -129,6 +134,22 @@ def _validate_tool_call_message(message: BaseMessage) -> None:
     assert content_tool_call["id"] is not None
 
 
+def _validate_tool_call_chunk(chunk: AIMessageChunk) -> bool:
+    """Check whether a streaming chunk contains valid `tool_call_chunk` blocks.
+
+    Returns:
+        `True` if at least one `tool_call_chunk` block was found.
+    """
+    found = False
+    for block in chunk.content_blocks:
+        if block.get("type") == "tool_call_chunk":
+            found = True
+            assert "name" in block, "tool_call_chunk block missing 'name' field"
+            assert "args" in block, "tool_call_chunk block missing 'args' field"
+            assert "id" in block, "tool_call_chunk block missing 'id' field"
+    return found
+
+
 def _validate_tool_call_message_no_args(message: BaseMessage) -> None:
     assert isinstance(message, AIMessage)
     assert len(message.tool_calls) == 1
@@ -151,7 +172,7 @@ def _get_base64_from_url(url: str) -> str:
         )
         warnings.warn(warning_message, stacklevel=2)
     headers = {"User-Agent": user_agent} if user_agent else {}
-    httpx_response = httpx.get(url, headers=headers).content
+    httpx_response = httpx.get(url, headers=headers, timeout=10.0).content
     return base64.b64encode(httpx_response).decode("utf-8")
 
 
@@ -738,6 +759,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             will use the cassette instead of making HTTP calls.
     '''  # noqa: E501
 
+    @override
     @property
     def standard_chat_model_params(self) -> dict[str, Any]:
         """Standard parameters for chat model."""
@@ -820,20 +842,45 @@ class ChatModelIntegrationTests(ChatModelTests):
             ```python
             yield ChatGenerationChunk(message=AIMessageChunk(content="chunk text"))
             ```
+
+            The final chunk must have `chunk_position='last'` to signal stream
+            completion. This enables proper parsing of `tool_call_chunks` into
+            `tool_calls` on the aggregated message:
+
+            ```python
+            for i, token in enumerate(tokens):
+                is_last = i == len(tokens) - 1
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=token,
+                        chunk_position="last" if is_last else None,
+                    )
+                )
+            ```
         """
-        num_chunks = 0
+        chunks: list[AIMessageChunk] = []
         full: AIMessageChunk | None = None
         for chunk in model.stream("Hello"):
             assert chunk is not None
             assert isinstance(chunk, AIMessageChunk)
             assert isinstance(chunk.content, str | list)
-            num_chunks += 1
+            chunks.append(chunk)
             full = chunk if full is None else full + chunk
-        assert num_chunks > 0
+        assert len(chunks) > 0
         assert isinstance(full, AIMessageChunk)
         assert full.content
-        assert len(full.content_blocks) == 1
-        assert full.content_blocks[0]["type"] == "text"
+        assert full.text
+        # Exactly one text block — guards against merge bugs that would produce
+        # multiple adjacent text blocks in the aggregated result.
+        text_blocks = [b for b in full.content_blocks if b["type"] == "text"]
+        assert len(text_blocks) == 1
+
+        # Verify chunk_position signaling
+        last_chunk = chunks[-1]
+        assert last_chunk.chunk_position == "last", (
+            f"Final chunk must have chunk_position='last', "
+            f"got {last_chunk.chunk_position!r}"
+        )
 
     @pytest.mark.parametrize("model", [{}, {"output_version": "v1"}], indirect=True)
     async def test_astream(self, model: BaseChatModel) -> None:
@@ -861,20 +908,96 @@ class ChatModelIntegrationTests(ChatModelTests):
             ```python
             yield ChatGenerationChunk(message=AIMessageChunk(content="chunk text"))
             ```
+
+            See `test_stream` troubleshooting for `chunk_position` requirements.
         """
-        num_chunks = 0
+        chunks: list[AIMessageChunk] = []
         full: AIMessageChunk | None = None
         async for chunk in model.astream("Hello"):
             assert chunk is not None
             assert isinstance(chunk, AIMessageChunk)
             assert isinstance(chunk.content, str | list)
-            num_chunks += 1
+            chunks.append(chunk)
             full = chunk if full is None else full + chunk
-        assert num_chunks > 0
+        assert len(chunks) > 0
         assert isinstance(full, AIMessageChunk)
         assert full.content
-        assert len(full.content_blocks) == 1
-        assert full.content_blocks[0]["type"] == "text"
+        assert full.text
+        # Exactly one text block — guards against merge bugs that would produce
+        # multiple adjacent text blocks in the aggregated result.
+        text_blocks = [b for b in full.content_blocks if b["type"] == "text"]
+        assert len(text_blocks) == 1
+
+        # Verify chunk_position signaling
+        last_chunk = chunks[-1]
+        assert last_chunk.chunk_position == "last", (
+            f"Final chunk must have chunk_position='last', "
+            f"got {last_chunk.chunk_position!r}"
+        )
+
+    def test_stream_events_v3(self, model: BaseChatModel) -> None:
+        """Test that `model.stream_events("Hello", version="v3")` works.
+
+        Exercises the content-block-centric streaming protocol. Passing this
+        test indicates the model participates in `stream_events(version="v3")` either
+        natively (via `_stream_chat_model_events`) or through the compat bridge that
+        converts `_stream` chunks into protocol events.
+
+        ??? question "Troubleshooting"
+
+            First, debug
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_stream`
+            — `stream_events(version="v3")` falls back to the same
+            `_stream` path via the compat bridge when the model does not
+            implement
+            `_stream_chat_model_events`. If `test_stream` passes but this does
+            not, inspect the raised lifecycle violation: it identifies the
+            event index and the rule broken.
+        """
+        stream = model.stream_events("Hello", version="v3")
+        assert isinstance(stream, ChatModelStream)
+
+        events = list(stream)
+        assert len(events) > 0
+        assert_valid_event_stream(events)
+
+        message = stream.output
+        assert isinstance(message, AIMessage)
+        assert message.content
+        assert message.text
+        assert any(block["type"] == "text" for block in message.content_blocks)
+        # `stream_events(version="v3")` always assembles content as v1 protocol blocks.
+        assert message.response_metadata.get("output_version") == "v1"
+
+    async def test_astream_events_v3(self, model: BaseChatModel) -> None:
+        """Test that `await model.astream_events("Hello", version="v3")` works.
+
+        Async counterpart to `test_stream_events_v3`. Exercises the
+        `AsyncChatModelStream` path end-to-end: the background producer task,
+        replay-buffer-backed event iteration, and the awaitable `output`
+        projection.
+
+        ??? question "Troubleshooting"
+
+            First, debug
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_astream`.
+            If `test_astream` passes but this does not, inspect the raised
+            lifecycle violation; it identifies the event index and the rule
+            broken.
+        """
+        stream = await model.astream_events("Hello", version="v3")
+        assert isinstance(stream, AsyncChatModelStream)
+
+        events = [event async for event in stream]
+        assert len(events) > 0
+        assert_valid_event_stream(events)
+
+        message = await stream.output
+        assert isinstance(message, AIMessage)
+        assert message.content
+        assert message.text
+        assert any(block["type"] == "text" for block in message.content_blocks)
+        assert message.response_metadata.get("output_version") == "v1"
 
     def test_invoke_with_model_override(self, model: BaseChatModel) -> None:
         """Test that model name can be overridden at invoke time via kwargs.
@@ -1560,6 +1683,10 @@ class ChatModelIntegrationTests(ChatModelTests):
             Otherwise, in the case that only one tool is bound, ensure that
             `tool_choice` supports the string `'any'` to force calling that tool.
 
+            If `tool_call_streaming = true` is set in the model's profile
+            augmentations, individual chunks are also validated to contain
+            `tool_call_chunk` blocks in `content_blocks`.
+
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1574,12 +1701,27 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model_with_tools.invoke(query)
         _validate_tool_call_message(result)
 
+        tool_call_streaming = (
+            model.profile.get("tool_call_streaming", False) if model.profile else False
+        )
+
         # Test stream
         full: BaseMessage | None = None
+        found_tool_call_chunk = False
         for chunk in model_with_tools.stream(query):
-            full = chunk if full is None else full + chunk  # type: ignore[assignment]
+            if tool_call_streaming and isinstance(chunk, AIMessageChunk):
+                found_tool_call_chunk |= _validate_tool_call_chunk(chunk)
+            full = chunk if full is None else (cast("AIMessageChunk", full) + chunk)
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
+
+        if tool_call_streaming:
+            assert found_tool_call_chunk, (
+                "Expected to find 'tool_call_chunk' blocks in content_blocks of at "
+                "least one chunk during streaming, but none were found. If this "
+                "model does not support streaming tool calls, set "
+                "tool_call_streaming=false in the model's profile augmentations."
+            )
 
     async def test_tool_calling_async(self, model: BaseChatModel) -> None:
         """Test that the model generates tool calls.
@@ -1622,6 +1764,8 @@ class ChatModelIntegrationTests(ChatModelTests):
             Otherwise, in the case that only one tool is bound, ensure that
             `tool_choice` supports the string `'any'` to force calling that tool.
 
+            See `test_tool_calling` for `tool_call_streaming` profile configuration.
+
         """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
@@ -1636,12 +1780,27 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = await model_with_tools.ainvoke(query)
         _validate_tool_call_message(result)
 
+        tool_call_streaming = (
+            model.profile.get("tool_call_streaming", False) if model.profile else False
+        )
+
         # Test astream
         full: BaseMessage | None = None
+        found_tool_call_chunk = False
         async for chunk in model_with_tools.astream(query):
-            full = chunk if full is None else full + chunk  # type: ignore[assignment]
+            if tool_call_streaming and isinstance(chunk, AIMessageChunk):
+                found_tool_call_chunk |= _validate_tool_call_chunk(chunk)
+            full = chunk if full is None else (cast("AIMessageChunk", full) + chunk)
         assert isinstance(full, AIMessage)
         _validate_tool_call_message(full)
+
+        if tool_call_streaming:
+            assert found_tool_call_chunk, (
+                "Expected to find 'tool_call_chunk' blocks in content_blocks of at "
+                "least one chunk during streaming, but none were found. If this "
+                "model does not support streaming tool calls, set "
+                "tool_call_streaming=false in the model's profile augmentations."
+            )
 
     def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
         """Test bind runnables as tools.
@@ -1988,7 +2147,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         full: BaseMessage | None = None
         for chunk in model_with_tools.stream(query):
-            full = chunk if full is None else full + chunk  # type: ignore[assignment]
+            full = chunk if full is None else (cast("AIMessageChunk", full) + chunk)
         assert isinstance(full, AIMessage)
         _validate_tool_call_message_no_args(full)
 
@@ -2336,11 +2495,13 @@ class ChatModelIntegrationTests(ChatModelTests):
             punchline: str = FieldV1(description="answer to resolve the joke")
 
         # Pydantic class
+        # Note: with_structured_output return type is dict | pydantic.BaseModel (v2),
+        # but this test validates pydantic.v1.BaseModel support at runtime.
         chat = model.with_structured_output(Joke, **self.structured_output_kwargs)
         result = chat.invoke("Tell me a joke about cats.")
-        assert isinstance(result, Joke)
+        assert isinstance(result, Joke)  # type: ignore[unreachable]
 
-        chunk = None
+        chunk = None  # type: ignore[unreachable]
         for chunk in chat.stream("Tell me a joke about cats."):
             assert isinstance(chunk, Joke)
         assert chunk is not None, "Stream returned no chunks - possible API issue"
@@ -2550,7 +2711,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model does not support PDF inputs.")
 
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-        pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+        pdf_data = base64.b64encode(httpx.get(url, timeout=10.0).content).decode(
+            "utf-8"
+        )
 
         message = HumanMessage(
             [
@@ -2748,7 +2911,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model does not support image message.")
 
         image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
-        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+        image_data = base64.b64encode(
+            httpx.get(image_url, timeout=10.0).content
+        ).decode("utf-8")
 
         # OpenAI CC format, base64 data
         message = HumanMessage(
@@ -2854,7 +3019,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model does not support image tool message.")
 
         image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
-        image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+        image_data = base64.b64encode(
+            httpx.get(image_url, timeout=10.0).content
+        ).decode("utf-8")
 
         # OpenAI CC format, base64 data
         oai_format_message = ToolMessage(
@@ -2953,7 +3120,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Model does not support PDF tool message.")
 
         url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-        pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+        pdf_data = base64.b64encode(httpx.get(url, timeout=10.0).content).decode(
+            "utf-8"
+        )
 
         tool_message = ToolMessage(
             content_blocks=[
@@ -3080,7 +3249,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             "cache_control": {"type": "ephemeral"},
         }
 
-        human_content = [
+        human_content: list[str | dict[Any, Any]] = [
             {
                 "type": "text",
                 "text": "what's your favorite color in this image",
@@ -3089,7 +3258,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         ]
         if self.supports_image_inputs:
             image_url = "https://raw.githubusercontent.com/langchain-ai/docs/4d11d08b6b0e210bd456943f7a22febbd168b543/src/images/agentic-rag-output.png"
-            image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
+            image_data = base64.b64encode(
+                httpx.get(image_url, timeout=10.0).content
+            ).decode("utf-8")
             human_content.append(
                 {
                     "type": "image",
@@ -3102,7 +3273,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             )
         messages = [
             SystemMessage("you're a good assistant"),
-            HumanMessage(human_content),  # type: ignore[arg-type]
+            HumanMessage(human_content),
             AIMessage(
                 [
                     {"type": "text", "text": "Hmm let me think about that"},

@@ -5,6 +5,7 @@ import pytest
 
 from langchain_core.runnables.base import RunnableLambda
 from langchain_core.runnables.utils import (
+    AddableDict,
     get_function_nonlocals,
     get_lambda_source,
     indent_lines_after_first,
@@ -56,7 +57,7 @@ def test_nonlocals() -> None:
     def my_func4(value: str) -> str:
         return global_agent.invoke(value)
 
-    def my_func5() -> tuple[Callable[[str], str], RunnableLambda]:
+    def my_func5() -> tuple[Callable[[str], str], RunnableLambda[str, str]]:
         global_agent = RunnableLambda[str, str](lambda x: x * 3)
 
         def my_func6(value: str) -> str:
@@ -73,3 +74,29 @@ def test_nonlocals() -> None:
     assert RunnableLambda(my_func3).deps == [agent]
     assert RunnableLambda(my_func4).deps == [global_agent]
     assert RunnableLambda(func).deps == [nl]
+
+
+def test_addable_dict_add_incompatible_types_raises() -> None:
+    left = AddableDict({"count": 1})
+    right = AddableDict({"count": "some_string"})
+    with pytest.raises(
+        TypeError,
+        match=r"Cannot add incompatible types for key 'count': 'int' and 'str'\.",
+    ):
+        left + right
+
+
+def test_addable_dict_radd_incompatible_types_raises() -> None:
+    left = AddableDict({"count": 1})
+    right = AddableDict({"count": "some_string"})
+    with pytest.raises(
+        TypeError,
+        match=r"Cannot add incompatible types for key 'count': 'int' and 'str'\.",
+    ):
+        right.__radd__(left)
+
+
+def test_addable_dict_add_none_seeded_key_is_unaffected() -> None:
+    left = AddableDict({"data": None})
+    right = AddableDict({"data": {"a": 1}})
+    assert (left + right) == AddableDict({"data": {"a": 1}})

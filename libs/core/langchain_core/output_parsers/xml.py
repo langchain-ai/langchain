@@ -42,16 +42,18 @@ Here are the output tags:
 class _StreamingParser:
     """Streaming parser for XML.
 
-    This implementation is pulled into a class to avoid implementation
-    drift between transform and atransform of the `XMLOutputParser`.
+    This implementation is pulled into a class to avoid implementation drift between
+    `transform` and `atransform` of the `XMLOutputParser`.
     """
 
     def __init__(self, parser: Literal["defusedxml", "xml"]) -> None:
         """Initialize the streaming parser.
 
         Args:
-            parser: Parser to use for XML parsing. Can be either `'defusedxml'` or
-                `'xml'`. See documentation in `XMLOutputParser` for more information.
+            parser: Parser to use for XML parsing.
+
+                Can be either `'defusedxml'` or `'xml'`. See documentation in
+                `XMLOutputParser` for more information.
 
         Raises:
             ImportError: If `defusedxml` is not installed and the `defusedxml` parser is
@@ -61,8 +63,9 @@ class _StreamingParser:
             if not _HAS_DEFUSEDXML:
                 msg = (
                     "defusedxml is not installed. "
-                    "Please install it to use the defusedxml parser."
-                    "You can install it with `pip install defusedxml` "
+                    "Please install it to use the defusedxml parser. "
+                    "You can install it with `pip install defusedxml`. "
+                    "See https://github.com/tiran/defusedxml for more details"
                 )
                 raise ImportError(msg)
             parser_ = XMLParser(target=TreeBuilder())
@@ -146,7 +149,7 @@ class _StreamingParser:
             self.pull_parser.close()
 
 
-class XMLOutputParser(BaseTransformOutputParser):
+class XMLOutputParser(BaseTransformOutputParser[dict[str, Any]]):
     """Parse an output using xml format.
 
     Returns a dictionary of tags.
@@ -160,30 +163,35 @@ class XMLOutputParser(BaseTransformOutputParser):
     For example, with `tags=["foo", "bar", "baz"]`:
 
     1. A well-formatted XML instance:
-        `"<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>"`
+        `'<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>'`
 
     2. A badly-formatted XML instance (missing closing tag for 'bar'):
-        `"<foo>\n   <bar>\n   </foo>"`
+        `'<foo>\n   <bar>\n   </foo>'`
 
     3. A badly-formatted XML instance (unexpected 'tag' element):
-        `"<foo>\n   <tag>\n   </tag>\n</foo>"`
+        `'<foo>\n   <tag>\n   </tag>\n</foo>'`
     """
-    encoding_matcher: re.Pattern = re.compile(
+    encoding_matcher: re.Pattern[str] = re.compile(
         r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL
     )
+
     parser: Literal["defusedxml", "xml"] = "defusedxml"
-    """Parser to use for XML parsing. Can be either `'defusedxml'` or `'xml'`.
+    """Parser to use for XML parsing.
 
-    * `'defusedxml'` is the default parser and is used to prevent XML vulnerabilities
-        present in some distributions of Python's standard library xml.
-        `defusedxml` is a wrapper around the standard library parser that
-        sets up the parser with secure defaults.
-    * `'xml'` is the standard library parser.
+    Can be either `'defusedxml'` or `'xml'`.
 
-    Use `xml` only if you are sure that your distribution of the standard library is not
-    vulnerable to XML vulnerabilities.
+    - `'defusedxml'` is the default parser and is used to prevent XML vulnerabilities
+        present in some distributions of Python's standard library xml. `defusedxml` is
+        a wrapper around the standard library parser that sets up the parser with secure
+        defaults.
+    - `'xml'` is the standard library parser.
 
-    Please review the following resources for more information:
+    !!! warning
+
+        Use `xml` only if you are sure that your distribution of the standard library is
+        not vulnerable to XML vulnerabilities.
+
+    Review the following resources for more information:
 
     * https://docs.python.org/3/library/xml.html#xml-vulnerabilities
     * https://github.com/tiran/defusedxml
@@ -207,8 +215,8 @@ class XMLOutputParser(BaseTransformOutputParser):
 
         Raises:
             OutputParserException: If the XML is not well-formed.
-            ImportError: If defus`edxml is not installed and the `defusedxml` parser is
-                requested.
+            ImportError: If `defusedxml` is not installed and the `defusedxml` parser
+                is requested.
         """
         # Try to find XML string within triple backticks
         # Imports are temporarily placed here to avoid issue with caching on CI
@@ -217,8 +225,8 @@ class XMLOutputParser(BaseTransformOutputParser):
             if not _HAS_DEFUSEDXML:
                 msg = (
                     "defusedxml is not installed. "
-                    "Please install it to use the defusedxml parser."
-                    "You can install it with `pip install defusedxml`"
+                    "Please install it to use the defusedxml parser. "
+                    "You can install it with `pip install defusedxml`. "
                     "See https://github.com/tiran/defusedxml for more details"
                 )
                 raise ImportError(msg)
@@ -265,13 +273,13 @@ class XMLOutputParser(BaseTransformOutputParser):
             # If root text contains any non-whitespace character it
             # returns {root.tag: root.text}
             return {root.tag: root.text}
-        result: dict = {root.tag: []}
+        root_tag: list[Any] = []
         for child in root:
             if len(child) == 0:
-                result[root.tag].append({child.tag: child.text})
+                root_tag.append({child.tag: child.text})
             else:
-                result[root.tag].append(self._root_to_dict(child))
-        return result
+                root_tag.append(self._root_to_dict(child))
+        return {root.tag: root_tag}
 
     @property
     def _type(self) -> str:

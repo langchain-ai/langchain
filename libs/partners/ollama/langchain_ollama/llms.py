@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Iterator, Mapping
-from typing import Any, Literal
+from typing import Any, Literal, Self
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -13,9 +13,13 @@ from langchain_core.language_models import BaseLLM, LangSmithParams
 from langchain_core.outputs import GenerationChunk, LLMResult
 from ollama import AsyncClient, Client, Options
 from pydantic import PrivateAttr, model_validator
-from typing_extensions import Self
 
-from ._utils import merge_auth_headers, parse_url_with_auth, validate_model
+from langchain_ollama._utils import (
+    merge_auth_headers,
+    parse_url_with_auth,
+    validate_model,
+)
+from langchain_ollama._version import __version__
 
 
 class OllamaLLM(BaseLLM):
@@ -316,6 +320,12 @@ class OllamaLLM(BaseLLM):
         return params
 
     @model_validator(mode="after")
+    def _set_ollama_llm_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-ollama", __version__)
+        return self
+
+    @model_validator(mode="after")
     def _set_clients(self) -> Self:
         """Set clients to use for ollama."""
         client_kwargs = self.client_kwargs or {}
@@ -343,11 +353,16 @@ class OllamaLLM(BaseLLM):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[Mapping[str, Any] | str]:
-        if self._async_client:
-            async for part in await self._async_client.generate(
-                **self._generate_params(prompt, stop=stop, **kwargs)
-            ):
-                yield part
+        if not self._async_client:
+            msg = (
+                "Ollama async client is not initialized. "
+                "Make sure the model was properly constructed."
+            )
+            raise RuntimeError(msg)
+        async for part in await self._async_client.generate(
+            **self._generate_params(prompt, stop=stop, **kwargs)
+        ):
+            yield part
 
     def _create_generate_stream(
         self,
@@ -355,10 +370,15 @@ class OllamaLLM(BaseLLM):
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> Iterator[Mapping[str, Any] | str]:
-        if self._client:
-            yield from self._client.generate(
-                **self._generate_params(prompt, stop=stop, **kwargs)
+        if not self._client:
+            msg = (
+                "Ollama sync client is not initialized. "
+                "Make sure the model was properly constructed."
             )
+            raise RuntimeError(msg)
+        yield from self._client.generate(
+            **self._generate_params(prompt, stop=stop, **kwargs)
+        )
 
     async def _astream_with_aggregation(
         self,
@@ -461,7 +481,7 @@ class OllamaLLM(BaseLLM):
                 **kwargs,
             )
             generations.append([final_chunk])
-        return LLMResult(generations=generations)  # type: ignore[arg-type]
+        return LLMResult(generations=generations)
 
     async def _agenerate(
         self,
@@ -480,7 +500,7 @@ class OllamaLLM(BaseLLM):
                 **kwargs,
             )
             generations.append([final_chunk])
-        return LLMResult(generations=generations)  # type: ignore[arg-type]
+        return LLMResult(generations=generations)
 
     def _stream(
         self,

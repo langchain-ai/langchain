@@ -2,6 +2,7 @@ import asyncio
 import logging
 import warnings
 from collections.abc import Callable, Iterable
+from typing import Self
 
 import httpx
 from httpx import Response
@@ -16,9 +17,8 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_fixed
 from tokenizers import Tokenizer  # type: ignore[import]
-from typing_extensions import Self
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,25 @@ MAX_TOKENS = 16_000
 accepted by the embedding model for each document/chunk, but rather the maximum number
 of tokens that can be sent in a single request to the Mistral API (across multiple
 documents/chunks)"""
+
+
+def _is_retryable_error(exception: BaseException) -> bool:
+    """Determine if an exception should trigger a retry.
+
+    Only retries on:
+    - Timeout exceptions
+    - 429 (rate limit) errors
+    - 5xx (server) errors
+
+    Does NOT retry on 400 (bad request) or other 4xx client errors.
+    """
+    if isinstance(exception, httpx.TimeoutException):
+        return True
+    if isinstance(exception, httpx.HTTPStatusError):
+        status_code = exception.response.status_code
+        # Retry on rate limit (429) or server errors (5xx)
+        return status_code == 429 or status_code >= 500
+    return False
 
 
 class DummyTokenizer:
@@ -145,7 +164,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
     max_concurrent_requests: int = 64
 
-    tokenizer: Tokenizer = Field(default=None)
+    tokenizer: Tokenizer | None = Field(default=None)
 
     model: str = "mistral-embed"
 
@@ -194,7 +213,6 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                     "Falling back to a dummy tokenizer that uses `len()`.",
                     stacklevel=2,
                 )
-                self.tokenizer = DummyTokenizer()
         return self
 
     def _get_batches(self, texts: list[str]) -> Iterable[list[str]]:
@@ -202,9 +220,9 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         batch: list[str] = []
         batch_tokens = 0
 
-        text_token_lengths = [
-            len(encoded) for encoded in self.tokenizer.encode_batch(texts)
-        ]
+        tokenizer = self.tokenizer or DummyTokenizer()
+
+        text_token_lengths = [len(encoded) for encoded in tokenizer.encode_batch(texts)]
 
         for text, text_tokens in zip(texts, text_token_lengths, strict=False):
             if batch_tokens + text_tokens > MAX_TOKENS:
@@ -225,9 +243,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             return func
 
         return retry(
-            retry=retry_if_exception_type(
-                (httpx.TimeoutException, httpx.HTTPStatusError)
-            ),
+            retry=retry_if_exception(_is_retryable_error),
             wait=wait_fixed(self.wait_time),
             stop=stop_after_attempt(self.max_retries),
         )(func)

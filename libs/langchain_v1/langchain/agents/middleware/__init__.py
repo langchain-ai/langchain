@@ -1,42 +1,54 @@
 """Entrypoint to using [middleware](https://docs.langchain.com/oss/python/langchain/middleware) plugins with [Agents](https://docs.langchain.com/oss/python/langchain/agents)."""  # noqa: E501
 
-from .context_editing import (
-    ClearToolUsesEdit,
-    ContextEditingMiddleware,
-)
-from .file_search import FilesystemFileSearchMiddleware
-from .human_in_the_loop import (
+from langgraph.runtime import Runtime
+
+from langchain.agents.middleware._trace_policy import configure_trace_policy
+from langchain.agents.middleware.auto_mode import AutoModeMiddleware
+from langchain.agents.middleware.context_editing import ClearToolUsesEdit, ContextEditingMiddleware
+from langchain.agents.middleware.file_search import FilesystemFileSearchMiddleware
+from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
     InterruptOnConfig,
 )
-from .model_call_limit import ModelCallLimitMiddleware
-from .model_fallback import ModelFallbackMiddleware
-from .model_retry import ModelRetryMiddleware
-from .pii import PIIDetectionError, PIIMiddleware
-from .shell_tool import (
+from langchain.agents.middleware.model_call_limit import ModelCallLimitMiddleware
+from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
+from langchain.agents.middleware.model_refusal import ModelRefusalMiddleware
+from langchain.agents.middleware.model_retry import ModelRetryMiddleware
+from langchain.agents.middleware.model_router import ModelChoice, ModelRouterMiddleware
+from langchain.agents.middleware.pii import PIIDetectionError, PIIMatch, PIIMiddleware
+from langchain.agents.middleware.provider_tool_search import ProviderToolSearchMiddleware
+from langchain.agents.middleware.shell_tool import (
     CodexSandboxExecutionPolicy,
     DockerExecutionPolicy,
     HostExecutionPolicy,
     RedactionRule,
     ShellToolMiddleware,
 )
-from .summarization import SummarizationMiddleware
-from .todo import TodoListMiddleware
-from .tool_call_limit import ToolCallLimitMiddleware
-from .tool_emulator import LLMToolEmulator
-from .tool_retry import ToolRetryMiddleware
-from .tool_selection import LLMToolSelectorMiddleware
-from .types import (
+from langchain.agents.middleware.summarization import SummarizationMiddleware, TriggerClause
+from langchain.agents.middleware.todo import TodoListMiddleware
+from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
+from langchain.agents.middleware.tool_emulator import LLMToolEmulator
+from langchain.agents.middleware.tool_error import ToolErrorMiddleware
+from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
+from langchain.agents.middleware.tool_selection import LLMToolSelectorMiddleware
+from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    ExtendedModelResponse,
+    InputAgentState,
+    ModelCallResult,
     ModelRequest,
     ModelResponse,
+    OutputAgentState,
+    ToolCallRequest,
+    TracePolicy,
     after_agent,
     after_model,
     before_agent,
     before_model,
     dynamic_prompt,
     hook_config,
+    omit_payload,
     wrap_model_call,
     wrap_tool_call,
 )
@@ -44,35 +56,52 @@ from .types import (
 __all__ = [
     "AgentMiddleware",
     "AgentState",
+    "AutoModeMiddleware",
     "ClearToolUsesEdit",
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
     "DockerExecutionPolicy",
+    "ExtendedModelResponse",
     "FilesystemFileSearchMiddleware",
     "HostExecutionPolicy",
     "HumanInTheLoopMiddleware",
+    "InputAgentState",
     "InterruptOnConfig",
     "LLMToolEmulator",
     "LLMToolSelectorMiddleware",
     "ModelCallLimitMiddleware",
+    "ModelCallResult",
+    "ModelChoice",
     "ModelFallbackMiddleware",
+    "ModelRefusalMiddleware",
     "ModelRequest",
     "ModelResponse",
     "ModelRetryMiddleware",
+    "ModelRouterMiddleware",
+    "OutputAgentState",
     "PIIDetectionError",
+    "PIIMatch",
     "PIIMiddleware",
+    "ProviderToolSearchMiddleware",
     "RedactionRule",
+    "Runtime",
     "ShellToolMiddleware",
     "SummarizationMiddleware",
     "TodoListMiddleware",
     "ToolCallLimitMiddleware",
+    "ToolCallRequest",
+    "ToolErrorMiddleware",
     "ToolRetryMiddleware",
+    "TracePolicy",
+    "TriggerClause",
     "after_agent",
     "after_model",
     "before_agent",
     "before_model",
+    "configure_trace_policy",
     "dynamic_prompt",
     "hook_config",
+    "omit_payload",
     "wrap_model_call",
     "wrap_tool_call",
 ]

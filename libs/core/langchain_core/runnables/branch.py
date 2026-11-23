@@ -13,7 +13,7 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
 from typing_extensions import override
 
 from langchain_core.runnables.base import (
@@ -35,6 +35,7 @@ from langchain_core.runnables.utils import (
     Output,
     get_unique_config_specs,
 )
+from langchain_core.utils.pydantic import TypeBaseModel
 
 _MIN_BRANCHES = 2
 
@@ -77,9 +78,9 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             Runnable[Input, bool]
             | Callable[[Input], bool]
             | Callable[[Input], Awaitable[bool]],
-            RunnableLike,
+            RunnableLike[Input, Output],
         ]
-        | RunnableLike,
+        | RunnableLike[Input, Output],
     ) -> None:
         """A `Runnable` that runs one of two branches based on a condition.
 
@@ -106,9 +107,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             msg = "RunnableBranch default must be Runnable, callable or mapping."
             raise TypeError(msg)
 
-        default_ = cast(
-            "Runnable[Input, Output]", coerce_to_runnable(cast("RunnableLike", default))
-        )
+        default_ = coerce_to_runnable(cast("Runnable[Input, Output]", default))
 
         branches_ = []
 
@@ -128,7 +127,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                 raise ValueError(msg)
             condition, runnable = branch
             condition = cast("Runnable[Input, bool]", coerce_to_runnable(condition))
-            runnable = coerce_to_runnable(runnable)
+            runnable = coerce_to_runnable(cast("Runnable[Input, Output]", runnable))
             branches_.append((condition, runnable))
 
         super().__init__(
@@ -156,7 +155,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         return ["langchain", "schema", "runnable"]
 
     @override
-    def get_input_schema(self, config: RunnableConfig | None = None) -> type[BaseModel]:
+    def get_input_schema(self, config: RunnableConfig | None = None) -> TypeBaseModel:
         runnables = (
             [self.default]
             + [r for _, r in self.branches]
@@ -164,10 +163,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         )
 
         for runnable in runnables:
-            if (
-                runnable.get_input_schema(config).model_json_schema().get("type")
-                is not None
-            ):
+            if runnable.get_input_jsonschema(config).get("type") is not None:
                 return runnable.get_input_schema(config)
 
         return super().get_input_schema(config)

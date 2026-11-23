@@ -1,8 +1,9 @@
 import uuid
-from typing import get_args
+from typing import Any, get_args
 
 import pytest
 
+from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.documents import Document
 from langchain_core.load import dumpd, load
 from langchain_core.messages import (
@@ -132,6 +133,34 @@ def test_message_chunks() -> None:
         + AIMessageChunk(
             content="",
             tool_call_chunks=[
+                create_tool_call_chunk(name=None, args='{"arg1": "val', id="", index=0)
+            ],
+        )
+        + AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                create_tool_call_chunk(name=None, args='ue"}', id="", index=0)
+            ],
+        )
+    ) == AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            create_tool_call_chunk(
+                name="tool1", args='{"arg1": "value"}', id="1", index=0
+            )
+        ],
+    )
+
+    assert (
+        AIMessageChunk(
+            content="",
+            tool_call_chunks=[
+                create_tool_call_chunk(name="tool1", args="", id="1", index=0)
+            ],
+        )
+        + AIMessageChunk(
+            content="",
+            tool_call_chunks=[
                 create_tool_call_chunk(name="tool1", args="a", id=None, index=1)
             ],
         )
@@ -195,6 +224,14 @@ def test_message_chunks() -> None:
 
     # Provider assigned IDs have highest precedence
     assert (default_id_chunk + provider_chunk).id == meaningful_id
+
+
+def test_message_chunks_bool_additional_kwargs_raises() -> None:
+    """Differing booleans (e.g. `refusal`) must not silently coerce to `int`."""
+    a = AIMessageChunk(content="", additional_kwargs={"refusal": True})
+    b = AIMessageChunk(content="", additional_kwargs={"refusal": False})
+    with pytest.raises(TypeError, match="unsupported type"):
+        a + b
 
 
 def test_chat_message_chunks() -> None:
@@ -370,6 +407,14 @@ class TestGetBufferString:
 
         assert get_buffer_string(msgs) == expected_output
 
+    def test_custom_message_separator(self) -> None:
+        msgs = [
+            self._HUMAN_MSG,
+            self._AI_MSG,
+        ]
+        expected_output = "Human: human\n\nAI: ai"
+        assert get_buffer_string(msgs, message_separator="\n\n") == expected_output
+
 
 def test_multiple_msg() -> None:
     human_msg = HumanMessage(content="human", additional_kwargs={"key": "value"})
@@ -452,7 +497,7 @@ def test_message_chunk_to_message() -> None:
 
 
 def test_tool_calls_merge() -> None:
-    chunks: list[dict] = [
+    chunks: list[dict[str, Any]] = [
         {"content": ""},
         {
             "content": "",
@@ -908,6 +953,47 @@ def test_merge_tool_calls() -> None:
     assert len(merged) == 2
 
 
+def test_merge_tool_calls_parallel_same_index() -> None:
+    """Test parallel tool calls with same index but different IDs."""
+    # Two parallel tool calls with the same index but different IDs
+    left = create_tool_call_chunk(
+        name="read_file", args='{"path": "foo.txt"}', id="tooluse_ABC", index=0
+    )
+    right = create_tool_call_chunk(
+        name="search_text", args='{"query": "bar"}', id="tooluse_DEF", index=0
+    )
+    merged = merge_lists([left], [right])
+    assert merged is not None
+    assert len(merged) == 2
+    assert merged[0]["name"] == "read_file"
+    assert merged[0]["id"] == "tooluse_ABC"
+    assert merged[1]["name"] == "search_text"
+    assert merged[1]["id"] == "tooluse_DEF"
+
+    # Streaming continuation: same index, id=None on continuation chunk
+    # should still merge correctly with the original chunk
+    first = create_tool_call_chunk(name="tool1", args="", id="id1", index=0)
+    continuation = create_tool_call_chunk(
+        name=None, args='{"key": "value"}', id=None, index=0
+    )
+    merged = merge_lists([first], [continuation])
+    assert merged is not None
+    assert len(merged) == 1
+    assert merged[0]["name"] == "tool1"
+    assert merged[0]["args"] == '{"key": "value"}'
+    assert merged[0]["id"] == "id1"
+
+    # Three parallel tool calls all with the same index
+    tc1 = create_tool_call_chunk(name="tool_a", args="{}", id="id_a", index=0)
+    tc2 = create_tool_call_chunk(name="tool_b", args="{}", id="id_b", index=0)
+    tc3 = create_tool_call_chunk(name="tool_c", args="{}", id="id_c", index=0)
+    merged = merge_lists([tc1], [tc2], [tc3])
+    assert merged is not None
+    assert len(merged) == 3
+    assert [m["name"] for m in merged] == ["tool_a", "tool_b", "tool_c"]
+    assert [m["id"] for m in merged] == ["id_a", "id_b", "id_c"]
+
+
 def test_tool_message_serdes() -> None:
     message = ToolMessage(
         "foo", artifact={"bar": {"baz": 123}}, tool_call_id="1", status="error"
@@ -1015,9 +1101,28 @@ def test_tool_message_str() -> None:
         ),
     ],
 )
-def test_merge_content(first: list | str, others: list, expected: list | str) -> None:
+def test_merge_content(
+    first: str | list[str | dict[str, Any]],
+    others: str | list[str | dict[str, Any]],
+    expected: str | list[str | dict[str, Any]],
+) -> None:
     actual = merge_content(first, *others)
     assert actual == expected
+
+
+@pytest.mark.parametrize(
+    "first",
+    [
+        [{"type": "text", "text": "a"}],
+        ["x"],
+    ],
+)
+def test_merge_content_leaves_the_first_list_unchanged(
+    first: list[str | dict[str, Any]],
+) -> None:
+    original = list(first)
+    merge_content(first, "b")
+    assert first == original
 
 
 def test_tool_message_content() -> None:
@@ -1306,34 +1411,40 @@ def test_typed_init() -> None:
     )
 
 
+# Calling `.text()` as a method is the deprecated path under test here, so the
+# warning it emits is expected rather than something to fix.
+@pytest.mark.filterwarnings(
+    r"ignore:Calling \.text\(\) as a method is deprecated:"
+    r"langchain_core._api.deprecation.LangChainDeprecationWarning"
+)
 def test_text_accessor() -> None:
     """Test that `message.text` property and `.text()` method return the same value."""
     human_msg = HumanMessage(content="Hello world")
     assert human_msg.text == "Hello world"
-    assert human_msg.text == "Hello world"
-    assert str(human_msg.text) == str(human_msg.text)
+    assert human_msg.text() == "Hello world"
+    assert str(human_msg.text) == str(human_msg.text())
 
     system_msg = SystemMessage(content="You are a helpful assistant")
     assert system_msg.text == "You are a helpful assistant"
-    assert system_msg.text == "You are a helpful assistant"
-    assert str(system_msg.text) == str(system_msg.text)
+    assert system_msg.text() == "You are a helpful assistant"
+    assert str(system_msg.text) == str(system_msg.text())
 
     ai_msg = AIMessage(content="I can help you with that")
     assert ai_msg.text == "I can help you with that"
-    assert ai_msg.text == "I can help you with that"
-    assert str(ai_msg.text) == str(ai_msg.text)
+    assert ai_msg.text() == "I can help you with that"
+    assert str(ai_msg.text) == str(ai_msg.text())
 
     tool_msg = ToolMessage(content="Task completed", tool_call_id="tool_1")
     assert tool_msg.text == "Task completed"
-    assert tool_msg.text == "Task completed"
-    assert str(tool_msg.text) == str(tool_msg.text)
+    assert tool_msg.text() == "Task completed"
+    assert str(tool_msg.text) == str(tool_msg.text())
 
     complex_msg = HumanMessage(
         content=[{"type": "text", "text": "Hello "}, {"type": "text", "text": "world"}]
     )
     assert complex_msg.text == "Hello world"
-    assert complex_msg.text == "Hello world"
-    assert str(complex_msg.text) == str(complex_msg.text)
+    assert complex_msg.text() == "Hello world"
+    assert str(complex_msg.text) == str(complex_msg.text())
 
     mixed_msg = AIMessage(
         content=[
@@ -1343,10 +1454,19 @@ def test_text_accessor() -> None:
         ]
     )
     assert mixed_msg.text == "The answer is 42"
-    assert mixed_msg.text == "The answer is 42"
-    assert str(mixed_msg.text) == str(mixed_msg.text)
+    assert mixed_msg.text() == "The answer is 42"
+    assert str(mixed_msg.text) == str(mixed_msg.text())
 
     empty_msg = HumanMessage(content=[])
     assert empty_msg.text == ""
-    assert empty_msg.text == ""
-    assert str(empty_msg.text) == str(empty_msg.text)
+    assert empty_msg.text() == ""
+    assert str(empty_msg.text) == str(empty_msg.text())
+
+
+def test_text_accessor_deprecation_warning() -> None:
+    """Test that calling `.text()` as a method emits a deprecation warning."""
+    with pytest.warns(
+        LangChainDeprecationWarning,
+        match=r"Calling \.text\(\) as a method is deprecated",
+    ):
+        HumanMessage(content="Hello world").text()

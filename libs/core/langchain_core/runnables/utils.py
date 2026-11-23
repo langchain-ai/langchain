@@ -1,4 +1,4 @@
-"""Utility code for runnables."""
+"""Utility code for `Runnable` objects."""
 
 from __future__ import annotations
 
@@ -12,7 +12,6 @@ import textwrap
 # RunnableConfigurableFields.
 from collections.abc import Mapping, Sequence  # noqa: TC003
 from functools import lru_cache
-from inspect import signature
 from itertools import groupby
 from typing import (
     TYPE_CHECKING,
@@ -24,6 +23,8 @@ from typing import (
 )
 
 from typing_extensions import override
+
+from langchain_core.utils._signature import _signature_parameters
 
 # Re-export create-model for backwards compatibility
 from langchain_core.utils.pydantic import create_model  # noqa: F401
@@ -46,7 +47,9 @@ Input = TypeVar("Input", contravariant=True)  # noqa: PLC0105
 Output = TypeVar("Output", covariant=True)  # noqa: PLC0105
 
 
-async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
+async def gated_coro(
+    semaphore: asyncio.Semaphore, coro: Coroutine[Any, Any, Any]
+) -> Any:
     """Run a coroutine with a semaphore.
 
     Args:
@@ -60,7 +63,9 @@ async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
         return await coro
 
 
-async def gather_with_concurrency(n: int | None, *coros: Coroutine) -> list:
+async def gather_with_concurrency(
+    n: int | None, *coros: Coroutine[Any, Any, Any]
+) -> list[Any]:
     """Gather coroutines with a limit on the number of concurrent coroutines.
 
     Args:
@@ -88,7 +93,7 @@ def accepts_run_manager(callable: Callable[..., Any]) -> bool:  # noqa: A002
         `True` if the callable accepts a run_manager argument, `False` otherwise.
     """
     try:
-        return signature(callable).parameters.get("run_manager") is not None
+        return _signature_parameters(callable).get("run_manager") is not None
     except ValueError:
         return False
 
@@ -103,7 +108,7 @@ def accepts_config(callable: Callable[..., Any]) -> bool:  # noqa: A002
         `True` if the callable accepts a config argument, `False` otherwise.
     """
     try:
-        return signature(callable).parameters.get("config") is not None
+        return _signature_parameters(callable).get("config") is not None
     except ValueError:
         return False
 
@@ -118,7 +123,7 @@ def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
         `True` if the callable accepts a context argument, `False` otherwise.
     """
     try:
-        return signature(callable).parameters.get("context") is not None
+        return _signature_parameters(callable).get("context") is not None
     except ValueError:
         return False
 
@@ -143,16 +148,15 @@ def coro_with_context(
     Args:
         coro: The coroutine to await.
         context: The context to use.
-        create_task: Whether to create a task.
+        create_task: Kept for compatibility; this helper always creates a task.
 
     Returns:
         The coroutine with the context.
     """
     if asyncio_accepts_context():
         return asyncio.create_task(coro, context=context)  # type: ignore[arg-type,call-arg,unused-ignore]
-    if create_task:
-        return asyncio.create_task(coro)  # type: ignore[arg-type]
-    return coro
+    del create_task
+    return context.run(asyncio.create_task, coro)  # type: ignore[arg-type]
 
 
 class IsLocalDict(ast.NodeVisitor):
@@ -362,7 +366,7 @@ class GetLambdaSource(ast.NodeVisitor):
             self.source = ast.unparse(node)
 
 
-def get_function_first_arg_dict_keys(func: Callable) -> list[str] | None:
+def get_function_first_arg_dict_keys(func: Callable[..., Any]) -> list[str] | None:
     """Get the keys of the first argument of a function if it is a dict.
 
     Args:
@@ -381,7 +385,7 @@ def get_function_first_arg_dict_keys(func: Callable) -> list[str] | None:
         return None
 
 
-def get_lambda_source(func: Callable) -> str | None:
+def get_lambda_source(func: Callable[..., Any]) -> str | None:
     """Get the source code of a lambda function.
 
     Args:
@@ -405,7 +409,7 @@ def get_lambda_source(func: Callable) -> str | None:
 
 
 @lru_cache(maxsize=256)
-def get_function_nonlocals(func: Callable) -> list[Any]:
+def get_function_nonlocals(func: Callable[..., Any]) -> list[Any]:
     """Get the nonlocal variables accessed by a function.
 
     Args:
@@ -474,6 +478,9 @@ class AddableDict(dict[str, Any]):
 
         Returns:
             A dictionary that is the result of adding the two dictionaries.
+
+        Raises:
+            TypeError: If a shared key holds values of incompatible types.
         """
         chunk = AddableDict(self)
         for key in other:
@@ -482,8 +489,13 @@ class AddableDict(dict[str, Any]):
             elif other[key] is not None:
                 try:
                     added = chunk[key] + other[key]
-                except TypeError:
-                    added = other[key]
+                except TypeError as exc:
+                    msg = (
+                        f"Cannot add incompatible types for key {key!r}: "
+                        f"{type(chunk[key]).__name__!r} and "
+                        f"{type(other[key]).__name__!r}."
+                    )
+                    raise TypeError(msg) from exc
                 chunk[key] = added
         return chunk
 
@@ -495,6 +507,9 @@ class AddableDict(dict[str, Any]):
 
         Returns:
             A dictionary that is the result of adding the two dictionaries.
+
+        Raises:
+            TypeError: If a shared key holds values of incompatible types.
         """
         chunk = AddableDict(other)
         for key in self:
@@ -503,8 +518,13 @@ class AddableDict(dict[str, Any]):
             elif self[key] is not None:
                 try:
                     added = chunk[key] + self[key]
-                except TypeError:
-                    added = self[key]
+                except TypeError as exc:
+                    msg = (
+                        f"Cannot add incompatible types for key {key!r}: "
+                        f"{type(chunk[key]).__name__!r} and "
+                        f"{type(self[key]).__name__!r}."
+                    )
+                    raise TypeError(msg) from exc
                 chunk[key] = added
         return chunk
 
@@ -558,12 +578,16 @@ class ConfigurableField(NamedTuple):
 
     id: str
     """The unique identifier of the field."""
+
     name: str | None = None
     """The name of the field. """
+
     description: str | None = None
     """The description of the field. """
+
     annotation: Any | None = None
     """The annotation of the field. """
+
     is_shared: bool = False
     """Whether the field is shared."""
 
@@ -577,14 +601,19 @@ class ConfigurableFieldSingleOption(NamedTuple):
 
     id: str
     """The unique identifier of the field."""
+
     options: Mapping[str, Any]
     """The options for the field."""
+
     default: str
     """The default value for the field."""
+
     name: str | None = None
     """The name of the field. """
+
     description: str | None = None
     """The description of the field. """
+
     is_shared: bool = False
     """Whether the field is shared."""
 
@@ -598,14 +627,19 @@ class ConfigurableFieldMultiOption(NamedTuple):
 
     id: str
     """The unique identifier of the field."""
+
     options: Mapping[str, Any]
     """The options for the field."""
+
     default: Sequence[str]
     """The default values for the field."""
+
     name: str | None = None
     """The name of the field. """
+
     description: str | None = None
     """The description of the field. """
+
     is_shared: bool = False
     """Whether the field is shared."""
 
@@ -624,16 +658,22 @@ class ConfigurableFieldSpec(NamedTuple):
 
     id: str
     """The unique identifier of the field."""
+
     annotation: Any
     """The annotation of the field."""
+
     name: str | None = None
     """The name of the field. """
+
     description: str | None = None
     """The description of the field. """
+
     default: Any = None
     """The default value for the field. """
+
     is_shared: bool = False
     """Whether the field is shared."""
+
     dependencies: list[str] | None = None
     """The dependencies of the field. """
 
@@ -727,7 +767,7 @@ class _RootEventFilter:
 
 def is_async_generator(
     func: Any,
-) -> TypeGuard[Callable[..., AsyncIterator]]:
+) -> TypeGuard[Callable[..., AsyncIterator[Any]]]:
     """Check if a function is an async generator.
 
     Args:
@@ -744,7 +784,7 @@ def is_async_generator(
 
 def is_async_callable(
     func: Any,
-) -> TypeGuard[Callable[..., Awaitable]]:
+) -> TypeGuard[Callable[..., Awaitable[Any]]]:
     """Check if a function is async.
 
     Args:
@@ -753,7 +793,7 @@ def is_async_callable(
     Returns:
         `True` if the function is async, `False` otherwise.
     """
-    return asyncio.iscoroutinefunction(func) or (
+    return inspect.iscoroutinefunction(func) or (
         hasattr(func, "__call__")  # noqa: B004
-        and asyncio.iscoroutinefunction(func.__call__)
+        and inspect.iscoroutinefunction(func.__call__)
     )

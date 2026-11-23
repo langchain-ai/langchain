@@ -13,9 +13,10 @@ from pydantic.v1 import BaseModel
 from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
+from langchain_core.output_parsers._refusal import raise_if_refused
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
-from langchain_core.outputs import Generation
+from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils.json import (
     parse_and_check_json_markdown,
     parse_json_markdown,
@@ -34,16 +35,18 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     Probably the most reliable output parser for getting structured data that does *not*
     use function calling.
 
-    When used in streaming mode, it will yield partial JSON objects containing
-    all the keys that have been returned so far.
+    When used in streaming mode, it will yield partial JSON objects containing all the
+    keys that have been returned so far.
 
-    In streaming, if `diff` is set to `True`, yields JSONPatch operations describing the
-    difference between the previous and the current object.
+    In streaming, if `diff` is set to `True`, yields `JSONPatch` operations describing
+    the difference between the previous and the current object.
     """
 
     pydantic_object: Annotated[type[TBaseModel] | None, SkipValidation()] = None  # type: ignore[valid-type]
     """The Pydantic object to use for validation.
-    If `None`, no validation is performed."""
+
+    If `None`, no validation is performed.
+    """
 
     @override
     def _diff(self, prev: Any | None, next: Any) -> Any:
@@ -62,16 +65,21 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON objects.
-                If `True`, the output will be a JSON object containing
-                all the keys that have been returned so far.
+
+                If `True`, the output will be a JSON object containing all the keys that
+                have been returned so far.
+
                 If `False`, the output will be the full JSON object.
 
         Returns:
             The parsed JSON object.
 
         Raises:
+            ModelRefusalError: If the model refused to answer.
             OutputParserException: If the output is not valid JSON.
         """
+        if isinstance(result[0], ChatGeneration):
+            raise_if_refused(result[0].message)
         text = result[0].text
         text = text.strip()
         if partial:

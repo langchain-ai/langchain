@@ -8,12 +8,13 @@ import logging
 from typing import (
     TYPE_CHECKING,
     Any,
+    NotRequired,
     TypedDict,
     TypeVar,
     cast,
 )
 
-from typing_extensions import NotRequired, override
+from typing_extensions import override
 
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackManager
 from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
@@ -40,7 +41,7 @@ from langchain_core.tracers.log_stream import (
     RunLog,
     _astream_log_implementation,
 )
-from langchain_core.tracers.memory_stream import _MemoryStream
+from langchain_core.tracers.memory_stream import _get_or_create_loop, _MemoryStream
 from langchain_core.utils.aiter import aclosing
 from langchain_core.utils.uuid import uuid7
 
@@ -63,16 +64,24 @@ class RunInfo(TypedDict):
 
     name: str
     """The name of the run."""
+
     tags: list[str]
     """The tags associated with the run."""
+
     metadata: dict[str, Any]
     """The metadata associated with the run."""
+
     run_type: str
     """The type of the run."""
+
     inputs: NotRequired[Any]
     """The inputs to the run."""
+
     parent_run_id: UUID | None
     """The ID of the parent run."""
+
+    tool_call_id: NotRequired[str | None]
+    """The tool call ID associated with the run."""
 
 
 def _assign_name(name: str | None, serialized: dict[str, Any] | None) -> str:
@@ -90,7 +99,9 @@ def _assign_name(name: str | None, serialized: dict[str, Any] | None) -> str:
 T = TypeVar("T")
 
 
-class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHandler):
+class _AstreamEventsCallbackHandler(
+    AsyncCallbackHandler, _StreamingCallbackHandler[Any]
+):
     """An implementation of an async callback handler for astream events."""
 
     def __init__(
@@ -129,11 +140,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             exclude_tags=exclude_tags,
         )
 
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-        memory_stream = _MemoryStream[StreamEvent](loop)
+        memory_stream = _MemoryStream[StreamEvent](_get_or_create_loop(self))
         self.send_stream = memory_stream.get_send_stream()
         self.receive_stream = memory_stream.get_receive_stream()
 
@@ -174,16 +181,15 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     ) -> AsyncIterator[T]:
         """Tap the output aiter.
 
-        This method is used to tap the output of a Runnable that produces
-        an async iterator. It is used to generate stream events for the
-        output of the Runnable.
+        This method is used to tap the output of a `Runnable` that produces an async
+        iterator. It is used to generate stream events for the output of the `Runnable`.
 
         Args:
             run_id: The ID of the run.
-            output: The output of the Runnable.
+            output: The output of the `Runnable`.
 
         Yields:
-            The output of the Runnable.
+            The output of the `Runnable`.
         """
         sentinel = object()
         # atomic check and set
@@ -230,10 +236,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
 
         Args:
             run_id: The ID of the run.
-            output: The output of the Runnable.
+            output: The output of the `Runnable`.
 
         Yields:
-            The output of the Runnable.
+            The output of the `Runnable`.
         """
         sentinel = object()
         # atomic check and set
@@ -300,6 +306,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             # optionally provided and distinguish between missing value
             # vs. None value.
             info["inputs"] = kwargs["inputs"]
+
+        if "tool_call_id" in kwargs:
+            # Store tool_call_id in run info for linking errors to tool calls
+            info["tool_call_id"] = kwargs["tool_call_id"]
 
         self.run_map[run_id] = info
         self.parent_map[run_id] = parent_run_id
@@ -416,16 +426,18 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     @override
     async def on_llm_new_token(
         self,
-        token: str,
+        token: str | list[str | dict[str, Any]],
         *,
         chunk: GenerationChunk | ChatGenerationChunk | None = None,
         run_id: UUID,
         parent_run_id: UUID | None = None,
         **kwargs: Any,
     ) -> None:
-        """Run on new output token. Only available when streaming is enabled.
+        """Run on new output token.
 
-        For both chat models and non-chat models (legacy LLMs).
+        Only available when streaming is enabled.
+
+        For both chat models and non-chat models (legacy text-completion LLMs).
 
         Raises:
             ValueError: If the run type is not `llm` or `chat_model`.
@@ -450,7 +462,8 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         elif run_info["run_type"] == "llm":
             event = "on_llm_stream"
             if chunk is None:
-                chunk_ = GenerationChunk(text=token)
+                text = token if isinstance(token, str) else ""
+                chunk_ = GenerationChunk(text=text)
             else:
                 chunk_ = cast("GenerationChunk", chunk)
         else:
@@ -478,7 +491,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     ) -> None:
         """End a trace for a model run.
 
-        For both chat models and non-chat models (legacy LLMs).
+        For both chat models and non-chat models (legacy text-completion LLMs).
 
         Raises:
             ValueError: If the run type is not `'llm'` or `'chat_model'`.
@@ -487,7 +500,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         inputs_ = run_info.get("inputs")
 
         generations: list[list[GenerationChunk]] | list[list[ChatGenerationChunk]]
-        output: dict | BaseMessage = {}
+        output: dict[str, Any] | BaseMessage = {}
 
         if run_info["run_type"] == "chat_model":
             generations = cast("list[list[ChatGenerationChunk]]", response.generations)
@@ -623,7 +636,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_id: The run ID of the tool.
 
         Returns:
-            A tuple of (run_info, inputs).
+            A tuple of `(run_info, inputs)`.
 
         Raises:
             AssertionError: If the run ID is a tool call and does not have inputs.
@@ -663,6 +676,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             name_=name_,
             run_type="tool",
             inputs=inputs,
+            tool_call_id=kwargs.get("tool_call_id"),
         )
 
         self._send(
@@ -691,23 +705,27 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         **kwargs: Any,
     ) -> None:
         """Run when tool errors."""
+        # Extract tool_call_id from kwargs if passed directly, or from run_info
+        # (which was stored during on_tool_start) as a fallback
+        tool_call_id = kwargs.get("tool_call_id")
         run_info, inputs = self._get_tool_run_info_with_inputs(run_id)
+        if tool_call_id is None:
+            tool_call_id = run_info.get("tool_call_id")
 
-        self._send(
-            {
-                "event": "on_tool_error",
-                "data": {
-                    "error": error,
-                    "input": inputs,
-                },
-                "run_id": str(run_id),
-                "name": run_info["name"],
-                "tags": run_info["tags"],
-                "metadata": run_info["metadata"],
-                "parent_ids": self._get_parent_ids(run_id),
+        event: StandardStreamEvent = {
+            "event": "on_tool_error",
+            "data": {
+                "error": error,
+                "input": inputs,
+                "tool_call_id": tool_call_id,
             },
-            "tool",
-        )
+            "run_id": str(run_id),
+            "name": run_info["name"],
+            "tags": run_info["tags"],
+            "metadata": run_info["metadata"],
+            "parent_ids": self._get_parent_ids(run_id),
+        }
+        self._send(event, "tool")
 
     @override
     async def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> None:
@@ -743,7 +761,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         name: str | None = None,
         **kwargs: Any,
     ) -> None:
-        """Run when Retriever starts running."""
+        """Run when `Retriever` starts running."""
         name_ = _assign_name(name, serialized)
         run_type = "retriever"
 
@@ -778,7 +796,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     async def on_retriever_end(
         self, documents: Sequence[Document], *, run_id: UUID, **kwargs: Any
     ) -> None:
-        """Run when Retriever ends running."""
+        """Run when `Retriever` ends running."""
         run_info = self.run_map.pop(run_id)
 
         self._send(
@@ -797,7 +815,9 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_info["run_type"],
         )
 
-    def __deepcopy__(self, memo: dict) -> _AstreamEventsCallbackHandler:
+    def __deepcopy__(
+        self, memo: dict[int, Any] | None = None
+    ) -> _AstreamEventsCallbackHandler:
         """Return self."""
         return self
 
@@ -995,7 +1015,7 @@ async def _astream_events_implementation_v2(
     exclude_tags: Sequence[str] | None = None,
     **kwargs: Any,
 ) -> AsyncIterator[StandardStreamEvent]:
-    """Implementation of the astream events API for V2 runnables."""
+    """Implementation of the astream events API for v2 runnables."""
     event_streamer = _AstreamEventsCallbackHandler(
         include_names=include_names,
         include_types=include_types,
@@ -1022,7 +1042,7 @@ async def _astream_events_implementation_v2(
         callbacks.add_handler(event_streamer, inherit=True)
         config["callbacks"] = callbacks
     else:
-        msg = (
+        msg = (  # type: ignore[unreachable]
             f"Unexpected type for callbacks: {callbacks}."
             "Expected None, list or AsyncCallbackManager."
         )

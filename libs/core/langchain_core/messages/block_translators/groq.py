@@ -27,7 +27,7 @@ def _populate_extras(
     return standard_block
 
 
-def _parse_code_json(s: str) -> dict:
+def _parse_code_json(s: str) -> dict[str, Any]:
     """Extract Python code from Groq built-in tool content.
 
     Extracts the value of the 'code' field from a string of the form:
@@ -105,15 +105,15 @@ def _convert_to_v1_from_groq(message: AIMessage) -> list[types.ContentBlock]:
     if isinstance(message.content, str) and message.content:
         content_blocks.append({"type": "text", "text": message.content})
 
-    for tool_call in message.tool_calls:
-        content_blocks.append(  # noqa: PERF401
-            {
-                "type": "tool_call",
-                "name": tool_call["name"],
-                "args": tool_call["args"],
-                "id": tool_call.get("id"),
-            }
-        )
+    content_blocks.extend(
+        {
+            "type": "tool_call",
+            "name": tool_call["name"],
+            "args": tool_call["args"],
+            "id": tool_call.get("id"),
+        }
+        for tool_call in message.tool_calls
+    )
 
     return content_blocks
 

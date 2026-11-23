@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:11ecd3f93450c32e219ab59eace1a4dca085d97af0f2b0a03b226cc83027c02d",
+  "claims": [
+    {
+      "id": "claim_c1ceff5d6c5d4e22aa8b16a8ce787305",
+      "statement": "Every LangChain component—prompts, models, parsers, retrievers, tools—implements the Runnable interface, providing unified invoke, ainvoke, batch, abatch, stream, and astream methods. This unified interface enables declarative composition without custom adapter code.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/__init__.py#L1-L136",
+          "version": "repo-lines-v1:sha256:3115ee61a18a70378fcdfa9a7eb3bc9cb765b7734cd481156110d711f9c41143:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI3MjQzZTFiNTQ2NTg5MWE0ODk3NGJmMjIyZTk5NmQ0MTA5MDBkNGM1OTkwNTljMDBlOWQxODJjMWE4YTUxMzRmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzYTFiN2RhNmZiMWZmYjE0YjU1MjI4N2NhNDllYjExMzdmMmRjNjJhOWE1OWQ4Y2FkNGQwNDNhOTc2NGFiZDVlIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L134-L350",
+          "version": "repo-lines-v1:sha256:c726e66dec3c2d0789041d63f17d399bc3d85356101fb5337df60327e64009e0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjE3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMDY2NDAxOWM5MDdkZjg1MGVhOWUwNThmMTJiMTkyMzc0YmViM2ZjY2FiMDYxOTAzMGM2OGU2NTQ4YWQ4MTQ5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2YzE3Y2MxYzMxZWIzZmE5MjFkNGY1YzEyMDdlNTUwZjYwNzg5MWE3ODkyMzE2ZDJhNTVhMmQ5YWUwZjI2MmViIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3MTgwODU1ZDUzMGZkYjU4MzIyNDIzYTZmZGRkZTlhM2IyYTRhMDk2MjVhNWRiMzc0M2U4OTdjMDUyYmJiZGQzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiYzA2NWUwNTI5MTdjZjU4ODUzNjJlY2QyNDcwMTRmOWQ0OTFlMDdmM2Y1MzVjNzEzMjQ5NGU0ZTdkZjdlZWMxIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_f10c35a143cd41d69d2702acd137df82",
+      "statement": "The pipe operator (|) creates RunnableSequence, chaining Runnables sequentially where each output becomes the next input. It automatically flattens nested sequences and coerces callables and dicts to Runnables, enabling inline composition.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L3079-L3235",
+          "version": "repo-lines-v1:sha256:9e17c9b4d22b465eb4fe938622668409ee9d6c526c045b1b81b976345954edad:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiZWUyODI4YWI5ODNjODVkZTdkOWUxOGNlZjVhYTQzZGY0MTJiYmRiY2FiMDc3ZjdmMDEzYjUzZWQ3ZTRlNzM3IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJiYmE4N2JmMGViZjZiMTlkMmYyNTU5MGE0MzI4OTgxYTcyOWY4YTc0NDc2YjM3YTBjNmMwZjk4ODk4ZGZmZDFiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJjYmVjNzljZDAzZDA2YmE2ZmU3MDBlMDhiZDA0ZjFmMDA0ZDFkZTg0ODMzMzMwN2U2ZGE5YTJlZjcyZTZmODZmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjN2YzZjY0OGIxYjQxYTAyYWJkYWZjMDZiYWIwODIxZmExNjZmMDJmNGZmZDBlMWFkMWFjZGY0ZDY3ZjJlY2I4In0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L648-L722",
+          "version": "repo-lines-v1:sha256:60c8a9355f19918ea595f3722b42293719d828ee6b3dc539d94abb2bdf863b90:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjUwZGUyNTg3MTk2MTQ5MjYwNzFjOGZiMTlmZDg2NjE1MDU1NWYxYjAxMzU0ZjhjZDE2MDNhMTA5YTdkZGFlNDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIzN2IxMWQwNDAxMDhhNzhmMDVmNWQxZGZmZGQ2ZGY3MTU3MjdlNzNiMDJmMmJlZGZmOTg3MmZhZjhhM2QwNzkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjNThkMzk1NjQwZGEzOGYyZDZlZGYxNjhmMzI2YTMyNzI1NDE0NDYyYzFhMjgyMWVlNWE4NTZjYTYzZThmODEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_32c33225b83e41ce908d4108ef10a396",
+      "statement": "RunnableParallel invokes multiple Runnables concurrently with the same input, collecting results into a dict. A dict literal in a sequence is automatically coerced to RunnableParallel. Execution uses thread pool for sync and asyncio.gather for async, with max_concurrency config limiting parallelism.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L3868-L3950",
+          "version": "repo-lines-v1:sha256:51a7d6b77803d9585e4f749ba8bcd2a3b2e403611c448b758555156df662e148:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRjN2E2YTkzNGU1YjIzOTgzOTBmNmRhYWUyYmJkYTQzYjgzZjUwODE2Nzk3NDRhMDgxYjkxYjlhMTFjZWE2YmYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNhMzg5NzhjZGMxYThkNzYxMjBhMzFmZjg2MDU0NWNhNDNiMWE0ZWFjOWU2YWJiMmIwNWQ2MjE5ZTE4NDExODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEzMGM4MWNlMmVjZWFlMjJkMjIyMDJmZmFkZGYxNjljNjU4OWM4YjFiYzc3ZmQ4MDU2ZmVhZDVmMzc0YjI0MmQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_8b467fe337b24da2881bfd58328492a6",
+      "statement": "RunnableBranch routes execution to one of multiple branches based on sequential condition evaluation. The first condition returning True selects its branch; if none match, the default branch executes. Conditions can be sync, async, or awaitable callables returning bool.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/branch.py#L43-L290",
+          "version": "repo-lines-v1:sha256:77b53fbabf2bdae2e052b15b90650cf13e0e2d73221231eb5f782f4a5b5445ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MjQ4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJhMWIxNzY1NTk3Nzk0MDIzYzI1ZGNhOTMzMGQ2MDQ5NTQ3MjkyNzMwY2Q2MGVmZWE4YjVhZDljZTM4ZmY0NDliIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlOWMwNDUwMTVhMDNhZjc2Mjk2MzRlMDZlOWJlM2Y4OGIyNDI2YWI1YTM3ZmU5MGIyODJiZThmN2YxY2Y3N2RmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwYzExNTkyYTEzMjczNWJlODI0OTA4OWQ3MWFhMGJlN2VmNmQ2MDQ5MjczNDQ4NDM0YTI4MmJkNGQ1NTBlMDM5In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_1871af27b9594dc287f334e9c8c92533",
+      "statement": "RunnableWithFallbacks tries a primary Runnable, then fallbacks in order until one succeeds. It catches exceptions matching exceptions_to_handle, optionally injects exceptions into fallback input via exception_key, and tracks per-input success in batch mode.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/fallbacks.py#L37-L212",
+          "version": "repo-lines-v1:sha256:5c2c20fdcde5ebcffb1bf039339f861947fcb862b82d3594ae9e42c4183f2c6f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTc2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmY2U5OTZhMzU2NWJjY2E4MDcwNzYwNDYzMWU2OTc4ZTYzOWZkMTkyYjE4NzRmMTliNWJjYzQxYWZmNTQwMGJlIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxZWI5MjVlYWI5MGM5MDY5OTNhMDM5YzRkNjhmODhiM2U5YWQyNjhiZjA3NTgwNjA4YTdkYjdjMTUxYzdiYjVkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJiZWI5MWQ5NDFlNTA0MjVlYzdhOGUwYTIxZDJhNTJmYzVkOTkzOTFmNzliYjdjZjhlNTdjMjZlZjY5MjRlNzRmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1N2RjZTU3ZTA3YjEzNDJkYWNmMTZjYmYzYzE5ZTM1MTMxZjVjNGE4NzBlNjNhMjBmNzBiNmNmZGI1ZDIxYWM0In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_2cfbfc0796aa4bb98fe7a602880236dc",
+      "statement": "Runnables are generic over input and output types (Runnable[Input, Output]). Input/output schemas are inferred from generic parameters or function signatures, exposed via input_schema and output_schema properties, and used for validation and tooling.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L309-L373",
+          "version": "repo-lines-v1:sha256:5a6941e4ae00986a82805000af109e4ba8e2e4655ec8cfe1c49dd7530b49cd53:eyJzZWxlY3RlZExpbmVDb3VudCI6NjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZDAwY2YyNzA5NjRkNDRhMTNkZmFjODc1MmIwOWZjYzQzNWIwZjE5YjMxNmFiY2Y4MWE3YWE2NGJiMTIyZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3Nzg4NDc0OTNjZWI0YTJjNTVlZmJmZjA1MWE4MTQ5NzM5MDk1ZDkzNzE4NDNhOTA1YTc1YWE3Yzk0OWRiYWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI1NTU3ZDc3MWVlNWM0ZjQxMTc1YmI4MGIzNjIxMTNiOTRiMzlmYWRjNzkyNGM2MWJkYmY2OTE1NzhmYTk3OWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc1NTIyNTk0YjI1ZmZhMWFjNzFlOTkwOGVhOTE2MTBiNjY3OThjNmRkZTRlYjJmZDM3NTU5N2JlODIwM2YwYTkifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L375-L527",
+          "version": "repo-lines-v1:sha256:cbc479829bc0ac41181f4f320cc72f87a90a0a86f2139dbbc9cf8be1e64f16cb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTUzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmM2QwMGNmMjcwOTY0ZDQ0YTEzZGZhYzg3NTJiMDlmY2M0MzViMGYxOWIzMTZhYmNmODFhN2FhNjRiYjEyMmQ2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1MGRlMjU4NzE5NjE0OTI2MDcxYzhmYjE5ZmQ4NjYxNTA1NTVmMWIwMTM1NGY4Y2QxNjAzYTEwOWE3ZGRhZTQwIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYTNlMmQwMDI0NjE2YWY3NzM2MDNiNWFhZjE1MWMxNjJjNTk3MWFlYmI3NTYzYWEwNGY4OTA2ZjA4M2RlYjIzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhYTIyZjIwZTFiMTA3NTk2OTViZjcwNDQyYjk4NDZjMDQ2MzVlMTY4ODcyNWFmNGRjY2IzNjU3MzMyYzU4MzBjIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_19edca10e9d74676beef229119b89a16",
+      "statement": "RunnableSequence preserves streaming properties: if all steps implement transform, the sequence chains them end-to-end for progressive streaming. If any step lacks transform, streaming begins after that step. This enables responsive output without redundant buffering.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L3079-L3161",
+          "version": "repo-lines-v1:sha256:b66024e27889a05d49c08517d065b080ae186be096dc2a32657fc6ae073d5971:eyJzZWxlY3RlZExpbmVDb3VudCI6ODMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlZTI4MjhhYjk4M2M4NWRlN2Q5ZTE4Y2VmNWFhNDNkZjQxMmJiZGJjYWIwNzdmN2YwMTNiNTNlZDdlNGU3MzciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNiZWM3OWNkMDNkMDZiYTZmZTcwMGUwOGJkMDRmMWYwMDRkMWRlODQ4MzMzMzA3ZTZkYTlhMmVmNzJlNmY4NmYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxYzEzZDVhNGUxYWI3OThjNGY5YzQ5Yjg4YjNmZjgxMTZhZjNiMDIyYTI1YTZiYTFiNjQyMTVhY2FmYTk5NGUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_06675c49bfc2426db6d098948f12c01e",
+      "statement": "RunnableConfig (tags, metadata, callbacks, max_concurrency, configurable fields) is threaded through composed chains automatically. Configs are merged at composition boundaries, with child values taking precedence and list fields accumulating. Context variables propagate config down the call stack.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L2506-L2706",
+          "version": "repo-lines-v1:sha256:b7b2bd61c80b0c49754833a46fabfd7e4d249c06b2a85cdd2f8ed6561c1d508d:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0NzNhOTA2OGY3YWJjNDU2NTZiOWY0NWE4ZTE0YjE5MTAyYThiMGYyMTliZTBiNjU2NTE2N2UzOTg1M2ZhMjQxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyYjNkODlmNTliN2ZlOGFhYmRmMWY1NWY1NTg0NjVhYzdkMzBjZTJjMzdhM2MwNDgxNDQzZGI5MGI2NzQ4YTA2IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlZTViMTIyM2M2YmUyYzZmMjU2M2E5NjQ4MmQ0MDJhOWU3MzljMWJmNmY2ZDAwZjYwZGVhMGM0ZDVkMGFiOGE0In0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/config.py#L174-L280",
+          "version": "repo-lines-v1:sha256:df061d5e516c9f862ee06a7ea55e397f0e311e42aa69eacbcda61797191e6aab:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkOWZmNTczNDhkZTVkODk2ZmJmYzc3NGUxOTZlY2Q2ZGRhMWQ3OGI4ZmQ1N2I1MDcxN2Q5ODAxMTk3ZDgyMTdhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI1NTAzMmU5NjRkMDkzMjM1MWU1ZDE4NTI2OTI4MWIxNzFhM2EwOWIwOGIyODZlNjYxZWE0NzAzMjNjODJlYjRkIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzMWVlOTI4MzFhNThkMTk5OGQ5NDdlYzFkN2VjNTc4ZWEwNTNlZjU5N2I5ZTkwOGE5NDI5YzBjZmI2NmU4YTIzIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIwZjllZWViMWQ3MWQwNWYyYTcxNjQzYzk4NmRkNGEyYjY0ZDhjMmEwMjVjZjc3YWU1OWZhY2UyY2YyZDgxYjJjIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/config.py#L431-L494",
+          "version": "repo-lines-v1:sha256:484fc3d1d78ae0ebc51062d7d308539d5fe7ffd8783e8e1688760f39e9355d24:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZkZGExYWZmM2E2NDViNGE0MGEyMWI1ZGJmOWRkZjVkNTA5OGE5ZjAyMmIwYzVkMWI1NWQ2YjRiNThlODhhOTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVlZGJmZDdkYTcwZWZkZWFiZGY5MDk1YzM0MWIyZWNjMzk5YTY2ODU5NzhiYmI0OGVhODlkNmQ3ZTBiYjg4NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0YTNiYWNjMWEyMzI1ODFlMGI4YTE2NzJhZjI3NDA0ZGY2NjE3MmVkYjlmMzRiNmU1NzJiMGYyZTBjZmZkZjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImM1NTI5YzE1YzBkOTIzNjFiNWRkNWZiODNiNTU1ZjljOWFjYWZhN2E3ZTgwODQwNDNlNjMwMzg2Yzk1NGVlODIifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/config.py#L57-L129",
+          "version": "repo-lines-v1:sha256:def5c5af24438aa68655c3dd7c5616745bc16d1e92d9f85b281622790264a60d:eyJzZWxlY3RlZExpbmVDb3VudCI6NzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0NDE1ZGIxNWIwNDQyZjJiMWY1ZjNmZDNlMGVhMzIwOGVhYTQxNjRlOTJkMTU5Mjg1ZTNjOWQyZGM2OTEyZWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY0NmVhN2E5YWU3NmIzNTI0YTM4NWUzMmEwN2E1NmQwYTUyNjI1NTU0ZDAzNmI0ZjFiM2JkOTJlYzc3ODcxMDkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU0ODY1YWQ4MzExYTZlNGE5ODNmZjNhMjk0Mzk4NTIzNDNjYTkzNjhjNmExNTU1ODIzMThmMWI3NTBmMDJhOWIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_fbbb3b3174e64269bf54641648c86584",
+      "statement": "SubagentTransformer detects hierarchical agent boundaries when a tool function invokes create_agent(name=...) that differs from the parent's lc_agent_name. On boundary detection, it creates a typed SubagentRunStream or AsyncSubagentRunStream handle on run.subagents, tracks the originating tool call as a causation edge via the cause property, and forwards child events into an isolated mux for independent consumption.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L1-L82",
+          "version": "repo-lines-v1:sha256:7a22ce25db41f0ca1e8e362100824869d2c1d4892d860c8c4654f40b29abd170:eyJzZWxlY3RlZExpbmVDb3VudCI6ODIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MDNjNjdlMmM3Mjk0OTc1NWFhOWFhOTNiMTY5YjNiYjBlNzY0OGY4YjBiOTFlMmQ5NTgxYTdiYzQ1ODAyNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlOWE4NmNmN2Y2NmRmMWRjNTU5ODgxNzE4Yjk3MzYyZDQwNjU0NDg3MTc2NGUxODIzODNjZGZjYmE4ZGI5Y2YifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L120-L195",
+          "version": "repo-lines-v1:sha256:c871566dc1a1a630ebd27fdd9d23437044f3360ad6bc0ccafcde71967cb6d6c4:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJmYzhhZWMyZTU5MjZkYmExMTg0M2RmOTk2NjAzM2Q2MjgxN2UzNDAyYzMxYTcxYmY1YzQxNTBjYzg0MmFlZDQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJkNjllNTZhZDNhM2FmYTlhZjkxMTYxMmRhOWI1ZDVkMjM5NzJhZDIwNGE2YTg5MmYzNzNiZTc5YjE3NjZkZTgiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkNmFjODUxNTFhYzQyZmVlZDVjM2FkMjA2ZDdhMTBmN2IzM2ZkMTkzMzk1YTYwMDY1OTYxOWNjYTc3ZjY2NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU1YTM5YjBiYmFlYjc0YjE4NTZlYmMyMGQ2ZWQ3MmRlY2FjOGEyYzBjMTczOWE3YWM2NzdhYmEwZjI5NmNjMjIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_4c077e41b68b4c9f9d0eeaeef1f39a6e",
+      "statement": "Hierarchical agent systems in LangChain compose through tool-based delegation: specialist agents (leaf nodes) implement domain-specific logic; coordinator agents (middle nodes) route queries via tool invocation; supervisor agents (root) maintain user context. Each agent has an isolated middleware stack; behavior propagation across levels requires explicit handling via tool wrappers, context passing, or runtime.context.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L44-L118",
+          "version": "repo-lines-v1:sha256:fefaebe537c1019b6bae92e7c5c0f41edeccee836c15a394d38166badace9e7c:eyJzZWxlY3RlZExpbmVDb3VudCI6NzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwNGY4ZGQ0MTI4NDljYzJjZWQ5ZTczODM3YTFkYjZiOTZlOTllN2ZkNmI2MTliNDJjNjBkMDhkZmRjZTVhZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyMDA5N2U0YWE1MDA2OGJhMTU3ZjlhMjczOWZhZDg2OTk1ZTFlMGNkY2NkYWRjNTg5N2MyMDM0Yzc0ZDNlZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmOWUxYmI2OWRlMGNiZWVlOWY1MTJjMzdjODYzOThlMGIzNzNjY2YwMTM1YWFmNzYyOTIzZDExZjMwMmQ0MGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_1cfd944083d7476082bff65f3d60a5dd",
+      "statement": "Subagent events can be streamed independently via stream_events(version=\"v3\"). SubagentRunStream exposes name (the nested agent's lc_agent_name), cause (the tool call that triggered it as {\"type\": \"toolCall\", \"tool_call_id\": ...}), status (success/failed/timeout), and error (failure message). This enables end-to-end tracing and causation tracking across hierarchies.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L44-L82",
+          "version": "repo-lines-v1:sha256:00f094b6ca965e53536d72288f1c813f1242473aeb4759adf4f25cbb1b7acb94:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQwNGY4ZGQ0MTI4NDljYzJjZWQ5ZTczODM3YTFkYjZiOTZlOTllN2ZkNmI2MTliNDJjNjBkMDhkZmRjZTVhZDEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYyMDA5N2U0YWE1MDA2OGJhMTU3ZjlhMjczOWZhZDg2OTk1ZTFlMGNkY2NkYWRjNTg5N2MyMDM0Yzc0ZDNlZmEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZlOWE4NmNmN2Y2NmRmMWRjNTU5ODgxNzE4Yjk3MzYyZDQwNjU0NDg3MTc2NGUxODIzODNjZGZjYmE4ZGI5Y2YifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L84-L118",
+          "version": "repo-lines-v1:sha256:1701e229b7791d8499564f4176d923f5f42f0c062c3983d2a1bbbd6828f80f52:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRmYWY0ZDJlZDIwMDQ2ZWUwMDgzMjM1OTg0N2E4NTM2M2M3OWJmOGFiZTU1MTgwMTIyZjI4Mzg0ZmEzMWM0N2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRkNmFjODUxNTFhYzQyZmVlZDVjM2FkMjA2ZDdhMTBmN2IzM2ZkMTkzMzk1YTYwMDY1OTYxOWNjYTc3ZjY2NWIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImVmOWUxYmI2OWRlMGNiZWVlOWY1MTJjMzdjODYzOThlMGIzNzNjY2YwMTM1YWFmNzYyOTIzZDExZjMwMmQ0MGYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_9bda2ead2c7f45a3b99cdaafcd6173c2",
+      "statement": "Middleware registered on an agent forms an independent stack where first-in becomes outermost layer. Middleware does not automatically propagate across agent boundaries; to share behavior across coordinator and specialist agents, wrap tool functions with error handling, use context-aware middleware that reads runtime.context, or implement per-level middleware aligned with agent responsibilities.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L158-L196",
+          "version": "repo-lines-v1:sha256:4afaa6ff7a5caba1f848a15f6bded7f8eea19b03411a6549bca2fae7c2dafe54:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY4M2Y5MjczYjRhODg2YzE3OTNkODgxMGNmMTI2OTE1OWRmYjU4NmExMGY3YjZhZmY1NTA2ZmNjOTIwMWQ1NTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImY3NDBjZWM3ZmQ2MzI4YTU5MzBkNDdjNmM5ZTJkMjJhZmZhMjQ4ZjUzNjk3MmVkMDBlNTBiMTFlMDgzNzI4ZDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNjOTcwNTM5MWExNjgxYjQ2ZTRlN2UyNjAzZmFiYTAwOTc3MzIyMzg0OGZiMTU1NDI0ZjI1ZTY4OTM5MzRiMTIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_02fd606ec145401094f412537792acb3",
+      "statement": "Each agent maintains its own isolated AgentState (messages, jump_to, custom fields). State does not automatically flow between parent and child agents. To share context across hierarchy levels, pass relevant state through tool function inputs, include context in system prompts, or use runtime.context (if provided by the application). Persistent shared state requires Store integration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L1-L30",
+          "version": "repo-lines-v1:sha256:ef669de86cae8ca4c6e2bb1152366a4fb1710a8dd4ff9c3e6f2321873c73caaa:eyJzZWxlY3RlZExpbmVDb3VudCI6MzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU3MDNjNjdlMmM3Mjk0OTc1NWFhOWFhOTNiMTY5YjNiYjBlNzY0OGY4YjBiOTFlMmQ5NTgxYTdiYzQ1ODAyNDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdhMmZhNDgyNjA2ZWVmNDBkZmIxYzc0YzI1ZDhjNTc2ZmVkZDQ1ZmNiM2M1ZTBhYzVlYzUwZjc2MDhkYjFiYjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNiYTI1ODljMzVjMGNhMThjYTY5NjM3NTI2ZjAzZmY3MmU0OTM5Zjk4MTRmMmM0M2I1MzJmMzA5YjEzNjk2OWYifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_360b64e91097401eac3b95edadd31f5d",
+      "statement": "LLMToolSelectorMiddleware dynamically filters tools before model execution by invoking a secondary LLM to analyze the user query and select only the most relevant tools. It supports max_tools to cap the selection, always_include to protect critical tools, and on_parsing_failure to specify fallback behavior when the selection model returns malformed responses. Provider-specific tool dicts are preserved separately.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/tool_selection.py#L121-L241",
+          "version": "repo-lines-v1:sha256:9f4df514ec2011b6ebdcc06ef0dc569eab86a1f99bf2d91e1b09cd8df11a231b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIxLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMzBjNjRmM2Y1MmViYjQ3ZDFkMTA1NTUwOTNkYjE2YmE0NTNkZDczNTdjNjg1YWUyZjlmNjMwYmFmNjQyYTE5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJkNjdiNzMzYzllZDQ5ODE4N2RjOGE2MDMxMGFlNGM3NWNkZmVlZTM4MjU2NzJiNDk1MWNkNmNmMzBkNDY4NDE0IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhODMxNmM5YmQ2MjRjMmRmZTQ2NGFjNDlkZjE3NTRiYTJlMGJmZjQxMTFlMTYyYmEwZWUzZmEwNmJlMWYyOWIwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3NGQwZjViOTY3YjVkNDFhOTU2Y2I3OTQ0ZTk3NjJiMDBmZDMwYzZmZDZlYmFmMDg2MDNiYWNhYTBhNzAzYzFjIn0"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/tool_selection.py#L52-L440",
+          "version": "repo-lines-v1:sha256:9e32a15bb5f5fc6e0a6ba3ce25de299beb36b0a3dd3b25e596c7b60d195a8048:eyJzZWxlY3RlZExpbmVDb3VudCI6Mzg5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJiNmZiYWUwYjkxZDQ0ZmMwZDQ5ZjVkZTY5MWRhNmZjNDMxZjI2MDEzNGJmNzMxZTBlMjFmNzY0ODA5NDMzNGNiIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4ZDFjNjZlMThiMDM3ZDM1ZjJlZGY2MzE2NGRlMzY5YmU0ZmQ0OGE2ODliOTZkMWFhOGYxNWIyMjRkNTBmNDBhIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzOGFlNjBhMDlhNzg0YjQ3ZWEwODUzMTZiZmY5MmM2ODAxMWRkNjcwZDg5ZjI4ZGFmNWRhOWJiNmFlNDFiYzQyIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjMjM3NTY4ZjM3MWM2NjRmYTczOWZlNmRmMzcwMmU3NjI1M2UwNzQzMjhkMDI1NmE0YWFkM2RlZDk5ZDdmOGE0In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_a8ef2d9045a84a2aa3f80c95d7d95627",
+      "statement": "AgentMiddleware provides lifecycle hooks across the agent execution pipeline: before_agent/abefore_agent (pre-execution), before_model/abefore_model (pre-model), wrap_model_call/awrap_model_call (model interception via handler callback), after_model/aafter_model (post-model), and wrap_tool_call/awrap_tool_call (tool execution interception). Hooks can modify state, skip execution, or retry by calling the handler multiple times.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L433-L750",
+          "version": "repo-lines-v1:sha256:33fe400711fe4a4eed543b4c3e1dc7c54917061b158a7b112459d868a04720d1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzE4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI1MWI2OTVmNDZkZjYzNWMwOTc2NTg0OTRjMzQ5MDNjOGI0NjQ5OGIwZTNhYzIwMzY5ODNiYmQ3NzFkM2QwZjhhIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI2MDg5M2ZiZWEyYjk3MjkwNTc5OGFmY2ZmNWMyMTFkYmUyMGUwZmEyY2I0MWQwOTQ0NmM3NzRmZDQ0MmU1NWZmIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI5M2U2N2M2ZWMwZTYwZGNlYmFkMzYyYmM3MmNlOGZiNGI3ZTJkMzM1Yjg4ZTk1NjkwMTI4MjRkOTUwMmRmOGQ0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI4MWE4YzY0OWM0M2E3ZjM4YTQ4NGM2ZWU2NjMzM2FlMWU3NWU2ZDBkNGJmODI1OTIzYjcxOTdhN2VkOWI5N2I3In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_01a93b394ccb405aae315bdae8ce08f9",
+      "statement": "Multiple middleware compose in registration order where first-registered becomes the outermost layer. Each middleware wraps the next via handler callback, enabling layered control flow. wrap_model_call handlers from inner middleware accumulate via Command objects; LangGraph reducers apply accumulated commands (inner-first, then outer) so message fields append and other fields are overridden by outermost.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L284-L350",
+          "version": "repo-lines-v1:sha256:fd06edb4cf66ba065e30018ccd135a283a07c2ecd82be8d7a4e0445c439769ca:eyJzZWxlY3RlZExpbmVDb3VudCI6NjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1Y2IwNmM0MzdmOTk3ODhiZDVjOGM4MDY5MjU0MTI5YmVlN2ExNGYzMzc2ZTFjZWY2MTczYWUyMGE3Y2YyZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJlZTJjODVhYzY1OTAyNzZhYjllMGUxNDE1MTVhOTc1YjJlZDk5MTQ2N2QxNzc0OTZhZTdjYWE5ZDA1MGFjMGQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI4YjE2YTdhZjFkZDFlYzI4OTY3MWRhMWU5MmExY2UzN2I4MTA0YWFlYjZlYjU3MzY1NmU4NWVhMzU0YTNhY2MiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIyNjY5YTFkNmEwMTdjOTNjMDM5ZGIwMTQxNmJlN2E4YThiOWRlY2E1ZDgyNjJiYTA5OWQyY2I4ZDc1NDE2MWEifQ"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/factory.py#L334-L390",
+          "version": "repo-lines-v1:sha256:4aed6d6a863ea681643bc61bfba1ac18c8526d334e24875d1af251131b7cd7c8:eyJzZWxlY3RlZExpbmVDb3VudCI6NTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA4YTRjZmM4OWI5Yzc0NmZiOWQyMjE4YmZkZWYyYjA0ZDMzYzE3NzIzYmI1Yjc1NzdlY2I3YjQ5YTNiM2UwOGQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBlZjFiODU0ZTRlMGYyNTllOTljZWJkODY5MDQ5MzIzMjVkY2IzMzg3OGM2NzI4Njk3NWUxYTI2YmE2M2Y3YWMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU5OGM5YTYxMWVmNGRjOWUzODk5MWMzZWI3ZDIyOGNkODZmMjNlNDIyZDc0MmY4NzMwZDg3Zjg0NDI1ODg2ZDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMyOWM5MWJjNTM1ODg3ZWVjNDYzZDlhYzZkMGIxNzJhNmQ4MzExOWI3YWE2ZjIzNjhmOWIzMTAxZTZmOTUzNzIifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_c5deebc0e7f64f65ab09b46821abee59",
+      "statement": "ModelRequest provides access to messages, system_message, tools, tool_choice, response_format, state (agent state dict), runtime (Runtime[ContextT]), and model_settings. The request object is immutable; middleware uses override() to create modified copies. runtime.context (if provided by the application) enables middleware to access application-level context for adaptive behavior.",
+      "evidence": [
+        {
+          "resource": "repo://libs/langchain_v1/langchain/agents/middleware/types.py#L89-L272",
+          "version": "repo-lines-v1:sha256:41282f9288054a87165c1249402e85c3e2f4217cacd582f6ef8a15f3027c7b7a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTg0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmOWE0ZjBkOTIyOWRmY2E0YWM1MDllNDc0OWQyNGFiZGIxMzg2NGIwYWVmMmIxNWViYmQ5ODlkNTgyNjhjZDUzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIwYjE2MTg3MTIxNzdiOGJkY2RmZTZmMWFkNTEzNzM1ZmQzMjBiZDAzZWQ2MGJkZTQzZmNiY2FkMjYzYmViZTVmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIzNmNiNWM0MDIzMDhiY2YyYTI4ZjRjNjJkN2NjNGNjZmJiYjg1Nzg1ZjgwZmYyZGUwY2Q0YWJhODY0MTliODQ1In0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-11-18T08:17:15.497Z"
+  }
+}

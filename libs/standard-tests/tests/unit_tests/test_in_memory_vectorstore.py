@@ -5,11 +5,13 @@ from langchain_core.vectorstores import (
     InMemoryVectorStore,
     VectorStore,
 )
+from typing_extensions import override
 
 from langchain_tests.integration_tests.vectorstores import VectorStoreIntegrationTests
 
 
 class TestInMemoryVectorStore(VectorStoreIntegrationTests):
+    @override
     @pytest.fixture
     def vectorstore(self) -> VectorStore:
         embeddings = self.get_embeddings()
@@ -23,11 +25,13 @@ class WithoutGetByIdsVectorStore(InMemoryVectorStore):
 
 
 class TestWithoutGetByIdVectorStore(VectorStoreIntegrationTests):
+    @override
     @pytest.fixture
     def vectorstore(self) -> VectorStore:
         embeddings = self.get_embeddings()
         return WithoutGetByIdsVectorStore(embedding=embeddings)
 
+    @override
     @property
     def has_get_by_ids(self) -> bool:
         return False

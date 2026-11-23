@@ -21,16 +21,11 @@ from langchain_classic.chains.llm import LLMChain
 
 @deprecated(
     since="0.2.13",
-    removal="1.0",
-    message=(
-        "This function will continue to be supported, but it is recommended for new "
-        "use cases to be built with LangGraph. LangGraph offers a more flexible and "
-        "full-featured framework for building agents, including support for "
-        "tool-calling, persistence of state, and human-in-the-loop workflows. "
-        "See API reference for this function for a replacement implementation: "
-        "https://api.python.langchain.com/en/latest/agents/langchain.agents.agent_toolkits.vectorstore.base.create_vectorstore_agent.html "  # noqa: E501
-        "Read more here on how to create agents that query vector stores: "
-        "https://python.langchain.com/docs/how_to/qa_chat_history_how_to/#agents"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Bind a vector store retrieval tool to an agent built with "
+        "`create_agent`. See https://docs.langchain.com/oss/python/langchain/agents"
     ),
 )
 def create_vectorstore_agent(
@@ -118,16 +113,11 @@ def create_vectorstore_agent(
 
 @deprecated(
     since="0.2.13",
-    removal="1.0",
-    message=(
-        "This function will continue to be supported, but it is recommended for new "
-        "use cases to be built with LangGraph. LangGraph offers a more flexible and "
-        "full-featured framework for building agents, including support for "
-        "tool-calling, persistence of state, and human-in-the-loop workflows. "
-        "See API reference for this function for a replacement implementation: "
-        "https://api.python.langchain.com/en/latest/agents/langchain.agents.agent_toolkits.vectorstore.base.create_vectorstore_router_agent.html "  # noqa: E501
-        "Read more here on how to create agents that query vector stores: "
-        "https://python.langchain.com/docs/how_to/qa_chat_history_how_to/#agents"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Bind a vector store retrieval tool per route to an agent built with "
+        "`create_agent`. See https://docs.langchain.com/oss/python/langchain/agents"
     ),
 )
 def create_vectorstore_router_agent(

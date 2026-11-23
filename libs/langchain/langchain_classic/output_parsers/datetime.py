@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
@@ -26,7 +26,7 @@ class DatetimeOutputParser(BaseOutputParser[datetime]):
             )
         else:
             try:
-                now = datetime.now(tz=timezone.utc)
+                now = datetime.now(tz=UTC)
                 examples = comma_list(
                     [
                         now.strftime(self.format),

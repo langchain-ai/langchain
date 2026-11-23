@@ -1,11 +1,11 @@
 """Messages for tools."""
 
 import json
-from typing import Any, Literal, cast, overload
+from typing import Any, Literal, NotRequired, cast, overload
 from uuid import UUID
 
 from pydantic import Field, model_validator
-from typing_extensions import NotRequired, TypedDict, override
+from typing_extensions import TypedDict, override
 
 from langchain_core.messages import content as types
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
@@ -76,20 +76,20 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     Should only be specified if it is different from the message content, e.g. if only
     a subset of the full tool output is being passed as message content but the full
     output is needed in other parts of the code.
-
     """
 
     status: Literal["success", "error"] = "success"
     """Status of the tool invocation."""
 
-    additional_kwargs: dict = Field(default_factory=dict, repr=False)
+    additional_kwargs: dict[Any, Any] = Field(default_factory=dict, repr=False)
     """Currently inherited from `BaseMessage`, but not used."""
-    response_metadata: dict = Field(default_factory=dict, repr=False)
+
+    response_metadata: dict[Any, Any] = Field(default_factory=dict, repr=False)
     """Currently inherited from `BaseMessage`, but not used."""
 
     @model_validator(mode="before")
     @classmethod
-    def coerce_args(cls, values: dict) -> dict:
+    def coerce_args(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Coerce the model arguments to the correct types.
 
         Args:
@@ -135,21 +135,21 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     @overload
     def __init__(
         self,
-        content: str | list[str | dict],
+        content: str | list[str | dict[Any, Any]],
         **kwargs: Any,
     ) -> None: ...
 
     @overload
     def __init__(
         self,
-        content: str | list[str | dict] | None = None,
+        content: str | list[str | dict[Any, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None: ...
 
     def __init__(
         self,
-        content: str | list[str | dict] | None = None,
+        content: str | list[str | dict[Any, Any]] | None = None,
         content_blocks: list[types.ContentBlock] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -164,7 +164,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         """
         if content_blocks is not None:
             super().__init__(
-                content=cast("str | list[str | dict]", content_blocks),
+                content=cast("list[str | dict[Any, Any]]", content_blocks),
                 **kwargs,
             )
         else:
@@ -214,20 +214,29 @@ class ToolCall(TypedDict):
         This represents a request to call the tool named `'foo'` with arguments
         `{"a": 1}` and an identifier of `'123'`.
 
+    !!! note "Factory function"
+
+        `tool_call` may also be used as a factory to create a `ToolCall`. Benefits
+        include:
+
+        * Required arguments strictly validated at creation time
     """
 
     name: str
     """The name of the tool to be called."""
+
     args: dict[str, Any]
-    """The arguments to the tool call."""
+    """The arguments to the tool call as a dictionary."""
+
     id: str | None
     """An identifier associated with the tool call.
 
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
-
     """
+
     type: NotRequired[Literal["tool_call"]]
+    """Used for discrimination."""
 
 
 def tool_call(
@@ -240,7 +249,7 @@ def tool_call(
 
     Args:
         name: The name of the tool to be called.
-        args: The arguments to the tool call.
+        args: The arguments to the tool call as a dictionary.
         id: An identifier associated with the tool call.
 
     Returns:
@@ -252,9 +261,9 @@ def tool_call(
 class ToolCallChunk(TypedDict):
     """A chunk of a tool call (yielded when streaming).
 
-    When merging `ToolCallChunk`s (e.g., via `AIMessageChunk.__add__`),
-    all string attributes are concatenated. Chunks are only merged if their
-    values of `index` are equal and not None.
+    When merging `ToolCallChunk` objects (e.g., via `AIMessageChunk.__add__`), all
+    string attributes are concatenated. Chunks are only merged if their values of
+    `index` are equal and not `None`.
 
     Example:
     ```python
@@ -270,13 +279,25 @@ class ToolCallChunk(TypedDict):
 
     name: str | None
     """The name of the tool to be called."""
+
     args: str | None
-    """The arguments to the tool call."""
+    """The arguments to the tool call as a JSON-parseable string."""
+
     id: str | None
-    """An identifier associated with the tool call."""
+    """An identifier associated with the tool call.
+
+    An identifier is needed to associate a tool call request with a tool
+    call result in events when multiple concurrent tool calls are made.
+    """
+
     index: int | None
-    """The index of the tool call in a sequence."""
+    """The index of the tool call in a sequence.
+
+    Used for merging chunks.
+    """
+
     type: NotRequired[Literal["tool_call_chunk"]]
+    """Used for discrimination."""
 
 
 def tool_call_chunk(
@@ -290,7 +311,7 @@ def tool_call_chunk(
 
     Args:
         name: The name of the tool to be called.
-        args: The arguments to the tool call.
+        args: The arguments to the tool call as a JSON string.
         id: An identifier associated with the tool call.
         index: The index of the tool call in a sequence.
 
@@ -313,7 +334,7 @@ def invalid_tool_call(
 
     Args:
         name: The name of the tool to be called.
-        args: The arguments to the tool call.
+        args: The arguments to the tool call as a JSON string.
         id: An identifier associated with the tool call.
         error: An error message associated with the tool call.
 
@@ -326,7 +347,7 @@ def invalid_tool_call(
 
 
 def default_tool_parser(
-    raw_tool_calls: list[dict],
+    raw_tool_calls: list[dict[str, Any]],
 ) -> tuple[list[ToolCall], list[InvalidToolCall]]:
     """Best-effort parsing of tools.
 
@@ -362,7 +383,9 @@ def default_tool_parser(
     return tool_calls, invalid_tool_calls
 
 
-def default_tool_chunk_parser(raw_tool_calls: list[dict]) -> list[ToolCallChunk]:
+def default_tool_chunk_parser(
+    raw_tool_calls: list[dict[str, Any]],
+) -> list[ToolCallChunk]:
     """Best-effort parsing of tool chunks.
 
     Args:

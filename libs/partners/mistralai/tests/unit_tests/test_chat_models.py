@@ -1,33 +1,113 @@
 """Test MistralAI Chat API wrapper."""
 
 import os
-from collections.abc import AsyncGenerator, Generator
-from typing import Any, cast
+from collections.abc import AsyncGenerator, Generator, Iterator
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
 from langchain_core.callbacks.base import BaseCallbackHandler
+from langchain_core.exceptions import (
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+)
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
     ChatMessage,
     HumanMessage,
     InvalidToolCall,
     SystemMessage,
     ToolCall,
+    ToolMessage,
 )
 from pydantic import SecretStr
 
+if TYPE_CHECKING:
+    from langchain_core.messages import content as types
+
+from langchain_mistralai._compat import _convert_to_v1_from_mistral
 from langchain_mistralai.chat_models import (  # type: ignore[import]
     ChatMistralAI,
+    _araise_on_error,
+    _convert_chunk_to_message_chunk,
     _convert_message_to_mistral_chat_message,
     _convert_mistral_chat_message_to_message,
     _convert_tool_call_id_to_mistral_compatible,
+    _format_message_content,
     _is_valid_mistral_tool_call_id,
+    _raise_on_error,
+    _sanitize_chat_completions_content,
 )
 
 os.environ["MISTRAL_API_KEY"] = "foo"
+
+
+def _error_response(status_code: int) -> httpx.Response:
+    """Build a response with the given status for the error handlers."""
+    request = httpx.Request("POST", "https://api.mistral.ai/v1/chat/completions")
+    return httpx.Response(status_code, request=request, content=b'{"message": "boom"}')
+
+
+def test_sanitize_chat_completions_text_blocks_strips_id() -> None:
+    """LangChain auto-generated `id` on text blocks must not reach the wire.
+
+    Mistral's chat completions endpoint returns 422 with `extra_forbidden`
+    on `messages[*].tool.content.list[...].text.id` if not stripped.
+    """
+    message = ToolMessage(
+        content=[{"type": "text", "text": "foo", "id": "lc_abc123"}],
+        tool_call_id="abc12345",
+    )
+    result = _convert_message_to_mistral_chat_message(message)
+    assert result["content"] == [{"type": "text", "text": "foo"}]
+
+
+def test_sanitize_chat_completions_content_passthrough_string() -> None:
+    assert _sanitize_chat_completions_content("hello") == "hello"
+
+
+def test_ai_message_reference_metadata_does_not_reach_wire() -> None:
+    message = AIMessage(
+        content=[
+            {"type": "text", "text": "The answer is "},
+            {"type": "text", "text": "42", "reference": {"reference_ids": [0]}},
+            {"type": "text", "text": "."},
+        ],
+        response_metadata={"model_provider": "mistralai"},
+    )
+
+    result = _convert_message_to_mistral_chat_message(message)
+    assert result["content"] == [
+        {"type": "text", "text": "The answer is "},
+        {"type": "text", "text": "42"},
+        {"type": "text", "text": "."},
+    ]
+
+
+def test_v1_ai_message_reference_metadata_does_not_reach_wire() -> None:
+    message = AIMessage(
+        content=[
+            {"type": "text", "text": "The answer is "},
+            {"type": "text", "text": "42", "reference": {"reference_ids": [0]}},
+            {"type": "text", "text": "."},
+        ],
+        response_metadata={"model_provider": "mistralai", "output_version": "v1"},
+    )
+
+    result = _convert_message_to_mistral_chat_message(message)
+    assert result["content"] == [
+        {"type": "text", "text": "The answer is "},
+        {"type": "text", "text": "42"},
+        {"type": "text", "text": "."},
+    ]
 
 
 def test_mistralai_model_param() -> None:
@@ -69,12 +149,12 @@ def test_mistralai_initialization_baseurl(
         ("MISTRAL_BASE_URL"),
     ],
 )
-def test_mistralai_initialization_baseurl_env(env_var_name: str) -> None:
+def test_mistralai_initialization_baseurl_env(
+    env_var_name: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Test ChatMistralAI initialization."""
     # Verify that ChatMistralAI can be initialized using env variable
-    import os
-
-    os.environ[env_var_name] = "boo"
+    monkeypatch.setenv(env_var_name, "boo")
     model = ChatMistralAI(model="test")  # type: ignore[call-arg]
     assert model.endpoint == "boo"
 
@@ -111,6 +191,180 @@ def test_convert_message_to_mistral_chat_message(
     assert result == expected
 
 
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [
+        ("hello", "hello"),
+        ("", ""),
+        (None, None),
+        ([], []),
+    ],
+)
+def test_format_message_content_passthrough_non_list(
+    content: Any, expected: Any
+) -> None:
+    """Strings, None, and empty lists pass through `_format_message_content`."""
+    assert _format_message_content(content) == expected
+
+
+@pytest.mark.parametrize(
+    ("block", "expected"),
+    [
+        (
+            {"type": "image", "url": "https://example.com/img.png"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/img.png"},
+            },
+        ),
+        (
+            {"type": "image", "base64": "abc123", "mime_type": "image/jpeg"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,abc123"},
+            },
+        ),
+        (
+            {
+                "type": "image",
+                "source_type": "url",
+                "url": "https://example.com/v0.png",
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/v0.png"},
+            },
+        ),
+        (
+            {
+                "type": "image",
+                "source_type": "base64",
+                "data": "v0data",
+                "mime_type": "image/png",
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/png;base64,v0data"},
+            },
+        ),
+    ],
+)
+def test_format_message_content_translates_image_blocks(
+    block: dict, expected: dict
+) -> None:
+    """v0 and v1 canonical image blocks translate to Mistral's `image_url` shape."""
+    assert _format_message_content([block]) == [expected]
+
+
+@pytest.mark.parametrize(
+    "block",
+    [
+        {"type": "text", "text": "hello"},
+        {"type": "image_url", "image_url": {"url": "https://example.com/img.png"}},
+        {"type": "image_url", "image_url": "https://example.com/img.png"},
+    ],
+)
+def test_format_message_content_passthrough_known_blocks(block: dict) -> None:
+    """Already-translated wire blocks and text blocks pass through unchanged."""
+    assert _format_message_content([block]) == [block]
+
+
+@pytest.mark.parametrize(
+    "block_type",
+    ["tool_use", "thinking", "reasoning_content", "document_url", "input_audio"],
+)
+def test_format_message_content_passes_unknown_blocks_through(block_type: str) -> None:
+    """Non-canonical blocks pass through; the Mistral API validates them."""
+    blocks = [
+        {"type": "text", "text": "kept"},
+        {"type": block_type, "data": "anything"},
+    ]
+    assert _format_message_content(blocks) == blocks
+
+
+def test_format_message_content_preserves_order_for_mixed_blocks() -> None:
+    """Multiple text + image blocks retain their order — vision prompts depend on it."""
+    blocks: list[Any] = [
+        {"type": "text", "text": "first"},
+        {"type": "image", "url": "https://example.com/a.png"},
+        {"type": "text", "text": "between"},
+        {"type": "image", "base64": "xyz", "mime_type": "image/png"},
+        "trailing string",
+    ]
+    expected = [
+        {"type": "text", "text": "first"},
+        {"type": "image_url", "image_url": {"url": "https://example.com/a.png"}},
+        {"type": "text", "text": "between"},
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,xyz"}},
+        "trailing string",
+    ]
+    assert _format_message_content(blocks) == expected
+
+
+def test_format_message_content_image_missing_mime_type_raises() -> None:
+    """Base64 image without `mime_type` raises via the core translator."""
+    with pytest.raises(ValueError, match="mime_type"):
+        _format_message_content([{"type": "image", "base64": "abc"}])
+
+
+@pytest.mark.parametrize(
+    ("message", "expected"),
+    [
+        (
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": "What is in this image?"},
+                    {"type": "image", "url": "https://example.com/img.png"},
+                ]
+            ),
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "What is in this image?"},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "https://example.com/img.png"},
+                    },
+                ],
+            },
+        ),
+        (
+            HumanMessage(
+                content=[
+                    {"type": "text", "text": "Describe this image."},
+                    {
+                        "type": "image",
+                        "base64": "abc123",
+                        "mime_type": "image/png",
+                    },
+                ]
+            ),
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Describe this image."},
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "data:image/png;base64,abc123"},
+                    },
+                ],
+            },
+        ),
+    ],
+)
+def test_convert_human_message_with_images(
+    message: BaseMessage, expected: dict
+) -> None:
+    result = _convert_message_to_mistral_chat_message(message)
+    assert result == expected
+
+
+def test_convert_human_message_with_string_content_unchanged() -> None:
+    """Plain string `HumanMessage` content is not wrapped or modified."""
+    result = _convert_message_to_mistral_chat_message(HumanMessage(content="hi"))
+    assert result == {"role": "user", "content": "hi"}
+
+
 def _make_completion_response_from_token(token: str) -> dict:
     return {
         "id": "abc123",
@@ -144,8 +398,11 @@ async def mock_chat_astream(*args: Any, **kwargs: Any) -> AsyncGenerator:
 class MyCustomHandler(BaseCallbackHandler):
     last_token: str = ""
 
-    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-        self.last_token = token
+    def on_llm_new_token(
+        self, token: str | list[str | dict[str, Any]], **kwargs: Any
+    ) -> None:
+        if isinstance(token, str):
+            self.last_token = token
 
 
 @patch(
@@ -290,6 +547,396 @@ def test__convert_dict_to_message_with_missing_content() -> None:
     assert result == expected_output
 
 
+def test__convert_dict_to_message_with_citations() -> None:
+    """Reference blocks normalized to text blocks with reference metadata."""
+    cited_text = "the temperature is 20 degrees C"
+    raw_content: list[str | dict] = [
+        {"type": "text", "text": "According to the document, "},
+        {"type": "reference", "reference_ids": [0], "text": cited_text},
+        {"type": "text", "text": " on average."},
+    ]
+    message = {"role": "assistant", "content": raw_content}
+    result = _convert_mistral_chat_message_to_message(message)
+
+    assert isinstance(result.content, list)
+    content = result.content
+    # The reference block is normalized to type="text" so .text includes it
+    assert content[0] == {"type": "text", "text": "According to the document, "}
+    assert isinstance(content[1], dict)
+    block_1 = content[1]
+    assert block_1["type"] == "text"
+    assert block_1["text"] == cited_text
+    assert block_1["reference"] == {"reference_ids": [0]}
+    assert content[2] == {"type": "text", "text": " on average."}
+    assert result.response_metadata["model_provider"] == "mistralai"
+    assert "citations" not in result.response_metadata
+
+
+def test__convert_dict_to_message_citations_text_accessor() -> None:
+    """message.text includes cited spans from normalized reference blocks."""
+    cited_text = "the temperature is 20 degrees C"
+    raw_content: list[str | dict] = [
+        {"type": "text", "text": "According to the document, "},
+        {"type": "reference", "reference_ids": [0], "text": cited_text},
+        {"type": "text", "text": " on average."},
+    ]
+    message = {"role": "assistant", "content": raw_content}
+    result = _convert_mistral_chat_message_to_message(message)
+
+    # .text should include all visible text, including the cited span
+    assert str(result.text) == (
+        "According to the document, the temperature is 20 degrees C on average."
+    )
+
+
+def test__convert_dict_to_message_citations_to_content_blocks() -> None:
+    """content_blocks translates reference metadata to TextContentBlock."""
+    cited_text = "the temperature is 20 degrees C"
+    raw_content: list[str | dict] = [
+        {"type": "text", "text": "According to the document, "},
+        {"type": "reference", "reference_ids": [0], "text": cited_text},
+        {"type": "text", "text": " on average."},
+    ]
+    message = {"role": "assistant", "content": raw_content}
+    result = _convert_mistral_chat_message_to_message(message)
+
+    assert isinstance(result, AIMessage)
+    blocks = _convert_to_v1_from_mistral(result)
+    assert len(blocks) == 3
+
+    # First block: plain text
+    assert blocks[0]["type"] == "text"
+    assert blocks[0]["text"] == "According to the document, "
+
+    # Second block: text with citation annotation
+    block_1 = cast("types.TextContentBlock", blocks[1])
+    assert block_1["type"] == "text"
+    assert block_1["text"] == cited_text
+    annotations = block_1["annotations"]
+    assert len(annotations) == 1
+    assert annotations[0]["type"] == "citation"
+    assert "cited_text" not in annotations[0]
+    assert annotations[0]["extras"]["reference_ids"] == [0]
+
+    # Third block: plain text
+    assert blocks[2]["type"] == "text"
+    assert blocks[2]["text"] == " on average."
+
+
+def test_create_chat_result_with_citations() -> None:
+    """Citations are normalized to text blocks with reference metadata in .content."""
+    chat = ChatMistralAI()
+    raw_citation = {"type": "reference", "reference_ids": [0], "text": "42"}
+    raw_content: list[str | dict] = [
+        {"type": "text", "text": "The answer is "},
+        raw_citation,
+        {"type": "text", "text": "."},
+    ]
+    response = {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": raw_content,
+                },
+                "finish_reason": "stop",
+            }
+        ]
+    }
+
+    result = chat._create_chat_result(response)
+    message = result.generations[0].message
+
+    assert isinstance(message.content, list)
+    content = message.content
+    # The reference block is normalized; .text includes the cited span
+    assert isinstance(content[1], dict)
+    block_1 = content[1]
+    assert block_1["type"] == "text"
+    assert block_1["text"] == "42"
+    assert block_1["reference"] == {"reference_ids": [0]}
+    assert str(message.text) == "The answer is 42."
+    assert "citations" not in message.response_metadata
+
+
+def test__convert_chunk_to_message_chunk_with_citations() -> None:
+    """Streaming reference blocks are normalized to text blocks in chunk .content."""
+    raw_citation = {"type": "reference", "reference_ids": [0], "text": "42"}
+    text_chunk = {
+        "choices": [
+            {
+                "delta": {"role": "assistant", "content": "The answer is "},
+                "finish_reason": None,
+            }
+        ],
+    }
+    reference_chunk = {
+        "choices": [
+            {
+                "delta": {
+                    "role": "assistant",
+                    "content": [
+                        dict(raw_citation),
+                    ],
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "model": "mistral-small-latest",
+    }
+
+    result_1, index, index_type = _convert_chunk_to_message_chunk(
+        text_chunk, AIMessageChunk, -1, "", None
+    )
+    result_2, _, _ = _convert_chunk_to_message_chunk(
+        reference_chunk, AIMessageChunk, index, index_type, None
+    )
+
+    assert isinstance(result_2, AIMessageChunk)
+    # Reference block is normalized to type="text" with reference metadata
+    assert result_2.content == [
+        {"type": "text", "text": "42", "reference": {"reference_ids": [0]}, "index": 0},
+    ]
+    assert "citations" not in result_2.response_metadata
+
+    full = result_1 + result_2
+    assert isinstance(full, AIMessageChunk)
+    assert "citations" not in full.response_metadata
+    assert full.response_metadata["finish_reason"] == "stop"
+    # .text includes the cited span
+    assert str(full.text) == "The answer is 42"
+
+
+def test_citation_round_trip() -> None:
+    """Round-trip through v1 preserves text and reference metadata."""
+    from langchain_mistralai._compat import (
+        _convert_from_v1_to_mistral,
+        _convert_to_v1_from_mistral,
+    )
+
+    # Start with normalized content (as produced by _convert_mistral_chat_message)
+    original_content: list[str | dict] = [
+        {"type": "text", "text": "The answer is "},
+        {"type": "text", "text": "42", "reference": {"reference_ids": [0]}},
+        {"type": "text", "text": "."},
+    ]
+    message = AIMessage(content=original_content)
+    v1_blocks = _convert_to_v1_from_mistral(message)
+    round_tripped = _convert_from_v1_to_mistral(v1_blocks, "mistralai")
+
+    # Should have exactly 3 blocks, no duplication of cited text
+    assert len(round_tripped) == 3
+    assert round_tripped[0] == {"type": "text", "text": "The answer is "}
+    assert isinstance(round_tripped[1], dict)
+    block_1 = round_tripped[1]
+    assert block_1["type"] == "text"
+    assert block_1["text"] == "42"
+    assert block_1["reference"] == {"reference_ids": [0]}
+    assert round_tripped[2] == {"type": "text", "text": "."}
+
+
+def test_citation_round_trip_preserves_extra_fields() -> None:
+    """Extra provider fields on reference metadata survive the round-trip."""
+    from langchain_mistralai._compat import (
+        _convert_from_v1_to_mistral,
+        _convert_to_v1_from_mistral,
+    )
+
+    original_content: list[str | dict] = [
+        {"type": "text", "text": "cited span", "reference": {"reference_ids": [1, 2]}},
+    ]
+    message = AIMessage(content=original_content)
+    v1_blocks = _convert_to_v1_from_mistral(message)
+    round_tripped = _convert_from_v1_to_mistral(v1_blocks, "mistralai")
+
+    assert len(round_tripped) == 1
+    assert isinstance(round_tripped[0], dict)
+    block_0 = round_tripped[0]
+    assert block_0["type"] == "text"
+    assert block_0["text"] == "cited span"
+    assert block_0["reference"] == {"reference_ids": [1, 2]}
+
+
+def test_citation_round_trip_preserves_annotated_response_text() -> None:
+    """Serializing citations preserves block text, not citation source excerpts."""
+    from langchain_mistralai._compat import _convert_from_v1_to_mistral
+
+    content: list[types.ContentBlock] = [
+        {
+            "type": "text",
+            "text": "The answer is 42.",
+            "annotations": [
+                {
+                    "type": "citation",
+                    "cited_text": "source excerpt mentioning 42",
+                    "extras": {"reference_ids": [0]},
+                }
+            ],
+        }
+    ]
+    round_tripped = _convert_from_v1_to_mistral(content, "mistralai")
+
+    assert len(round_tripped) == 1
+    assert isinstance(round_tripped[0], dict)
+    block = round_tripped[0]
+    assert block["type"] == "text"
+    assert block["text"] == "The answer is 42."
+    assert block["reference"]["reference_ids"] == [0]
+    assert block["reference"]["cited_text"] == "source excerpt mentioning 42"
+
+
+def test_citation_streaming_v1_reference_gets_separate_index() -> None:
+    """Reference chunks do not merge into surrounding v1 text block indexes."""
+    text_chunk = {
+        "choices": [
+            {
+                "delta": {"role": "assistant", "content": "The answer is "},
+                "finish_reason": None,
+            }
+        ],
+    }
+    reference_chunk = {
+        "choices": [
+            {
+                "delta": {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "reference", "reference_ids": [0], "text": "42"},
+                    ],
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "model": "mistral-small-latest",
+    }
+
+    result_1, index, index_type = _convert_chunk_to_message_chunk(
+        text_chunk, AIMessageChunk, -1, "", "v1"
+    )
+    result_2, _, _ = _convert_chunk_to_message_chunk(
+        reference_chunk, AIMessageChunk, index, index_type, "v1"
+    )
+
+    assert result_1.content == [{"type": "text", "text": "The answer is ", "index": 0}]
+    assert result_2.content == [
+        {"type": "text", "text": "42", "reference": {"reference_ids": [0]}, "index": 1},
+    ]
+
+
+def test_citation_streaming_accumulated_content() -> None:
+    """Streaming chunks accumulate normalized text blocks in full.content."""
+    raw_citation = {"type": "reference", "reference_ids": [0], "text": "42"}
+    text_chunk = {
+        "choices": [
+            {
+                "delta": {"role": "assistant", "content": "The answer is "},
+                "finish_reason": None,
+            }
+        ],
+    }
+    reference_chunk = {
+        "choices": [
+            {
+                "delta": {
+                    "role": "assistant",
+                    "content": [dict(raw_citation)],
+                },
+                "finish_reason": "stop",
+            }
+        ],
+        "model": "mistral-small-latest",
+    }
+
+    result_1, index, index_type = _convert_chunk_to_message_chunk(
+        text_chunk, AIMessageChunk, -1, "", None
+    )
+    result_2, _, _ = _convert_chunk_to_message_chunk(
+        reference_chunk, AIMessageChunk, index, index_type, None
+    )
+
+    full = result_1 + result_2
+    # full.content should contain both the text and the normalized reference block
+    assert isinstance(full.content, list)
+    assert any(
+        isinstance(b, dict)
+        and b.get("type") == "text"
+        and b.get("text") == "42"
+        and isinstance(ref := b.get("reference"), dict)
+        and ref.get("reference_ids") == [0]
+        for b in full.content
+    )
+
+
+def test_citation_index_not_in_extras() -> None:
+    """Streaming index should not leak into citation extras."""
+    from langchain_mistralai._compat import _convert_to_v1_from_mistral
+
+    content: list[str | dict] = [
+        {"type": "text", "text": "42", "reference": {"reference_ids": [0]}, "index": 0},
+    ]
+    message = AIMessageChunk(content=content)
+    blocks = _convert_to_v1_from_mistral(message)
+    assert len(blocks) == 1
+    block_0 = cast("types.TextContentBlock", blocks[0])
+    annotation = block_0["annotations"][0]
+    extras = annotation.get("extras", {})
+    assert isinstance(extras, dict)
+    assert "index" not in extras
+
+
+def test_citation_no_text_in_reference() -> None:
+    """A reference block with no text still converts without error."""
+    from langchain_mistralai._compat import _convert_to_v1_from_mistral
+
+    content: list[str | dict] = [
+        {"type": "text", "text": "", "reference": {"reference_ids": [0]}},
+    ]
+    message = AIMessage(content=content)
+    blocks = _convert_to_v1_from_mistral(message)
+    assert len(blocks) == 1
+    assert blocks[0]["type"] == "text"
+    assert blocks[0]["text"] == ""
+    block_0 = cast("types.TextContentBlock", blocks[0])
+    assert "cited_text" not in block_0["annotations"][0]
+
+
+def test_citation_empty_reference_metadata_still_adds_annotation() -> None:
+    """Presence of reference metadata is the signal, even if the metadata is empty."""
+    from langchain_mistralai._compat import _convert_to_v1_from_mistral
+
+    message = AIMessage(content=[{"type": "text", "text": "42", "reference": {}}])
+    blocks = _convert_to_v1_from_mistral(message)
+
+    block_0 = cast("types.TextContentBlock", blocks[0])
+    assert block_0["annotations"] == [{"type": "citation"}]
+
+
+def test_malformed_annotation_does_not_crash() -> None:
+    """Malformed annotations are skipped, not raised."""
+    from langchain_mistralai._compat import _convert_from_v1_to_mistral
+
+    content: list = [
+        {
+            "type": "text",
+            "text": "hello",
+            "annotations": [
+                None,  # not a dict
+                {"type": "unknown"},  # unrecognized type
+                {"type": "citation", "cited_text": "cited"},  # valid
+            ],
+        }
+    ]
+    result = _convert_from_v1_to_mistral(content, "mistralai")
+    # The valid citation produces a text block with reference metadata;
+    # the text block is not appended because a reference was emitted.
+    assert len(result) == 1
+    assert isinstance(result[0], dict)
+    block_0 = result[0]
+    assert block_0["type"] == "text"
+    assert block_0["text"] == "hello"
+    assert "reference" in block_0
+
+
 def test_custom_token_counting() -> None:
     def token_encoder(text: str) -> list[int]:
         return [1, 2, 3]
@@ -315,17 +962,65 @@ def test_tool_id_conversion() -> None:
 
 def test_extra_kwargs() -> None:
     # Check that foo is saved in extra_kwargs.
-    llm = ChatMistralAI(model="my-model", foo=3, max_tokens=10)  # type: ignore[call-arg]
+    with pytest.warns(UserWarning, match="foo is not default parameter"):
+        llm = ChatMistralAI(model="my-model", foo=3, max_tokens=10)  # type: ignore[call-arg]
     assert llm.max_tokens == 10
     assert llm.model_kwargs == {"foo": 3}
 
     # Test that if extra_kwargs are provided, they are added to it.
-    llm = ChatMistralAI(model="my-model", foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
+    with pytest.warns(UserWarning, match="foo is not default parameter"):
+        llm = ChatMistralAI(model="my-model", foo=3, model_kwargs={"bar": 2})  # type: ignore[call-arg]
     assert llm.model_kwargs == {"foo": 3, "bar": 2}
 
     # Test that if provided twice it errors
     with pytest.raises(ValueError):
         ChatMistralAI(model="my-model", foo=3, model_kwargs={"foo": 2})  # type: ignore[call-arg]
+
+
+def test_stop_stored_as_field() -> None:
+    """`stop` is a first-class field, not routed into `model_kwargs`."""
+    llm = ChatMistralAI(model="my-model", stop=["END"])  # type: ignore[call-arg]
+    assert llm.stop == ["END"]
+    assert "stop" not in llm.model_kwargs
+
+
+def test_create_message_dicts_sends_instance_stop() -> None:
+    """Instance-level `stop` is forwarded to the request params."""
+    llm = ChatMistralAI(model="my-model", stop=["END"])  # type: ignore[call-arg]
+    _, params = llm._create_message_dicts([HumanMessage("hi")], None)
+    assert params["stop"] == ["END"]
+
+
+def test_create_message_dicts_per_call_stop_overrides_instance() -> None:
+    """A per-call `stop` (including an empty list) overrides the instance value."""
+    llm = ChatMistralAI(model="my-model", stop=["END"])  # type: ignore[call-arg]
+    # A non-empty per-call value wins over the instance default.
+    _, params = llm._create_message_dicts([HumanMessage("hi")], ["STOP"])
+    assert params["stop"] == ["STOP"]
+
+    # An explicit empty list overrides the instance default and is treated as
+    # "no stop sequences", so it is omitted from the request rather than sent
+    # as an empty array (which the API would reject).
+    _, params = llm._create_message_dicts([HumanMessage("hi")], [])
+    assert "stop" not in params
+
+
+def test_create_message_dicts_omits_stop_when_unset() -> None:
+    """No `stop` field and no per-call value means `stop` is not sent."""
+    llm = ChatMistralAI(model="my-model")  # type: ignore[call-arg]
+    _, params = llm._create_message_dicts([HumanMessage("hi")], None)
+    assert "stop" not in params
+
+
+def test_get_ls_params_stop_precedence() -> None:
+    """`_get_ls_params` records instance `stop` and lets a per-call value win."""
+    llm = ChatMistralAI(model="my-model", stop=["END"])  # type: ignore[call-arg]
+    assert llm._get_ls_params().get("ls_stop") == ["END"]
+    assert llm._get_ls_params(stop=["STOP"]).get("ls_stop") == ["STOP"]
+
+    # Without an instance default and no per-call value, `ls_stop` is omitted.
+    llm_no_stop = ChatMistralAI(model="my-model")  # type: ignore[call-arg]
+    assert "ls_stop" not in llm_no_stop._get_ls_params()
 
 
 def test_retry_with_failure_then_success() -> None:
@@ -407,3 +1102,262 @@ def test_no_duplicate_tool_calls_when_multiple_tools() -> None:
 def test_profile() -> None:
     model = ChatMistralAI(model="mistral-large-latest")  # type: ignore[call-arg]
     assert model.profile
+
+
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    llm = ChatMistralAI(model="foo")  # type: ignore[call-arg]
+    assert llm.metadata is not None
+    versions = llm.metadata["lc_versions"]
+    assert "langchain-core" in versions
+    assert "langchain-mistralai" in versions
+
+
+@pytest.mark.parametrize(
+    ("status_code", "model_error_type", "is_retryable"),
+    [
+        (400, ModelInvalidRequestError, False),
+        (401, ModelAuthenticationError, False),
+        (403, ModelPermissionDeniedError, False),
+        (404, ModelNotFoundError, False),
+        (422, ModelInvalidRequestError, False),
+        (429, ModelRateLimitError, True),
+        (500, ModelAPIError, True),
+        (503, ModelAPIError, True),
+    ],
+)
+def test_error_classification(
+    status_code: int,
+    model_error_type: type[ModelError],
+    *,
+    is_retryable: bool,
+) -> None:
+    """Errors are raised as both `httpx.HTTPStatusError` and the LangChain type."""
+    response = _error_response(status_code)
+
+    with pytest.raises(httpx.HTTPStatusError) as exc_info:
+        _raise_on_error(response)
+
+    assert isinstance(exc_info.value, model_error_type)
+    assert exc_info.value.is_retryable is is_retryable
+    assert exc_info.value.response.status_code == status_code
+
+
+async def test_error_classification_async() -> None:
+    """The async response handler classifies errors the same way."""
+    with pytest.raises(httpx.HTTPStatusError) as exc_info:
+        await _araise_on_error(_error_response(429))
+
+    assert isinstance(exc_info.value, ModelRateLimitError)
+
+
+def test_unclassified_status_stays_a_plain_status_error() -> None:
+    """Status codes outside the taxonomy keep the previous behavior."""
+    with pytest.raises(httpx.HTTPStatusError) as exc_info:
+        _raise_on_error(_error_response(409))
+
+    assert not isinstance(exc_info.value, ModelError)
+
+
+def test_success_response_does_not_raise() -> None:
+    """A non-error response is left alone."""
+    _raise_on_error(_error_response(200))
+
+
+# --- LangSmith gateway ---
+
+
+@pytest.fixture
+def _gateway_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for var in (
+        "LANGSMITH_GATEWAY",
+        "LANGSMITH_GATEWAY_API_KEY",
+        "LANGSMITH_API_KEY",
+        "MISTRAL_BASE_URL",
+        "MISTRAL_API_KEY",
+    ):
+        monkeypatch.delenv(var, raising=False)
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`LANGSMITH_GATEWAY` routes to the gateway with the gateway key."""
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    llm = ChatMistralAI(model_name="mistral-small")
+    assert llm.endpoint == "https://gateway.smith.langchain.com/mistral/v1"
+    assert llm.mistral_api_key is not None
+    assert llm.mistral_api_key.get_secret_value() == "gateway-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Without the gateway, the provider key and default URL are used."""
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("MISTRAL_API_KEY", "provider-key")
+    llm = ChatMistralAI(model_name="mistral-small")
+    assert llm.endpoint == "https://api.mistral.ai/v1"
+    assert llm.mistral_api_key is not None
+    assert llm.mistral_api_key.get_secret_value() == "provider-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_provider_env_base_url_wins(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A provider base URL env var wins over `LANGSMITH_GATEWAY`."""
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("MISTRAL_BASE_URL", "https://proxy.example.com/v1")
+    monkeypatch.setenv("MISTRAL_API_KEY", "provider-key")
+    llm = ChatMistralAI(model_name="mistral-small")
+    assert llm.endpoint == "https://proxy.example.com/v1"
+    assert llm.mistral_api_key is not None
+    assert llm.mistral_api_key.get_secret_value() == "provider-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_context_overrides_explicit_values() -> None:
+    """`langsmith_gateway` overrides an explicit base URL and API key."""
+    gateway = pytest.importorskip("langchain_core.utils._gateway")
+    if not hasattr(gateway, "langsmith_gateway"):
+        pytest.skip("Requires a langchain-core release with `langsmith_gateway`.")
+    with gateway.langsmith_gateway(api_key="service-key"):
+        llm = ChatMistralAI(
+            model_name="mistral-small",
+            base_url="https://other.example.com/v1",
+            api_key=SecretStr("user-key"),
+        )
+    assert llm.endpoint == "https://gateway.smith.langchain.com/mistral/v1"
+    assert llm.mistral_api_key is not None
+    assert llm.mistral_api_key.get_secret_value() == "service-key"
+
+
+def _make_delta_chunk(content: Any, finish_reason: str | None = None) -> dict:
+    return {
+        "id": "abc123",
+        "model": "mistral-large-latest",
+        "choices": [
+            {"index": 0, "delta": {"content": content}, "finish_reason": finish_reason}
+        ],
+    }
+
+
+_REASONING_STREAM = [
+    {
+        "id": "abc123",
+        "model": "mistral-large-latest",
+        "choices": [
+            {
+                "index": 0,
+                "delta": {"role": "assistant", "content": ""},
+                "finish_reason": None,
+            }
+        ],
+    },
+    _make_delta_chunk(
+        [{"type": "thinking", "thinking": [{"type": "text", "text": "User says"}]}]
+    ),
+    _make_delta_chunk(
+        [{"type": "thinking", "thinking": [{"type": "text", "text": " hello."}]}]
+    ),
+    _make_delta_chunk(
+        [
+            {"type": "thinking", "thinking": []},
+            {"type": "text", "text": "Hello! How"},
+        ]
+    ),
+    _make_delta_chunk(" can I help you"),
+    _make_delta_chunk(" today?", finish_reason="stop"),
+]
+
+
+def mock_reasoning_stream(*args: Any, **kwargs: Any) -> Iterator[dict]:
+    return iter([dict(c) for c in _REASONING_STREAM])
+
+
+async def mock_reasoning_astream(*args: Any, **kwargs: Any) -> AsyncGenerator:
+    async def it() -> AsyncGenerator:
+        for c in _REASONING_STREAM:
+            yield dict(c)
+
+    return it()
+
+
+def _check_reasoning_stream(chunks: list[AIMessageChunk]) -> None:
+    assert all(c.content for c in chunks[:-1])
+    full = chunks[0]
+    for c in chunks[1:]:
+        full += c
+    assert isinstance(full, AIMessageChunk)
+    text_blocks = [b for b in full.content_blocks if b["type"] == "text"]
+    assert len(text_blocks) == 1
+    assert text_blocks[0]["text"] == "Hello! How can I help you today?"
+    reasoning_blocks = [b for b in full.content_blocks if b["type"] == "reasoning"]
+    assert len(reasoning_blocks) == 1
+    assert reasoning_blocks[0].get("reasoning") == "User says hello."
+    assert full.text == "Hello! How can I help you today?"
+    assert full.chunk_position == "last"
+
+
+@pytest.mark.parametrize("output_version", [None, "v1"])
+@patch(
+    "langchain_mistralai.chat_models.ChatMistralAI.completion_with_retry",
+    new=mock_reasoning_stream,
+)
+def test_stream_reasoning_then_text(output_version: str | None) -> None:
+    llm = ChatMistralAI(output_version=output_version)
+    chunks = [cast("AIMessageChunk", c) for c in llm.stream("Hello")]
+    _check_reasoning_stream(chunks)
+
+
+@pytest.mark.parametrize("output_version", [None, "v1"])
+@patch(
+    "langchain_mistralai.chat_models.acompletion_with_retry",
+    new=mock_reasoning_astream,
+)
+async def test_astream_reasoning_then_text(output_version: str | None) -> None:
+    llm = ChatMistralAI(output_version=output_version)
+    chunks = [cast("AIMessageChunk", c) async for c in llm.astream("Hello")]
+    _check_reasoning_stream(chunks)
+
+
+@patch(
+    "langchain_mistralai.chat_models.ChatMistralAI.completion_with_retry",
+    new=mock_chat_stream,
+)
+def test_stream_string_content_stays_string() -> None:
+    llm = ChatMistralAI()
+    full: AIMessageChunk | None = None
+    for chunk in llm.stream("Hello"):
+        full = chunk if full is None else full + chunk  # type: ignore[assignment]
+    assert full is not None
+    assert full.content == "Hello how can I help?"
+
+
+def test_reasoning_effort_omitted_by_default() -> None:
+    llm = ChatMistralAI()
+    assert "reasoning_effort" not in llm._default_params
+
+
+def test_reasoning_effort_in_default_params() -> None:
+    llm = ChatMistralAI(reasoning_effort="high")
+    assert llm._default_params["reasoning_effort"] == "high"
+
+
+def test_reasoning_effort_passed_to_client() -> None:
+    llm = ChatMistralAI(reasoning_effort="high")
+    with patch.object(
+        ChatMistralAI,
+        "completion_with_retry",
+        return_value={
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "Hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        },
+    ) as mock_completion:
+        llm.invoke("Hello")
+    assert mock_completion.call_args.kwargs["reasoning_effort"] == "high"

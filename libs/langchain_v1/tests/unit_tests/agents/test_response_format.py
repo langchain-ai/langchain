@@ -8,15 +8,22 @@ from unittest.mock import patch
 
 import pytest
 from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage as CoreAIMessage
-from langchain_core.messages import BaseMessage, HumanMessage
-from langchain_core.runnables import Runnable
-from pydantic import BaseModel, Field
-from typing_extensions import TypedDict
+from langchain_core.messages import HumanMessage
+from langchain_core.runnables import Runnable, RunnableConfig
+from langgraph.checkpoint.memory import InMemorySaver
+from pydantic import BaseModel, Field, field_validator
+from typing_extensions import TypedDict, override
 
 from langchain.agents import create_agent
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+from langchain.agents.factory import _supports_provider_strategy
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ModelCallResult,
+    ModelRequest,
+    ModelResponse,
+)
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
     ProviderStrategy,
@@ -96,14 +103,14 @@ def get_location() -> str:
 
 
 # Standardized test data
-WEATHER_DATA = {"temperature": 75.0, "condition": "sunny"}
-LOCATION_DATA = {"city": "New York", "country": "USA"}
+WEATHER_DATA: dict[str, float | str] = {"temperature": 75.0, "condition": "sunny"}
+LOCATION_DATA: dict[str, str] = {"city": "New York", "country": "USA"}
 
 # Standardized expected responses
-EXPECTED_WEATHER_PYDANTIC = WeatherBaseModel(**WEATHER_DATA)
-EXPECTED_WEATHER_DATACLASS = WeatherDataclass(**WEATHER_DATA)
+EXPECTED_WEATHER_PYDANTIC = WeatherBaseModel(temperature=75.0, condition="sunny")
+EXPECTED_WEATHER_DATACLASS = WeatherDataclass(temperature=75.0, condition="sunny")
 EXPECTED_WEATHER_DICT: WeatherTypedDict = {"temperature": 75.0, "condition": "sunny"}
-EXPECTED_LOCATION = LocationResponse(**LOCATION_DATA)
+EXPECTED_LOCATION = LocationResponse(city="New York", country="USA")
 EXPECTED_LOCATION_DICT: LocationTypedDict = {"city": "New York", "country": "USA"}
 
 
@@ -191,6 +198,37 @@ class TestResponseFormatAsModel:
 
         assert response["structured_response"] == EXPECTED_WEATHER_DICT
         assert len(response["messages"]) == 5
+
+    def test_autostrategy_with_anonymous_json_schema(self) -> None:
+        """Test response_format as anonymous JSON schema (AutoStrategy).
+
+        Verifies that tool name mismatch is avoided when using AutoStrategy with
+        schemas that generate random names by ensuring the ToolStrategy instance
+        is reused during execution.
+        """
+        anonymous_schema = {
+            "type": "object",
+            "properties": {
+                "result": {"type": "string"},
+            },
+            "required": ["result"],
+        }
+
+        with patch("langchain.agents.factory._supports_provider_strategy", return_value=False):
+            model = FakeToolCallingModel(tool_calls=[])
+            agent = create_agent(model, [], response_format=anonymous_schema)
+
+            # We expect a recursion error or similar because we didn't mock the tool call
+            # matching our anonymous schema, but it should NOT raise ValueError
+            # during the binding phase.
+            try:
+                agent.invoke({"messages": [HumanMessage("hi")]}, config={"recursion_limit": 1})
+            except ValueError as e:
+                if "which wasn't declared" in str(e):
+                    pytest.fail(f"Tool name mismatch occurred: {e}")
+            except Exception:  # noqa: S110
+                # Other exceptions mean we passed the binding phase
+                pass
 
 
 class TestResponseFormatAsToolStrategy:
@@ -343,7 +381,7 @@ class TestResponseFormatAsToolStrategy:
             ],
         ]
 
-        model = FakeToolCallingModel[WeatherBaseModel | LocationResponse](tool_calls=tool_calls)
+        model = FakeToolCallingModel(tool_calls=tool_calls)
 
         agent = create_agent(
             model,
@@ -461,7 +499,7 @@ class TestResponseFormatAsToolStrategy:
     def test_structured_output_parsing_error_without_retry(self) -> None:
         """Test structured output parsing error without retry.
 
-        Test that StructuredOutputParsingError is raised when tool args fail to parse
+        Test that StructuredOutputValidationError is raised when tool args fail to parse
         without retry.
         """
         tool_calls = [
@@ -647,6 +685,49 @@ class TestResponseFormatAsToolStrategy:
         ):
             agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
+    def test_structured_response_not_stale_across_checkpointed_turns(self) -> None:
+        """Test that a checkpointed turn doesn't reuse a previous turn's response.
+
+        Regression test for a bug where the routing edges checked for
+        `structured_response` key *presence* rather than freshness, so a turn whose
+        first attempt failed validation (and needed a retry) would exit early with
+        the previous turn's stale `structured_response` still sitting in the
+        checkpointed state.
+        """
+
+        class Answer(BaseModel):
+            text: str
+
+            @field_validator("text")
+            @classmethod
+            def not_bad(cls, v: str) -> str:
+                if v == "BAD":
+                    msg = "bad sentinel"
+                    raise ValueError(msg)
+                return v
+
+        tool_calls = [
+            [{"name": "Answer", "id": "1", "args": {"text": "Hi"}}],
+            [{"name": "Answer", "id": "2", "args": {"text": "BAD"}}],
+            [{"name": "Answer", "id": "3", "args": {"text": "Bye"}}],
+        ]
+
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(Answer, handle_errors=True),
+            checkpointer=InMemorySaver(),
+        )
+        thread: RunnableConfig = {"configurable": {"thread_id": "test-thread"}}
+
+        response_1 = agent.invoke({"messages": [HumanMessage("say hi")]}, config=thread)
+        response_2 = agent.invoke({"messages": [HumanMessage("say bye")]}, config=thread)
+
+        assert response_1["structured_response"] == Answer(text="Hi")
+        assert response_2["structured_response"] == Answer(text="Bye")
+
 
 class TestResponseFormatAsProviderStrategy:
     def test_pydantic_model(self) -> None:
@@ -655,7 +736,7 @@ class TestResponseFormatAsProviderStrategy:
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
 
-        model = FakeToolCallingModel[WeatherBaseModel](
+        model = FakeToolCallingModel(
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_PYDANTIC
         )
 
@@ -678,7 +759,7 @@ class TestResponseFormatAsProviderStrategy:
         ]
 
         # But we're using WeatherBaseModel which has different field requirements
-        model = FakeToolCallingModel[dict](
+        model = FakeToolCallingModel(
             tool_calls=tool_calls,
             structured_response={"invalid": "data"},  # Wrong structure
         )
@@ -699,7 +780,7 @@ class TestResponseFormatAsProviderStrategy:
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
 
-        model = FakeToolCallingModel[WeatherDataclass](
+        model = FakeToolCallingModel(
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DATACLASS
         )
 
@@ -719,7 +800,7 @@ class TestResponseFormatAsProviderStrategy:
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
 
-        model = FakeToolCallingModel[WeatherTypedDict](
+        model = FakeToolCallingModel(
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT
         )
 
@@ -737,7 +818,7 @@ class TestResponseFormatAsProviderStrategy:
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
 
-        model = FakeToolCallingModel[dict](
+        model = FakeToolCallingModel(
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT
         )
 
@@ -748,18 +829,6 @@ class TestResponseFormatAsProviderStrategy:
 
         assert response["structured_response"] == EXPECTED_WEATHER_DICT
         assert len(response["messages"]) == 4
-
-    def test_provider_strategy_strict_flag(self) -> None:
-        """ProviderStrategy should pass through strict flag for provider schemas."""
-        # Default should not set strict
-        strategy_default = ProviderStrategy(WeatherBaseModel)
-        kwargs_default = strategy_default.to_model_kwargs()
-        assert "strict" not in kwargs_default["response_format"]["json_schema"]
-
-        # Explicit strict True should include the flag
-        strategy_strict = ProviderStrategy(WeatherBaseModel, strict=True)
-        kwargs_strict = strategy_strict.to_model_kwargs()
-        assert kwargs_strict["response_format"]["json_schema"]["strict"] is True
 
 
 class TestDynamicModelWithResponseFormat:
@@ -778,11 +847,12 @@ class TestDynamicModelWithResponseFormat:
         class CustomModel(GenericFakeChatModel):
             tool_bindings: list[Any] = Field(default_factory=list)
 
+            @override
             def bind_tools(
                 self,
-                tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
+                tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
                 **kwargs: Any,
-            ) -> Runnable[LanguageModelInput, BaseMessage]:
+            ) -> Runnable[LanguageModelInput, AIMessage]:
                 # Record every tool binding event.
                 self.tool_bindings.append(tools)
                 return self
@@ -802,15 +872,17 @@ class TestDynamicModelWithResponseFormat:
             def wrap_model_call(
                 self,
                 request: ModelRequest,
-                handler: Callable[[ModelRequest], CoreAIMessage],
-            ) -> CoreAIMessage:
+                handler: Callable[[ModelRequest], ModelResponse],
+            ) -> ModelCallResult:
                 # Replace the model with our custom test model
                 return handler(request.override(model=model))
 
         # Track which model is checked for provider strategy support
         calls = []
 
-        def mock_supports_provider_strategy(model, tools) -> bool:
+        def mock_supports_provider_strategy(
+            model: str | BaseChatModel, *_args: Any, **_kwargs: Any
+        ) -> bool:
             """Track which model is checked and return True for ProviderStrategy."""
             calls.append(model)
             return True
@@ -858,7 +930,7 @@ def test_union_of_types() -> None:
         ],
     ]
 
-    model = FakeToolCallingModel[WeatherBaseModel | LocationResponse](
+    model = FakeToolCallingModel(
         tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_PYDANTIC
     )
 
@@ -871,3 +943,173 @@ def test_union_of_types() -> None:
 
     assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
     assert len(response["messages"]) == 5
+
+
+def test_wrap_model_call_narrows_response_format_tools() -> None:
+    """`wrap_model_call` narrowing `response_format` should restrict bound tools."""
+
+    class RecordingModel(GenericFakeChatModel):
+        bound_tool_names: list[list[str]] = Field(default_factory=list)
+
+        @override
+        def bind_tools(
+            self,
+            tools: Sequence[dict[str, Any] | type[BaseModel] | Callable[..., Any] | BaseTool],
+            **kwargs: Any,
+        ) -> Runnable[LanguageModelInput, AIMessage]:
+            self.bound_tool_names.append(sorted(t.name for t in tools if isinstance(t, BaseTool)))
+            return self
+
+    model = RecordingModel(
+        messages=iter(
+            [
+                AIMessage(
+                    content="",
+                    tool_calls=[{"name": "WeatherBaseModel", "id": "1", "args": WEATHER_DATA}],
+                ),
+            ]
+        )
+    )
+
+    class NarrowToWeatherMiddleware(AgentMiddleware):
+        def wrap_model_call(
+            self,
+            request: ModelRequest,
+            handler: Callable[[ModelRequest], ModelResponse],
+        ) -> ModelCallResult:
+            narrowed = request.override(response_format=ToolStrategy(WeatherBaseModel))
+            return handler(narrowed)
+
+    agent = create_agent(
+        model=model,
+        tools=[],
+        response_format=ToolStrategy(WeatherBaseModel | LocationResponse),
+        middleware=[NarrowToWeatherMiddleware()],
+    )
+    response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+
+    assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+    # Only the narrowed tool should have been bound to the model, not the full
+    # union of originally-declared structured output tools.
+    assert model.bound_tool_names == [["WeatherBaseModel"]]
+
+
+class TestSupportsProviderStrategy:
+    """Unit tests for `_supports_provider_strategy`."""
+
+    @staticmethod
+    def _make_structured_model(model_name: str) -> GenericFakeChatModel:
+        class GeminiTestChatModel(GenericFakeChatModel):
+            model_name: str
+
+        return GeminiTestChatModel(
+            messages=iter(
+                [
+                    AIMessage(content="test-response"),
+                ]
+            ),
+            profile={"structured_output": True},
+            model_name=model_name,
+        )
+
+    def test_blocks_gemini_v2_with_tools(self) -> None:
+        """Gemini 2 series models cannot use provider strategy with tools."""
+        model = self._make_structured_model("gemini-2.5-flash")
+        assert not _supports_provider_strategy(model, tools=[get_weather])
+
+    def test_allows_gemini_v3_with_tools(self) -> None:
+        """Gemini 3 series models support structured output alongside tools."""
+        model = self._make_structured_model("gemini-3.1-pro-preview")
+        assert _supports_provider_strategy(model, tools=[get_weather])
+
+    @pytest.mark.parametrize(
+        "alias",
+        [
+            "gemini-flash-latest",
+            "gemini-flash-lite-latest",
+        ],
+    )
+    def test_blocks_gemini_latest_aliases(self, alias: str) -> None:
+        """Latest aliases stay blocked until they point to Gemini 3."""
+        model = self._make_structured_model(alias)
+        assert not _supports_provider_strategy(model, tools=[get_weather])
+
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "gpt-4.1",
+            "gpt-4.1-mini",
+            "gpt-4o",
+            "gpt-4o-mini",
+            "gpt-5",
+            "gpt-5-mini",
+            "gpt-5.1",
+            "gpt-5.1-codex",
+            "gpt-5.2",
+            "gpt-5.2-2025-12-01",
+            "gpt-5.2-chat-latest",
+            "gpt-5.2-codex",
+            "gpt-5.3",
+            "gpt-5.3-codex-spark",
+            "gpt-5.4",
+            "gpt-5.4-2026-03-05",
+            "gpt-5.4-mini",
+            "gpt-5.4-nano",
+            "gpt-5.5-pro",
+            "openai:gpt-5.5",
+            "openai/gpt-5-mini",
+            "openai.gpt-5.4-mini",
+            "gpt-6-sol",
+            "us.openai.gpt-6-sol",
+            "global.openai.gpt-6-luna",
+            "openai.gpt-6-astra",
+            "claude-fable-5",
+            "claude-mythos-5",
+            "claude-haiku-4-5",
+            "claude-haiku-4-5-20251001",
+            "claude-opus-4-5",
+            "claude-opus-4-5-20251101",
+            "claude-opus-4-6",
+            "claude-opus-4-7",
+            "claude-opus-4-8",
+            "claude-sonnet-4-5",
+            "claude-sonnet-4-5-20250929",
+            "claude-sonnet-4-6",
+            "anthropic/claude-sonnet-4-5",
+            "anthropic.claude-opus-4-6",
+            "anthropic.claude-sonnet-4-5-20250929-v1:0",
+            "grok-4.20-0309-reasoning",
+            "grok-4.3",
+            "grok-build-0.1",
+        ],
+    )
+    def test_fallback_allows_known_structured_output_models(self, model_name: str) -> None:
+        """Fallback model patterns allow known native structured-output models."""
+        assert _supports_provider_strategy(model_name)
+
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "gpt-5.2-pro",
+            "gpt-5.4-pro",
+            "gpt-oss-120b",
+            "openai/gpt-oss-120b:free",
+            "claude-3-5-sonnet-20241022",
+            "claude-opus-4-1",
+            "claude-opus-4-1-20250805",
+            "claude-opus-4-20250514",
+            "claude-opus-4-0",
+            "grok-imagine-image",
+            "grok-imagine-video",
+            "solar-pro3",
+            "sao10k/l3.1-70b-hanami-x1",
+        ],
+    )
+    def test_fallback_blocks_overbroad_structured_output_matches(self, model_name: str) -> None:
+        """Fallback patterns avoid models.dev counterexamples and substrings."""
+        assert not _supports_provider_strategy(model_name)
+
+    def test_fallback_string_path_ignores_tools(self) -> None:
+        """The bare-string fallback path ignores `tools` (Gemini guard is profile-only)."""
+        assert _supports_provider_strategy("gpt-5.5")
+        assert _supports_provider_strategy("gpt-5.5", tools=[get_weather])

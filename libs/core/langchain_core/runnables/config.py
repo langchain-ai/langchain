@@ -1,4 +1,4 @@
-"""Configuration utilities for Runnables."""
+"""Configuration utilities for `Runnable` objects."""
 
 from __future__ import annotations
 
@@ -7,7 +7,15 @@ import asyncio
 # Cannot move uuid to TYPE_CHECKING as RunnableConfig is used in Pydantic models
 import uuid  # noqa: TC003
 import warnings
-from collections.abc import Awaitable, Callable, Generator, Iterable, Iterator, Sequence
+from collections.abc import (
+    Awaitable,
+    Callable,
+    Generator,
+    Iterable,
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
@@ -20,7 +28,6 @@ from typing import (
     cast,
 )
 
-from langsmith.run_helpers import _set_tracing_context, get_tracing_context
 from typing_extensions import TypedDict
 
 from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
@@ -30,7 +37,6 @@ from langchain_core.runnables.utils import (
     accepts_config,
     accepts_run_manager,
 )
-from langchain_core.tracers.langchain import LangChainTracer
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.base import BaseCallbackManager, Callbacks
@@ -51,8 +57,24 @@ class EmptyDict(TypedDict, total=False):
 class RunnableConfig(TypedDict, total=False):
     """Configuration for a `Runnable`.
 
-    See the [reference docs](https://reference.langchain.com/python/langchain_core/runnables/#langchain_core.runnables.RunnableConfig)
-    for more details.
+    !!! note Custom values
+
+        The `TypedDict` has `total=False` set intentionally to:
+
+        - Allow partial configs to be created and merged together via `merge_configs`
+        - Support config propagation from parent to child runnables via
+            `var_child_runnable_config` (a `ContextVar` that automatically passes
+            config down the call stack without explicit parameter passing), where
+            configs are merged rather than replaced
+
+        !!! example
+
+            ```python
+            # Parent sets tags
+            chain.invoke(input, config={"tags": ["parent"]})
+            # Child automatically inherits and can add:
+            # ensure_config({"tags": ["child"]}) -> {"tags": ["parent", "child"]}
+            ```
     """
 
     tags: list[str]
@@ -92,7 +114,8 @@ class RunnableConfig(TypedDict, total=False):
 
     configurable: dict[str, Any]
     """Runtime values for attributes previously made configurable on this `Runnable`,
-    or sub-Runnables, through `configurable_fields` or `configurable_alternatives`.
+    or sub-`Runnable` objects, through `configurable_fields` or
+    `configurable_alternatives`.
 
     Check `output_schema` for a description of the attributes that have been made
     configurable.
@@ -123,6 +146,28 @@ COPIABLE_KEYS = [
     "configurable",
 ]
 
+
+# Users are expected to use the `context` API with a context object
+# (which does not get traced)
+CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS = frozenset(("api_key",))
+
+
+def _get_langsmith_inheritable_metadata_from_config(
+    config: RunnableConfig,
+) -> dict[str, Any] | None:
+    """Get LangSmith-only inheritable metadata defaults derived from config."""
+    configurable = config.get("configurable") or {}
+    metadata = {
+        key: value
+        for key, value in configurable.items()
+        if not key.startswith("__")
+        and isinstance(value, (str, int, float, bool))
+        and key not in config.get("metadata", {})
+        and key not in CONFIGURABLE_TO_TRACING_METADATA_EXCLUDED_KEYS
+    }
+    return metadata or None
+
+
 DEFAULT_RECURSION_LIMIT = 25
 
 
@@ -143,6 +188,14 @@ def _set_config_context(
     Returns:
         The token to reset the config and the previous tracing context.
     """
+    # Deferred to avoid importing langsmith at module level (~132ms).
+    from langsmith.run_helpers import (  # noqa: PLC0415
+        _set_tracing_context,
+        get_tracing_context,
+    )
+
+    from langchain_core.tracers.langchain import LangChainTracer  # noqa: PLC0415
+
     config_token = var_child_runnable_config.set(config)
     current_context = None
     if (
@@ -177,6 +230,9 @@ def set_config_context(config: RunnableConfig) -> Generator[Context, None, None]
     Yields:
         The config context.
     """
+    # Deferred to avoid importing langsmith at module level (~132ms).
+    from langsmith.run_helpers import _set_tracing_context  # noqa: PLC0415
+
     ctx = copy_context()
     config_token, _ = ctx.run(_set_config_context, config)
     try:
@@ -238,14 +294,17 @@ def ensure_config(config: RunnableConfig | None = None) -> RunnableConfig:
         for k, v in config.items():
             if k not in CONFIG_KEYS and v is not None:
                 empty["configurable"][k] = v
-    for key, value in empty.get("configurable", {}).items():
+    for configurable_key in ("model", "checkpoint_ns"):
         if (
-            not key.startswith("__")
-            and isinstance(value, (str, int, float, bool))
-            and key not in empty["metadata"]
-            and key != "api_key"
+            isinstance(
+                configurable_value := empty.get("configurable", {}).get(
+                    configurable_key
+                ),
+                str,
+            )
+            and configurable_key not in empty["metadata"]
         ):
-            empty["metadata"][key] = value
+            empty["metadata"][configurable_key] = configurable_value
     return empty
 
 
@@ -337,6 +396,38 @@ def patch_config(
     return config
 
 
+def _merge_metadata_dicts(
+    base: Mapping[str, Any], incoming: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Merge metadata dicts, accumulating only `lc_versions` nested mappings.
+
+    Metadata generally uses last-writer-wins semantics. The LangChain-owned
+    `lc_versions` key is the only nested mapping that accumulates across merges
+    so package versions from core, `langchain`, and partner packages coexist.
+
+    Args:
+        base: The base metadata dict.
+
+            Values here are kept unless overridden by `incoming`.
+        incoming: The metadata dict to merge on top.
+
+            Its values take precedence on conflict.
+
+    Returns:
+        A new merged dict.
+    """
+    merged = {**base, **incoming}
+    base_versions = base.get("lc_versions")
+    incoming_versions = incoming.get("lc_versions")
+    if isinstance(base_versions, Mapping) and isinstance(incoming_versions, Mapping):
+        merged["lc_versions"] = {**base_versions, **incoming_versions}
+    elif isinstance(incoming_versions, Mapping):
+        merged["lc_versions"] = {**incoming_versions}
+    elif "lc_versions" not in incoming and isinstance(base_versions, Mapping):
+        merged["lc_versions"] = {**base_versions}
+    return merged
+
+
 def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
     """Merge multiple configs into one.
 
@@ -352,10 +443,10 @@ def merge_configs(*configs: RunnableConfig | None) -> RunnableConfig:
     for config in (ensure_config(c) for c in configs if c is not None):
         for key in config:
             if key == "metadata":
-                base["metadata"] = {
-                    **base.get("metadata", {}),
-                    **(config.get("metadata") or {}),
-                }
+                base["metadata"] = _merge_metadata_dicts(
+                    base.get("metadata", {}),
+                    config.get("metadata") or {},
+                )
             elif key == "tags":
                 base["tags"] = sorted(
                     set(base.get("tags", []) + (config.get("tags") or [])),
@@ -482,6 +573,9 @@ def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
         inheritable_metadata=config.get("metadata"),
+        langsmith_inheritable_metadata=_get_langsmith_inheritable_metadata_from_config(
+            config
+        ),
     )
 
 
@@ -500,6 +594,9 @@ def get_async_callback_manager_for_config(
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
         inheritable_metadata=config.get("metadata"),
+        langsmith_inheritable_metadata=_get_langsmith_inheritable_metadata_from_config(
+            config
+        ),
     )
 
 

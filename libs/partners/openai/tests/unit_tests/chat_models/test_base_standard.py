@@ -12,6 +12,13 @@ class TestOpenAIStandard(ChatModelUnitTests):
         return ChatOpenAI
 
     @property
+    def chat_model_params(self) -> dict:
+        return {
+            "base_url": "https://api.openai.com/v1",
+            "stream_usage": True,
+        }
+
+    @property
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
         return (
             {

@@ -105,9 +105,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
 
         from langchain_anthropic import ChatAnthropic
 
-        model = ChatAnthropic(
-            model_name="claude-sonnet-4-5-20250929", rate_limiter=rate_limiter
-        )
+        model = ChatAnthropic(model_name="claude-sonnet-5", rate_limiter=rate_limiter)
 
         for _ in range(5):
             tic = time.time()
@@ -147,14 +145,19 @@ class InMemoryRateLimiter(BaseRateLimiter):
         """
         # Number of requests that we can make per second.
         self.requests_per_second = requests_per_second
+
         # Number of tokens in the bucket.
         self.available_tokens = 0.0
+
         self.max_bucket_size = max_bucket_size
+
         # A lock to ensure that tokens can only be consumed by one thread
         # at a given time.
         self._consume_lock = threading.Lock()
+
         # The last time we tried to consume tokens.
         self.last: float | None = None
+
         self.check_every_n_seconds = check_every_n_seconds
 
     def _consume(self) -> bool:
@@ -211,6 +214,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
 
         while not self._consume():
             time.sleep(self.check_every_n_seconds)
+
         return True
 
     async def aacquire(self, *, blocking: bool = True) -> bool:

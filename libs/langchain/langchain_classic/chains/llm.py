@@ -40,7 +40,7 @@ from langchain_classic.chains.base import Chain
 @deprecated(
     since="0.1.17",
     alternative="RunnableSequence, e.g., `prompt | llm`",
-    removal="1.0",
+    removal="2.0.0",
 )
 class LLMChain(Chain):
     """Chain to run queries against LLMs.

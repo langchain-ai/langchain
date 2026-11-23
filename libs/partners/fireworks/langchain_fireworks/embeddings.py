@@ -1,8 +1,9 @@
+from typing import Self
+
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import secret_from_env
 from openai import OpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
 
 
 class FireworksEmbeddings(BaseModel, Embeddings):
@@ -71,7 +72,11 @@ class FireworksEmbeddings(BaseModel, Embeddings):
         alias="api_key",
         default_factory=secret_from_env(
             "FIREWORKS_API_KEY",
-            default="",
+            error_message=(
+                "You must specify an api key. "
+                "You can pass it an argument as `api_key=...` or "
+                "set the environment variable `FIREWORKS_API_KEY`."
+            ),
         ),
     )
     """Fireworks API key.

@@ -2,9 +2,199 @@
 
 from __future__ import annotations
 
-from langchain_core.messages import AIMessage
+import json
+import logging
+import os
+from collections.abc import AsyncIterator, Iterator
+from typing import Any
+from unittest.mock import AsyncMock, MagicMock
 
-from langchain_fireworks.chat_models import _convert_dict_to_message
+import httpx
+import pytest
+from fireworks import (
+    APIConnectionError,
+    APITimeoutError,
+    AsyncFireworks,
+    AuthenticationError,
+    BadRequestError,
+    Fireworks,
+    FireworksError,
+    InternalServerError,
+    NotFoundError,
+    PermissionDeniedError,
+    RateLimitError,
+)
+from langchain_core.exceptions import (
+    ContextOverflowError,
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelConnectionError,
+    ModelError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
+    ModelTimeoutError,
+)
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    BaseMessage,
+    ChatMessage,
+    HumanMessage,
+    SystemMessage,
+    ToolMessage,
+)
+from langchain_core.outputs import ChatGeneration
+
+from langchain_fireworks import ChatFireworks
+from langchain_fireworks.chat_models import (
+    _ALLOWED_CONTENT_PART_KEYS,
+    _DROPPED_CONTENT_BLOCK_TYPES,
+    FireworksContextOverflowError,
+    _acompletion_with_retry,
+    _completion_with_retry,
+    _convert_chunk_to_message_chunk,
+    _convert_dict_to_message,
+    _convert_message_to_dict,
+    _format_message_content,
+    _sanitize_chat_completions_content,
+    _update_token_usage,
+    _usage_to_metadata,
+)
+from langchain_fireworks.data._profiles import _PROFILES
+
+MODEL_NAME = "accounts/fireworks/models/test-model"
+
+
+def _make_model(**kwargs: Any) -> ChatFireworks:
+    defaults: dict[str, Any] = {"model": MODEL_NAME, "api_key": "fake-key"}
+    defaults.update(kwargs)
+    return ChatFireworks(**defaults)  # type: ignore[arg-type]
+
+
+def _api_error(cls: type, msg: str, status_code: int) -> Exception:
+    """Construct a 1.x SDK `APIStatusError` subclass with a synthetic response.
+
+    Stainless-generated SDK errors require `message`, `response`, and `body`,
+    so this helper keeps the test setup readable.
+    """
+    request = httpx.Request("POST", "https://api.fireworks.ai/inference/v1")
+    response = httpx.Response(status_code=status_code, request=request)
+    return cls(msg, response=response, body=None)
+
+
+_STREAM_CHUNKS: list[dict[str, Any]] = [
+    {
+        "choices": [{"delta": {"role": "assistant", "content": ""}, "index": 0}],
+    },
+    {
+        "choices": [{"delta": {"content": "Hello"}, "index": 0}],
+    },
+    {
+        "choices": [{"delta": {}, "finish_reason": "stop", "index": 0}],
+    },
+    # Final usage-only chunk (empty choices)
+    {
+        "choices": [],
+        "usage": {"prompt_tokens": 5, "completion_tokens": 2, "total_tokens": 7},
+    },
+]
+
+
+def test_fireworks_model_param() -> None:
+    llm = ChatFireworks(model="foo", api_key="fake-key")  # type: ignore[arg-type]
+    assert llm.model_name == "foo"
+    assert llm.model == "foo"
+    llm = ChatFireworks(model_name="foo", api_key="fake-key")  # type: ignore[call-arg, arg-type]
+    assert llm.model_name == "foo"
+    assert llm.model == "foo"
+
+
+@pytest.mark.parametrize("model_name", _PROFILES)
+def test_model_profile_rejects_native_pdf_input(model_name: str) -> None:
+    profile = _make_model(model=model_name).profile
+
+    assert profile is not None
+    assert profile["pdf_inputs"] is False
+    assert profile["pdf_tool_message"] is False
+
+
+@pytest.mark.parametrize("model_name", [*_PROFILES, MODEL_NAME])
+def test_max_tokens_from_model_profile(model_name: str) -> None:
+    model = _make_model(model=model_name)
+    expected = _PROFILES.get(model_name, {}).get("max_output_tokens")
+
+    assert model.max_tokens == expected
+    if expected is None:
+        assert "max_tokens" not in model._default_params
+    else:
+        assert model._default_params["max_tokens"] == expected
+
+
+@pytest.mark.parametrize("max_tokens", [None, 0, 100])
+@pytest.mark.parametrize("model_field", ["model", "model_name"])
+def test_max_tokens_with_custom_profile(
+    max_tokens: int | None, model_field: str
+) -> None:
+    model = _make_model(
+        **{model_field: MODEL_NAME},
+        profile={"max_output_tokens": 8192},
+        max_tokens=max_tokens,
+    )
+    expected = 8192 if max_tokens is None else max_tokens
+
+    assert model.max_tokens == expected
+    assert model._default_params["max_tokens"] == expected
+
+
+def test_max_tokens_with_empty_profile() -> None:
+    model_name = next(name for name, p in _PROFILES.items() if "max_output_tokens" in p)
+    model = _make_model(model=model_name, profile={})
+
+    assert model.max_tokens is None
+    assert "max_tokens" not in model._default_params
+
+
+def test_max_tokens_runtime_override() -> None:
+    model = _make_model(profile={"max_output_tokens": 8192})
+    model.client = MagicMock()
+    model.client.create.return_value = {
+        "choices": [{"message": {"role": "assistant", "content": "Hello"}}],
+    }
+
+    model.invoke("Hello", max_tokens=100)
+
+    assert model.client.create.call_args.kwargs["max_tokens"] == 100
+    assert model.max_tokens == 8192
+
+
+@pytest.mark.parametrize("at_invocation", [False, True])
+@pytest.mark.parametrize("asynchronous", [False, True])
+async def test_max_completion_tokens_overrides_profile_default(
+    *, at_invocation: bool, asynchronous: bool
+) -> None:
+    token_kwargs: dict[str, Any] = {"max_completion_tokens": 100}
+    response = {
+        "choices": [{"message": {"role": "assistant", "content": "Hello"}}],
+    }
+    client = AsyncMock() if asynchronous else MagicMock()
+    client.create.return_value = response
+    model = _make_model(
+        profile={"max_output_tokens": 8192},
+        model_kwargs={} if at_invocation else token_kwargs,
+        client=client,
+        async_client=client,
+    )
+    invocation_kwargs = token_kwargs if at_invocation else {}
+
+    if asynchronous:
+        await model.ainvoke("Hello", **invocation_kwargs)
+    else:
+        model.invoke("Hello", **invocation_kwargs)
+
+    assert client.create.call_args.kwargs["max_completion_tokens"] == 100
+    assert "max_tokens" not in client.create.call_args.kwargs
 
 
 def test_convert_dict_to_message_with_reasoning_content() -> None:
@@ -36,3 +226,2427 @@ def test_convert_dict_to_message_without_reasoning_content() -> None:
     assert isinstance(message, AIMessage)
     assert message.content == "The answer is 42."
     assert "reasoning_content" not in message.additional_kwargs
+
+
+def test_metadata_versions() -> None:
+    """Test that metadata reports the correct version info."""
+    os.environ.setdefault("FIREWORKS_API_KEY", "fake-key")
+    llm = ChatFireworks(model="accounts/fireworks/models/llama-v3-70b-instruct")
+    assert llm.metadata is not None
+    versions = llm.metadata["lc_versions"]
+    assert "langchain-core" in versions
+    assert "langchain-fireworks" in versions
+
+
+def test_format_message_content_passthrough_string() -> None:
+    """Plain string content is returned unchanged."""
+    assert _format_message_content("hello") == "hello"
+
+
+def test_sanitize_chat_completions_text_blocks_strips_id() -> None:
+    """LangChain auto-generated `id` on text blocks must not reach the wire.
+
+    Fireworks's chat completions schema rejects unknown keys on tool message
+    content blocks (`Extra inputs are not permitted, ... [0].id`). A single
+    text-only block also collapses to a plain string, since the Fireworks
+    `content` union lists `str` first.
+    """
+    message = ToolMessage(
+        content=[{"type": "text", "text": "foo", "id": "lc_abc123"}],
+        tool_call_id="def456",
+    )
+    assert _convert_message_to_dict(message) == {
+        "role": "tool",
+        "content": "foo",
+        "tool_call_id": "def456",
+    }
+
+
+def test_sanitize_chat_completions_content_passthrough_string() -> None:
+    assert _sanitize_chat_completions_content("hello") == "hello"
+
+
+def test_convert_v1_message_filters_invalid_tool_call_content() -> None:
+    """Invalid tool calls remain diagnostic metadata, not content blocks."""
+    message = AIMessage(
+        content=[
+            {"type": "text", "text": "Let me check."},
+            {
+                "type": "invalid_tool_call",
+                "id": "call_invalid",
+                "name": "get_weather",
+                "args": '{"city":',
+                "error": "Invalid JSON",
+            },
+        ],
+        invalid_tool_calls=[
+            {
+                "type": "invalid_tool_call",
+                "id": "call_invalid",
+                "name": "get_weather",
+                "args": '{"city":',
+                "error": "Invalid JSON",
+            }
+        ],
+        response_metadata={"output_version": "v1"},
+    )
+
+    assert _convert_message_to_dict(message) == {
+        "role": "assistant",
+        "content": "Let me check.",
+        "tool_calls": [
+            {
+                "type": "function",
+                "id": "call_invalid",
+                "function": {
+                    "name": "get_weather",
+                    "arguments": json.dumps(
+                        {"__invalid_tool_call_arguments": '{"city":'}
+                    ),
+                },
+            }
+        ],
+    }
+
+
+@pytest.mark.parametrize("raw_history", [False, True])
+@pytest.mark.parametrize(
+    ("arguments", "wrapped"),
+    [
+        ('{"city":', True),
+        ("[]", True),
+        ("null", True),
+        (None, True),
+        ('{"x": NaN}', True),
+        ('{"city": "Paris"}', False),
+    ],
+)
+def test_replay_invalid_tool_call_arguments(
+    arguments: str | None, *, wrapped: bool, raw_history: bool
+) -> None:
+    message = AIMessage(
+        content="",
+        tool_calls=[{"name": "get_weather", "args": {"city": "Paris"}, "id": "valid"}],
+        invalid_tool_calls=[
+            {"name": "get_weather", "args": arguments, "id": "invalid", "error": "bad"}
+        ],
+    )
+    if raw_history:
+        message.additional_kwargs["tool_calls"] = [
+            {
+                "type": "function",
+                "id": "invalid",
+                "function": {"name": "get_weather", "arguments": arguments},
+            }
+        ]
+        message.tool_calls = []
+        message.invalid_tool_calls = []
+    original = message.model_dump()
+
+    result = _convert_message_to_dict(message)
+
+    assert message.model_dump() == original
+    invalid = result["tool_calls"][-1]
+    assert invalid["id"] == "invalid"
+    assert invalid["function"]["name"] == "get_weather"
+    if wrapped:
+        assert json.loads(invalid["function"]["arguments"]) == {
+            "__invalid_tool_call_arguments": arguments
+        }
+    else:
+        assert invalid["function"]["arguments"] == arguments
+    if not raw_history:
+        assert json.loads(result["tool_calls"][0]["function"]["arguments"]) == {
+            "city": "Paris"
+        }
+    tool_result = ToolMessage(content="Invalid JSON", tool_call_id="invalid")
+    assert _convert_message_to_dict(tool_result)["tool_call_id"] == invalid["id"]
+
+
+def test_sanitize_chat_completions_content_passthrough_non_text_block() -> None:
+    blocks = [{"type": "image_url", "image_url": {"url": "https://x/y.png"}}]
+    assert _sanitize_chat_completions_content(blocks) == blocks
+
+
+def test_sanitize_chat_completions_content_strips_anthropic_v1_index() -> None:
+    """Reproduction for the Kimi-via-Fireworks 400 from cross-provider history.
+
+    Anthropic-shaped AIMessage text blocks carry an `index` streaming-reassembly
+    marker that Fireworks rejects as `Extra inputs are not permitted, field:
+    'messages[N].content.list[ChatMessageContent][0].index'`. After sanitization
+    the single text block collapses to a plain string, matching the first branch
+    of Fireworks's `content` union.
+    """
+    blocks = [{"text": "hello", "type": "text", "index": 0}]
+
+    assert _sanitize_chat_completions_content(blocks) == "hello"
+
+
+def test_sanitize_chat_completions_content_strips_tool_use_extras() -> None:
+    """Unknown keys on a `tool_use` block are stripped down to allowlisted keys.
+
+    `_format_message_content` is the real guard against `tool_use` blocks on
+    outbound messages — it drops them entirely. The sanitizer only enforces
+    the per-block key allowlist; it does not validate `type` against
+    Fireworks's content union, so the surviving `{"type": "tool_use"}` is not
+    itself wire-valid. This test pins the key-stripping contract; wire
+    validity of `tool_use` blocks is `_format_message_content`'s job.
+    """
+    blocks = [
+        {
+            "type": "tool_use",
+            "id": "toolu_1",
+            "name": "foo",
+            "input": {},
+            "caller": {"type": "direct"},
+            "index": 0,
+        }
+    ]
+
+    sanitized = _sanitize_chat_completions_content(blocks)
+
+    assert sanitized == [{"type": "tool_use"}]
+
+
+def test_sanitize_chat_completions_content_keeps_multi_block_list() -> None:
+    """A multi-block list is not coerced to a string."""
+    blocks = [
+        {"type": "text", "text": "a", "index": 0},
+        {"type": "text", "text": "b", "index": 1},
+    ]
+
+    assert _sanitize_chat_completions_content(blocks) == [
+        {"type": "text", "text": "a"},
+        {"type": "text", "text": "b"},
+    ]
+
+
+def test_sanitize_chat_completions_content_does_not_coerce_image_only() -> None:
+    """Coercion to string is gated on a single `{type:text,text:str}` block."""
+    blocks = [{"type": "image_url", "image_url": {"url": "https://x/y.png"}}]
+
+    assert _sanitize_chat_completions_content(blocks) == blocks
+
+
+def test_sanitize_does_not_coerce_when_text_is_non_string() -> None:
+    """Coercion is gated on `text` being a `str` — non-string `text` stays a list.
+
+    Without the `isinstance(..., str)` guard the gate would send a malformed
+    payload (e.g. `content=123`) downstream, which is worse than letting
+    Fireworks reject the list.
+    """
+    blocks = [{"type": "text", "text": 123}]
+
+    assert _sanitize_chat_completions_content(blocks) == [{"type": "text", "text": 123}]
+
+
+def test_sanitize_does_not_coerce_when_text_key_missing_after_strip() -> None:
+    """After stripping, a `{"type":"text"}` block with no `text` is not coerced."""
+    blocks = [{"type": "text", "index": 0}]
+
+    assert _sanitize_chat_completions_content(blocks) == [{"type": "text"}]
+
+
+def test_convert_human_message_with_anthropic_v1_blocks_is_wire_clean() -> None:
+    """`HumanMessage` content also routes through the sanitizer end-to-end."""
+    message = HumanMessage(
+        content=[{"type": "text", "text": "hi", "index": 0}],
+    )
+
+    assert _convert_message_to_dict(message) == {"role": "user", "content": "hi"}
+
+
+def test_convert_ai_message_with_anthropic_v1_blocks_is_wire_clean() -> None:
+    """End-to-end: an AIMessage carrying Anthropic v1 markers serializes clean.
+
+    Mirrors the actual payload that triggered the 400 in production (Fleet ran
+    a Sonnet-started conversation through ChatFireworks/Kimi).
+    """
+    message = AIMessage(
+        content=[
+            {
+                "text": (
+                    "I don't have a direct Hex API integration available "
+                    "as a built-in tool."
+                ),
+                "type": "text",
+                "index": 0,
+            }
+        ],
+    )
+
+    assert _convert_message_to_dict(message) == {
+        "role": "assistant",
+        "content": (
+            "I don't have a direct Hex API integration available as a built-in tool."
+        ),
+    }
+
+
+def test_fireworks_sdk_request_layout_stable() -> None:
+    """Fail loudly if `fireworks-ai` reshuffles its request TypedDict layout.
+
+    The content-part allowlist (`_ALLOWED_CONTENT_PART_KEYS`) is derived from
+    the SDK's stainless-generated TypedDict at import time. If a future SDK
+    version renames the module, renames the class, or drops a key the
+    sanitizer assumes is present, this test fails so the strip logic gets
+    updated in the same PR as the `fireworks-ai` bump.
+    """
+    from typing import get_type_hints
+
+    from fireworks.types.shared_params.chat_message import (
+        ChatMessage as SDKChatMessage,
+    )
+    from fireworks.types.shared_params.chat_message import (
+        ContentUnionMember1,
+    )
+
+    content_keys = set(get_type_hints(ContentUnionMember1))
+    message_keys = set(get_type_hints(SDKChatMessage))
+
+    assert "type" in content_keys, (
+        "Fireworks SDK no longer exposes `type` on ContentUnionMember1; "
+        "update `_allowed_content_part_keys` / the sanitizer."
+    )
+    assert "text" in content_keys
+    assert {"role", "content"} <= message_keys
+    # The sanitizer's allowlist must equal the SDK TypedDict's keys; this is
+    # the actual production contract, not just the `type`/`text` spot-checks.
+    assert frozenset(content_keys) == _ALLOWED_CONTENT_PART_KEYS
+
+
+def test_format_message_content_translates_v1_image_block() -> None:
+    """Canonical v1 image block is translated to OpenAI image_url + data URI."""
+    blocks = [{"type": "image", "base64": "abc", "mime_type": "image/png"}]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+    ]
+
+
+def test_format_message_content_translates_v0_base64_image_block() -> None:
+    """v0 source_type='base64' image block is translated."""
+    blocks = [
+        {
+            "type": "image",
+            "source_type": "base64",
+            "data": "qqq",
+            "mime_type": "image/png",
+        }
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,qqq"}},
+    ]
+
+
+def test_format_message_content_passes_through_existing_image_url() -> None:
+    """Already-OpenAI image_url blocks pass through unchanged."""
+    blocks = [
+        {"type": "image_url", "image_url": {"url": "https://example.com/y.png"}},
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == blocks
+
+
+def test_dropped_content_block_types_membership() -> None:
+    """Pin the drop-list so a removal is a deliberate, visible change.
+
+    The parametrized test below derives its cases from the constant, so it
+    tracks additions for free but cannot catch a deletion.
+    """
+    assert {
+        "tool_use",
+        "thinking",
+        "reasoning",
+        "reasoning_content",
+        "function_call",
+        "code_interpreter_call",
+    } == _DROPPED_CONTENT_BLOCK_TYPES
+
+
+@pytest.mark.parametrize("btype", sorted(_DROPPED_CONTENT_BLOCK_TYPES))
+def test_format_message_content_drops_unsupported_block_types(btype: str) -> None:
+    """Block types not part of the OpenAI chat completions wire format are stripped."""
+    blocks = [
+        {"type": "text", "text": "visible"},
+        {"type": btype, "foo": "bar"},
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [{"type": "text", "text": "visible"}]
+
+
+def test_format_message_content_preserves_order_around_dropped_blocks() -> None:
+    """Surviving blocks keep their order when interleaved drops are removed."""
+    blocks = [
+        {"type": "text", "text": "before"},
+        {"type": "thinking", "thinking": "..."},
+        {"type": "image", "base64": "abc", "mime_type": "image/png"},
+        {"type": "tool_use", "name": "t", "input": {}},
+        {"type": "text", "text": "after"},
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "text", "text": "before"},
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+        {"type": "text", "text": "after"},
+    ]
+
+
+def test_format_message_content_translates_v1_url_image_block() -> None:
+    """v1 image block with a top-level URL maps to an OpenAI image_url block."""
+    blocks = [{"type": "image", "url": "https://example.com/img.png"}]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "image_url", "image_url": {"url": "https://example.com/img.png"}},
+    ]
+
+
+def test_format_message_content_translates_v0_url_image_block() -> None:
+    """v0 source_type=url image block is translated."""
+    blocks = [
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://example.com/v0.png",
+        }
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "image_url", "image_url": {"url": "https://example.com/v0.png"}},
+    ]
+
+
+def test_format_message_content_translates_anthropic_source_base64_image() -> None:
+    """Legacy Anthropic-shape image with base64 source maps to a data URI."""
+    blocks = [
+        {
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/png",
+                "data": "abc",
+            },
+        }
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+    ]
+
+
+def test_format_message_content_translates_anthropic_source_url_image() -> None:
+    """Legacy Anthropic-shape image with url source maps to image_url."""
+    blocks = [
+        {
+            "type": "image",
+            "source": {"type": "url", "url": "https://example.com/anthropic.png"},
+        }
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {
+            "type": "image_url",
+            "image_url": {"url": "https://example.com/anthropic.png"},
+        },
+    ]
+
+
+def test_format_message_content_translates_v1_audio_block() -> None:
+    """v1 audio block is translated to OpenAI input_audio shape."""
+    blocks = [{"type": "audio", "base64": "aGVsbG8=", "mime_type": "audio/wav"}]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {"type": "input_audio", "input_audio": {"data": "aGVsbG8=", "format": "wav"}},
+    ]
+
+
+def test_format_message_content_translates_v1_file_block_base64() -> None:
+    """v1 file block with base64 + filename maps to OpenAI file_data shape."""
+    blocks = [
+        {
+            "type": "file",
+            "base64": "JVBERi0=",
+            "mime_type": "application/pdf",
+            "filename": "x.pdf",
+        }
+    ]
+
+    formatted = _format_message_content(blocks)
+
+    assert formatted == [
+        {
+            "type": "file",
+            "file": {
+                "file_data": "data:application/pdf;base64,JVBERi0=",
+                "filename": "x.pdf",
+            },
+        },
+    ]
+
+
+def test_convert_message_to_dict_translates_tool_message_image() -> None:
+    """ToolMessage with a canonical image block lands as OpenAI image_url on the wire.
+
+    Reproduces the failure mode where a tool that returns an image (e.g. a
+    file-reader) hands back `content_blocks=[{"type": "image", ...}]` and the
+    message round-trips into a Fireworks chat completions request.
+    """
+    tool_message = ToolMessage(
+        content=[{"type": "image", "base64": "abc", "mime_type": "image/png"}],
+        tool_call_id="call_1",
+    )
+
+    result = _convert_message_to_dict(tool_message)
+
+    assert result == {
+        "role": "tool",
+        "content": [
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+        ],
+        "tool_call_id": "call_1",
+    }
+
+
+def test_convert_message_to_dict_translates_human_mixed_content() -> None:
+    """HumanMessage with mixed text + image blocks translates correctly."""
+    human_message = HumanMessage(
+        content=[
+            {"type": "text", "text": "what is this?"},
+            {"type": "image", "base64": "xyz", "mime_type": "image/jpeg"},
+        ]
+    )
+
+    result = _convert_message_to_dict(human_message)
+
+    assert result == {
+        "role": "user",
+        "content": [
+            {"type": "text", "text": "what is this?"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,xyz"},
+            },
+        ],
+    }
+
+
+def test_convert_message_to_dict_chat_message_uses_translator() -> None:
+    """ChatMessage path also runs content through the formatter."""
+    chat_message = ChatMessage(
+        role="custom",
+        content=[{"type": "image", "base64": "zz", "mime_type": "image/gif"}],
+    )
+
+    result = _convert_message_to_dict(chat_message)
+
+    assert result == {
+        "role": "custom",
+        "content": [
+            {"type": "image_url", "image_url": {"url": "data:image/gif;base64,zz"}},
+        ],
+    }
+
+
+def test_convert_message_to_dict_string_content_unchanged() -> None:
+    """String content on common message types passes through unmodified."""
+    assert _convert_message_to_dict(HumanMessage(content="hi"))["content"] == "hi"
+    assert _convert_message_to_dict(SystemMessage(content="sys"))["content"] == "sys"
+    assert (
+        _convert_message_to_dict(ToolMessage(content="r1", tool_call_id="t"))["content"]
+        == "r1"
+    )
+
+
+def test_convert_message_to_dict_translates_system_list_content() -> None:
+    """SystemMessage with list content is routed through the formatter."""
+    system_message = SystemMessage(
+        content=[
+            {"type": "text", "text": "rules"},
+            {"type": "thinking", "thinking": "drop me"},
+        ]
+    )
+
+    result = _convert_message_to_dict(system_message)
+
+    # `thinking` is dropped by `_format_message_content`; the lone text block
+    # is coerced to a plain string by `_sanitize_chat_completions_content`
+    # since Fireworks's `content` union lists `str` as its first branch.
+    assert result == {
+        "role": "system",
+        "content": "rules",
+    }
+
+
+def test_convert_message_to_dict_translates_ai_message_image_content() -> None:
+    """AIMessage with a canonical image block is translated, not forwarded raw."""
+    ai_message = AIMessage(
+        content=[
+            {"type": "text", "text": "see attached"},
+            {"type": "image", "base64": "abc", "mime_type": "image/png"},
+        ]
+    )
+
+    result = _convert_message_to_dict(ai_message)
+
+    assert result == {
+        "role": "assistant",
+        "content": [
+            {"type": "text", "text": "see attached"},
+            {"type": "image_url", "image_url": {"url": "data:image/png;base64,abc"}},
+        ],
+    }
+
+
+def test_convert_message_to_dict_propagates_translator_value_error() -> None:
+    """Translator errors surface to callers instead of shipping bad payloads.
+
+    Chat completions does not support file URLs; the translator raises rather
+    than letting an unsupported block through.
+    """
+    bad_message = HumanMessage(
+        content=[{"type": "file", "url": "https://example.com/doc.pdf"}]
+    )
+
+    with pytest.raises(ValueError, match="file URLs"):
+        _convert_message_to_dict(bad_message)
+
+
+def _make_llm(max_retries: int | None = 2) -> ChatFireworks:
+    return ChatFireworks(
+        model="accounts/fireworks/models/test",
+        api_key="fake-key",  # type: ignore[arg-type]
+        max_retries=max_retries,
+    )
+
+
+def _success_response() -> dict[str, Any]:
+    return {
+        "choices": [
+            {
+                "message": {"role": "assistant", "content": "hello"},
+                "finish_reason": "stop",
+            }
+        ],
+        "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+    }
+
+
+@pytest.fixture(autouse=True)
+def _no_retry_sleep(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Avoid tenacity's exponential backoff in tests."""
+    import asyncio
+    import time
+
+    monkeypatch.setattr(time, "sleep", lambda _s: None)
+
+    async def _no_async_sleep(_s: float) -> None:
+        return None
+
+    monkeypatch.setattr(asyncio, "sleep", _no_async_sleep)
+
+
+def test_completion_with_retry_retries_on_retryable_error() -> None:
+    """Retryable errors trigger retries up to the configured limit."""
+    llm = _make_llm(max_retries=2)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = [
+        _api_error(RateLimitError, "rate limited", 429),
+        _api_error(InternalServerError, "unavailable", 503),
+        _success_response(),
+    ]
+    llm.client = mock_client
+
+    result = _completion_with_retry(llm, messages=[])
+
+    assert result == _success_response()
+    assert mock_client.create.call_count == 3
+
+
+def test_completion_with_retry_does_not_retry_non_retryable() -> None:
+    """Non-retryable errors propagate after a single attempt."""
+    llm = _make_llm(max_retries=3)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _api_error(AuthenticationError, "bad key", 401)
+    llm.client = mock_client
+
+    with pytest.raises(AuthenticationError):
+        _completion_with_retry(llm, messages=[])
+
+    assert mock_client.create.call_count == 1
+
+
+def test_completion_with_retry_respects_max_retries_none() -> None:
+    """`max_retries=None` disables retries."""
+    llm = _make_llm(max_retries=None)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _api_error(RateLimitError, "rate limited", 429)
+    llm.client = mock_client
+
+    with pytest.raises(RateLimitError):
+        _completion_with_retry(llm, messages=[])
+
+    assert mock_client.create.call_count == 1
+
+
+def test_completion_with_retry_exhausts_and_raises() -> None:
+    """When every attempt fails, the last error is re-raised."""
+    llm = _make_llm(max_retries=2)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _api_error(RateLimitError, "rate limited", 429)
+    llm.client = mock_client
+
+    with pytest.raises(RateLimitError):
+        _completion_with_retry(llm, messages=[])
+
+    # 1 initial attempt + 2 retries = 3 total attempts
+    assert mock_client.create.call_count == 3
+
+
+@pytest.mark.parametrize(
+    "error",
+    [_api_error(RateLimitError, "rate limited", 429), httpx.ReadTimeout("slow")],
+)
+def test_completion_with_retry_streaming_retries_on_setup(error: Exception) -> None:
+    """Streaming errors raised during the first-chunk pull are retried."""
+    llm = _make_llm(max_retries=1)
+
+    calls = {"n": 0}
+
+    def _fail_then_stream(**_kwargs: Any) -> Any:
+        calls["n"] += 1
+        if calls["n"] == 1:
+
+            def _failing_gen() -> Any:
+                raise error
+                yield  # pragma: no cover
+
+            return _failing_gen()
+
+        def _good_gen() -> Any:
+            yield {"id": 0, "choices": [{"delta": {"content": "one"}}]}
+            yield {"id": 1, "choices": [{"delta": {"content": "two"}}]}
+
+        return _good_gen()
+
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _fail_then_stream
+    llm.client = mock_client
+
+    chunks = list(_completion_with_retry(llm, messages=[], stream=True))
+
+    # First chunk is preserved and in order — guards `_prepend_chunk` regression
+    assert [c["id"] for c in chunks] == [0, 1]
+    assert calls["n"] == 2
+
+
+def test_completion_with_retry_streaming_accepts_iterable_only_result() -> None:
+    """Streaming setup accepts iterable-only custom client wrappers."""
+
+    class _IterableOnlyStream:
+        def __iter__(self) -> Any:
+            yield {"id": 0, "choices": [{"delta": {"content": "one"}}]}
+            yield {"id": 1, "choices": [{"delta": {"content": "two"}}]}
+
+    llm = _make_llm(max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.return_value = _IterableOnlyStream()
+    llm.client = mock_client
+
+    chunks = list(_completion_with_retry(llm, messages=[], stream=True))
+
+    assert [c["id"] for c in chunks] == [0, 1]
+    assert mock_client.create.call_count == 1
+
+
+def test_completion_with_retry_retries_on_5xx_http_status_error() -> None:
+    """5xx `httpx.HTTPStatusError` is promoted and retried."""
+    llm = _make_llm(max_retries=1)
+    mock_client = MagicMock()
+    response_504 = httpx.Response(status_code=504, request=httpx.Request("POST", "x"))
+    mock_client.create.side_effect = [
+        httpx.HTTPStatusError(
+            "504", request=response_504.request, response=response_504
+        ),
+        _success_response(),
+    ]
+    llm.client = mock_client
+
+    result = _completion_with_retry(llm, messages=[])
+
+    assert result == _success_response()
+    assert mock_client.create.call_count == 2
+
+
+def test_completion_with_retry_does_not_retry_on_4xx_http_status_error() -> None:
+    """Non-5xx `httpx.HTTPStatusError` passes through unretried."""
+    llm = _make_llm(max_retries=3)
+    mock_client = MagicMock()
+    response_422 = httpx.Response(status_code=422, request=httpx.Request("POST", "x"))
+    mock_client.create.side_effect = httpx.HTTPStatusError(
+        "422", request=response_422.request, response=response_422
+    )
+    llm.client = mock_client
+
+    with pytest.raises(httpx.HTTPStatusError):
+        _completion_with_retry(llm, messages=[])
+    assert mock_client.create.call_count == 1
+
+
+def test_completion_with_retry_retries_on_timeout_exception() -> None:
+    """`httpx.TimeoutException` is in the retryable set."""
+    llm = _make_llm(max_retries=1)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = [
+        httpx.ConnectTimeout("slow"),
+        _success_response(),
+    ]
+    llm.client = mock_client
+
+    result = _completion_with_retry(llm, messages=[])
+
+    assert result == _success_response()
+    assert mock_client.create.call_count == 2
+
+
+def test_completion_with_retry_max_retries_zero_is_single_attempt() -> None:
+    """`max_retries=0` disables retries (same as `None`)."""
+    llm = _make_llm(max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _api_error(RateLimitError, "rate limited", 429)
+    llm.client = mock_client
+
+    with pytest.raises(RateLimitError):
+        _completion_with_retry(llm, messages=[])
+    assert mock_client.create.call_count == 1
+
+
+def test_completion_with_retry_raises_on_empty_stream() -> None:
+    """Empty streams surface as a descriptive `FireworksError`."""
+    llm = _make_llm(max_retries=0)
+    mock_client = MagicMock()
+
+    def _empty_gen(**_kwargs: Any) -> Any:
+        if False:
+            yield  # pragma: no cover
+        return
+
+    mock_client.create.side_effect = _empty_gen
+    llm.client = mock_client
+
+    with pytest.raises(FireworksError, match="empty stream"):
+        list(_completion_with_retry(llm, messages=[], stream=True))
+
+
+def test_chat_fireworks_invoke_routes_through_retry() -> None:
+    """`.invoke()` end-to-end exercises the retry helper on `self.client.create`.
+
+    Guards against a regression that bypasses `_completion_with_retry` from
+    `_generate`.
+    """
+    llm = _make_llm(max_retries=2)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = [
+        _api_error(RateLimitError, "rate limited", 429),
+        _success_response(),
+    ]
+    llm.client = mock_client
+
+    result = llm.invoke("hello")
+
+    assert isinstance(result, AIMessage)
+    assert result.content == "hello"
+    assert mock_client.create.call_count == 2
+
+
+@pytest.mark.parametrize(
+    "error",
+    [_api_error(RateLimitError, "rate limited", 429), httpx.ReadTimeout("slow")],
+)
+async def test_acompletion_with_retry_streaming_retries_on_setup(
+    error: Exception,
+) -> None:
+    """Async streaming errors during the first-chunk pull are retried."""
+    llm = _make_llm(max_retries=1)
+    calls = {"n": 0}
+
+    async def _create(**_kwargs: Any) -> Any:
+        calls["n"] += 1
+        if calls["n"] == 1:
+
+            async def _failing_agen() -> Any:
+                raise error
+                yield  # pragma: no cover
+
+            return _failing_agen()
+
+        async def _good_agen() -> Any:
+            yield {"id": 0, "choices": [{"delta": {"content": "one"}}]}
+            yield {"id": 1, "choices": [{"delta": {"content": "two"}}]}
+
+        return _good_agen()
+
+    mock_async = MagicMock()
+    mock_async.create = _create
+    llm.async_client = mock_async
+
+    agen = await _acompletion_with_retry(llm, messages=[], stream=True)
+    chunks = [c async for c in agen]
+
+    assert [c["id"] for c in chunks] == [0, 1]
+    assert calls["n"] == 2
+
+
+async def test_acompletion_with_retry_streaming_accepts_async_iterable_only_result() -> (  # noqa: E501
+    None
+):
+    """Async streaming setup accepts async-iterable-only custom wrappers."""
+
+    class _AsyncIterableOnlyStream:
+        def __aiter__(self) -> Any:
+            async def _aiter() -> Any:
+                yield {"id": 0, "choices": [{"delta": {"content": "one"}}]}
+                yield {"id": 1, "choices": [{"delta": {"content": "two"}}]}
+
+            return _aiter()
+
+    llm = _make_llm(max_retries=0)
+    mock_async = MagicMock()
+
+    async def _create(**_kwargs: Any) -> Any:
+        return _AsyncIterableOnlyStream()
+
+    mock_async.create = MagicMock(side_effect=_create)
+    llm.async_client = mock_async
+
+    agen = await _acompletion_with_retry(llm, messages=[], stream=True)
+    chunks = [c async for c in agen]
+
+    assert [c["id"] for c in chunks] == [0, 1]
+    assert mock_async.create.call_count == 1
+
+
+async def test_achat_fireworks_ainvoke_routes_through_retry() -> None:
+    """`.ainvoke()` end-to-end exercises the async retry helper."""
+    llm = _make_llm(max_retries=2)
+    calls = {"n": 0}
+
+    async def _create(**_kwargs: Any) -> dict[str, Any]:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            msg = "rate limited"
+            raise _api_error(RateLimitError, msg, 429)
+        return _success_response()
+
+    mock_async = MagicMock()
+    mock_async.create = _create
+    llm.async_client = mock_async
+
+    result = await llm.ainvoke("hello")
+    assert isinstance(result, AIMessage)
+    assert result.content == "hello"
+    assert calls["n"] == 2
+
+
+async def test_acompletion_with_retry_retries_on_retryable_error() -> None:
+    """Async retries on retryable errors up to the configured limit."""
+    llm = _make_llm(max_retries=2)
+    mock_async = MagicMock()
+
+    call_count = {"n": 0}
+
+    async def _create(**_kwargs: Any) -> dict[str, Any]:
+        call_count["n"] += 1
+        if call_count["n"] < 3:
+            msg = "rate limited"
+            raise _api_error(RateLimitError, msg, 429)
+        return _success_response()
+
+    mock_async.create = _create
+    llm.async_client = mock_async
+
+    result = await _acompletion_with_retry(llm, messages=[])
+    assert result == _success_response()
+    assert call_count["n"] == 3
+
+
+async def test_acompletion_with_retry_does_not_retry_non_retryable() -> None:
+    """Async does not retry non-retryable errors."""
+    llm = _make_llm(max_retries=3)
+    mock_async = MagicMock()
+    call_count = {"n": 0}
+
+    async def _create(**_kwargs: Any) -> dict[str, Any]:
+        call_count["n"] += 1
+        msg = "bad input"
+        raise _api_error(BadRequestError, msg, 400)
+
+    mock_async.create = _create
+    llm.async_client = mock_async
+
+    with pytest.raises(BadRequestError):
+        await _acompletion_with_retry(llm, messages=[HumanMessage(content="hi")])
+    assert call_count["n"] == 1
+
+
+async def test_acompletion_with_retry_retries_on_5xx_http_status_error() -> None:
+    """Async 5xx `httpx.HTTPStatusError` is promoted and retried."""
+    llm = _make_llm(max_retries=1)
+    call_count = {"n": 0}
+    response_504 = httpx.Response(status_code=504, request=httpx.Request("POST", "x"))
+
+    async def _create(**_kwargs: Any) -> dict[str, Any]:
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            msg = "504"
+            raise httpx.HTTPStatusError(
+                msg, request=response_504.request, response=response_504
+            )
+        return _success_response()
+
+    mock_async = MagicMock()
+    mock_async.create = _create
+    llm.async_client = mock_async
+
+    result = await _acompletion_with_retry(llm, messages=[])
+    assert result == _success_response()
+    assert call_count["n"] == 2
+
+
+async def test_acompletion_with_retry_raises_on_empty_stream() -> None:
+    """Async empty streams surface as a descriptive `FireworksError`."""
+    llm = _make_llm(max_retries=0)
+
+    async def _create(**_kwargs: Any) -> Any:
+        async def _empty_agen() -> Any:
+            if False:
+                yield  # pragma: no cover
+            return
+
+        return _empty_agen()
+
+    mock_async = MagicMock()
+    mock_async.create = _create
+    llm.async_client = mock_async
+
+    with pytest.raises(FireworksError, match="empty stream"):
+        agen = await _acompletion_with_retry(llm, messages=[], stream=True)
+        async for _ in agen:
+            pass
+
+
+def test_completion_with_retry_retries_on_transport_error() -> None:
+    """`httpx.TransportError` is in the retryable set."""
+    llm = _make_llm(max_retries=1)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = [
+        httpx.ConnectError("refused"),
+        _success_response(),
+    ]
+    llm.client = mock_client
+
+    result = _completion_with_retry(llm, messages=[])
+
+    assert result == _success_response()
+    assert mock_client.create.call_count == 2
+
+
+class TestUsageToMetadata:
+    """Tests for the `_usage_to_metadata` helper."""
+
+    def test_all_fields_present(self) -> None:
+        result = _usage_to_metadata(
+            {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15}
+        )
+        assert result == {"input_tokens": 10, "output_tokens": 5, "total_tokens": 15}
+
+    def test_total_tokens_fallback_sums_input_and_output(self) -> None:
+        """When provider omits total_tokens, sum input + output."""
+        result = _usage_to_metadata({"prompt_tokens": 7, "completion_tokens": 3})
+        assert result == {"input_tokens": 7, "output_tokens": 3, "total_tokens": 10}
+
+    def test_missing_fields_default_to_zero(self) -> None:
+        result = _usage_to_metadata({})
+        assert result == {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}
+
+    def test_explicit_none_fields_coerced_to_zero(self) -> None:
+        """Provider may send explicit `None` values; coerce them to `0`.
+
+        Guards the `or`-based fallbacks against a `.get(key, default)` regression,
+        which would preserve `None` for a present-but-null key.
+        """
+        result = _usage_to_metadata(
+            {
+                "prompt_tokens": None,
+                "completion_tokens": None,
+                "total_tokens": None,
+            }
+        )
+        assert result == {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}
+
+    def test_total_tokens_falls_back_to_sum_when_none(self) -> None:
+        """A null `total_tokens` falls back to `input + output`."""
+        result = _usage_to_metadata(
+            {"prompt_tokens": 7, "completion_tokens": 3, "total_tokens": None}
+        )
+        assert result == {"input_tokens": 7, "output_tokens": 3, "total_tokens": 10}
+
+    def test_cached_prompt_tokens_mapped_to_cache_read(self) -> None:
+        result = _usage_to_metadata(
+            {
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+                "prompt_tokens_details": {"cached_tokens": 7},
+            }
+        )
+        assert result == {
+            "input_tokens": 10,
+            "output_tokens": 5,
+            "total_tokens": 15,
+            "input_token_details": {"cache_read": 7},
+        }
+
+    def test_cached_tokens_zero_preserved(self) -> None:
+        """A genuine `0` cache hit is reported, not dropped.
+
+        Guards the `is not None` check against a truthiness (`if cached_tokens:`)
+        regression that would silently omit `cache_read` for a real zero.
+        """
+        result = _usage_to_metadata(
+            {
+                "prompt_tokens": 10,
+                "completion_tokens": 5,
+                "total_tokens": 15,
+                "prompt_tokens_details": {"cached_tokens": 0},
+            }
+        )
+        assert result["input_token_details"] == {"cache_read": 0}
+
+    def test_prompt_tokens_details_without_cached_tokens_omits_detail(self) -> None:
+        """A details dict lacking (or nulling) `cached_tokens` adds no detail."""
+        assert "input_token_details" not in _usage_to_metadata(
+            {"prompt_tokens": 5, "prompt_tokens_details": {}}
+        )
+        assert "input_token_details" not in _usage_to_metadata(
+            {"prompt_tokens": 5, "prompt_tokens_details": {"cached_tokens": None}}
+        )
+
+
+class TestCombineLLMOutputs:
+    """Tests for combining raw provider token usage across generations."""
+
+    def test_combines_nested_token_usage(self) -> None:
+        model = _make_model()
+        result = model._combine_llm_outputs(
+            [
+                {
+                    "token_usage": {
+                        "prompt_tokens": 32,
+                        "completion_tokens": 51,
+                        "total_tokens": 83,
+                        "prompt_tokens_details": {"cached_tokens": 0},
+                    },
+                    "system_fingerprint": "fp-1",
+                },
+                {
+                    "token_usage": {
+                        "prompt_tokens": 44341,
+                        "completion_tokens": 10,
+                        "total_tokens": 44351,
+                        "prompt_tokens_details": {"cached_tokens": 41518},
+                    },
+                },
+            ]
+        )
+        assert result == {
+            "token_usage": {
+                "prompt_tokens": 44373,
+                "completion_tokens": 61,
+                "total_tokens": 44434,
+                "prompt_tokens_details": {"cached_tokens": 41518},
+            },
+            "model_name": MODEL_NAME,
+            "system_fingerprint": "fp-1",
+        }
+
+    def test_preserves_prior_nested_token_usage_keys(self) -> None:
+        model = _make_model()
+        result = model._combine_llm_outputs(
+            [
+                {
+                    "token_usage": {
+                        "prompt_tokens_details": {
+                            "audio_tokens": 4,
+                            "cached_tokens": 8,
+                        },
+                    },
+                },
+                {
+                    "token_usage": {
+                        "prompt_tokens_details": {
+                            "audio_tokens": 6,
+                        },
+                    },
+                },
+                {
+                    "token_usage": {
+                        "prompt_tokens_details": {
+                            "cached_tokens": None,
+                        },
+                    },
+                },
+            ]
+        )
+
+        assert result["token_usage"] == {
+            "prompt_tokens_details": {
+                "audio_tokens": 10,
+                "cached_tokens": 8,
+            },
+        }
+
+    def test_skips_none_token_usage_values(self) -> None:
+        model = _make_model()
+        result = model._combine_llm_outputs(
+            [
+                {"token_usage": {"prompt_tokens_details": None}},
+                {
+                    "token_usage": {
+                        "prompt_tokens_details": {"cached_tokens": 8},
+                    }
+                },
+            ]
+        )
+        assert result["token_usage"] == {"prompt_tokens_details": {"cached_tokens": 8}}
+
+    def test_uses_first_nonempty_response_model(self) -> None:
+        model = _make_model()
+        result = model._combine_llm_outputs(
+            [
+                None,
+                {"model_name": ""},
+                {"model_name": "returned-model"},
+                {"model_name": "another-model"},
+            ]
+        )
+        assert result["model_name"] == "returned-model"
+        assert result["token_usage"] == {}
+
+    def test_skips_none_streaming_outputs(self) -> None:
+        """`None` entries (produced during streaming) are skipped, not dereferenced."""
+        model = _make_model()
+        result = model._combine_llm_outputs(
+            [None, {"token_usage": {"prompt_tokens": 5, "total_tokens": 5}}, None]
+        )
+        assert result["token_usage"] == {"prompt_tokens": 5, "total_tokens": 5}
+
+
+class TestUpdateTokenUsage:
+    """Tests for the recursive `_update_token_usage` merge helper.
+
+    The type-mismatch and unexpected-type branches are unreachable with today's
+    stable Fireworks payloads, so they are exercised directly here to lock in the
+    behavior: mismatches raise, while a wholly unexpected leaf type is logged and
+    passed through rather than failing the response.
+    """
+
+    def test_int_accumulator_with_dict_value_raises(self) -> None:
+        with pytest.raises(ValueError, match="Got different types for token usage"):
+            _update_token_usage(5, {"cached_tokens": 1})
+
+    def test_dict_accumulator_with_int_value_raises(self) -> None:
+        with pytest.raises(ValueError, match="Got different types for token usage"):
+            _update_token_usage({"cached_tokens": 1}, 5)
+
+    def test_unexpected_value_type_warns_and_passes_through(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        with caplog.at_level(logging.WARNING):
+            result = _update_token_usage(0, 1.5)  # type: ignore[arg-type]
+        assert result == 1.5
+        assert "Unexpected type for token usage" in caplog.text
+
+    def test_first_seen_nested_dict_value_merges(self) -> None:
+        """A first-seen nested `dict` node seeds as a dict instead of raising."""
+        result = _update_token_usage(
+            {"details": {"a": 1}},
+            {"details": {"a": 2, "nested": {"b": 3}}},
+        )
+        assert result == {"details": {"a": 3, "nested": {"b": 3}}}
+
+
+class TestConvertChunkToMessageChunk:
+    """Tests for `_convert_chunk_to_message_chunk` empty-choices handling."""
+
+    def test_empty_choices_with_usage_returns_usage_chunk(self) -> None:
+        chunk = {
+            "choices": [],
+            "usage": {"prompt_tokens": 4, "completion_tokens": 1, "total_tokens": 5},
+        }
+        result = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+        assert isinstance(result, AIMessageChunk)
+        assert result.content == ""
+        assert result.usage_metadata == {
+            "input_tokens": 4,
+            "output_tokens": 1,
+            "total_tokens": 5,
+        }
+
+    def test_empty_choices_without_usage_logs_and_returns_blank(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        chunk: dict[str, Any] = {"choices": []}
+        with caplog.at_level("DEBUG", logger="langchain_fireworks.chat_models"):
+            result = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+        assert isinstance(result, AIMessageChunk)
+        assert result.content == ""
+        assert result.usage_metadata is None
+        assert any("no choices and no usage" in rec.message for rec in caplog.records)
+
+    def test_missing_choices_key_treated_as_empty(self) -> None:
+        """Provider may omit `choices` entirely on the final usage frame."""
+        chunk = {
+            "usage": {"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 3},
+        }
+        result = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+        assert isinstance(result, AIMessageChunk)
+        assert result.usage_metadata == {
+            "input_tokens": 1,
+            "output_tokens": 2,
+            "total_tokens": 3,
+        }
+
+    def test_usage_chunk_maps_cached_prompt_tokens(self) -> None:
+        chunk = {
+            "choices": [],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 2,
+                "total_tokens": 12,
+                "prompt_tokens_details": {"cached_tokens": 6},
+            },
+        }
+        result = _convert_chunk_to_message_chunk(chunk, AIMessageChunk)
+        assert isinstance(result, AIMessageChunk)
+        assert result.usage_metadata == {
+            "input_tokens": 10,
+            "output_tokens": 2,
+            "total_tokens": 12,
+            "input_token_details": {"cache_read": 6},
+        }
+
+
+class TestCreateChatResult:
+    """Tests for converting Fireworks responses into chat generations."""
+
+    def test_maps_cached_prompt_tokens_to_message_usage_metadata(self) -> None:
+        model = _make_model()
+        chat_result = model._create_chat_result(
+            {
+                "choices": [
+                    {
+                        "message": {"role": "assistant", "content": "ok"},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 20,
+                    "completion_tokens": 3,
+                    "total_tokens": 23,
+                    "prompt_tokens_details": {"cached_tokens": 11},
+                },
+            }
+        )
+        message = chat_result.generations[0].message
+        assert isinstance(message, AIMessage)
+        assert message.usage_metadata == {
+            "input_tokens": 20,
+            "output_tokens": 3,
+            "total_tokens": 23,
+            "input_token_details": {"cache_read": 11},
+        }
+
+
+class TestExtraHeaders:
+    """Tests for request-specific HTTP header plumbing."""
+
+    def test_mixed_case_headers_are_not_duplicated_on_the_wire(self) -> None:
+        requests: list[httpx.Request] = []
+
+        def respond(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            return httpx.Response(200, json=_success_response())
+
+        with Fireworks(
+            api_key="fake-key",
+            http_client=httpx.Client(transport=httpx.MockTransport(respond)),
+        ) as sdk:
+            model = _make_model(
+                client=sdk.chat.completions,
+                async_client=MagicMock(),
+                model_kwargs={"extra_headers": {"X-Session-Affinity": "model"}},
+            )
+            model.invoke("Hello", extra_headers={"x-session-affinity": "request"})
+
+        assert len(requests) == 1
+        assert requests[0].headers.get_list("x-session-affinity") == ["request"]
+
+    def test_extra_headers_forwarded_to_sync_create(self) -> None:
+        model_headers = {"X-Model": "model", "x-shared": "model"}
+        model = _make_model(model_kwargs={"extra_headers": model_headers})
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [{"message": {"role": "assistant", "content": "ok"}}],
+            "usage": {},
+        }
+        headers = {
+            "X-Shared": "request",
+            "x-session-affinity": "thread-123",
+            "x-multi-turn-session-id": "thread-123",
+        }
+
+        model.invoke("Hello", extra_headers=headers)
+
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["extra_headers"] == {"X-Model": "model", **headers}
+        assert model.model_kwargs["extra_headers"] == model_headers
+        assert "X-Model" not in headers
+        # `extra_headers` must reach the SDK at the top level, not be folded
+        # into `extra_body` by `_prepare_sdk_kwargs`.
+        assert "extra_headers" not in call_kwargs.get("extra_body", {})
+
+    async def test_extra_headers_forwarded_to_async_create(self) -> None:
+        model_headers = {"X-Model": "model", "x-shared": "model"}
+        model = _make_model(model_kwargs={"extra_headers": model_headers})
+        model.async_client = MagicMock()
+        headers = {
+            "X-Shared": "request",
+            "x-session-affinity": "thread-123",
+            "x-multi-turn-session-id": "thread-123",
+        }
+
+        async def _create(**_kwargs: Any) -> dict[str, Any]:
+            return {
+                "choices": [{"message": {"role": "assistant", "content": "ok"}}],
+                "usage": {},
+            }
+
+        model.async_client.create = MagicMock(side_effect=_create)
+
+        await model.ainvoke("Hello", extra_headers=headers)
+
+        call_kwargs = model.async_client.create.call_args[1]
+        assert call_kwargs["extra_headers"] == {"X-Model": "model", **headers}
+        assert model.model_kwargs["extra_headers"] == model_headers
+        assert "X-Model" not in headers
+
+    def test_extra_headers_forwarded_when_streaming(self) -> None:
+        """`extra_headers` must also survive the separate streaming param path."""
+        model_headers = {"X-Model": "model", "x-shared": "model"}
+        model = _make_model(model_kwargs={"extra_headers": model_headers})
+        model.client = MagicMock()
+        model.client.create.return_value = iter(list(_STREAM_CHUNKS))
+        headers = {
+            "X-Shared": "request",
+            "x-session-affinity": "thread-123",
+            "x-multi-turn-session-id": "thread-123",
+        }
+
+        list(model.stream("Hello", extra_headers=headers))
+
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["extra_headers"] == {"X-Model": "model", **headers}
+        assert model.model_kwargs["extra_headers"] == model_headers
+        assert "X-Model" not in headers
+        assert "extra_headers" not in call_kwargs.get("extra_body", {})
+
+
+@pytest.mark.parametrize("with_request", [False, True])
+@pytest.mark.parametrize("async_mode", [False, True])
+@pytest.mark.parametrize("tool_call", [False, True])
+async def test_midstream_read_timeout_is_classified_without_replay(
+    *, with_request: bool, async_mode: bool, tool_call: bool
+) -> None:
+    request = httpx.Request("POST", "https://api.fireworks.ai/inference/v1")
+    error = httpx.ReadTimeout(
+        "Timeout on reading data from socket",
+        request=request if with_request else None,
+    )
+    delta: dict[str, object] = (
+        {
+            "tool_calls": [
+                {
+                    "index": 0,
+                    "id": "call_1",
+                    "type": "function",
+                    "function": {"name": "lookup", "arguments": '{"query":'},
+                }
+            ]
+        }
+        if tool_call
+        else {"content": "Hello"}
+    )
+    chunk: dict[str, object] = {"choices": [{"delta": delta, "index": 0}]}
+
+    def _stream() -> Iterator[dict[str, object]]:
+        yield chunk
+        raise error
+
+    async def _astream() -> AsyncIterator[dict[str, object]]:
+        yield chunk
+        raise error
+
+    model = _make_llm(max_retries=2)
+    received: list[AIMessageChunk] = []
+    with pytest.raises(httpx.ReadTimeout) as exc_info:
+        if async_mode:
+            model.async_client = MagicMock(create=AsyncMock(return_value=_astream()))
+            async for message in model.astream("Hello"):
+                received.append(message)  # noqa: PERF401
+        else:
+            model.client = MagicMock(create=MagicMock(return_value=_stream()))
+            received.extend(model.stream("Hello"))
+
+    classified = exc_info.value
+    assert isinstance(classified, ModelTimeoutError)
+    assert classified.is_retryable
+    assert classified.__cause__ is error
+    assert str(classified) == str(error)
+    if with_request:
+        assert classified.request is request
+    else:
+        with pytest.raises(RuntimeError, match="request"):
+            _ = classified.request
+    assert len(received) == 1
+    if tool_call:
+        assert received[0].tool_call_chunks[0]["args"] == '{"query":'
+    else:
+        assert received[0].content == "Hello"
+    client = model.async_client if async_mode else model.client
+    client.create.assert_called_once()
+
+
+@pytest.mark.parametrize("async_mode", [False, True])
+async def test_midstream_non_timeout_propagates_unchanged(*, async_mode: bool) -> None:
+    error = ValueError("invalid stream")
+
+    def _stream() -> Iterator[dict[str, object]]:
+        yield {"choices": [{"delta": {"content": "Hello"}}]}
+        raise error
+
+    async def _astream() -> AsyncIterator[dict[str, object]]:
+        for chunk in _stream():
+            yield chunk
+
+    model = _make_llm(max_retries=2)
+    with pytest.raises(ValueError) as exc_info:
+        if async_mode:
+            model.async_client = MagicMock(create=AsyncMock(return_value=_astream()))
+            _ = [chunk async for chunk in model.astream("Hello")]
+        else:
+            model.client = MagicMock(create=MagicMock(return_value=_stream()))
+            list(model.stream("Hello"))
+    assert exc_info.value is error
+    client = model.async_client if async_mode else model.client
+    client.create.assert_called_once()
+
+
+class TestStreamUsage:
+    """Tests for the `stream_usage` field and `stream_options` plumbing."""
+
+    def test_stream_options_passed_by_default(self) -> None:
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = iter(list(_STREAM_CHUNKS))
+        list(model.stream("Hello"))
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["extra_body"]["stream_options"] == {"include_usage": True}
+
+    def test_stream_options_not_passed_when_disabled(self) -> None:
+        model = _make_model(stream_usage=False)
+        model.client = MagicMock()
+        model.client.create.return_value = iter(list(_STREAM_CHUNKS))
+        list(model.stream("Hello"))
+        call_kwargs = model.client.create.call_args[1]
+        assert "stream_options" not in call_kwargs
+        assert "extra_body" not in call_kwargs
+
+    def test_user_stream_options_in_model_kwargs_wins(self) -> None:
+        """User-provided stream_options via model_kwargs overrides the default."""
+        custom = {"include_usage": False}
+        model = _make_model(model_kwargs={"stream_options": custom})
+        model.client = MagicMock()
+        model.client.create.return_value = iter(list(_STREAM_CHUNKS))
+        list(model.stream("Hello"))
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["extra_body"]["stream_options"] == custom
+
+    def test_extra_body_stream_options_wins_over_top_level(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """`extra_body['stream_options']` wins over a top-level value.
+
+        When both are supplied, the `extra_body` value is preserved and a
+        warning is logged.
+        """
+        explicit = {"include_usage": False}
+        model = _make_model(
+            model_kwargs={
+                "stream_options": {"include_usage": True},
+                "extra_body": {"stream_options": explicit},
+            },
+        )
+        model.client = MagicMock()
+        model.client.create.return_value = iter(list(_STREAM_CHUNKS))
+        with caplog.at_level("WARNING", logger="langchain_fireworks.chat_models"):
+            list(model.stream("Hello"))
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["extra_body"]["stream_options"] == explicit
+        assert "stream_options" not in call_kwargs
+        assert any(
+            "extra_body" in rec.message and "discarding" in rec.message
+            for rec in caplog.records
+        )
+
+    def test_usage_only_chunk_emits_usage_metadata(self) -> None:
+        """The final empty-choices + usage chunk propagates as usage_metadata."""
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = iter(list(_STREAM_CHUNKS))
+        chunks = list(model.stream("Hello"))
+        usage_chunks = [c for c in chunks if c.usage_metadata]
+        assert len(usage_chunks) == 1
+        assert usage_chunks[0].usage_metadata == {
+            "input_tokens": 5,
+            "output_tokens": 2,
+            "total_tokens": 7,
+        }
+
+    async def test_astream_options_passed_by_default(self) -> None:
+        model = _make_model()
+        model.async_client = MagicMock()
+
+        async def _aiter() -> Any:
+            for c in _STREAM_CHUNKS:
+                yield c
+
+        async def _create(**_kwargs: Any) -> Any:
+            return _aiter()
+
+        model.async_client.create = MagicMock(side_effect=_create)
+        [chunk async for chunk in model.astream("Hello")]
+        call_kwargs = model.async_client.create.call_args[1]
+        assert call_kwargs["extra_body"]["stream_options"] == {"include_usage": True}
+
+    async def test_astream_usage_only_chunk_emits_usage_metadata(self) -> None:
+        model = _make_model()
+        model.async_client = MagicMock()
+
+        async def _aiter() -> Any:
+            for c in _STREAM_CHUNKS:
+                yield c
+
+        async def _create(**_kwargs: Any) -> Any:
+            return _aiter()
+
+        model.async_client.create = MagicMock(side_effect=_create)
+        chunks = [chunk async for chunk in model.astream("Hello")]
+        usage_chunks = [c for c in chunks if c.usage_metadata]
+        assert len(usage_chunks) == 1
+        assert usage_chunks[0].usage_metadata == {
+            "input_tokens": 5,
+            "output_tokens": 2,
+            "total_tokens": 7,
+        }
+
+
+class TestReasoningEffort:
+    """Tests for the `reasoning_effort` field plumbing."""
+
+    def test_reasoning_effort_omitted_by_default(self) -> None:
+        model = _make_model()
+        assert "reasoning_effort" not in model._default_params
+
+    def test_reasoning_effort_in_default_params_when_set(self) -> None:
+        model = _make_model(reasoning_effort="high")
+        assert model._default_params["reasoning_effort"] == "high"
+
+    def test_reasoning_effort_passed_to_client_when_set(self) -> None:
+        model = _make_model(reasoning_effort="high")
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello")
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["reasoning_effort"] == "high"
+
+    def test_reasoning_effort_not_passed_when_unset(self) -> None:
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello")
+        call_kwargs = model.client.create.call_args[1]
+        assert "reasoning_effort" not in call_kwargs
+
+    def test_reasoning_effort_as_call_time_kwarg(self) -> None:
+        """`reasoning_effort` also works as a call-time keyword argument.
+
+        This is the standard `reasoning_effort` param shared across chat model
+        integrations, so it must work via `model.invoke(..., reasoning_effort=...)`
+        without requiring it to be set on the model instance.
+        """
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello", reasoning_effort="low")
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["reasoning_effort"] == "low"
+
+    def test_reasoning_effort_call_time_kwarg_overrides_construction_time(
+        self,
+    ) -> None:
+        model = _make_model(reasoning_effort="low")
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello", reasoning_effort="high")
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["reasoning_effort"] == "high"
+
+
+class TestServiceTier:
+    """Tests for the `service_tier` field plumbing."""
+
+    def test_service_tier_omitted_by_default(self) -> None:
+        model = _make_model()
+        assert "service_tier" not in model._default_params
+
+    def test_service_tier_in_default_params_when_set(self) -> None:
+        model = _make_model(service_tier="priority")
+        assert model._default_params["service_tier"] == "priority"
+
+    def test_service_tier_passed_to_client_when_set(self) -> None:
+        model = _make_model(service_tier="priority")
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello")
+        call_kwargs = model.client.create.call_args[1]
+        assert call_kwargs["service_tier"] == "priority"
+
+    def test_service_tier_not_passed_when_unset(self) -> None:
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        model.invoke("Hello")
+        call_kwargs = model.client.create.call_args[1]
+        assert "service_tier" not in call_kwargs
+
+    def test_service_tier_echoed_in_response_metadata(self) -> None:
+        model = _make_model(service_tier="priority")
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+            "service_tier": "priority",
+        }
+        result = model.invoke("Hello")
+        assert isinstance(result, AIMessage)
+        assert result.response_metadata["service_tier"] == "priority"
+
+    def test_service_tier_echoed_once_in_stream_chunks(self) -> None:
+        model = _make_model(service_tier="priority")
+        model.client = MagicMock()
+        chunks: list[dict[str, Any]] = [
+            {
+                "choices": [{"delta": {"role": "assistant", "content": "hi"}}],
+                "service_tier": "priority",
+            },
+            {
+                "choices": [{"delta": {}, "finish_reason": "stop"}],
+                "service_tier": "priority",
+            },
+            {
+                "choices": [],
+                "usage": {
+                    "prompt_tokens": 1,
+                    "completion_tokens": 1,
+                    "total_tokens": 2,
+                },
+                "service_tier": "priority",
+            },
+        ]
+        model.client.create.return_value = iter(chunks)
+        output = list(model.stream("Hello"))
+        tagged = [c for c in output if c.response_metadata.get("service_tier")]
+        assert len(tagged) == 1
+        assert tagged[0].response_metadata["service_tier"] == "priority"
+
+        combined = output[0]
+        for chunk in output[1:]:
+            combined += chunk
+        assert combined.response_metadata["service_tier"] == "priority"
+
+    async def test_service_tier_echoed_once_in_async_stream_chunks(self) -> None:
+        model = _make_model(service_tier="priority")
+        model.async_client = MagicMock()
+        chunks: list[dict[str, Any]] = [
+            {
+                "choices": [{"delta": {"role": "assistant", "content": "hi"}}],
+                "service_tier": "priority",
+            },
+            {
+                "choices": [{"delta": {}, "finish_reason": "stop"}],
+                "service_tier": "priority",
+            },
+        ]
+
+        async def _aiter() -> Any:
+            for chunk in chunks:
+                yield chunk
+
+        async def _create(**_kwargs: Any) -> Any:
+            return _aiter()
+
+        model.async_client.create = MagicMock(side_effect=_create)
+        output = [chunk async for chunk in model.astream("Hello")]
+        tagged = [c for c in output if c.response_metadata.get("service_tier")]
+        assert len(tagged) == 1
+        assert tagged[0].response_metadata["service_tier"] == "priority"
+
+    def test_service_tier_absent_when_not_in_response(self) -> None:
+        model = _make_model()
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        result = model.invoke("Hello")
+        assert isinstance(result, AIMessage)
+        assert "service_tier" not in result.response_metadata
+
+    def test_service_tier_in_llm_output_when_response_carries_it(self) -> None:
+        model = _make_model(service_tier="priority")
+        chat_result = model._create_chat_result(
+            {
+                "choices": [
+                    {
+                        "message": {"role": "assistant", "content": "hi"},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {
+                    "prompt_tokens": 1,
+                    "completion_tokens": 1,
+                    "total_tokens": 2,
+                },
+                "service_tier": "priority",
+            }
+        )
+        assert chat_result.llm_output is not None
+        assert chat_result.llm_output["service_tier"] == "priority"
+
+    def test_service_tier_not_inferred_from_request(self) -> None:
+        """Init-set tier must not leak into response_metadata if API omits it."""
+        model = _make_model(service_tier="priority")
+        model.client = MagicMock()
+        model.client.create.return_value = {
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": "hi"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2},
+        }
+        result = model.invoke("Hello")
+        assert isinstance(result, AIMessage)
+        assert "service_tier" not in result.response_metadata
+
+
+_CONTEXT_OVERFLOW_MESSAGE = (
+    '{"error": {"object": "error", "type": "invalid_request_error", '
+    '"code": "invalid_request_error", "message": "The prompt is too long: '
+    '500208, model maximum context length: 262143"}}'
+)
+
+
+@pytest.mark.parametrize(
+    ("status_code", "sdk_error_type", "model_error_type", "is_retryable"),
+    [
+        (400, BadRequestError, ModelInvalidRequestError, False),
+        (401, AuthenticationError, ModelAuthenticationError, False),
+        (403, PermissionDeniedError, ModelPermissionDeniedError, False),
+        (404, NotFoundError, ModelNotFoundError, False),
+        (429, RateLimitError, ModelRateLimitError, True),
+        (500, InternalServerError, ModelAPIError, True),
+    ],
+)
+def test_fireworks_error_classification(
+    status_code: int,
+    sdk_error_type: type[Exception],
+    model_error_type: type[ModelError],
+    *,
+    is_retryable: bool,
+) -> None:
+    """Provider errors are raised as both the SDK type and the LangChain type."""
+    llm = _make_llm(max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _api_error(
+        sdk_error_type, "model request failed", status_code
+    )
+    llm.client = mock_client
+
+    with pytest.raises(sdk_error_type) as exc_info:
+        llm.invoke([HumanMessage(content="test")])
+
+    assert isinstance(exc_info.value, model_error_type)
+    assert exc_info.value.is_retryable is is_retryable
+
+
+def test_fireworks_transport_error_classification() -> None:
+    """Timeout and connection failures are classified without a status code."""
+    request = httpx.Request("POST", "https://api.fireworks.ai/inference/v1")
+
+    for sdk_error, model_error_type in (
+        (APITimeoutError(request), ModelTimeoutError),
+        (APIConnectionError(request=request), ModelConnectionError),
+    ):
+        llm = _make_llm(max_retries=0)
+        mock_client = MagicMock()
+        mock_client.create.side_effect = sdk_error
+        llm.client = mock_client
+
+        with pytest.raises(type(sdk_error)) as exc_info:
+            llm.invoke([HumanMessage(content="test")])
+
+        assert isinstance(exc_info.value, model_error_type)
+        assert exc_info.value.is_retryable is True
+
+
+def test_context_overflow_error_invoke_sync() -> None:
+    """Prompt-too-long errors surface as `ContextOverflowError` on invoke."""
+    llm = _make_llm(max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _api_error(
+        BadRequestError, _CONTEXT_OVERFLOW_MESSAGE, 400
+    )
+    llm.client = mock_client
+
+    with pytest.raises(ContextOverflowError) as exc_info:
+        llm.invoke([HumanMessage(content="test")])
+
+    assert "prompt is too long" in str(exc_info.value)
+    assert isinstance(exc_info.value, FireworksContextOverflowError)
+
+
+async def test_context_overflow_error_invoke_async() -> None:
+    """Prompt-too-long errors surface as `ContextOverflowError` on ainvoke."""
+    llm = _make_llm(max_retries=0)
+    mock_async = MagicMock()
+
+    async def _create(**_kwargs: Any) -> dict[str, Any]:
+        raise _api_error(BadRequestError, _CONTEXT_OVERFLOW_MESSAGE, 400)
+
+    mock_async.create = _create
+    llm.async_client = mock_async
+
+    with pytest.raises(ContextOverflowError) as exc_info:
+        await llm.ainvoke([HumanMessage(content="test")])
+
+    assert "prompt is too long" in str(exc_info.value)
+    assert isinstance(exc_info.value, FireworksContextOverflowError)
+
+
+def test_context_overflow_error_stream_sync() -> None:
+    """Prompt-too-long errors surface as `ContextOverflowError` on stream."""
+    llm = _make_llm(max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _api_error(
+        BadRequestError, _CONTEXT_OVERFLOW_MESSAGE, 400
+    )
+    llm.client = mock_client
+
+    with pytest.raises(ContextOverflowError) as exc_info:
+        list(llm.stream([HumanMessage(content="test")]))
+
+    assert "prompt is too long" in str(exc_info.value)
+    assert isinstance(exc_info.value, FireworksContextOverflowError)
+
+
+async def test_context_overflow_error_stream_async() -> None:
+    """Prompt-too-long errors surface as `ContextOverflowError` on astream."""
+    llm = _make_llm(max_retries=0)
+    mock_async = MagicMock()
+
+    async def _create(**_kwargs: Any) -> Any:
+        async def _failing_agen() -> Any:
+            raise _api_error(BadRequestError, _CONTEXT_OVERFLOW_MESSAGE, 400)
+            yield  # pragma: no cover
+
+        return _failing_agen()
+
+    mock_async.create = _create
+    llm.async_client = mock_async
+
+    with pytest.raises(ContextOverflowError) as exc_info:
+        async for _ in llm.astream([HumanMessage(content="test")]):
+            pass
+
+    assert "prompt is too long" in str(exc_info.value)
+    assert isinstance(exc_info.value, FireworksContextOverflowError)
+
+
+def test_context_overflow_error_backwards_compatibility() -> None:
+    """`ContextOverflowError` is also catchable as `BadRequestError`."""
+    llm = _make_llm(max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _api_error(
+        BadRequestError, _CONTEXT_OVERFLOW_MESSAGE, 400
+    )
+    llm.client = mock_client
+
+    with pytest.raises(BadRequestError) as exc_info:
+        llm.invoke([HumanMessage(content="test")])
+
+    assert isinstance(exc_info.value, BadRequestError)
+    assert isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_unrelated_invalid_request_error_not_promoted() -> None:
+    """Unrelated `BadRequestError`s should not be wrapped."""
+    llm = _make_llm(max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _api_error(
+        BadRequestError, "some other bad request", 400
+    )
+    llm.client = mock_client
+
+    with pytest.raises(BadRequestError) as exc_info:
+        llm.invoke([HumanMessage(content="test")])
+
+    assert not isinstance(exc_info.value, ContextOverflowError)
+
+
+def test_context_overflow_error_carries_response_metadata() -> None:
+    """Promoted `FireworksContextOverflowError` preserves `response`/`body`.
+
+    Downstream catchers that introspect `.response.status_code` rely on this.
+    """
+    llm = _make_llm(max_retries=0)
+    mock_client = MagicMock()
+    mock_client.create.side_effect = _api_error(
+        BadRequestError, _CONTEXT_OVERFLOW_MESSAGE, 400
+    )
+    llm.client = mock_client
+
+    with pytest.raises(FireworksContextOverflowError) as exc_info:
+        llm.invoke([HumanMessage(content="test")])
+
+    assert exc_info.value.response.status_code == 400
+    assert exc_info.value.body is None
+
+
+def test_sdk_clients_constructed_with_max_retries_zero(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`Fireworks` / `AsyncFireworks` must be built with `max_retries=0`.
+
+    Retries are owned by `_create_retry_decorator`; if this kwarg is lost,
+    every retryable failure would be retried by both layers.
+    """
+    sync_mock = MagicMock()
+    async_mock = MagicMock()
+    monkeypatch.setattr("langchain_fireworks.chat_models.Fireworks", sync_mock)
+    monkeypatch.setattr("langchain_fireworks.chat_models.AsyncFireworks", async_mock)
+
+    ChatFireworks(model=MODEL_NAME, api_key="fake-key")  # type: ignore[arg-type]
+
+    assert sync_mock.call_args.kwargs["max_retries"] == 0
+    assert async_mock.call_args.kwargs["max_retries"] == 0
+
+
+def test_request_timeout_tuple_normalized_to_httpx_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """0.x's `(connect, read)` tuple still works after the 1.x migration.
+
+    1.x's SDK only accepts `float | httpx.Timeout | None`. The validator
+    normalizes the legacy tuple so existing user code keeps working.
+    """
+    sync_mock = MagicMock()
+    async_mock = MagicMock()
+    monkeypatch.setattr("langchain_fireworks.chat_models.Fireworks", sync_mock)
+    monkeypatch.setattr("langchain_fireworks.chat_models.AsyncFireworks", async_mock)
+
+    ChatFireworks(
+        model=MODEL_NAME,
+        api_key="fake-key",  # type: ignore[arg-type]
+        timeout=(5.0, 30.0),
+    )
+
+    forwarded = sync_mock.call_args.kwargs["timeout"]
+    assert isinstance(forwarded, httpx.Timeout)
+    assert forwarded.connect == 5.0
+    assert forwarded.read == 30.0
+    assert async_mock.call_args.kwargs["timeout"] == forwarded
+
+
+def test_langsmith_gateway_true(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    llm = _make_model()
+    assert llm.fireworks_api_base == "https://gateway.smith.langchain.com/fireworks"
+
+
+def test_langsmith_gateway_false(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "false")
+    monkeypatch.delenv("FIREWORKS_API_BASE", raising=False)
+    llm = _make_model()
+    assert llm.fireworks_api_base is None
+
+
+def test_langsmith_gateway_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.delenv("FIREWORKS_API_BASE", raising=False)
+    llm = _make_model()
+    assert llm.fireworks_api_base is None
+
+
+def test_langsmith_gateway_custom_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "https://my-gateway.example.com/")
+    monkeypatch.delenv("FIREWORKS_API_BASE", raising=False)
+    llm = _make_model()
+    assert llm.fireworks_api_base == "https://my-gateway.example.com/fireworks"
+
+
+def test_langsmith_gateway_provider_env_overrides_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("FIREWORKS_API_BASE", "https://api.fireworks.ai/inference/v1")
+    llm = _make_model()
+    assert llm.fireworks_api_base == "https://api.fireworks.ai/inference/v1"
+
+
+def test_langsmith_gateway_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.delenv("FIREWORKS_API_KEY", raising=False)
+    llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
+    assert llm.fireworks_api_key.get_secret_value() == "gateway-key"
+
+
+def test_langsmith_gateway_api_key_not_used_without_gateway(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("LANGSMITH_GATEWAY", raising=False)
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("FIREWORKS_API_KEY", "provider-key")
+    llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
+    assert llm.fireworks_api_key.get_secret_value() == "provider-key"
+
+
+def test_langsmith_gateway_api_key_overrides_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("FIREWORKS_API_KEY", "provider-key")
+    llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
+    assert llm.fireworks_api_key.get_secret_value() == "gateway-key"
+
+
+@pytest.mark.parametrize(
+    ("method", "streaming", "candidate_count"),
+    [
+        ("invoke", False, 1),
+        ("ainvoke", False, 1),
+        ("invoke", True, 1),
+        ("ainvoke", True, 1),
+        ("stream", True, 1),
+        ("astream", True, 1),
+        ("generate", False, 1),
+        ("agenerate", False, 1),
+        ("generate", False, 2),
+        ("agenerate", False, 2),
+    ],
+)
+@pytest.mark.parametrize("response_model", ["returned-model", None, ""])
+@pytest.mark.parametrize("include_usage", [False, True])
+async def test_response_model_metadata_through_sdk_http_transport(
+    method: str,
+    response_model: str | None,
+    candidate_count: int,
+    *,
+    streaming: bool,
+    include_usage: bool,
+) -> None:
+    """Report the served model, not the requested deployment, even without usage."""
+    requests: list[dict[str, Any]] = []
+    usage = {"prompt_tokens": 5, "completion_tokens": 2, "total_tokens": 7}
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        requests.append(body)
+        common = {"id": "completion_test", "created": 0}
+        # Omit the field entirely for the fallback case, as older APIs may do.
+        model_fields = {"model": response_model} if response_model is not None else {}
+        if body.get("stream"):
+            chunks: list[dict[str, Any]] = [
+                {
+                    **model_fields,
+                    "choices": [
+                        {"index": 0, "delta": {"role": "assistant", "content": "Hel"}}
+                    ],
+                },
+                {
+                    **model_fields,
+                    "choices": [{"index": 0, "delta": {"content": "lo"}}],
+                },
+                {"choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]},
+            ]
+            if include_usage:
+                chunks.append({"choices": [], "usage": usage})
+            events = [
+                "data: "
+                + json.dumps({**common, "object": "chat.completion.chunk", **chunk})
+                + "\n\n"
+                for chunk in chunks
+            ]
+            return httpx.Response(
+                200,
+                headers={"content-type": "text/event-stream"},
+                content="".join([*events, "data: [DONE]\n\n"]),
+            )
+        return httpx.Response(
+            200,
+            json={
+                **common,
+                **model_fields,
+                "object": "chat.completion",
+                "choices": [
+                    {
+                        "index": index,
+                        "finish_reason": "stop",
+                        "message": {"role": "assistant", "content": "Hello"},
+                    }
+                    for index in range(candidate_count)
+                ],
+                **({"usage": usage} if include_usage else {}),
+            },
+        )
+
+    transport = httpx.MockTransport(respond)
+    with Fireworks(
+        api_key="fake-key", http_client=httpx.Client(transport=transport), max_retries=0
+    ) as sdk:
+        async with AsyncFireworks(
+            api_key="fake-key",
+            http_client=httpx.AsyncClient(transport=transport),
+            max_retries=0,
+        ) as async_sdk:
+            model = _make_model(
+                client=sdk.chat.completions,
+                async_client=async_sdk.chat.completions,
+                streaming=streaming,
+            )
+            expected_model = response_model or MODEL_NAME
+            response: BaseMessage
+            if method == "stream":
+                chunks = list(model.stream("Hello"))
+                response = sum(chunks[1:], chunks[0])
+            elif method == "astream":
+                chunks = [chunk async for chunk in model.astream("Hello")]
+                response = sum(chunks[1:], chunks[0])
+            elif method in ("generate", "agenerate"):
+                messages: list[list[BaseMessage]] = [
+                    [HumanMessage(content="Hello")]
+                ] * 2
+                result = (
+                    await model.agenerate(messages)
+                    if method == "agenerate"
+                    else model.generate(messages)
+                )
+                assert result.llm_output is not None
+                assert result.llm_output["model_name"] == expected_model
+                assert result.llm_output["token_usage"] == (
+                    {key: value * 2 for key, value in usage.items()}
+                    if include_usage
+                    else {}
+                )
+                for generations in result.generations:
+                    assert len(generations) == candidate_count
+                    for candidate in generations:
+                        assert isinstance(candidate, ChatGeneration)
+                        assert (
+                            candidate.message.response_metadata["model_name"]
+                            == expected_model
+                        )
+                generation = result.generations[0][0]
+                assert isinstance(generation, ChatGeneration)
+                response = generation.message
+            elif method == "ainvoke":
+                response = await model.ainvoke("Hello")
+            else:
+                response = model.invoke("Hello")
+            assert response.content == "Hello"
+            assert response.response_metadata["model_name"] == expected_model
+            assert isinstance(response, (AIMessage, AIMessageChunk))
+            assert response.usage_metadata == (
+                {"input_tokens": 5, "output_tokens": 2, "total_tokens": 7}
+                if include_usage
+                else None
+            )
+    assert all(request["model"] == MODEL_NAME for request in requests)
+
+
+_DUPLICATE_USAGE = {"prompt_tokens": 5, "completion_tokens": 2, "total_tokens": 7}
+_DUPLICATE_USAGE_STREAM: list[dict[str, Any]] = [
+    {
+        "model": "m",
+        "choices": [{"index": 0, "delta": {"role": "assistant", "content": "hi"}}],
+    },
+    {
+        "model": "m",
+        "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+        "usage": _DUPLICATE_USAGE,
+    },
+    {"model": "m", "choices": [], "usage": _DUPLICATE_USAGE},
+]
+
+
+def _assert_usage_reported_once(chunks: list[AIMessageChunk]) -> None:
+    assert sum(1 for c in chunks if c.usage_metadata) == 1
+    full = chunks[0]
+    for c in chunks[1:]:
+        full = full + c
+    assert full.usage_metadata == {
+        "input_tokens": 5,
+        "output_tokens": 2,
+        "total_tokens": 7,
+    }
+
+
+def test_stream_reports_usage_once_when_sent_twice() -> None:
+    """Usage on both the finish chunk and a trailing chunk is not double counted."""
+    llm = _make_llm(max_retries=0)
+    llm.client = MagicMock(create=MagicMock(return_value=iter(_DUPLICATE_USAGE_STREAM)))
+
+    chunks = [c for c in llm.stream("hi") if isinstance(c, AIMessageChunk)]
+
+    _assert_usage_reported_once(chunks)
+
+
+async def test_astream_reports_usage_once_when_sent_twice() -> None:
+    """Async variant of `test_stream_reports_usage_once_when_sent_twice`."""
+
+    async def _astream() -> Any:
+        for chunk in _DUPLICATE_USAGE_STREAM:
+            yield chunk
+
+    llm = _make_llm(max_retries=0)
+    llm.async_client = MagicMock(create=AsyncMock(return_value=_astream()))
+
+    chunks = [c async for c in llm.astream("hi") if isinstance(c, AIMessageChunk)]
+
+    _assert_usage_reported_once(chunks)
+
+
+def test_stream_keeps_last_usage_when_reports_differ() -> None:
+    """A partial early report never wins over the final one."""
+    stream = [
+        {
+            "model": "m",
+            "choices": [{"index": 0, "delta": {"role": "assistant", "content": "a"}}],
+            "usage": {"prompt_tokens": 5, "completion_tokens": 1, "total_tokens": 6},
+        },
+        {
+            "model": "m",
+            "choices": [
+                {"index": 0, "delta": {"content": "b"}, "finish_reason": "stop"}
+            ],
+        },
+        {"model": "m", "choices": [], "usage": _DUPLICATE_USAGE},
+    ]
+    llm = _make_llm(max_retries=0)
+    llm.client = MagicMock(create=MagicMock(return_value=iter(stream)))
+
+    chunks = [c for c in llm.stream("hi") if isinstance(c, AIMessageChunk)]
+
+    _assert_usage_reported_once(chunks)

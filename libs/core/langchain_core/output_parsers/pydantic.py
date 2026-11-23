@@ -1,7 +1,7 @@
 """Output parsers using Pydantic."""
 
 import json
-from typing import Annotated, Generic, Literal, overload
+from typing import Annotated, Any, Generic, Literal, overload
 
 import pydantic
 from pydantic import SkipValidation
@@ -22,20 +22,22 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     pydantic_object: Annotated[type[TBaseModel], SkipValidation()]
     """The Pydantic model to parse."""
 
-    def _parse_obj(self, obj: dict) -> TBaseModel:
+    def _parse_obj(self, obj: Any) -> TBaseModel:
         try:
             if issubclass(self.pydantic_object, pydantic.BaseModel):
                 return self.pydantic_object.model_validate(obj)
             if issubclass(self.pydantic_object, pydantic.v1.BaseModel):
                 return self.pydantic_object.parse_obj(obj)
-            msg = f"Unsupported model version for PydanticOutputParser: \
-                        {self.pydantic_object.__class__}"
+            msg = (  # type: ignore[unreachable]
+                "Unsupported model version for PydanticOutputParser: "
+                f"{self.pydantic_object.__class__}"
+            )
             raise OutputParserException(msg)
         except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
             raise self._parser_exception(e, obj) from e
 
     def _parser_exception(
-        self, e: Exception, json_object: dict
+        self, e: Exception, json_object: Any
     ) -> OutputParserException:
         json_string = json.dumps(json_object, ensure_ascii=False)
         name = self.pydantic_object.__name__
@@ -60,18 +62,20 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON objects.
-                If `True`, the output will be a JSON object containing
-                all the keys that have been returned so far.
+
+                If `True`, the output will be a JSON object containing all the keys that
+                have been returned so far.
 
         Raises:
-            OutputParserException: If the result is not valid JSON
-                or does not conform to the Pydantic model.
+            ModelRefusalError: If the model refused to answer.
+            OutputParserException: If the result is not valid JSON or does not conform
+                to the Pydantic model.
 
         Returns:
             The parsed Pydantic object.
         """
         try:
-            json_object = super().parse_result(result)
+            json_object = super().parse_result(result, partial=partial)
             return self._parse_obj(json_object)
         except OutputParserException:
             if partial:

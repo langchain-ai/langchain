@@ -78,7 +78,7 @@ class ReActJsonSingleInputOutputParser(AgentOutputParser):
             if not includes_answer:
                 msg = f"Could not parse LLM output: {text}"
                 raise OutputParserException(msg) from e
-            output = text.split(FINAL_ANSWER_ACTION)[-1].strip()
+            output = text.rsplit(FINAL_ANSWER_ACTION, maxsplit=1)[-1].strip()
             return AgentFinish({"output": output}, text)
 
     @property

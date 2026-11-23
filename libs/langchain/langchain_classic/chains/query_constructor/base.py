@@ -268,7 +268,7 @@ def get_query_constructor_prompt(
 @deprecated(
     since="0.2.13",
     alternative="load_query_constructor_runnable",
-    removal="1.0",
+    removal="2.0.0",
 )
 def load_query_constructor_chain(
     llm: BaseLanguageModel,

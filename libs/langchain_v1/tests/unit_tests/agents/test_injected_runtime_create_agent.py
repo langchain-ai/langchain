@@ -16,24 +16,27 @@ configurations.
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from langgraph.prebuilt import InjectedStore
 from langgraph.store.memory import InMemoryStore
+from typing_extensions import override
 
 from langchain.agents import create_agent
-from langchain.agents.middleware.types import AgentMiddleware, AgentState
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, InputAgentState
 from langchain.tools import InjectedState, ToolRuntime
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
-from .model import FakeToolCallingModel
+if TYPE_CHECKING:
+    from langgraph.runtime import Runtime
 
 
 def test_tool_runtime_basic_injection() -> None:
     """Test basic ToolRuntime injection in tools with create_agent."""
     # Track what was injected
-    injected_data = {}
+    injected_data: dict[str, Any] = {}
 
     @tool
     def runtime_tool(x: int, runtime: ToolRuntime) -> str:
@@ -45,6 +48,8 @@ def test_tool_runtime_basic_injection() -> None:
         injected_data["store"] = runtime.store
         injected_data["stream_writer"] = runtime.stream_writer
         return f"Processed {x}"
+
+    assert runtime_tool.args
 
     agent = create_agent(
         model=FakeToolCallingModel(
@@ -79,7 +84,7 @@ def test_tool_runtime_basic_injection() -> None:
 
 async def test_tool_runtime_async_injection() -> None:
     """Test ToolRuntime injection works with async tools."""
-    injected_data = {}
+    injected_data: dict[str, Any] = {}
 
     @tool
     async def async_runtime_tool(x: int, runtime: ToolRuntime) -> str:
@@ -194,7 +199,7 @@ def test_tool_runtime_with_store() -> None:
 
 def test_tool_runtime_with_multiple_tools() -> None:
     """Test multiple tools can all access ToolRuntime."""
-    call_log = []
+    call_log: list[tuple[str, str | None, int | str]] = []
 
     @tool
     def tool_a(x: int, runtime: ToolRuntime) -> str:
@@ -241,7 +246,7 @@ def test_tool_runtime_with_multiple_tools() -> None:
 
 def test_tool_runtime_config_access() -> None:
     """Test tools can access config through ToolRuntime."""
-    config_data = {}
+    config_data: dict[str, Any] = {}
 
     @tool
     def config_tool(x: int, runtime: ToolRuntime) -> str:
@@ -250,9 +255,10 @@ def test_tool_runtime_config_access() -> None:
         config_data["has_configurable"] = (
             "configurable" in runtime.config if runtime.config else False
         )
-        # Config may have run_id or other fields depending on execution context
         if runtime.config:
             config_data["config_keys"] = list(runtime.config.keys())
+            config_data["recursion_limit"] = runtime.config.get("recursion_limit")
+            config_data["metadata"] = runtime.config.get("metadata")
         return f"Config accessed for {x}"
 
     agent = create_agent(
@@ -266,13 +272,26 @@ def test_tool_runtime_config_access() -> None:
         system_prompt="You are a helpful assistant.",
     )
 
-    result = agent.invoke({"messages": [HumanMessage("Test config")]})
+    result = agent.invoke(
+        {"messages": [HumanMessage("Test config")]},
+    )
 
-    # Verify config was accessible
     assert config_data["config_exists"] is True
     assert "config_keys" in config_data
+    assert config_data["recursion_limit"] == 9999
+    assert config_data["metadata"]["ls_integration"] == "langchain_create_agent"
 
-    # Verify tool executed
+    tool_message = result["messages"][2]
+    assert isinstance(tool_message, ToolMessage)
+    assert tool_message.content == "Config accessed for 5"
+
+    result = agent.invoke(
+        {"messages": [HumanMessage("Test config again")]},
+        config={"recursion_limit": 7},
+    )
+
+    assert config_data["recursion_limit"] == 7
+
     tool_message = result["messages"][2]
     assert isinstance(tool_message, ToolMessage)
     assert tool_message.content == "Config accessed for 5"
@@ -281,7 +300,10 @@ def test_tool_runtime_config_access() -> None:
 def test_tool_runtime_with_custom_state() -> None:
     """Test ToolRuntime works with custom state schemas."""
 
-    class CustomState(AgentState):
+    class CustomState(AgentState[Any]):
+        custom_field: str
+
+    class CustomInputState(InputAgentState):
         custom_field: str
 
     runtime_state = {}
@@ -308,10 +330,10 @@ def test_tool_runtime_with_custom_state() -> None:
     )
 
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("Test custom state")],
-            "custom_field": "custom_value",
-        }
+        CustomInputState(
+            messages=[HumanMessage("Test custom state")],
+            custom_field="custom_value",
+        )
     )
 
     # Verify custom field was accessible
@@ -425,6 +447,7 @@ def test_tool_runtime_error_handling() -> None:
     @tool
     def safe_tool(x: int, runtime: ToolRuntime) -> str:
         """Tool that handles errors safely."""
+        assert isinstance(runtime, ToolRuntime)
         try:
             if x == 0:
                 return "Error: Cannot process zero"
@@ -463,11 +486,13 @@ def test_tool_runtime_with_middleware() -> None:
     runtime_calls = []
 
     class TestMiddleware(AgentMiddleware):
-        def before_model(self, state, runtime) -> dict[str, Any]:
+        @override
+        def before_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
             middleware_calls.append("before_model")
             return {}
 
-        def after_model(self, state, runtime) -> dict[str, Any]:
+        @override
+        def after_model(self, state: AgentState[Any], runtime: Runtime) -> dict[str, Any]:
             middleware_calls.append("after_model")
             return {}
 
@@ -514,11 +539,7 @@ def test_tool_runtime_type_hints() -> None:
     def typed_runtime_tool(x: int, runtime: ToolRuntime) -> str:
         """Tool with runtime access."""
         # Access state dict - verify we can access standard state fields
-        if isinstance(runtime.state, dict):
-            # Count messages in state
-            typed_runtime["message_count"] = len(runtime.state.get("messages", []))
-        else:
-            typed_runtime["message_count"] = len(getattr(runtime.state, "messages", []))
+        typed_runtime["message_count"] = len(runtime.state.get("messages", []))
         return f"Typed: {x}"
 
     agent = create_agent(
@@ -545,7 +566,7 @@ def test_tool_runtime_type_hints() -> None:
 
 def test_tool_runtime_name_based_injection() -> None:
     """Test that parameter named 'runtime' gets injected without type annotation."""
-    injected_data = {}
+    injected_data: dict[str, Any] = {}
 
     @tool
     def name_based_tool(x: int, runtime: Any) -> str:
@@ -600,7 +621,11 @@ def test_combined_injected_state_runtime_store() -> None:
     injected_data = {}
 
     # Custom state schema with additional fields
-    class CustomState(AgentState):
+    class CustomState(AgentState[Any]):
+        user_id: str
+        session_id: str
+
+    class CustomInputState(InputAgentState):
         user_id: str
         session_id: str
 
@@ -666,6 +691,7 @@ def test_combined_injected_state_runtime_store() -> None:
 
     # Verify the tool's args schema only includes LLM-controlled parameters
     tool_args_schema = multi_injection_tool.args_schema
+    assert isinstance(tool_args_schema, dict)
     assert "location" in tool_args_schema["properties"]
     assert "state" not in tool_args_schema["properties"]
     assert "runtime" not in tool_args_schema["properties"]
@@ -673,11 +699,11 @@ def test_combined_injected_state_runtime_store() -> None:
 
     # Invoke with custom state fields
     result = agent.invoke(
-        {
-            "messages": [HumanMessage("What's the weather like?")],
-            "user_id": "user_42",
-            "session_id": "session_abc123",
-        }
+        CustomInputState(
+            messages=[HumanMessage("What's the weather like?")],
+            user_id="user_42",
+            session_id="session_abc123",
+        )
     )
 
     # Verify tool executed successfully
@@ -717,7 +743,11 @@ async def test_combined_injected_state_runtime_store_async() -> None:
     injected_data = {}
 
     # Custom state schema
-    class CustomState(AgentState):
+    class CustomState(AgentState[Any]):
+        api_key: str
+        request_id: str
+
+    class CustomInputState(InputAgentState):
         api_key: str
         request_id: str
 
@@ -791,6 +821,7 @@ async def test_combined_injected_state_runtime_store_async() -> None:
 
     # Verify the tool's args schema only includes LLM-controlled parameters
     tool_args_schema = async_multi_injection_tool.args_schema
+    assert isinstance(tool_args_schema, dict)
     assert "query" in tool_args_schema["properties"]
     assert "max_results" in tool_args_schema["properties"]
     assert "state" not in tool_args_schema["properties"]
@@ -799,11 +830,11 @@ async def test_combined_injected_state_runtime_store_async() -> None:
 
     # Invoke async
     result = await agent.ainvoke(
-        {
-            "messages": [HumanMessage("Search for something")],
-            "api_key": "sk-test-key-xyz",
-            "request_id": "req_999",
-        }
+        CustomInputState(
+            messages=[HumanMessage("Search for something")],
+            api_key="sk-test-key-xyz",
+            request_id="req_999",
+        )
     )
 
     # Verify tool executed successfully

@@ -1,14 +1,16 @@
 """Internal utilities for the in memory implementation of `VectorStore`.
 
-These are part of a private API, and users should not use them directly
-as they can change without notice.
+!!! warning
+
+    These are part of a private API, and users should not use them directly as they can
+    change without notice.
 """
 
 from __future__ import annotations
 
 import logging
 import warnings
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 try:
     import numpy as np
@@ -25,24 +27,28 @@ except ImportError:
     _HAS_SIMSIMD = False
 
 if TYPE_CHECKING:
-    Matrix = list[list[float]] | list[np.ndarray] | np.ndarray
+    import numpy.typing as npt
+
+    Matrix = (
+        list[list[float]] | list[npt.NDArray[np.floating]] | npt.NDArray[np.floating]
+    )
 
 logger = logging.getLogger(__name__)
 
 
-def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
+def _cosine_similarity(x: Matrix, y: Matrix) -> npt.NDArray[np.floating]:
     """Row-wise cosine similarity between two equal-width matrices.
 
     Args:
-        x: A matrix of shape (n, m).
-        y: A matrix of shape (k, m).
+        x: A matrix of shape `(n, m)`.
+        y: A matrix of shape `(k, m)`.
 
     Returns:
-        A matrix of shape (n, k) where each element (i, j) is the cosine similarity
-        between the ith row of X and the jth row of Y.
+        A matrix of shape `(n, k)` where each element `(i, j)` is the cosine similarity
+            between the `i`th row of `x` and the `j`th row of `y`.
 
     Raises:
-        ValueError: If the number of columns in X and Y are not the same.
+        ValueError: If the number of columns in `x` and `y` are not the same.
         ImportError: If numpy is not installed.
     """
     if not _HAS_NUMPY:
@@ -89,12 +95,14 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
         y_norm = np.linalg.norm(y, axis=1)
         # Ignore divide by zero errors run time warnings as those are handled below.
         with np.errstate(divide="ignore", invalid="ignore"):
-            similarity = np.dot(x, y.T) / np.outer(x_norm, y_norm)
+            similarity: npt.NDArray[np.floating] = np.dot(x, y.T) / np.outer(
+                x_norm, y_norm
+            )
         if np.isnan(similarity).all():
             msg = "NaN values found, please remove the NaN values and try again"
             raise ValueError(msg) from None
         similarity[np.isnan(similarity) | np.isinf(similarity)] = 0.0
-        return cast("np.ndarray", similarity)
+        return similarity
 
     x = np.array(x, dtype=np.float32)
     y = np.array(y, dtype=np.float32)
@@ -102,8 +110,8 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
 
 
 def maximal_marginal_relevance(
-    query_embedding: np.ndarray,
-    embedding_list: list,
+    query_embedding: npt.NDArray[np.floating],
+    embedding_list: list[list[float]],
     lambda_mult: float = 0.5,
     k: int = 4,
 ) -> list[int]:

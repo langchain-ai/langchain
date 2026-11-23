@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import os
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, cast
+from typing import TYPE_CHECKING, Annotated, Any, NotRequired, cast
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -22,7 +22,7 @@ from langchain.agents.middleware.types import (
 from langchain.tools import ToolRuntime, tool
 from langchain_core.messages import SystemMessage, ToolMessage
 from langgraph.types import Command
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Sequence
@@ -93,6 +93,31 @@ class AnthropicToolsState(AgentState):
     """Virtual file system for memory tools."""
 
 
+def _is_within_allowed_prefix(normalized: str, prefixes: Sequence[str]) -> bool:
+    """Check whether a normalized path lies within an allowed prefix directory.
+
+    Uses a segment-boundary comparison rather than a raw string prefix test so
+    that sibling directories sharing a textual prefix cannot escape the allowed
+    directory. For example, with prefix `/memories` the path `/memories2/evil.txt`
+    is rejected because it is not the prefix itself nor a descendant of it.
+
+    Args:
+        normalized: A normalized, forward-slash, absolute-style path.
+        prefixes: Allowed path prefixes to compare against.
+
+    Returns:
+        `True` if `normalized` exactly equals one of the prefix directories or is
+        contained within one of them, `False` otherwise.
+    """
+    for prefix in prefixes:
+        # Normalize the prefix the same way the path was normalized so the
+        # comparison is consistent (drop any trailing slash for the boundary).
+        prefix_dir = prefix.rstrip("/")
+        if normalized == prefix_dir or normalized.startswith(f"{prefix_dir}/"):
+            return True
+    return False
+
+
 def _validate_path(path: str, *, allowed_prefixes: Sequence[str] | None = None) -> str:
     """Validate and normalize file path for security.
 
@@ -122,8 +147,8 @@ def _validate_path(path: str, *, allowed_prefixes: Sequence[str] | None = None) 
         normalized = f"/{normalized}"
 
     # Check allowed prefixes if specified
-    if allowed_prefixes is not None and not any(
-        normalized.startswith(prefix) for prefix in allowed_prefixes
+    if allowed_prefixes is not None and not _is_within_allowed_prefix(
+        normalized, allowed_prefixes
     ):
         msg = f"Path must start with one of {allowed_prefixes}: {path}"
         raise ValueError(msg)
@@ -215,7 +240,9 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
                 Command for state update or string result.
             """
             # Build args dict for handler methods
-            args: dict[str, Any] = {"path": path}
+            # `old_path` is populated for `_handle_rename`, which reads the source
+            # path under that key instead of `path`.
+            args: dict[str, Any] = {"path": path, "old_path": path}
             if file_text is not None:
                 args["file_text"] = file_text
             if old_str is not None:
@@ -381,7 +408,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         existing = files.get(normalized_path)
 
         # Create file data
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         created_at = existing["created_at"] if existing else now
 
         content_lines = file_text.split("\n")
@@ -434,7 +461,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         new_lines = new_content.split("\n")
 
         # Update file
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         return Command(
             update={
@@ -481,7 +508,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
         )
 
         # Update file
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
 
         return Command(
             update={
@@ -548,7 +575,7 @@ class _StateClaudeFileToolMiddleware(AgentMiddleware):
             raise ValueError(msg)
 
         # Update timestamp
-        now = datetime.now(timezone.utc).isoformat()
+        now = datetime.now(UTC).isoformat()
         file_data_copy = file_data.copy()
         file_data_copy["modified_at"] = now
 
@@ -717,7 +744,9 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
                 Command for message update or string result.
             """
             # Build args dict for handler methods
-            args: dict[str, Any] = {"path": path}
+            # `old_path` is populated for `_handle_rename`, which reads the source
+            # path under that key instead of `path`.
+            args: dict[str, Any] = {"path": path, "old_path": path}
             if file_text is not None:
                 args["file_text"] = file_text
             if old_str is not None:
@@ -847,14 +876,11 @@ class _FilesystemClaudeFileToolMiddleware(AgentMiddleware):
 
         # Check allowed prefixes
         virtual_path = "/" + str(full_path.relative_to(self.root_path))
-        if self.allowed_prefixes:
-            allowed = any(
-                virtual_path.startswith(prefix) or virtual_path == prefix.rstrip("/")
-                for prefix in self.allowed_prefixes
-            )
-            if not allowed:
-                msg = f"Path must start with one of: {self.allowed_prefixes}"
-                raise ValueError(msg)
+        if self.allowed_prefixes and not _is_within_allowed_prefix(
+            virtual_path, self.allowed_prefixes
+        ):
+            msg = f"Path must start with one of: {self.allowed_prefixes}"
+            raise ValueError(msg)
 
         return full_path
 

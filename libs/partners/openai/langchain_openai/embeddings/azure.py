@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from typing import cast
+from typing import Self, cast
 
 import openai
 from langchain_core.utils import from_env, secret_from_env
 from pydantic import Field, SecretStr, model_validator
-from typing_extensions import Self
 
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 
@@ -200,12 +199,22 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
             "default_headers": {
-                **(self.default_headers or {}),
                 "User-Agent": "langchain-partner-python-azure-openai",
+                **(self.default_headers or {}),
             },
             "default_query": self.default_query,
         }
-        if not self.client:
+        if (
+            self.azure_ad_token
+            or self.azure_ad_token_provider
+            or self.azure_ad_async_token_provider
+        ):
+            client_params["api_key"] = None
+        if not self.client and (
+            not self.azure_ad_async_token_provider
+            or self.azure_ad_token
+            or self.azure_ad_token_provider
+        ):
             sync_specific: dict = {"http_client": self.http_client}
             self.client = openai.AzureOpenAI(
                 **client_params,  # type: ignore[arg-type]

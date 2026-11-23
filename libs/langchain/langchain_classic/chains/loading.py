@@ -676,11 +676,8 @@ type_to_loader_dict = {
 
 @deprecated(
     since="0.2.13",
-    message=(
-        "This function is deprecated and will be removed in langchain 1.0. "
-        "At that point chains must be imported from their respective modules."
-    ),
-    removal="1.0",
+    removal="2.0.0",
+    addendum="Chains must be imported from their respective modules.",
 )
 def load_chain_from_config(config: dict, **kwargs: Any) -> Chain:
     """Load chain from Config Dict."""
@@ -699,11 +696,8 @@ def load_chain_from_config(config: dict, **kwargs: Any) -> Chain:
 
 @deprecated(
     since="0.2.13",
-    message=(
-        "This function is deprecated and will be removed in langchain 1.0. "
-        "At that point chains must be imported from their respective modules."
-    ),
-    removal="1.0",
+    removal="2.0.0",
+    addendum="Chains must be imported from their respective modules.",
 )
 def load_chain(path: str | Path, **kwargs: Any) -> Chain:
     """Unified method for loading a chain from LangChainHub or local fs."""

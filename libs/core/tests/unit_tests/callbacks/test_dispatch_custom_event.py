@@ -1,4 +1,3 @@
-import sys
 import uuid
 from typing import Any
 from uuid import UUID
@@ -60,19 +59,13 @@ async def test_async_custom_event_root_dispatch() -> None:
         await adispatch_custom_event("event1", {"x": 1})
 
 
-IS_GTE_3_11 = sys.version_info >= (3, 11)
-
-
-@pytest.mark.skipif(not IS_GTE_3_11, reason="Requires Python >=3.11")
 async def test_async_custom_event_implicit_config() -> None:
     """Test dispatch without passing config explicitly."""
     callback = AsyncCustomCallbackHandler()
 
     run_id = uuid.UUID(int=7)
 
-    # Typing not working well with RunnableLambda when used as
-    # a decorator for async functions
-    @RunnableLambda  # type: ignore[arg-type]
+    @RunnableLambda
     async def foo(x: int, config: RunnableConfig) -> int:
         assert "callbacks" in config
         await adispatch_custom_event("event1", {"x": x})
@@ -80,7 +73,7 @@ async def test_async_custom_event_implicit_config() -> None:
         return x
 
     await foo.ainvoke(
-        1,  # type: ignore[arg-type]
+        1,
         {"callbacks": [callback], "run_id": run_id},
     )
 
@@ -96,16 +89,14 @@ async def test_async_callback_manager() -> None:
 
     run_id = uuid.UUID(int=7)
 
-    # Typing not working well with RunnableLambda when used as
-    # a decorator for async functions
-    @RunnableLambda  # type: ignore[arg-type]
+    @RunnableLambda
     async def foo(x: int, config: RunnableConfig) -> int:
         await adispatch_custom_event("event1", {"x": x}, config=config)
         await adispatch_custom_event("event2", {"x": x}, config=config)
         return x
 
     await foo.ainvoke(
-        1,  # type: ignore[arg-type]
+        1,
         {"callbacks": [callback], "run_id": run_id},
     )
 

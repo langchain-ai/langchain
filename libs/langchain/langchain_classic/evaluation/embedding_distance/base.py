@@ -2,7 +2,7 @@
 
 import functools
 import logging
-from enum import Enum
+from enum import StrEnum
 from importlib import util
 from typing import Any
 
@@ -60,7 +60,7 @@ def _embedding_factory() -> Embeddings:
         from langchain_openai import OpenAIEmbeddings
     except ImportError:
         try:
-            from langchain_community.embeddings.openai import (  # type: ignore[no-redef]
+            from langchain_community.embeddings.openai import (  # type: ignore[no-redef,unused-ignore]
                 OpenAIEmbeddings,
             )
         except ImportError as e:
@@ -72,7 +72,7 @@ def _embedding_factory() -> Embeddings:
     return OpenAIEmbeddings()
 
 
-class EmbeddingDistance(str, Enum):
+class EmbeddingDistance(StrEnum):
     """Embedding Distance Metric.
 
     Attributes:
@@ -121,7 +121,7 @@ class _EmbeddingDistanceChainMixin(Chain):
             pass
 
         try:
-            from langchain_community.embeddings.openai import (  # type: ignore[no-redef]
+            from langchain_community.embeddings.openai import (  # type: ignore[no-redef,unused-ignore]
                 OpenAIEmbeddings,
             )
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import builtins
 import contextlib
 from abc import ABC, abstractmethod
 from typing import (
@@ -14,6 +15,7 @@ from typing import (
 
 from typing_extensions import override
 
+from langchain_core._api import deprecated
 from langchain_core.language_models import LanguageModelOutput
 from langchain_core.messages import AnyMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, Generation
@@ -21,6 +23,8 @@ from langchain_core.runnables import Runnable, RunnableConfig, RunnableSerializa
 from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
+    import builtins
+
     from langchain_core.prompt_values import PromptValue
 
 T = TypeVar("T")
@@ -35,10 +39,13 @@ class BaseLLMOutputParser(ABC, Generic[T]):
         """Parse a list of candidate model `Generation` objects into a specific format.
 
         Args:
-            result: A list of `Generation` to be parsed. The `Generation` objects are
-                assumed to be different candidate outputs for a single model input.
-            partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results.
+            result: A list of `Generation` to be parsed.
+
+                The `Generation` objects are assumed to be different candidate outputs
+                for a single model input.
+            partial: Whether to parse the output as a partial result.
+
+                This is useful for parsers that can parse partial results.
 
         Returns:
             Structured output.
@@ -47,22 +54,25 @@ class BaseLLMOutputParser(ABC, Generic[T]):
     async def aparse_result(
         self, result: list[Generation], *, partial: bool = False
     ) -> T:
-        """Async parse a list of candidate model `Generation` objects into a specific format.
+        """Parse a list of candidate model `Generation` objects into a specific format.
 
         Args:
-            result: A list of `Generation` to be parsed. The Generations are assumed
-                to be different candidate outputs for a single model input.
-            partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results.
+            result: A list of `Generation` to be parsed.
+
+                The Generations are assumed to be different candidate outputs for a
+                single model input.
+            partial: Whether to parse the output as a partial result.
+
+                This is useful for parsers that can parse partial results.
 
         Returns:
             Structured output.
-        """  # noqa: E501
+        """
         return await run_in_executor(None, self.parse_result, result, partial=partial)
 
 
 class BaseGenerationOutputParser(
-    BaseLLMOutputParser, RunnableSerializable[LanguageModelOutput, T]
+    BaseLLMOutputParser[T], RunnableSerializable[LanguageModelOutput, T]
 ):
     """Base class to parse the output of an LLM call."""
 
@@ -128,7 +138,7 @@ class BaseGenerationOutputParser(
 
 
 class BaseOutputParser(
-    BaseLLMOutputParser, RunnableSerializable[LanguageModelOutput, T]
+    BaseLLMOutputParser[T], RunnableSerializable[LanguageModelOutput, T]
 ):
     """Base class to parse the output of an LLM call.
 
@@ -241,13 +251,16 @@ class BaseOutputParser(
         """Parse a list of candidate model `Generation` objects into a specific format.
 
         The return value is parsed from only the first `Generation` in the result, which
-            is assumed to be the highest-likelihood `Generation`.
+        is assumed to be the highest-likelihood `Generation`.
 
         Args:
-            result: A list of `Generation` to be parsed. The `Generation` objects are
-                assumed to be different candidate outputs for a single model input.
-            partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results.
+            result: A list of `Generation` to be parsed.
+
+                The `Generation` objects are assumed to be different candidate outputs
+                for a single model input.
+            partial: Whether to parse the output as a partial result.
+
+                This is useful for parsers that can parse partial results.
 
         Returns:
             Structured output.
@@ -268,24 +281,37 @@ class BaseOutputParser(
     async def aparse_result(
         self, result: list[Generation], *, partial: bool = False
     ) -> T:
-        """Async parse a list of candidate model `Generation` objects into a specific format.
+        """Parse a list of candidate model `Generation` objects into a specific format.
 
         The return value is parsed from only the first `Generation` in the result, which
-            is assumed to be the highest-likelihood `Generation`.
+        is assumed to be the highest-likelihood `Generation`.
+
+        This method is used by `ainvoke` and `abatch`. The default implementation
+        runs `parse_result` in an executor; it does not call `aparse`. Override this
+        method to provide native async parsing, for example when using async I/O or
+        clients bound to the caller's event loop. Synchronous parsers can use the
+        default implementation.
 
         Args:
-            result: A list of `Generation` to be parsed. The `Generation` objects are
-                assumed to be different candidate outputs for a single model input.
-            partial: Whether to parse the output as a partial result. This is useful
-                for parsers that can parse partial results.
+            result: A list of `Generation` to be parsed.
+
+                The `Generation` objects are assumed to be different candidate outputs
+                for a single model input.
+            partial: Whether to parse the output as a partial result.
+
+                This is useful for parsers that can parse partial results.
 
         Returns:
             Structured output.
-        """  # noqa: E501
+        """
         return await run_in_executor(None, self.parse_result, result, partial=partial)
 
     async def aparse(self, text: str) -> T:
         """Async parse a single string model output into some structure.
+
+        The default implementation runs `parse` in an executor. To use native
+        async parsing through `ainvoke` or `abatch`, override `aparse_result`
+        instead; those entry points do not call this method by default.
 
         Args:
             text: String output of a language model.
@@ -303,9 +329,8 @@ class BaseOutputParser(
     ) -> Any:
         """Parse the output of an LLM call with the input prompt for context.
 
-        The prompt is largely provided in the event the `OutputParser` wants
-        to retry or fix the output in some way, and needs information from
-        the prompt to do so.
+        The prompt is largely provided in the event the `OutputParser` wants to retry or
+        fix the output in some way, and needs information from the prompt to do so.
 
         Args:
             completion: String output of a language model.
@@ -329,8 +354,17 @@ class BaseOutputParser(
         )
         raise NotImplementedError(msg)
 
-    def dict(self, **kwargs: Any) -> dict:
-        """Return dictionary representation of output parser."""
+    @deprecated("1.4.2", alternative="asdict", removal="2.0.0")
+    @override
+    def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
+        """DEPRECATED - use `asdict()` instead.
+
+        Return a dictionary representation of the output parser.
+        """
+        return self.asdict(**kwargs)
+
+    def asdict(self, **kwargs: Any) -> builtins.dict[str, Any]:
+        """Return a dictionary representation of the output parser."""
         output_parser_dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):
             output_parser_dict["_type"] = self._type

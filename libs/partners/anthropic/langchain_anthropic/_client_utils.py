@@ -1,7 +1,8 @@
 """Helpers for creating Anthropic API clients.
 
-This module allows for the caching of httpx clients to avoid creating new instances
-for each instance of ChatAnthropic.
+The sync httpx client is cached so instances of ChatAnthropic share it. The async
+client is not: its connections belong to the event loop that opened them, so it
+must not be shared between models that may run in different event loops.
 
 Logic is largely replicated from anthropic._base_client.
 """
@@ -22,10 +23,9 @@ class _SyncHttpxClientWrapper(anthropic.DefaultHttpxClient):
     """Borrowed from anthropic._base_client."""
 
     def __del__(self) -> None:
-        if self.is_closed:
-            return
-
         try:
+            if self.is_closed:
+                return
             self.close()
         except Exception:  # noqa: S110
             pass
@@ -35,10 +35,9 @@ class _AsyncHttpxClientWrapper(anthropic.DefaultAsyncHttpxClient):
     """Borrowed from anthropic._base_client."""
 
     def __del__(self) -> None:
-        if self.is_closed:
-            return
-
         try:
+            if self.is_closed:
+                return
             # TODO(someday): support non asyncio runtimes here
             asyncio.get_running_loop().create_task(self.aclose())
         except Exception:  # noqa: S110
@@ -64,13 +63,19 @@ def _get_default_httpx_client(
     return _SyncHttpxClientWrapper(**kwargs)
 
 
-@lru_cache
 def _get_default_async_httpx_client(
     *,
     base_url: str | None,
     timeout: Any = _NOT_GIVEN,
     anthropic_proxy: str | None = None,
 ) -> _AsyncHttpxClientWrapper:
+    """Build a new async httpx client for one model.
+
+    Not cached, unlike the sync client: sharing one between models lets a model
+    in a new event loop pick up a connection opened in an earlier, closed loop
+    (`RuntimeError: Event loop is closed`). The SDK hides this today by retrying
+    on a fresh connection, at the cost of a failed attempt and a backoff delay.
+    """
     kwargs: dict[str, Any] = {
         "base_url": base_url
         or os.environ.get("ANTHROPIC_BASE_URL")

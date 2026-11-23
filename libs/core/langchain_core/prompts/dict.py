@@ -1,9 +1,10 @@
-"""Dict prompt template."""
+"""Dictionary prompt template."""
 
 import warnings
 from functools import cached_property
 from typing import Any, Literal, cast
 
+from pydantic import model_validator
 from typing_extensions import override
 
 from langchain_core.load import dumpd
@@ -15,15 +16,40 @@ from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_core.runnables.config import ensure_config
 
 
-class DictPromptTemplate(RunnableSerializable[dict, dict]):
-    """Template represented by a dict.
+class DictPromptTemplate(RunnableSerializable[dict[str, Any], dict[str, Any]]):
+    """Template represented by a dictionary.
 
-    Recognizes variables in f-string or mustache formatted string dict values. Does NOT
-    recognize variables in dict keys. Applies recursively.
+    Recognizes variables in f-string or mustache formatted string dict values.
+
+    Does NOT recognize variables in dict keys. Applies recursively.
+
+    Example:
+        ```python
+        prompt = DictPromptTemplate(
+            template={
+                "type": "text",
+                "text": "Hello {name}",
+                "metadata": {"source": "{source}"},
+            },
+            template_format="f-string",
+        )
+        prompt.format(name="Alice", source="docs")
+        # {
+        #     "type": "text",
+        #     "text": "Hello Alice",
+        #     "metadata": {"source": "docs"},
+        # }
+        ```
     """
 
     template: dict[str, Any]
     template_format: Literal["f-string", "mustache"]
+
+    @model_validator(mode="after")
+    def validate_template(self) -> "DictPromptTemplate":
+        """Validate that the template structure contains only safe variables."""
+        _get_input_variables(self.template, self.template_format)
+        return self
 
     @property
     def input_variables(self) -> list[str]:
@@ -48,8 +74,8 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
 
     @override
     def invoke(
-        self, input: dict, config: RunnableConfig | None = None, **kwargs: Any
-    ) -> dict:
+        self, input: dict[str, Any], config: RunnableConfig | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
         return self._call_with_config(
             lambda x: self.format(**x),
             input,
@@ -97,7 +123,7 @@ class DictPromptTemplate(RunnableSerializable[dict, dict]):
 
 
 def _get_input_variables(
-    template: dict, template_format: Literal["f-string", "mustache"]
+    template: dict[str, Any], template_format: Literal["f-string", "mustache"]
 ) -> list[str]:
     input_variables = []
     for v in template.values():
@@ -135,7 +161,7 @@ def _insert_input_variables(
                 warnings.warn(msg, stacklevel=2)
             formatted[k] = _insert_input_variables(v, inputs, template_format)
         elif isinstance(v, (list, tuple)):
-            formatted_v: list[str | dict[str, Any]] = []
+            formatted_v: list[Any] = []
             for x in v:
                 if isinstance(x, str):
                     formatted_v.append(formatter(x, **inputs))
@@ -143,6 +169,8 @@ def _insert_input_variables(
                     formatted_v.append(
                         _insert_input_variables(x, inputs, template_format)
                     )
+                else:
+                    formatted_v.append(x)
             formatted[k] = type(v)(formatted_v)
         else:
             formatted[k] = v

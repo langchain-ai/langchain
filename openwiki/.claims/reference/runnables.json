@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:6b7937126bc9be11d899149094027aa480cfe4672c931ef9e7cf310ca788209f",
+  "claims": [
+    {
+      "id": "claim_2bb63455e4bc43e499c3dbb9d5d98f0a",
+      "statement": "The Runnable interface is the foundational execution abstraction in LangChain that defines a unified, composable protocol for synchronous invoke, asynchronous invoke, batch processing, streaming, and schema introspection across all LangChain components. The LangChain Expression Language (LCEL) leverages Runnables to enable declarative composition with operators and methods for sequential piping, parallel forking, branching, fallback, and retry logic.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/runnables/base.py#L197-L330",
+          "version": "repo-lines-v1:sha256:28391bc12100849c0c4d67024109dcfe286e26296dc8c6b513b743fd84205bba:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM0LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkMDY2NDAxOWM5MDdkZjg1MGVhOWUwNThmMTJiMTkyMzc0YmViM2ZjY2FiMDYxOTAzMGM2OGU2NTQ4YWQ4MTQ5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIzOGFmNGM2Y2M3NWVlMjFhNWM0NDdlMjA5ZjQyNzgyZDAwNmI5MDYzZWM5N2EzMWY0MDhhMDNmMDlmN2NkNGNmIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI3ZmZhM2IwMzQxNzVmYzU2NzYwNDkzZGNlZDZiMzMxZjFkNGFjOTcwM2RmNzJiYTY0YjQ1MzEwYTRjMDY2N2UzIn0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-11-13T08:16:35.902Z"
+  }
+}

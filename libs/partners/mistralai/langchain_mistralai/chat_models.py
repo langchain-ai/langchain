@@ -7,12 +7,13 @@ import os
 import re
 import ssl
 import uuid
-from collections.abc import Callable  # noqa: TC003
+from collections.abc import Callable, Sequence  # noqa: TC003
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    Self,
     cast,
 )
 
@@ -22,6 +23,14 @@ from httpx_sse import EventSource, aconnect_sse, connect_sse
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
+)
+from langchain_core.exceptions import (
+    ModelAPIError,
+    ModelAuthenticationError,
+    ModelInvalidRequestError,
+    ModelNotFoundError,
+    ModelPermissionDeniedError,
+    ModelRateLimitError,
 )
 from langchain_core.language_models import (
     LanguageModelInput,
@@ -44,6 +53,10 @@ from langchain_core.messages import (
     SystemMessageChunk,
     ToolCall,
     ToolMessage,
+    is_data_content_block,
+)
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
 )
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import (
@@ -61,6 +74,7 @@ from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResu
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.utils import get_pydantic_field_names, secret_from_env
+from langchain_core.utils._gateway import _apply_gateway_config
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
@@ -71,13 +85,13 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
-from typing_extensions import Self
 
 from langchain_mistralai._compat import _convert_from_v1_to_mistral
+from langchain_mistralai._version import __version__
 from langchain_mistralai.data._profiles import _PROFILES
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator, Sequence
+    from collections.abc import AsyncIterator, Iterator
     from contextlib import AbstractAsyncContextManager
 
 logger = logging.getLogger(__name__)
@@ -141,6 +155,42 @@ def _convert_tool_call_id_to_mistral_compatible(tool_call_id: str) -> str:
     return base62_str.rjust(9, "0")
 
 
+def _normalize_mistral_content(content: Any) -> str | list[str | dict]:
+    """Normalize Mistral content so reference blocks are visible to .text.
+
+    Mistral citation responses return content as a list of typed chunks where
+    `reference` blocks carry visible answer text alongside citation metadata.
+    The core `.text` accessor only concatenates blocks whose type is
+    `"text"`, so preserving `reference` as-is would drop cited answer spans
+    from `message.text` and `ChatGeneration.text`.
+
+    To keep the answer text visible while preserving citation metadata, rewrite
+    each `reference` block to `type: "text"` and move the original block
+    (including `reference_ids`) under a `"reference"` key. The `_compat.py`
+    translator reads that key to produce standard `Citation` annotations.
+    """
+    if not isinstance(content, list):
+        return content or ""
+    has_reference = False
+    new_blocks: list[str | dict] = []
+    for block in content:
+        if isinstance(block, dict) and block.get("type") == "reference":
+            has_reference = True
+            new_block = {
+                "type": "text",
+                "text": block.get("text", ""),
+                "reference": {
+                    k: v for k, v in block.items() if k not in ("type", "text")
+                },
+            }
+            if "index" in block:
+                new_block["index"] = block["index"]
+            new_blocks.append(new_block)
+        else:
+            new_blocks.append(block)
+    return new_blocks if has_reference else content
+
+
 def _convert_mistral_chat_message_to_message(
     _message: dict,
 ) -> BaseMessage:
@@ -148,8 +198,11 @@ def _convert_mistral_chat_message_to_message(
     if role != "assistant":
         msg = f"Expected role to be 'assistant', got {role}"
         raise ValueError(msg)
-    # Mistral returns None for tool invocations
-    content = _message.get("content", "") or ""
+    # Mistral returns None for tool invocations. When citations are enabled,
+    # content is a list of typed chunks (text and reference). Normalize
+    # reference blocks so their answer text is visible via .text while
+    # citation metadata is preserved for _compat.py to translate.
+    content = _normalize_mistral_content(_message.get("content", ""))
 
     additional_kwargs: dict = {}
     tool_calls = []
@@ -175,6 +228,58 @@ def _convert_mistral_chat_message_to_message(
     )
 
 
+class MistralAIAuthenticationError(httpx.HTTPStatusError, ModelAuthenticationError):
+    """Mistral AI authentication error classified as a LangChain model error."""
+
+
+class MistralAIPermissionDeniedError(httpx.HTTPStatusError, ModelPermissionDeniedError):
+    """Mistral AI permission error classified as a LangChain model error."""
+
+
+class MistralAIInvalidRequestError(httpx.HTTPStatusError, ModelInvalidRequestError):
+    """Mistral AI invalid-request error classified as a LangChain model error."""
+
+
+class MistralAIModelNotFoundError(httpx.HTTPStatusError, ModelNotFoundError):
+    """Mistral AI not-found error classified as a LangChain model error."""
+
+
+class MistralAIRateLimitError(httpx.HTTPStatusError, ModelRateLimitError):
+    """Mistral AI rate-limit error classified as a LangChain model error."""
+
+
+class MistralAIAPIError(httpx.HTTPStatusError, ModelAPIError):
+    """Mistral AI server error classified as a LangChain model error."""
+
+
+_STATUS_ERROR_TYPES: dict[int, type[httpx.HTTPStatusError]] = {
+    400: MistralAIInvalidRequestError,
+    401: MistralAIAuthenticationError,
+    403: MistralAIPermissionDeniedError,
+    404: MistralAIModelNotFoundError,
+    422: MistralAIInvalidRequestError,
+    429: MistralAIRateLimitError,
+}
+"""HTTP status codes the Mistral AI API reports, keyed to LangChain error types."""
+
+
+def _status_error_type(status_code: int) -> type[httpx.HTTPStatusError]:
+    """Return the error type to raise for an HTTP status code.
+
+    Args:
+        status_code: The HTTP status code of the error response.
+
+    Returns:
+        The classified error type, or plain `httpx.HTTPStatusError` for status codes
+        the taxonomy does not cover.
+    """
+    if error_type := _STATUS_ERROR_TYPES.get(status_code):
+        return error_type
+    if status_code >= 500:
+        return MistralAIAPIError
+    return httpx.HTTPStatusError
+
+
 def _raise_on_error(response: httpx.Response) -> None:
     """Raise an error if the response is an error."""
     if httpx.codes.is_error(response.status_code):
@@ -183,7 +288,7 @@ def _raise_on_error(response: httpx.Response) -> None:
             f"Error response {response.status_code} "
             f"while fetching {response.url}: {error_message}"
         )
-        raise httpx.HTTPStatusError(
+        raise _status_error_type(response.status_code)(
             msg,
             request=response.request,
             response=response,
@@ -198,7 +303,7 @@ async def _araise_on_error(response: httpx.Response) -> None:
             f"Error response {response.status_code} "
             f"while fetching {response.url}: {error_message}"
         )
-        raise httpx.HTTPStatusError(
+        raise _status_error_type(response.status_code)(
             msg,
             request=response.request,
             response=response,
@@ -242,6 +347,15 @@ async def acompletion_with_retry(
     return await _completion_with_retry(**kwargs)
 
 
+def _is_empty_chunk(chunk: AIMessageChunk) -> bool:
+    return (
+        not chunk.content
+        and not chunk.tool_call_chunks
+        and not chunk.usage_metadata
+        and "finish_reason" not in chunk.response_metadata
+    )
+
+
 def _convert_chunk_to_message_chunk(
     chunk: dict,
     default_class: type[BaseMessageChunk],
@@ -253,13 +367,16 @@ def _convert_chunk_to_message_chunk(
     _delta = _choice["delta"]
     role = _delta.get("role")
     content = _delta.get("content") or ""
-    if output_version == "v1" and isinstance(content, str):
-        content = [{"type": "text", "text": content}]
+    # Once a stream has sent list content, keep later string deltas as text blocks
+    if isinstance(content, str) and (output_version == "v1" or index_type):
+        content = [{"type": "text", "text": content}] if content else []
+    content = _normalize_mistral_content(content)
     if isinstance(content, list):
         for block in content:
             if isinstance(block, dict):
-                if "type" in block and block["type"] != index_type:
-                    index_type = block["type"]
+                block_type = "reference" if "reference" in block else block.get("type")
+                if block_type is not None and block_type != index_type:
+                    index_type = block_type
                     index = index + 1
                 if "index" not in block:
                     block["index"] = index
@@ -273,7 +390,7 @@ def _convert_chunk_to_message_chunk(
         return HumanMessageChunk(content=content), index, index_type
     if role == "assistant" or default_class == AIMessageChunk:
         additional_kwargs: dict = {}
-        response_metadata = {}
+        response_metadata: dict[str, Any] = {}
         if raw_tool_calls := _delta.get("tool_calls"):
             additional_kwargs["tool_calls"] = raw_tool_calls
             try:
@@ -355,7 +472,10 @@ def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) ->
 
 
 def _clean_block(block: dict) -> dict:
-    # Remove "index" key added for message aggregation in langchain-core
+    # Remove internal keys added by LangChain or by provider response normalization.
+    if block.get("type") == "text" and "text" in block:
+        return {"type": "text", "text": block["text"]}
+
     new_block = {k: v for k, v in block.items() if k != "index"}
     if block.get("type") == "thinking" and isinstance(block.get("thinking"), list):
         new_block["thinking"] = [
@@ -369,13 +489,65 @@ def _clean_block(block: dict) -> dict:
     return new_block
 
 
+def _sanitize_chat_completions_content(content: Any) -> Any:
+    """Strip non-wire keys from text content blocks.
+
+    Mistral's chat completions endpoint rejects unknown fields on tool
+    message content blocks (e.g. the `id` that LangChain auto-generates on
+    `TextContentBlock`). For list content, keep only `type` and `text` on
+    text blocks; pass other blocks and non-list content through unchanged.
+    """
+    if not isinstance(content, list):
+        return content
+    sanitized: list[Any] = []
+    for block in content:
+        if isinstance(block, dict) and block.get("type") == "text" and "text" in block:
+            sanitized.append({"type": "text", "text": block["text"]})
+        else:
+            sanitized.append(block)
+    return sanitized
+
+
+def _format_message_content(content: Any) -> Any:
+    """Format message content for the Mistral chat completions wire format.
+
+    Walks list content and translates LangChain canonical v0/v1 multimodal
+    data blocks (e.g. `ImageContentBlock` with `url`, `base64`, or
+    `file_id`) into the OpenAI-compatible shape that Mistral accepts:
+    `{"type": "image_url", "image_url": {"url": "..."}}`. Strings and any
+    other dict blocks are returned unchanged so that already-translated wire
+    blocks (e.g. `text`, `image_url`) and Mistral-specific blocks
+    (`document_url`, `input_audio`) pass through; the API surfaces an error
+    for anything it doesn't understand.
+
+    Args:
+        content: The message content. Strings and non-list values pass
+            through unchanged; lists are walked block by block.
+
+    Returns:
+        The formatted content. List inputs return a new list with canonical
+        data-block translations applied; other inputs are returned as-is.
+    """
+    if not isinstance(content, list):
+        return content
+    formatted: list[Any] = []
+    for block in content:
+        if isinstance(block, dict) and is_data_content_block(block):
+            formatted.append(
+                convert_to_openai_data_block(block, api="chat/completions")
+            )
+            continue
+        formatted.append(block)
+    return formatted
+
+
 def _convert_message_to_mistral_chat_message(
     message: BaseMessage,
 ) -> dict:
     if isinstance(message, ChatMessage):
         return {"role": message.role, "content": message.content}
     if isinstance(message, HumanMessage):
-        return {"role": "user", "content": message.content}
+        return {"role": "user", "content": _format_message_content(message.content)}
     if isinstance(message, AIMessage):
         message_dict: dict[str, Any] = {"role": "assistant"}
         tool_calls: list = []
@@ -423,9 +595,7 @@ def _convert_message_to_mistral_chat_message(
 
         elif isinstance(content, list):
             content = [
-                _clean_block(block)
-                if isinstance(block, dict) and "index" in block
-                else block
+                _clean_block(block) if isinstance(block, dict) else block
                 for block in content
             ]
         else:
@@ -447,7 +617,7 @@ def _convert_message_to_mistral_chat_message(
     if isinstance(message, ToolMessage):
         return {
             "role": "tool",
-            "content": message.content,
+            "content": _sanitize_chat_completions_content(message.content),
             "name": message.name,
             "tool_call_id": _convert_tool_call_id_to_mistral_compatible(
                 message.tool_call_id
@@ -490,6 +660,14 @@ class ChatMistralAI(BaseChatModel):
 
     max_tokens: int | None = None
 
+    stop: list[str] | None = None
+    """Default stop sequences.
+
+    Generation stops when any of these strings is produced; the stop sequence itself
+    is not included in the output. Can be overridden per call via the `stop` argument.
+    Mistral accepts up to 4 stop sequences.
+    """
+
     top_p: float = 1
     """Decode using nucleus sampling: consider the smallest set of tokens whose
     probability sum is at least `top_p`. Must be in the closed interval
@@ -498,6 +676,16 @@ class ChatMistralAI(BaseChatModel):
     random_seed: int | None = None
 
     safe_mode: bool | None = None
+
+    reasoning_effort: str | None = None
+    """Reasoning effort.
+
+    Forwarded as the `reasoning_effort` request field. Supported values vary by
+    model (e.g. `'none'` or `'high'`).
+
+    Can also be passed at call time, e.g.
+    `model.invoke(..., reasoning_effort="high")`.
+    """
 
     streaming: bool = False
 
@@ -526,6 +714,7 @@ class ChatMistralAI(BaseChatModel):
             "top_p": self.top_p,
             "random_seed": self.random_seed,
             "safe_prompt": self.safe_mode,
+            "reasoning_effort": self.reasoning_effort,
             **self.model_kwargs,
         }
         return {k: v for k, v in defaults.items() if v is not None}
@@ -543,7 +732,7 @@ class ChatMistralAI(BaseChatModel):
         )
         if ls_max_tokens := params.get("max_tokens", self.max_tokens):
             ls_params["ls_max_tokens"] = ls_max_tokens
-        if ls_stop := stop or params.get("stop", None):
+        if ls_stop := stop or self.stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
         return ls_params
 
@@ -598,6 +787,33 @@ class ChatMistralAI(BaseChatModel):
         return {"token_usage": overall_token_usage, "model_name": self.model}
 
     @model_validator(mode="after")
+    def _set_mistralai_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-mistralai", __version__)
+        return self
+
+    @model_validator(mode="before")
+    @classmethod
+    def _apply_mistralai_gateway_config(cls, values: Any) -> Any:
+        """Resolve the base URL and API key, applying LangSmith gateway settings.
+
+        Routes through the gateway when `LANGSMITH_GATEWAY` is set or the model is
+        built inside `langsmith_gateway`. See `langchain_core.utils._gateway` for
+        precedence.
+        """
+        if isinstance(values, dict):
+            _apply_gateway_config(
+                values,
+                cls,
+                base_url_field="endpoint",
+                api_key_field="mistral_api_key",
+                provider_path="mistral/v1",
+                base_url_env="MISTRAL_BASE_URL",
+                api_key_env="MISTRAL_API_KEY",
+            )
+        return values
+
+    @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate api key, python package exists, temperature, and top_p."""
         if isinstance(self.mistral_api_key, SecretStr):
@@ -646,12 +862,8 @@ class ChatMistralAI(BaseChatModel):
 
         return self
 
-    @model_validator(mode="after")
-    def _set_model_profile(self) -> Self:
-        """Set model profile if not overridden."""
-        if self.profile is None:
-            self.profile = _get_default_model_profile(self.model)
-        return self
+    def _resolve_model_profile(self) -> ModelProfile | None:
+        return _get_default_model_profile(self.model) or None
 
     def _generate(
         self,
@@ -697,12 +909,9 @@ class ChatMistralAI(BaseChatModel):
         self, messages: list[BaseMessage], stop: list[str] | None
     ) -> tuple[list[dict], dict[str, Any]]:
         params = self._client_params
-        if stop is not None or "stop" in params:
-            if "stop" in params:
-                params.pop("stop")
-            logger.warning(
-                "Parameter `stop` not yet supported (https://docs.mistral.ai/api)"
-            )
+        stop = stop if stop is not None else self.stop
+        if stop:
+            params["stop"] = stop
         message_dicts = [_convert_message_to_mistral_chat_message(m) for m in messages]
         return message_dicts, params
 
@@ -729,6 +938,8 @@ class ChatMistralAI(BaseChatModel):
             )
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
+            if isinstance(new_chunk, AIMessageChunk) and _is_empty_chunk(new_chunk):
+                continue
             gen_chunk = ChatGenerationChunk(message=new_chunk)
             if run_manager:
                 run_manager.on_llm_new_token(
@@ -759,6 +970,8 @@ class ChatMistralAI(BaseChatModel):
             )
             # make future chunks same type as first chunk
             default_chunk_class = new_chunk.__class__
+            if isinstance(new_chunk, AIMessageChunk) and _is_empty_chunk(new_chunk):
+                continue
             gen_chunk = ChatGenerationChunk(message=new_chunk)
             if run_manager:
                 await run_manager.on_llm_new_token(
@@ -858,7 +1071,9 @@ class ChatMistralAI(BaseChatModel):
                     [function-calling feature](https://docs.mistral.ai/capabilities/function_calling/).
                 - `'json_schema'`:
                     Uses Mistral's
-                    [structured output feature](https://docs.mistral.ai/capabilities/structured-output/custom_structured_output/).
+                    [structured output feature](https://docs.mistral.ai/inference/conversations/structured-output/custom).
+                    Recommended. Some models (e.g. reasoning models) do not reliably
+                    follow the forced tool choice used by `'function_calling'`.
                 - `'json_mode'`:
                     Uses Mistral's
                     [JSON mode](https://docs.mistral.ai/capabilities/structured-output/json_mode/).

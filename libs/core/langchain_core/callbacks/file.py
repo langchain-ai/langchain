@@ -1,11 +1,11 @@
-"""Callback Handler that writes to a file."""
+"""Callback handler that writes to a file."""
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TextIO, cast
+from typing import TYPE_CHECKING, Any, Self, TextIO, cast
 
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_core._api import warn_deprecated
 from langchain_core.callbacks import BaseCallbackHandler
@@ -19,7 +19,7 @@ _GLOBAL_DEPRECATION_WARNED = False
 
 
 class FileCallbackHandler(BaseCallbackHandler):
-    """Callback Handler that writes to a file.
+    """Callback handler that writes to a file.
 
     This handler supports both context manager usage (recommended) and direct
     instantiation (deprecated) for backwards compatibility.
@@ -50,9 +50,10 @@ class FileCallbackHandler(BaseCallbackHandler):
         color: Default color for text output.
 
     !!! note
-        When not used as a context manager, a deprecation warning will be issued
-        on first use. The file will be opened immediately in `__init__` and closed
-        in `__del__` or when `close()` is called explicitly.
+
+        When not used as a context manager, a deprecation warning will be issued on
+        first use. The file will be opened immediately in `__init__` and closed in
+        `__del__` or when `close()` is called explicitly.
 
     """
 
@@ -81,11 +82,12 @@ class FileCallbackHandler(BaseCallbackHandler):
         """Enter the context manager.
 
         Returns:
-            The FileCallbackHandler instance.
+            The `FileCallbackHandler` instance.
 
         !!! note
-            The file is already opened in `__init__`, so this just marks that
-            the handler is being used as a context manager.
+
+            The file is already opened in `__init__`, so this just marks that the
+            handler is being used as a context manager.
 
         """
         self._file_opened_in_context = True
@@ -133,7 +135,6 @@ class FileCallbackHandler(BaseCallbackHandler):
             text: The text to write to the file.
             color: Optional color for the text. Defaults to `self.color`.
             end: String appended after the text.
-            file: Optional file to write to. Defaults to `self.file`.
 
         Raises:
             RuntimeError: If the file is closed or not available.
@@ -196,8 +197,9 @@ class FileCallbackHandler(BaseCallbackHandler):
 
         Args:
             action: The agent action containing the log to write.
-            color: Color override for this specific output. If `None`, uses
-                `self.color`.
+            color: Color override for this specific output.
+
+                If `None`, uses `self.color`.
             **kwargs: Additional keyword arguments.
 
         """
@@ -216,8 +218,9 @@ class FileCallbackHandler(BaseCallbackHandler):
 
         Args:
             output: The tool output to write.
-            color: Color override for this specific output. If `None`, uses
-                `self.color`.
+            color: Color override for this specific output.
+
+                If `None`, uses `self.color`.
             observation_prefix: Optional prefix to write before the output.
             llm_prefix: Optional prefix to write after the output.
             **kwargs: Additional keyword arguments.
@@ -237,8 +240,9 @@ class FileCallbackHandler(BaseCallbackHandler):
 
         Args:
             text: The text to write.
-            color: Color override for this specific output. If `None`, uses
-                `self.color`.
+            color: Color override for this specific output.
+
+                If `None`, uses `self.color`.
             end: String appended after the text.
             **kwargs: Additional keyword arguments.
 
@@ -253,8 +257,9 @@ class FileCallbackHandler(BaseCallbackHandler):
 
         Args:
             finish: The agent finish object containing the log to write.
-            color: Color override for this specific output. If `None`, uses
-                `self.color`.
+            color: Color override for this specific output.
+
+                If `None`, uses `self.color`.
             **kwargs: Additional keyword arguments.
 
         """

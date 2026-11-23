@@ -274,7 +274,7 @@ class GenericFakeChatModel(BaseChatModel):
             messages, stop=stop, run_manager=run_manager, **kwargs
         )
         if not isinstance(chat_result, ChatResult):
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 f"Expected generate to return a ChatResult, "
                 f"but got {type(chat_result)} instead."
             )
@@ -386,6 +386,9 @@ class ParrotFakeChatModel(BaseChatModel):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if not messages:
+            msg = "messages list cannot be empty."
+            raise ValueError(msg)
         return ChatResult(generations=[ChatGeneration(message=messages[-1])])
 
     @property

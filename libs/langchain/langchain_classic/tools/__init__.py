@@ -8,6 +8,7 @@ import warnings
 from typing import Any
 
 from langchain_core._api import LangChainDeprecationWarning
+from langchain_core._api.deprecation import _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING
 from langchain_core.tools import (
     BaseTool as BaseTool,
 )
@@ -27,11 +28,11 @@ _DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
 
 def _import_python_tool_python_ast_repl_tool() -> Any:
     msg = (
-        "This tool has been moved to langchain experiment. "
+        "This tool has been moved to langchain_experimental. "
         "This tool has access to a python REPL. "
         "For best practices make sure to sandbox this tool. "
         "Read https://github.com/langchain-ai/langchain/blob/master/SECURITY.md "
-        "To keep using this code as is, install langchain experimental and "
+        "To keep using this code as is, install langchain_experimental and "
         "update relevant imports replacing 'langchain' with 'langchain_experimental'"
     )
     raise ImportError(msg)
@@ -39,11 +40,11 @@ def _import_python_tool_python_ast_repl_tool() -> Any:
 
 def _import_python_tool_python_repl_tool() -> Any:
     msg = (
-        "This tool has been moved to langchain experiment. "
+        "This tool has been moved to langchain_experimental. "
         "This tool has access to a python REPL. "
         "For best practices make sure to sandbox this tool. "
         "Read https://github.com/langchain-ai/langchain/blob/master/SECURITY.md "
-        "To keep using this code as is, install langchain experimental and "
+        "To keep using this code as is, install langchain_experimental and "
         "update relevant imports replacing 'langchain' with 'langchain_experimental'"
     )
     raise ImportError(msg)
@@ -57,7 +58,10 @@ def __getattr__(name: str) -> Any:
     from langchain_community import tools
 
     # If not in interactive env, raise warning.
-    if not is_interactive_env():
+    if (
+        not is_interactive_env()
+        and not _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get()
+    ):
         warnings.warn(
             "Importing tools from langchain is deprecated. Importing from "
             "langchain will no longer be supported as of langchain==0.2.0. "

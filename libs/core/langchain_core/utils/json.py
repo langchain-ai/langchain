@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import re
+from bisect import bisect_right
+from itertools import accumulate
 from typing import TYPE_CHECKING, Any
 
 from langchain_core.exceptions import OutputParserException
@@ -13,6 +15,14 @@ if TYPE_CHECKING:
 
 
 def _replace_new_line(match: re.Match[str]) -> str:
+    """Replace newline characters in a regex match with escaped sequences.
+
+    Args:
+        match: Regex match object containing the string to process.
+
+    Returns:
+        String with newlines, carriage returns, tabs, and quotes properly escaped.
+    """
     value = match.group(2)
     value = re.sub(r"\n", r"\\n", value)
     value = re.sub(r"\r", r"\\r", value)
@@ -25,10 +35,9 @@ def _replace_new_line(match: re.Match[str]) -> str:
 def _custom_parser(multiline_string: str | bytes | bytearray) -> str:
     r"""Custom parser for multiline strings.
 
-    The LLM response for `action_input` may be a multiline
-    string containing unescaped newlines, tabs or quotes. This function
-    replaces those characters with their escaped counterparts.
-    (newlines in JSON must be double-escaped: `\\n`).
+    The LLM response for `action_input` may be a multiline string containing unescaped
+    newlines, tabs or quotes. This function replaces those characters with their escaped
+    counterparts. (newlines in JSON must be double-escaped: `\\n`).
 
     Returns:
         The modified string with escaped newlines, tabs and quotes.
@@ -111,6 +120,11 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
     # Reverse the stack to get the closing characters.
     stack.reverse()
 
+    # String offset at which each element of `new_chars` ends. Elements are not
+    # all one character long (a raw newline inside a string becomes `\\n`), so
+    # a decoder error offset has to be mapped back to a list index.
+    ends = list(accumulate(map(len, new_chars)))
+
     # Try to parse mods of string until we succeed or run out of characters.
     while new_chars:
         # Close any remaining open structures in the reverse
@@ -118,10 +132,17 @@ def parse_partial_json(s: str, *, strict: bool = False) -> Any:
         # Attempt to parse the modified string as JSON.
         try:
             return json.loads("".join(new_chars + stack), strict=strict)
-        except json.JSONDecodeError:
-            # If we still can't parse the string as JSON,
-            # try removing the last character
-            new_chars.pop()
+        except json.JSONDecodeError as e:
+            # Every longer candidate still contains the element the decoder
+            # rejected, in the same context, so it fails the same way. Skip
+            # straight past them instead of retrying one element at a time.
+            idx = bisect_right(ends, e.pos)
+            if idx < len(new_chars):
+                del new_chars[idx:]
+                del ends[idx:]
+            else:
+                new_chars.pop()
+                ends.pop()
 
     # If we got here, we ran out of characters to remove
     # and still couldn't parse the string as JSON, so return the parse error
@@ -139,7 +160,7 @@ def parse_json_markdown(
 
     Args:
         json_string: The Markdown string.
-        parser: The parser to use. Defaults to `parse_partial_json`.
+        parser: The parser to use.
 
     Returns:
         The parsed JSON object as a Python dictionary.
@@ -162,6 +183,18 @@ _json_strip_chars = " \n\r\t`"
 def _parse_json(
     json_str: str, *, parser: Callable[[str], Any] = parse_partial_json
 ) -> Any:
+    """Parse a JSON string, handling special characters and whitespace.
+
+    Strips whitespace, newlines, and backticks from the start and end of the string,
+    then processes special characters before parsing.
+
+    Args:
+        json_str: The JSON string to parse.
+        parser: Optional custom parser function.
+
+    Returns:
+        Parsed JSON object.
+    """
     # Strip whitespace,newlines,backtick from the start and end
     json_str = json_str.strip(_json_strip_chars)
 
@@ -172,7 +205,9 @@ def _parse_json(
     return parser(json_str)
 
 
-def parse_and_check_json_markdown(text: str, expected_keys: list[str]) -> dict:
+def parse_and_check_json_markdown(
+    text: str, expected_keys: list[str]
+) -> dict[str, Any]:
     """Parse and check a JSON string from a Markdown string.
 
     Checks that it contains the expected keys.

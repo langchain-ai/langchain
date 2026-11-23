@@ -15,8 +15,8 @@ modules = [
 for module in modules:
     pytest.register_assert_rewrite(f"langchain_tests.unit_tests.{module}")
 
-from .chat_models import ChatModelUnitTests
-from .embeddings import EmbeddingsUnitTests
-from .tools import ToolsUnitTests
+from langchain_tests.unit_tests.chat_models import ChatModelUnitTests
+from langchain_tests.unit_tests.embeddings import EmbeddingsUnitTests
+from langchain_tests.unit_tests.tools import ToolsUnitTests
 
 __all__ = ["ChatModelUnitTests", "EmbeddingsUnitTests", "ToolsUnitTests"]

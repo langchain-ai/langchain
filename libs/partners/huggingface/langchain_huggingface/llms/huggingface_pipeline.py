@@ -2,17 +2,18 @@ from __future__ import annotations  # type: ignore[import-not-found]
 
 import importlib.util
 import logging
+import warnings
 from collections.abc import Iterator, Mapping
-from typing import Any
+from typing import Any, Self
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from pydantic import ConfigDict, model_validator
 
+from langchain_huggingface._version import __version__
 from langchain_huggingface.utils.import_utils import (
     IMPORT_ERROR,
-    is_ipex_available,
     is_openvino_available,
     is_optimum_intel_available,
     is_optimum_intel_version,
@@ -91,6 +92,12 @@ class HuggingFacePipeline(BaseLLM):
         extra="forbid",
     )
 
+    @model_validator(mode="after")
+    def _set_huggingface_version(self) -> Self:
+        """Set package version in metadata."""
+        self._add_version("langchain-huggingface", __version__)
+        return self
+
     @model_validator(mode="before")
     @classmethod
     def pre_init_validator(cls, values: dict[str, Any]) -> dict[str, Any]:
@@ -150,7 +157,16 @@ class HuggingFacePipeline(BaseLLM):
             _model_kwargs["device_map"] = device_map
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
-        if backend in {"openvino", "ipex"}:
+        if backend == "ipex":
+            msg = (
+                "`backend='ipex'` is no longer supported; the default "
+                "`transformers` backend will be used instead. Intel GPU acceleration "
+                "is natively supported in PyTorch 2.5 and later."
+            )
+            warnings.warn(msg, UserWarning, stacklevel=2)
+            backend = "default"
+
+        if backend == "openvino":
             if task not in VALID_TASKS:
                 msg = (
                     f"Got invalid task {task}, "
@@ -162,51 +178,26 @@ class HuggingFacePipeline(BaseLLM):
             if not is_optimum_intel_available():
                 raise ImportError(err_msg)
 
-            # TODO: upgrade _MIN_OPTIMUM_VERSION to 1.22 after release
-            min_optimum_version = (
-                "1.22"
-                if backend == "ipex" and task != "text-generation"
-                else _MIN_OPTIMUM_VERSION
-            )
-            if is_optimum_intel_version("<", min_optimum_version):
+            if is_optimum_intel_version("<", _MIN_OPTIMUM_VERSION):
                 msg = (
                     f"Backend: {backend} requires optimum-intel>="
-                    f"{min_optimum_version}. You can install it with pip: "
+                    f"{_MIN_OPTIMUM_VERSION}. You can install it with pip: "
                     "`pip install --upgrade --upgrade-strategy eager "
                     f"`optimum[{backend}]`."
                 )
                 raise ImportError(msg)
 
-            if backend == "openvino":
-                if not is_openvino_available():
-                    raise ImportError(err_msg)
+            if not is_openvino_available():
+                raise ImportError(err_msg)
 
-                from optimum.intel import (  # type: ignore[import]
-                    OVModelForCausalLM,
-                    OVModelForSeq2SeqLM,
-                )
+            from optimum.intel import (  # type: ignore[import]
+                OVModelForCausalLM,
+                OVModelForSeq2SeqLM,
+            )
 
-                model_cls = (
-                    OVModelForCausalLM
-                    if task == "text-generation"
-                    else OVModelForSeq2SeqLM
-                )
-            else:
-                if not is_ipex_available():
-                    raise ImportError(err_msg)
-
-                if task == "text-generation":
-                    from optimum.intel import (
-                        IPEXModelForCausalLM,  # type: ignore[import]
-                    )
-
-                    model_cls = IPEXModelForCausalLM
-                else:
-                    from optimum.intel import (
-                        IPEXModelForSeq2SeqLM,  # type: ignore[import]
-                    )
-
-                    model_cls = IPEXModelForSeq2SeqLM
+            model_cls = (
+                OVModelForCausalLM if task == "text-generation" else OVModelForSeq2SeqLM
+            )
 
         else:
             model_cls = (
@@ -252,22 +243,28 @@ class HuggingFacePipeline(BaseLLM):
         ):
             import torch
 
-            cuda_device_count = torch.cuda.device_count()
-            if device < -1 or (device >= cuda_device_count):
+            # `torch.accelerator` (added in PyTorch 2.6) is device-agnostic and
+            # detects CUDA, XPU, and other accelerator backends.
+            if hasattr(torch, "accelerator"):
+                accelerator_device_count = torch.accelerator.device_count()
+            else:
+                accelerator_device_count = torch.cuda.device_count()
+            if device < -1 or (device >= accelerator_device_count):
                 msg = (
                     f"Got device=={device}, "
-                    f"device is required to be within [-1, {cuda_device_count})"
+                    f"device is required to be within [-1, {accelerator_device_count})"
                 )
                 raise ValueError(msg)
             if device_map is not None and device < 0:
                 device = None
-            if device is not None and device < 0 and cuda_device_count > 0:
+            if device is not None and device < 0 and accelerator_device_count > 0:
                 logger.warning(
-                    "Device has %d GPUs available. "
+                    "Device has %d accelerator(s) available. "
                     "Provide device={deviceId} to `from_model_id` to use available"
-                    "GPUs for execution. deviceId is -1 (default) for CPU and "
-                    "can be a positive integer associated with CUDA device id.",
-                    cuda_device_count,
+                    "accelerators for execution. deviceId is -1 (default) for CPU "
+                    "and can be a positive integer associated with the accelerator "
+                    "device id.",
+                    accelerator_device_count,
                 )
         if device is not None and device_map is not None and backend == "openvino":
             logger.warning("Please set device for OpenVINO through: `model_kwargs`")

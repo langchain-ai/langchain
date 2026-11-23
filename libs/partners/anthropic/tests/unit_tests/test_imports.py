@@ -1,6 +1,7 @@
 from langchain_anthropic import __all__
 
 EXPECTED_ALL = [
+    "__version__",
     "ChatAnthropic",
     "convert_to_anthropic_tool",
     "AnthropicLLM",

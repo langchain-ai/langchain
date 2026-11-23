@@ -1,19 +1,34 @@
+import inspect
 import json
+import warnings
 from typing import Any
 
 import pytest
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
+from pydantic.fields import FieldInfo
+from pydantic_core import PydanticUndefined
 
+from langchain_core._api import LangChainDeprecationWarning
+from langchain_core._api.deprecation import LangChainPendingDeprecationWarning
 from langchain_core.documents import Document
 from langchain_core.load import InitValidator, Serializable, dumpd, dumps, load, loads
-from langchain_core.load.serializable import _is_field_useful
-from langchain_core.messages import AIMessage
+from langchain_core.load.load import (
+    _get_default_allowed_class_paths,
+)
+from langchain_core.load.serializable import _is_field_useful, _try_neq_default
+from langchain_core.messages import AIMessage, RemoveMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.prompts import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     PromptTemplate,
 )
+from langchain_core.runnables import RunnablePassthrough, RunnablePick
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_core.tracers import log_stream
+from langchain_core.utils import from_env
+
+OPENAI_TEST_MODEL = "gpt-5.5"
 
 
 class NonBoolObj:
@@ -131,6 +146,62 @@ def test__is_field_useful() -> None:
     foo = Foo(x=default_x, y=default_y, z=ArrayObj())
     assert not _is_field_useful(foo, "x", foo.x)
     assert not _is_field_useful(foo, "y", foo.y)
+
+
+def test_try_neq_default_none_factory(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An env-backed `default_factory` at its `None` default is not flagged as changed.
+
+    Mirrors the real `output_version` field on chat models
+    (`Field(default_factory=from_env(..., default=None))`). Regression test for issue
+    #39157.
+    """
+    monkeypatch.delenv("LC_TEST_OUTPUT_VERSION", raising=False)
+
+    class Model(BaseModel):
+        none_factory: str | None = Field(
+            default_factory=from_env("LC_TEST_OUTPUT_VERSION", default=None)
+        )
+
+    field = Model.model_fields["none_factory"]
+    assert not _try_neq_default(None, field)
+    assert _try_neq_default("set", field)
+
+
+def test_try_neq_default_simulating_pydantic_2_14(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A `None`-factory default is still recognized when `get_default()` is undefined.
+
+    Pydantic 2.14+ returns `PydanticUndefined` (instead of `None`) for an un-called
+    `default_factory`; this forces that behavior on the current pydantic. The factory
+    must not be invoked, so the sentinel is mapped back to `None` for comparison.
+    """
+    monkeypatch.delenv("LC_TEST_OUTPUT_VERSION", raising=False)
+
+    called = False
+
+    def _factory() -> None:
+        nonlocal called
+        called = True
+
+    class Model(BaseModel):
+        none_factory: str | None = Field(default_factory=_factory)
+
+    real_get_default = FieldInfo.get_default
+
+    def fake_get_default(self: FieldInfo, **kwargs: Any) -> Any:
+        if self.default_factory is not None and not kwargs.get("call_default_factory"):
+            return PydanticUndefined
+        return real_get_default(self, **kwargs)
+
+    monkeypatch.setattr(FieldInfo, "get_default", fake_get_default)
+
+    field = Model.model_fields["none_factory"]
+    assert field.get_default() is PydanticUndefined
+    assert not _try_neq_default(None, field)
+    assert _try_neq_default("set", field)
+    # The factory must never be re-executed during comparison (possible side effects).
+    assert called is False
 
 
 class Foo(Serializable):
@@ -535,7 +606,7 @@ class TestDumpdEscapesLcKeyInPlainDicts:
         msg = AIMessage(
             content="Hello",
             additional_kwargs={"tool_calls": []},
-            response_metadata={"model": "gpt-4"},
+            response_metadata={"model": OPENAI_TEST_MODEL},
         )
         serialized = dumpd(msg)
         assert serialized["kwargs"]["content"] == "Hello"
@@ -590,6 +661,40 @@ class TestDumpdEscapesLcKeyInPlainDicts:
         assert serialized["kwargs"]["response_metadata"] == {
             "__lc_escaped__": {"lc": 1}
         }
+
+    def test_fake_secret_marker_in_metadata_is_escaped(self) -> None:
+        """A free-form dict shaped like a secret marker must not bypass escaping.
+
+        Previously the shape check accepted any value for `id`, letting a
+        constructor dict nested inside `id` reach the Reviver and get
+        instantiated on the way back in.
+        """
+        poisoned_metadata = {
+            "lc": 1,
+            "type": "secret",
+            "id": [
+                {
+                    "lc": 1,
+                    "type": "constructor",
+                    "id": ["langchain_core", "documents", "base", "Document"],
+                    "kwargs": {"page_content": "injected"},
+                }
+            ],
+        }
+        doc = Document(page_content="hello", metadata=poisoned_metadata)
+
+        serialized = dumpd(doc)
+        # The fake marker must be wrapped in `__lc_escaped__`, not passed
+        # through as if it were a real secret.
+        assert serialized["kwargs"]["metadata"] == {"__lc_escaped__": poisoned_metadata}
+
+        # And on round-trip, the nested constructor must not be instantiated:
+        # the metadata comes back as plain data, even with the most permissive
+        # allowlist.
+        roundtripped = load(serialized, allowed_objects="all")
+        assert isinstance(roundtripped, Document)
+        assert roundtripped.metadata == poisoned_metadata
+        assert isinstance(roundtripped.metadata["id"][0], dict)
 
 
 class TestInitValidator:
@@ -891,3 +996,298 @@ class TestJinja2SecurityBlocking:
         # jinja2 should be blocked by default
         with pytest.raises(ValueError, match="Jinja2 templates are not allowed"):
             load(serialized_jinja2, allowed_objects=[PromptTemplate])
+
+
+class TestInitValidatorInLoad:
+    """Tests that load() properly integrates with the init_validator."""
+
+    def test_init_validator_called(self) -> None:
+        """Test init_validator fires during deserialization."""
+        msg = AIMessage(content="test")
+        serialized = dumpd(msg)
+
+        init_validator_called = []
+
+        def custom_init_validator(
+            _class_path: tuple[str, ...], _kwargs: dict[str, Any]
+        ) -> None:
+            init_validator_called.append(True)
+
+        loaded = load(
+            serialized,
+            allowed_objects=[AIMessage],
+            init_validator=custom_init_validator,
+        )
+        assert loaded == msg
+        assert len(init_validator_called) == 1
+
+
+def test_load_js_remove_message() -> None:
+    serialized = {
+        "lc": 1,
+        "type": "constructor",
+        "id": ["langchain_core", "messages", "RemoveMessage"],
+        "kwargs": {"id": "msg-1"},
+    }
+    assert load(serialized, allowed_objects="messages") == RemoveMessage(id="msg-1")
+
+
+class TestMessagesAllowlistTier:
+    """Tests for the 'messages' allowlist tier."""
+
+    def test_messages_tier_contains_expected_types(self) -> None:
+        expected = {
+            "AIMessage",
+            "AIMessageChunk",
+            "HumanMessage",
+            "HumanMessageChunk",
+            "SystemMessage",
+            "SystemMessageChunk",
+            "ToolMessage",
+            "ToolMessageChunk",
+            "RemoveMessage",
+        }
+        paths = _get_default_allowed_class_paths("messages")
+        actual = {t[-1] for t in paths}
+        assert expected.issubset(actual), f"Missing: {expected - actual}"
+
+    def test_messages_tier_excludes_legacy_and_abstract_types(self) -> None:
+        legacy = {
+            "BaseMessage",
+            "BaseMessageChunk",
+            "ChatMessage",
+            "ChatMessageChunk",
+            "FunctionMessage",
+            "FunctionMessageChunk",
+        }
+        paths = _get_default_allowed_class_paths("messages")
+        actual = {t[-1] for t in paths}
+        overlap = legacy & actual
+        assert not overlap, f"Legacy/abstract message types in tier: {overlap}"
+
+    def test_messages_tier_excludes_non_message_types(self) -> None:
+        non_messages = {
+            "Document",
+            "Generation",
+            "ChatGeneration",
+            "GenerationChunk",
+            "ChatGenerationChunk",
+            "PromptValue",
+            "StringPromptValue",
+            "ChatPromptValue",
+            "AgentAction",
+            "AgentActionMessageLog",
+            "AgentFinish",
+        }
+        paths = _get_default_allowed_class_paths("messages")
+        actual = {t[-1] for t in paths}
+        overlap = non_messages & actual
+        assert not overlap, f"Non-message types in messages tier: {overlap}"
+
+    def test_messages_tier_excludes_dangerous_types(self) -> None:
+        dangerous = {
+            "ChatOpenAI",
+            "ChatAnthropic",
+            "OpenAI",
+            "PromptTemplate",
+            "ChatPromptTemplate",
+            "FewShotPromptWithTemplates",
+            "RunnableBinding",
+            "RunnableBranch",
+            "RunnableParallel",
+            "RunnableConfigurableFields",
+            "RunnableConfigurableAlternatives",
+            "DynamicRunnable",
+            "HubRunnable",
+            "OutputFixingParser",
+        }
+        paths = _get_default_allowed_class_paths("messages")
+        actual = {t[-1] for t in paths}
+        overlap = dangerous & actual
+        assert not overlap, f"Dangerous types in messages tier: {overlap}"
+
+    def test_messages_tier_load_allows_message(self) -> None:
+        serialized = {
+            "lc": 1,
+            "type": "constructor",
+            "id": ["langchain", "schema", "messages", "AIMessage"],
+            "kwargs": {"content": "hello"},
+        }
+        loaded = load(serialized, allowed_objects="messages")
+        assert isinstance(loaded, AIMessage)
+        assert loaded.content == "hello"
+
+    def test_messages_tier_load_blocks_prompt_template(self) -> None:
+        serialized = {
+            "lc": 1,
+            "type": "constructor",
+            "id": ["langchain", "prompts", "prompt", "PromptTemplate"],
+            "kwargs": {
+                "input_variables": ["name"],
+                "template": "{name}",
+                "template_format": "f-string",
+            },
+        }
+        with pytest.raises(ValueError, match="not allowed"):
+            load(serialized, allowed_objects="messages")
+
+    def test_messages_tier_load_blocks_chat_model(self) -> None:
+        serialized = {
+            "lc": 1,
+            "type": "constructor",
+            "id": ["langchain", "chat_models", "openai", "ChatOpenAI"],
+            "kwargs": {"model": OPENAI_TEST_MODEL},
+        }
+        with pytest.raises(ValueError, match="not allowed"):
+            load(serialized, allowed_objects="messages")
+
+
+class TestAllowedObjectsDeprecation:
+    """Tests for the pending-default warning emitted when `allowed_objects` is unset."""
+
+    def test_unset_default_emits_pending_warning(self) -> None:
+        """load() with no allowed_objects emits pending deprecation warning."""
+        serialized = {
+            "lc": 1,
+            "type": "constructor",
+            "id": ["langchain", "schema", "messages", "AIMessage"],
+            "kwargs": {"content": "hello"},
+        }
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            loaded = load(serialized)
+            dep_warnings = [
+                x
+                for x in w
+                if issubclass(
+                    x.category,
+                    (
+                        LangChainDeprecationWarning,
+                        LangChainPendingDeprecationWarning,
+                    ),
+                )
+            ]
+            assert len(dep_warnings) >= 1
+            assert "allowed_objects" in str(dep_warnings[0].message)
+        assert isinstance(loaded, AIMessage)
+
+    def test_explicit_core_no_warning(self) -> None:
+        """load() with explicit allowed_objects='core' does NOT warn."""
+        serialized = {
+            "lc": 1,
+            "type": "constructor",
+            "id": ["langchain", "schema", "messages", "AIMessage"],
+            "kwargs": {"content": "hello"},
+        }
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            load(serialized, allowed_objects="core")
+            dep_warnings = [
+                x
+                for x in w
+                if issubclass(
+                    x.category,
+                    (
+                        LangChainDeprecationWarning,
+                        LangChainPendingDeprecationWarning,
+                    ),
+                )
+            ]
+            assert len(dep_warnings) == 0
+
+    def test_explicit_messages_no_deprecation_warning(self) -> None:
+        serialized = {
+            "lc": 1,
+            "type": "constructor",
+            "id": ["langchain", "schema", "messages", "AIMessage"],
+            "kwargs": {"content": "hello"},
+        }
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            load(serialized, allowed_objects="messages")
+            dep_warnings = [
+                x for x in w if issubclass(x.category, LangChainDeprecationWarning)
+            ]
+            assert len(dep_warnings) == 0
+
+    def test_explicit_list_no_deprecation_warning(self) -> None:
+        serialized = {
+            "lc": 1,
+            "type": "constructor",
+            "id": ["langchain", "schema", "messages", "AIMessage"],
+            "kwargs": {"content": "hello"},
+        }
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            load(serialized, allowed_objects=[AIMessage])
+            dep_warnings = [
+                x for x in w if issubclass(x.category, LangChainDeprecationWarning)
+            ]
+            assert len(dep_warnings) == 0
+
+
+class TestInternalCallSitesUseMessages:
+    """Tests that internal call sites use 'messages' tier, not 'all'."""
+
+    def test_history_py_does_not_use_all(self) -> None:
+        source = inspect.getsource(RunnableWithMessageHistory)
+        assert 'allowed_objects="all"' not in source
+        assert (
+            'allowed_objects="messages"' in source
+            or "allowed_objects='messages'" in source
+        )
+
+    def test_log_stream_does_not_use_all(self) -> None:
+        source = inspect.getsource(log_stream)
+        assert 'allowed_objects="all"' not in source
+        assert (
+            'allowed_objects="messages"' in source
+            or "allowed_objects='messages'" in source
+        )
+
+
+def test_runnable_pick_roundtrips() -> None:
+    """Test `RunnablePick` can be loaded back after being dumped.
+
+    Regression test: `RunnablePick` reports `is_lc_serializable()` and dumps fine,
+    but was missing from the deserialization mapping, so `load` rejected it while
+    its siblings in the same module round-tripped.
+    """
+    original = RunnablePick(keys=["a"])
+
+    revived = load(dumpd(original))
+
+    assert isinstance(revived, RunnablePick)
+    assert revived.keys == ["a"]
+
+
+def test_chain_using_pick_roundtrips() -> None:
+    """Test a chain built with the public `.pick()` helper survives a round trip."""
+    chain = RunnablePassthrough().pick(["a"])
+
+    revived = load(dumpd(chain))
+
+    assert revived.invoke({"a": 1, "b": 2}) == {"a": 1}
+
+
+def _nest(depth: int, *, as_dict: bool) -> str:
+    open_, close = ('{"a": ', "}") if as_dict else ("[", "]")
+    return open_ * depth + '"leaf"' + close * depth
+
+
+@pytest.mark.parametrize("as_dict", [True, False])
+def test_load_rejects_deeply_nested_input(*, as_dict: bool) -> None:
+    text = _nest(500, as_dict=as_dict)
+
+    with pytest.raises(ValueError, match="nested more than 200 levels"):
+        load(json.loads(text), allowed_objects="messages")
+    with pytest.raises(ValueError, match="nested more than 200 levels"):
+        loads(text, allowed_objects="messages")
+
+
+@pytest.mark.parametrize("as_dict", [True, False])
+def test_load_accepts_nesting_up_to_limit(*, as_dict: bool) -> None:
+    text = _nest(200, as_dict=as_dict)
+
+    assert load(json.loads(text), allowed_objects="messages") == json.loads(text)
+    assert loads(text, allowed_objects="messages") == json.loads(text)

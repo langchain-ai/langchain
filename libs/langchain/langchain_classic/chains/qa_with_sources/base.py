@@ -36,11 +36,11 @@ from langchain_classic.chains.qa_with_sources.map_reduce_prompt import (
 
 @deprecated(
     since="0.2.13",
-    removal="1.0",
-    message=(
-        "This class is deprecated. Refer to this guide on retrieval and question "
-        "answering with sources: "
-        "https://python.langchain.com/docs/how_to/qa_sources/"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build new RAG flows with `create_agent` and a retrieval tool. See "
+        "https://docs.langchain.com/oss/python/langchain/rag"
     ),
 )
 class BaseQAWithSourcesChain(Chain, ABC):
@@ -217,11 +217,11 @@ class BaseQAWithSourcesChain(Chain, ABC):
 
 @deprecated(
     since="0.2.13",
-    removal="1.0",
-    message=(
-        "This class is deprecated. Refer to this guide on retrieval and question "
-        "answering with sources: "
-        "https://python.langchain.com/docs/how_to/qa_sources/"
+    removal="2.0.0",
+    alternative="langchain.agents.create_agent",
+    addendum=(
+        "Build new RAG flows with `create_agent` and a retrieval tool. See "
+        "https://docs.langchain.com/oss/python/langchain/rag"
     ),
 )
 class QAWithSourcesChain(BaseQAWithSourcesChain):
