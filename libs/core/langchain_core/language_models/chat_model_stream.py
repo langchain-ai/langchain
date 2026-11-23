@@ -1219,7 +1219,7 @@ class ChatModelStream(_ChatModelStreamBase):
         `.output.content` is always a list of v1 protocol blocks
         (text, reasoning, tool_call, image, …), regardless of the
         underlying model's `output_version` setting. That attribute
-        only controls the legacy `stream()` / `astream()` / `invoke()`
+        only controls the `stream()` / `astream()` / `invoke()`
         paths; `ChatModelStream` is built on the content-block
         protocol and emits v1 shapes by construction.
 
