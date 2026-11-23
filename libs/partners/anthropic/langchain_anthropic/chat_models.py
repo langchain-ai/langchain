@@ -2286,15 +2286,42 @@ class ChatAnthropic(BaseChatModel):
                 and not _compact_in_params(payload)
             )
             block_start_event = None
+            usage_fallback: dict[str, BaseModel | None] = {"usage": None}
+            previous_usage: BaseModel | None = None
+            received_message_stop = False
+            received_stop_reason = False
             is_first_chunk = True
             for event in stream:
+                if event.type == "message_start":
+                    usage_fallback["usage"] = event.message.usage
+                elif event.type == "message_stop":
+                    received_message_stop = True
+                elif event.type == "message_delta" and event.delta.stop_reason:
+                    received_stop_reason = True
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
                     coerce_content_to_string=coerce_content_to_string,
                     block_start_event=block_start_event,
+                    usage_fallback=usage_fallback,
                 )
                 if msg is not None:
+                    if msg.usage_metadata is not None:
+                        # `message_delta` usage is cumulative, so report only
+                        # the increment since the previous usage-bearing chunk;
+                        # chunk aggregation sums increments back to the total.
+                        # Increments are computed from the raw cumulative usage
+                        # so a field whose representation changes between
+                        # deltas (e.g. cache creation with and without a TTL
+                        # breakdown) is not counted twice.
+                        merged_usage = usage_fallback["usage"]
+                        if previous_usage is None or merged_usage is None:
+                            previous_usage = merged_usage
+                        else:
+                            msg.usage_metadata = _usage_increment_metadata(
+                                merged_usage, previous_usage
+                            )
+                            previous_usage = merged_usage
                     chunk = ChatGenerationChunk(
                         message=msg,
                         generation_info=base_generation_info
@@ -2305,6 +2332,10 @@ class ChatAnthropic(BaseChatModel):
                     if run_manager:
                         run_manager.on_llm_new_token(chunk.text, chunk=chunk)
                     yield chunk
+            _raise_if_stream_truncated(
+                received_message_stop=received_message_stop,
+                received_stop_reason=received_stop_reason,
+            )
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
         except anthropic.APIError as e:
@@ -2337,15 +2368,42 @@ class ChatAnthropic(BaseChatModel):
                 and not _compact_in_params(payload)
             )
             block_start_event = None
+            usage_fallback: dict[str, BaseModel | None] = {"usage": None}
+            previous_usage: BaseModel | None = None
+            received_message_stop = False
+            received_stop_reason = False
             is_first_chunk = True
             async for event in stream:
+                if event.type == "message_start":
+                    usage_fallback["usage"] = event.message.usage
+                elif event.type == "message_stop":
+                    received_message_stop = True
+                elif event.type == "message_delta" and event.delta.stop_reason:
+                    received_stop_reason = True
                 msg, block_start_event = self._make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
                     coerce_content_to_string=coerce_content_to_string,
                     block_start_event=block_start_event,
+                    usage_fallback=usage_fallback,
                 )
                 if msg is not None:
+                    if msg.usage_metadata is not None:
+                        # `message_delta` usage is cumulative, so report only
+                        # the increment since the previous usage-bearing chunk;
+                        # chunk aggregation sums increments back to the total.
+                        # Increments are computed from the raw cumulative usage
+                        # so a field whose representation changes between
+                        # deltas (e.g. cache creation with and without a TTL
+                        # breakdown) is not counted twice.
+                        merged_usage = usage_fallback["usage"]
+                        if previous_usage is None or merged_usage is None:
+                            previous_usage = merged_usage
+                        else:
+                            msg.usage_metadata = _usage_increment_metadata(
+                                merged_usage, previous_usage
+                            )
+                            previous_usage = merged_usage
                     chunk = ChatGenerationChunk(
                         message=msg,
                         generation_info=base_generation_info
@@ -2356,6 +2414,10 @@ class ChatAnthropic(BaseChatModel):
                     if run_manager:
                         await run_manager.on_llm_new_token(chunk.text, chunk=chunk)
                     yield chunk
+            _raise_if_stream_truncated(
+                received_message_stop=received_message_stop,
+                received_stop_reason=received_stop_reason,
+            )
         except anthropic.BadRequestError as e:
             _handle_anthropic_bad_request(e)
         except anthropic.APIError as e:
@@ -2368,6 +2430,7 @@ class ChatAnthropic(BaseChatModel):
         stream_usage: bool = True,
         coerce_content_to_string: bool,
         block_start_event: anthropic.types.RawMessageStreamEvent | None = None,
+        usage_fallback: dict[str, BaseModel | None] | None = None,
     ) -> tuple[AIMessageChunk | None, anthropic.types.RawMessageStreamEvent | None]:
         """Convert Anthropic streaming event to `AIMessageChunk`.
 
@@ -2381,6 +2444,10 @@ class ChatAnthropic(BaseChatModel):
                 content like tool calls and citations are maintained.
             block_start_event: Previous content block start event, used for tracking
                 tool use blocks and maintaining context across related events.
+            usage_fallback: Mutable holder for the latest cumulative usage seen
+                in this stream, seeded from the `message_start` event. A
+                `message_delta` event falls back to it for fields it omits,
+                and the merged usage is written back for the next delta.
 
         Returns:
             Tuple with
@@ -2559,9 +2626,25 @@ class ChatAnthropic(BaseChatModel):
 
         # Process final usage metadata and completion info
         elif event.type == "message_delta":
-            usage_metadata = (
-                _create_usage_metadata(event.usage) if stream_usage else None
-            )
+            usage: BaseModel = event.usage
+            if usage_fallback is not None and usage_fallback["usage"] is not None:
+                # Some streams report input and cache fields only in
+                # `message_start`, or update them in an earlier delta; fall
+                # back to the latest cumulative usage for fields this delta
+                # omits. Fields the delta does report are cumulative and win.
+                fallback = usage_fallback["usage"]
+                update = {
+                    k: v
+                    for k, v in event.usage
+                    if v is not None and k in type(fallback).model_fields
+                }
+                if "cache_creation_input_tokens" in update:
+                    # The delta's total supersedes the earlier TTL breakdown
+                    # of cache creation tokens.
+                    update.setdefault("cache_creation", None)
+                usage = fallback.model_copy(update=update)
+                usage_fallback["usage"] = usage
+            usage_metadata = _create_usage_metadata(usage) if stream_usage else None
             response_metadata = {
                 "stop_reason": event.delta.stop_reason,
                 "stop_sequence": event.delta.stop_sequence,
@@ -3421,6 +3504,88 @@ def _finish_reason_fields(stop_reason: str | None) -> dict[str, str]:
         # `pause_turn` means the caller must send another request to finish.
         "finish_state": "suspended" if stop_reason == "pause_turn" else "complete",
     }
+
+
+def _raise_if_stream_truncated(
+    *, received_message_stop: bool, received_stop_reason: bool
+) -> None:
+    """Raise if a stream reported a `stop_reason` but never `message_stop`.
+
+    A `message_delta` carrying a `stop_reason` marks the response complete;
+    if the stream then ends without `message_stop`, the response was cut
+    off in transit and must not be reported as a successful completion.
+    Streams that never report a `stop_reason` are already distinguishable
+    as incomplete, so they are left alone.
+    """
+    if received_stop_reason and not received_message_stop:
+        msg = (
+            "Anthropic stream ended without a message_stop event; "
+            "the response is incomplete."
+        )
+        raise ValueError(msg)
+
+
+def _cache_creation_tokens(anthropic_usage: BaseModel) -> int:
+    """Total cache creation tokens, from the TTL breakdown if present."""
+    cache_creation = getattr(anthropic_usage, "cache_creation", None)
+    if cache_creation:
+        if isinstance(cache_creation, BaseModel):
+            cache_creation = cache_creation.model_dump()
+        specific = sum(
+            cache_creation.get(k) or 0
+            for k in ("ephemeral_5m_input_tokens", "ephemeral_1h_input_tokens")
+        )
+        if specific > 0:
+            return specific
+    return getattr(anthropic_usage, "cache_creation_input_tokens", 0) or 0
+
+
+def _usage_increment_metadata(current: BaseModel, previous: BaseModel) -> UsageMetadata:
+    """Usage added between two cumulative Anthropic usage snapshots.
+
+    Computed on the raw counters so the result is independent of how each
+    snapshot represents them (notably cache creation, reported with a TTL
+    breakdown in some events and as a generic total in others).
+    """
+
+    def diff(field: str) -> int:
+        return max(
+            (getattr(current, field, 0) or 0) - (getattr(previous, field, 0) or 0),
+            0,
+        )
+
+    input_token_details: dict = {}
+    if cache_read := diff("cache_read_input_tokens"):
+        input_token_details["cache_read"] = cache_read
+    if cache_creation := max(
+        _cache_creation_tokens(current) - _cache_creation_tokens(previous), 0
+    ):
+        input_token_details["cache_creation"] = cache_creation
+
+    input_tokens = (
+        diff("input_tokens")
+        + (input_token_details.get("cache_read") or 0)
+        + (input_token_details.get("cache_creation") or 0)
+    )
+    output_tokens = diff("output_tokens")
+    usage_metadata = UsageMetadata(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        total_tokens=input_tokens + output_tokens,
+        input_token_details=InputTokenDetails(**input_token_details),
+    )
+
+    current_reasoning = getattr(
+        getattr(current, "output_tokens_details", None), "thinking_tokens", None
+    )
+    previous_reasoning = getattr(
+        getattr(previous, "output_tokens_details", None), "thinking_tokens", None
+    )
+    if current_reasoning is not None:
+        usage_metadata["output_token_details"] = OutputTokenDetails(
+            reasoning=max(current_reasoning - (previous_reasoning or 0), 0)
+        )
+    return usage_metadata
 
 
 def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:

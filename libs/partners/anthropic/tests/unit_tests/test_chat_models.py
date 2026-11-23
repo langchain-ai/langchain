@@ -15,6 +15,7 @@ import anthropic
 import pytest
 from anthropic.types import Message, TextBlock, Usage
 from blockbuster import blockbuster_ctx
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.exceptions import (
     ContextOverflowError,
     ModelAPIError,
@@ -4046,6 +4047,375 @@ def test_streaming_cache_token_reporting() -> None:
     assert delta_chunk.usage_metadata["input_tokens"] == 135
     assert delta_chunk.usage_metadata["output_tokens"] == 50
     assert delta_chunk.usage_metadata["total_tokens"] == 185
+
+
+_STREAM_START_USAGE = {
+    "input_tokens": 10,
+    "cache_read_input_tokens": 20,
+    "cache_creation_input_tokens": 60,
+}
+
+
+def _usage_stream_events(
+    deltas: list[dict[str, Any]], *, include_message_stop: bool = True
+) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = [
+        {
+            "type": "message_start",
+            "message": {
+                "id": "msg_1",
+                "type": "message",
+                "role": "assistant",
+                "model": MODEL_NAME,
+                "content": [],
+                "stop_reason": None,
+                "stop_sequence": None,
+                "usage": {"output_tokens": 1, **_STREAM_START_USAGE},
+            },
+        },
+        {
+            "type": "content_block_start",
+            "index": 0,
+            "content_block": {"type": "text", "text": "Synthetic text"},
+        },
+        {"type": "content_block_stop", "index": 0},
+        *deltas,
+    ]
+    if include_message_stop:
+        events.append({"type": "message_stop"})
+    return events
+
+
+def _usage_delta(usage: dict[str, Any], stop_reason: str | None = None) -> dict:
+    return {
+        "type": "message_delta",
+        "delta": {"stop_reason": stop_reason, "stop_sequence": None},
+        "usage": usage,
+    }
+
+
+def _mock_transport_clients(events: list[dict[str, Any]]) -> Any:
+    """Patch targets returning sync/async httpx clients over a mock transport."""
+
+    def handler(request: Any) -> Any:
+        assert json.loads(request.content)["stream"] is True
+        body = "".join(
+            f"event: {event['type']}\ndata: {json.dumps(event)}\n\n" for event in events
+        )
+        return httpx.Response(
+            200, text=body, headers={"content-type": "text/event-stream"}
+        )
+
+    sync_client = httpx.Client(transport=httpx.MockTransport(handler))
+    async_client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    return sync_client, async_client
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_streaming_cumulative_usage_deltas(use_async: bool) -> None:  # noqa: FBT001
+    """Cumulative `message_delta` usage must not be summed across deltas.
+
+    Input and cache fields arrive only in `message_start`; the deltas report
+    cumulative output tokens (3, then 7). The aggregated message must report
+    the final totals (90 input, 7 output), not 0 input and 3 + 7 output.
+    """
+    events = _usage_stream_events(
+        [
+            _usage_delta({"output_tokens": 3}),
+            _usage_delta({"output_tokens": 7}, "end_turn"),
+        ]
+    )
+    sync_client, async_client = _mock_transport_clients(events)
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="test", max_retries=0)
+    with (
+        patch(
+            "langchain_anthropic.chat_models._get_default_httpx_client",
+            return_value=sync_client,
+        ),
+        patch(
+            "langchain_anthropic.chat_models._get_default_async_httpx_client",
+            return_value=async_client,
+        ),
+    ):
+        if use_async:
+            message = await llm.ainvoke("Synthetic fixture", stream=True)
+        else:
+            message = llm.invoke("Synthetic fixture", stream=True)
+
+    assert message.usage_metadata is not None
+    assert message.usage_metadata["input_tokens"] == 90
+    assert message.usage_metadata["output_tokens"] == 7
+    assert message.usage_metadata["total_tokens"] == 97
+    input_details = message.usage_metadata["input_token_details"]
+    assert input_details.get("cache_read") == 20
+    assert input_details.get("cache_creation") == 60
+    assert message.response_metadata["finish_state"] == "complete"
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_streaming_single_delta_with_full_usage(use_async: bool) -> None:  # noqa: FBT001
+    """A single `message_delta` carrying every field reports those totals."""
+    events = _usage_stream_events(
+        [_usage_delta({"output_tokens": 7, **_STREAM_START_USAGE}, "end_turn")]
+    )
+    sync_client, async_client = _mock_transport_clients(events)
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="test", max_retries=0)
+    with (
+        patch(
+            "langchain_anthropic.chat_models._get_default_httpx_client",
+            return_value=sync_client,
+        ),
+        patch(
+            "langchain_anthropic.chat_models._get_default_async_httpx_client",
+            return_value=async_client,
+        ),
+    ):
+        if use_async:
+            message = await llm.ainvoke("Synthetic fixture", stream=True)
+        else:
+            message = llm.invoke("Synthetic fixture", stream=True)
+
+    assert message.usage_metadata is not None
+    assert message.usage_metadata["input_tokens"] == 90
+    assert message.usage_metadata["output_tokens"] == 7
+    assert message.response_metadata["finish_state"] == "complete"
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_streaming_usage_falls_back_to_latest_delta(use_async: bool) -> None:  # noqa: FBT001
+    """A field updated by one delta and omitted by the next must not revert
+    to the `message_start` value.
+
+    Deltas report cumulative input tokens 20, omit input, then report 20
+    again; the aggregate must be 20 input, not 20 + 10.
+    """
+    events: list[dict[str, Any]] = [
+        {
+            "type": "message_start",
+            "message": {
+                "id": "msg_1",
+                "type": "message",
+                "role": "assistant",
+                "model": MODEL_NAME,
+                "content": [],
+                "stop_reason": None,
+                "stop_sequence": None,
+                "usage": {"input_tokens": 10, "output_tokens": 1},
+            },
+        },
+        _usage_delta({"input_tokens": 20, "output_tokens": 3}),
+        _usage_delta({"output_tokens": 7}),
+        _usage_delta({"input_tokens": 20, "output_tokens": 9}, "end_turn"),
+        {"type": "message_stop"},
+    ]
+    sync_client, async_client = _mock_transport_clients(events)
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="test", max_retries=0)
+    with (
+        patch(
+            "langchain_anthropic.chat_models._get_default_httpx_client",
+            return_value=sync_client,
+        ),
+        patch(
+            "langchain_anthropic.chat_models._get_default_async_httpx_client",
+            return_value=async_client,
+        ),
+    ):
+        if use_async:
+            message = await llm.ainvoke("Synthetic fixture", stream=True)
+        else:
+            message = llm.invoke("Synthetic fixture", stream=True)
+
+    assert message.usage_metadata is not None
+    assert message.usage_metadata["input_tokens"] == 20
+    assert message.usage_metadata["output_tokens"] == 9
+    assert message.usage_metadata["total_tokens"] == 29
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_streaming_pause_turn_with_message_stop_does_not_raise(
+    use_async: bool,  # noqa: FBT001
+) -> None:
+    """A `pause_turn` stream that does end with `message_stop` completes as
+    suspended, without a truncation error.
+    """
+    events = _usage_stream_events(
+        [_usage_delta({"output_tokens": 7, **_STREAM_START_USAGE}, "pause_turn")]
+    )
+    sync_client, async_client = _mock_transport_clients(events)
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="test", max_retries=0)
+    with (
+        patch(
+            "langchain_anthropic.chat_models._get_default_httpx_client",
+            return_value=sync_client,
+        ),
+        patch(
+            "langchain_anthropic.chat_models._get_default_async_httpx_client",
+            return_value=async_client,
+        ),
+    ):
+        if use_async:
+            message = await llm.ainvoke("Synthetic fixture", stream=True)
+        else:
+            message = llm.invoke("Synthetic fixture", stream=True)
+
+    assert message.response_metadata["finish_state"] == "suspended"
+    assert message.usage_metadata is not None
+    assert message.usage_metadata["output_tokens"] == 7
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_streaming_usage_disabled_reports_no_usage(use_async: bool) -> None:  # noqa: FBT001
+    """With `stream_usage=False`, streamed chunks carry no usage metadata."""
+    events = _usage_stream_events(
+        [
+            _usage_delta({"output_tokens": 3}),
+            _usage_delta({"output_tokens": 7}, "end_turn"),
+        ]
+    )
+    sync_client, async_client = _mock_transport_clients(events)
+    llm = ChatAnthropic(
+        model=MODEL_NAME, api_key="test", max_retries=0, stream_usage=False
+    )
+    with (
+        patch(
+            "langchain_anthropic.chat_models._get_default_httpx_client",
+            return_value=sync_client,
+        ),
+        patch(
+            "langchain_anthropic.chat_models._get_default_async_httpx_client",
+            return_value=async_client,
+        ),
+    ):
+        if use_async:
+            message = await llm.ainvoke("Synthetic fixture", stream=True)
+        else:
+            message = llm.invoke("Synthetic fixture", stream=True)
+
+    assert message.usage_metadata is None
+    assert message.response_metadata["finish_state"] == "complete"
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_streaming_cache_creation_representation_change(use_async: bool) -> None:  # noqa: FBT001
+    """Cache creation reported with a TTL breakdown in `message_start` and
+    as a generic total in a later delta is the same 60 tokens; the
+    aggregated details must not count them twice.
+    """
+    events: list[dict[str, Any]] = [
+        {
+            "type": "message_start",
+            "message": {
+                "id": "msg_1",
+                "type": "message",
+                "role": "assistant",
+                "model": MODEL_NAME,
+                "content": [],
+                "stop_reason": None,
+                "stop_sequence": None,
+                "usage": {
+                    "input_tokens": 10,
+                    "cache_read_input_tokens": 20,
+                    "cache_creation_input_tokens": 60,
+                    "cache_creation": {
+                        "ephemeral_5m_input_tokens": 60,
+                        "ephemeral_1h_input_tokens": 0,
+                    },
+                    "output_tokens": 1,
+                },
+            },
+        },
+        _usage_delta({"output_tokens": 3}),
+        _usage_delta(
+            {"output_tokens": 7, "cache_creation_input_tokens": 60}, "end_turn"
+        ),
+        {"type": "message_stop"},
+    ]
+    sync_client, async_client = _mock_transport_clients(events)
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="test", max_retries=0)
+    with (
+        patch(
+            "langchain_anthropic.chat_models._get_default_httpx_client",
+            return_value=sync_client,
+        ),
+        patch(
+            "langchain_anthropic.chat_models._get_default_async_httpx_client",
+            return_value=async_client,
+        ),
+    ):
+        if use_async:
+            message = await llm.ainvoke("Synthetic fixture", stream=True)
+        else:
+            message = llm.invoke("Synthetic fixture", stream=True)
+
+    assert message.usage_metadata is not None
+    assert message.usage_metadata["input_tokens"] == 90
+    assert message.usage_metadata["output_tokens"] == 7
+    details = message.usage_metadata["input_token_details"]
+    assert details.get("cache_read") == 20
+    cache_creation_total = sum(
+        cast("int", details.get(key)) or 0
+        for key in (
+            "cache_creation",
+            "ephemeral_5m_input_tokens",
+            "ephemeral_1h_input_tokens",
+        )
+    )
+    assert cache_creation_total == 60
+
+
+class _EndErrorRecorder(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.events: list[str] = []
+
+    def on_llm_end(self, *args: Any, **kwargs: Any) -> None:
+        self.events.append("on_llm_end")
+
+    def on_llm_error(self, *args: Any, **kwargs: Any) -> None:
+        self.events.append("on_llm_error")
+
+
+@pytest.mark.parametrize("use_async", [False, True])
+async def test_streaming_missing_message_stop_raises(use_async: bool) -> None:  # noqa: FBT001
+    """A stream ending after the final `message_delta` but before
+    `message_stop` is truncated and must surface as an error, not a
+    successful completion.
+    """
+    events = _usage_stream_events(
+        [_usage_delta({"output_tokens": 7, **_STREAM_START_USAGE}, "end_turn")],
+        include_message_stop=False,
+    )
+    sync_client, async_client = _mock_transport_clients(events)
+    recorder = _EndErrorRecorder()
+    llm = ChatAnthropic(model=MODEL_NAME, api_key="test", max_retries=0)
+
+    async def run() -> None:
+        if use_async:
+            await llm.ainvoke(
+                "Synthetic fixture",
+                stream=True,
+                config={"callbacks": [recorder]},
+            )
+        else:
+            llm.invoke(
+                "Synthetic fixture",
+                stream=True,
+                config={"callbacks": [recorder]},
+            )
+
+    with (
+        patch(
+            "langchain_anthropic.chat_models._get_default_httpx_client",
+            return_value=sync_client,
+        ),
+        patch(
+            "langchain_anthropic.chat_models._get_default_async_httpx_client",
+            return_value=async_client,
+        ),
+        pytest.raises(ValueError, match="message_stop"),
+    ):
+        await run()
+
+    assert recorder.events == ["on_llm_error"]
 
 
 def _aggregate_anthropic_events(
