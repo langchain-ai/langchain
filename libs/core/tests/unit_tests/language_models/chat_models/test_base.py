@@ -47,10 +47,18 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    ChatResult,
+    GenerationChunk,
+)
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.tracers import LogStreamCallbackHandler
-from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
+from langchain_core.tracers._streaming import (
+    _StreamingCallbackHandler,
+    _V2StreamingCallbackHandler,
+)
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
@@ -1140,6 +1148,116 @@ class _AnotherFakeChatModel(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         for chunk in self.chunks:
             yield ChatGenerationChunk(message=chunk)
+
+
+def _provider_id_chunks(*, on_every_chunk: bool) -> list[AIMessageChunk]:
+    """Chunks shaped like OpenAI Responses: the provider id is on the first one."""
+    later_id = "resp_1" if on_every_chunk else None
+    return [
+        AIMessageChunk(content="", id="resp_1"),
+        AIMessageChunk(content="Hello", id=later_id),
+        AIMessageChunk(content=" world", id=later_id),
+    ]
+
+
+_PROVIDER_ID_CASES = pytest.mark.parametrize("on_every_chunk", [False, True])
+_OUTPUT_VERSIONS = pytest.mark.parametrize("output_version", [None, "v1"])
+
+
+class _ChunkIdRecorder(BaseCallbackHandler, _StreamingCallbackHandler[Any]):
+    def __init__(self) -> None:
+        self.chunk_ids: list[str | None] = []
+
+    @override
+    def on_llm_new_token(
+        self,
+        token: str | list[str | dict[str, Any]],
+        *,
+        chunk: GenerationChunk | ChatGenerationChunk | None = None,
+        **kwargs: Any,
+    ) -> None:
+        assert isinstance(chunk, ChatGenerationChunk)
+        self.chunk_ids.append(chunk.message.id)
+
+    @override
+    def tap_output_iter(
+        self, run_id: uuid.UUID, output: Iterator[Any]
+    ) -> Iterator[Any]:
+        return output
+
+    @override
+    def tap_output_aiter(
+        self, run_id: uuid.UUID, output: AsyncIterator[Any]
+    ) -> AsyncIterator[Any]:
+        return output
+
+
+@_PROVIDER_ID_CASES
+@_OUTPUT_VERSIONS
+def test_stream_reuses_provider_id(
+    *, on_every_chunk: bool, output_version: str | None
+) -> None:
+    chunks = _provider_id_chunks(on_every_chunk=on_every_chunk)
+    llm = _AnotherFakeChatModel(
+        responses=iter([]), chunks=iter(chunks), output_version=output_version
+    )
+    streamed = list(llm.stream("hi"))
+    assert streamed[-1].chunk_position == "last"
+    final = streamed[0]
+    for chunk in streamed[1:]:
+        final += chunk
+    assert final.id == "resp_1"
+    assert [chunk.id for chunk in streamed] == ["resp_1"] * len(streamed)
+
+
+@_PROVIDER_ID_CASES
+@_OUTPUT_VERSIONS
+async def test_astream_reuses_provider_id(
+    *, on_every_chunk: bool, output_version: str | None
+) -> None:
+    chunks = _provider_id_chunks(on_every_chunk=on_every_chunk)
+    llm = _AnotherFakeChatModel(
+        responses=iter([]), chunks=iter(chunks), output_version=output_version
+    )
+    streamed = [chunk async for chunk in llm.astream("hi")]
+    assert streamed[-1].chunk_position == "last"
+    final = streamed[0]
+    for chunk in streamed[1:]:
+        final += chunk
+    assert final.id == "resp_1"
+    assert [chunk.id for chunk in streamed] == ["resp_1"] * len(streamed)
+
+
+@_PROVIDER_ID_CASES
+@_OUTPUT_VERSIONS
+def test_invoke_with_streaming_callback_reuses_provider_id(
+    *, on_every_chunk: bool, output_version: str | None
+) -> None:
+    chunks = _provider_id_chunks(on_every_chunk=on_every_chunk)
+    llm = _AnotherFakeChatModel(
+        responses=iter([]), chunks=iter(chunks), output_version=output_version
+    )
+    recorder = _ChunkIdRecorder()
+    result = llm.invoke("hi", config={"callbacks": [recorder]})
+    assert result.id == "resp_1"
+    assert len(recorder.chunk_ids) == len(chunks) + 1
+    assert recorder.chunk_ids == [result.id] * len(recorder.chunk_ids)
+
+
+@_PROVIDER_ID_CASES
+@_OUTPUT_VERSIONS
+async def test_ainvoke_with_streaming_callback_reuses_provider_id(
+    *, on_every_chunk: bool, output_version: str | None
+) -> None:
+    chunks = _provider_id_chunks(on_every_chunk=on_every_chunk)
+    llm = _AnotherFakeChatModel(
+        responses=iter([]), chunks=iter(chunks), output_version=output_version
+    )
+    recorder = _ChunkIdRecorder()
+    result = await llm.ainvoke("hi", config={"callbacks": [recorder]})
+    assert result.id == "resp_1"
+    assert len(recorder.chunk_ids) == len(chunks) + 1
+    assert recorder.chunk_ids == [result.id] * len(recorder.chunk_ids)
 
 
 def test_output_version_stream(monkeypatch: Any) -> None:
