@@ -486,7 +486,8 @@ def convert_to_openai_function(
             )
             raise ValueError(msg)
         oai_function["strict"] = strict
-        if strict:
+        if strict and "parameters" in oai_function:
+            # `parameters` is optional, so only mark up a schema that is present.
             oai_function["parameters"] = _recursive_set_additional_properties_false(
                 oai_function["parameters"]
             )

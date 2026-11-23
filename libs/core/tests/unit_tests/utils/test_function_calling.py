@@ -1104,6 +1104,25 @@ def test_convert_to_openai_function_no_args() -> None:
     }
 
 
+def test_convert_to_openai_function_strict_without_parameters() -> None:
+    """`parameters` is optional, so strict mode must not require the key."""
+    function = {"name": "do_thing", "description": "Does a thing."}
+
+    assert convert_to_openai_function(function, strict=True) == {
+        "name": "do_thing",
+        "description": "Does a thing.",
+        "strict": True,
+    }
+    assert convert_to_openai_tool(function, strict=True) == {
+        "type": "function",
+        "function": {
+            "name": "do_thing",
+            "description": "Does a thing.",
+            "strict": True,
+        },
+    }
+
+
 def test_convert_to_json_schema(
     pydantic: type[BaseModel],
     function: Callable[[int, Literal["bar", "baz"]], None],
