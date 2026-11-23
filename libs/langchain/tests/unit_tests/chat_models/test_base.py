@@ -128,51 +128,11 @@ def test_configurable() -> None:
     for method in ("get_num_tokens", "get_num_tokens_from_messages"):
         assert hasattr(model_with_config, method)
 
+    from langchain_openai import ChatOpenAI
+
     assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
         "name": None,
-        "bound": {
-            "name": None,
-            "disable_streaming": False,
-            "disabled_params": None,
-            "model_name": OPENAI_TEST_MODEL,
-            "temperature": None,
-            "model_kwargs": {},
-            "openai_api_key": SecretStr("foo"),
-            "openai_api_base": None,
-            "openai_organization": None,
-            "openai_proxy": None,
-            "output_version": None,
-            "request_timeout": None,
-            "max_retries": None,
-            "presence_penalty": None,
-            "reasoning": None,
-            "reasoning_effort": None,
-            "verbosity": None,
-            "frequency_penalty": None,
-            "context_management": None,
-            "include": None,
-            "seed": None,
-            "prompt_cache_options": None,
-            "service_tier": None,
-            "logprobs": None,
-            "top_logprobs": None,
-            "logit_bias": None,
-            "streaming": False,
-            "n": None,
-            "top_p": None,
-            "truncation": None,
-            "max_tokens": None,
-            "tiktoken_model_name": None,
-            "default_headers": None,
-            "default_query": None,
-            "stop": None,
-            "store": None,
-            "extra_body": None,
-            "include_response_headers": False,
-            "stream_usage": True,
-            "use_previous_response_id": False,
-            "use_responses_api": None,
-        },
+        "bound": ChatOpenAI(model=OPENAI_TEST_MODEL).model_dump(),
         "kwargs": {
             "tools": [
                 {
