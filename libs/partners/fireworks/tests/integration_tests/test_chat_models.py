@@ -16,7 +16,7 @@ from typing_extensions import TypedDict
 from langchain_fireworks import ChatFireworks
 from tests.integration_tests._rate_limiter import rate_limiter
 
-_MODEL = "accounts/fireworks/models/gpt-oss-120b"
+_MODEL = "accounts/fireworks/models/glm-5p3-flash"
 
 
 @pytest.mark.parametrize("strict", [None, True, False])

@@ -19,7 +19,7 @@ class TestFireworksStandard(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         return {
-            "model": "accounts/fireworks/models/gpt-oss-120b",
+            "model": "accounts/fireworks/models/glm-5p3-flash",
             "temperature": 0,
             "rate_limiter": rate_limiter,
         }
