@@ -18,9 +18,10 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         llm = HuggingFaceEndpoint(  # type: ignore[call-arg]
-            repo_id="meta-llama/Llama-3.3-70B-Instruct",
+            repo_id="openai/gpt-oss-120b",
             task="conversational",
-            provider="novita",
+            provider="together",
+            max_new_tokens=4096,
             temperature=0,
         )
         return {"llm": llm}
