@@ -1922,6 +1922,22 @@ def test_experimental_markdown_syntax_text_splitter() -> None:
     assert output == expected_output
 
 
+def test_experimental_markdown_syntax_text_splitter_unclosed_code_fence() -> None:
+    """An unterminated code fence must not discard the rest of the document."""
+    markdown_splitter = ExperimentalMarkdownSyntaxTextSplitter()
+    text = "Intro\n```python\ndef f():\n    return 1\n"
+
+    output = markdown_splitter.split_text(text)
+
+    assert output == [
+        Document(page_content="Intro\n"),
+        Document(
+            page_content="```python\ndef f():\n    return 1\n",
+            metadata={"Code": "python"},
+        ),
+    ]
+
+
 def test_experimental_markdown_syntax_text_splitter_header_configuration() -> None:
     """Test experimental markdown syntax splitter."""
     headers_to_split_on = [("#", "Encabezamiento 1")]
