@@ -136,10 +136,13 @@ def test_markdown_list() -> None:
 
     text3 = "No items in the list."
 
+    text4 = "-\n- apple\n- banana"
+
     for text, expected in [
         (text1, ["foo", "bar", "baz"]),
         (text2, ["apple", "banana", "cherry"]),
         (text3, []),
+        (text4, ["apple", "banana"]),
     ]:
         expectedlist = [[a] for a in expected]
         assert parser.parse(text) == expected
@@ -158,6 +161,19 @@ def test_markdown_list() -> None:
             == expectedlist
         )
         assert list(parser.transform(iter([text]))) == expectedlist
+
+
+def test_markdown_list_empty_bullet() -> None:
+    """Test that empty bullet items do not cause the next bullet marker to be captured.
+
+    Fixes LangChain issue #42025.
+    """
+    parser = MarkdownListOutputParser()
+    assert parser.parse("-\n- apple\n- banana") == ["apple", "banana"]
+    assert parser.parse("*\n* apple\n* banana") == ["apple", "banana"]
+    assert parser.parse("- apple\n-\n- banana") == ["apple", "banana"]
+    assert parser.parse("-\n- apple\n-\n- banana\n-") == ["apple", "banana"]
+    assert parser.parse("- apple\n- \n- banana") == ["apple", "banana"]
 
 
 T = TypeVar("T")
@@ -282,10 +298,13 @@ async def test_markdown_list_async() -> None:
 
     text3 = "No items in the list."
 
+    text4 = "-\n- apple\n- banana"
+
     for text, expected in [
         (text1, ["foo", "bar", "baz"]),
         (text2, ["apple", "banana", "cherry"]),
         (text3, []),
+        (text4, ["apple", "banana"]),
     ]:
         expectedlist = [[a] for a in expected]
         assert await parser.aparse(text) == expected
