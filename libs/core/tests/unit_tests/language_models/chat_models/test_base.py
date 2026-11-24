@@ -1296,6 +1296,68 @@ async def test_late_provider_id(method: str, output_version: str | None) -> None
     assert recorder.chunk_ids == expected_ids
 
 
+def _auto_id() -> str:
+    return f"lc_{uuid.uuid4()}"
+
+
+@_OUTPUT_VERSIONS
+@pytest.mark.parametrize("method", ["stream", "astream", "invoke", "ainvoke"])
+async def test_auto_ids_on_streamed_reply_replaced_by_run_id(
+    method: str, output_version: str | None
+) -> None:
+    chunks = [
+        AIMessageChunk(content="Hello", id=_auto_id()),
+        AIMessageChunk(content=" world", id=_auto_id()),
+    ]
+    llm = _AnotherFakeChatModel(
+        responses=iter([]), chunks=iter(chunks), output_version=output_version
+    )
+    recorder = _ChunkIdRecorder()
+    run_id = uuid.uuid4()
+    config: RunnableConfig = {"run_id": run_id, "callbacks": [recorder]}
+    expected_id = f"lc_run--{run_id}"
+    result: BaseMessage
+    if method in ("stream", "astream"):
+        streamed = (
+            list(llm.stream("hi", config=config))
+            if method == "stream"
+            else [chunk async for chunk in llm.astream("hi", config=config)]
+        )
+        assert [chunk.id for chunk in streamed] == [expected_id] * len(streamed)
+        result = streamed[0]
+        for chunk in streamed[1:]:
+            result += chunk
+    elif method == "invoke":
+        result = llm.invoke("hi", config=config)
+    else:
+        result = await llm.ainvoke("hi", config=config)
+    assert result.id == expected_id
+    assert recorder.chunk_ids == [expected_id] * len(recorder.chunk_ids)
+
+
+@pytest.mark.parametrize("method", ["invoke", "ainvoke"])
+async def test_auto_id_on_generated_reply_replaced_by_run_id(method: str) -> None:
+    llm = _AnotherFakeChatModel(
+        responses=iter([AIMessage(content="Hello", id=_auto_id())]), chunks=iter([])
+    )
+    run_id = uuid.uuid4()
+    config: RunnableConfig = {"run_id": run_id}
+    result = (
+        llm.invoke("hi", config=config)
+        if method == "invoke"
+        else await llm.ainvoke("hi", config=config)
+    )
+    assert result.id == f"lc_run--{run_id}-0"
+
+
+@pytest.mark.parametrize("reply_id", ["resp_1", "lc_run--existing"])
+def test_non_auto_reply_id_kept(reply_id: str) -> None:
+    llm = _AnotherFakeChatModel(
+        responses=iter([AIMessage(content="Hello", id=reply_id)]), chunks=iter([])
+    )
+    assert llm.invoke("hi").id == reply_id
+
+
 def test_output_version_stream(monkeypatch: Any) -> None:
     messages = [AIMessage("foo bar")]
 

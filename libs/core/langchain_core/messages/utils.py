@@ -527,32 +527,34 @@ def get_buffer_string(
 
 def _message_from_dict(message: dict[str, Any]) -> BaseMessage:
     type_ = message["type"]
-    if type_ == "human":
-        return HumanMessage(**message["data"])
-    if type_ == "ai":
-        return AIMessage(**message["data"])
-    if type_ == "system":
-        return SystemMessage(**message["data"])
-    if type_ == "chat":
-        return ChatMessage(**message["data"])
-    if type_ == "function":
-        return FunctionMessage(**message["data"])
-    if type_ == "tool":
-        return ToolMessage(**message["data"])
     if type_ == "remove":
         return RemoveMessage(**message["data"])
+    # Keep a missing id unset rather than creating one on every load.
+    data = {"id": None, **message["data"]}
+    if type_ == "human":
+        return HumanMessage(**data)
+    if type_ == "ai":
+        return AIMessage(**data)
+    if type_ == "system":
+        return SystemMessage(**data)
+    if type_ == "chat":
+        return ChatMessage(**data)
+    if type_ == "function":
+        return FunctionMessage(**data)
+    if type_ == "tool":
+        return ToolMessage(**data)
     if type_ == "AIMessageChunk":
-        return AIMessageChunk(**message["data"])
+        return AIMessageChunk(**data)
     if type_ == "HumanMessageChunk":
-        return HumanMessageChunk(**message["data"])
+        return HumanMessageChunk(**data)
     if type_ == "FunctionMessageChunk":
-        return FunctionMessageChunk(**message["data"])
+        return FunctionMessageChunk(**data)
     if type_ == "ToolMessageChunk":
-        return ToolMessageChunk(**message["data"])
+        return ToolMessageChunk(**data)
     if type_ == "SystemMessageChunk":
-        return SystemMessageChunk(**message["data"])
+        return SystemMessageChunk(**data)
     if type_ == "ChatMessageChunk":
-        return ChatMessageChunk(**message["data"])
+        return ChatMessageChunk(**data)
     msg = f"Got unexpected message type: {type_}"
     raise ValueError(msg)
 
@@ -590,6 +592,48 @@ def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
         chunk.__class__.__mro__[1](
             **{k: v for k, v in chunk.__dict__.items() if k not in ignore_keys}
         ),
+    )
+
+
+def messages_equal_ignoring_ids(
+    left: BaseMessage | Sequence[BaseMessage],
+    right: BaseMessage | Sequence[BaseMessage],
+) -> bool:
+    """Compare two messages, or two sequences of messages, ignoring `id`.
+
+    `==` on messages compares every field, including `id`. Use this in tests that
+    compare a result with freshly built messages, whose ids differ.
+
+    Args:
+        left: A message or a sequence of messages.
+        right: A message or a sequence of messages.
+
+    Returns:
+        `True` if both sides are equal once `id` is ignored, `False` otherwise.
+
+    Example:
+        ```python
+        from langchain_core.messages import HumanMessage, messages_equal_ignoring_ids
+
+        assert messages_equal_ignoring_ids(
+            HumanMessage("hi", id="a"), HumanMessage("hi", id="b")
+        )
+        ```
+    """
+    if isinstance(left, BaseMessage) or isinstance(right, BaseMessage):
+        return _message_equal_ignoring_id(left, right)
+    return len(left) == len(right) and all(
+        _message_equal_ignoring_id(left_message, right_message)
+        for left_message, right_message in zip(left, right, strict=True)
+    )
+
+
+def _message_equal_ignoring_id(left: object, right: object) -> bool:
+    return (
+        isinstance(left, BaseMessage)
+        and isinstance(right, BaseMessage)
+        and left.model_copy(update={"id": None})
+        == right.model_copy(update={"id": None})
     )
 
 
@@ -641,7 +685,8 @@ def _create_message_from_message_type(
             kwargs["response_metadata"] = response_metadata
         kwargs["additional_kwargs"] = additional_kwargs
         additional_kwargs.update(additional_kwargs.pop("additional_kwargs", {}))
-    if id is not None:
+    # `RemoveMessage` requires an id.
+    if id is not None or message_type != "remove":
         kwargs["id"] = id
     if tool_calls is not None:
         kwargs["tool_calls"] = []

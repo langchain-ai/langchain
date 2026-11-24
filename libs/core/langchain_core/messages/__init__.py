@@ -71,6 +71,7 @@ if TYPE_CHECKING:
         get_buffer_string,
         merge_message_runs,
         message_chunk_to_message,
+        messages_equal_ignoring_ids,
         messages_from_dict,
         trim_messages,
     )
@@ -134,6 +135,7 @@ __all__ = (
     "merge_message_runs",
     "message_chunk_to_message",
     "message_to_dict",
+    "messages_equal_ignoring_ids",
     "messages_from_dict",
     "messages_to_dict",
     "trim_messages",
@@ -196,6 +198,7 @@ _dynamic_imports = {
     "is_data_content_block": "content",
     "merge_message_runs": "utils",
     "message_chunk_to_message": "utils",
+    "messages_equal_ignoring_ids": "utils",
     "messages_from_dict": "utils",
     "trim_messages": "utils",
 }

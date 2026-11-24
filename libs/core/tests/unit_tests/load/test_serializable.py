@@ -16,7 +16,7 @@ from langchain_core.load.load import (
     _get_default_allowed_class_paths,
 )
 from langchain_core.load.serializable import _is_field_useful, _try_neq_default
-from langchain_core.messages import AIMessage, RemoveMessage
+from langchain_core.messages import AIMessage, HumanMessage, RemoveMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.prompts import (
     ChatPromptTemplate,
@@ -1291,3 +1291,23 @@ def test_load_accepts_nesting_up_to_limit(*, as_dict: bool) -> None:
 
     assert load(json.loads(text), allowed_objects="messages") == json.loads(text)
     assert loads(text, allowed_objects="messages") == json.loads(text)
+
+
+def test_load_message_without_id_sets_id_explicitly() -> None:
+    kwargs = {"content": "hi"}
+    serialized = {
+        "lc": 1,
+        "type": "constructor",
+        "id": ["langchain", "schema", "messages", "HumanMessage"],
+        "kwargs": kwargs,
+    }
+    loaded = load(serialized, allowed_objects="messages")
+    assert isinstance(loaded, HumanMessage)
+    assert loaded.id is None
+    assert "id" in loaded.model_fields_set
+    assert "id" not in kwargs
+
+
+def test_load_message_with_id_keeps_id() -> None:
+    loaded = load(dumpd(HumanMessage("hi", id="msg-1")), allowed_objects="messages")
+    assert loaded == HumanMessage("hi", id="msg-1")

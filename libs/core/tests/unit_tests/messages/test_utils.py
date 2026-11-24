@@ -15,9 +15,12 @@ from langchain_core.messages import (
     ChatMessage,
     FunctionMessage,
     HumanMessage,
+    RemoveMessage,
     SystemMessage,
     ToolCall,
     ToolMessage,
+    messages_equal_ignoring_ids,
+    messages_from_dict,
 )
 from langchain_core.messages.utils import (
     MessageLikeRepresentation,
@@ -3170,3 +3173,85 @@ def test_convert_to_messages_lc_envelope_partial_shape_not_matched() -> None:
     # and dict `kwargs` too. Without all four, we fall through.
     with pytest.raises(ValueError, match="MESSAGE_COERCION_FAILURE"):
         convert_to_messages([{"lc": 1, "content": "missing other fields"}])
+
+
+@pytest.mark.parametrize(
+    "message_like",
+    [
+        "hi",
+        ("user", "hi"),
+        {"role": "user", "content": "hi"},
+        {
+            "lc": 1,
+            "type": "constructor",
+            "id": ["langchain", "schema", "messages", "HumanMessage"],
+            "kwargs": {"content": "hi"},
+        },
+    ],
+)
+def test_convert_to_messages_without_id_sets_id_explicitly(
+    message_like: MessageLikeRepresentation,
+) -> None:
+    [message] = convert_to_messages([message_like])
+    assert message == HumanMessage("hi")
+    assert "id" in message.model_fields_set
+
+
+def test_convert_to_messages_keeps_id() -> None:
+    [message] = convert_to_messages([{"role": "user", "content": "hi", "id": "1"}])
+    assert message.id == "1"
+
+
+def test_convert_to_messages_remove() -> None:
+    assert convert_to_messages([{"type": "remove", "content": "", "id": "1"}]) == [
+        RemoveMessage(id="1")
+    ]
+
+
+def test_messages_from_dict_without_id_sets_id_explicitly() -> None:
+    [message, removal] = messages_from_dict(
+        [
+            {"type": "human", "data": {"content": "hi"}},
+            {"type": "remove", "data": {"id": "1"}},
+        ]
+    )
+    assert message == HumanMessage("hi")
+    assert "id" in message.model_fields_set
+    assert removal == RemoveMessage(id="1")
+
+
+def test_messages_from_dict_keeps_id() -> None:
+    [message] = messages_from_dict(
+        [{"type": "ai", "data": {"content": "hi", "id": "1"}}]
+    )
+    assert message == AIMessage("hi", id="1")
+
+
+def test_messages_equal_ignoring_ids() -> None:
+    assert messages_equal_ignoring_ids(HumanMessage("hi", id="a"), HumanMessage("hi"))
+    assert messages_equal_ignoring_ids(
+        [HumanMessage("hi", id="a"), AIMessage("yo", id="b")],
+        [HumanMessage("hi"), AIMessage("yo", id="c")],
+    )
+    assert messages_equal_ignoring_ids([], [])
+
+
+@pytest.mark.parametrize(
+    ("left", "right"),
+    [
+        (HumanMessage("hi"), HumanMessage("bye")),
+        (HumanMessage("hi"), AIMessage("hi")),
+        (HumanMessage("hi", name="a"), HumanMessage("hi", name="b")),
+        ([HumanMessage("hi")], [HumanMessage("hi"), HumanMessage("hi")]),
+        ([HumanMessage("hi")], HumanMessage("hi")),
+        (["hi"], ["hi"]),
+    ],
+)
+def test_messages_equal_ignoring_ids_differences(left: Any, right: Any) -> None:
+    assert not messages_equal_ignoring_ids(left, right)
+
+
+def test_messages_equal_ignoring_ids_leaves_inputs_unchanged() -> None:
+    message = HumanMessage("hi", id="a")
+    messages_equal_ignoring_ids(message, HumanMessage("hi"))
+    assert message.id == "a"
