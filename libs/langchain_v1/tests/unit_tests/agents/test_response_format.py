@@ -565,6 +565,40 @@ class TestResponseFormatAsToolStrategy:
         assert len(response["messages"]) == 5
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
 
+    @pytest.mark.parametrize("handle_errors", [ValueError, (ValueError,)])
+    def test_retry_with_wrapped_source_exception_type(
+        self, handle_errors: type[Exception] | tuple[type[Exception], ...]
+    ) -> None:
+        """`handle_errors` exception types match `StructuredOutputValidationError.source`."""
+        tool_calls = [
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "1",
+                    "args": {"temperature": "not-a-number", "condition": "sunny"},
+                },
+            ],
+            [
+                {
+                    "name": "WeatherBaseModel",
+                    "id": "2",
+                    "args": WEATHER_DATA,
+                },
+            ],
+        ]
+        model = FakeToolCallingModel(tool_calls=tool_calls)
+        agent = create_agent(
+            model,
+            [],
+            response_format=ToolStrategy(
+                WeatherBaseModel,
+                handle_errors=handle_errors,
+            ),
+        )
+        response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
+        assert len(response["messages"]) == 5
+        assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
+
     def test_retry_with_custom_function(self) -> None:
         """Test retry with custom message generation."""
         tool_calls = [

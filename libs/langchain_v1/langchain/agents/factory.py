@@ -646,6 +646,17 @@ def _is_openai_compatible_model(model: BaseChatModel) -> bool:
     return isinstance(model, base_chat_openai.BaseChatOpenAI)
 
 
+def _matches_error_type(
+    exception: Exception,
+    error_type: type[Exception] | tuple[type[Exception], ...],
+) -> bool:
+    if isinstance(exception, error_type):
+        return True
+    if isinstance(exception, StructuredOutputValidationError):
+        return isinstance(exception.source, error_type)
+    return False
+
+
 def _handle_structured_output_error(
     exception: Exception,
     response_format: ResponseFormat[Any],
@@ -666,11 +677,11 @@ def _handle_structured_output_error(
     if isinstance(handle_errors, str):
         return True, handle_errors
     if isinstance(handle_errors, type):
-        if issubclass(handle_errors, Exception) and isinstance(exception, handle_errors):
+        if issubclass(handle_errors, Exception) and _matches_error_type(exception, handle_errors):
             return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
         return False, ""
     if isinstance(handle_errors, tuple):
-        if any(isinstance(exception, exc_type) for exc_type in handle_errors):
+        if _matches_error_type(exception, handle_errors):
             return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
         return False, ""
     return True, handle_errors(exception)
