@@ -47,7 +47,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
@@ -154,7 +153,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
@@ -255,7 +253,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -329,7 +326,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -412,7 +408,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -474,7 +469,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -554,7 +548,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -623,7 +616,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -860,7 +852,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -929,7 +920,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -1172,7 +1162,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -1253,7 +1242,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -1462,7 +1450,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
@@ -1569,7 +1556,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'invalid_tool_calls': dict({
@@ -1670,7 +1656,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -1744,7 +1729,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -1827,7 +1811,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -1889,7 +1872,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -1969,7 +1951,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -2038,7 +2019,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -2275,7 +2255,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -2344,7 +2323,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -2587,7 +2565,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({
@@ -2668,7 +2645,6 @@
                 'type': 'null',
               }),
             ]),
-            'default': None,
             'title': 'Id',
           }),
           'name': dict({

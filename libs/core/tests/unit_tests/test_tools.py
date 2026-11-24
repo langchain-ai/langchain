@@ -49,7 +49,7 @@ from langchain_core.callbacks.manager import (
     CallbackManagerForRetrieverRun,
 )
 from langchain_core.documents import Document
-from langchain_core.messages import ToolCall, ToolMessage
+from langchain_core.messages import ToolCall, ToolMessage, messages_equal_ignoring_ids
 from langchain_core.messages.tool import ToolOutputMixin
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import (
@@ -1729,7 +1729,7 @@ def test_tool_call_input_tool_message_output() -> None:
         "1 True {'img': 'base64string...'}", tool_call_id="123", name="structured_api"
     )
     actual = tool.invoke(tool_call)
-    assert actual == expected
+    assert messages_equal_ignoring_ids(actual, expected)
 
     tool_call.pop("type")
     with pytest.raises(ValidationError):
@@ -1797,7 +1797,7 @@ def test_tool_call_input_tool_message_with_artifact(tool: BaseTool) -> None:
         "1 True", artifact=tool_call["args"], tool_call_id="123", name="structured_api"
     )
     actual = tool.invoke(tool_call)
-    assert actual == expected
+    assert messages_equal_ignoring_ids(actual, expected)
 
     tool_call.pop("type")
     with pytest.raises(ValidationError):
@@ -2022,14 +2022,17 @@ def test_tool_injected_arg_without_schema(tool_: BaseTool) -> None:
         "required": ["x"],
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
-    assert tool_.invoke(
-        {
-            "name": "foo",
-            "args": {"x": 5, "y": "bar"},
-            "id": "123",
-            "type": "tool_call",
-        }
-    ) == ToolMessage("bar", tool_call_id="123", name="foo")
+    assert messages_equal_ignoring_ids(
+        tool_.invoke(
+            {
+                "name": "foo",
+                "args": {"x": 5, "y": "bar"},
+                "id": "123",
+                "type": "tool_call",
+            }
+        ),
+        ToolMessage("bar", tool_call_id="123", name="foo"),
+    )
     expected_error = (
         ValidationError if not isinstance(tool_, InjectedTool) else TypeError
     )
@@ -2070,14 +2073,17 @@ def test_tool_injected_arg_with_schema(tool_: BaseTool) -> None:
         "required": ["x"],
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
-    assert tool_.invoke(
-        {
-            "name": "foo",
-            "args": {"x": 5, "y": "bar"},
-            "id": "123",
-            "type": "tool_call",
-        }
-    ) == ToolMessage("bar", tool_call_id="123", name="foo")
+    assert messages_equal_ignoring_ids(
+        tool_.invoke(
+            {
+                "name": "foo",
+                "args": {"x": 5, "y": "bar"},
+                "id": "123",
+                "type": "tool_call",
+            }
+        ),
+        ToolMessage("bar", tool_call_id="123", name="foo"),
+    )
     expected_error = (
         ValidationError if not isinstance(tool_, InjectedTool) else TypeError
     )
@@ -2115,14 +2121,17 @@ def test_tool_injected_arg() -> None:
         "required": ["x"],
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
-    assert tool_.invoke(
-        {
-            "name": "foo",
-            "args": {"x": 5, "y": "bar"},
-            "id": "123",
-            "type": "tool_call",
-        }
-    ) == ToolMessage("bar", tool_call_id="123", name="foo")
+    assert messages_equal_ignoring_ids(
+        tool_.invoke(
+            {
+                "name": "foo",
+                "args": {"x": 5, "y": "bar"},
+                "id": "123",
+                "type": "tool_call",
+            }
+        ),
+        ToolMessage("bar", tool_call_id="123", name="foo"),
+    )
     expected_error = (
         ValidationError if not isinstance(tool_, InjectedTool) else TypeError
     )
@@ -2182,14 +2191,17 @@ def test_tool_inherited_injected_arg() -> None:
         "required": ["x"],
     }
     assert tool_.invoke({"x": 5, "y": "bar"}) == "bar"
-    assert tool_.invoke(
-        {
-            "name": "foo",
-            "args": {"x": 5, "y": "bar"},
-            "id": "123",
-            "type": "tool_call",
-        }
-    ) == ToolMessage("bar", tool_call_id="123", name="foo")
+    assert messages_equal_ignoring_ids(
+        tool_.invoke(
+            {
+                "name": "foo",
+                "args": {"x": 5, "y": "bar"},
+                "id": "123",
+                "type": "tool_call",
+            }
+        ),
+        ToolMessage("bar", tool_call_id="123", name="foo"),
+    )
     with pytest.raises(ValidationError):
         tool_.invoke({"x": 5})
 
@@ -2660,15 +2672,18 @@ def test_create_retriever_tool() -> None:
     assert retriever_tool.name == "retriever_tool_content"
     assert retriever_tool.description == "Retriever Tool Content"
     assert retriever_tool.invoke("bar") == "foo bar\n\nbar"
-    assert retriever_tool.invoke(
-        ToolCall(
-            name="retriever_tool_content",
-            args={"query": "bar"},
-            id="123",
-            type="tool_call",
-        )
-    ) == ToolMessage(
-        "foo bar\n\nbar", tool_call_id="123", name="retriever_tool_content"
+    assert messages_equal_ignoring_ids(
+        retriever_tool.invoke(
+            ToolCall(
+                name="retriever_tool_content",
+                args={"query": "bar"},
+                id="123",
+                type="tool_call",
+            )
+        ),
+        ToolMessage(
+            "foo bar\n\nbar", tool_call_id="123", name="retriever_tool_content"
+        ),
     )
 
     retriever_tool_artifact = tools.create_retriever_tool(
@@ -2681,18 +2696,21 @@ def test_create_retriever_tool() -> None:
     assert retriever_tool_artifact.name == "retriever_tool_artifact"
     assert retriever_tool_artifact.description == "Retriever Tool Artifact"
     assert retriever_tool_artifact.invoke("bar") == "foo bar\n\nbar"
-    assert retriever_tool_artifact.invoke(
-        ToolCall(
+    assert messages_equal_ignoring_ids(
+        retriever_tool_artifact.invoke(
+            ToolCall(
+                name="retriever_tool_artifact",
+                args={"query": "bar"},
+                id="123",
+                type="tool_call",
+            )
+        ),
+        ToolMessage(
+            "foo bar\n\nbar",
+            artifact=[Document(page_content="foo bar"), Document(page_content="bar")],
+            tool_call_id="123",
             name="retriever_tool_artifact",
-            args={"query": "bar"},
-            id="123",
-            type="tool_call",
-        )
-    ) == ToolMessage(
-        "foo bar\n\nbar",
-        artifact=[Document(page_content="foo bar"), Document(page_content="bar")],
-        tool_call_id="123",
-        name="retriever_tool_artifact",
+        ),
     )
 
 
@@ -2905,7 +2923,10 @@ def test_tool_injected_tool_call_id_with_custom_schema() -> None:
             "id": "test_call_id",
         }
     )
-    assert result == ToolMessage("42", tool_call_id="test_call_id")
+    assert messages_equal_ignoring_ids(
+        result,
+        ToolMessage("42", tool_call_id="test_call_id"),
+    )
 
     # Test that it still raises error when invoked without a ToolCall
     with pytest.raises(
@@ -2917,7 +2938,10 @@ def test_tool_injected_tool_call_id_with_custom_schema() -> None:
 
     # Test that tool_call_id can be passed directly in input dict
     result = injected_tool.invoke({"x": 42, "tool_call_id": "direct_id"})
-    assert result == ToolMessage("42", tool_call_id="direct_id")
+    assert messages_equal_ignoring_ids(
+        result,
+        ToolMessage("42", tool_call_id="direct_id"),
+    )
 
 
 def test_tool_injected_arg_with_custom_schema() -> None:
@@ -3304,14 +3328,17 @@ def test_tool_injected_tool_call_id() -> None:
         """Foo."""
         return ToolMessage(str(x), tool_call_id=tool_call_id)
 
-    assert foo.invoke(
-        {
-            "type": "tool_call",
-            "args": {"x": 0},
-            "name": "foo",
-            "id": "bar",
-        }
-    ) == ToolMessage("0", tool_call_id="bar")
+    assert messages_equal_ignoring_ids(
+        foo.invoke(
+            {
+                "type": "tool_call",
+                "args": {"x": 0},
+                "name": "foo",
+                "id": "bar",
+            }
+        ),
+        ToolMessage("0", tool_call_id="bar"),
+    )
 
     with pytest.raises(
         ValueError,
@@ -3325,14 +3352,17 @@ def test_tool_injected_tool_call_id() -> None:
         """Foo."""
         return ToolMessage(str(x), tool_call_id=tool_call_id)
 
-    assert foo2.invoke(
-        {
-            "type": "tool_call",
-            "args": {"x": 0},
-            "name": "foo",
-            "id": "bar",
-        }
-    ) == ToolMessage("0", tool_call_id="bar")
+    assert messages_equal_ignoring_ids(
+        foo2.invoke(
+            {
+                "type": "tool_call",
+                "args": {"x": 0},
+                "name": "foo",
+                "id": "bar",
+            }
+        ),
+        ToolMessage("0", tool_call_id="bar"),
+    )
 
 
 def test_tool_injected_tool_call_id_override_llm_generated() -> None:
@@ -3354,7 +3384,10 @@ def test_tool_injected_tool_call_id_override_llm_generated() -> None:
     )
 
     # The tool should receive the real tool call ID, not the LLM-generated one
-    assert result == ToolMessage("0", tool_call_id="real_tool_call_id")
+    assert messages_equal_ignoring_ids(
+        result,
+        ToolMessage("0", tool_call_id="real_tool_call_id"),
+    )
 
 
 def test_tool_uninjected_tool_call_id() -> None:
@@ -3366,14 +3399,17 @@ def test_tool_uninjected_tool_call_id() -> None:
     with pytest.raises(ValueError, match="1 validation error for foo"):
         foo.invoke({"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"})
 
-    assert foo.invoke(
-        {
-            "type": "tool_call",
-            "args": {"x": 0, "tool_call_id": "zap"},
-            "name": "foo",
-            "id": "bar",
-        }
-    ) == ToolMessage(0, tool_call_id="zap")  # type: ignore[call-overload]
+    assert messages_equal_ignoring_ids(
+        foo.invoke(
+            {
+                "type": "tool_call",
+                "args": {"x": 0, "tool_call_id": "zap"},
+                "name": "foo",
+                "id": "bar",
+            }
+        ),
+        ToolMessage(0, tool_call_id="zap"),  # type: ignore[call-overload]
+    )
 
 
 def test_tool_return_output_mixin() -> None:
@@ -3500,8 +3536,9 @@ def test_empty_string_tool_call_id() -> None:
         """Foo."""
         return "hi"
 
-    assert foo.invoke({"type": "tool_call", "args": {"x": 0}, "id": ""}) == ToolMessage(
-        content="hi", name="foo", tool_call_id=""
+    assert messages_equal_ignoring_ids(
+        foo.invoke({"type": "tool_call", "args": {"x": 0}, "id": ""}),
+        ToolMessage(content="hi", name="foo", tool_call_id=""),
     )
 
 
@@ -4337,8 +4374,13 @@ async def test_tool_call_id_passed_to_on_tool_start_callback(method: str) -> Non
     else:
         result = simple_tool.invoke(tool_call, config={"callbacks": [handler]})
 
-    assert result == ToolMessage(
-        content="Result: test", name="simple_tool", tool_call_id="test_tool_call_id_123"
+    assert messages_equal_ignoring_ids(
+        result,
+        ToolMessage(
+            content="Result: test",
+            name="simple_tool",
+            tool_call_id="test_tool_call_id_123",
+        ),
     )
     assert handler.tool_starts == 1
     assert len(handler.captured_tool_call_ids) == 1
@@ -4401,8 +4443,9 @@ def test_tool_call_id_empty_string_passed_to_callback() -> None:
 
     result = simple_tool.invoke(tool_call, config={"callbacks": [handler]})
 
-    assert result == ToolMessage(
-        content="Result: test", name="simple_tool", tool_call_id=""
+    assert messages_equal_ignoring_ids(
+        result,
+        ToolMessage(content="Result: test", name="simple_tool", tool_call_id=""),
     )
     assert handler.tool_starts == 1
     assert len(handler.captured_tool_call_ids) == 1
@@ -4443,10 +4486,13 @@ async def test_tool_call_id_passed_via_run_method(method: str) -> None:
             tool_call_id="run_method_tool_call_id",
         )
 
-    assert result == ToolMessage(
-        content="Result: test",
-        name="simple_tool",
-        tool_call_id="run_method_tool_call_id",
+    assert messages_equal_ignoring_ids(
+        result,
+        ToolMessage(
+            content="Result: test",
+            name="simple_tool",
+            tool_call_id="run_method_tool_call_id",
+        ),
     )
     assert handler.tool_starts == 1
     assert len(handler.captured_tool_call_ids) == 1

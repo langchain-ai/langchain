@@ -1,5 +1,6 @@
 from langchain_core.messages import HumanMessageChunk
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
+from tests.unit_tests.stubs import _any_id
 
 
 def test_generation_chunk() -> None:
@@ -31,16 +32,16 @@ def test_chat_generation_chunk() -> None:
         message=HumanMessageChunk(content="Hello, ")
     ) + ChatGenerationChunk(
         message=HumanMessageChunk(content="world!")
-    ) == ChatGenerationChunk(message=HumanMessageChunk(content="Hello, world!")), (
-        "ChatGenerationChunk + ChatGenerationChunk should be a ChatGenerationChunk"
-    )
+    ) == ChatGenerationChunk(
+        message=_any_id(HumanMessageChunk(content="Hello, world!"))
+    ), "ChatGenerationChunk + ChatGenerationChunk should be a ChatGenerationChunk"
 
     assert ChatGenerationChunk(
         message=HumanMessageChunk(content="Hello, ")
     ) + ChatGenerationChunk(
         message=HumanMessageChunk(content="world!"), generation_info={"foo": "bar"}
     ) == ChatGenerationChunk(
-        message=HumanMessageChunk(content="Hello, world!"),
+        message=_any_id(HumanMessageChunk(content="Hello, world!")),
         generation_info={"foo": "bar"},
     ), (
         "GenerationChunk + GenerationChunk should be a GenerationChunk "
@@ -54,7 +55,7 @@ def test_chat_generation_chunk() -> None:
     ) + ChatGenerationChunk(
         message=HumanMessageChunk(content="!"), generation_info={"baz": "foo"}
     ) == ChatGenerationChunk(
-        message=HumanMessageChunk(content="Hello, world!!"),
+        message=_any_id(HumanMessageChunk(content="Hello, world!!")),
         generation_info={"foo": "bar", "baz": "foo"},
     ), (
         "GenerationChunk + GenerationChunk should be a GenerationChunk "

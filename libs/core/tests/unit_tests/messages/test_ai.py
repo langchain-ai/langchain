@@ -1,7 +1,11 @@
 from typing import Any, cast
 
 from langchain_core.load import dumpd, load
-from langchain_core.messages import AIMessage, AIMessageChunk
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    messages_equal_ignoring_ids,
+)
 from langchain_core.messages import content as types
 from langchain_core.messages.ai import (
     InputTokenDetails,
@@ -23,6 +27,7 @@ def test_serdes_message() -> None:
         invalid_tool_calls=[
             create_invalid_tool_call(name="foobad", args="blah", id="booz", error="bad")
         ],
+        id="msg-1",
     )
     expected = {
         "lc": 1,
@@ -30,6 +35,7 @@ def test_serdes_message() -> None:
         "id": ["langchain", "schema", "messages", "AIMessage"],
         "kwargs": {
             "type": "ai",
+            "id": "msg-1",
             "content": [{"text": "blah", "type": "text"}],
             "tool_calls": [
                 {"name": "foo", "args": {"bar": 1}, "id": "baz", "type": "tool_call"}
@@ -62,6 +68,7 @@ def test_serdes_message_chunk() -> None:
                 index=1,
             ),
         ],
+        id="msg-1",
     )
     expected = {
         "lc": 1,
@@ -69,6 +76,7 @@ def test_serdes_message_chunk() -> None:
         "id": ["langchain", "schema", "messages", "AIMessageChunk"],
         "kwargs": {
             "type": "AIMessageChunk",
+            "id": "msg-1",
             "content": [{"text": "blah", "type": "text"}],
             "tool_calls": [
                 {"name": "foo", "args": {"bar": 1}, "id": "baz", "type": "tool_call"}
@@ -189,14 +197,17 @@ def test_add_ai_message_chunks_usage() -> None:
         ),
     ]
     combined = add_ai_message_chunks(*chunks)
-    assert combined == AIMessageChunk(
-        content="",
-        usage_metadata=UsageMetadata(
-            input_tokens=4,
-            output_tokens=6,
-            total_tokens=10,
-            input_token_details=InputTokenDetails(audio=1, cache_read=1),
-            output_token_details=OutputTokenDetails(audio=1, reasoning=2),
+    assert messages_equal_ignoring_ids(
+        combined,
+        AIMessageChunk(
+            content="",
+            usage_metadata=UsageMetadata(
+                input_tokens=4,
+                output_tokens=6,
+                total_tokens=10,
+                input_token_details=InputTokenDetails(audio=1, cache_read=1),
+                output_token_details=OutputTokenDetails(audio=1, reasoning=2),
+            ),
         ),
     )
 

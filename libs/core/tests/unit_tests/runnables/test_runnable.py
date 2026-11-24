@@ -114,7 +114,12 @@ from tests.unit_tests.pydantic_utils import (
     _schema,
     skip_if_no_pydantic_v1,
 )
-from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
+from tests.unit_tests.stubs import (
+    AnyStr,
+    _any_id,
+    _any_id_ai_message,
+    _any_id_ai_message_chunk,
+)
 
 if TYPE_CHECKING:
     from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
@@ -1496,8 +1501,8 @@ def test_prompt() -> None:
     )
     expected = ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
 
@@ -1512,8 +1517,8 @@ def test_prompt() -> None:
         expected,
         ChatPromptValue(
             messages=[
-                SystemMessage(content="You are a nice assistant."),
-                HumanMessage(content="What is your favorite color?"),
+                _any_id(SystemMessage(content="You are a nice assistant.")),
+                _any_id(HumanMessage(content="What is your favorite color?")),
             ]
         ),
     ]
@@ -1530,8 +1535,8 @@ async def test_prompt_async() -> None:
     )
     expected = ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
 
@@ -1546,8 +1551,8 @@ async def test_prompt_async() -> None:
         expected,
         ChatPromptValue(
             messages=[
-                SystemMessage(content="You are a nice assistant."),
-                HumanMessage(content="What is your favorite color?"),
+                _any_id(SystemMessage(content="You are a nice assistant.")),
+                _any_id(HumanMessage(content="What is your favorite color?")),
             ]
         ),
     ]
@@ -1568,21 +1573,20 @@ async def test_prompt_async() -> None:
     assert stream_log[0].ops[0]["value"]["streamed_output"] == []
     assert isinstance(stream_log[0].ops[0]["value"]["id"], str)
 
-    assert stream_log[1:] == [
-        RunLogPatch(
-            {"op": "add", "path": "/streamed_output/-", "value": expected},
-            {
-                "op": "replace",
-                "path": "/final_output",
-                "value": ChatPromptValue(
-                    messages=[
-                        SystemMessage(content="You are a nice assistant."),
-                        HumanMessage(content="What is your name?"),
-                    ]
-                ),
-            },
-        ),
-    ]
+    expected_patch = RunLogPatch(
+        {"op": "add", "path": "/streamed_output/-", "value": expected},
+        {
+            "op": "replace",
+            "path": "/final_output",
+            "value": ChatPromptValue(
+                messages=[
+                    _any_id(SystemMessage(content="You are a nice assistant.")),
+                    _any_id(HumanMessage(content="What is your name?")),
+                ]
+            ),
+        },
+    )
+    assert stream_log[1:] == [expected_patch]
 
     stream_log_state = [
         part
@@ -1597,14 +1601,15 @@ async def test_prompt_async() -> None:
     stream_log_state[-1].state["id"] = "00000000-0000-0000-0000-000000000000"
 
     # assert output with diff=False matches output with diff=True
-    assert stream_log_state[-1].ops == [op for chunk in stream_log for op in chunk.ops]
+    assert stream_log_state[-1].ops == [*stream_log[0].ops, *expected_patch.ops]
     assert stream_log_state[-1] == RunLog(
-        *[op for chunk in stream_log for op in chunk.ops],
+        *stream_log[0].ops,
+        *expected_patch.ops,
         state={
             "final_output": ChatPromptValue(
                 messages=[
-                    SystemMessage(content="You are a nice assistant."),
-                    HumanMessage(content="What is your name?"),
+                    _any_id(SystemMessage(content="You are a nice assistant.")),
+                    _any_id(HumanMessage(content="What is your name?")),
                 ]
             ),
             "id": "00000000-0000-0000-0000-000000000000",
@@ -1612,8 +1617,8 @@ async def test_prompt_async() -> None:
             "streamed_output": [
                 ChatPromptValue(
                     messages=[
-                        SystemMessage(content="You are a nice assistant."),
-                        HumanMessage(content="What is your name?"),
+                        _any_id(SystemMessage(content="You are a nice assistant.")),
+                        _any_id(HumanMessage(content="What is your name?")),
                     ]
                 )
             ],
@@ -1648,8 +1653,8 @@ async def test_prompt_async() -> None:
                 "path": "/final_output",
                 "value": ChatPromptValue(
                     messages=[
-                        SystemMessage(content="You are a nice assistant."),
-                        HumanMessage(content="What is your name?"),
+                        _any_id(SystemMessage(content="You are a nice assistant.")),
+                        _any_id(HumanMessage(content="What is your name?")),
                     ]
                 ),
             },
@@ -1668,7 +1673,9 @@ def test_prompt_template_params() -> None:
         }
     )
     assert result == ChatPromptValue(
-        messages=[HumanMessage(content="Respond to the following question: test")]
+        messages=[
+            _any_id(HumanMessage(content="Respond to the following question: test"))
+        ]
     )
 
     with pytest.raises(KeyError):
@@ -1836,8 +1843,8 @@ def test_prompt_with_chat_model(
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
 
@@ -1867,14 +1874,14 @@ def test_prompt_with_chat_model(
     assert chat_spy.call_args.args[1] == [
         ChatPromptValue(
             messages=[
-                SystemMessage(content="You are a nice assistant."),
-                HumanMessage(content="What is your name?"),
+                _any_id(SystemMessage(content="You are a nice assistant.")),
+                _any_id(HumanMessage(content="What is your name?")),
             ]
         ),
         ChatPromptValue(
             messages=[
-                SystemMessage(content="You are a nice assistant."),
-                HumanMessage(content="What is your favorite color?"),
+                _any_id(SystemMessage(content="You are a nice assistant.")),
+                _any_id(HumanMessage(content="What is your favorite color?")),
             ]
         ),
     ]
@@ -1905,8 +1912,8 @@ def test_prompt_with_chat_model(
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
 
@@ -1942,8 +1949,8 @@ async def test_prompt_with_chat_model_async(
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
 
@@ -1973,14 +1980,14 @@ async def test_prompt_with_chat_model_async(
     assert chat_spy.call_args.args[1] == [
         ChatPromptValue(
             messages=[
-                SystemMessage(content="You are a nice assistant."),
-                HumanMessage(content="What is your name?"),
+                _any_id(SystemMessage(content="You are a nice assistant.")),
+                _any_id(HumanMessage(content="What is your name?")),
             ]
         ),
         ChatPromptValue(
             messages=[
-                SystemMessage(content="You are a nice assistant."),
-                HumanMessage(content="What is your favorite color?"),
+                _any_id(SystemMessage(content="You are a nice assistant.")),
+                _any_id(HumanMessage(content="What is your favorite color?")),
             ]
         ),
     ]
@@ -2014,8 +2021,8 @@ async def test_prompt_with_chat_model_async(
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
 
@@ -2257,8 +2264,8 @@ async def test_prompt_with_llm_parser(
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert llm_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
     assert parser_spy.call_args.args[1] == "bear, dog, cat"
@@ -2286,14 +2293,14 @@ async def test_prompt_with_llm_parser(
     assert llm_spy.call_args.args[1] == [
         ChatPromptValue(
             messages=[
-                SystemMessage(content="You are a nice assistant."),
-                HumanMessage(content="What is your name?"),
+                _any_id(SystemMessage(content="You are a nice assistant.")),
+                _any_id(HumanMessage(content="What is your name?")),
             ]
         ),
         ChatPromptValue(
             messages=[
-                SystemMessage(content="You are a nice assistant."),
-                HumanMessage(content="What is your favorite color?"),
+                _any_id(SystemMessage(content="You are a nice assistant.")),
+                _any_id(HumanMessage(content="What is your favorite color?")),
             ]
         ),
     ]
@@ -2325,8 +2332,8 @@ async def test_prompt_with_llm_parser(
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert llm_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
 
@@ -2383,8 +2390,8 @@ async def test_prompt_with_llm_parser(
                 "path": "/logs/ChatPromptTemplate/final_output",
                 "value": ChatPromptValue(
                     messages=[
-                        SystemMessage(content="You are a nice assistant."),
-                        HumanMessage(content="What is your name?"),
+                        _any_id(SystemMessage(content="You are a nice assistant.")),
+                        _any_id(HumanMessage(content="What is your name?")),
                     ]
                 ),
             },
@@ -2650,8 +2657,8 @@ async def test_prompt_with_llm_and_async_lambda(
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert llm_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
     assert tracer.runs == snapshot
@@ -2691,8 +2698,8 @@ def test_prompt_with_chat_model_and_parser(
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
     assert parser_spy.call_args.args[1] == _any_id_ai_message(content="foo, bar")
@@ -2816,20 +2823,24 @@ Question:
     }
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(
-                content="You are a nice assistant.",
-                additional_kwargs={},
-                response_metadata={},
+            _any_id(
+                SystemMessage(
+                    content="You are a nice assistant.",
+                    additional_kwargs={},
+                    response_metadata={},
+                )
             ),
-            HumanMessage(
-                content="Context:\n"
-                "[Document(metadata={}, page_content='foo'), "
-                "Document(metadata={}, page_content='bar')]\n"
-                "\n"
-                "Question:\n"
-                "What is your name?",
-                additional_kwargs={},
-                response_metadata={},
+            _any_id(
+                HumanMessage(
+                    content="Context:\n"
+                    "[Document(metadata={}, page_content='foo'), "
+                    "Document(metadata={}, page_content='bar')]\n"
+                    "\n"
+                    "Question:\n"
+                    "What is your name?",
+                    additional_kwargs={},
+                    response_metadata={},
+                )
             ),
         ]
     )
@@ -2885,14 +2896,14 @@ def test_seq_prompt_dict(mocker: MockerFixture, snapshot: SnapshotAssertion) -> 
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
     assert llm_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
     assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
@@ -3141,22 +3152,22 @@ def test_seq_prompt_map(mocker: MockerFixture, snapshot: SnapshotAssertion) -> N
         "llm": "i'm a textbot",
         "passthrough": ChatPromptValue(
             messages=[
-                SystemMessage(content="You are a nice assistant."),
-                HumanMessage(content="What is your name?"),
+                _any_id(SystemMessage(content="You are a nice assistant.")),
+                _any_id(HumanMessage(content="What is your name?")),
             ]
         ),
     }
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
     assert llm_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
     assert len([r for r in tracer.runs if r.parent_run_id is None]) == 1
@@ -3187,6 +3198,15 @@ def test_map_stream() -> None:
         "passthrough": RunnablePassthrough(),
     }
 
+    expected_prompt_value = ChatPromptValue(
+        messages=[
+            _any_id(message)
+            for message in prompt.invoke(
+                {"question": "What is your name?"}
+            ).to_messages()
+        ]
+    )
+
     stream = chain.stream({"question": "What is your name?"})
 
     final_value = None
@@ -3200,7 +3220,7 @@ def test_map_stream() -> None:
             final_value += chunk
 
     assert streamed_chunks[0] in [
-        {"passthrough": prompt.invoke({"question": "What is your name?"})},
+        {"passthrough": expected_prompt_value},
         {"llm": "i"},
         {"chat": _any_id_ai_message_chunk(content="i")},
     ]
@@ -3211,9 +3231,7 @@ def test_map_stream() -> None:
     assert chat_message is not None
     assert chat_message.content == "i'm a chatbot"
     assert final_value.get("llm") == "i'm a textbot"
-    assert final_value.get("passthrough") == prompt.invoke(
-        {"question": "What is your name?"}
-    )
+    assert final_value.get("passthrough") == expected_prompt_value
 
     chain_pick_one = chain.pick("llm")
 
@@ -3350,6 +3368,15 @@ async def test_map_astream() -> None:
         "passthrough": RunnablePassthrough(),
     }
 
+    expected_prompt_value = ChatPromptValue(
+        messages=[
+            _any_id(message)
+            for message in prompt.invoke(
+                {"question": "What is your name?"}
+            ).to_messages()
+        ]
+    )
+
     stream = chain.astream({"question": "What is your name?"})
 
     final_value = None
@@ -3363,7 +3390,7 @@ async def test_map_astream() -> None:
             final_value += chunk
 
     assert streamed_chunks[0] in [
-        {"passthrough": prompt.invoke({"question": "What is your name?"})},
+        {"passthrough": expected_prompt_value},
         {"llm": "i"},
         {"chat": _any_id_ai_message_chunk(content="i")},
     ]
@@ -3375,9 +3402,9 @@ async def test_map_astream() -> None:
     assert chat_message.content == "i'm a chatbot"
     chat_message.id = AnyStr()
     assert final_value.get("llm") == "i'm a textbot"
-    assert final_value.get("passthrough") == prompt.invoke(
-        {"question": "What is your name?"}
-    )
+    assert final_value.get("passthrough") == expected_prompt_value
+    for message in final_value["passthrough"].messages:
+        _any_id(message)
 
     # Test astream_log state accumulation
 
@@ -3399,9 +3426,10 @@ async def test_map_astream() -> None:
     assert (
         final_state.state["logs"]["ChatPromptTemplate"]["name"] == "ChatPromptTemplate"
     )
-    assert final_state.state["logs"]["ChatPromptTemplate"][
-        "final_output"
-    ] == prompt.invoke({"question": "What is your name?"})
+    assert (
+        final_state.state["logs"]["ChatPromptTemplate"]["final_output"]
+        == expected_prompt_value
+    )
     assert (
         final_state.state["logs"]["RunnableParallel<chat,llm,passthrough>"]["name"]
         == "RunnableParallel<chat,llm,passthrough>"
@@ -3448,7 +3476,7 @@ async def test_map_astream() -> None:
         final_state.state["logs"]["ChatPromptTemplate"]["name"] == "ChatPromptTemplate"
     )
     assert final_state.state["logs"]["ChatPromptTemplate"]["final_output"] == (
-        prompt.invoke({"question": "What is your name?"})
+        expected_prompt_value
     )
     assert (
         final_state.state["logs"]["RunnableParallel<chat,llm,passthrough>"]["name"]

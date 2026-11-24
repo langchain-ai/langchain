@@ -41,7 +41,7 @@ def test_merge_message_runs_str(msg_cls: type[BaseMessage]) -> None:
     messages_model_copy = [m.model_copy(deep=True) for m in messages]
     expected = [msg_cls("foo\nbar\nbaz")]
     actual = merge_message_runs(messages)
-    assert actual == expected
+    assert messages_equal_ignoring_ids(actual, expected)
     assert messages == messages_model_copy
 
 
@@ -53,7 +53,7 @@ def test_merge_message_runs_str_with_specified_separator(
     messages_model_copy = [m.model_copy(deep=True) for m in messages]
     expected = [msg_cls("foo<sep>bar<sep>baz")]
     actual = merge_message_runs(messages, chunk_separator="<sep>")
-    assert actual == expected
+    assert messages_equal_ignoring_ids(actual, expected)
     assert messages == messages_model_copy
 
 
@@ -65,7 +65,7 @@ def test_merge_message_runs_str_without_separator(
     messages_model_copy = [m.model_copy(deep=True) for m in messages]
     expected = [msg_cls("foobarbaz")]
     actual = merge_message_runs(messages, chunk_separator="")
-    assert actual == expected
+    assert messages_equal_ignoring_ids(actual, expected)
     assert messages == messages_model_copy
 
 
@@ -299,7 +299,7 @@ def test_trim_messages_first_30() -> None:
         token_counter=dummy_token_counter,
         strategy="first",
     )
-    assert actual == expected
+    assert messages_equal_ignoring_ids(actual, expected)
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
@@ -318,7 +318,7 @@ def test_trim_messages_first_30_allow_partial() -> None:
         strategy="first",
         allow_partial=True,
     )
-    assert actual == expected
+    assert messages_equal_ignoring_ids(actual, expected)
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
@@ -336,7 +336,7 @@ def test_trim_messages_first_30_allow_partial_end_on_human() -> None:
         allow_partial=True,
         end_on="human",
     )
-    assert actual == expected
+    assert messages_equal_ignoring_ids(actual, expected)
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
@@ -354,7 +354,7 @@ def test_trim_messages_last_30_include_system() -> None:
         token_counter=dummy_token_counter,
         strategy="last",
     )
-    assert actual == expected
+    assert messages_equal_ignoring_ids(actual, expected)
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
@@ -380,7 +380,7 @@ def test_trim_messages_last_40_include_system_allow_partial() -> None:
         include_system=True,
     )
 
-    assert actual == expected
+    assert messages_equal_ignoring_ids(actual, expected)
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
@@ -406,7 +406,7 @@ def test_trim_messages_last_30_include_system_allow_partial_end_on_human() -> No
         end_on="human",
     )
 
-    assert actual == expected
+    assert messages_equal_ignoring_ids(actual, expected)
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
@@ -427,7 +427,7 @@ def test_trim_messages_last_40_include_system_allow_partial_start_on_human() -> 
         start_on="human",
     )
 
-    assert actual == expected
+    assert messages_equal_ignoring_ids(actual, expected)
     assert _MESSAGES_TO_TRIM == _MESSAGES_TO_TRIM_COPY
 
 
@@ -944,7 +944,7 @@ def test_convert_to_messages() -> None:
         ),
     ]
     actual = convert_to_messages(message_like)
-    assert expected == actual
+    assert messages_equal_ignoring_ids(actual, expected)
 
 
 def test_convert_to_messages_openai_refusal() -> None:
@@ -952,7 +952,7 @@ def test_convert_to_messages_openai_refusal() -> None:
         [{"role": "assistant", "content": "", "refusal": "9.1"}]
     )
     expected = [AIMessage("", additional_kwargs={"refusal": "9.1"})]
-    assert actual == expected
+    assert messages_equal_ignoring_ids(actual, expected)
 
     # Raises error if content is missing.
     with pytest.raises(
@@ -977,7 +977,7 @@ def test_convert_to_openai_messages_string() -> None:
 
 
 def test_convert_to_openai_messages_single_message() -> None:
-    message: BaseMessage = HumanMessage(content="Hello")
+    message: BaseMessage = HumanMessage(content="Hello", id=None)
     result = convert_to_openai_messages(message)
     assert result == {"role": "user", "content": "Hello"}
 

@@ -46,6 +46,7 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
     SystemMessage,
+    messages_equal_ignoring_ids,
 )
 from langchain_core.outputs import (
     ChatGeneration,
@@ -691,20 +692,21 @@ def test_trace_images_in_openai_format() -> None:
     ]
     tracer = FakeChatModelStartTracer()
     llm.invoke(messages, config={"callbacks": [tracer]})
-    assert tracer.messages == [
+    assert len(tracer.messages) == 1
+    assert len(tracer.messages[0]) == 1
+    assert messages_equal_ignoring_ids(
+        tracer.messages[0][0],
         [
-            [
-                HumanMessage(
-                    content=[
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": "https://example.com/image.png"},
-                        }
-                    ]
-                )
-            ]
-        ]
-    ]
+            HumanMessage(
+                content=[
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": "https://example.com/image.png"},
+                    }
+                ]
+            )
+        ],
+    )
 
 
 def test_trace_pdfs() -> None:
@@ -728,22 +730,23 @@ def test_trace_pdfs() -> None:
         warnings.simplefilter("error")
         llm.invoke(messages, config={"callbacks": [tracer]})
 
-    assert tracer.messages == [
+    assert len(tracer.messages) == 1
+    assert len(tracer.messages[0]) == 1
+    assert messages_equal_ignoring_ids(
+        tracer.messages[0][0],
         [
-            [
-                HumanMessage(
-                    content=[
-                        {
-                            "type": "file",
-                            "mime_type": "application/pdf",
-                            "source_type": "base64",
-                            "data": "<base64 string>",
-                        }
-                    ]
-                )
-            ]
-        ]
-    ]
+            HumanMessage(
+                content=[
+                    {
+                        "type": "file",
+                        "mime_type": "application/pdf",
+                        "source_type": "base64",
+                        "data": "<base64 string>",
+                    }
+                ]
+            )
+        ],
+    )
 
 
 def test_content_block_transformation_v0_to_v1_image() -> None:
@@ -805,24 +808,25 @@ def test_trace_content_blocks_with_no_type_key(output_version: str) -> None:
     ]
     tracer = FakeChatModelStartTracer()
     response = llm.invoke(messages, config={"callbacks": [tracer]})
-    assert tracer.messages == [
+    assert len(tracer.messages) == 1
+    assert len(tracer.messages[0]) == 1
+    assert messages_equal_ignoring_ids(
+        tracer.messages[0][0],
         [
-            [
-                HumanMessage(
-                    [
-                        {
-                            "type": "text",
-                            "text": "Hello",
-                        },
-                        {
-                            "type": "cachePoint",
-                            "cachePoint": {"type": "default"},
-                        },
-                    ]
-                )
-            ]
-        ]
-    ]
+            HumanMessage(
+                [
+                    {
+                        "type": "text",
+                        "text": "Hello",
+                    },
+                    {
+                        "type": "cachePoint",
+                        "cachePoint": {"type": "default"},
+                    },
+                ]
+            )
+        ],
+    )
 
     if output_version == "v0":
         assert response.content == [

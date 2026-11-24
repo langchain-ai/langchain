@@ -26,7 +26,12 @@ from pydantic import BaseModel, ConfigDict, Field
 from pydantic.errors import PydanticInvalidForJsonSchema
 
 import langchain_core
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    HumanMessage,
+    ToolMessage,
+    messages_equal_ignoring_ids,
+)
 from langchain_core.runnables import RunnableLambda
 from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
 from langchain_core.utils.function_calling import (
@@ -716,9 +721,9 @@ def test_valid_example_conversion() -> None:
         HumanMessage(content="This is a valid example"),
         AIMessage(content="", additional_kwargs={"tool_calls": []}),
     ]
-    assert (
-        tool_example_to_messages(input="This is a valid example", tool_calls=[])
-        == expected_messages
+    assert messages_equal_ignoring_ids(
+        tool_example_to_messages(input="This is a valid example", tool_calls=[]),
+        expected_messages,
     )
 
 

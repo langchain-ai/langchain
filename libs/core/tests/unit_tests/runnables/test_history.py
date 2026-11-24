@@ -11,7 +11,13 @@ from langchain_core.callbacks import (
 )
 from langchain_core.chat_history import InMemoryChatMessageHistory
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    BaseMessage,
+    HumanMessage,
+    SystemMessage,
+    messages_equal_ignoring_ids,
+)
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.runnables.base import RunnableBinding, RunnableLambda
@@ -25,6 +31,7 @@ from langchain_core.tracers.root_listeners import (
     RootListenersTracer,
 )
 from tests.unit_tests.pydantic_utils import _schema
+from tests.unit_tests.stubs import _any_id
 
 # This module is the compatibility test suite for `RunnableWithMessageHistory`,
 # so constructing that deprecated class is the behavior under test.
@@ -79,12 +86,12 @@ def test_input_messages() -> None:
     assert store == {
         "1": InMemoryChatMessageHistory(
             messages=[
-                HumanMessage(content="hello"),
-                AIMessage(content="you said: hello"),
-                HumanMessage(content="good bye"),
-                AIMessage(content="you said: hello\ngood bye"),
-                HumanMessage(content="hi again"),
-                AIMessage(content="you said: hello\ngood bye\nhi again"),
+                _any_id(HumanMessage(content="hello")),
+                _any_id(AIMessage(content="you said: hello")),
+                _any_id(HumanMessage(content="good bye")),
+                _any_id(AIMessage(content="you said: hello\ngood bye")),
+                _any_id(HumanMessage(content="hi again")),
+                _any_id(AIMessage(content="you said: hello\ngood bye\nhi again")),
             ]
         )
     }
@@ -113,12 +120,12 @@ async def test_input_messages_async() -> None:
     assert store == {
         "1_async": InMemoryChatMessageHistory(
             messages=[
-                HumanMessage(content="hello"),
-                AIMessage(content="you said: hello"),
-                HumanMessage(content="good bye"),
-                AIMessage(content="you said: hello\ngood bye"),
-                HumanMessage(content="hi again"),
-                AIMessage(content="you said: hello\ngood bye\nhi again"),
+                _any_id(HumanMessage(content="hello")),
+                _any_id(AIMessage(content="you said: hello")),
+                _any_id(HumanMessage(content="good bye")),
+                _any_id(AIMessage(content="you said: hello\ngood bye")),
+                _any_id(HumanMessage(content="hi again")),
+                _any_id(AIMessage(content="you said: hello\ngood bye\nhi again")),
             ]
         )
     }
@@ -253,9 +260,11 @@ def test_output_message() -> None:
     )
     config: RunnableConfig = {"configurable": {"session_id": "4"}}
     output = with_history.invoke({"input": "hello"}, config)
-    assert output == AIMessage(content="you said: hello")
+    assert messages_equal_ignoring_ids(output, AIMessage(content="you said: hello"))
     output = with_history.invoke({"input": "good bye"}, config)
-    assert output == AIMessage(content="you said: hello\ngood bye")
+    assert messages_equal_ignoring_ids(
+        output, AIMessage(content="you said: hello\ngood bye")
+    )
 
 
 async def test_output_message_async() -> None:
@@ -281,9 +290,11 @@ async def test_output_message_async() -> None:
     )
     config: RunnableConfig = {"configurable": {"session_id": "4_async"}}
     output = await with_history.ainvoke({"input": "hello"}, config)
-    assert output == AIMessage(content="you said: hello")
+    assert messages_equal_ignoring_ids(output, AIMessage(content="you said: hello"))
     output = await with_history.ainvoke({"input": "good bye"}, config)
-    assert output == AIMessage(content="you said: hello\ngood bye")
+    assert messages_equal_ignoring_ids(
+        output, AIMessage(content="you said: hello\ngood bye")
+    )
 
 
 class LengthChatModel(BaseChatModel):
@@ -360,9 +371,11 @@ def test_output_messages() -> None:
     )
     config: RunnableConfig = {"configurable": {"session_id": "6"}}
     output = with_history.invoke({"input": "hello"}, config)
-    assert output == [AIMessage(content="you said: hello")]
+    assert messages_equal_ignoring_ids(output, [AIMessage(content="you said: hello")])
     output = with_history.invoke({"input": "good bye"}, config)
-    assert output == [AIMessage(content="you said: hello\ngood bye")]
+    assert messages_equal_ignoring_ids(
+        output, [AIMessage(content="you said: hello\ngood bye")]
+    )
 
 
 async def test_output_messages_async() -> None:
@@ -390,9 +403,11 @@ async def test_output_messages_async() -> None:
     )
     config: RunnableConfig = {"configurable": {"session_id": "6_async"}}
     output = await with_history.ainvoke({"input": "hello"}, config)
-    assert output == [AIMessage(content="you said: hello")]
+    assert messages_equal_ignoring_ids(output, [AIMessage(content="you said: hello")])
     output = await with_history.ainvoke({"input": "good bye"}, config)
-    assert output == [AIMessage(content="you said: hello\ngood bye")]
+    assert messages_equal_ignoring_ids(
+        output, [AIMessage(content="you said: hello\ngood bye")]
+    )
 
 
 def test_output_dict() -> None:
@@ -423,9 +438,11 @@ def test_output_dict() -> None:
     )
     config: RunnableConfig = {"configurable": {"session_id": "7"}}
     output = with_history.invoke({"input": "hello"}, config)
-    assert output == {"output": [AIMessage(content="you said: hello")]}
+    assert output == {"output": [_any_id(AIMessage(content="you said: hello"))]}
     output = with_history.invoke({"input": "good bye"}, config)
-    assert output == {"output": [AIMessage(content="you said: hello\ngood bye")]}
+    assert output == {
+        "output": [_any_id(AIMessage(content="you said: hello\ngood bye"))]
+    }
 
 
 async def test_output_dict_async() -> None:
@@ -456,9 +473,11 @@ async def test_output_dict_async() -> None:
     )
     config: RunnableConfig = {"configurable": {"session_id": "7_async"}}
     output = await with_history.ainvoke({"input": "hello"}, config)
-    assert output == {"output": [AIMessage(content="you said: hello")]}
+    assert output == {"output": [_any_id(AIMessage(content="you said: hello"))]}
     output = await with_history.ainvoke({"input": "good bye"}, config)
-    assert output == {"output": [AIMessage(content="you said: hello\ngood bye")]}
+    assert output == {
+        "output": [_any_id(AIMessage(content="you said: hello\ngood bye"))]
+    }
 
 
 def test_get_input_schema_input_dict() -> None:
@@ -613,14 +632,12 @@ def test_using_custom_config_specs() -> None:
         },
         {"configurable": {"user_id": "user1", "conversation_id": "1"}},
     )
-    assert result == [
-        AIMessage(content="you said: hello"),
-    ]
+    assert messages_equal_ignoring_ids(result, [AIMessage(content="you said: hello")])
     assert store == {
         ("user1", "1"): InMemoryChatMessageHistory(
             messages=[
-                HumanMessage(content="hello"),
-                AIMessage(content="you said: hello"),
+                _any_id(HumanMessage(content="hello")),
+                _any_id(AIMessage(content="you said: hello")),
             ]
         )
     }
@@ -631,16 +648,14 @@ def test_using_custom_config_specs() -> None:
         },
         {"configurable": {"user_id": "user1", "conversation_id": "1"}},
     )
-    assert result == [
-        AIMessage(content="you said: goodbye"),
-    ]
+    assert messages_equal_ignoring_ids(result, [AIMessage(content="you said: goodbye")])
     assert store == {
         ("user1", "1"): InMemoryChatMessageHistory(
             messages=[
-                HumanMessage(content="hello"),
-                AIMessage(content="you said: hello"),
-                HumanMessage(content="goodbye"),
-                AIMessage(content="you said: goodbye"),
+                _any_id(HumanMessage(content="hello")),
+                _any_id(AIMessage(content="you said: hello")),
+                _any_id(HumanMessage(content="goodbye")),
+                _any_id(AIMessage(content="you said: goodbye")),
             ]
         )
     }
@@ -651,22 +666,20 @@ def test_using_custom_config_specs() -> None:
         },
         {"configurable": {"user_id": "user2", "conversation_id": "1"}},
     )
-    assert result == [
-        AIMessage(content="you said: meow"),
-    ]
+    assert messages_equal_ignoring_ids(result, [AIMessage(content="you said: meow")])
     assert store == {
         ("user1", "1"): InMemoryChatMessageHistory(
             messages=[
-                HumanMessage(content="hello"),
-                AIMessage(content="you said: hello"),
-                HumanMessage(content="goodbye"),
-                AIMessage(content="you said: goodbye"),
+                _any_id(HumanMessage(content="hello")),
+                _any_id(AIMessage(content="you said: hello")),
+                _any_id(HumanMessage(content="goodbye")),
+                _any_id(AIMessage(content="you said: goodbye")),
             ]
         ),
         ("user2", "1"): InMemoryChatMessageHistory(
             messages=[
-                HumanMessage(content="meow"),
-                AIMessage(content="you said: meow"),
+                _any_id(HumanMessage(content="meow")),
+                _any_id(AIMessage(content="you said: meow")),
             ]
         ),
     }
@@ -726,14 +739,12 @@ async def test_using_custom_config_specs_async() -> None:
         },
         {"configurable": {"user_id": "user1_async", "conversation_id": "1_async"}},
     )
-    assert result == [
-        AIMessage(content="you said: hello"),
-    ]
+    assert messages_equal_ignoring_ids(result, [AIMessage(content="you said: hello")])
     assert store == {
         ("user1_async", "1_async"): InMemoryChatMessageHistory(
             messages=[
-                HumanMessage(content="hello"),
-                AIMessage(content="you said: hello"),
+                _any_id(HumanMessage(content="hello")),
+                _any_id(AIMessage(content="you said: hello")),
             ]
         )
     }
@@ -744,16 +755,14 @@ async def test_using_custom_config_specs_async() -> None:
         },
         {"configurable": {"user_id": "user1_async", "conversation_id": "1_async"}},
     )
-    assert result == [
-        AIMessage(content="you said: goodbye"),
-    ]
+    assert messages_equal_ignoring_ids(result, [AIMessage(content="you said: goodbye")])
     assert store == {
         ("user1_async", "1_async"): InMemoryChatMessageHistory(
             messages=[
-                HumanMessage(content="hello"),
-                AIMessage(content="you said: hello"),
-                HumanMessage(content="goodbye"),
-                AIMessage(content="you said: goodbye"),
+                _any_id(HumanMessage(content="hello")),
+                _any_id(AIMessage(content="you said: hello")),
+                _any_id(HumanMessage(content="goodbye")),
+                _any_id(AIMessage(content="you said: goodbye")),
             ]
         )
     }
@@ -764,22 +773,20 @@ async def test_using_custom_config_specs_async() -> None:
         },
         {"configurable": {"user_id": "user2_async", "conversation_id": "1_async"}},
     )
-    assert result == [
-        AIMessage(content="you said: meow"),
-    ]
+    assert messages_equal_ignoring_ids(result, [AIMessage(content="you said: meow")])
     assert store == {
         ("user1_async", "1_async"): InMemoryChatMessageHistory(
             messages=[
-                HumanMessage(content="hello"),
-                AIMessage(content="you said: hello"),
-                HumanMessage(content="goodbye"),
-                AIMessage(content="you said: goodbye"),
+                _any_id(HumanMessage(content="hello")),
+                _any_id(AIMessage(content="you said: hello")),
+                _any_id(HumanMessage(content="goodbye")),
+                _any_id(AIMessage(content="you said: goodbye")),
             ]
         ),
         ("user2_async", "1_async"): InMemoryChatMessageHistory(
             messages=[
-                HumanMessage(content="meow"),
-                AIMessage(content="you said: meow"),
+                _any_id(HumanMessage(content="meow")),
+                _any_id(AIMessage(content="you said: meow")),
             ]
         ),
     }
