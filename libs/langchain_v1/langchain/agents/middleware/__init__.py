@@ -30,6 +30,11 @@ from langchain.agents.middleware.tool_call_limit import ToolCallLimitMiddleware
 from langchain.agents.middleware.tool_emulator import LLMToolEmulator
 from langchain.agents.middleware.tool_error import ToolErrorMiddleware
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
+from langchain.agents.middleware.tool_search import (
+    BM25ToolRetriever,
+    ToolRetriever,
+    ToolSearchMiddleware,
+)
 from langchain.agents.middleware.tool_selection import LLMToolSelectorMiddleware
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -57,6 +62,7 @@ __all__ = [
     "AgentMiddleware",
     "AgentState",
     "AutoModeMiddleware",
+    "BM25ToolRetriever",
     "ClearToolUsesEdit",
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
@@ -91,7 +97,9 @@ __all__ = [
     "ToolCallLimitMiddleware",
     "ToolCallRequest",
     "ToolErrorMiddleware",
+    "ToolRetriever",
     "ToolRetryMiddleware",
+    "ToolSearchMiddleware",
     "TracePolicy",
     "TriggerClause",
     "after_agent",
