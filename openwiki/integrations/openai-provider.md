@@ -11,7 +11,7 @@ sources:
 generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-18T08:17:15.497Z
+    at: 2026-11-24T08:17:18.845Z
 ---
 
 # OpenAI Provider Implementation

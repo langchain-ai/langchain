@@ -40,10 +40,10 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/__init__.py
   - id: openwiki-source-48ce5ee900993294d349b4e8
     resource: repo://libs/standard-tests/langchain_tests/__init__.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-24T08:17:18.845Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-18T08:17:15.497Z
+    at: 2026-11-24T08:17:18.845Z
 ---
 
 ## Welcome to LangChain Development
@@ -60,9 +60,9 @@ LangChain is organized as a **three-layer architecture** in `/libs/`:
 
 ```
 /libs/
-├── core/              # langchain-core (v1.8.1): Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
-├── langchain/         # langchain-classic (v1.0.8): Legacy orchestration layer (no new features)
-├── langchain_v1/      # langchain (v1.5.0): Agent orchestration, factory, middleware
+├── core/              # langchain-core (v1.8.4): Base abstractions (Runnable, BaseChatModel, tools, prompts, messages)
+├── langchain/         # langchain-classic (v1.1.0): Legacy orchestration layer (no new features)
+├── langchain_v1/      # langchain (v1.5.2): Agent orchestration, factory, middleware
 ├── partners/          # Provider-specific integrations (OpenAI, Anthropic, Ollama, etc.)
 ├── standard-tests/    # Shared test suites for component conformance
 ├── text-splitters/    # Text splitting utilities

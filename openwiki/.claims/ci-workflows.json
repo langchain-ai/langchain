@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:eefacebefabf5d223c30fddd4ab8098e08f23f4bcc86a306ef2b48e87dc07974",
+  "pageVersion": "sha256:b7686150ce198eccf1b6bfd9bb035cd4b60b41a2d59dba76a617f52067522449",
   "claims": [
     {
       "id": "claim_cb5fe3f72803497eac3f09ebf02d97cd",
@@ -89,8 +89,8 @@
       "statement": "Pre-release checks (pre-release-checks job) disable caching to catch missing dependencies, import the built wheel directly, run unit tests on both current and minimum dependency versions, block prerelease dependencies for stable releases, and run integration tests for partner packages.",
       "evidence": [
         {
-          "resource": "repo://.github/workflows/_release.yml#L414-L589",
-          "version": "repo-lines-v1:sha256:6dede91dc3a34033f9cb753fe8b5f359b9d6580f6197f5fa64f0b6f4126e09f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTc2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNmI2OTNjOWRmMzU1MThmNzEyODQwN2UyNDhiODM3ZTAxZjBlZmJmNTQ4ZTg4MGUyMDA4NTgyZDdmMTI3MDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxYTU5ZmRkM2Q4MWZkMTUyZDU5ZTJiNzliYTIxOGNmMGJhMDgyYWQ2NzM3ZmE3ZTFiYTEwYjRlY2FlMjlkY2I3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MTZhZDk2YzhlNWQyNGQ4OWU2MWQyZTkwMzEyOGY2YWE0YWYzYmQ2Y2I2MjhmNWMzYzY5NTI5YWUxNDJjZWY4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNzBkZDYxNTE3ZTAxOGI4NWVmYzNjOWM3YWM0ZWM5ZjUxYTU2NzMyMWU1Mjk4MjEwYjZmZjZlN2FkNTkzYjFmIn0"
+          "resource": "repo://.github/workflows/_release.yml#L414-L603",
+          "version": "repo-lines-v1:sha256:791589e5498bc5729c5d636b4be0910581c0db2b7dfa143549fc995848c14ac8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTkwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIzNmI2OTNjOWRmMzU1MThmNzEyODQwN2UyNDhiODM3ZTAxZjBlZmJmNTQ4ZTg4MGUyMDA4NTgyZDdmMTI3MDdmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIxYTU5ZmRkM2Q4MWZkMTUyZDU5ZTJiNzliYTIxOGNmMGJhMDgyYWQ2NzM3ZmE3ZTFiYTEwYjRlY2FlMjlkY2I3IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI2MTZhZDk2YzhlNWQyNGQ4OWU2MWQyZTkwMzEyOGY2YWE0YWYzYmQ2Y2I2MjhmNWMzYzY5NTI5YWUxNDJjZWY4IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiIxNzBkZDYxNTE3ZTAxOGI4NWVmYzNjOWM3YWM0ZWM5ZjUxYTU2NzMyMWU1Mjk4MjEwYjZmZjZlN2FkNTkzYjFmIn0"
         }
       ]
     },
@@ -154,7 +154,7 @@
       "evidence": [
         {
           "resource": "repo://.github/workflows/_release.yml#L503-L535",
-          "version": "repo-lines-v1:sha256:577f03749273cf8e820244e3ef1a3dd9c6f753e28a4774e5131228f651762db0:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlZTZiYWEyMzFjNDUwODllY2ZlMDYyYWNkOTNhNDAwYzQ4MGU4M2NmMWU1MTdjN2M3M2M2OWY2Y2RkOTI2OWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhNTlmZGQzZDgxZmQxNTJkNTllMmI3OWJhMjE4Y2YwYmEwODJhZDY3MzdmYTdlMWJhMTBiNGVjYWUyOWRjYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyYjY3YzFiZTU1ZTZlNzc1NGRlNDQyYTM5ZWJjZTI4MWM4ODgxOWFkNDgyMzU1MGRmOTY2NTY2MTU4N2UyNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzMmM4NWUxNzFlYmVlZGNjMmI3MjY4OTNhMjEwMDY4M2M5ZDJkY2QzODRhZDE0MGMxYWMyYzZhN2IzODAzZmUifQ"
+          "version": "repo-lines-v1:sha256:5080458db66fd3706d7980d3a30b6383e51b13327d7c25db08c0133e487c0525:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFlZTZiYWEyMzFjNDUwODllY2ZlMDYyYWNkOTNhNDAwYzQ4MGU4M2NmMWU1MTdjN2M3M2M2OWY2Y2RkOTI2OWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFhNTlmZGQzZDgxZmQxNTJkNTllMmI3OWJhMjE4Y2YwYmEwODJhZDY3MzdmYTdlMWJhMTBiNGVjYWUyOWRjYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQyYjY3YzFiZTU1ZTZlNzc1NGRlNDQyYTM5ZWJjZTI4MWM4ODgxOWFkNDgyMzU1MGRmOTY2NTY2MTU4N2UyNGUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAzMmM4NWUxNzFlYmVlZGNjMmI3MjY4OTNhMjEwMDY4M2M5ZDJkY2QzODRhZDE0MGMxYWMyYzZhN2IzODAzZmUifQ"
         },
         {
           "resource": "repo://.github/workflows/_test.yml#L55-L72",
@@ -335,6 +335,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-16T08:30:18.041Z"
+    "at": "2026-11-24T08:17:18.845Z"
   }
 }
