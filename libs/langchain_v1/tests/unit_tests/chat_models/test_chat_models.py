@@ -9,7 +9,11 @@ from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
 
 from langchain.chat_models import __all__, init_chat_model
-from langchain.chat_models.base import _BUILTIN_PROVIDERS, _attempt_infer_model_provider
+from langchain.chat_models.base import (
+    _BUILTIN_PROVIDERS,
+    _attempt_infer_model_provider,
+    _get_chat_model_creator,
+)
 
 if TYPE_CHECKING:
     from langchain_core.language_models import BaseChatModel
@@ -132,6 +136,36 @@ def test_init_chat_model_langsmith_explicit_config() -> None:
     assert model.openai_api_base == "https://apac.gateway.example.com/v1"
     assert isinstance(model.openai_api_key, SecretStr)
     assert model.openai_api_key.get_secret_value() == "explicit-key"
+
+
+@pytest.mark.parametrize("model_provider", [None, "modal"])
+def test_init_chat_model_modal(model_provider: str | None) -> None:
+    endpoint = "my-endpoint.us-west.modal.direct"
+    chat_modal = mock.Mock(return_value=FakeChatModel())
+    _get_chat_model_creator.cache_clear()
+    try:
+        with mock.patch.dict("sys.modules", {"langchain_modal": mock.Mock(ChatModal=chat_modal)}):
+            model = init_chat_model(
+                f"modal:{endpoint}" if model_provider is None else endpoint,
+                model_provider=model_provider,
+                temperature=0.5,
+            )
+        assert model is chat_modal.return_value
+        chat_modal.assert_called_once_with(model=endpoint, temperature=0.5)
+    finally:
+        _get_chat_model_creator.cache_clear()
+
+
+def test_init_chat_model_modal_missing_dependency() -> None:
+    _get_chat_model_creator.cache_clear()
+    try:
+        with (
+            mock.patch.dict("sys.modules", {"langchain_modal": None}),
+            pytest.raises(ImportError, match="pip install langchain-modal"),
+        ):
+            init_chat_model("modal:my-endpoint.us-west.modal.direct")
+    finally:
+        _get_chat_model_creator.cache_clear()
 
 
 def test_init_chat_model_rejects_model_object() -> None:
