@@ -27,7 +27,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.runnables.config import run_in_executor
-from langchain_core.tools import BaseTool, StructuredTool
+from langchain_core.tools import BaseTool, StructuredTool, ToolException
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.vectorstores import InMemoryVectorStore
 from langgraph.types import Command
@@ -372,12 +372,14 @@ class ToolSearchMiddleware(AgentMiddleware[ToolSearchState[ResponseT], ContextT,
             catalog = {tool.name: tool for tool in self._catalog(runtime)}
             loaded = _loaded(runtime.state)
             problem = self._dispatch_problem(name, _as_object(arguments or {}), catalog, loaded)
-            return f"Error: {problem or 'the call could not be dispatched.'}"
+            msg = problem or "The call could not be dispatched."
+            raise ToolException(msg)
 
         return StructuredTool.from_function(
             func=call_tool,
             name=DISPATCH_TOOL_NAME,
             metadata={_OWN_TOOL: True},
+            handle_tool_error=True,
             description=(
                 f"Run a tool found by {SEARCH_TOOL_NAME}. Pass the tool's name and its "
                 "arguments as an object."

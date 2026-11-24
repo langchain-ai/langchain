@@ -431,7 +431,7 @@ def test_dispatch_rejects_a_tool_that_was_not_found() -> None:
     result = agent.invoke({"messages": [HumanMessage("refund 42")]})
 
     reply = next(m for m in result["messages"] if isinstance(m, ToolMessage))
-    assert reply.name == "call_tool"
+    assert (reply.name, reply.status) == ("call_tool", "error")
     assert "has not been found yet" in reply.content
 
 
@@ -440,6 +440,7 @@ def test_dispatch_rejects_an_unknown_tool() -> None:
     result = agent.invoke({"messages": [HumanMessage("x")]})
 
     reply = next(m for m in result["messages"] if isinstance(m, ToolMessage))
+    assert reply.status == "error"
     assert "No tool named 'delete_everything'" in reply.content
 
 
