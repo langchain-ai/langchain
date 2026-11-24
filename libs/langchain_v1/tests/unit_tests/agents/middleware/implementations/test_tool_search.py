@@ -5,12 +5,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 import pytest
+from langchain_core.embeddings import Embeddings
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.tools import StructuredTool, tool
 
 from langchain.agents import create_agent
 from langchain.agents.middleware.tool_search import (
     BM25ToolRetriever,
+    EmbeddingToolRetriever,
     ToolSearchMiddleware,
 )
 from langchain.agents.middleware.types import AgentMiddleware, ModelRequest, ModelResponse
@@ -274,3 +276,74 @@ def test_bm25_indexes_mcp_server_name() -> None:
 
     hits = BM25ToolRetriever().retrieve("payroll insights", [get_insights_ads, get_insights], None)  # type: ignore[arg-type]
     assert hits[0] is get_insights
+
+
+class ConceptEmbeddings(Embeddings):
+    """Embeds text as counts of a few concepts, so paraphrases land near each other."""
+
+    CONCEPTS = (
+        ("pay", "salary", "earn", "compensation"),
+        ("refund", "money back", "return"),
+        ("weather", "rain", "sunny"),
+        ("invoice", "bill"),
+    )
+
+    def __init__(self) -> None:
+        self.embedded: list[str] = []
+
+    def _vector(self, text: str) -> list[float]:
+        lowered = text.lower()
+        return [float(sum(word in lowered for word in words)) + 0.01 for words in self.CONCEPTS]
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        self.embedded.extend(texts)
+        return [self._vector(t) for t in texts]
+
+    def embed_query(self, text: str) -> list[float]:
+        return self._vector(text)
+
+
+def test_embedding_retriever_matches_paraphrases() -> None:
+    retriever = EmbeddingToolRetriever(ConceptEmbeddings(), k=1)
+    catalog = [refund_order, get_compensation, list_invoices, get_weather]
+
+    assert retriever.retrieve("how much does Jane earn", catalog, None) == [get_compensation]  # type: ignore[arg-type]
+    assert retriever.retrieve("I want my money back", catalog, None) == [refund_order]  # type: ignore[arg-type]
+    hits = retriever.retrieve("pay this bill", catalog, None)  # type: ignore[arg-type]
+    assert hits[0].name in {"list_invoices", "get_compensation"}
+
+
+def test_embedding_retriever_embeds_each_tool_once() -> None:
+    embeddings = ConceptEmbeddings()
+    retriever = EmbeddingToolRetriever(embeddings)
+    catalog = [refund_order, get_compensation]
+    retriever.retrieve("refund", catalog, None)  # type: ignore[arg-type]
+    retriever.retrieve("pay", catalog, None)  # type: ignore[arg-type]
+    retriever.retrieve("pay", [*catalog, get_weather], None)  # type: ignore[arg-type]
+
+    assert len(embeddings.embedded) == 3
+
+
+def test_embedding_retriever_ignores_tools_outside_the_catalog() -> None:
+    retriever = EmbeddingToolRetriever(ConceptEmbeddings())
+    retriever.retrieve("pay", [get_compensation, refund_order], None)  # type: ignore[arg-type]
+
+    assert retriever.retrieve("pay", [refund_order], None) == [refund_order]  # type: ignore[arg-type]
+
+
+def test_agent_searches_with_embeddings() -> None:
+    seen = ToolsSeen()
+    agent = create_agent(
+        FakeToolCallingModel(
+            tool_calls=[[_call("tool_search", "s1", query="what does Jane earn")], []]
+        ),
+        tools=[get_weather, refund_order, get_compensation],
+        middleware=_stack(
+            ToolSearchMiddleware(retriever=EmbeddingToolRetriever(ConceptEmbeddings(), k=1)),
+            seen,
+        ),
+    )
+    agent.invoke({"messages": [HumanMessage("Jane's pay")]})
+
+    assert "get_compensation" in seen.calls[1]
+    assert "refund_order" not in seen.calls[1]

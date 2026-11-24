@@ -32,6 +32,7 @@ from langchain.agents.middleware.tool_error import ToolErrorMiddleware
 from langchain.agents.middleware.tool_retry import ToolRetryMiddleware
 from langchain.agents.middleware.tool_search import (
     BM25ToolRetriever,
+    EmbeddingToolRetriever,
     ToolRetriever,
     ToolSearchMiddleware,
 )
@@ -67,6 +68,7 @@ __all__ = [
     "CodexSandboxExecutionPolicy",
     "ContextEditingMiddleware",
     "DockerExecutionPolicy",
+    "EmbeddingToolRetriever",
     "ExtendedModelResponse",
     "FilesystemFileSearchMiddleware",
     "HostExecutionPolicy",

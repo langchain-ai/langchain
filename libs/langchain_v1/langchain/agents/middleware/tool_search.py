@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import importlib.util
 import math
 import re
 from collections import Counter
 from typing import TYPE_CHECKING, Annotated, Any, NotRequired, Protocol, TypeGuard
 
+from langchain_core.documents import Document
 from langchain_core.messages import AIMessage, AnyMessage, ToolMessage
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool, StructuredTool
+from langchain_core.vectorstores import InMemoryVectorStore
 from langgraph.types import Command
 
 from langchain.agents.middleware.types import (
@@ -26,6 +29,7 @@ from langchain.tools import ToolRuntime  # noqa: TC001  # resolved at runtime fo
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable, Mapping, Sequence
 
+    from langchain_core.embeddings import Embeddings
     from langgraph.runtime import Runtime
 
 DEFER_LOADING = "defer_loading"
@@ -157,6 +161,69 @@ class BM25ToolRetriever:
             if score > 0 or tool.name == exact
         )
         return [tools[entry[-1]] for entry in ranked[: self.k]]
+
+
+class EmbeddingToolRetriever:
+    """Semantic search over tool names and descriptions.
+
+    Finds tools whose wording differs from the query, such as "annual pay" for
+    `get_compensation`. Each tool is embedded once, and again only if its
+    description changes.
+    """
+
+    def __init__(self, embeddings: Embeddings, *, k: int = 5) -> None:
+        """Initialize the retriever.
+
+        Args:
+            embeddings: Model that embeds tool text and queries.
+            k: Maximum number of tools to return. Every returned tool is loaded
+                for the rest of the thread, so keep it small.
+        """
+        if importlib.util.find_spec("numpy") is None:
+            msg = "EmbeddingToolRetriever needs numpy. Install it with `pip install numpy`."
+            raise ImportError(msg)
+        self.k = k
+        self._store = InMemoryVectorStore(embeddings)
+        self._indexed: dict[str, str] = {}
+
+    def _pending(self, tools: Sequence[BaseTool]) -> list[Document]:
+        return [
+            Document(text, id=tool.name, metadata={"name": tool.name})
+            for tool in tools
+            if self._indexed.get(tool.name) != (text := _embedding_text(tool))
+        ]
+
+    def _mark_indexed(self, documents: Sequence[Document]) -> None:
+        self._indexed.update({d.metadata["name"]: d.page_content for d in documents})
+
+    def _ranked(self, documents: Sequence[Document], tools: Sequence[BaseTool]) -> list[BaseTool]:
+        by_name = {tool.name: tool for tool in tools}
+        names = [document.metadata["name"] for document in documents]
+        return [by_name[name] for name in names if name in by_name][: self.k]
+
+    def _fetch(self, tools: Sequence[BaseTool]) -> int:
+        # Over-fetch, so tools indexed earlier but absent from this catalog don't crowd the top k.
+        return self.k + max(0, len(self._indexed) - len(tools))
+
+    def retrieve(
+        self,
+        query: str,
+        tools: Sequence[BaseTool],
+        runtime: ToolRuntime,  # noqa: ARG002  # protocol signature
+    ) -> Sequence[BaseTool]:
+        """Return up to `k` tools closest in meaning to `query`, best first."""
+        if not tools:
+            return []
+        if pending := self._pending(tools):
+            self._store.add_documents(pending)
+            self._mark_indexed(pending)
+        return self._ranked(self._store.similarity_search(query, k=self._fetch(tools)), tools)
+
+
+def _embedding_text(tool: BaseTool) -> str:
+    server = _server_name(tool)
+    prefix = f"[{server}] " if server else ""
+    return f"{prefix}{' '.join(_tokens(tool.name))}: {tool.description}"
 
 
 class ToolSearchMiddleware(AgentMiddleware[ToolSearchState[ResponseT], ContextT, ResponseT]):
