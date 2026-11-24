@@ -119,8 +119,7 @@ class _Bm25:
 class BM25ToolRetriever:
     """Keyword search over tool names, descriptions, argument names and MCP server names.
 
-    Names and descriptions are ranked separately, so a long description cannot drown
-    a match on the name. An exact name match ranks first.
+    All of a tool's text is scored as one document. An exact name match ranks first.
     """
 
     def __init__(self, *, k: int = 5) -> None:
@@ -131,16 +130,15 @@ class BM25ToolRetriever:
                 for the rest of the thread, so keep it small.
         """
         self.k = k
-        self._cache: tuple[tuple[object, ...], _Bm25, _Bm25] | None = None
+        self._cache: tuple[tuple[object, ...], _Bm25] | None = None
 
-    def _indexes(self, tools: Sequence[BaseTool]) -> tuple[_Bm25, _Bm25]:
+    def _index(self, tools: Sequence[BaseTool]) -> _Bm25:
         key = tuple((tool.name, tool.description, *tool.args) for tool in tools)
         cache = self._cache
         if cache is None or cache[0] != key:
-            names = _Bm25([_tokens(tool.name) for tool in tools])
-            texts = _Bm25([_index_text(tool) for tool in tools])
-            cache = self._cache = (key, names, texts)
-        return cache[1], cache[2]
+            index = _Bm25([[*_tokens(tool.name), *_index_text(tool)] for tool in tools])
+            cache = self._cache = (key, index)
+        return cache[1]
 
     def retrieve(
         self,
@@ -151,17 +149,12 @@ class BM25ToolRetriever:
         """Return up to `k` tools matching `query`, best first."""
         if not tools:
             return []
-        names, texts = self._indexes(tools)
-        terms = _tokens(query)
+        scores = self._index(tools).scores(_tokens(query))
         exact = query.strip()
         ranked = sorted(
-            (
-                (tool.name != exact, -name, -text, tool.name, index)
-                for index, (tool, name, text) in enumerate(
-                    zip(tools, names.scores(terms), texts.scores(terms), strict=True)
-                )
-                if name > 0 or text > 0 or tool.name == exact
-            ),
+            (tool.name != exact, -score, tool.name, index)
+            for index, (tool, score) in enumerate(zip(tools, scores, strict=True))
+            if score > 0 or tool.name == exact
         )
         return [tools[entry[-1]] for entry in ranked[: self.k]]
 

@@ -231,7 +231,7 @@ def test_bm25_reindexes_when_a_description_changes() -> None:
     assert not retriever.retrieve("refund", [make("Weather forecast.")], None)  # type: ignore[arg-type]
 
 
-def test_bm25_ranks_exact_name_then_name_then_description() -> None:
+def test_bm25_ranks_exact_name_then_best_match() -> None:
     catalog = [refund_order, get_compensation, list_invoices, get_weather]
     retriever = BM25ToolRetriever()
     runtime: Any = None
@@ -242,6 +242,20 @@ def test_bm25_ranks_exact_name_then_name_then_description() -> None:
     # Description words find a tool whose name doesn't contain them.
     assert retriever.retrieve("annual pay", catalog, runtime) == [get_compensation]
     assert retriever.retrieve("nothing relevant here", catalog, runtime) == []
+
+
+def test_bm25_name_match_on_a_filler_word_does_not_outrank_the_description() -> None:
+    about = StructuredTool.from_function(lambda: "v1", name="about", description="API version.")
+    refund = StructuredTool.from_function(
+        lambda: "ok", name="issue_refund", description="Return a payment for a purchase."
+    )
+
+    hits = BM25ToolRetriever().retrieve(
+        "tell me about getting my payment back for a purchase",
+        [about, refund],
+        None,  # type: ignore[arg-type]
+    )
+    assert hits[0] is refund
 
 
 def test_bm25_indexes_mcp_server_name() -> None:
