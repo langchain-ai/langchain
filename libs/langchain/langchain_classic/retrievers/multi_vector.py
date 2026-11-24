@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from langchain_core.callbacks import (
@@ -15,7 +15,7 @@ from typing_extensions import override
 from langchain_classic.storage._lc_store import create_kv_docstore
 
 
-class SearchType(str, Enum):
+class SearchType(StrEnum):
     """Enumerator of the types of search to perform."""
 
     similarity = "similarity"

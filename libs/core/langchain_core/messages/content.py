@@ -116,9 +116,9 @@ Factory functions offer benefits such as:
 - No need to manually specify the `type` field
 """
 
-from typing import Any, Literal, get_args, get_type_hints
+from typing import Any, Literal, NotRequired, get_args, get_type_hints
 
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
 
 from langchain_core.utils.utils import ensure_id
 
@@ -492,6 +492,33 @@ class ReasoningContentBlock(TypedDict):
     """Provider-specific metadata."""
 
 
+class RefusalContentBlock(TypedDict):
+    """An explicit refusal reported by the model provider.
+
+    Providers report refusals differently: OpenAI returns refusal content, while
+    Anthropic reports a refusal stop reason on the response. Both are represented
+    as this block so callers can detect a refusal without provider-specific code.
+    Refusals the model writes as ordinary text are not detected.
+
+    !!! version-added "Added in `langchain-core` 1.7.5"
+    """
+
+    type: Literal["refusal"]
+    """Type of the content block. Used for discrimination."""
+
+    refusal: str
+    """Human-readable refusal message, or an empty string if none was provided."""
+
+    id: NotRequired[str]
+    """Unique identifier for this content block."""
+
+    index: NotRequired[int | str]
+    """Index of block in aggregate response. Used during streaming."""
+
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata, e.g. Anthropic's refusal `category`."""
+
+
 # Note: `title` and `context` are fields that could be used to provide additional
 # information about the file, such as a description or summary of its content.
 # E.g. with Claude, you can provide a context for a file which is passed to the model.
@@ -846,6 +873,7 @@ ContentBlock = (
     TextContentBlock
     | InvalidToolCall
     | ReasoningContentBlock
+    | RefusalContentBlock
     | NonStandardContentBlock
     | DataContentBlock
     | ToolContentBlock
@@ -857,6 +885,7 @@ KNOWN_BLOCK_TYPES = {
     # Text output
     "text",
     "reasoning",
+    "refusal",
     # Tools
     "tool_call",
     "invalid_tool_call",

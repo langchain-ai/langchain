@@ -38,6 +38,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    Self,
     TypeAlias,
     TypeVar,
     cast,
@@ -60,6 +61,7 @@ from langchain_core.exceptions import (
     ModelNotFoundError,
     ModelPermissionDeniedError,
     ModelRateLimitError,
+    ModelRefusalError,
     ModelTimeoutError,
 )
 from langchain_core.language_models import (
@@ -110,6 +112,7 @@ from langchain_core.output_parsers.openai_tools import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import (
     Runnable,
+    RunnableGenerator,
     RunnableLambda,
     RunnableMap,
     RunnablePassthrough,
@@ -120,8 +123,11 @@ from langchain_core.tools.base import _stringify
 from langchain_core.utils import get_pydantic_field_names
 from langchain_core.utils._gateway import (
     GATEWAY_METADATA_RESPONSE_KEY,
+    _gateway_headers,
+    _langsmith_gateway_active,
     _parse_gateway_metadata,
     _resolve_gateway_config,
+    _with_gateway_headers,
 )
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
@@ -137,13 +143,13 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PrivateAttr,
     SecretStr,
     ValidationError,
     field_validator,
     model_validator,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
-from typing_extensions import Self
 
 from langchain_openai._version import __version__
 from langchain_openai.chat_models._client_utils import (
@@ -248,6 +254,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
                     )
         if audio := _dict.get("audio"):
             additional_kwargs["audio"] = audio
+        if refusal := _dict.get("refusal"):
+            additional_kwargs["refusal"] = refusal
         return AIMessage(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -677,6 +685,28 @@ class OpenAITimeoutError(openai.APITimeoutError, ModelTimeoutError):
     """OpenAI timeout error classified as a LangChain model error."""
 
 
+class OpenAIStreamServerError(openai.APIError, ModelAPIError):
+    """OpenAI server error reported inside a stream, classified as retryable.
+
+    OpenAI can accept a streaming request with HTTP 200 and then fail partway
+    through by sending an error event. The SDK raises these as a bare
+    `openai.APIError` with no status code, so this class carries the same
+    `ModelAPIError` classification an HTTP 5xx gets without fabricating an
+    HTTP response.
+    """
+
+
+class OpenAIResponsesServerError(ValueError, ModelAPIError):
+    """Responses API `response.failed` or `error` event with a server error code.
+
+    Subclasses `ValueError`, which these stream events raise for other codes.
+    """
+
+
+_TRANSIENT_STREAM_ERROR_CODES = frozenset({"server_error"})
+"""In-band stream error codes/types that indicate a transient backend failure."""
+
+
 def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
     if (
         "context_length_exceeded" in str(e)
@@ -742,6 +772,14 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
         raise OpenAITimeoutError(e.request) from e
     if isinstance(e, openai.APIConnectionError):
         raise OpenAIConnectionError(message=e.message, request=e.request) from e
+    # The SDK raises the exact `APIError` for an error event inside a stream that
+    # already returned HTTP 200; subclasses carry their own status-based verdicts.
+    if type(e) is openai.APIError and not _TRANSIENT_STREAM_ERROR_CODES.isdisjoint(
+        (e.code, e.type)
+    ):
+        raise OpenAIStreamServerError(
+            message=e.message, request=e.request, body=e.body
+        ) from e
     raise
 
 
@@ -808,7 +846,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Holds any model parameters valid for `create` call not explicitly specified."""
 
     openai_api_key: (
-        SecretStr | None | Callable[[], str] | Callable[[], Awaitable[str]]
+        SecretStr | Callable[[], str] | Callable[[], Awaitable[str]] | None
     ) = Field(alias="api_key", default=None)
     """API key to use.
 
@@ -1014,6 +1052,9 @@ class BaseChatOpenAI(BaseChatModel):
     """
 
     default_headers: Mapping[str, str] | None = None
+
+    _langsmith_gateway_headers: dict[str, str] | None = PrivateAttr(default=None)
+    """Headers from `langsmith_gateway`, sent by the client but never serialized."""
 
     default_query: Mapping[str, object] | None = None
 
@@ -1427,6 +1468,10 @@ class BaseChatOpenAI(BaseChatModel):
         self.openai_api_base = _gateway_config.base_url
         self.openai_api_key = _gateway_config.api_key
         _base_url_from_gateway = _gateway_config.base_url_from_gateway
+        if _langsmith_gateway_active():
+            self.openai_proxy = None
+        if self._langsmith_gateway_headers is None:
+            self._langsmith_gateway_headers = _gateway_headers()
 
         # Enable stream_usage by default if using default base URL and client,
         # or when the base URL was set by the LangSmith gateway (which proxies
@@ -1464,7 +1509,9 @@ class BaseChatOpenAI(BaseChatModel):
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
-            "default_headers": self.default_headers,
+            "default_headers": _with_gateway_headers(
+                self.default_headers, self._langsmith_gateway_headers
+            ),
             "default_query": self.default_query,
         }
         if self.max_retries is not None:
@@ -1664,6 +1711,7 @@ class BaseChatOpenAI(BaseChatModel):
 
         if finish_reason := choice.get("finish_reason"):
             generation_info["finish_reason"] = finish_reason
+            generation_info.update(_chat_finish_reason_fields(finish_reason))
             if model_name := chunk.get("model"):
                 generation_info["model_name"] = model_name
             if system_fingerprint := chunk.get("system_fingerprint"):
@@ -1728,6 +1776,8 @@ class BaseChatOpenAI(BaseChatModel):
                 current_sub_index = -1
                 has_reasoning = False
                 item_output_indices: dict[str, int] = {}
+                function_call_arguments: dict[str, str] = {}
+                function_call_indices: dict[str, int] = {}
                 for chunk in response:
                     metadata = headers if is_first_chunk else {}
                     (
@@ -1745,6 +1795,8 @@ class BaseChatOpenAI(BaseChatModel):
                         has_reasoning=has_reasoning,
                         output_version=self.output_version,
                         item_output_indices=item_output_indices,
+                        function_call_arguments=function_call_arguments,
+                        function_call_indices=function_call_indices,
                     )
                     if generation_chunk:
                         if is_first_chunk and base_generation_info:
@@ -1800,6 +1852,8 @@ class BaseChatOpenAI(BaseChatModel):
                 current_sub_index = -1
                 has_reasoning = False
                 item_output_indices: dict[str, int] = {}
+                function_call_arguments: dict[str, str] = {}
+                function_call_indices: dict[str, int] = {}
                 async for chunk in _astream_with_chunk_timeout(
                     response,
                     self.stream_chunk_timeout,
@@ -1821,6 +1875,8 @@ class BaseChatOpenAI(BaseChatModel):
                         has_reasoning=has_reasoning,
                         output_version=self.output_version,
                         item_output_indices=item_output_indices,
+                        function_call_arguments=function_call_arguments,
+                        function_call_indices=function_call_indices,
                     )
                     if generation_chunk:
                         if is_first_chunk and base_generation_info:
@@ -1902,6 +1958,7 @@ class BaseChatOpenAI(BaseChatModel):
                 context_manager = response
             with context_manager as response:
                 is_first_chunk = True
+                finish_tracker = _StreamFinishTracker()
                 for chunk in response:
                     if not isinstance(chunk, dict):
                         chunk = chunk.model_dump()
@@ -1912,6 +1969,7 @@ class BaseChatOpenAI(BaseChatModel):
                     )
                     if generation_chunk is None:
                         continue
+                    finish_tracker.update(chunk, generation_chunk)
                     default_chunk_class = generation_chunk.message.__class__
                     logprobs = (generation_chunk.generation_info or {}).get("logprobs")
                     if run_manager:
@@ -2057,6 +2115,15 @@ class BaseChatOpenAI(BaseChatModel):
                 else _convert_message_to_dict(m)
                 for m in messages
             ]
+        if self._langsmith_gateway_headers and isinstance(
+            payload.get("extra_headers"), Mapping
+        ):
+            protected = {name.lower() for name in self._langsmith_gateway_headers}
+            payload["extra_headers"] = {
+                name: value
+                for name, value in payload["extra_headers"].items()
+                if name.lower() not in protected
+            }
         return payload
 
     def _create_chat_result(
@@ -2132,7 +2199,17 @@ class BaseChatOpenAI(BaseChatModel):
             )
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
-            gen = ChatGeneration(message=message, generation_info=generation_info)
+            finish_fields = _chat_finish_reason_fields(
+                generation_info["finish_reason"],
+                has_tool_calls=bool(
+                    isinstance(message, AIMessage)
+                    and (message.tool_calls or message.invalid_tool_calls)
+                ),
+                refusal=bool(message.additional_kwargs.get("refusal")),
+            )
+            gen = ChatGeneration(
+                message=message, generation_info={**generation_info, **finish_fields}
+            )
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
@@ -2199,6 +2276,7 @@ class BaseChatOpenAI(BaseChatModel):
                 context_manager = response
             async with context_manager as response:
                 is_first_chunk = True
+                finish_tracker = _StreamFinishTracker()
                 async for chunk in _astream_with_chunk_timeout(
                     response,
                     self.stream_chunk_timeout,
@@ -2213,6 +2291,7 @@ class BaseChatOpenAI(BaseChatModel):
                     )
                     if generation_chunk is None:
                         continue
+                    finish_tracker.update(chunk, generation_chunk)
                     default_chunk_class = generation_chunk.message.__class__
                     logprobs = (generation_chunk.generation_info or {}).get("logprobs")
                     if run_manager:
@@ -2669,6 +2748,9 @@ class BaseChatOpenAI(BaseChatModel):
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+
+                If the model refuses, `ModelRefusalError` is raised, or returned as
+                `'parsing_error'` when `include_raw` is `True`.
             strict:
 
                 - `True`:
@@ -2866,16 +2948,21 @@ class BaseChatOpenAI(BaseChatModel):
             )
             raise ValueError(msg)
 
+        # Checked per chunk so streamed structured output still streams.
+        checked_parser = (
+            RunnableGenerator(_check_refusal, _acheck_refusal) | output_parser
+        )
+
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
-                parsed=itemgetter("raw") | output_parser, parsing_error=lambda _: None
+                parsed=itemgetter("raw") | checked_parser, parsing_error=lambda _: None
             )
             parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
             parser_with_fallback = parser_assign.with_fallbacks(
                 [parser_none], exception_key="parsing_error"
             )
             return RunnableMap(raw=llm) | parser_with_fallback
-        return llm | output_parser
+        return llm | checked_parser
 
     def _filter_disabled_params(self, **kwargs: Any) -> dict[str, Any]:
         if not self.disabled_params:
@@ -2900,8 +2987,7 @@ class BaseChatOpenAI(BaseChatModel):
         if isinstance(chat_message, AIMessage):
             usage_metadata = chat_message.usage_metadata
             # Skip tool_calls, already sent as chunks
-            if "tool_calls" in chat_message.additional_kwargs:
-                chat_message.additional_kwargs.pop("tool_calls")
+            chat_message.additional_kwargs.pop("tool_calls", None)
         else:
             usage_metadata = None
         message = AIMessageChunk(
@@ -3925,6 +4011,9 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+
+                If the model refuses, `ModelRefusalError` is raised, or returned as
+                `'parsing_error'` when `include_raw` is `True`.
             strict:
 
                 - `True`:
@@ -4453,22 +4542,7 @@ def _oai_structured_outputs_parser(
         if isinstance(parsed, dict):
             return schema(**parsed)
         return parsed
-    if ai_msg.additional_kwargs.get("refusal"):
-        raise OpenAIRefusalError(ai_msg.additional_kwargs["refusal"])
-    if any(
-        isinstance(block, dict)
-        and block.get("type") == "non_standard"
-        and "refusal" in block["value"]  # type: ignore[typeddict-item]
-        for block in ai_msg.content_blocks
-    ):
-        refusal = next(
-            block["value"]["refusal"]
-            for block in ai_msg.content_blocks
-            if isinstance(block, dict)
-            and block["type"] == "non_standard"
-            and "refusal" in block["value"]
-        )
-        raise OpenAIRefusalError(refusal)
+    _raise_on_refusal(ai_msg)
     if ai_msg.tool_calls:
         return None
     msg = (
@@ -4478,11 +4552,50 @@ def _oai_structured_outputs_parser(
     raise ValueError(msg)
 
 
-class OpenAIRefusalError(Exception):
-    """Error raised when OpenAI Structured Outputs API returns a refusal.
+def _raise_on_refusal(message: BaseMessage) -> None:
+    """Raise `OpenAIRefusalError` if the model refused or output was filtered."""
+    response_metadata = message.response_metadata
+    finish_reason = response_metadata.get("finish_reason")
+    for block in message.content_blocks:
+        if block["type"] == "refusal":
+            if text := block.get("refusal"):
+                raise OpenAIRefusalError(text, raw_message=message)
+            raise OpenAIRefusalError(raw_message=message)
+    incomplete_details = response_metadata.get("incomplete_details")
+    incomplete_reason = (
+        incomplete_details.get("reason")
+        if isinstance(incomplete_details, dict)
+        else None
+    )
+    if "content_filter" in (finish_reason, incomplete_reason):
+        msg = "Model output was stopped by a content filter"
+        raise OpenAIRefusalError(msg, raw_message=message)
+
+
+def _check_refusal(messages: Iterator[BaseMessage]) -> Iterator[BaseMessage]:
+    for message in messages:
+        _raise_on_refusal(message)
+        yield message
+
+
+async def _acheck_refusal(
+    messages: AsyncIterator[BaseMessage],
+) -> AsyncIterator[BaseMessage]:
+    async for message in messages:
+        _raise_on_refusal(message)
+        yield message
+
+
+class OpenAIRefusalError(ModelRefusalError):
+    """Error raised when an OpenAI model refuses a structured output request.
 
     When using OpenAI's Structured Outputs API with user-generated input, the model
-    may occasionally refuse to fulfill the request for safety reasons.
+    may occasionally refuse to fulfill the request for safety reasons. The same
+    error is raised when the response stops because of a content filter
+    (`finish_reason="content_filter"`).
+
+    Subclasses `ModelRefusalError`, so provider-agnostic code can catch that
+    instead.
 
     See [more on refusals](https://platform.openai.com/docs/guides/structured-outputs/refusals).
     """
@@ -5329,6 +5442,17 @@ def _construct_lc_result_from_responses_api(
         except json.JSONDecodeError:
             pass
 
+    response_metadata.update(
+        _responses_finish_reason_fields(
+            response_metadata.get("status"),
+            response_metadata.get("incomplete_details"),
+            has_tool_calls=bool(tool_calls or invalid_tool_calls),
+            refusal=any(
+                isinstance(block, dict) and block.get("type") == "refusal"
+                for block in content_blocks
+            ),
+        )
+    )
     message = AIMessage(
         content=content_blocks,
         id=response.id,
@@ -5342,6 +5466,92 @@ def _construct_lc_result_from_responses_api(
         message = _convert_to_v03_ai_message(message)
 
     return ChatResult(generations=[ChatGeneration(message=message)])
+
+
+_CHAT_FINISH_REASONS: dict[str, str] = {
+    "stop": "stop",
+    "length": "length",
+    "tool_calls": "tool_call",
+    "content_filter": "content_filter",
+}
+
+_RESPONSES_INCOMPLETE_REASONS: dict[str, str] = {
+    "max_output_tokens": "length",
+    "content_filter": "content_filter",
+}
+
+
+def _chat_finish_reason_fields(
+    finish_reason: str | None,
+    *,
+    has_tool_calls: bool = False,
+    refusal: bool = False,
+) -> dict[str, str]:
+    """Map a Chat Completions `finish_reason` onto `normalized_finish_reason`."""
+    if not finish_reason:
+        return {}
+    # OpenAI refuses with a normal `stop`; the refusal is the signal.
+    normalized = (
+        "refusal" if refusal else _CHAT_FINISH_REASONS.get(finish_reason, "other")
+    )
+    # A forced `tool_choice` ends with `stop` even though the model called a tool.
+    if normalized == "stop" and has_tool_calls:
+        normalized = "tool_call"
+    return {"normalized_finish_reason": normalized}
+
+
+class _StreamFinishTracker:
+    """Corrects the final chunk's finish fields using earlier stream chunks."""
+
+    def __init__(self) -> None:
+        self.saw_tool_call = False
+        self.saw_refusal = False
+
+    def update(self, chunk: dict, generation_chunk: ChatGenerationChunk) -> None:
+        message = generation_chunk.message
+        if isinstance(message, AIMessageChunk) and message.tool_call_chunks:
+            self.saw_tool_call = True
+        # Refusal deltas aren't kept on the message chunk, so read the raw delta.
+        choices = chunk.get("choices") or []
+        if choices and (choices[0].get("delta") or {}).get("refusal"):
+            self.saw_refusal = True
+        info = generation_chunk.generation_info
+        if info and info.get("normalized_finish_reason"):
+            info.update(
+                _chat_finish_reason_fields(
+                    info.get("finish_reason"),
+                    has_tool_calls=self.saw_tool_call,
+                    refusal=self.saw_refusal,
+                )
+            )
+
+
+def _responses_finish_reason_fields(
+    status: str | None,
+    incomplete_details: Any,
+    *,
+    has_tool_calls: bool,
+    refusal: bool,
+) -> dict[str, str]:
+    """Map a Responses API `status` onto the shared finish fields."""
+    if not status:
+        return {}
+    if refusal:
+        normalized = "refusal"
+    elif status == "completed":
+        normalized = "tool_call" if has_tool_calls else "stop"
+    elif status == "incomplete":
+        reason = (
+            incomplete_details.get("reason")
+            if isinstance(incomplete_details, dict)
+            else None
+        )
+        normalized = _RESPONSES_INCOMPLETE_REASONS.get(str(reason), "other")
+    elif status == "failed":
+        normalized = "error"
+    else:
+        normalized = "other"
+    return {"finish_reason": status, "normalized_finish_reason": normalized}
 
 
 def _coerce_chunk_response(resp: Any) -> Any:
@@ -5367,6 +5577,18 @@ def _coerce_chunk_response(resp: Any) -> Any:
     return resp
 
 
+def _remaining_function_call_arguments(
+    item_id: str, arguments: str, function_call_arguments: dict[str, str]
+) -> str:
+    """Return the completed arguments' missing suffix and update streamed state."""
+    streamed = function_call_arguments.get(item_id, "")
+    arguments = arguments or ""
+    if not arguments.startswith(streamed):
+        return ""
+    function_call_arguments[item_id] = arguments
+    return arguments[len(streamed) :]
+
+
 def _convert_responses_chunk_to_generation_chunk(
     chunk: Any,
     current_index: int,  # index in content
@@ -5377,6 +5599,8 @@ def _convert_responses_chunk_to_generation_chunk(
     has_reasoning: bool = False,
     output_version: str | None = None,
     item_output_indices: dict[str, int] | None = None,  # item id -> `output_index`
+    function_call_arguments: dict[str, str] | None = None,  # item id -> args so far
+    function_call_indices: dict[str, int] | None = None,
 ) -> tuple[int, int, int, ChatGenerationChunk | None]:
     # After several built-in tool calls the API can report a later `output_index` on
     # an item's `done` events than on its `added` event. Pin each item to the first
@@ -5437,6 +5661,12 @@ def _convert_responses_chunk_to_generation_chunk(
             current_sub_index = sub_idx
         current_output_index = output_idx
 
+    def _function_call_index(item_id: str, output_index: int) -> int:
+        if function_call_indices is not None and item_id in function_call_indices:
+            return function_call_indices[item_id]
+        _advance(output_index)
+        return current_index
+
     if output_version is None:
         # Sentinel value of None lets us know if output_version is set explicitly.
         # Explicitly setting `output_version="responses/v1"` separately enables the
@@ -5445,6 +5675,22 @@ def _convert_responses_chunk_to_generation_chunk(
 
     content = []
     tool_call_chunks: list = []
+
+    def _append_function_call_arguments(
+        item_id: str, arguments: str, index: int
+    ) -> None:
+        if function_call_arguments is not None and (
+            remaining := _remaining_function_call_arguments(
+                item_id, arguments, function_call_arguments
+            )
+        ):
+            tool_call_chunks.append(
+                {"type": "tool_call_chunk", "args": remaining, "index": index}
+            )
+            content.append(
+                {"type": "function_call", "arguments": remaining, "index": index}
+            )
+
     additional_kwargs: dict = {}
     response_metadata = metadata or {}
     response_metadata["model_provider"] = "openai"
@@ -5485,13 +5731,29 @@ def _convert_responses_chunk_to_generation_chunk(
         response_metadata["id"] = response.id  # Backwards compatibility
     elif chunk.type == "response.failed":
         response = _coerce_chunk_response(chunk.response)
-        error_msg = str(response.error or f"Response {response.id} failed.")
+        error = response.error
+        error_msg = str(error or f"Response {response.id} failed.")
+        code = (
+            error.get("code")
+            if isinstance(error, dict)
+            else getattr(error, "code", None)
+        )
+        if code in _TRANSIENT_STREAM_ERROR_CODES:
+            raise OpenAIResponsesServerError(error_msg)
         raise ValueError(error_msg)
     elif chunk.type == "error":
         error_msg = f"{chunk.code}: {chunk.message}" if chunk.code else chunk.message
+        if chunk.code in _TRANSIENT_STREAM_ERROR_CODES:
+            raise OpenAIResponsesServerError(error_msg)
         raise ValueError(error_msg)
     elif chunk.type in ("response.completed", "response.incomplete"):
         response = _coerce_chunk_response(chunk.response)
+        if function_call_indices is not None:
+            for item in response.output:
+                if item.type == "function_call" and item.id in function_call_indices:
+                    _append_function_call_arguments(
+                        item.id, item.arguments, function_call_indices[item.id]
+                    )
         msg = cast(
             AIMessage,
             (
@@ -5529,6 +5791,10 @@ def _convert_responses_chunk_to_generation_chunk(
         and chunk.item.type == "function_call"
     ):
         _advance(chunk.output_index)
+        if function_call_arguments is not None:
+            function_call_arguments[chunk.item.id] = chunk.item.arguments or ""
+        if function_call_indices is not None:
+            function_call_indices[chunk.item.id] = current_index
         tool_call_chunks.append(
             {
                 "type": "tool_call_chunk",
@@ -5555,6 +5821,15 @@ def _convert_responses_chunk_to_generation_chunk(
         if async_flag is not None:
             function_call_content["async"] = async_flag
         content.append(function_call_content)
+    elif (
+        chunk.type == "response.output_item.done"
+        and chunk.item.type == "function_call"
+        and function_call_indices is not None
+        and chunk.item.id in function_call_indices
+    ):
+        _append_function_call_arguments(
+            chunk.item.id, chunk.item.arguments, function_call_indices[chunk.item.id]
+        )
     elif chunk.type == "response.output_item.done" and chunk.item.type in (
         "compaction",
         "web_search_call",
@@ -5592,13 +5867,20 @@ def _convert_responses_chunk_to_generation_chunk(
             }
         )
     elif chunk.type == "response.function_call_arguments.delta":
-        _advance(chunk.output_index)
+        index = _function_call_index(chunk.item_id, chunk.output_index)
+        if function_call_arguments is not None:
+            function_call_arguments[chunk.item_id] = (
+                function_call_arguments.get(chunk.item_id, "") + chunk.delta
+            )
         tool_call_chunks.append(
-            {"type": "tool_call_chunk", "args": chunk.delta, "index": current_index}
+            {"type": "tool_call_chunk", "args": chunk.delta, "index": index}
         )
         content.append(
-            {"type": "function_call", "arguments": chunk.delta, "index": current_index}
+            {"type": "function_call", "arguments": chunk.delta, "index": index}
         )
+    elif chunk.type == "response.function_call_arguments.done":
+        index = _function_call_index(chunk.item_id, chunk.output_index)
+        _append_function_call_arguments(chunk.item_id, chunk.arguments, index)
     elif chunk.type == "response.refusal.done":
         content.append({"type": "refusal", "refusal": chunk.refusal})
     elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
@@ -5658,6 +5940,15 @@ def _convert_responses_chunk_to_generation_chunk(
             }
         )
     else:
+        return current_index, current_output_index, current_sub_index, None
+
+    if (
+        chunk.type
+        in ("response.function_call_arguments.done", "response.output_item.done")
+        and not content
+        and not tool_call_chunks
+    ):
+        # Nothing left to recover from the completed function call.
         return current_index, current_output_index, current_sub_index, None
 
     message = AIMessageChunk(

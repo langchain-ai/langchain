@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:9e644c6458691a8c48006fe8ea0e29ed3f03845401db3ad97aa9b4978dbe0419",
+  "claims": [
+    {
+      "id": "claim_2513ed136e6840e0bbacc76aed603ab8",
+      "statement": "The core Makefile (repo://libs/core/Makefile) defines development targets including test, test_watch, test_profile, extended_tests for testing; format, lint, type, check_version, check_imports for code quality; and help for documentation. All targets run through uv run within virtual environments managed by uv, with UV_FROZEN=true preventing lock file changes. Testing targets unset tracing environment variables (LANGCHAIN_TRACING_V2, LANGCHAIN_API_KEY, LANGSMITH_API_KEY, LANGSMITH_TRACING, LANGCHAIN_PROJECT) and disable network sockets except Unix sockets. The root libs/Makefile provides lock and check-lock targets that manage uv.lock files across core packages.",
+      "evidence": [
+        {
+          "resource": "repo://libs/Makefile",
+          "version": "repo-file-v1:sha256:b703a85cdfdb60e98c41ec8261d9b78f0e7137105ee9da36b8cb919b2d35858b"
+        },
+        {
+          "resource": "repo://libs/core/Makefile",
+          "version": "repo-file-v1:sha256:de57f57034c8091a64fc2e3e96e5b872cc9cccb7fd3409dd0ca836c870f40b82"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-11-13T08:16:35.902Z"
+  }
+}

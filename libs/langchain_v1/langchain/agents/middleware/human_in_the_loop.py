@@ -9,13 +9,14 @@ from typing import (
     Annotated,
     Any,
     Literal,
+    NotRequired,
     Protocol,
     Union,
     cast,
     get_args,
 )
 
-from langchain_core.messages import AIMessage, ToolCall, ToolMessage
+from langchain_core.messages import AIMessage, ToolCall, ToolMessage, add_notification_metadata
 from langgraph.config import get_config
 from langgraph.prebuilt.tool_node import ToolRuntime
 from langgraph.runtime import get_runtime
@@ -28,7 +29,7 @@ from pydantic import (
     WrapValidator,
     create_model,
 )
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import TypedDict
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -46,6 +47,7 @@ if TYPE_CHECKING:
     from langchain_core.runnables import RunnableConfig
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
+    from typing_extensions import TypeForm
 
 
 _EDITED_TOOL_CALLS_KEY = "hitl_edited_tool_calls"
@@ -221,12 +223,12 @@ def _edit_decision(name: str, tool: BaseTool | None) -> object:
     """`EditDecision` for one tool: `name` pinned to it, `args` from `_edit_args`."""
     edited_action = create_model(
         "EditedAction",
-        name=(Literal[name], ...),
-        args=(_edit_args(tool), ...),
+        name=(cast("TypeForm[Any]", Literal[name]), ...),
+        args=(cast("TypeForm[Any]", _edit_args(tool)), ...),
     )
     decision = create_model(
         "EditDecision",
-        type=(Literal["edit"], ...),
+        type=(cast("TypeForm[Any]", Literal["edit"]), ...),
         edited_action=(edited_action, ...),
     )
     return Annotated[decision, WrapValidator(_as_sent)]
@@ -276,11 +278,15 @@ def _answer_message(tool_call: ToolCall, decision: RejectDecision | RespondDecis
             f"{tool_call['id']}. The tool was not executed. Do not retry this tool "
             "call unless the user explicitly requests it."
         )
-    return ToolMessage(
-        content=content,
-        name=tool_call["name"],
-        tool_call_id=tool_call["id"],
-        status="success" if decision["type"] == "respond" else "error",
+    return add_notification_metadata(
+        ToolMessage(
+            content=content,
+            name=tool_call["name"],
+            tool_call_id=tool_call["id"],
+            status="success" if decision["type"] == "respond" else "error",
+        ),
+        source="hitl_interrupt_decision",
+        data={"decision": decision["type"]},
     )
 
 

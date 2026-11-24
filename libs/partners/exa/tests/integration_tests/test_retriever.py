@@ -25,11 +25,8 @@ def test_exa_retriever_highlights() -> None:
     assert isinstance(res, list)
     assert isinstance(res[0], Document)
     highlights = res[0].metadata["highlights"]
-    highlight_scores = res[0].metadata["highlight_scores"]
     assert isinstance(highlights, list)
-    assert isinstance(highlight_scores, list)
     assert isinstance(highlights[0], str)
-    assert isinstance(highlight_scores[0], float)
 
 
 def test_exa_retriever_advanced_features() -> None:

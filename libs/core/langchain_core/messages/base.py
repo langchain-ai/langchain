@@ -15,8 +15,7 @@ from langchain_core.utils.interactive_env import is_interactive_env
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
-
-    from typing_extensions import Self
+    from typing import Self
 
     from langchain_core.prompts.chat import ChatPromptTemplate
 
@@ -379,6 +378,9 @@ def merge_content(
     """
     merged: str | list[str | dict[Any, Any]]
     merged = "" if first_content is None else first_content
+    if isinstance(merged, list):
+        # The branches below append to it, which would change the first message.
+        merged = merged.copy()
 
     for content in contents:
         # If current is a string

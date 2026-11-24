@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:0e1b2a3141b9ecb7ceec4c8c729ce904f1f22627da6666e21d98c745267aed6d",
+  "claims": [
+    {
+      "id": "claim_c5bc4bfccc6949a6b4fdab357d92d652",
+      "statement": "BaseTool is the abstract base class for all LangChain tools, defining the interface that all tools must implement, and tools are components that can be called by agents to perform specific actions with properties including name (unique identifier), description (for guiding model selection), args_schema (for input validation), and error handling configuration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L433-L545",
+          "version": "repo-lines-v1:sha256:1baff1696d54f472b07478f09e2d3c824d266964fc2bc141df2b483b0830d0c6:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEzLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNzEwZmFhMmY2NGI5MzZiNTFmMjNlMjU2OWYwZjM4ZWNkODJiYmM5NjI3MjdmYjQyZTEyMmM3YzhmM2M1ZmRjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlMzFmODU1ZTE2NTJlZWE5NmFmYTNjN2NiZTc1MGM4ZDMzZjM4MzM3N2ExYzMxOGUyOGU0ZTYxZDFmNTUzMmFiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3YzkyOGZhZWFhMWMxZjhjZDJmODQ4ZWMwYWU1ZGJlMTcxZGEzNjZiYjcyMjViMTMzZDJmZjZhYmZiZjAxZTg0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiI1MmE1ZjkzMmMxYmM1YzU4ZDJiMjhjODVjODk4ZjFmNDY5Zjc1MTQ3YWI1NjU1Y2IzZWQ5ZDQ0NDAxYWY1MDk0In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_7d82760dc52949f9a7e37b0482642c92",
+      "statement": "BaseTool is the abstract base class for all LangChain tools extending RunnableSerializable, defining the interface that all tools must implement with required properties including name (unique identifier), description (for model guidance), and optional args_schema (for input validation), along with configuration for execution control (return_direct, response_format, error handling strategies) and callback integration (lifecycle hooks for start, end, error events).",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L434-L572",
+          "version": "repo-lines-v1:sha256:4588948ee03bca3282741672afbb1985b940d1a9db2c13ec67e235ee73f4747b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNzEwZmFhMmY2NGI5MzZiNTFmMjNlMjU2OWYwZjM4ZWNkODJiYmM5NjI3MjdmYjQyZTEyMmM3YzhmM2M1ZmRjIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJhNmE3MTUyNTcyZWU4NGYxMDkwNmM3NGI5ZjJhOTI0MzRkZGFiMGUzYzQyODEzYjA0ZTU5N2VmY2VjOTUxYjI2IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI3YzkyOGZhZWFhMWMxZjhjZDJmODQ4ZWMwYWU1ZGJlMTcxZGEzNjZiYjcyMjViMTMzZDJmZjZhYmZiZjAxZTg0IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjZmVmYjM2YTlmMGI5MWViODQwOTA3NjAyZmM5YjM2YmIwYmE0ODJiN2E2Y2QyMDRiZjZhN2M2MjE1OWFlODE5In0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L598-L756",
+          "version": "repo-lines-v1:sha256:d164c74e9b955aca1a187e113d055c35bb7f9dbde5d8a9bc54aebe62d5c067a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MTU5LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJmM2QwMGNmMjcwOTY0ZDQ0YTEzZGZhYzg3NTJiMDlmY2M0MzViMGYxOWIzMTZhYmNmODFhN2FhNjRiYjEyMmQ2IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIwMWJhNDcxOWM4MGI2ZmU5MTFiMDkxYTdjMDUxMjRiNjRlZWVjZTk2NGUwOWMwNThlZjhmOTgwNWRhY2E1NDZiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlNzQwMjBiYWFhMmJlNzlmNTU1YzA5OGIzNDg0MTE0YTRlOTA1NTgwODNlMTUxODlkYjBiZTFiYjcxNGFmM2E5IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJmYTAzODNmMDc4ZjVjODgyZWJlNzMyNDJhZGRjYzBhMGQ2Mjg2ZjQ3YWMwZGJjYjQxNTM2MTI3NjRlNjhkZDVkIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_199cb10a0dae431b8d0843b990fa75be",
+      "statement": "Tool input validation is built on Pydantic models where args_schema can be explicitly provided as a Pydantic BaseModel or JSON schema dict, or automatically inferred from the _run() method signature via create_schema_from_function(), with injected arguments (InjectedToolArg, InjectedToolCallId, ToolRuntime) automatically excluded from the schema sent to models but re-injected at runtime during execution.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L264-L369",
+          "version": "repo-lines-v1:sha256:6be27fc7884bb4ff7573c7ef90d98d1f10ce6844ea226559221e1a60a703c2e2:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJkNzFjZmJkMTEyZDAwODM3MDA5MjczMmMwYWI0YWFjODMyNzE5NzAzZmI3NWU0MzM3YTIwYThiODkyOWY0NGY5IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIzMGMxZjE4OGYxNDJlZDdhODI0NjgwYjIwNzE3MmM1NTE5YmM2MTRhNDhmZGE3Y2YxNjdlZGI4ZGRmNzk5NTZjIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJmMWY4NzEyZTdmNzg3OTdiMzI5NGQ3OTE3Mzc5NTU1ODcxMWZhNzcwZTI1ODAyNTgxNDBmNDQ3Nzk5MDdmMjNjIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJhYWM3ODAwNzI3MjMxNjA2NDE3M2FkOTk5ZWQyYTM1OTIyYWRlMDYwZTAzNjA3ZmE3NTJhYzEwMDllYTkxYTMzIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L742-L755",
+          "version": "repo-lines-v1:sha256:2f929482091eb9d3295ec96e244a53037f74a7e1a2d3f8d7e962a0a26757609c:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRiYmEwMzI5ZWMzMmU0ODliZjc1ZjZmMTY5ZmMzNGM5OThjYmM4YjlhNWY0ZmEzOGI1YzY4OTI0NTA1NmI5ZjEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjVkYjg1OGFhMDRmNzA5MDY4ZjFjZDFjY2YwYzk2MjRkMGZiMTc1NDQ4NWJmODVkYmU4MTVhNmRmNWNiNTM2YzkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImE4NzY2ODFlNmNhZTQ1N2M1ODAzODI4MDg0NzZmOTE5ZDdiOTcwOTdlMGI4MmIyZmE3MWRhMzU5ZmE0M2NhZWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImI3N2VjOGI3OTAxMWU0ZmM0Yjc5OTQ3ZjYxYmFkOTdhYzBmZGRlYmRjZWVjMjc0ZGE1ZDM2MjMwMGQyYzYxNTIifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L779-L905",
+          "version": "repo-lines-v1:sha256:c1b176ad6f4463e7f7c7a29045a18212cb4a46ace2853228ab3f4ac2d017d32a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI0NmQ0ZjFiZmY3NDNjZjQzOTA5MTIyYzM2NGE0OGFkMGNmNjliMjQwZDI1ZDI4NjMxY2JkZDg5YzhiNjFkZTRmIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiIyMWUyZGIxOTA4OWI1ZGFhODZhYjgwY2I4MDc1ZDcyNmI0YzkyODQ1MzE3NWQwZTkwYjI5YzNiMDk4M2RiMDNiIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiIyMWQzMDhjYWMzMDI2YThlMjgwYjhhNmRhN2EyY2Y3YTQ3OGQzYTg5OGI5ZGEzNDE4MWZlOTIyNTZiY2ZlMjIwIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjZDYwYThkMzBmMWRkNWJkNWMwMmVlODliY2Y3NWQzMGQ2YjdiY2Q0YmJlOTQ5N2EzNzUyMWViZWQwM2I4ZGQ0In0"
+        }
+      ]
+    },
+    {
+      "id": "claim_c841468fd4344ae0883b050f3b85312e",
+      "statement": "The tool_call_schema property generates and caches a subset model class per tool instance that excludes injected arguments, with the model's model_json_schema() method patched to cache the generated dict to prevent expensive regeneration on every agent loop iteration.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L405-L431",
+          "version": "repo-lines-v1:sha256:ae6427b056a005a561041dd5b10ff678f0a31fccec7184ddfcb0ea2ad6ab34ad:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyNmIxMzQyNzVlNmVhOGU0MGQzN2I5NzM1OWVjYTQ2NTk1ZjE4MWQzMjU4ODY4ZDcyMThlNGRmMzk0MWVmNzIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVlNzJiYTc5YjQ3ZDY0MGI0ZTExMjA0YjVhZDdjMTQzMDM5MzAwZjAwMWNkYjZmMmFiYTUzOWQ1OWE0YTg5ZjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjI5ODEzZDNlMGNhZThhN2M0YjQ4YTYzOTdiNTJhMzY0ZWI1MDgxNWRmZWYzZTJlMzFkNTczYTgxZTg2ZGVmZGQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjZhZjc0YTBjMzU5Mzk3NGRjZTY2ZGZjZjkyYWI0N2EyMjhjMmE0OTZjZDQzOGJhNDFlY2U3ZmYzNGYzZGI1N2UifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L625-L636",
+          "version": "repo-lines-v1:sha256:ac952cda0cd314e18587f465c091084d2cd32e6e53cee05fce5dbab9c4d47042:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjExMTkyMDI2ZTc5NGYxZjcwOWMxYjRiOWNlZWM2YjExOWVmNTk0ODZlMTJlMjY0ZTkwMDgxMjBiYjU5MTE3YWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNjYjIzMTY0MmY0ZmYxZDU0MjM3YmEwMzhjZjQ5NmFkZTA4ODc2MzUwOGExZmI0MDA2YjczMjE2Yjk0ZDc1MDYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjE1YmJlNjBlNGMxNzIxZTE0MDFiYjA3YWEyOTExM2FmNDg5ZTUyOTg4YTYxOWU1ZTVhNWQzNDkyYTkzMWYxYTEifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L677-L723",
+          "version": "repo-lines-v1:sha256:508d434a0ae5f93490a1fd7e268ff0c3d92480a8561009a5dd468b1b3765600f:eyJzZWxlY3RlZExpbmVDb3VudCI6NDcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYzZDAwY2YyNzA5NjRkNDRhMTNkZmFjODc1MmIwOWZjYzQzNWIwZjE5YjMxNmFiY2Y4MWE3YWE2NGJiMTIyZDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE1MTBmZGIzZGRjYzU0YmNmYzc0YjNlMTIxZDQyMGEyMGFiYmUyNGE0OTNiNjA3MDVmYTYwNzcyNDBiZjg1YTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImYwNjU0NmY4NzU5MGM3MTJlOTZhMjgwYTYxZDY3ZGYwMDYzN2UxYjczNjRlODc0YjNiMGVhYzU1ZWIzZTU4MTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZjOGRkZWUyNmEwYWQyZTA4OTViYzg3YTYzOTU0MzdmNDFmYzk1Y2I3Yjk1YzAwZjRkZjBkNzRkZGRmOWZiZWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_a2a1d4c519704652bbffe3bfa158efc0",
+      "statement": "Tool execution lifecycle through run() and arun() follows eight stages: configuration (callback setup), callback start, input preparation (parsing and validation), runtime injection (run_manager, RunnableConfig), execution (calling _run/_arun in config context), output processing (format_output wrapping in ToolMessage if tool_call_id set), error handling (ValidationError and ToolException handled per configuration), and callback end.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L1010-L1136",
+          "version": "repo-lines-v1:sha256:bbecef2a444a14bfbe489a410864ed91f373431a157e66630f5b8a39fb3c224d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTI3LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiIwMDhjZDk3OTY5Yjk0ZjdjYWJkOWFiODUyY2RlY2RjOWNlOTllNTJkNzJlYzFjZDE4YjhhZWNhMjlhOWUyYmUyIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4MjBlN2JiNmFkMzZjNjE5YWIxZjJiM2MyYjQzNTVjNjFlNWI1NTc3MmM4MmU2NGU1YmVkZmZkZDQ5YzQzNzMxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0ZDg5MjM5YTEwYTAwMTRmMjM0ZTE3MjM3NWQxMWZkZWFmNjdjNWFhNzJjZjFkYTMzMjMxMWQ3NGJiNjEwMTBhIiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJjMTIxMzUwY2E0NmI3Yjc0OWVkZTdlYTBhNmFhYmQ1ZGFjYWNmYmJkMTdmOGRkZTZjMjZmMmRkN2UyN2IxYjkxIn0"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L1138-L1267",
+          "version": "repo-lines-v1:sha256:a730463f4c645a09f54122a04ffacc7a1918a0041c04c4c7e428acacb9d24e3b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiI5ODg4Y2RmM2VjMDJlMzlhNjkwZWFiZTY2MzYzMjE2Yzc5MWZiYWU4Yzc5NjllM2VjYmY3ZGVmN2YyY2Y2NzYzIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI4MjBlN2JiNmFkMzZjNjE5YWIxZjJiM2MyYjQzNTVjNjFlNWI1NTc3MmM4MmU2NGU1YmVkZmZkZDQ5YzQzNzMxIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiI0ZWVmNTIxMTkxYWNjMzY2NDcyMzI3MDk0NjZiOGY0ZDhhYjk3YTgwZjI5NDE2Y2UxYjY5MmYxNTQ0OGRiZmY3IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlNDdjYTUwMDM4YTA3NGI5NDMwOGI5OTdkMWMzOWEyZDE5MWJjNWNkZTViMjYzYzcxMjE0OTRkYWU4NjM1YjExIn0"
+        }
+      ]
+    },
+    {
+      "id": "claim_cc32a1c08e26460ea252d7f66c60540f",
+      "statement": "_filter_injected_args removes both reserved parameter names (run_manager, callbacks) and injected arguments (identified by signature inspection of _injected_args_keys property or annotation check against InjectedToolArg types) from tool input before passing to callback handlers, protecting tool implementation details from callbacks.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L725-L737",
+          "version": "repo-lines-v1:sha256:5b089be64aff49b57764e097e63ae8175a4893322db9c20eb3521fb1ad533ca7:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE0ZTI3MjcxZWE3MTgyNjJlNTI4YTY5M2I3NTQ1YmUzYmM1Y2ZhNTdhYTM1NjQ0NWM4M2I4MWQxZDI4MWUzYWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE3MGJlZTUwNDc5MGVjYzllMDI5Y2I5MmM5YWNlNmU0YjcwZmUyM2FkMjJhZjBmNjFmNDg1YjkwZTA0ZjQ2YzciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk2YTdlMjZjNDc2MmQ1YjdkY2Q5MGM1NGFlY2FkNTVmZTAyN2FlMWZhZTMxOGEyMWFmNmQ3OTFiNjU2Mzk3MzEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU4NjYxZDQ1YmQ0ZTJkYzUwMzAzZTk1NTYyOGZiOWUyM2VhYzE3YmQ1YzFkMmNkOGY5YzIxODRlOTVmM2Q2ODUifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L935-L969",
+          "version": "repo-lines-v1:sha256:9c957ccf11b9e761c60599354c52a06085fbaa680c74534b7be4720987c60a75:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImZmMDc5ZjYxZTBkYmVhYjliNTI1ZmM4ZDEzY2RmZGU1YTQzZjhiM2NjOTg3MmFmNDI5MmY1ZmMzNGUyMmM5YmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiMzI3YzY4YTEzZDc5YTdiODUxZTJjNjQyNjRlMmVlMmRmMDdjOTU3OTVlNTEwZTBlMmZmMTNkM2EwMmFhMDAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NDQ3NWZhMzFkNTNkNWIxMmNlZmE0ODE5MmE1OGY1YjA1NGRkOTkzOGI3MjMzYWI5OGU1YzU2ODQ4ZGY3YjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjQxNGJkYzY0YWVlMDcxYmJiY2VkNTYxZWE4MDM4MDQzNjQ2NWJiZTAzNWY0YWZlNjIwMjA4ZjMyYjhjNzViOWEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_60bf775e5c8a4cbbacb9c596f09c0c98",
+      "statement": "Injected arguments are identified and tracked via _get_injected_args_keys_from_signature() which resolves type annotations with support for postponed annotations (from __future__ import annotations, quoted forward references) and checks annotations against _is_injected_arg_type() which detects both Annotated[T, InjectedToolArg] patterns and directly injected types like ToolRuntime.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L1618-L1677",
+          "version": "repo-lines-v1:sha256:336743765c140d356bf589a28d6e4d2c6490cf37cc4356feee4cd0f14a035184:eyJzZWxlY3RlZExpbmVDb3VudCI6NjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEyMTY5NWVjZjVjN2UzY2NjYjcwOTExMzA4ZmUzMjlmNzAyMjBmMDVlMGUxZTA1Zjk4OWU2OGQ0MmY4MWM0ODgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM3YmU0ZDkzMzE5OWZhZTM3OGFjYjg4ZDg5ZjE4YjVhNTVjMTEwNDk4MzA3ZjBiMzZiNDg4NjNjYTljMDg5MjQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjliOGNiZjRkNWU4MGJiZTVlNDhjNTdmNGZjYjczNTY3M2Q2MDc3NDBiNDJhN2FiNmM5MjM2ZTM3MmE5ZjUzZTAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjM1MDVjMmYyNGQzOTM0ZDc3Y2VhNTQxZWQwNTgxZWVjNmZhODA1MzBlMTg2YjBiZGUxODM5NTc2M2FmYzc3YTAifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L1783-L1828",
+          "version": "repo-lines-v1:sha256:75d563812f4afc4f90bfb72d8f491dfbec8434108e97f4177bee716b755e02d5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZkYTY0ODJlZGM1NzhhZWUzZDVhZGUxNTAwNjQzZjQ1NTMyZGU5N2Q4NzZhYWU5NGYzMTY5MWFiZDJjY2RiNWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjAyYjI1NzhkODVmMDU0N2ZhOTE3ZGE3YjE4ZDIwNzg5OTE4MjlhNTM4MmM3OTEyOGJlMTZmNmYxMDg4ZjdhYjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwYzUzZDJhMzQ0YTI3YzVmNjhiMGIzZTZlMmZjODhmZWRkNjJhNjc4NzhjNmMxODU4MzJhYzQ4ZTYxODJiZjUifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_da1a9c4ddc38449bbaf6870e8dd4db4f",
+      "statement": "BaseTool.__setattr__ clears the tool_call_schema_memo when name, description, or args_schema properties are reassigned, and model_copy() clears the memo when update affects schema-building fields, ensuring schema regeneration when tool identity or schema definition changes.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L401-L402",
+          "version": "repo-lines-v1:sha256:2d6b85367814306b3dbc160ac43fb2cc44806f0225c11906f1f99660376efad5:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjJiMGY5ZWRhNjRhNGM3NDZiMmYwMzUxMjNiMDBhN2Y2ZmIwYmFmOWE5NTBkYWQxNWYzN2FkZjQxYTMwMTQ3OCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDdjMWRkODdmYzA3OWQxMWVlZWU5YTIxZWVhNzU5OWUxNGZlM2Y2ZjkwNjVmMGU2OThkYzY1NmNkOGYwN2E4NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjIyYmIyNjg0Y2Y0MDBmNzcwNTliZGRkNTljNDg3ODE5ZDExZmUwNDA4ZDI0MjM4YmVmMzYyOGI3ODc5ZDdkZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODU5MzNhN2M3YzU1NzZiMzQ2Y2M0OGU0NzRlNjBhYWJkMTI2MzNjYjYyMDE2MWZkNTc5Nzk4OTNhNWYyODc0OCJ9"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L638-L659",
+          "version": "repo-lines-v1:sha256:7fc3d588150847840547721603a8d318769e8e89e1fecd4583ae3d27e9ea8808:eyJzZWxlY3RlZExpbmVDb3VudCI6MjIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ0ZGE5MzUwMDE5ZGMxZTY2NzQ1MjY0Mzg3MzE2MTk5NzIyNWU5Y2U2MDEwN2FmN2I2NGY4NDBkZGVjZmRhNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI3M2RmN2ZkZTYxMTg0NWU5ZDRjNTBhMGZiNzY4NjFjZGI1YzY4ZmRkNDg5ZTc3OWFjYmViMzBmMTNkYTNkM2MiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijc4MWU4YzJiMjIwYWE5NzYxNmE0YTEyMmQ3ZmQyMDkxMjJlODhhNjJkNmQ3MzA4MGM5NTEwZWE4MThhOGJhYjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjU0YjM5ZjRmN2E3MzYzOGE3NTQ4YWFhYjE0Nzc0YmIxMWQwNGIyMTIyYmFhMGNiMDQyZGU3MjhiOTgxMTdjOTEifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_e80855ffbbe04fc7970ef5383ec4cfef",
+      "statement": "Tool output formatting via _format_output() returns ToolOutputMixin instances or lists thereof unchanged, returns non-ToolMessage content unchanged if tool_call_id is None (not part of agentic flow), otherwise normalizes content to string or list of message content blocks and wraps in ToolMessage with status indicating success or error.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L1391-L1427",
+          "version": "repo-lines-v1:sha256:eb3515111795c02c6352ebb306cfabf299aff906c25d6676fcdacea0507d5e29:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhNmUzMGQyYjhiZGQzZjU1ZmU5MjUzNDAyOWE4NDM1Yzk4MGY4ZWIxMDkwMTRlNjZkN2E0OGJjNzk2N2MzOWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjMwYzFmMTg4ZjE0MmVkN2E4MjQ2ODBiMjA3MTcyYzU1MTliYzYxNGE0OGZkYTdjZjE2N2VkYjhkZGY3OTk1NmMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU3MTcwNzY3OTk3MzgxYTgxMTIwY2Y2NDFiMjNhYTdlNTQwNWMyZWE4MzYyNDI0ZmI5YzFjY2M3MTM2MDliMWIifQ"
+        },
+        {
+          "resource": "repo://libs/core/langchain_core/tools/base.py#L1430-L1469",
+          "version": "repo-lines-v1:sha256:8cf2cfc40dbd85ab26c8b1c5a4f7e9c1df9a652aada50d89fb0c770dc881ebaa:eyJzZWxlY3RlZExpbmVDb3VudCI6NDAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU3MjdmYTY2Njk3OWNkM2M2Yzc2MjZmZjJhZGRiN2Q0MTM4NzMwMzk4ZmIxMDVmNzY1YTUwN2UxODE5MzgyOTYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU1YmM0NzExZWNjYTA0NTBhZmM4MzI3NzlhODg2NzZhN2M2OTYwZmEzZGE1YWY0MTBlZTAyZDFlMDE1MTU5MWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhjYzRhN2QxY2M3OTZhYmEzZTQ2NzIzMzI3ZjUxN2U5ZjgxMTk4MmQyNTBmMDcwMjk4NmU0YjU3NjRhZDk1ODkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE2NDEzZjBiNDZhYWYyNTBjNGQ0NzIxYmJmZDg5Yjc2NmMxMGRkYmY1ODJhNjM1OTU1OWRlMjdhODY1ZjdkYTkifQ"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-11-13T08:16:35.902Z"
+  }
+}

@@ -22,10 +22,10 @@ sources:
     resource: repo://libs/core/langchain_core/utils/function_calling.py
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-20T08:25:57.412Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 ## Overview
@@ -79,7 +79,7 @@ When `infer_schema=True` (default), the tool examines the function signature to 
 - Function docstring is parsed (if `parse_docstring=True`) following Google style to extract parameter descriptions
 - Descriptions are merged from: Annotated metadata → docstring Args section → none
 - Injected arguments (those annotated with `InjectedToolArg`, `InjectedToolCallId`, or `ToolRuntime`) are automatically excluded from the schema sent to models but re-injected at runtime
-- Reserved parameter names (`run_manager`, `callbacks`, `config`) are filtered from the user-facing schema
+- Reserved parameter names (`run_manager`, `callbacks`) are filtered from the user-facing schema; additionally, `config` is a reserved name that causes errors if used as a tool parameter because it shadows the injected RunnableConfig
 
 **Memoization:** The `tool_call_schema` property builds and caches a subset model class per tool instance, excluding injected arguments. The schema class's `model_json_schema()` method is patched to cache the generated dict, preventing expensive regeneration on every agent loop.
 
@@ -351,10 +351,11 @@ def track_call(query: str, call_id: InjectedToolCallId) -> str:
     return f"Call {call_id}: {query}"
 ```
 
-**ToolRuntime:** A directly-injected argument type providing access to state, context, and store:
+**ToolRuntime:** A directly-injected argument type (from LangGraph) providing access to state, context, and store:
 
 ```python
-from langchain_core.tools import tool, ToolRuntime
+from langchain_core.tools import tool
+from langgraph.prebuilt.tool_node import ToolRuntime
 
 @tool
 def stateful_tool(query: str, runtime: ToolRuntime) -> str:
@@ -544,7 +545,7 @@ Tools expose run_manager in `_run()` signature to allow direct callback invocati
 
 **Reserved Parameter Names:**
 
-Parameters named `config`, `run_manager`, or `callbacks` are filtered from the tool schema because they conflict with LangChain's runtime injection. Use `ToolRuntime` annotation to access runtime state instead.
+Parameters named `run_manager` or `callbacks` are filtered from the tool schema by FILTERED_ARGS. The parameter name `config` is also reserved because when used as a tool argument, it shadows the injected `RunnableConfig`, causing a `TypeError: missing 1 required positional argument: 'config'`. Use `ToolRuntime` annotation to access runtime state, context, and store instead of these reserved parameter names.
 
 **Provider Extras:**
 
@@ -579,26 +580,6 @@ Invalid docstrings (missing Args section, args not in signature, malformed) rais
 **Verbose Output:**
 
 Set `verbose=True` to log tool execution. Combined with callback managers for comprehensive observability.
-
-## Tool Call Extraction and Validation
-
-Models return tool calls embedded in AIMessage objects when bound with tools. The extraction and validation process:
-
-1. **Parsing:** Models emit structured JSON in tool_calls field of AIMessage
-2. **Extraction:** ToolNode or custom code accesses `message.tool_calls` list
-3. **Validation:** Each ToolCall dict contains name, args (JSON), and id
-4. **Resolution:** Tool name is looked up against the agent's tool registry
-5. **Input Validation:** Tool's args_schema validates the args dict via Pydantic
-6. **Execution:** Tool is invoked with validated args and tool_call_id
-
-**Invalid Tool Calls:**
-
-Models may emit invalid tool calls:
-- Unknown tool name: ToolNode reports error via ToolMessage with status="error"
-- Invalid JSON args: Validation error caught per handle_validation_error
-- Missing required args: Pydantic ValidationError during schema validation
-
-These errors are returned to the model as ToolMessage, allowing it to correct and retry.
 
 ## Summary: When to Use Each Pattern
 

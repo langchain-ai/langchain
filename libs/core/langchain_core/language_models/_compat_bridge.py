@@ -54,19 +54,20 @@ from langchain_protocol.protocol import (
     UsageInfo,
 )
 
+from langchain_core.language_models._finish_reason import _finish_fields
 from langchain_core.messages import AIMessageChunk, BaseMessage
+from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
 from langchain_core.utils._merge import merge_dicts
 
 if TYPE_CHECKING:
-    from collections.abc import AsyncIterator, Iterator
+    from collections.abc import AsyncIterator, Iterable, Iterator
 
     from langchain_protocol.protocol import (
-        BlockDelta,
-        BlockDeltaFields,
         ContentBlockDelta,
         DataDelta,
         ReasoningDelta,
         TextDelta,
+        ToolCallDelta,
     )
 
     from langchain_core.messages.ai import UsageMetadata
@@ -108,38 +109,6 @@ def _to_protocol_block(block: CompatBlock) -> ContentBlock:
 def _to_finalized_block(block: CompatBlock) -> FinalizedContentBlock:
     """Counterpart of `_to_protocol_block` for finalized blocks."""
     return cast("FinalizedContentBlock", block)
-
-
-def _to_block_delta_fields(block: CompatBlock) -> BlockDeltaFields:
-    """Narrow an internal working dict to protocol block-delta fields."""
-    return cast("BlockDeltaFields", block)
-
-
-def _to_content_delta(block: CompatBlock) -> ContentBlockDelta:
-    """Convert a content-block slice/snapshot to an explicit protocol delta."""
-    btype = block.get("type")
-    if btype == "text":
-        return cast("TextDelta", {"type": "text-delta", "text": block.get("text", "")})
-    if btype == "reasoning":
-        return cast(
-            "ReasoningDelta",
-            {
-                "type": "reasoning-delta",
-                "reasoning": block.get("reasoning", ""),
-            },
-        )
-    if "data" in block:
-        delta = cast("DataDelta", {"type": "data-delta", "data": block.get("data", "")})
-        if block.get("encoding") == "base64":
-            delta["encoding"] = "base64"
-        return delta
-    return cast(
-        "BlockDelta",
-        {
-            "type": "block-delta",
-            "fields": _to_block_delta_fields(block),
-        },
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -230,13 +199,17 @@ def _iter_protocol_blocks(msg: BaseMessage) -> list[tuple[Any, CompatBlock]]:
 # of being serialized twice on the wire.
 _HEAVY_FIELDS = frozenset({"args", "data", "output", "transcript", "value"})
 
+_TOOL_CALL_CHUNK_TYPES = frozenset({"tool_call_chunk", "server_tool_call_chunk"})
+
 
 def _start_skeleton(block: CompatBlock) -> ContentBlock:
     """Empty-content placeholder for the `content-block-start` event.
 
     Deltaable block types (text, reasoning, the `_chunk` tool variants)
     get an empty payload so the lifecycle's "start" signal is distinct
-    from the first incremental delta.  Self-contained types (image,
+    from the first incremental delta.  The `_chunk` tool variants also
+    carry the call's `id`, `name` and provider `index`, because
+    `tool-call-delta` carries only args.  Self-contained types (image,
     audio, video, file, non_standard, finalized tool calls) drop their
     heavy payload fields; those are carried by `content-block-finish`.
     Correlation fields (id, name, toolCallId) and small metadata
@@ -256,12 +229,15 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
         r_skel["reasoning"] = ""
         return _to_protocol_block(r_skel)
     if btype == "tool_call_chunk":
-        return ToolCallChunk(
+        skel = ToolCallChunk(
             type="tool_call_chunk",
             id=block.get("id"),
             name=block.get("name"),
             args="",
         )
+        if block.get("index") is not None:
+            skel["index"] = block["index"]
+        return skel
     if btype == "server_tool_call_chunk":
         s_skel = ServerToolCallChunk(
             type="server_tool_call_chunk",
@@ -271,6 +247,8 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
             s_skel["id"] = block["id"]
         if block.get("name") is not None:
             s_skel["name"] = block["name"]
+        if block.get("index") is not None:
+            s_skel["index"] = block["index"]
         return s_skel
 
     stripped: CompatBlock = {k: v for k, v in block.items() if k not in _HEAVY_FIELDS}
@@ -283,8 +261,8 @@ def _start_skeleton(block: CompatBlock) -> ContentBlock:
     return _to_protocol_block(stripped)
 
 
-def _should_emit_delta(block: CompatBlock) -> bool:
-    """Whether a per-chunk block carries content worth a delta event.
+def _to_content_delta(block: CompatBlock) -> ContentBlockDelta | None:
+    """Convert a content-block slice to a protocol delta, or `None` if it has none.
 
     Deltaable types emit only when they have fresh content.  Self-contained
     / already-finalized types skip the delta entirely — the `finish`
@@ -292,16 +270,29 @@ def _should_emit_delta(block: CompatBlock) -> bool:
     """
     btype = block.get("type")
     if btype == "text":
-        return bool(block.get("text"))
+        if not block.get("text"):
+            return None
+        return cast("TextDelta", {"type": "text-delta", "text": block["text"]})
     if btype == "reasoning":
-        return bool(block.get("reasoning"))
-    if btype in {"tool_call_chunk", "server_tool_call_chunk"}:
-        return bool(
-            block.get("args") or block.get("id") or block.get("name"),
+        if not block.get("reasoning"):
+            return None
+        return cast(
+            "ReasoningDelta",
+            {"type": "reasoning-delta", "reasoning": block["reasoning"]},
         )
-    if "data" in block:
-        return bool(block.get("data"))
-    return False
+    if btype in _TOOL_CALL_CHUNK_TYPES:
+        # Only the args: the call's `id`, `name` and `index` went on its
+        # start. `extras`, and an `id` or `name` arriving after the
+        # start, reach consumers on `content-block-finish`.
+        if not block.get("args"):
+            return None
+        return cast("ToolCallDelta", {"type": "tool-call-delta", "args": block["args"]})
+    if block.get("data"):
+        delta = cast("DataDelta", {"type": "data-delta", "data": block["data"]})
+        if block.get("encoding") == "base64":
+            delta["encoding"] = "base64"
+        return delta
+    return None
 
 
 def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
@@ -340,7 +331,7 @@ def _accumulate(state: CompatBlock | None, delta: CompatBlock) -> CompatBlock:
                 state["extras"] = {**(state.get("extras") or {}), **value}
             else:
                 state[key] = value
-    elif btype in {"tool_call_chunk", "server_tool_call_chunk"} and dtype == btype:
+    elif btype in _TOOL_CALL_CHUNK_TYPES and dtype == btype:
         state["args"] = (state.get("args", "") or "") + (delta.get("args") or "")
         if delta.get("id") is not None:
             state["id"] = delta["id"]
@@ -438,7 +429,7 @@ def _finalize_block(block: CompatBlock) -> FinalizedContentBlock:
     their terminal shape.
     """
     btype = block.get("type")
-    if btype in {"tool_call_chunk", "server_tool_call_chunk"}:
+    if btype in _TOOL_CALL_CHUNK_TYPES:
         # Carry provider-specific fields from the accumulated chunk onto
         # the finalized block. Drop the chunk-only keys we rewrite
         # explicitly. `index` is stripped on client-side
@@ -552,12 +543,18 @@ def _build_message_finish(
     usage: UsageInfo | None,
     response_metadata: dict[str, Any] | None,
     additional_kwargs: dict[str, Any] | None = None,
+    has_tool_calls: bool = False,
+    has_refusal: bool = False,
 ) -> MessageFinishData:
     # Protocol 0.0.9 removed the top-level `reason` field from
     # `MessageFinishData`; the provider's raw `finish_reason` /
-    # `stop_reason` now rides inside `metadata` alongside other
-    # response metadata. Pass it through unchanged.
-    finish_data: dict[str, Any] = {"event": "message-finish"}
+    # `stop_reason` still rides inside `metadata` for backward compat.
+    finish_data: dict[str, Any] = {
+        "event": "message-finish",
+        **_finish_fields(
+            response_metadata, has_tool_calls=has_tool_calls, has_refusal=has_refusal
+        ),
+    }
     usage_info = _isolate_usage(usage)
     if usage_info is not None:
         finish_data["usage"] = usage_info
@@ -574,6 +571,14 @@ def _build_message_finish(
     if additional_kwargs:
         finish_data["additional_kwargs"] = dict(additional_kwargs)
     return cast("MessageFinishData", finish_data)
+
+
+def _has_tool_calls(blocks: Iterable[CompatBlock]) -> bool:
+    return any(b.get("type") in {"tool_call", "tool_call_chunk"} for b in blocks)
+
+
+def _has_refusal(blocks: Iterable[CompatBlock]) -> bool:
+    return any(b.get("type") == "refusal" for b in blocks)
 
 
 def _finalize_and_build_finish(
@@ -597,6 +602,7 @@ def chunks_to_events(
     chunks: Iterator[ChatGenerationChunk],
     *,
     message_id: str | None = None,
+    generation_info: dict[str, Any] | None = None,
 ) -> Iterator[MessagesData]:
     """Convert a stream of `ChatGenerationChunk` to protocol events.
 
@@ -610,6 +616,7 @@ def chunks_to_events(
     Args:
         chunks: Iterator of `ChatGenerationChunk` from `_stream()`.
         message_id: Optional stable message ID.
+        generation_info: Optional accumulator for tracing-only gateway metadata.
 
     Yields:
         `MessagesData` lifecycle events.
@@ -639,6 +646,9 @@ def chunks_to_events(
             **(chunk.generation_info or {}),
             **(msg.response_metadata or {}),
         }
+        gateway_metadata = merged_rm.pop(GATEWAY_METADATA_RESPONSE_KEY, None)
+        if generation_info is not None and isinstance(gateway_metadata, dict):
+            generation_info[GATEWAY_METADATA_RESPONSE_KEY] = gateway_metadata
         if merged_rm:
             response_metadata.update(merged_rm)
 
@@ -670,17 +680,12 @@ def chunks_to_events(
             else:
                 wire_idx, existing = blocks[key]
                 blocks[key] = (wire_idx, _accumulate(existing, block))
-            if _should_emit_delta(block):
-                wire_idx, current = blocks[key]
-                is_block_delta = block.get("type") in {
-                    "tool_call_chunk",
-                    "server_tool_call_chunk",
-                }
-                delta_source = current if is_block_delta else block
+            delta = _to_content_delta(block)
+            if delta is not None:
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
                     index=wire_idx,
-                    delta=_to_content_delta(delta_source or block),
+                    delta=delta,
                 )
 
         if msg.usage_metadata:
@@ -696,6 +701,8 @@ def chunks_to_events(
         usage=usage,
         response_metadata=response_metadata,
         additional_kwargs=additional_kwargs,
+        has_tool_calls=_has_tool_calls(block for _, block in blocks.values()),
+        has_refusal=_has_refusal(block for _, block in blocks.values()),
     )
 
 
@@ -703,6 +710,7 @@ async def achunks_to_events(
     chunks: AsyncIterator[ChatGenerationChunk],
     *,
     message_id: str | None = None,
+    generation_info: dict[str, Any] | None = None,
 ) -> AsyncIterator[MessagesData]:
     """Async variant of `chunks_to_events`."""
     started = False
@@ -724,6 +732,9 @@ async def achunks_to_events(
             **(chunk.generation_info or {}),
             **(msg.response_metadata or {}),
         }
+        gateway_metadata = merged_rm.pop(GATEWAY_METADATA_RESPONSE_KEY, None)
+        if generation_info is not None and isinstance(gateway_metadata, dict):
+            generation_info[GATEWAY_METADATA_RESPONSE_KEY] = gateway_metadata
         if merged_rm:
             response_metadata.update(merged_rm)
 
@@ -750,17 +761,12 @@ async def achunks_to_events(
             else:
                 wire_idx, existing = blocks[key]
                 blocks[key] = (wire_idx, _accumulate(existing, block))
-            if _should_emit_delta(block):
-                wire_idx, current = blocks[key]
-                is_block_delta = block.get("type") in {
-                    "tool_call_chunk",
-                    "server_tool_call_chunk",
-                }
-                delta_source = current if is_block_delta else block
+            delta = _to_content_delta(block)
+            if delta is not None:
                 yield ContentBlockDeltaData(
                     event="content-block-delta",
                     index=wire_idx,
-                    delta=_to_content_delta(delta_source or block),
+                    delta=delta,
                 )
 
         if msg.usage_metadata:
@@ -776,6 +782,8 @@ async def achunks_to_events(
         usage=usage,
         response_metadata=response_metadata,
         additional_kwargs=additional_kwargs,
+        has_tool_calls=_has_tool_calls(block for _, block in blocks.values()),
+        has_refusal=_has_refusal(block for _, block in blocks.values()),
     )
 
 
@@ -792,9 +800,10 @@ def message_to_events(
     downstream see a uniform event shape regardless of source.
 
     Text and reasoning blocks emit a single `content-block-delta` with
-    the full accumulated content.  Already-finalized blocks (tool_call,
-    server_tool_call, image, etc.) skip the delta and rely on the
-    `content-block-finish` event alone.
+    the full accumulated content, and tool-call chunk blocks a single
+    `tool-call-delta` with their full args.  Already-finalized blocks
+    (tool_call, server_tool_call, image, etc.) skip the delta and rely
+    on the `content-block-finish` event alone.
 
     Args:
         msg: The finalized message — typically an `AIMessage`.
@@ -812,11 +821,12 @@ def message_to_events(
             index=wire_idx,
             content=_start_skeleton(block),
         )
-        if _should_emit_delta(block):
+        delta = _to_content_delta(block)
+        if delta is not None:
             yield ContentBlockDeltaData(
                 event="content-block-delta",
                 index=wire_idx,
-                delta=_to_content_delta(block),
+                delta=delta,
             )
         yield ContentBlockFinishData(
             event="content-block-finish",
@@ -827,6 +837,8 @@ def message_to_events(
     yield _build_message_finish(
         usage=getattr(msg, "usage_metadata", None),
         response_metadata=response_metadata,
+        has_tool_calls=bool(getattr(msg, "tool_calls", None)),
+        has_refusal=any(b["type"] == "refusal" for b in msg.content_blocks),
     )
 
 

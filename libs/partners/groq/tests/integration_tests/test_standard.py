@@ -22,7 +22,7 @@ class TestGroq(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         return {
-            "model": "qwen/qwen3.6-27b",
+            "model": "qwen/qwen3.8-27b",
             "reasoning_effort": "none",
             "rate_limiter": rate_limiter,
         }

@@ -256,6 +256,17 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     text_block["index"] = block["index"]
                 yield text_block
 
+            elif block_type == "refusal":
+                refusal_block: types.RefusalContentBlock = {
+                    "type": "refusal",
+                    "refusal": block.get("refusal", ""),
+                }
+                if extras := block.get("extras"):
+                    refusal_block["extras"] = extras
+                if "index" in block:
+                    refusal_block["index"] = block["index"]
+                yield refusal_block
+
             elif block_type == "thinking":
                 reasoning_block: types.ReasoningContentBlock = {
                     "type": "reasoning",
@@ -484,15 +495,43 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                 yield server_tool_result
 
             else:
-                new_block: types.NonStandardContentBlock = {
-                    "type": "non_standard",
-                    "value": block,
-                }
-                if "index" in new_block["value"]:
-                    new_block["index"] = new_block["value"].pop("index")
+                if "index" in block:
+                    # Copy before lifting `index` off the block: `block` is the
+                    # caller's own dict from `message.content`, and `.pop` would
+                    # otherwise mutate it in place.
+                    value = block.copy()
+                    index = value.pop("index")
+                    new_block: types.NonStandardContentBlock = {
+                        "type": "non_standard",
+                        "value": value,
+                        "index": index,
+                    }
+                else:
+                    new_block = {"type": "non_standard", "value": block}
                 yield new_block
 
-    return list(_iter_blocks())
+    blocks = list(_iter_blocks())
+    if message.response_metadata.get("stop_reason") == "refusal" and not any(
+        block["type"] == "refusal" for block in blocks
+    ):
+        blocks.append(_refusal_from_stop_details(message.response_metadata))
+    return blocks
+
+
+def _refusal_from_stop_details(
+    response_metadata: dict[str, Any],
+) -> types.RefusalContentBlock:
+    """Build a refusal block from Anthropic's response-level refusal fields."""
+    details = response_metadata.get("stop_details")
+    if not isinstance(details, dict):
+        details = {}
+    block: types.RefusalContentBlock = {
+        "type": "refusal",
+        "refusal": details.get("explanation") or "",
+    }
+    if category := details.get("category"):
+        block["extras"] = {"category": category}
+    return block
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:

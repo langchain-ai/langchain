@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:062ec851d10b52a28bd3720be18100580f147c553974ec2e35e260c607135c30",
+  "claims": [
+    {
+      "id": "claim_582624e6ba514810bdb789729d4765b2",
+      "statement": "LangChain's CI/CD infrastructure is built on three interconnected GitHub Actions workflows: check_diffs.yml (PR change detection and dynamic test matrix generation), integration_tests.yml (scheduled daily integration testing against live APIs), and _release.yml (PyPI publication with validation gates).",
+      "evidence": [
+        {
+          "resource": "repo://.github/workflows/_release.yml",
+          "version": "repo-file-v1:sha256:ddf15fcf50faccf53f340d6c9190ce2c0dd5d4c5ff233ef4d47e464d66294fd5"
+        },
+        {
+          "resource": "repo://.github/workflows/check_diffs.yml",
+          "version": "repo-file-v1:sha256:bec4d7633b50dba8eff57290186ad869b7b55f1ee08ec102a3cd8a09754b88e7"
+        },
+        {
+          "resource": "repo://.github/workflows/integration_tests.yml",
+          "version": "repo-file-v1:sha256:aa38d1c78f1d188ca720438011e5d2e9856a9c484c581e7c46fbfdf3a381e29b"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-11-16T08:30:18.041Z"
+  }
+}

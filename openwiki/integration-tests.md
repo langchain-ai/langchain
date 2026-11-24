@@ -3,9 +3,6 @@ type: "Testing & QA"
 title: "Integration Testing: Standard Test Suites & Providers"
 description: "How LangChain integration tests work: VCR cassettes for API recording/playback, standard test suite inheritance for providers, CI/CD integration, and test markers for live vs. recorded testing."
 tags: [integration-tests, vcr, cassettes, api-testing, pytest, ci-cd, model-testing, standard-tests, test-markers]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
 sources:
   - id: openwiki-source-a12f520c2572fe032a111e3b
     resource: repo://.github/workflows/_compile_integration_test.yml
@@ -13,8 +10,6 @@ sources:
     resource: repo://.github/workflows/_test_vcr.yml
   - id: openwiki-source-6e3a52c89729b5704dbd7eec
     resource: repo://.github/workflows/check_diffs.yml
-  - id: openwiki-source-9069a5dd5fbb579fbd5470ce
-    resource: repo://.github/workflows/integration_tests.yml
   - id: openwiki-source-ff76574b014ac8b5c67560a6
     resource: repo://libs/langchain_v1/tests/integration_tests/chat_models/test_base.py
   - id: openwiki-source-bcf7be66f36f862f639f3c7a
@@ -41,7 +36,12 @@ sources:
     resource: repo://libs/standard-tests/langchain_tests/integration_tests/__init__.py
   - id: openwiki-source-f7c26a6473517c7b426ef023
     resource: repo://libs/standard-tests/langchain_tests/integration_tests/chat_models.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-20T08:25:57.412Z" }
+  - id: openwiki-source-3eb9100e02f9d70098d1b30d
+    resource: repo://libs/standard-tests/langchain_tests/unit_tests/chat_models.py
+generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 ## Overview
@@ -547,7 +547,11 @@ cd libs/partners/openai
 make integration_tests
 ```
 
-Only tests marked `@pytest.mark.scheduled` run in these workflows. See [CI/CD Workflows](repo:///openwiki/ci-workflows.md) for details.
+Only tests marked `@pytest.mark.scheduled` run in these workflows (VCR-marked tests are skipped). This validates that live API calls work and catches issues not covered by cassettes.
+
+**Python version matrix**: The `integration_tests.yml` workflow generates a dynamic test matrix with Python 3.11 and 3.14 for all packages.
+
+See [CI/CD Workflows](repo:///openwiki/ci-workflows.md) for details.
 
 ## Standard Test Suite Inheritance
 
@@ -744,6 +748,7 @@ uv run --group test --group test_integration pytest -v --tb=short tests/integrat
 - Runs only tests marked `@pytest.mark.scheduled`
 - Tests marked `@pytest.mark.vcr` are skipped (use cassettes in PR checks instead)
 - Smoke-tests each supported SDK major version
+- **Python version matrix**: Tests run on Python 3.11 and 3.14 for all packages
 
 ### Cassette Validation in CI
 

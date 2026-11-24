@@ -13,7 +13,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -22,11 +21,10 @@ classifiers = [
 ]
 
 version = "0.0.6"
-requires-python = ">=3.10.0,<4.0.0"
+requires-python = ">=3.11.0,<4.0.0"
 dependencies = [
-    "httpx>=0.23.0,<1",
-    "tomli>=2.0.0,<3.0.0; python_version < '3.11'",
-    "typing-extensions>=4.7.0,<5.0.0",
+    "httpx>=0.23.0",
+    "typing-extensions>=4.7.0",
 ]
 
 [project.scripts]
@@ -61,11 +59,11 @@ test = [
 test_integration = ["langchain-core>=1.4.7,<2.0.0"]
 
 lint = [
-    "ruff>=0.15.0,<0.17.0",
+    "ruff>=0.15.0,<0.18.0",
     "langchain>=1.0.0,<2.0.0",
 ]
 typing = [
-    "mypy>=2.1.0,<2.4.0",
+    "mypy>=2.1.0,<2.5.0",
     "types-toml>=0.10.8.20240310,<1.0.0.0",
 ]
 

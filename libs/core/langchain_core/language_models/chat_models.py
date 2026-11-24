@@ -10,11 +10,11 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, Self, cast, overload
 
 from langchain_protocol.protocol import MessageFinishData
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_core._api import beta, deprecated, suppress_langchain_deprecation_warning
 from langchain_core.caches import BaseCache
@@ -96,7 +96,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from langchain_core.utils.utils import LC_ID_PREFIX, from_env
+from langchain_core.utils.utils import LC_AUTO_PREFIX, LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
     import uuid
@@ -107,6 +107,17 @@ if TYPE_CHECKING:
     from langchain_core.runnables import Runnable, RunnableConfig
     from langchain_core.runnables.schema import StreamEvent
     from langchain_core.tools import BaseTool
+
+
+def _provider_message_id(message_id: str | None) -> str | None:
+    """Return `message_id` if the provider assigned it, else `None`.
+
+    The OpenAI Responses API sends its id on the first chunk only; streams reuse
+    it so every chunk matches the merged message's id.
+    """
+    if message_id and not message_id.startswith((LC_ID_PREFIX, LC_AUTO_PREFIX)):
+        return message_id
+    return None
 
 
 def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
@@ -145,6 +156,47 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
         generations = []
 
     return generations
+
+
+def _v3_generation(
+    message: AIMessage, stream: ChatModelStream | AsyncChatModelStream
+) -> ChatGeneration:
+    """Build the final generation for a v3 stream.
+
+    Attaches tracing-only metadata (e.g. gateway metadata) collected while
+    bridging chunks, which is kept off the public message.
+    """
+    return ChatGeneration(
+        message=message,
+        generation_info=stream._generation_info or None,  # noqa: SLF001
+    )
+
+
+def _v3_error_response(
+    error: BaseException, stream: ChatModelStream | AsyncChatModelStream
+) -> LLMResult:
+    """Build the `on_llm_error` response for a v3 stream.
+
+    Mirrors v1 `stream()` so gateway metadata reaches the trace on failure:
+    parsed from the error's HTTP response, or collected from chunks received
+    before the failure.
+    """
+    generations = _generate_response_from_error(error)
+    generation_info = stream._generation_info  # noqa: SLF001
+    if generation_info:
+        if generations:
+            generations[0].generation_info = {
+                **generation_info,
+                **(generations[0].generation_info or {}),
+            }
+        else:
+            generations = [
+                ChatGeneration(
+                    message=AIMessage(content=""),
+                    generation_info=dict(generation_info),
+                )
+            ]
+    return LLMResult(generations=[generations] if generations else [])
 
 
 def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
@@ -686,6 +738,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             event_iter = chunks_to_events(
                 self._stream(messages, stop=stop, run_manager=run_manager, **kwargs),
                 message_id=stream.message_id,
+                generation_info=stream._generation_info,  # noqa: SLF001
             )
         for event in event_iter:
             stream.dispatch(event)
@@ -717,6 +770,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             event_iter = achunks_to_events(
                 self._astream(messages, stop=stop, run_manager=run_manager, **kwargs),
                 message_id=stream.message_id,
+                generation_info=stream._generation_info,  # noqa: SLF001
             )
         async for event in event_iter:
             stream.dispatch(event)
@@ -788,12 +842,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             try:
                 input_messages = _normalize_messages(messages)
                 run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
+                provider_id: str | None = None
                 yielded = False
                 index = -1
                 index_type = ""
                 for chunk in self._stream(input_messages, stop=stop, **kwargs):
+                    provider_id = provider_id or _provider_message_id(chunk.message.id)
                     if chunk.message.id is None:
-                        chunk.message.id = run_id
+                        chunk.message.id = provider_id or run_id
                     chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                     if self.output_version == "v1":
                         # Overwrite .content with .content_blocks
@@ -824,7 +880,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         "" if isinstance(chunk.message.content, str) else []
                     )
                     msg_chunk = AIMessageChunk(
-                        content=empty_content, chunk_position="last", id=run_id
+                        content=empty_content,
+                        chunk_position="last",
+                        id=provider_id or run_id,
                     )
                     run_manager.on_llm_new_token(
                         "", chunk=ChatGenerationChunk(message=msg_chunk)
@@ -921,6 +979,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         try:
             input_messages = _normalize_messages(messages)
             run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
+            provider_id: str | None = None
             yielded = False
             index = -1
             index_type = ""
@@ -929,8 +988,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 stop=stop,
                 **kwargs,
             ):
+                provider_id = provider_id or _provider_message_id(chunk.message.id)
                 if chunk.message.id is None:
-                    chunk.message.id = run_id
+                    chunk.message.id = provider_id or run_id
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if self.output_version == "v1":
                     # Overwrite .content with .content_blocks
@@ -960,7 +1020,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     "" if isinstance(chunk.message.content, str) else []
                 )
                 msg_chunk = AIMessageChunk(
-                    content=empty_content, chunk_position="last", id=run_id
+                    content=empty_content,
+                    chunk_position="last",
+                    id=provider_id or run_id,
                 )
                 await run_manager.on_llm_new_token(
                     "", chunk=ChatGenerationChunk(message=msg_chunk)
@@ -1099,14 +1161,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         stream.fail(err)
                         run_manager.on_llm_error(
                             err,
-                            response=LLMResult(generations=[]),
+                            response=_v3_error_response(err, stream),
                         )
                         return False
                 if stream.done and stream.output_message is not None:
                     run_manager.on_llm_end(
                         LLMResult(
                             generations=[
-                                [ChatGeneration(message=stream.output_message)],
+                                [_v3_generation(stream.output_message, stream)],
                             ],
                         ),
                     )
@@ -1115,14 +1177,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 stream.fail(exc)
                 run_manager.on_llm_error(
                     exc,
-                    response=LLMResult(generations=[]),
+                    response=_v3_error_response(exc, stream),
                 )
                 return False
             if stream.done and stream.output_message is not None:
                 run_manager.on_llm_end(
                     LLMResult(
                         generations=[
-                            [ChatGeneration(message=stream.output_message)],
+                            [_v3_generation(stream.output_message, stream)],
                         ],
                     ),
                 )
@@ -1213,14 +1275,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         stream.fail(err)
                         await run_manager.on_llm_error(
                             err,
-                            response=LLMResult(generations=[]),
+                            response=_v3_error_response(err, stream),
                         )
                         return
                 if stream.done and stream.output_message is not None:
                     await run_manager.on_llm_end(
                         LLMResult(
                             generations=[
-                                [ChatGeneration(message=stream.output_message)],
+                                [_v3_generation(stream.output_message, stream)],
                             ],
                         ),
                     )
@@ -1234,14 +1296,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 with contextlib.suppress(Exception):
                     await run_manager.on_llm_error(
                         exc,
-                        response=LLMResult(generations=[]),
+                        response=_v3_error_response(exc, stream),
                     )
                 raise
             except BaseException as exc:
                 stream.fail(exc)
                 await run_manager.on_llm_error(
                     exc,
-                    response=LLMResult(generations=[]),
+                    response=_v3_error_response(exc, stream),
                 )
 
         async def ensure_started() -> None:
@@ -1276,7 +1338,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             # is being cancelled.
             await run_manager.on_llm_error(
                 exc,
-                response=LLMResult(generations=[]),
+                response=_v3_error_response(exc, stream),
             )
 
         stream.set_start(ensure_started)
@@ -1320,18 +1382,20 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         `ChatModelStream` exposing typed projections (`.text`,
         `.reasoning`, `.tool_calls`, `.output`).
 
-        !!! warning "Beta"
+        !!! warning "Deprecated v3 streaming API"
 
-            `version="v3"` is in beta. The protocol shape, return type,
-            and surface area may change in future releases. Calling it
-            emits a `LangChainBetaWarning` at runtime.
+            `version="v3"` is deprecated. Use `stream()` / `astream()` or
+            `astream_events(version="v2")` instead. The v2 API remains supported.
+
+            This deprecation is documentation-only. Calls still emit
+            `LangChainBetaWarning`, not `LangChainDeprecationWarning`.
 
         !!! note "v3 always produces v1-shaped content"
 
             `ChatModelStream.output.content` is always a list of v1
             content blocks (text / reasoning / tool_call / image / …),
             regardless of the model's `output_version` attribute. The
-            setting only affects the legacy `stream()` / `astream()` /
+            setting only affects the `stream()` / `astream()` /
             `invoke()` paths. If you're mixing
             `stream_events(version="v3")` with those paths in the same
             pipeline and need a consistent output shape across them,
@@ -1962,7 +2026,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 msg = "v2 stream finished without producing a message"
                 raise RuntimeError(msg)
             result = ChatResult(
-                generations=[ChatGeneration(message=stream_accum.output_message)]
+                generations=[_v3_generation(stream_accum.output_message, stream_accum)]
             )
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _stream not implemented
@@ -1975,6 +2039,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             run_id: str | None = (
                 f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
             )
+            provider_id: str | None = None
             yielded = False
             index = -1
             index_type = ""
@@ -1993,9 +2058,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                             index += 1
                         if "index" not in block:
                             block["index"] = index
+                provider_id = provider_id or _provider_message_id(chunk.message.id)
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = run_id
+                        chunk.message.id = provider_id or run_id
                     run_manager.on_llm_new_token(chunk.message.content, chunk=chunk)
                 chunks.append(chunk)
                 yielded = True
@@ -2011,7 +2077,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 )
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
-                        content=empty_content, chunk_position="last", id=run_id
+                        content=empty_content,
+                        chunk_position="last",
+                        id=provider_id or run_id,
                     )
                 )
                 if run_manager:
@@ -2117,7 +2185,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 msg = "v2 stream finished without producing a message"
                 raise RuntimeError(msg)
             result = ChatResult(
-                generations=[ChatGeneration(message=stream_accum.output_message)]
+                generations=[_v3_generation(stream_accum.output_message, stream_accum)]
             )
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented
@@ -2130,6 +2198,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             run_id: str | None = (
                 f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
             )
+            provider_id: str | None = None
             yielded = False
             index = -1
             index_type = ""
@@ -2148,9 +2217,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                             index += 1
                         if "index" not in block:
                             block["index"] = index
+                provider_id = provider_id or _provider_message_id(chunk.message.id)
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = run_id
+                        chunk.message.id = provider_id or run_id
                     await run_manager.on_llm_new_token(
                         chunk.message.content, chunk=chunk
                     )
@@ -2168,7 +2238,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 )
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
-                        content=empty_content, chunk_position="last", id=run_id
+                        content=empty_content,
+                        chunk_position="last",
+                        id=provider_id or run_id,
                     )
                 )
                 if run_manager:
@@ -2421,6 +2493,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
                 The final output is always a `dict` with keys `'raw'`, `'parsed'`, and
                 `'parsing_error'`.
+
+                If the model refuses, `ModelRefusalError` is raised, or returned as
+                `'parsing_error'` when `include_raw` is `True`.
 
         Raises:
             ValueError: If there are any unsupported `kwargs`.

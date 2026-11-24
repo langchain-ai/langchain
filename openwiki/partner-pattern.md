@@ -3,9 +3,6 @@ type: Integration Pattern
 title: Adding a New Chat Model Provider
 description: Step-by-step guide to integrate a new LLM provider into LangChain's monorepo, including package structure, ChatModel implementation, streaming, function calling, structured output, and standard tests. Covers message conversion, error handling, model profiles, and optional advanced API modes like Responses API.
 tags: [chat-models, provider-integration, llm, function-calling, structured-output, streaming]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
 sources:
   - id: openwiki-source-c52037e7b642f7ac5a7642a8
     resource: repo://libs/core/langchain_core/language_models/chat_models.py
@@ -39,7 +36,10 @@ sources:
     resource: repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py
   - id: openwiki-source-025cad4ae99967890152b7e0
     resource: repo://libs/standard-tests/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-10-20T08:25:57.412Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-18T08:17:15.497Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-18T08:17:15.497Z
 ---
 
 ## Overview
@@ -108,8 +108,8 @@ requires-python = ">=3.10.0,<4.0.0"
 version = "0.1.0"
 
 dependencies = [
-    "langchain-core>=1.6.10,<2.0.0",          # Required: base LangChain (current minimum)
-    "provider-client-library>=2.45.0,<4.0.0", # Provider's own SDK (pinned version)
+    "langchain-core>=1.8.2,<2.0.0",           # Required: base LangChain (current minimum)
+    "provider-client-library>=2.45.0",        # Provider's own SDK (pinned minimum version)
     "certifi>=2024.6.2",                      # SSL certificates
 ]
 
@@ -139,7 +139,7 @@ constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 ```
 
 **Key patterns:**
-- **Lock provider SDK versions** to prevent breaking API changes (e.g., `openai>=2.45.0,<4.0.0`, `anthropic>=0.120.0,<2.0.0`)
+- **Lock provider SDK minimum versions** to prevent breakage from uncontrolled downgrades (e.g., `openai>=2.45.0`, `anthropic>=0.120.0`)
 - **Add version constraints to all test dependencies** for reproducibility
 - **Use `[tool.uv.sources]`** to reference local LangChain packages in monorepo
 - **Separate integration test dependencies** in a dedicated group (only needed in CI)
@@ -148,7 +148,7 @@ constraint-dependencies = ["urllib3>=2.6.3", "pygments>=2.20.0"]
 
 ### BaseChatModel and Core Requirements
 
-All provider implementations must inherit from **`BaseChatModel`** (defined in `repo://libs/core/langchain_core/language_models/chat_models.py#L284-L2400`), which defines the contract for invoking and streaming chat models.
+All provider implementations must inherit from **`BaseChatModel`** (defined in `repo://libs/core/langchain_core/language_models/chat_models.py#L325-L2701`), which defines the contract for invoking and streaming chat models.
 
 **Core responsibilities:**
 
@@ -515,7 +515,7 @@ Streaming returns `AIMessageChunk` objects incrementally as the model generates 
 5. **Wrap in `ChatGenerationChunk`** for the generation abstraction
 6. **Notify run_manager** via `on_llm_new_token` callback for observability
 
-**Key pattern (from `repo://libs/partners/anthropic/langchain_anthropic/chat_models.py#L1862-L1910`):**
+**Key pattern (from `repo://libs/partners/anthropic/langchain_anthropic/chat_models.py#L2198-L2247`):**
 
 ```python
 def _stream(
@@ -529,20 +529,26 @@ def _stream(
     kwargs["stream"] = True
     payload = self._get_request_payload(messages, stop=stop, **kwargs)
     
-    # Stream from API
-    raw_response = self._client.create(payload)
-    for event in raw_response.parse():
-        # Convert Anthropic streaming event to AIMessageChunk
-        msg_chunk = self._make_message_chunk_from_anthropic_event(event)
+    try:
+        # Stream from API
+        raw_response = self._client.create(payload)
+        stream = raw_response.parse()
         
-        if msg_chunk is not None:
-            chunk = ChatGenerationChunk(message=msg_chunk)
+        for event in stream:
+            # Convert provider streaming event to AIMessageChunk
+            msg_chunk = self._make_message_chunk_from_provider_event(event)
             
-            # Notify callbacks
-            if run_manager and isinstance(msg_chunk.content, str):
-                run_manager.on_llm_new_token(msg_chunk.content, chunk=chunk)
-            
-            yield chunk
+            if msg_chunk is not None:
+                chunk = ChatGenerationChunk(message=msg_chunk)
+                
+                # Notify callbacks of new token
+                if run_manager:
+                    run_manager.on_llm_new_token(chunk.text, chunk=chunk)
+                
+                yield chunk
+    except ProviderAPIError as e:
+        # Handle provider-specific errors
+        raise ModelAPIError(str(e)) from e
 ```
 
 ### Async Streaming

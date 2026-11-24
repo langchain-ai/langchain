@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final, TypeAlias
+from typing import TYPE_CHECKING, Any, Final, Self, TypeAlias
 
 from pydantic import AnyUrl, TypeAdapter, ValidationError
-from typing_extensions import Self
 
 from langchain.mcp.elicitation import _arm_for_interrupts
 from langchain.mcp.tools import as_langchain_tool

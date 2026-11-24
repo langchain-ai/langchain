@@ -47,7 +47,7 @@ import logging
 import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Literal, cast
+from typing import Any, Literal, Self, cast
 from uuid import uuid4
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -87,7 +87,7 @@ from ollama import AsyncClient, Client, Message
 from pydantic import BaseModel, PrivateAttr, field_validator, model_validator
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
-from typing_extensions import Self, is_typeddict
+from typing_extensions import is_typeddict
 
 from langchain_ollama._compat import _convert_from_v1_to_ollama
 from langchain_ollama._utils import (

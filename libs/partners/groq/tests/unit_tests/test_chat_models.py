@@ -10,6 +10,7 @@ import httpx
 import langchain_core.load as lc_load
 import pytest
 from langchain_core.exceptions import ContextOverflowError
+from langchain_core.load import dumpd
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -20,7 +21,8 @@ from langchain_core.messages import (
     ToolCall,
 )
 from langchain_core.runnables import RunnableBinding, RunnableSequence
-from pydantic import BaseModel
+from langchain_core.utils._gateway import langsmith_gateway
+from pydantic import BaseModel, SecretStr
 
 from langchain_groq.chat_models import (
     ChatGroq,
@@ -1330,3 +1332,81 @@ def test_with_structured_output_documents_method_once() -> None:
     assert doc is not None
     assert doc.count("method:") == 1
     assert "json_schema" in doc
+
+
+# --- LangSmith gateway ---
+
+
+@pytest.fixture
+def _gateway_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    for var in (
+        "LANGSMITH_GATEWAY",
+        "LANGSMITH_GATEWAY_API_KEY",
+        "LANGSMITH_API_KEY",
+        "GROQ_API_BASE",
+        "GROQ_API_KEY",
+    ):
+        monkeypatch.delenv(var, raising=False)
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    llm = ChatGroq(model="llama-3.3-70b-versatile")
+    assert llm.groq_api_base == "https://gateway.smith.langchain.com/groq"
+    assert llm.groq_api_key is not None
+    assert llm.groq_api_key.get_secret_value() == "gateway-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_disabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv("GROQ_API_KEY", "provider-key")
+    llm = ChatGroq(model="llama-3.3-70b-versatile")
+    assert llm.groq_api_base is None
+    assert llm.groq_api_key is not None
+    assert llm.groq_api_key.get_secret_value() == "provider-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_provider_env_base_url_wins(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
+    monkeypatch.setenv("GROQ_API_BASE", "https://proxy.example.com/v1")
+    monkeypatch.setenv("GROQ_API_KEY", "provider-key")
+    llm = ChatGroq(model="llama-3.3-70b-versatile")
+    assert llm.groq_api_base == "https://proxy.example.com/v1"
+    assert llm.groq_api_key is not None
+    assert llm.groq_api_key.get_secret_value() == "provider-key"
+
+
+@pytest.mark.usefixtures("_gateway_env")
+def test_langsmith_gateway_context_overrides_explicit_values() -> None:
+    gateway = pytest.importorskip("langchain_core.utils._gateway")
+    if not hasattr(gateway, "langsmith_gateway"):
+        pytest.skip("Requires a langchain-core release with `langsmith_gateway`.")
+    with gateway.langsmith_gateway(api_key="service-key"):
+        llm = ChatGroq(
+            model="llama-3.3-70b-versatile",
+            base_url="https://other.example.com/v1",
+            api_key=SecretStr("user-key"),
+        )
+    assert llm.groq_api_base == "https://gateway.smith.langchain.com/groq"
+    assert llm.groq_api_key is not None
+    assert llm.groq_api_key.get_secret_value() == "service-key"
+
+
+def test_langsmith_gateway_context_headers() -> None:
+    """Gateway headers reach the client but are never serialized."""
+    with langsmith_gateway(api_key="placeholder", headers={"X-Service-Key": "svc-key"}):
+        llm = ChatGroq(
+            model="llama-3.3-70b",
+            api_key=SecretStr("user-key"),
+            default_headers={"x-service-key": "forged", "X-Custom": "kept"},
+        )
+    sent = llm.client._client.default_headers
+    assert sent["X-Service-Key"] == "svc-key"
+    assert sent["X-Custom"] == "kept"
+    assert "svc-key" not in json.dumps(dumpd(llm))

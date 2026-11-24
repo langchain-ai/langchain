@@ -3,9 +3,6 @@ type: Architecture Pattern
 title: "Agent Middleware: Composable Request/Response Processing"
 description: "Comprehensive guide to the middleware composition system: lifecycle hooks, handler interception, state transformation, payload types, error handling, and implementation patterns for common middleware."
 tags: [agent-middleware, request-interception, composition, error-handling, human-in-the-loop, lifecycle-hooks, tool-error-handling]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
 sources:
   - id: openwiki-source-71e882e1ac9757ea8e959a7c
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
@@ -21,7 +18,10 @@ sources:
     resource: repo://libs/langchain_v1/langchain/agents/middleware/tool_retry.py
   - id: openwiki-source-03e8ca0eebe37feda8566793
     resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-20T08:25:57.412Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 ## Overview
@@ -306,6 +306,19 @@ class ToolCallRequest:
     tool: BaseTool | None  # Resolved BaseTool instance (or None in batch mode)
     state: AgentState[Any]  # Agent state at time of call
     runtime: ToolRuntime  # Runtime context with tool-specific info
+```
+
+**Immutable Pattern**: Similar to `ModelRequest`, `ToolCallRequest` follows an immutable pattern. Middleware must use `request.override(**changes)` to create a new request with modifications. This enables safe composition and retry semantics.
+
+```python
+# ✅ Correct: use override() to modify tool_call arguments
+modified_call = {**request.tool_call, "args": {"key": "new_value"}}
+new_request = request.override(tool_call=modified_call)
+return handler(new_request)
+
+# ✅ Also correct: override() can change the tool instance
+new_request = request.override(tool=different_tool)
+return handler(new_request)
 ```
 
 ## Core Middleware Types and Patterns

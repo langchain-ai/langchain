@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "pageVersion": "sha256:793e033c11fd54e239405e0329f0b8a3c34d3f4ecd0ed7e03240fd92f2b90cca",
+  "claims": [
+    {
+      "id": "claim_8d2c3dd85b344c36b68762524e0c4b66",
+      "statement": "The LangChain unit test infrastructure provides pytest fixtures in conftest.py for controlling async I/O validation (blockbuster), deterministic UUID generation (deterministic_uuids), and conditional test execution (@pytest.mark.requires). Agent tests use parametrized fixtures (sync_checkpointer, async_checkpointer, sync_store, async_store) that test across multiple storage backends (memory, sqlite, postgres) controlled by LANGGRAPH_TEST_FAST environment variable.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/conftest.py",
+          "version": "repo-file-v1:sha256:db4edbdb240f9a7e3c35fc6eab5dd5024c15e3a4efa8155295fdb30489a34b75"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/agents/conftest.py",
+          "version": "repo-file-v1:sha256:adf0b3740a02889add6c741b22bab2cceca3ec97d01bf84ed75da030f2f84142"
+        }
+      ]
+    },
+    {
+      "id": "claim_eb9503764a804b73b3256a209f756370",
+      "statement": "The unit test infrastructure provides mock implementations including FakeToolCallingModel for scripting multi-turn agent behavior with tool calls, GenericFakeChatModel for streaming sequences, FakeListChatModel for cycling responses, and FakeChatModel variants for bypassing API calls. FakeCallbackHandler tracks lifecycle events (starts, ends, errors) at fine granularity (llm_starts, chain_starts, tool_starts) for callback testing.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/fake/callbacks.py",
+          "version": "repo-file-v1:sha256:ccf91cc5acefdc15b6e52c09110bc586866d7a704c4a4e0d651fd1c0dc149405"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/fake/test_fake_chat_model.py",
+          "version": "repo-file-v1:sha256:acf9cde387c94c53607c5239a64798e11798b6061d7e78f5b87c06efe95fcea1"
+        },
+        {
+          "resource": "repo://libs/langchain_v1/tests/unit_tests/agents/model.py",
+          "version": "repo-file-v1:sha256:a2d052706b934bef0fb28ba4f7734aeebf0c383209b30f08c578926bb63e40ac"
+        }
+      ]
+    },
+    {
+      "id": "claim_3075870d6d394ba3a2e8b3fee4189ffd",
+      "statement": "Test utilities include AnyStr (string subclass matching any string value) and message factory functions (_any_id_ai_message, _any_id_human_message, etc.) that create message objects with wildcard IDs, enabling content-based assertions independent of generated UUIDs. Pydantic schema utilities normalize JSON schemas across v1/v2 and provide helper markers (skip_if_no_pydantic_v1) for compatibility.",
+      "evidence": [
+        {
+          "resource": "repo://libs/core/tests/unit_tests/pydantic_utils.py",
+          "version": "repo-file-v1:sha256:c80ecf32bea0b4e7d5a86ae816614622e63f082e45bf2dc665118ddcb8400d87"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/stubs.py",
+          "version": "repo-file-v1:sha256:3d42d384f2ef72708c96fc0dd013c0571cbf102d84024d4fd0f6b511ad1185c0"
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "by": "openwiki/0.5.0",
+    "at": "2026-11-13T08:16:35.902Z"
+  }
+}

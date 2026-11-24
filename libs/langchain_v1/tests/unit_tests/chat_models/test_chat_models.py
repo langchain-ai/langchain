@@ -190,10 +190,48 @@ def test_bedrock_mantle_providers_registered() -> None:
         ("grok-beta", "xai"),
         ("sonar-small", "perplexity"),
         ("solar-pro", "upstage"),
+        ("unknown-model", None),
     ],
 )
-def test_attempt_infer_model_provider(model_name: str, expected_provider: str) -> None:
+@pytest.mark.filterwarnings("error::DeprecationWarning")
+def test_attempt_infer_model_provider(model_name: str, expected_provider: str | None) -> None:
     assert _attempt_infer_model_provider(model_name) == expected_provider
+
+
+@pytest.mark.parametrize("model_name", ["gemini-2.5-pro", "Gemini-2.5-pro"])
+def test_init_chat_model_warns_for_inferred_google_provider(model_name: str) -> None:
+    with (
+        mock.patch("langchain.chat_models.base._get_chat_model_creator") as get_creator,
+        pytest.warns(
+            DeprecationWarning, match="Inferred `model_provider='google_vertexai'`"
+        ) as info,
+    ):
+        init_chat_model(model_name)
+
+    get_creator.assert_called_once_with("google_vertexai")
+    get_creator.return_value.assert_called_once_with(model=model_name)
+    assert len(info) == 1
+    assert info[0].filename == __file__
+
+
+@pytest.mark.parametrize(
+    ("model_name", "model_provider", "expected_provider"),
+    [
+        ("gemini-2.5-pro", "google_vertexai", "google_vertexai"),
+        ("gemini-2.5-pro", "google_genai", "google_genai"),
+        ("google_vertexai:gemini-2.5-pro", None, "google_vertexai"),
+        ("google_genai:gemini-2.5-pro", None, "google_genai"),
+    ],
+)
+@pytest.mark.filterwarnings("error::DeprecationWarning")
+def test_init_chat_model_does_not_warn_for_explicit_google_provider(
+    model_name: str, model_provider: str | None, expected_provider: str
+) -> None:
+    with mock.patch("langchain.chat_models.base._get_chat_model_creator") as get_creator:
+        init_chat_model(model_name, model_provider=model_provider)
+
+    get_creator.assert_called_once_with(expected_provider)
+    get_creator.return_value.assert_called_once_with(model="gemini-2.5-pro")
 
 
 @pytest.mark.requires("langchain_openai")

@@ -2,7 +2,7 @@
 
 import uuid
 from collections.abc import Iterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from unittest import mock
 
@@ -28,7 +28,7 @@ from langchain_classic.smith.evaluation.runner_utils import (
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
-_CREATED_AT = datetime(2015, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+_CREATED_AT = datetime(2015, 1, 1, 0, 0, 0, tzinfo=UTC)
 _TENANT_ID = "7a3d2b56-cd5b-44e5-846f-7eb6e8144ce4"
 _EXAMPLE_MESSAGE = {
     "data": {"content": "Foo", "example": False, "additional_kwargs": {}},

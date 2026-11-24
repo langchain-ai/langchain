@@ -1044,6 +1044,12 @@ _JS_SERIALIZABLE_MAPPING: dict[tuple[str, ...], tuple[str, ...]] = {
         "human",
         "HumanMessageChunk",
     ),
+    ("langchain_core", "messages", "RemoveMessage"): (
+        "langchain_core",
+        "messages",
+        "modifier",
+        "RemoveMessage",
+    ),
     ("langchain_core", "messages", "SystemMessage"): (
         "langchain_core",
         "messages",

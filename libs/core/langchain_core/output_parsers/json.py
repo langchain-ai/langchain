@@ -13,9 +13,10 @@ from pydantic.v1 import BaseModel
 from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
+from langchain_core.output_parsers._refusal import raise_if_refused
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
-from langchain_core.outputs import Generation
+from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils.json import (
     parse_and_check_json_markdown,
     parse_json_markdown,
@@ -74,8 +75,11 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             The parsed JSON object.
 
         Raises:
+            ModelRefusalError: If the model refused to answer.
             OutputParserException: If the output is not valid JSON.
         """
+        if isinstance(result[0], ChatGeneration):
+            raise_if_refused(result[0].message)
         text = result[0].text
         text = text.strip()
         if partial:

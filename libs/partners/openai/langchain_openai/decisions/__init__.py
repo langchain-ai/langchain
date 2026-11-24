@@ -1,6 +1,7 @@
 """OpenAI Decisions API integration."""
 
 from langchain_openai.decisions.base import OpenAIDecisions
+from langchain_openai.decisions.classifier import OpenAIClassifier
 from langchain_openai.decisions.types import (
     Answer,
     Choice,
@@ -25,6 +26,7 @@ __all__ = [
     "DecisionRequest",
     "DecisionResponse",
     "Level",
+    "OpenAIClassifier",
     "OpenAIDecisions",
     "Predicate",
     "PredicateAnswer",

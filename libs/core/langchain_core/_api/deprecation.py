@@ -140,9 +140,9 @@ def deprecated(
     inherited its `__init__` from its own base class, then `@deprecated` would mess up
     `__init__` inheritance when installing its own (deprecation-emitting) `C.__init__`).
 
-    Parameters are the same as for `warn_deprecated`, except that *obj_type* defaults to
-    'class' if decorating a class, 'attribute' if decorating a property, and 'function'
-    otherwise.
+    Parameters are the same as for `warn_deprecated`, except for `stacklevel`;
+    *obj_type* defaults to 'class' if decorating a class, 'attribute' if decorating a
+    property, and 'function' otherwise.
 
     Args:
         since: The release at which this API became deprecated.
@@ -465,15 +465,27 @@ def deprecated(
 
 @contextlib.contextmanager
 def suppress_langchain_deprecation_warning() -> Generator[None, None, None]:
-    """Context manager to suppress `LangChainDeprecationWarning`."""
+    """Suppress LangChain deprecation warnings within the current context.
+
+    Silences warnings emitted through `warn_deprecated` and `@deprecated`. It does not
+    modify the global `warnings` filters, so calling `warnings.warn` directly with
+    `LangChainDeprecationWarning` is not suppressed; use `warnings.filterwarnings` for
+    that.
+
+    Suppression is stored in a context variable, not a process-wide filter. It
+    applies to the current thread or asyncio task, and to tasks or copied contexts
+    created inside the block (e.g. `asyncio.create_task`, `asyncio.to_thread`),
+    which keep it even after the block exits. Other threads are unaffected.
+    """
     token = _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.set(True)
     try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", LangChainDeprecationWarning)
-            warnings.simplefilter("ignore", LangChainPendingDeprecationWarning)
-            yield
+        yield
     finally:
-        _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.reset(token)
+        # Exiting from a different context (e.g. an async generator suspended
+        # inside the block and closed by another task) makes `reset` raise. That
+        # context never saw this block's `set`, so there is nothing to undo.
+        with contextlib.suppress(ValueError):
+            _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.reset(token)
 
 
 def warn_deprecated(
@@ -488,6 +500,7 @@ def warn_deprecated(
     addendum: str = "",
     removal: str = "",
     package: str = "",
+    stacklevel: int = 4,
 ) -> None:
     """Display a standardized deprecation.
 
@@ -518,7 +531,12 @@ def warn_deprecated(
 
             Cannot be used together with pending.
         package: The package of the deprecated object.
+        stacklevel: Warning attribution depth passed to `warnings.warn`; `1` points
+            inside this helper and `2` points to its caller.
     """
+    if _SUPPRESSING_LANGCHAIN_DEPRECATION_WARNING.get():
+        return
+
     if not pending and removal:
         removal = f"in {removal}"
 
@@ -565,7 +583,7 @@ def warn_deprecated(
         LangChainPendingDeprecationWarning if pending else LangChainDeprecationWarning
     )
     warning = warning_cls(message)
-    warnings.warn(warning, category=LangChainDeprecationWarning, stacklevel=4)
+    warnings.warn(warning, category=LangChainDeprecationWarning, stacklevel=stacklevel)
 
 
 def surface_langchain_deprecation_warnings() -> None:

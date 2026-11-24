@@ -5,7 +5,12 @@ from __future__ import annotations
 import importlib
 import warnings
 
-from langchain_core._api import LangChainBetaWarning
+import pytest
+from langchain_core._api import (
+    LangChainBetaWarning,
+    beta_decorator,
+    suppress_langchain_beta_warning,
+)
 
 import langchain.mcp
 
@@ -30,6 +35,7 @@ def test_importing_the_namespace_warns_that_it_is_in_beta() -> None:
 
     assert len(beta_warnings) == 1
     assert "`langchain.mcp` is in beta" in str(beta_warnings[0].message)
+    assert beta_warnings[0].filename == importlib.__file__
 
 
 def test_the_beta_warning_can_be_silenced() -> None:
@@ -40,6 +46,27 @@ def test_the_beta_warning_can_be_silenced() -> None:
         importlib.reload(langchain.mcp)
 
     assert [w for w in caught if issubclass(w.category, LangChainBetaWarning)] == []
+
+
+def test_the_beta_warning_can_be_suppressed_in_context() -> None:
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LangChainBetaWarning)
+        with suppress_langchain_beta_warning():
+            importlib.reload(langchain.mcp)
+            with suppress_langchain_beta_warning():
+                importlib.reload(langchain.mcp)
+            importlib.reload(langchain.mcp)
+        with pytest.raises(LangChainBetaWarning, match="is in beta"):
+            importlib.reload(langchain.mcp)
+
+
+def test_the_beta_warning_supports_older_core(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delattr(beta_decorator, "_SUPPRESSING_LANGCHAIN_BETA_WARNING", raising=False)
+    assert any(issubclass(w.category, LangChainBetaWarning) for w in _reimport())
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", LangChainBetaWarning)
+        warnings.filterwarnings("ignore", category=LangChainBetaWarning)
+        importlib.reload(langchain.mcp)
 
 
 def test_the_public_names_survive_the_warning() -> None:

@@ -13,6 +13,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, InvalidToolCall
 from langchain_core.messages.tool import invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
+from langchain_core.output_parsers._refusal import raise_if_refused
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils.json import parse_partial_json
@@ -178,6 +179,7 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
             The parsed tool calls.
 
         Raises:
+            ModelRefusalError: If the model refused to answer.
             OutputParserException: If the output is not valid JSON.
         """
         generation = result[0]
@@ -185,6 +187,7 @@ class JsonOutputToolsParser(BaseCumulativeTransformOutputParser[Any]):
             msg = "This output parser can only be used with a chat generation."
             raise OutputParserException(msg)
         message = generation.message
+        raise_if_refused(message)
         if isinstance(message, AIMessage) and message.tool_calls:
             tool_calls = [dict(tc) for tc in message.tool_calls]
             for tool_call in tool_calls:
@@ -238,6 +241,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
                 If `False`, the output will be the full JSON object.
 
         Raises:
+            ModelRefusalError: If the model refused to answer.
             OutputParserException: If the generation is not a chat generation.
 
         Returns:
@@ -248,6 +252,7 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
             msg = "This output parser can only be used with a chat generation."
             raise OutputParserException(msg)
         message = generation.message
+        raise_if_refused(message)
         if isinstance(message, AIMessage) and message.tool_calls:
             parsed_tool_calls = [dict(tc) for tc in message.tool_calls]
             for tool_call in parsed_tool_calls:
@@ -326,6 +331,7 @@ class PydanticToolsParser(JsonOutputToolsParser):
             The parsed Pydantic objects.
 
         Raises:
+            ModelRefusalError: If the model refused to answer.
             ValueError: If the tool call arguments are not a dict.
             ValidationError: If the tool call arguments do not conform to the Pydantic
                 model.

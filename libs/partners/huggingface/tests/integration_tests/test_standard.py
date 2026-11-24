@@ -18,9 +18,10 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         llm = HuggingFaceEndpoint(  # type: ignore[call-arg]
-            repo_id="meta-llama/Llama-3.3-70B-Instruct",
+            repo_id="openai/gpt-oss-120b",
             task="conversational",
-            provider="together",
+            provider="novita",
+            max_new_tokens=4096,
             temperature=0,
         )
         return {"llm": llm}
@@ -66,6 +67,16 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
         super().test_tool_message_histories_list_content(
             model, my_adder_tool=my_adder_tool
         )
+
+    @pytest.mark.xfail(
+        reason=(
+            "Novita's gpt-oss-120b intermittently returns malformed arguments for "
+            "no-argument tools (e.g. '{\"\": {}}' instead of '{}')"
+        ),
+        strict=False,
+    )
+    def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
+        super().test_tool_calling_with_no_arguments(model)
 
     @property
     def has_tool_choice(self) -> bool:

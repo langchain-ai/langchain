@@ -1,5 +1,6 @@
 """Tests for LangSmith gateway configuration resolution."""
 
+import asyncio
 from typing import Any
 
 import pytest
@@ -8,9 +9,12 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr
 from langchain_core.utils._gateway import (
     GatewayConfig,
     _apply_gateway_config,
+    _gateway_headers,
     _parse_gateway_metadata,
     _resolve_gateway_base_url,
     _resolve_gateway_config,
+    _with_gateway_headers,
+    langsmith_gateway,
 )
 
 # A representative provider path; the helper is provider-agnostic.
@@ -180,16 +184,15 @@ def test_provider_base_url_does_not_use_langsmith_key(
     assert config.api_key is None
 
 
-def test_provider_base_url_falls_back_to_gateway_key(
+def test_provider_base_url_does_not_use_gateway_key(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # Base URL overridden, no provider key -> gateway key used as fallback.
     monkeypatch.setenv("LANGSMITH_GATEWAY", "true")
     monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
     monkeypatch.setenv(_BASE_ENV, "https://api.openai.com/v1")
     config = _config()
     assert config.base_url == "https://api.openai.com/v1"
-    assert config.api_key.get_secret_value() == "gateway-key"
+    assert config.api_key is None
 
 
 def test_custom_gateway_url(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -217,15 +220,39 @@ def test_explicit_kwargs_override_everything(
     assert config.api_key is explicit_key
 
 
-def test_explicit_base_url_pairs_with_gateway_key(
-    monkeypatch: pytest.MonkeyPatch,
+@pytest.mark.parametrize(
+    ("base_url", "expected_key"),
+    [
+        ("https://eu.gateway.example.com/openai/v1", "gateway-key"),
+        ("https://EU.gateway.example.com:443/openai/v1", "gateway-key"),
+        ("https://apac.gateway.example.com", None),
+        ("https://eu.gateway.example.com.attacker.example", None),
+        ("http://eu.gateway.example.com", None),
+        ("https://eu.gateway.example.com:444", None),
+        ("https://eu.gateway.example.com:0", None),
+        ("https://eu.gateway.example.com:invalid", None),
+    ],
+)
+def test_explicit_base_url_only_uses_gateway_key_on_same_origin(
+    monkeypatch: pytest.MonkeyPatch, base_url: str, expected_key: str | None
 ) -> None:
-    # Explicit base URL, no explicit key: gateway key still resolved from env.
     monkeypatch.setenv("LANGSMITH_GATEWAY", "https://eu.gateway.example.com")
     monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
-    config = _config(base_url="https://apac.gateway.example.com")
-    assert config.base_url == "https://apac.gateway.example.com"
-    assert config.api_key.get_secret_value() == "gateway-key"
+    config = _config(base_url=base_url)
+    assert config.base_url == base_url
+    assert (
+        config.api_key.get_secret_value() if config.api_key else None
+    ) == expected_key
+
+
+def test_explicit_gateway_url_still_prefers_provider_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "https://eu.gateway.example.com")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "gateway-key")
+    monkeypatch.setenv(_KEY_ENV, "provider-key")
+    config = _config(base_url="https://eu.gateway.example.com/openai/v1")
+    assert config.api_key.get_secret_value() == "provider-key"
 
 
 def test_no_gateway_uses_provider_defaults(
@@ -331,3 +358,139 @@ def test_parse_gateway_metadata_absent() -> None:
 def test_parse_gateway_metadata_non_json() -> None:
     headers = {"X-LangSmith-Gateway-Metadata": "not-json"}
     assert _parse_gateway_metadata(headers) is None
+
+
+# --- langsmith_gateway ------------------------------------------------------
+
+
+def test_context_routes_to_gateway() -> None:
+    with langsmith_gateway(api_key="ctx-key"):
+        config = _config()
+        assert _resolve_gateway_base_url(_PATH) == _DEFAULT_GATEWAY
+    assert config.base_url == _DEFAULT_GATEWAY
+    assert isinstance(config.api_key, SecretStr)
+    assert config.api_key.get_secret_value() == "ctx-key"
+    assert config.base_url_from_gateway is True
+
+
+def test_context_custom_base_url_strips_trailing_slash() -> None:
+    with langsmith_gateway(api_key="ctx-key", base_url="https://gw.example.com/"):
+        assert _config().base_url == "https://gw.example.com/openai/v1"
+
+
+def test_context_overrides_explicit_and_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(_BASE_ENV, "https://env.example.com")
+    monkeypatch.setenv(_KEY_ENV, "env-key")
+    monkeypatch.setenv("LANGSMITH_GATEWAY", "https://other-gateway.example.com")
+    monkeypatch.setenv("LANGSMITH_GATEWAY_API_KEY", "env-gateway-key")
+    with langsmith_gateway(api_key=SecretStr("ctx-key")):
+        config = _config(base_url="https://attacker.example.com", api_key="user-key")
+    assert config.base_url == _DEFAULT_GATEWAY
+    assert config.api_key.get_secret_value() == "ctx-key"
+
+
+def test_context_resets_on_exit_and_error() -> None:
+    with langsmith_gateway(api_key="ctx-key"):
+        pass
+    assert _config().base_url is None
+    with pytest.raises(RuntimeError), langsmith_gateway(api_key="ctx-key"):
+        raise RuntimeError
+    assert _config().base_url is None
+
+
+def test_context_nesting_restores_outer() -> None:
+    with langsmith_gateway(api_key="outer", base_url="https://outer.example.com"):
+        with langsmith_gateway(api_key="inner", base_url="https://inner.example.com"):
+            assert _config().api_key.get_secret_value() == "inner"
+        assert _config().base_url == "https://outer.example.com/openai/v1"
+
+
+def test_context_headers() -> None:
+    assert _gateway_headers() == {}
+    with langsmith_gateway(api_key="k", headers={"X-Service-Key": "svc"}):
+        assert _gateway_headers() == {"X-Service-Key": "svc"}
+    assert _gateway_headers() == {}
+
+
+def test_gateway_headers_replace_model_headers() -> None:
+    merged = _with_gateway_headers(
+        {"x-service-key": "forged", "X-Custom": "kept"}, {"X-Service-Key": "svc"}
+    )
+    assert merged == {"X-Custom": "kept", "X-Service-Key": "svc"}
+    model_headers = {"X-Custom": "kept"}
+    assert _with_gateway_headers(model_headers, {}) is model_headers
+
+
+@pytest.mark.parametrize("api_key", ["", SecretStr("")])
+def test_context_rejects_empty_key(api_key: str | SecretStr) -> None:
+    with pytest.raises(ValueError, match="API key"), langsmith_gateway(api_key=api_key):
+        pass
+
+
+@pytest.mark.parametrize(
+    "base_url", ["gateway.example.com", "ftp://gw.example.com", "https://", ""]
+)
+def test_context_rejects_invalid_base_url(base_url: str) -> None:
+    with (
+        pytest.raises(ValueError, match="base URL"),
+        langsmith_gateway(api_key="k", base_url=base_url),
+    ):
+        pass
+
+
+async def test_context_isolated_between_tasks() -> None:
+    async def resolve() -> str | None:
+        return _config().base_url
+
+    with langsmith_gateway(api_key="ctx-key"):
+        inside = asyncio.create_task(resolve())
+        assert await inside == _DEFAULT_GATEWAY
+    outside = asyncio.create_task(resolve())
+    assert await outside is None
+
+
+def test_context_applies_to_model_fields() -> None:
+    class _Model(BaseModel):
+        model_config = ConfigDict(populate_by_name=True)
+        api_base: str | None = Field(default=None, alias="base_url")
+        api_key: SecretStr | None = None
+
+    values: dict[str, Any] = {
+        "base_url": "https://attacker.example.com",
+        "api_key": "k",
+    }
+    with langsmith_gateway(api_key="ctx-key"):
+        _apply_gateway_config(
+            values,
+            _Model,
+            base_url_field="api_base",
+            api_key_field="api_key",
+            provider_path=_PATH,
+        )
+    model = _Model(**values)
+    assert model.api_base == _DEFAULT_GATEWAY
+    assert model.api_key is not None
+    assert model.api_key.get_secret_value() == "ctx-key"
+
+
+def test_context_keeps_explicit_url_on_gateway_host() -> None:
+    """A base URL already on the gateway host keeps its path (e.g. `/v1`)."""
+    gateway_v1 = "https://gateway.smith.langchain.com/v1"
+    with langsmith_gateway(api_key="ctx-key"):
+        config = _config(base_url=gateway_v1, api_key="user-key")
+    assert config.base_url == gateway_v1
+    assert config.api_key.get_secret_value() == "ctx-key"
+
+
+@pytest.mark.parametrize(
+    "base_url",
+    [
+        "https://gateway.smith.langchain.com.evil.com/v1",
+        "https://gateway.smith.langchain.com@evil.com/v1",
+        "https://gateway.smith.langchain.com",
+    ],
+)
+def test_context_replaces_lookalike_gateway_url(base_url: str) -> None:
+    with langsmith_gateway(api_key="ctx-key"):
+        config = _config(base_url=base_url)
+    assert config.base_url == _DEFAULT_GATEWAY

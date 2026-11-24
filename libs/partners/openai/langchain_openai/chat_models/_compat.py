@@ -176,6 +176,12 @@ def _convert_from_v1_to_chat_completions(message: AIMessage) -> AIMessage:
                 if block_type == "text":
                     # Strip annotations
                     new_content.append({"type": "text", "text": block["text"]})
+                elif block_type == "refusal":
+                    # Refusals without text, e.g. from Anthropic, have nothing to send.
+                    if block.get("refusal"):
+                        new_content.append(
+                            {"type": "refusal", "refusal": block["refusal"]}
+                        )
                 elif block_type in ("reasoning", "tool_call", "invalid_tool_call"):
                     pass
                 else:
@@ -441,6 +447,18 @@ def _convert_from_v1_to_responses(
             new_block["annotations"] = [
                 _convert_annotation_from_v1(a) for a in block["annotations"]
             ]
+            new_content.append(new_block)
+        elif block["type"] == "refusal":
+            # Refusals without text, e.g. from Anthropic, have nothing to send.
+            if not block.get("refusal"):
+                continue
+            new_block = {"type": "refusal", "refusal": block["refusal"]}
+            if "id" in block:
+                new_block["id"] = block["id"]
+            if "phase" in block:
+                new_block["phase"] = block.get("phase")
+            elif "phase" in block.get("extras", {}):
+                new_block["phase"] = block["extras"]["phase"]
             new_content.append(new_block)
         elif block["type"] == "tool_call":
             new_block = {"type": "function_call", "call_id": block["id"]}

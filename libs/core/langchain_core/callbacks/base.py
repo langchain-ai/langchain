@@ -7,11 +7,11 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from typing import Self
     from uuid import UUID
 
     from langchain_protocol.protocol import MessagesData
     from tenacity import RetryCallState
-    from typing_extensions import Self
 
     from langchain_core.agents import AgentAction, AgentFinish
     from langchain_core.documents import Document

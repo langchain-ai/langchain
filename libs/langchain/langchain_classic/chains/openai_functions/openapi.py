@@ -320,7 +320,7 @@ def get_openapi_chain(
                 break
             except ImportError:
                 raise
-            except Exception:  # noqa: BLE001
+            except Exception:
                 _logger.debug(
                     "Parse spec failed for OpenAPISpec.%s",
                     conversion.__name__,

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import (
     Annotated,
     Any,
+    Self,
     TypedDict,
     TypeVar,
     cast,
@@ -20,7 +21,7 @@ from pydantic import (
     SkipValidation,
     model_validator,
 )
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_core._api import deprecated
 from langchain_core.messages import (

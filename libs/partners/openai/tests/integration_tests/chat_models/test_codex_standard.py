@@ -27,7 +27,7 @@ from langchain_openai.chat_models.codex import _ChatOpenAICodex
 
 pytestmark = pytest.mark.vcr
 
-MODEL_NAME = os.getenv("CODEX_MODEL", "gpt-5.5")
+MODEL_NAME = os.getenv("CODEX_MODEL", "gpt-6.2-sol")
 TERSE_INSTRUCTIONS = "You are terse. Answer in five words or fewer."
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Self
 
 import pytest
 from langchain.agents import create_agent
@@ -13,7 +13,7 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, ToolCall, ToolMessage
 from langchain_core.tools import BaseTool, tool
 from pydantic import SecretStr
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_openai._compat import httpx
 from langchain_openai.chat_models.base import OpenAIAPIError, OpenAIInvalidRequestError

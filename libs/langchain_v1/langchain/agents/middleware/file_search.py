@@ -13,7 +13,7 @@ import os
 import re
 import subprocess
 from contextlib import suppress
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
 
@@ -196,7 +196,7 @@ class FilesystemFileSearchMiddleware(AgentMiddleware[AgentState[ResponseT], Cont
                     # Convert to virtual path
                     virtual_path = "/" + str(match.relative_to(self.root_path))
                     stat = match.stat()
-                    modified_at = datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat()
+                    modified_at = datetime.fromtimestamp(stat.st_mtime, tz=UTC).isoformat()
                     matching.append((virtual_path, modified_at))
 
             if not matching:

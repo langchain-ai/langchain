@@ -719,3 +719,53 @@ def test_graph_mermaid_special_chars(snapshot: SnapshotAssertion) -> None:
         ],
     )
     assert graph.draw_mermaid() == snapshot(name="mermaid")
+
+
+def test_graph_mermaid_metadata_labels() -> None:
+    nodes = {
+        "__start__": Node(
+            id="__start__", name="__start__", data=BaseModel, metadata=None
+        ),
+        "tools": Node(
+            id="tools",
+            name="tools",
+            data=BaseModel,
+            metadata={
+                "__tools": ["search", "lookup"],
+                "tags": {"b", "c", "a"},
+                "__subagents": {"a": "b"},
+            },
+        ),
+        "agent": Node(
+            id="agent",
+            name="agent",
+            data=BaseModel,
+            metadata={"note": 'say "hi" [x] (y) {z} <b> #1 str | None'},
+        ),
+        "sub": Node(
+            id="sub",
+            name="sub",
+            data=BaseModel,
+            metadata={"__subagents": {"a": {"description": "b"}}, "nested": [[1]]},
+        ),
+        "__end__": Node(id="__end__", name="__end__", data=BaseModel, metadata=None),
+    }
+    edges = [
+        Edge(source="__start__", target="agent"),
+        Edge(source="agent", target="tools"),
+        Edge(source="tools", target="sub"),
+        Edge(source="sub", target="__end__"),
+    ]
+    mermaid = Graph(nodes, edges).draw_mermaid()
+
+    assert (
+        "\ttools(tools<hr/><small><em>__tools = search, lookup\n"
+        "tags = a, b, c</em></small>)\n" in mermaid
+    )
+    assert (
+        "\tagent(agent<hr/><small><em>note = say #quot;hi#quot; #91;x#93; "
+        "#40;y#41; #123;z#125; #60;b#62; #35;1 str #124; None</em></small>)\n"
+        in mermaid
+    )
+    assert "\tsub(sub)\n" in mermaid
+    assert "__subagents" not in mermaid

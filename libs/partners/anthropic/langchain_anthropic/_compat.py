@@ -122,6 +122,10 @@ def _convert_from_v1_to_anthropic(
                 new_block = {"text": block.get("text", ""), "type": "text"}
             new_content.append(new_block)
 
+        elif block["type"] == "refusal":
+            # The Messages API has no refusal input block.
+            continue
+
         elif block["type"] == "tool_call":
             tool_use_block = {
                 "type": "tool_use",
@@ -204,6 +208,8 @@ def _convert_from_v1_to_anthropic(
                     new_block["server_name"] = block["extras"]["server_name"]
             else:
                 new_block["name"] = block.get("name", "")
+            if "caller" in block.get("extras", {}):
+                new_block["caller"] = block["extras"]["caller"]
             if block.get("name") == "remote_mcp":
                 new_block["type"] = "mcp_tool_use"
             else:
@@ -220,6 +226,8 @@ def _convert_from_v1_to_anthropic(
             if "tool_call_id" in block:
                 new_block["tool_use_id"] = block["tool_call_id"]
             new_block["type"] = server_tool_result_type
+            if "caller" in block.get("extras", {}):
+                new_block["caller"] = block["extras"]["caller"]
             new_content.append(new_block)
 
         elif (

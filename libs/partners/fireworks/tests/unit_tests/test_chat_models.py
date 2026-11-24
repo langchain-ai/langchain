@@ -14,6 +14,7 @@ import pytest
 from fireworks import (
     APIConnectionError,
     APITimeoutError,
+    AsyncFireworks,
     AuthenticationError,
     BadRequestError,
     Fireworks,
@@ -38,11 +39,13 @@ from langchain_core.exceptions import (
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
+    BaseMessage,
     ChatMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
 )
+from langchain_core.outputs import ChatGeneration
 
 from langchain_fireworks import ChatFireworks
 from langchain_fireworks.chat_models import (
@@ -115,6 +118,83 @@ def test_model_profile_rejects_native_pdf_input(model_name: str) -> None:
     assert profile is not None
     assert profile["pdf_inputs"] is False
     assert profile["pdf_tool_message"] is False
+
+
+@pytest.mark.parametrize("model_name", [*_PROFILES, MODEL_NAME])
+def test_max_tokens_from_model_profile(model_name: str) -> None:
+    model = _make_model(model=model_name)
+    expected = _PROFILES.get(model_name, {}).get("max_output_tokens")
+
+    assert model.max_tokens == expected
+    if expected is None:
+        assert "max_tokens" not in model._default_params
+    else:
+        assert model._default_params["max_tokens"] == expected
+
+
+@pytest.mark.parametrize("max_tokens", [None, 0, 100])
+@pytest.mark.parametrize("model_field", ["model", "model_name"])
+def test_max_tokens_with_custom_profile(
+    max_tokens: int | None, model_field: str
+) -> None:
+    model = _make_model(
+        **{model_field: MODEL_NAME},
+        profile={"max_output_tokens": 8192},
+        max_tokens=max_tokens,
+    )
+    expected = 8192 if max_tokens is None else max_tokens
+
+    assert model.max_tokens == expected
+    assert model._default_params["max_tokens"] == expected
+
+
+def test_max_tokens_with_empty_profile() -> None:
+    model_name = next(name for name, p in _PROFILES.items() if "max_output_tokens" in p)
+    model = _make_model(model=model_name, profile={})
+
+    assert model.max_tokens is None
+    assert "max_tokens" not in model._default_params
+
+
+def test_max_tokens_runtime_override() -> None:
+    model = _make_model(profile={"max_output_tokens": 8192})
+    model.client = MagicMock()
+    model.client.create.return_value = {
+        "choices": [{"message": {"role": "assistant", "content": "Hello"}}],
+    }
+
+    model.invoke("Hello", max_tokens=100)
+
+    assert model.client.create.call_args.kwargs["max_tokens"] == 100
+    assert model.max_tokens == 8192
+
+
+@pytest.mark.parametrize("at_invocation", [False, True])
+@pytest.mark.parametrize("asynchronous", [False, True])
+async def test_max_completion_tokens_overrides_profile_default(
+    *, at_invocation: bool, asynchronous: bool
+) -> None:
+    token_kwargs: dict[str, Any] = {"max_completion_tokens": 100}
+    response = {
+        "choices": [{"message": {"role": "assistant", "content": "Hello"}}],
+    }
+    client = AsyncMock() if asynchronous else MagicMock()
+    client.create.return_value = response
+    model = _make_model(
+        profile={"max_output_tokens": 8192},
+        model_kwargs={} if at_invocation else token_kwargs,
+        client=client,
+        async_client=client,
+    )
+    invocation_kwargs = token_kwargs if at_invocation else {}
+
+    if asynchronous:
+        await model.ainvoke("Hello", **invocation_kwargs)
+    else:
+        model.invoke("Hello", **invocation_kwargs)
+
+    assert client.create.call_args.kwargs["max_completion_tokens"] == 100
+    assert "max_tokens" not in client.create.call_args.kwargs
 
 
 def test_convert_dict_to_message_with_reasoning_content() -> None:
@@ -1360,6 +1440,19 @@ class TestCombineLLMOutputs:
         )
         assert result["token_usage"] == {"prompt_tokens_details": {"cached_tokens": 8}}
 
+    def test_uses_first_nonempty_response_model(self) -> None:
+        model = _make_model()
+        result = model._combine_llm_outputs(
+            [
+                None,
+                {"model_name": ""},
+                {"model_name": "returned-model"},
+                {"model_name": "another-model"},
+            ]
+        )
+        assert result["model_name"] == "returned-model"
+        assert result["token_usage"] == {}
+
     def test_skips_none_streaming_outputs(self) -> None:
         """`None` entries (produced during streaming) are skipped, not dereferenced."""
         model = _make_model()
@@ -2337,3 +2430,223 @@ def test_langsmith_gateway_api_key_overrides_provider_key(
     monkeypatch.setenv("FIREWORKS_API_KEY", "provider-key")
     llm = ChatFireworks(model=MODEL_NAME)  # type: ignore[call-arg]
     assert llm.fireworks_api_key.get_secret_value() == "gateway-key"
+
+
+@pytest.mark.parametrize(
+    ("method", "streaming", "candidate_count"),
+    [
+        ("invoke", False, 1),
+        ("ainvoke", False, 1),
+        ("invoke", True, 1),
+        ("ainvoke", True, 1),
+        ("stream", True, 1),
+        ("astream", True, 1),
+        ("generate", False, 1),
+        ("agenerate", False, 1),
+        ("generate", False, 2),
+        ("agenerate", False, 2),
+    ],
+)
+@pytest.mark.parametrize("response_model", ["returned-model", None, ""])
+@pytest.mark.parametrize("include_usage", [False, True])
+async def test_response_model_metadata_through_sdk_http_transport(
+    method: str,
+    response_model: str | None,
+    candidate_count: int,
+    *,
+    streaming: bool,
+    include_usage: bool,
+) -> None:
+    """Report the served model, not the requested deployment, even without usage."""
+    requests: list[dict[str, Any]] = []
+    usage = {"prompt_tokens": 5, "completion_tokens": 2, "total_tokens": 7}
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        requests.append(body)
+        common = {"id": "completion_test", "created": 0}
+        # Omit the field entirely for the fallback case, as older APIs may do.
+        model_fields = {"model": response_model} if response_model is not None else {}
+        if body.get("stream"):
+            chunks: list[dict[str, Any]] = [
+                {
+                    **model_fields,
+                    "choices": [
+                        {"index": 0, "delta": {"role": "assistant", "content": "Hel"}}
+                    ],
+                },
+                {
+                    **model_fields,
+                    "choices": [{"index": 0, "delta": {"content": "lo"}}],
+                },
+                {"choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]},
+            ]
+            if include_usage:
+                chunks.append({"choices": [], "usage": usage})
+            events = [
+                "data: "
+                + json.dumps({**common, "object": "chat.completion.chunk", **chunk})
+                + "\n\n"
+                for chunk in chunks
+            ]
+            return httpx.Response(
+                200,
+                headers={"content-type": "text/event-stream"},
+                content="".join([*events, "data: [DONE]\n\n"]),
+            )
+        return httpx.Response(
+            200,
+            json={
+                **common,
+                **model_fields,
+                "object": "chat.completion",
+                "choices": [
+                    {
+                        "index": index,
+                        "finish_reason": "stop",
+                        "message": {"role": "assistant", "content": "Hello"},
+                    }
+                    for index in range(candidate_count)
+                ],
+                **({"usage": usage} if include_usage else {}),
+            },
+        )
+
+    transport = httpx.MockTransport(respond)
+    with Fireworks(
+        api_key="fake-key", http_client=httpx.Client(transport=transport), max_retries=0
+    ) as sdk:
+        async with AsyncFireworks(
+            api_key="fake-key",
+            http_client=httpx.AsyncClient(transport=transport),
+            max_retries=0,
+        ) as async_sdk:
+            model = _make_model(
+                client=sdk.chat.completions,
+                async_client=async_sdk.chat.completions,
+                streaming=streaming,
+            )
+            expected_model = response_model or MODEL_NAME
+            response: BaseMessage
+            if method == "stream":
+                chunks = list(model.stream("Hello"))
+                response = sum(chunks[1:], chunks[0])
+            elif method == "astream":
+                chunks = [chunk async for chunk in model.astream("Hello")]
+                response = sum(chunks[1:], chunks[0])
+            elif method in ("generate", "agenerate"):
+                messages: list[list[BaseMessage]] = [
+                    [HumanMessage(content="Hello")]
+                ] * 2
+                result = (
+                    await model.agenerate(messages)
+                    if method == "agenerate"
+                    else model.generate(messages)
+                )
+                assert result.llm_output is not None
+                assert result.llm_output["model_name"] == expected_model
+                assert result.llm_output["token_usage"] == (
+                    {key: value * 2 for key, value in usage.items()}
+                    if include_usage
+                    else {}
+                )
+                for generations in result.generations:
+                    assert len(generations) == candidate_count
+                    for candidate in generations:
+                        assert isinstance(candidate, ChatGeneration)
+                        assert (
+                            candidate.message.response_metadata["model_name"]
+                            == expected_model
+                        )
+                generation = result.generations[0][0]
+                assert isinstance(generation, ChatGeneration)
+                response = generation.message
+            elif method == "ainvoke":
+                response = await model.ainvoke("Hello")
+            else:
+                response = model.invoke("Hello")
+            assert response.content == "Hello"
+            assert response.response_metadata["model_name"] == expected_model
+            assert isinstance(response, (AIMessage, AIMessageChunk))
+            assert response.usage_metadata == (
+                {"input_tokens": 5, "output_tokens": 2, "total_tokens": 7}
+                if include_usage
+                else None
+            )
+    assert all(request["model"] == MODEL_NAME for request in requests)
+
+
+_DUPLICATE_USAGE = {"prompt_tokens": 5, "completion_tokens": 2, "total_tokens": 7}
+_DUPLICATE_USAGE_STREAM: list[dict[str, Any]] = [
+    {
+        "model": "m",
+        "choices": [{"index": 0, "delta": {"role": "assistant", "content": "hi"}}],
+    },
+    {
+        "model": "m",
+        "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}],
+        "usage": _DUPLICATE_USAGE,
+    },
+    {"model": "m", "choices": [], "usage": _DUPLICATE_USAGE},
+]
+
+
+def _assert_usage_reported_once(chunks: list[AIMessageChunk]) -> None:
+    assert sum(1 for c in chunks if c.usage_metadata) == 1
+    full = chunks[0]
+    for c in chunks[1:]:
+        full = full + c
+    assert full.usage_metadata == {
+        "input_tokens": 5,
+        "output_tokens": 2,
+        "total_tokens": 7,
+    }
+
+
+def test_stream_reports_usage_once_when_sent_twice() -> None:
+    """Usage on both the finish chunk and a trailing chunk is not double counted."""
+    llm = _make_llm(max_retries=0)
+    llm.client = MagicMock(create=MagicMock(return_value=iter(_DUPLICATE_USAGE_STREAM)))
+
+    chunks = [c for c in llm.stream("hi") if isinstance(c, AIMessageChunk)]
+
+    _assert_usage_reported_once(chunks)
+
+
+async def test_astream_reports_usage_once_when_sent_twice() -> None:
+    """Async variant of `test_stream_reports_usage_once_when_sent_twice`."""
+
+    async def _astream() -> Any:
+        for chunk in _DUPLICATE_USAGE_STREAM:
+            yield chunk
+
+    llm = _make_llm(max_retries=0)
+    llm.async_client = MagicMock(create=AsyncMock(return_value=_astream()))
+
+    chunks = [c async for c in llm.astream("hi") if isinstance(c, AIMessageChunk)]
+
+    _assert_usage_reported_once(chunks)
+
+
+def test_stream_keeps_last_usage_when_reports_differ() -> None:
+    """A partial early report never wins over the final one."""
+    stream = [
+        {
+            "model": "m",
+            "choices": [{"index": 0, "delta": {"role": "assistant", "content": "a"}}],
+            "usage": {"prompt_tokens": 5, "completion_tokens": 1, "total_tokens": 6},
+        },
+        {
+            "model": "m",
+            "choices": [
+                {"index": 0, "delta": {"content": "b"}, "finish_reason": "stop"}
+            ],
+        },
+        {"model": "m", "choices": [], "usage": _DUPLICATE_USAGE},
+    ]
+    llm = _make_llm(max_retries=0)
+    llm.client = MagicMock(create=MagicMock(return_value=iter(stream)))
+
+    chunks = [c for c in llm.stream("hi") if isinstance(c, AIMessageChunk)]
+
+    _assert_usage_reported_once(chunks)

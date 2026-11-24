@@ -1,7 +1,7 @@
 """String distance evaluators based on the RapidFuzz library."""
 
 from collections.abc import Callable
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from langchain_core.callbacks import Callbacks
@@ -38,7 +38,7 @@ def _load_rapidfuzz() -> Any:
     return rapidfuzz.distance
 
 
-class StringDistance(str, Enum):
+class StringDistance(StrEnum):
     """Distance metric to use.
 
     Attributes:

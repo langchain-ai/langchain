@@ -30,10 +30,10 @@ sources:
     resource: repo://.github/workflows/pr_lint.yml
   - id: openwiki-source-4d1645cb6317345817452838
     resource: repo://.pre-commit-config.yaml
-generated: { by: "openwiki/0.5.0", at: "2026-10-20T08:25:57.412Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-16T08:30:18.041Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-10-20T08:25:57.412Z
+    at: 2026-11-16T08:30:18.041Z
 ---
 
 # CI/CD Workflows: GitHub Actions and Release Process
@@ -66,7 +66,12 @@ This detection ensures only affected packages are tested, optimizing CI runtime.
 
 ### Linting Pipeline (`_lint.yml`)
 
-Runs on affected packages with Python 3.11 (configurable):
+Runs on affected packages with Python versions determined by package type:
+
+- **libs/core**: Python 3.11, 3.12, 3.13, 3.14
+- **All other packages**: Python 3.11, 3.14
+
+Linting checks include:
 
 - **Ruff analysis**: Code style, import sorting, and rule enforcement with inline GitHub annotations (via `RUFF_OUTPUT_FORMAT: github`)
 - **MyPy type checking**: Static type verification
@@ -79,8 +84,8 @@ Tools are sourced from dependency groups: `lint` and `typing`. The workflow inst
 Runs matrix tests across Python versions with dependency constraint verification:
 
 **Matrix dimensions**:
-- Python 3.10, 3.11, 3.12, 3.13, 3.14 for `libs/core`
-- Python 3.10 and 3.14 for other packages
+- Python 3.11, 3.12, 3.13, 3.14 for `libs/core`
+- Python 3.11 and 3.14 for all other packages
 - Current locked dependencies (from `uv.lock`)
 - Minimum supported dependency versions
 
@@ -119,6 +124,10 @@ Performs shallow integration test validation:
 - Catches import errors and obvious syntax issues
 - Provides quick feedback loop without running expensive external API calls
 - Installs both test and integration test dependency groups
+
+**Python version matrix**:
+- **libs/core**: Python 3.11, 3.12, 3.13, 3.14
+- **All other packages**: Python 3.11, 3.14
 
 ### Extended Test Suites
 
@@ -220,7 +229,7 @@ Scheduled daily (1 PM UTC) with manual dispatch override capability.
 **Job: `compute-matrix`**:
 
 - **Default scope**: Tests 9 partner libraries (OpenAI, Anthropic, Fireworks, Groq, MistralAI, XAI, Google VertexAI, Google GenAI, AWS)
-- **Python versions**: 3.10 and 3.14 by default; overridable via input
+- **Python versions**: 3.11 and 3.14 by default; overridable via input
 - **Selective testing**: Can select single library, exclude libraries, or override Python versions
 - **Scope security**: Only runs on main repository; manual dispatch allowed from forks
 
@@ -353,7 +362,7 @@ Local developers use pre-commit hooks (`.pre-commit-config.yaml`) to enforce cod
 
 **Version consistency hooks**:
 - Enforce that version strings in `pyproject.toml` match version files (e.g., `langchain_core/version.py`)
-- Applies to core, langchain_v1, anthropic, chroma, and deepseek packages
+- Applies to core, langchain_v1, and 16+ partner packages (anthropic, chroma, deepseek, exa, fireworks, groq, huggingface, mistralai, nomic, ollama, openai, openrouter, perplexity, qdrant, typesafe, xai)
 - Prevents accidental version mismatches during development
 
 ### Workflow

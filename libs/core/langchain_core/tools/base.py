@@ -15,6 +15,7 @@ from typing import (
     Annotated,
     Any,
     Literal,
+    Self,
     TypeVar,
     cast,
     get_args,
@@ -36,7 +37,7 @@ from pydantic.fields import FieldInfo
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
-from typing_extensions import Self, get_type_hints, override
+from typing_extensions import get_type_hints, override
 
 from langchain_core.callbacks import (
     AsyncCallbackManager,
@@ -1084,7 +1085,7 @@ class ChildTool(BaseTool):
         content = None
         artifact = None
         status = "success"
-        error_to_raise: Exception | KeyboardInterrupt | None = None
+        error_to_raise: BaseException | None = None
         try:
             child_config = patch_config(config, callbacks=run_manager.get_child())
             with set_config_context(child_config) as context:
@@ -1124,7 +1125,7 @@ class ChildTool(BaseTool):
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
                 status = "error"
-        except (Exception, KeyboardInterrupt) as e:
+        except BaseException as e:
             error_to_raise = e
 
         if error_to_raise:
@@ -1211,7 +1212,7 @@ class ChildTool(BaseTool):
         content = None
         artifact = None
         status = "success"
-        error_to_raise: Exception | KeyboardInterrupt | None = None
+        error_to_raise: BaseException | None = None
         try:
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
             child_config = patch_config(config, callbacks=run_manager.get_child())
@@ -1254,7 +1255,7 @@ class ChildTool(BaseTool):
             else:
                 content = _handle_tool_error(e, flag=self.handle_tool_error)
                 status = "error"
-        except (Exception, KeyboardInterrupt) as e:
+        except BaseException as e:
             error_to_raise = e
 
         if error_to_raise:

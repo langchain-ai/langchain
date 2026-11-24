@@ -11,7 +11,7 @@ import re
 import unicodedata
 import uuid
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -1272,15 +1272,15 @@ class _DatasetRunContainer:
             try:
                 agg_feedback = results.get_aggregate_feedback()
                 _display_aggregate_results(agg_feedback)
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 logger.debug("Failed to print aggregate feedback: %s", e, exc_info=True)
         try:
             # Closing the project permits name changing and metric optimizations
             self.client.update_project(
                 self.project.id,
-                end_time=datetime.now(timezone.utc),
+                end_time=datetime.now(UTC),
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             logger.debug("Failed to close project: %s", e, exc_info=True)
         return results
 

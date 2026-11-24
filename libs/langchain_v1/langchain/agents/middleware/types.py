@@ -12,6 +12,8 @@ from typing import (
     Any,
     Generic,
     Literal,
+    NotRequired,
+    Required,
     cast,
     overload,
 )
@@ -30,7 +32,7 @@ from langgraph.prebuilt.tool_node import ToolCallRequest, ToolCallWrapper
 from langgraph.runtime import Runtime
 from langgraph.types import Command, TracePolicy, omit_payload
 from langgraph.typing import ContextT
-from typing_extensions import NotRequired, Required, TypedDict, TypeVar, Unpack
+from typing_extensions import TypedDict, TypeVar, Unpack
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
@@ -143,17 +145,17 @@ class ModelRequest(Generic[ContextT]):
         if system_prompt is not None:
             system_message = SystemMessage(content=system_prompt)
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=DeprecationWarning)
-            self.model = model
-            self.messages = messages
-            self.system_message = system_message
-            self.tool_choice = tool_choice
-            self.tools = tools if tools is not None else []
-            self.response_format = response_format
-            self.state = state if state is not None else {"messages": []}
-            self.runtime = runtime  # type: ignore[assignment]
-            self.model_settings = model_settings if model_settings is not None else {}
+        object.__setattr__(self, "model", model)
+        object.__setattr__(self, "messages", messages)
+        object.__setattr__(self, "system_message", system_message)
+        object.__setattr__(self, "tool_choice", tool_choice)
+        object.__setattr__(self, "tools", tools if tools is not None else [])
+        object.__setattr__(self, "response_format", response_format)
+        object.__setattr__(self, "state", state if state is not None else {"messages": []})
+        object.__setattr__(self, "runtime", runtime)
+        object.__setattr__(
+            self, "model_settings", model_settings if model_settings is not None else {}
+        )
 
     @property
     def system_prompt(self) -> str | None:

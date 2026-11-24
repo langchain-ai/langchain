@@ -27,3 +27,12 @@ okf_version: "0.2"
 - [Structured Output and Response Formatting](structured-output.md) - Document the structured output system: response format specification, strategy selection (auto, provider, tool-based), parsing, validation, and middleware integration.
 - [Tools and Tool Binding](tools.md) - LangChain's tool system enables agents and language models to execute structured actions through schema-aware components with automatic validation, error handling, and callback integration.
 - [Unit Testing and Mocking](unit-tests.md) - Guide to writing unit tests: test structure, mocking chat models, fixtures, assertions, and test coverage for agents and components.
+
+# Directories
+
+- [concepts](concepts/)
+- [integrations](integrations/)
+- [operations](operations/)
+- [reference](reference/)
+- [testing](testing/)
+- [workflows](workflows/)

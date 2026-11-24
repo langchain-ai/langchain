@@ -25,11 +25,11 @@ from tests.unit_tests.fake.callbacks import (
 )
 
 DEFAULT_MODEL_NAME = "openai/gpt-oss-20b"
-TOOL_CALLING_MODEL_NAME = "qwen/qwen3.6-27b"
+TOOL_CALLING_MODEL_NAME = "qwen/qwen3.8-27b"
 TOOL_CALLING_MODEL_KWARGS: dict[str, Any] = {"reasoning_effort": "none"}
 
-# GPT-OSS models don't support `reasoning_format`
-REASONING_MODEL_NAME = "qwen/qwen3.6-27b"
+# Qwen only reasons when `reasoning_effort` is low, medium, or high
+REASONING_MODEL_NAME = "qwen/qwen3.8-27b"
 
 
 #
@@ -231,6 +231,7 @@ def test_reasoning_output_invoke() -> None:
     chat = ChatGroq(
         model=REASONING_MODEL_NAME,
         reasoning_format="parsed",
+        reasoning_effort="low",
     )
     message = [
         SystemMessage(
@@ -250,6 +251,7 @@ def test_reasoning_output_stream() -> None:
     chat = ChatGroq(
         model=REASONING_MODEL_NAME,
         reasoning_format="parsed",
+        reasoning_effort="low",
     )
     message = [
         SystemMessage(
@@ -382,7 +384,7 @@ def test_streaming_generation_info() -> None:
     callback = _FakeCallback()
     chat = ChatGroq(
         # Non-reasoning model so the first tokens are plain content
-        model="qwen/qwen3.6-27b",
+        model="qwen/qwen3.8-27b",
         reasoning_effort="none",
         max_tokens=2,
         temperature=0,
