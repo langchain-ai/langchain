@@ -225,3 +225,27 @@ def test_invoke_leaves_response_metadata_alone() -> None:
     assert msg.response_metadata["finish_reason"] == "stop"
     assert "normalized_finish_reason" not in msg.response_metadata
     assert "finish_state" not in msg.response_metadata
+
+
+def test_stream_events_v3_synthesizes_refusal_block_from_stop_details() -> None:
+    model = _StreamModel(
+        first={},
+        last={
+            "stop_reason": "refusal",
+            "finish_reason": "refusal",
+            "stop_details": {
+                "category": "safety",
+                "explanation": "Cannot continue",
+            },
+        },
+    )
+    stream = model.stream_events("hi", version="v3")
+    msg = stream.output
+    list(stream)
+    assert [b["type"] for b in msg.content_blocks] == ["refusal"]
+    refusal = msg.content_blocks[-1]
+    assert refusal == {
+        "type": "refusal",
+        "refusal": "Cannot continue",
+        "extras": {"category": "safety"},
+    }
