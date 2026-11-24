@@ -312,3 +312,9 @@ async def test_markdown_list_async() -> None:
         assert [
             a async for a in parser.atransform(aiter_from_iter([text]))
         ] == expectedlist
+
+
+def test_markdown_list_skips_empty_bullet_items() -> None:
+    parser = MarkdownListOutputParser()
+    assert parser.parse("-\n- apple\n- banana") == ["apple", "banana"]
+    assert parser.parse("*\n* apple\n* banana") == ["apple", "banana"]
