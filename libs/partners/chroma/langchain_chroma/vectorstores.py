@@ -1119,6 +1119,7 @@ class Chroma(VectorStore):
             lambda_mult=lambda_mult,
             filter=filter,
             where_document=where_document,
+            **kwargs,
         )
 
     def delete_collection(self) -> None:
