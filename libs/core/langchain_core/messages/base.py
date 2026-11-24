@@ -12,6 +12,7 @@ from langchain_core.messages import content as types
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
+from langchain_core.utils.utils import ensure_id
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -131,11 +132,14 @@ class BaseMessage(Serializable):
 
     """
 
-    id: str | None = Field(default=None, coerce_numbers_to_str=True)
-    """An optional unique identifier for the message.
+    id: str | None = Field(
+        default_factory=lambda: ensure_id(None), coerce_numbers_to_str=True
+    )
+    """A unique identifier for the message.
 
-    This should ideally be provided by the provider/model which created the message.
-
+    Defaults to an auto-generated `lc_<uuid4>` id. Chat models replace it with the
+    provider's id or `lc_run--<run id>`. Messages loaded or converted from data
+    without an id keep `id=None`.
     """
 
     model_config = ConfigDict(

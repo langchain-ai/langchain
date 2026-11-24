@@ -6,7 +6,11 @@ from langchain_core.chat_history import (
     BaseChatMessageHistory,
     InMemoryChatMessageHistory,
 )
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages import (
+    BaseMessage,
+    HumanMessage,
+    messages_equal_ignoring_ids,
+)
 
 
 @pytest.mark.parametrize(
@@ -28,7 +32,9 @@ async def test_in_memory_history_initialization() -> None:
     assert history.messages == messages
     await history.aclear()
     assert history.messages == []
-    assert other_history.messages == [HumanMessage(content="World")]
+    assert messages_equal_ignoring_ids(
+        other_history.messages, [HumanMessage(content="World")]
+    )
 
 
 def test_add_message_implementation_only() -> None:
@@ -50,10 +56,10 @@ def test_add_message_implementation_only() -> None:
     chat_history = SampleChatHistory(store=store)
     chat_history.add_message(HumanMessage(content="Hello"))
     assert len(store) == 1
-    assert store[0] == HumanMessage(content="Hello")
+    assert messages_equal_ignoring_ids(store[0], HumanMessage(content="Hello"))
     chat_history.add_message(HumanMessage(content="World"))
     assert len(store) == 2
-    assert store[1] == HumanMessage(content="World")
+    assert messages_equal_ignoring_ids(store[1], HumanMessage(content="World"))
 
     chat_history.add_messages(
         [
@@ -62,8 +68,8 @@ def test_add_message_implementation_only() -> None:
         ]
     )
     assert len(store) == 4
-    assert store[2] == HumanMessage(content="Hello")
-    assert store[3] == HumanMessage(content="World")
+    assert messages_equal_ignoring_ids(store[2], HumanMessage(content="Hello"))
+    assert messages_equal_ignoring_ids(store[3], HumanMessage(content="World"))
 
 
 def test_bulk_message_implementation_only() -> None:
@@ -85,10 +91,10 @@ def test_bulk_message_implementation_only() -> None:
     chat_history = BulkAddHistory(store=store)
     chat_history.add_message(HumanMessage(content="Hello"))
     assert len(store) == 1
-    assert store[0] == HumanMessage(content="Hello")
+    assert messages_equal_ignoring_ids(store[0], HumanMessage(content="Hello"))
     chat_history.add_message(HumanMessage(content="World"))
     assert len(store) == 2
-    assert store[1] == HumanMessage(content="World")
+    assert messages_equal_ignoring_ids(store[1], HumanMessage(content="World"))
 
     chat_history.add_messages(
         [
@@ -97,8 +103,8 @@ def test_bulk_message_implementation_only() -> None:
         ]
     )
     assert len(store) == 4
-    assert store[2] == HumanMessage(content="Hello")
-    assert store[3] == HumanMessage(content="World")
+    assert messages_equal_ignoring_ids(store[2], HumanMessage(content="Hello"))
+    assert messages_equal_ignoring_ids(store[3], HumanMessage(content="World"))
 
 
 async def test_async_interface() -> None:
@@ -123,15 +129,21 @@ async def test_async_interface() -> None:
             HumanMessage(content="World"),
         ]
     )
-    assert await chat_history.aget_messages() == [
-        HumanMessage(content="Hello"),
-        HumanMessage(content="World"),
-    ]
+    assert messages_equal_ignoring_ids(
+        await chat_history.aget_messages(),
+        [
+            HumanMessage(content="Hello"),
+            HumanMessage(content="World"),
+        ],
+    )
     await chat_history.aadd_messages([HumanMessage(content="!")])
-    assert await chat_history.aget_messages() == [
-        HumanMessage(content="Hello"),
-        HumanMessage(content="World"),
-        HumanMessage(content="!"),
-    ]
+    assert messages_equal_ignoring_ids(
+        await chat_history.aget_messages(),
+        [
+            HumanMessage(content="Hello"),
+            HumanMessage(content="World"),
+            HumanMessage(content="!"),
+        ],
+    )
     await chat_history.aclear()
     assert await chat_history.aget_messages() == []

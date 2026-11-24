@@ -16,6 +16,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
     get_buffer_string,
+    messages_equal_ignoring_ids,
 )
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.prompts import PromptTemplate
@@ -120,8 +121,12 @@ def test_create_system_message_prompt_template_from_template_partial() -> None:
         input_variables=["history"],
         partial_variables={"instructions": {}},
     )
-    assert graph_analyst_template.format(history="history") == SystemMessage(
-        content="\n    Your instructions are:\n    {}\n    History:\n    history\n    "
+    assert messages_equal_ignoring_ids(
+        graph_analyst_template.format(history="history"),
+        SystemMessage(
+            content="\n    Your instructions are:\n    {}\n"
+            "    History:\n    history\n    "
+        ),
     )
 
 
@@ -138,18 +143,22 @@ def test_create_system_message_prompt_list_template() -> None:
         template=[graph_creator_content1, graph_creator_content2],
         input_variables=["variables"],
     )
-    assert graph_analyst_template.format(variables="foo") == SystemMessage(
-        content=[
-            {
-                "type": "text",
-                "text": "\n    This is the prompt for the first test:\n    foo\n    ",
-            },
-            {
-                "type": "text",
-                "text": "\n    This is the prompt for "
-                "the second test:\n        foo\n        ",
-            },
-        ]
+    assert messages_equal_ignoring_ids(
+        graph_analyst_template.format(variables="foo"),
+        SystemMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "\n    This is the prompt for the first test:"
+                    "\n    foo\n    ",
+                },
+                {
+                    "type": "text",
+                    "text": "\n    This is the prompt for "
+                    "the second test:\n        foo\n        ",
+                },
+            ]
+        ),
     )
 
 
@@ -204,7 +213,7 @@ async def test_chat_prompt_template(chat_prompt_template: ChatPromptTemplate) ->
         foo="foo", bar="bar", context="context"
     )
 
-    assert async_prompt.to_messages() == messages
+    assert messages_equal_ignoring_ids(async_prompt.to_messages(), messages)
 
     string = prompt.to_string()
     expected = (
@@ -258,12 +267,12 @@ async def test_chat_prompt_template_from_messages_using_role_strings() -> None:
     ]
 
     messages = template.format_messages(name="Bob", user_input="What is your name?")
-    assert messages == expected
+    assert messages_equal_ignoring_ids(messages, expected)
 
     messages = await template.aformat_messages(
         name="Bob", user_input="What is your name?"
     )
-    assert messages == expected
+    assert messages_equal_ignoring_ids(messages, expected)
 
 
 def test_chat_prompt_template_from_messages_mustache() -> None:
@@ -280,14 +289,18 @@ def test_chat_prompt_template_from_messages_mustache() -> None:
 
     messages = template.format_messages(name="Bob", user_input="What is your name?")
 
-    assert messages == [
-        SystemMessage(
-            content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
-        ),
-        HumanMessage(content="Hello, how are you doing?", additional_kwargs={}),
-        AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
-        HumanMessage(content="What is your name?", additional_kwargs={}),
-    ]
+    assert messages_equal_ignoring_ids(
+        messages,
+        [
+            SystemMessage(
+                content="You are a helpful AI bot. Your name is Bob.",
+                additional_kwargs={},
+            ),
+            HumanMessage(content="Hello, how are you doing?", additional_kwargs={}),
+            AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
+            HumanMessage(content="What is your name?", additional_kwargs={}),
+        ],
+    )
 
 
 @pytest.mark.requires("jinja2")
@@ -304,14 +317,18 @@ def test_chat_prompt_template_from_messages_jinja2() -> None:
 
     messages = template.format_messages(name="Bob", user_input="What is your name?")
 
-    assert messages == [
-        SystemMessage(
-            content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
-        ),
-        HumanMessage(content="Hello, how are you doing?", additional_kwargs={}),
-        AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
-        HumanMessage(content="What is your name?", additional_kwargs={}),
-    ]
+    assert messages_equal_ignoring_ids(
+        messages,
+        [
+            SystemMessage(
+                content="You are a helpful AI bot. Your name is Bob.",
+                additional_kwargs={},
+            ),
+            HumanMessage(content="Hello, how are you doing?", additional_kwargs={}),
+            AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
+            HumanMessage(content="What is your name?", additional_kwargs={}),
+        ],
+    )
 
 
 def test_chat_prompt_template_from_messages_using_message_classes() -> None:
@@ -335,7 +352,7 @@ def test_chat_prompt_template_from_messages_using_message_classes() -> None:
     ]
 
     messages = template.format_messages(name="Bob", user_input="What is your name?")
-    assert messages == expected
+    assert messages_equal_ignoring_ids(messages, expected)
 
 
 def test_chat_prompt_template_message_class_tuples_with_invoke() -> None:
@@ -621,21 +638,22 @@ def test_chat_prompt_template_image_prompt_from_message(
     template = ChatPromptTemplate.from_messages(
         [("human", [prompt])], template_format=template_format
     )
-    assert template.format_messages(
-        image_type="image/png", image_data="base64data"
-    ) == [
-        HumanMessage(
-            content=[
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": "data:image/png;base64, base64data",
-                        "detail": "low",
-                    },
-                }
-            ]
-        )
-    ]
+    assert messages_equal_ignoring_ids(
+        template.format_messages(image_type="image/png", image_data="base64data"),
+        [
+            HumanMessage(
+                content=[
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": "data:image/png;base64, base64data",
+                            "detail": "low",
+                        },
+                    }
+                ]
+            )
+        ],
+    )
 
 
 def test_chat_prompt_template_with_messages(
@@ -659,7 +677,9 @@ def test_chat_prompt_template_with_messages(
         context="see", foo="this", bar="magic"
     )
     prompt_value_messages = prompt_value.to_messages()
-    assert prompt_value_messages[-1] == HumanMessage(content="foo")
+    assert messages_equal_ignoring_ids(
+        prompt_value_messages[-1], HumanMessage(content="foo")
+    )
 
 
 def test_chat_invalid_input_variables_extra() -> None:
@@ -763,7 +783,12 @@ def test_convert_to_message(
     args: Any, expected: BaseMessage | BaseMessagePromptTemplate
 ) -> None:
     """Test convert to message."""
-    assert _convert_to_message_template(args) == expected
+    actual = _convert_to_message_template(args)
+    if isinstance(expected, BaseMessage):
+        assert isinstance(actual, BaseMessage)
+        assert messages_equal_ignoring_ids(actual, expected)
+    else:
+        assert actual == expected
 
 
 def test_chat_prompt_template_indexing() -> None:
@@ -831,7 +856,7 @@ def test_chat_message_partial() -> None:
         AIMessage(content="Hi there, Lucy, I'm R2D2."),
         HumanMessage(content="hello"),
     ]
-    assert res == expected
+    assert messages_equal_ignoring_ids(res, expected)
     assert template2.format(input="hello") == get_buffer_string(expected)
 
 
@@ -849,7 +874,7 @@ def test_chat_message_partial_composition() -> None:
         SystemMessage(content="Appendix 3"),
     ]
 
-    assert res == expected
+    assert messages_equal_ignoring_ids(res, expected)
 
 
 async def test_chat_tmpl_from_messages_multipart_text() -> None:
@@ -875,10 +900,10 @@ async def test_chat_tmpl_from_messages_multipart_text() -> None:
         ),
     ]
     messages = template.format_messages(name="R2D2")
-    assert messages == expected
+    assert messages_equal_ignoring_ids(messages, expected)
 
     messages = await template.aformat_messages(name="R2D2")
-    assert messages == expected
+    assert messages_equal_ignoring_ids(messages, expected)
 
 
 async def test_chat_tmpl_from_messages_multipart_text_with_template() -> None:
@@ -904,10 +929,10 @@ async def test_chat_tmpl_from_messages_multipart_text_with_template() -> None:
         ),
     ]
     messages = template.format_messages(name="R2D2", object_name="image")
-    assert messages == expected
+    assert messages_equal_ignoring_ids(messages, expected)
 
     messages = await template.aformat_messages(name="R2D2", object_name="image")
-    assert messages == expected
+    assert messages_equal_ignoring_ids(messages, expected)
 
 
 async def test_chat_tmpl_from_messages_multipart_image() -> None:
@@ -984,12 +1009,12 @@ async def test_chat_tmpl_from_messages_multipart_image() -> None:
     messages = template.format_messages(
         name="R2D2", my_image=base64_image, my_other_image=other_base64_image
     )
-    assert messages == expected
+    assert messages_equal_ignoring_ids(messages, expected)
 
     messages = await template.aformat_messages(
         name="R2D2", my_image=base64_image, my_other_image=other_base64_image
     )
-    assert messages == expected
+    assert messages_equal_ignoring_ids(messages, expected)
 
 
 async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
@@ -1048,12 +1073,15 @@ def test_messages_placeholder() -> None:
         prompt.format_messages()
     prompt = MessagesPlaceholder("history", optional=True)
     assert prompt.format_messages() == []
-    assert prompt.format_messages(
-        history=[("system", "You are an AI assistant."), "Hello!"]
-    ) == [
-        SystemMessage(content="You are an AI assistant."),
-        HumanMessage(content="Hello!"),
-    ]
+    assert messages_equal_ignoring_ids(
+        prompt.format_messages(
+            history=[("system", "You are an AI assistant."), "Hello!"]
+        ),
+        [
+            SystemMessage(content="You are an AI assistant."),
+            HumanMessage(content="Hello!"),
+        ],
+    )
 
 
 def test_messages_placeholder_with_max() -> None:
@@ -1065,19 +1093,25 @@ def test_messages_placeholder_with_max() -> None:
     prompt = MessagesPlaceholder("history")
     assert prompt.format_messages(history=history) == history
     prompt = MessagesPlaceholder("history", n_messages=2)
-    assert prompt.format_messages(history=history) == [
-        AIMessage(content="2"),
-        AIMessage(content="3"),
-    ]
+    assert messages_equal_ignoring_ids(
+        prompt.format_messages(history=history),
+        [
+            AIMessage(content="2"),
+            AIMessage(content="3"),
+        ],
+    )
 
 
 def test_chat_prompt_message_placeholder_partial() -> None:
     prompt = ChatPromptTemplate([MessagesPlaceholder("history")])
     prompt = prompt.partial(history=[("system", "foo")])
-    assert prompt.format_messages() == [SystemMessage(content="foo")]
-    assert prompt.format_messages(history=[("system", "bar")]) == [
-        SystemMessage(content="bar")
-    ]
+    assert messages_equal_ignoring_ids(
+        prompt.format_messages(), [SystemMessage(content="foo")]
+    )
+    assert messages_equal_ignoring_ids(
+        prompt.format_messages(history=[("system", "bar")]),
+        [SystemMessage(content="bar")],
+    )
 
     prompt = ChatPromptTemplate(
         [
@@ -1086,31 +1120,34 @@ def test_chat_prompt_message_placeholder_partial() -> None:
     )
     assert prompt.format_messages() == []
     prompt = prompt.partial(history=[("system", "foo")])
-    assert prompt.format_messages() == [SystemMessage(content="foo")]
+    assert messages_equal_ignoring_ids(
+        prompt.format_messages(), [SystemMessage(content="foo")]
+    )
 
 
 def test_chat_prompt_message_placeholder_tuple() -> None:
     prompt = ChatPromptTemplate([("placeholder", "{convo}")])
-    assert prompt.format_messages(convo=[("user", "foo")]) == [
-        HumanMessage(content="foo")
-    ]
+    assert messages_equal_ignoring_ids(
+        prompt.format_messages(convo=[("user", "foo")]), [HumanMessage(content="foo")]
+    )
 
     assert prompt.format_messages() == []
 
     # Is optional = True
     optional_prompt = ChatPromptTemplate([("placeholder", ["{convo}", False])])
-    assert optional_prompt.format_messages(convo=[("user", "foo")]) == [
-        HumanMessage(content="foo")
-    ]
+    assert messages_equal_ignoring_ids(
+        optional_prompt.format_messages(convo=[("user", "foo")]),
+        [HumanMessage(content="foo")],
+    )
     with pytest.raises(KeyError):
         assert optional_prompt.format_messages() == []
 
 
 def test_chat_prompt_message_placeholder_dict() -> None:
     prompt = ChatPromptTemplate([{"role": "placeholder", "content": "{convo}"}])
-    assert prompt.format_messages(convo=[("user", "foo")]) == [
-        HumanMessage(content="foo")
-    ]
+    assert messages_equal_ignoring_ids(
+        prompt.format_messages(convo=[("user", "foo")]), [HumanMessage(content="foo")]
+    )
 
     assert prompt.format_messages() == []
 
@@ -1118,9 +1155,10 @@ def test_chat_prompt_message_placeholder_dict() -> None:
     optional_prompt = ChatPromptTemplate(
         [{"role": "placeholder", "content": ["{convo}", False]}]
     )
-    assert optional_prompt.format_messages(convo=[("user", "foo")]) == [
-        HumanMessage(content="foo")
-    ]
+    assert messages_equal_ignoring_ids(
+        optional_prompt.format_messages(convo=[("user", "foo")]),
+        [HumanMessage(content="foo")],
+    )
     with pytest.raises(KeyError):
         assert optional_prompt.format_messages() == []
 
@@ -1132,10 +1170,13 @@ def test_chat_prompt_message_dict() -> None:
             {"role": "user", "content": "bar"},
         ]
     )
-    assert prompt.format_messages() == [
-        SystemMessage(content="foo"),
-        HumanMessage(content="bar"),
-    ]
+    assert messages_equal_ignoring_ids(
+        prompt.format_messages(),
+        [
+            SystemMessage(content="foo"),
+            HumanMessage(content="bar"),
+        ],
+    )
 
     with pytest.raises(ValueError, match="Invalid template: False"):
         ChatPromptTemplate([{"role": "system", "content": False}])
@@ -1147,10 +1188,14 @@ def test_chat_prompt_message_dict() -> None:
 async def test_messages_prompt_accepts_list() -> None:
     prompt = ChatPromptTemplate([MessagesPlaceholder("history")])
     value = prompt.invoke([("user", "Hi there")])  # type: ignore[arg-type]
-    assert value.to_messages() == [HumanMessage(content="Hi there")]
+    assert messages_equal_ignoring_ids(
+        value.to_messages(), [HumanMessage(content="Hi there")]
+    )
 
     value = await prompt.ainvoke([("user", "Hi there")])  # type: ignore[arg-type]
-    assert value.to_messages() == [HumanMessage(content="Hi there")]
+    assert messages_equal_ignoring_ids(
+        value.to_messages(), [HumanMessage(content="Hi there")]
+    )
 
     # Assert still raises a nice error
     prompt = ChatPromptTemplate(
@@ -1428,37 +1473,41 @@ def test_chat_prompt_template_data_prompt_from_message(
     template = ChatPromptTemplate.from_messages(
         [("human", [prompt])], template_format=template_format
     )
-    assert template.format_messages(source_data="base64data") == [
-        HumanMessage(
-            content=[
-                {
-                    "type": "image",
-                    "source_type": "base64",
-                    "data": "base64data",
-                }
-            ]
-        )
-    ]
+    assert messages_equal_ignoring_ids(
+        template.format_messages(source_data="base64data"),
+        [
+            HumanMessage(
+                content=[
+                    {
+                        "type": "image",
+                        "source_type": "base64",
+                        "data": "base64data",
+                    }
+                ]
+            )
+        ],
+    )
 
     # metadata
     prompt["metadata"] = {"cache_control": {"type": f"{cache_control_placeholder}"}}
     template = ChatPromptTemplate.from_messages(
         [("human", [prompt])], template_format=template_format
     )
-    assert template.format_messages(
-        cache_type="ephemeral", source_data="base64data"
-    ) == [
-        HumanMessage(
-            content=[
-                {
-                    "type": "image",
-                    "source_type": "base64",
-                    "data": "base64data",
-                    "metadata": {"cache_control": {"type": "ephemeral"}},
-                }
-            ]
-        )
-    ]
+    assert messages_equal_ignoring_ids(
+        template.format_messages(cache_type="ephemeral", source_data="base64data"),
+        [
+            HumanMessage(
+                content=[
+                    {
+                        "type": "image",
+                        "source_type": "base64",
+                        "data": "base64data",
+                        "metadata": {"cache_control": {"type": "ephemeral"}},
+                    }
+                ]
+            )
+        ],
+    )
 
 
 def test_dict_message_prompt_template_errors_on_jinja2() -> None:

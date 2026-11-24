@@ -32,7 +32,7 @@ from langchain_core.runnables import (
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import tool
-from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
+from tests.unit_tests.stubs import _any_id, _any_id_ai_message, _any_id_ai_message_chunk
 
 # This module intentionally exercises `astream_events(version="v1")` and the
 # history wrapper to preserve compatibility coverage for those deprecated paths.
@@ -578,7 +578,9 @@ async def test_astream_events_from_model() -> None:
                 "tags": [],
             },
             {
-                "data": {"input": {"messages": [[HumanMessage(content="hello")]]}},
+                "data": {
+                    "input": {"messages": [[_any_id(HumanMessage(content="hello"))]]}
+                },
                 "event": "on_chat_model_start",
                 "metadata": {
                     "a": "b",
@@ -639,7 +641,7 @@ async def test_astream_events_from_model() -> None:
             },
             {
                 "data": {
-                    "input": {"messages": [[HumanMessage(content="hello")]]},
+                    "input": {"messages": [[_any_id(HumanMessage(content="hello"))]]},
                     "output": {
                         "generations": [
                             [
@@ -710,7 +712,9 @@ async def test_astream_events_from_model() -> None:
                 "tags": [],
             },
             {
-                "data": {"input": {"messages": [[HumanMessage(content="hello")]]}},
+                "data": {
+                    "input": {"messages": [[_any_id(HumanMessage(content="hello"))]]}
+                },
                 "event": "on_chat_model_start",
                 "metadata": {
                     "a": "b",
@@ -771,7 +775,7 @@ async def test_astream_events_from_model() -> None:
             },
             {
                 "data": {
-                    "input": {"messages": [[HumanMessage(content="hello")]]},
+                    "input": {"messages": [[_any_id(HumanMessage(content="hello"))]]},
                     "output": {
                         "generations": [
                             [
@@ -888,8 +892,8 @@ async def test_event_stream_with_simple_chain() -> None:
                     "input": {"question": "hello"},
                     "output": ChatPromptValue(
                         messages=[
-                            SystemMessage(content="You are Cat Agent 007"),
-                            HumanMessage(content="hello"),
+                            _any_id(SystemMessage(content="You are Cat Agent 007")),
+                            _any_id(HumanMessage(content="hello")),
                         ]
                     ),
                 },
@@ -905,8 +909,8 @@ async def test_event_stream_with_simple_chain() -> None:
                     "input": {
                         "messages": [
                             [
-                                SystemMessage(content="You are Cat Agent 007"),
-                                HumanMessage(content="hello"),
+                                _any_id(SystemMessage(content="You are Cat Agent 007")),
+                                _any_id(HumanMessage(content="hello")),
                             ]
                         ]
                     }
@@ -1015,8 +1019,8 @@ async def test_event_stream_with_simple_chain() -> None:
                     "input": {
                         "messages": [
                             [
-                                SystemMessage(content="You are Cat Agent 007"),
-                                HumanMessage(content="hello"),
+                                _any_id(SystemMessage(content="You are Cat Agent 007")),
+                                _any_id(HumanMessage(content="hello")),
                             ]
                         ]
                     },
@@ -1778,8 +1782,8 @@ async def test_with_llm() -> None:
                     "input": {"question": "hello"},
                     "output": ChatPromptValue(
                         messages=[
-                            SystemMessage(content="You are Cat Agent 007"),
-                            HumanMessage(content="hello"),
+                            _any_id(SystemMessage(content="You are Cat Agent 007")),
+                            _any_id(HumanMessage(content="hello")),
                         ]
                     ),
                 },
@@ -2021,7 +2025,7 @@ async def test_runnable_with_message_history() -> None:
 
     assert store == {
         "session-123": [
-            HumanMessage(content="hello"),
+            _any_id(HumanMessage(content="hello")),
             AIMessage(content="hello", id="ai3"),
         ]
     }
@@ -2034,9 +2038,9 @@ async def test_runnable_with_message_history() -> None:
     )
     assert store == {
         "session-123": [
-            HumanMessage(content="hello"),
+            _any_id(HumanMessage(content="hello")),
             AIMessage(content="hello", id="ai3"),
-            HumanMessage(content="meow"),
+            _any_id(HumanMessage(content="meow")),
             AIMessage(content="world", id="ai4"),
         ]
     }

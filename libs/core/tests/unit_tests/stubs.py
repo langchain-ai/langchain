@@ -1,7 +1,9 @@
-from typing import Any
+from typing import Any, TypeVar
 
 from langchain_core.documents import Document
-from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage, HumanMessage
+
+_MessageT = TypeVar("_MessageT", bound=BaseMessage)
 
 
 class AnyStr(str):
@@ -45,5 +47,11 @@ def _any_id_ai_message_chunk(**kwargs: Any) -> AIMessageChunk:
 def _any_id_human_message(**kwargs: Any) -> HumanMessage:
     """Create a `HumanMessage` with an any id field."""
     message = HumanMessage(**kwargs)
+    message.id = AnyStr()
+    return message
+
+
+def _any_id(message: _MessageT) -> _MessageT:
+    """Set `message.id` to `AnyStr()` so `==` matches any string id."""
     message.id = AnyStr()
     return message

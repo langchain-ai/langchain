@@ -8,7 +8,12 @@ import pytest
 from typing_extensions import override
 
 from langchain_core.example_selectors import BaseExampleSelector
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage,
+    messages_equal_ignoring_ids,
+)
 from langchain_core.prompts import (
     AIMessagePromptTemplate,
     ChatPromptTemplate,
@@ -365,9 +370,9 @@ async def test_few_shot_chat_message_prompt_template() -> None:
     ]
 
     messages = final_prompt.format_messages(input="100 + 1")
-    assert messages == expected
+    assert messages_equal_ignoring_ids(messages, expected)
     messages = await final_prompt.aformat_messages(input="100 + 1")
-    assert messages == expected
+    assert messages_equal_ignoring_ids(messages, expected)
 
 
 class AsIsSelector(BaseExampleSelector):
@@ -439,7 +444,7 @@ def test_few_shot_chat_message_prompt_template_with_selector() -> None:
         HumanMessage(content="100 + 1", additional_kwargs={}),
     ]
     messages = final_prompt.format_messages(input="100 + 1")
-    assert messages == expected
+    assert messages_equal_ignoring_ids(messages, expected)
 
 
 def test_few_shot_chat_message_prompt_template_infer_input_variables() -> None:
@@ -540,4 +545,4 @@ async def test_few_shot_chat_message_prompt_template_with_selector_async() -> No
         HumanMessage(content="100 + 1", additional_kwargs={}),
     ]
     messages = await final_prompt.aformat_messages(input="100 + 1")
-    assert messages == expected
+    assert messages_equal_ignoring_ids(messages, expected)

@@ -1,9 +1,10 @@
 from langchain_core.agents import AgentActionMessageLog
-from langchain_core.messages import AIMessage, FunctionMessage
+from langchain_core.messages import AIMessage
 
 from langchain_classic.agents.format_scratchpad.openai_functions import (
     format_to_openai_function_messages,
 )
+from tests.unit_tests.stubs import _AnyIdFunctionMessage
 
 
 def test_calls_convert_agent_action_to_messages() -> None:
@@ -55,11 +56,11 @@ def test_calls_convert_agent_action_to_messages() -> None:
     ]
     expected_messages = [
         message1,
-        FunctionMessage(name="tool1", content="observation1"),
+        _AnyIdFunctionMessage(name="tool1", content="observation1"),
         message2,
-        FunctionMessage(name="tool2", content="observation2"),
+        _AnyIdFunctionMessage(name="tool2", content="observation2"),
         message3,
-        FunctionMessage(name="tool3", content="observation3"),
+        _AnyIdFunctionMessage(name="tool3", content="observation3"),
     ]
     output = format_to_openai_function_messages(intermediate_steps)
     assert output == expected_messages

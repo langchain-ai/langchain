@@ -26,3 +26,14 @@ def _AnyIdToolMessage(**kwargs: Any) -> ToolMessage:  # noqa: N802
     message = ToolMessage(**kwargs)
     message.id = AnyStr()
     return message
+
+
+class _IgnoreIdToolMessage(ToolMessage):
+    """`ToolMessage` that equals another `ToolMessage` whatever their ids."""
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, ToolMessage) and self.model_dump(
+            exclude={"id"}
+        ) == other.model_dump(exclude={"id"})
+
+    __hash__ = None  # type: ignore[assignment]

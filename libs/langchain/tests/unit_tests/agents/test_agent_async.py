@@ -5,13 +5,13 @@ from typing import Any
 from langchain_core.agents import AgentAction, AgentStep
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import LLM
-from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.runnables.utils import add
 from langchain_core.tools import Tool
 from typing_extensions import override
 
 from langchain_classic.agents import AgentExecutor, AgentType, initialize_agent
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
+from tests.unit_tests.stubs import _AnyIdAIMessage, _AnyIdHumanMessage
 
 
 class FakeListLLM(LLM):
@@ -188,7 +188,7 @@ async def test_agent_stream() -> None:
                 ),
             ],
             "messages": [
-                AIMessage(
+                _AnyIdAIMessage(
                     content="FooBarBaz\nAction: Search\nAction Input: misalignment",
                 ),
             ],
@@ -204,7 +204,7 @@ async def test_agent_stream() -> None:
                     observation="Results for: misalignment",
                 ),
             ],
-            "messages": [HumanMessage(content="Results for: misalignment")],
+            "messages": [_AnyIdHumanMessage(content="Results for: misalignment")],
         },
         {
             "actions": [
@@ -215,7 +215,7 @@ async def test_agent_stream() -> None:
                 ),
             ],
             "messages": [
-                AIMessage(
+                _AnyIdAIMessage(
                     content="FooBarBaz\nAction: Search\nAction Input: something else",
                 ),
             ],
@@ -231,12 +231,12 @@ async def test_agent_stream() -> None:
                     observation="Results for: something else",
                 ),
             ],
-            "messages": [HumanMessage(content="Results for: something else")],
+            "messages": [_AnyIdHumanMessage(content="Results for: something else")],
         },
         {
             "output": "curses foiled again",
             "messages": [
-                AIMessage(content="Oh well\nFinal Answer: curses foiled again"),
+                _AnyIdAIMessage(content="Oh well\nFinal Answer: curses foiled again"),
             ],
         },
     ]
@@ -272,13 +272,15 @@ async def test_agent_stream() -> None:
             ),
         ],
         "messages": [
-            AIMessage(content="FooBarBaz\nAction: Search\nAction Input: misalignment"),
-            HumanMessage(content="Results for: misalignment"),
-            AIMessage(
+            _AnyIdAIMessage(
+                content="FooBarBaz\nAction: Search\nAction Input: misalignment"
+            ),
+            _AnyIdHumanMessage(content="Results for: misalignment"),
+            _AnyIdAIMessage(
                 content="FooBarBaz\nAction: Search\nAction Input: something else",
             ),
-            HumanMessage(content="Results for: something else"),
-            AIMessage(content="Oh well\nFinal Answer: curses foiled again"),
+            _AnyIdHumanMessage(content="Results for: something else"),
+            _AnyIdAIMessage(content="Oh well\nFinal Answer: curses foiled again"),
         ],
         "output": "curses foiled again",
     }

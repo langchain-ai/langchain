@@ -9,7 +9,7 @@ from typing_extensions import override
 from langchain_core.language_models import FakeListChatModel, LanguageModelInput
 from langchain_core.load.dump import dumps
 from langchain_core.load.load import loads
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, messages_equal_ignoring_ids
 from langchain_core.prompts.structured import StructuredPrompt
 from langchain_core.runnables.base import Runnable, RunnableLambda
 from langchain_core.utils.mustache import ChevronError
@@ -133,9 +133,10 @@ def test_structured_prompt_template_format() -> None:
     )
     assert prompt.messages[0].prompt.template_format == "mustache"  # type: ignore[union-attr, union-attr]
     assert prompt.input_variables == ["person"]
-    assert prompt.invoke({"person": {"name": "foo"}}).to_messages() == [
-        HumanMessage("hi foo")
-    ]
+    assert messages_equal_ignoring_ids(
+        prompt.invoke({"person": {"name": "foo"}}).to_messages(),
+        [HumanMessage("hi foo")],
+    )
 
 
 def test_structured_prompt_template_empty_vars() -> None:
