@@ -1,6 +1,8 @@
 """Test Base Schema of documents."""
 
 from collections.abc import Iterator
+from contextlib import aclosing
+from pathlib import Path
 
 import pytest
 from typing_extensions import override
@@ -70,3 +72,44 @@ async def test_default_aload() -> None:
     assert docs == [Document(page_content="foo"), Document(page_content="bar")]
     assert docs == [doc async for doc in loader.alazy_load()]
     assert docs == await loader.aload()
+
+
+async def test_alazy_load_closes_iterator_when_closed_early(tmp_path: Path) -> None:
+    """Verify `alazy_load` closes the sync iterator if it is not exhausted."""
+
+    class LineLoader(BaseLoader):
+        def __init__(self, path: Path) -> None:
+            self.source = path.open(encoding="utf-8")
+            self.iterator = self.read_lines()
+
+        def read_lines(self) -> Iterator[Document]:
+            with self.source:
+                for line in self.source:
+                    yield Document(page_content=line.rstrip("\n"))
+
+        @override
+        def lazy_load(self) -> Iterator[Document]:
+            return self.iterator
+
+    path = tmp_path / "docs.txt"
+    path.write_text("first\nsecond\n", encoding="utf-8")
+    loader = LineLoader(path)
+    async with aclosing(loader.alazy_load()) as docs:
+        assert (await anext(docs)).page_content == "first"
+
+    assert loader.source.closed
+
+
+async def test_alazy_load_iterator_without_close() -> None:
+    """Verify `alazy_load` works with iterators that have no `close` method."""
+
+    class ListLoader(BaseLoader):
+        @override
+        def lazy_load(self) -> Iterator[Document]:
+            return iter([Document(page_content="foo"), Document(page_content="bar")])
+
+    loader = ListLoader()
+    async with aclosing(loader.alazy_load()) as docs:
+        assert (await anext(docs)).page_content == "foo"
+
+    assert [doc.page_content async for doc in loader.alazy_load()] == ["foo", "bar"]

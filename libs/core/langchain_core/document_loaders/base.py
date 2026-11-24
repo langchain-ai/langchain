@@ -107,11 +107,20 @@ class BaseLoader(ABC):  # noqa: B024
         """
         iterator = await run_in_executor(None, self.lazy_load)
         done = object()
-        while True:
-            doc = await run_in_executor(None, next, iterator, done)
-            if doc is done:
-                break
-            yield doc  # type: ignore[misc]
+        exhausted = False
+        try:
+            while True:
+                doc = await run_in_executor(None, next, iterator, done)
+                if doc is done:
+                    exhausted = True
+                    break
+                yield doc  # type: ignore[misc]
+        finally:
+            # If the async generator is closed before the iterator is exhausted,
+            # close the iterator so it can release the resources it owns.
+            close = getattr(iterator, "close", None)
+            if not exhausted and callable(close):
+                await run_in_executor(None, close)
 
 
 class BaseBlobParser(ABC):
