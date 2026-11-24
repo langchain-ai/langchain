@@ -3022,6 +3022,54 @@ def test_additional_html_header_text_splitter(
         )
 
 
+@pytest.mark.requires("bs4")
+def test_html_header_text_splitter_preserves_inline_element_order() -> None:
+    """Inline elements must not reorder the text around them.
+
+    Regression test for `<p>A <strong>B</strong> C</p>` producing the words
+    `A`, `C`, `B` because the paragraph's direct text was collected before its
+    child tag was visited.
+    """
+    splitter = HTMLHeaderTextSplitter(
+        headers_to_split_on=[("h1", "title")],
+    )
+    docs = splitter.split_text("<h1>Manual</h1><p>A <strong>B</strong> C</p>")
+
+    assert len(docs) == 2
+    assert docs[0].page_content == "Manual"
+    assert docs[1].page_content == "A  \nB  \nC"
+    assert docs[1].metadata == {"title": "Manual"}
+
+
+@pytest.mark.requires("bs4")
+def test_html_header_text_splitter_preserves_nested_inline_order() -> None:
+    """Nested inline elements and trailing text stay in document order."""
+    splitter = HTMLHeaderTextSplitter(
+        headers_to_split_on=[("h1", "title")],
+    )
+    docs = splitter.split_text(
+        "<h1>Manual</h1><p>a <b>x <i>y</i> z</b> c</p><p>tail</p>"
+    )
+
+    assert [doc.page_content for doc in docs] == [
+        "Manual",
+        "a  \nx  \ny  \nz  \nc  \ntail",
+    ]
+
+
+@pytest.mark.requires("bs4")
+def test_html_header_text_splitter_inline_order_return_each_element() -> None:
+    """`return_each_element=True` also emits text in document order."""
+    splitter = HTMLHeaderTextSplitter(
+        headers_to_split_on=[("h1", "title")],
+        return_each_element=True,
+    )
+    docs = splitter.split_text("<h1>Manual</h1><p>A <strong>B</strong> C</p>")
+
+    assert [doc.page_content for doc in docs] == ["Manual", "A", "B", "C"]
+    assert docs[1].metadata == {"title": "Manual"}
+
+
 @pytest.mark.parametrize(
     ("headers_to_split_on", "html_content", "expected_output", "test_case"),
     [

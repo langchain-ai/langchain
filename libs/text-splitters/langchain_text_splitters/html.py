@@ -293,28 +293,57 @@ class HTMLHeaderTextSplitter:
             final_meta = {k: v[0] for k, v in active_headers.items()}
             return Document(page_content=final_text, metadata=final_meta)
 
-        # We'll use a stack for DFS traversal
-        stack = [body]
+        # We'll use a stack for DFS traversal. It holds tags to visit and
+        # `(text, dom_depth)` fragments collected from direct child text so
+        # that text and inline elements are emitted in document order.
+        stack: list[Any] = [body]
         while stack:
             node = stack.pop()
-            children = list(node.children)
 
-            stack.extend(
-                child for child in reversed(children) if isinstance(child, tag_cls)
-            )
+            if isinstance(node, tuple):
+                node_text, dom_depth = node
+                tag = None
+            else:
+                tag = getattr(node, "name", None)
+                if not tag:
+                    continue
 
-            tag = getattr(node, "name", None)
-            if not tag:
-                continue
+                dom_depth = len(list(node.parents))
+                children = list(node.children)
 
-            text_elements = [
-                str(child).strip() for child in _find_all_strings(node, recursive=False)
-            ]
-            node_text = " ".join(elem for elem in text_elements if elem)
+                if tag in self.header_tags:
+                    stack.extend(
+                        child
+                        for child in reversed(children)
+                        if isinstance(child, tag_cls)
+                    )
+                    text_elements = [
+                        str(child).strip()
+                        for child in _find_all_strings(node, recursive=False)
+                    ]
+                    node_text = " ".join(elem for elem in text_elements if elem)
+                else:
+                    # Queue direct text and child tags in document order so
+                    # inline elements do not reorder the surrounding text.
+                    node_text = ""
+                    pieces: list[Any] = []
+                    pending_text: list[str] = []
+                    for child in children:
+                        if isinstance(child, tag_cls):
+                            if pending_text:
+                                pieces.append((" ".join(pending_text), dom_depth))
+                                pending_text = []
+                            pieces.append(child)
+                        else:
+                            child_text = str(child).strip()
+                            if child_text:
+                                pending_text.append(child_text)
+                    if pending_text:
+                        pieces.append((" ".join(pending_text), dom_depth))
+                    stack.extend(reversed(pieces))
+
             if not node_text:
                 continue
-
-            dom_depth = len(list(node.parents))
 
             # If this node is one of our headers
             if tag in self.header_tags:
