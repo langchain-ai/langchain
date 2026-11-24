@@ -2712,10 +2712,30 @@ class ChatAnthropic(BaseChatModel):
             await _aparse(raw_response), generation_info=generation_info, **kwargs
         )
 
+    def _make_tool_call_guard(self) -> Callable[[AIMessage], AIMessage]:
+        thinking_admonition = (
+            "You are attempting to use structured output via forced tool calling, "
+            "which is not supported when `thinking` is enabled or on "
+            f"{self.model}. This method will raise an OutputParserException if tool "
+            "calls are not generated. Consider `method='json_schema'`, disabling "
+            "`thinking` where supported, or adjusting your prompt to ensure the "
+            "tool is called."
+        )
+
+        def _raise_if_no_tool_calls(message: AIMessage) -> AIMessage:
+            refused = message.response_metadata.get("stop_reason") == "refusal"
+            if not message.tool_calls and not refused:
+                raise OutputParserException(thinking_admonition)
+            return message
+
+        return _raise_if_no_tool_calls
+
     def _get_llm_for_structured_output_when_thinking_is_enabled(
         self,
         schema: dict | type,
         formatted_tool: AnthropicTool,
+        *,
+        check_tool_calls: bool = True,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         thinking_admonition = (
             "You are attempting to use structured output via forced tool calling, "
@@ -2735,14 +2755,9 @@ class ChatAnthropic(BaseChatModel):
                 "schema": formatted_tool,
             },
         )
-
-        def _raise_if_no_tool_calls(message: AIMessage) -> AIMessage:
-            refused = message.response_metadata.get("stop_reason") == "refusal"
-            if not message.tool_calls and not refused:
-                raise OutputParserException(thinking_admonition)
-            return message
-
-        return llm | _raise_if_no_tool_calls
+        if check_tool_calls:
+            return llm | self._make_tool_call_guard()
+        return llm
 
     def bind_tools(
         self,
@@ -3058,13 +3073,15 @@ class ChatAnthropic(BaseChatModel):
             # The result of convert_to_anthropic_tool for 'method=function_calling' will
             # always be an AnthropicTool
             tool_name = formatted_tool["name"]
-            if (
+            unforced_tool_choice = (
                 self.thinking is not None
                 and self.thinking.get("type") in ("enabled", "adaptive")
-            ) or not _supports_forced_tool_choice(self.model):
+            ) or not _supports_forced_tool_choice(self.model)
+            if unforced_tool_choice:
                 llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
                     schema,
                     formatted_tool,
+                    check_tool_calls=not include_raw,
                 )
             else:
                 llm = self.bind_tools(
@@ -3086,6 +3103,8 @@ class ChatAnthropic(BaseChatModel):
                     key_name=tool_name,
                     first_tool_only=True,
                 )
+            if unforced_tool_choice and include_raw:
+                output_parser = self._make_tool_call_guard() | output_parser
         elif method == "json_schema":
             llm = self.bind(
                 output_config={

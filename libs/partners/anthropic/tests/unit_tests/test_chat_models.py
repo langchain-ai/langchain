@@ -6653,6 +6653,25 @@ def test_invoke_does_not_raise_on_refusal() -> None:
     assert result.response_metadata["stop_details"]["category"] == "cyber"
 
 
+def test_with_structured_output_include_raw_text_only_reply() -> None:
+    """Text-only reply with include_raw=True returns raw and parsing_error (#42024)."""
+    from langchain_core.exceptions import OutputParserException
+    from langchain_core.outputs import ChatGeneration, ChatResult
+
+    class _Answer(BaseModel):
+        value: int
+
+    message = AIMessage(content="42", response_metadata={"stop_reason": "end_turn"})
+    reply = ChatResult(generations=[ChatGeneration(message=message)])
+    llm = ChatAnthropic(model="claude-sonnet-5-5", api_key="unused")
+    with patch.object(ChatAnthropic, "_generate", return_value=reply):
+        result = llm.with_structured_output(_Answer, include_raw=True).invoke("6 * 7?")
+
+    assert result["raw"].content == "42"
+    assert result["parsed"] is None
+    assert isinstance(result["parsing_error"], OutputParserException)
+
+
 def test_with_structured_output_parses_when_not_refused() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
     structured = llm.with_structured_output(_RefusalSchema, method="json_schema")
