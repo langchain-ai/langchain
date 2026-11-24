@@ -175,6 +175,10 @@ class ToolSearchMiddleware(AgentMiddleware[ToolSearchState[ResponseT], ContextT,
     Place this middleware after any middleware that swaps the model, and before
     prompt caching, so it shapes the final request.
 
+    Search covers every searchable tool given to the agent, including tools an
+    outer middleware removes from a request. Hiding a tool does not block it: the
+    agent still runs a hidden tool if the model calls it by name.
+
     !!! warning
 
         Experimental. The retriever signature may change.
