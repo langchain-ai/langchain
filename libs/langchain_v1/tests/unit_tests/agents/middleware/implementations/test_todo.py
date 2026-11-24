@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain.agents.factory import create_agent
 from langchain.agents.middleware.todo import (
@@ -17,6 +17,7 @@ from langchain.agents.middleware.todo import (
     write_todos,
 )
 from langchain.agents.middleware.types import AgentState, ModelRequest, ModelResponse
+from tests.unit_tests.agents.messages import _IgnoreIdToolMessage
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 if TYPE_CHECKING:
@@ -542,7 +543,7 @@ def test_parallel_write_todos_calls_rejected() -> None:
     # Should return error messages
     assert result == {
         "messages": [
-            ToolMessage(
+            _IgnoreIdToolMessage(
                 content=(
                     "Error: The `write_todos` tool should never be called multiple times "
                     "in parallel. Please call it only once per model invocation to update "
@@ -551,7 +552,7 @@ def test_parallel_write_todos_calls_rejected() -> None:
                 tool_call_id="call_1",
                 status="error",
             ),
-            ToolMessage(
+            _IgnoreIdToolMessage(
                 content=(
                     "Error: The `write_todos` tool should never be called multiple times "
                     "in parallel. Please call it only once per model invocation to update "
@@ -601,7 +602,7 @@ def test_parallel_write_todos_with_other_tools() -> None:
     # Should return error messages for write_todos calls only
     assert result == {
         "messages": [
-            ToolMessage(
+            _IgnoreIdToolMessage(
                 content=(
                     "Error: The `write_todos` tool should never be called multiple times "
                     "in parallel. Please call it only once per model invocation to update "
@@ -610,7 +611,7 @@ def test_parallel_write_todos_with_other_tools() -> None:
                 tool_call_id="call_1",
                 status="error",
             ),
-            ToolMessage(
+            _IgnoreIdToolMessage(
                 content=(
                     "Error: The `write_todos` tool should never be called multiple times "
                     "in parallel. Please call it only once per model invocation to update "
@@ -719,7 +720,7 @@ async def test_parallel_write_todos_calls_rejected_async() -> None:
     # Should return error messages
     assert result == {
         "messages": [
-            ToolMessage(
+            _IgnoreIdToolMessage(
                 content=(
                     "Error: The `write_todos` tool should never be called multiple times "
                     "in parallel. Please call it only once per model invocation to update "
@@ -728,7 +729,7 @@ async def test_parallel_write_todos_calls_rejected_async() -> None:
                 tool_call_id="call_1",
                 status="error",
             ),
-            ToolMessage(
+            _IgnoreIdToolMessage(
                 content=(
                     "Error: The `write_todos` tool should never be called multiple times "
                     "in parallel. Please call it only once per model invocation to update "
@@ -778,7 +779,7 @@ async def test_parallel_write_todos_with_other_tools_async() -> None:
     # Should return error messages for write_todos calls only
     assert result == {
         "messages": [
-            ToolMessage(
+            _IgnoreIdToolMessage(
                 content=(
                     "Error: The `write_todos` tool should never be called multiple times "
                     "in parallel. Please call it only once per model invocation to update "
@@ -787,7 +788,7 @@ async def test_parallel_write_todos_with_other_tools_async() -> None:
                 tool_call_id="call_1",
                 status="error",
             ),
-            ToolMessage(
+            _IgnoreIdToolMessage(
                 content=(
                     "Error: The `write_todos` tool should never be called multiple times "
                     "in parallel. Please call it only once per model invocation to update "

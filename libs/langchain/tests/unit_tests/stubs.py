@@ -1,4 +1,10 @@
-from langchain_core.messages import AIMessage, AIMessageChunk
+from langchain_core.messages import (
+    AIMessage,
+    AIMessageChunk,
+    FunctionMessage,
+    HumanMessage,
+    ToolMessage,
+)
 from pydantic import BaseModel
 
 
@@ -21,3 +27,15 @@ class _AnyIdAIMessage(AIMessage, _AnyIDMixin):
 
 class _AnyIdAIMessageChunk(AIMessageChunk, _AnyIDMixin):
     """AIMessageChunk with any ID."""
+
+
+class _AnyIdHumanMessage(HumanMessage, _AnyIDMixin):
+    """HumanMessage with any ID."""
+
+
+class _AnyIdFunctionMessage(FunctionMessage, _AnyIDMixin):
+    """FunctionMessage with any ID."""
+
+
+class _AnyIdToolMessage(ToolMessage, _AnyIDMixin):
+    """ToolMessage with any ID."""

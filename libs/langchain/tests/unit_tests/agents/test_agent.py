@@ -17,8 +17,6 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
-    FunctionMessage,
-    HumanMessage,
     ToolCall,
 )
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -39,7 +37,10 @@ from langchain_classic.agents.output_parsers.openai_tools import OpenAIToolAgent
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
 from tests.unit_tests.llms.fake_chat_model import GenericFakeChatModel
 from tests.unit_tests.stubs import (
+    _AnyIdAIMessage,
     _AnyIdAIMessageChunk,
+    _AnyIdFunctionMessage,
+    _AnyIdHumanMessage,
 )
 
 
@@ -217,7 +218,7 @@ def test_agent_stream() -> None:
                 ),
             ],
             "messages": [
-                AIMessage(
+                _AnyIdAIMessage(
                     content="FooBarBaz\nAction: Search\nAction Input: misalignment",
                 ),
             ],
@@ -233,7 +234,7 @@ def test_agent_stream() -> None:
                     observation="Results for: misalignment",
                 ),
             ],
-            "messages": [HumanMessage(content="Results for: misalignment")],
+            "messages": [_AnyIdHumanMessage(content="Results for: misalignment")],
         },
         {
             "actions": [
@@ -244,7 +245,7 @@ def test_agent_stream() -> None:
                 ),
             ],
             "messages": [
-                AIMessage(
+                _AnyIdAIMessage(
                     content="FooBarBaz\nAction: Search\nAction Input: something else",
                 ),
             ],
@@ -260,12 +261,12 @@ def test_agent_stream() -> None:
                     observation="Results for: something else",
                 ),
             ],
-            "messages": [HumanMessage(content="Results for: something else")],
+            "messages": [_AnyIdHumanMessage(content="Results for: something else")],
         },
         {
             "output": "curses foiled again",
             "messages": [
-                AIMessage(content="Oh well\nFinal Answer: curses foiled again"),
+                _AnyIdAIMessage(content="Oh well\nFinal Answer: curses foiled again"),
             ],
         },
     ]
@@ -301,13 +302,15 @@ def test_agent_stream() -> None:
             ),
         ],
         "messages": [
-            AIMessage(content="FooBarBaz\nAction: Search\nAction Input: misalignment"),
-            HumanMessage(content="Results for: misalignment"),
-            AIMessage(
+            _AnyIdAIMessage(
+                content="FooBarBaz\nAction: Search\nAction Input: misalignment"
+            ),
+            _AnyIdHumanMessage(content="Results for: misalignment"),
+            _AnyIdAIMessage(
                 content="FooBarBaz\nAction: Search\nAction Input: something else",
             ),
-            HumanMessage(content="Results for: something else"),
-            AIMessage(content="Oh well\nFinal Answer: curses foiled again"),
+            _AnyIdHumanMessage(content="Results for: something else"),
+            _AnyIdAIMessage(content="Oh well\nFinal Answer: curses foiled again"),
         ],
         "output": "curses foiled again",
     }
@@ -498,7 +501,7 @@ async def test_runnable_agent() -> None:
     # Stream
     results = await asyncio.to_thread(list, executor.stream({"question": "hello"}))
     assert results == [
-        {"foo": "meow", "messages": [AIMessage(content="hard-coded-message")]},
+        {"foo": "meow", "messages": [_AnyIdAIMessage(content="hard-coded-message")]},
     ]
 
     # astream
@@ -507,7 +510,7 @@ async def test_runnable_agent() -> None:
         {
             "foo": "meow",
             "messages": [
-                AIMessage(content="hard-coded-message"),
+                _AnyIdAIMessage(content="hard-coded-message"),
             ],
         },
     ]
@@ -532,7 +535,7 @@ async def test_runnable_agent() -> None:
 
     assert run_log.state["final_output"] == {
         "foo": "meow",
-        "messages": [AIMessage(content="hard-coded-message")],
+        "messages": [_AnyIdAIMessage(content="hard-coded-message")],
     }
 
 
@@ -604,10 +607,10 @@ async def test_runnable_agent_with_function_calls() -> None:
                     log="find_pet()",
                 ),
             ],
-            "messages": [AIMessage(content="find_pet()")],
+            "messages": [_AnyIdAIMessage(content="find_pet()")],
         },
         {
-            "messages": [HumanMessage(content="Spying from under the bed.")],
+            "messages": [_AnyIdHumanMessage(content="Spying from under the bed.")],
             "steps": [
                 AgentStep(
                     action=AgentAction(
@@ -619,7 +622,7 @@ async def test_runnable_agent_with_function_calls() -> None:
                 ),
             ],
         },
-        {"foo": "meow", "messages": [AIMessage(content="hard-coded-message")]},
+        {"foo": "meow", "messages": [_AnyIdAIMessage(content="hard-coded-message")]},
     ]
 
     # astream log
@@ -724,17 +727,17 @@ async def test_runnable_with_multi_action_per_step() -> None:
                     log="find_pet()",
                 ),
             ],
-            "messages": [AIMessage(content="find_pet()")],
+            "messages": [_AnyIdAIMessage(content="find_pet()")],
         },
         {
             "actions": [
                 AgentAction(tool="pet_pet", tool_input={"pet": "cat"}, log="pet_pet()"),
             ],
-            "messages": [AIMessage(content="pet_pet()")],
+            "messages": [_AnyIdAIMessage(content="pet_pet()")],
         },
         {
             # By-default observation gets converted into human message.
-            "messages": [HumanMessage(content="Spying from under the bed.")],
+            "messages": [_AnyIdHumanMessage(content="Spying from under the bed.")],
             "steps": [
                 AgentStep(
                     action=AgentAction(
@@ -748,7 +751,7 @@ async def test_runnable_with_multi_action_per_step() -> None:
         },
         {
             "messages": [
-                HumanMessage(
+                _AnyIdHumanMessage(
                     content="pet_pet is not a valid tool, try one of [find_pet].",
                 ),
             ],
@@ -763,7 +766,7 @@ async def test_runnable_with_multi_action_per_step() -> None:
                 ),
             ],
         },
-        {"foo": "meow", "messages": [AIMessage(content="hard-coded-message")]},
+        {"foo": "meow", "messages": [_AnyIdAIMessage(content="hard-coded-message")]},
     ]
 
     # astream log
@@ -1201,7 +1204,7 @@ async def test_openai_agent_tools_agent() -> None:
             },
             {
                 "messages": [
-                    FunctionMessage(
+                    _AnyIdFunctionMessage(
                         content="Spying from under the bed.",
                         name="find_pet",
                     ),
@@ -1244,7 +1247,7 @@ async def test_openai_agent_tools_agent() -> None:
             },
             {
                 "messages": [
-                    FunctionMessage(
+                    _AnyIdFunctionMessage(
                         content="check_time is not a valid tool, "
                         "try one of [find_pet].",
                         name="check_time",
@@ -1289,7 +1292,7 @@ async def test_openai_agent_tools_agent() -> None:
             },
             {
                 "messages": [
-                    AIMessage(content="The cat is spying from under the bed."),
+                    _AnyIdAIMessage(content="The cat is spying from under the bed."),
                 ],
                 "output": "The cat is spying from under the bed.",
             },

@@ -2063,8 +2063,8 @@ async def test_prompt_with_llm(
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert llm_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
     assert tracer.runs == snapshot
@@ -2089,14 +2089,14 @@ async def test_prompt_with_llm(
     assert llm_spy.call_args.args[1] == [
         ChatPromptValue(
             messages=[
-                SystemMessage(content="You are a nice assistant."),
-                HumanMessage(content="What is your name?"),
+                _any_id(SystemMessage(content="You are a nice assistant.")),
+                _any_id(HumanMessage(content="What is your name?")),
             ]
         ),
         ChatPromptValue(
             messages=[
-                SystemMessage(content="You are a nice assistant."),
-                HumanMessage(content="What is your favorite color?"),
+                _any_id(SystemMessage(content="You are a nice assistant.")),
+                _any_id(HumanMessage(content="What is your favorite color?")),
             ]
         ),
     ]
@@ -2117,8 +2117,8 @@ async def test_prompt_with_llm(
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert llm_spy.call_args.args[1] == ChatPromptValue(
         messages=[
-            SystemMessage(content="You are a nice assistant."),
-            HumanMessage(content="What is your name?"),
+            _any_id(SystemMessage(content="You are a nice assistant.")),
+            _any_id(HumanMessage(content="What is your name?")),
         ]
     )
 
@@ -2175,8 +2175,8 @@ async def test_prompt_with_llm(
                 "path": "/logs/ChatPromptTemplate/final_output",
                 "value": ChatPromptValue(
                     messages=[
-                        SystemMessage(content="You are a nice assistant."),
-                        HumanMessage(content="What is your name?"),
+                        _any_id(SystemMessage(content="You are a nice assistant.")),
+                        _any_id(HumanMessage(content="What is your name?")),
                     ]
                 ),
             },

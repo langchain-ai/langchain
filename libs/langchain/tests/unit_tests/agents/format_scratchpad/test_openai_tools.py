@@ -1,4 +1,4 @@
-from langchain_core.messages import AIMessage, ToolCall, ToolMessage
+from langchain_core.messages import AIMessage, ToolCall
 
 from langchain_classic.agents.format_scratchpad.openai_tools import (
     format_to_openai_tool_messages,
@@ -6,6 +6,7 @@ from langchain_classic.agents.format_scratchpad.openai_tools import (
 from langchain_classic.agents.output_parsers.openai_tools import (
     parse_ai_message_to_openai_tool_action,
 )
+from tests.unit_tests.stubs import _AnyIdToolMessage
 
 
 def test_calls_convert_agent_action_to_messages() -> None:
@@ -78,30 +79,30 @@ def test_calls_convert_agent_action_to_messages() -> None:
     ]
     expected_messages = [
         message1,
-        ToolMessage(
+        _AnyIdToolMessage(
             tool_call_id="call_abcd12345",
             content="observation1",
             additional_kwargs={"name": "add"},
         ),
         message2,
-        ToolMessage(
+        _AnyIdToolMessage(
             tool_call_id="call_abcd54321",
             content="observation2",
             additional_kwargs={"name": "subtract"},
         ),
         message3,
-        ToolMessage(
+        _AnyIdToolMessage(
             tool_call_id="call_abcd67890",
             content="observation3",
             additional_kwargs={"name": "multiply"},
         ),
-        ToolMessage(
+        _AnyIdToolMessage(
             tool_call_id="call_abcd09876",
             content="observation4",
             additional_kwargs={"name": "divide"},
         ),
         message4,
-        ToolMessage(
+        _AnyIdToolMessage(
             tool_call_id="call_abc02468",
             content="observation4",
             additional_kwargs={"name": "exponentiate"},

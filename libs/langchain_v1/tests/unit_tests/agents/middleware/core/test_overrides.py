@@ -160,7 +160,7 @@ class TestModelRequestOverride:
         model = GenericFakeChatModel(messages=iter([AIMessage(content="Hello")]))
         original_request = ModelRequest(
             model=model,
-            system_message=SystemMessage("Original prompt"),
+            system_message=SystemMessage("Original prompt", id="system"),
             messages=[HumanMessage("Hi")],
             tool_choice="auto",
             tools=[],
@@ -176,7 +176,7 @@ class TestModelRequestOverride:
 
         assert new_request.system_message is None
         assert new_request.tool_choice is None
-        assert original_request.system_message == SystemMessage("Original prompt")
+        assert original_request.system_message == SystemMessage("Original prompt", id="system")
         assert original_request.tool_choice == "auto"
 
     def test_override_preserves_identity_of_unchanged_objects(self) -> None:
