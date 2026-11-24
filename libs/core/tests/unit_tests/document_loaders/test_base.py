@@ -1,6 +1,7 @@
 """Test Base Schema of documents."""
 
 from collections.abc import Iterator
+from contextlib import aclosing
 
 import pytest
 from typing_extensions import override
@@ -70,3 +71,38 @@ async def test_default_aload() -> None:
     assert docs == [Document(page_content="foo"), Document(page_content="bar")]
     assert docs == [doc async for doc in loader.alazy_load()]
     assert docs == await loader.aload()
+
+
+async def test_alazy_load_closes_underlying_iterator_on_aclose() -> None:
+    closed = False
+
+    class FakeLoader(BaseLoader):
+        @override
+        def lazy_load(self) -> Iterator[Document]:
+            nonlocal closed
+            try:
+                yield Document(page_content="first")
+                yield Document(page_content="second")
+            finally:
+                closed = True
+
+    loader = FakeLoader()
+    async with aclosing(loader.alazy_load()) as docs:
+        first = await anext(docs)
+        assert first.page_content == "first"
+    assert closed
+
+
+async def test_alazy_load_aclose_with_non_closable_iterator() -> None:
+    class FakeLoader(BaseLoader):
+        @override
+        def lazy_load(self) -> Iterator[Document]:
+            return iter(
+                [Document(page_content="first"), Document(page_content="second")]
+            )
+
+    loader = FakeLoader()
+    async with aclosing(loader.alazy_load()) as docs:
+        first = await anext(docs)
+        assert first.page_content == "first"
+

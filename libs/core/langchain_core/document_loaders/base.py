@@ -107,11 +107,16 @@ class BaseLoader(ABC):  # noqa: B024
         """
         iterator = await run_in_executor(None, self.lazy_load)
         done = object()
-        while True:
-            doc = await run_in_executor(None, next, iterator, done)
-            if doc is done:
-                break
-            yield doc  # type: ignore[misc]
+        try:
+            while True:
+                doc = await run_in_executor(None, next, iterator, done)
+                if doc is done:
+                    break
+                yield doc  # type: ignore[misc]
+        finally:
+            close = getattr(iterator, "close", None)
+            if callable(close):
+                await run_in_executor(None, close)
 
 
 class BaseBlobParser(ABC):
