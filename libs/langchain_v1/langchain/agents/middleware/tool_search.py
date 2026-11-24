@@ -3,15 +3,32 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import math
 import re
 from collections import Counter
-from typing import TYPE_CHECKING, Annotated, Any, NotRequired, Protocol, TypeGuard
+from dataclasses import replace
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Literal,
+    NotRequired,
+    Protocol,
+    TypeGuard,
+    cast,
+)
 
 from langchain_core.documents import Document
-from langchain_core.messages import AIMessage, AnyMessage, ToolMessage
+from langchain_core.messages import (
+    AIMessage,
+    AnyMessage,
+    ToolCall,
+    ToolMessage,
+)
 from langchain_core.runnables.config import run_in_executor
 from langchain_core.tools import BaseTool, StructuredTool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.vectorstores import InMemoryVectorStore
 from langgraph.types import Command
 
@@ -38,6 +55,7 @@ DEFER_LOADING = "defer_loading"
 SEARCH_TOOL_NAME = "tool_search"
 _OWN_TOOL = "langchain_tool_search"
 """Metadata key on the tools this middleware adds."""
+DISPATCH_TOOL_NAME = "call_tool"
 
 _SEARCH_AGAIN = (
     "\n\nIf none of these does what you need, search again with different words "
@@ -230,7 +248,15 @@ class ToolSearchMiddleware(AgentMiddleware[ToolSearchState[ResponseT], ContextT,
     """Let the model search a tool catalog and load only the tools it finds.
 
     Searchable tools are hidden from the model until a `tool_search` call returns
-    them. Loaded tools are appended to the tool list and never unloaded.
+    them. Loaded tools are never unloaded.
+
+    With `loading="bind"`, loaded tools become ordinary tools, appended to the
+    tool list.
+
+    With `loading="dispatch"`, the tool list never changes on any model. The search
+    result carries each found tool's schema and the model runs one through
+    `call_tool(name, arguments)`. The call is recorded in state under the tool's
+    own name, so approval, limits and tracing treat it as a direct call.
 
     Place this middleware after any middleware that swaps the model, and before
     prompt caching, so it shapes the final request.
@@ -251,6 +277,7 @@ class ToolSearchMiddleware(AgentMiddleware[ToolSearchState[ResponseT], ContextT,
         *,
         retriever: ToolRetriever,
         searchable_tools: Sequence[str | BaseTool] | None = None,
+        loading: Literal["bind", "dispatch"] = "bind",
     ) -> None:
         """Initialize tool search.
 
@@ -258,13 +285,19 @@ class ToolSearchMiddleware(AgentMiddleware[ToolSearchState[ResponseT], ContextT,
             retriever: Ranks searchable tools for a query.
             searchable_tools: Tools or tool names to make searchable, in addition to
                 tools whose `extras` set `defer_loading`.
+            loading: How the model reaches a found tool. `"bind"` makes it an
+                ordinary tool. `"dispatch"` keeps the tool list fixed and runs it
+                through `call_tool`.
         """
         super().__init__()
         self.retriever = retriever
+        self.loading = loading
         self.searchable_names = {
             t if isinstance(t, str) else t.name for t in searchable_tools or ()
         }
         self.tools = [self._search_tool()]
+        if loading == "dispatch":
+            self.tools.append(self._dispatch_tool())
 
     def _is_searchable(self, tool: BaseTool | dict[str, Any]) -> TypeGuard[BaseTool]:
         if not isinstance(tool, BaseTool) or tool.name == SEARCH_TOOL_NAME:
@@ -275,7 +308,11 @@ class ToolSearchMiddleware(AgentMiddleware[ToolSearchState[ResponseT], ContextT,
         return [tool for tool in runtime.tools if self._is_searchable(tool)]
 
     def _found(self, hits: Sequence[BaseTool], runtime: ToolRuntime) -> Command[Any]:
-        if hits:
+        if hits and self.loading == "dispatch":
+            specs = [convert_to_openai_tool(tool)["function"] for tool in hits]
+            header = f"Found tools. Run one with {DISPATCH_TOOL_NAME}(name, arguments):\n"
+            content = header + json.dumps(specs, indent=1) + _SEARCH_AGAIN
+        elif hits:
             lines = [f"- {tool.name}: {tool.description}" for tool in hits]
             content = "Found tools, now available to call:\n" + "\n".join(lines) + _SEARCH_AGAIN
         else:
@@ -316,6 +353,85 @@ class ToolSearchMiddleware(AgentMiddleware[ToolSearchState[ResponseT], ContextT,
             ),
         )
 
+    def _dispatch_problem(
+        self, name: object, arguments: object, catalog: dict[str, BaseTool], loaded: dict[str, str]
+    ) -> str | None:
+        """Return why `call_tool(name, arguments)` can't run, or `None` if it can."""
+        if not isinstance(name, str) or name not in catalog:
+            return f"No tool named {name!r}. Use {SEARCH_TOOL_NAME} to find tools."
+        if name not in loaded:
+            return f"Tool {name!r} has not been found yet. Call {SEARCH_TOOL_NAME} first."
+        if not isinstance(arguments, dict):
+            return "`arguments` must be an object of the tool's arguments."
+        return _schema_problem(catalog[name], arguments)
+
+    def _dispatch_tool(self) -> BaseTool:
+        def call_tool(
+            name: str, runtime: ToolRuntime, arguments: dict[str, Any] | None = None
+        ) -> str:
+            catalog = {tool.name: tool for tool in self._catalog(runtime)}
+            loaded = _loaded(runtime.state)
+            problem = self._dispatch_problem(name, _as_object(arguments or {}), catalog, loaded)
+            return f"Error: {problem or 'the call could not be dispatched.'}"
+
+        return StructuredTool.from_function(
+            func=call_tool,
+            name=DISPATCH_TOOL_NAME,
+            metadata={_OWN_TOOL: True},
+            description=(
+                f"Run a tool found by {SEARCH_TOOL_NAME}. Pass the tool's name and its "
+                "arguments as an object."
+            ),
+        )
+
+    def _to_direct_calls(
+        self, response: ModelResponse[ResponseT] | AIMessage, request: ModelRequest[ContextT]
+    ) -> ModelResponse[ResponseT] | AIMessage:
+        """Record valid `call_tool` calls under the name of the tool they run."""
+        if self.loading != "dispatch":
+            return response
+        catalog = {t.name: t for t in request.tools if self._is_searchable(t)}
+        loaded = _loaded(request.state)
+
+        def direct(call: ToolCall) -> ToolCall:
+            name = call["args"].get("name")
+            arguments = _as_object(call["args"].get("arguments") or {})
+            if call["name"] != DISPATCH_TOOL_NAME or self._dispatch_problem(
+                name, arguments, catalog, loaded
+            ):
+                return call
+            args = cast("dict[str, Any]", arguments)
+            return ToolCall(name=str(name), args=args, id=call["id"], type="tool_call")
+
+        if isinstance(response, AIMessage):
+            return _with_calls(response, direct)
+        result = [
+            _with_calls(m, direct) if isinstance(m, AIMessage) else m for m in response.result
+        ]
+        return replace(response, result=result)
+
+    def _to_dispatch_calls(self, request: ModelRequest[ContextT]) -> list[AnyMessage]:
+        """Show the model its past calls to searchable tools as `call_tool` calls."""
+        names = {t.name for t in request.tools if self._is_searchable(t)}
+
+        def dispatch(call: ToolCall) -> ToolCall:
+            if call["name"] not in names:
+                return call
+            args = {"name": call["name"], "arguments": call["args"]}
+            return ToolCall(name=DISPATCH_TOOL_NAME, args=args, id=call["id"], type="tool_call")
+
+        messages: list[AnyMessage] = []
+        dispatched: set[str | None] = set()
+        for message in request.messages:
+            if isinstance(message, AIMessage):
+                dispatched.update(c["id"] for c in message.tool_calls if c["name"] in names)
+                messages.append(_with_calls(message, dispatch))
+            elif isinstance(message, ToolMessage) and message.tool_call_id in dispatched:
+                messages.append(message.model_copy(update={"name": DISPATCH_TOOL_NAME}))
+            else:
+                messages.append(message)
+        return messages
+
     def _validate(self, tools: Sequence[BaseTool | dict[str, Any]]) -> None:
         """Raise on a tool that shadows one of ours, or an unknown searchable name."""
         present = {tool.name: tool for tool in tools if isinstance(tool, BaseTool)}
@@ -337,6 +453,9 @@ class ToolSearchMiddleware(AgentMiddleware[ToolSearchState[ResponseT], ContextT,
 
     def _prepare(self, request: ModelRequest[ContextT]) -> ModelRequest[ContextT]:
         self._validate(request.tools)
+        if self.loading == "dispatch":
+            kept = [tool for tool in request.tools if not self._is_searchable(tool)]
+            return request.override(tools=kept, messages=self._to_dispatch_calls(request))
         loaded = _loaded(request.state)
         found = {tool.name: tool for tool in request.tools if self._is_searchable(tool)}
         kept = [tool for tool in request.tools if not self._is_searchable(tool)]
@@ -367,7 +486,7 @@ class ToolSearchMiddleware(AgentMiddleware[ToolSearchState[ResponseT], ContextT,
         handler: Callable[[ModelRequest[ContextT]], ModelResponse[ResponseT]],
     ) -> ModelResponse[ResponseT] | AIMessage:
         """Hide unloaded searchable tools and show loaded ones."""
-        return handler(self._prepare(request))
+        return self._to_direct_calls(handler(self._prepare(request)), request)
 
     async def awrap_model_call(
         self,
@@ -375,7 +494,66 @@ class ToolSearchMiddleware(AgentMiddleware[ToolSearchState[ResponseT], ContextT,
         handler: Callable[[ModelRequest[ContextT]], Awaitable[ModelResponse[ResponseT]]],
     ) -> ModelResponse[ResponseT] | AIMessage:
         """Hide unloaded searchable tools and show loaded ones."""
-        return await handler(self._prepare(request))
+        return self._to_direct_calls(await handler(self._prepare(request)), request)
+
+
+def _as_object(arguments: object) -> object:
+    """Parse `arguments` when a model sent the object as a JSON string."""
+    if isinstance(arguments, str):
+        try:
+            return json.loads(arguments)
+        except ValueError:
+            return arguments
+    return arguments
+
+
+def _schema_problem(tool: BaseTool, arguments: dict[str, Any]) -> str | None:
+    """Check `arguments` against a JSON-schema tool, which the tool node doesn't validate."""
+    schema = tool.args_schema
+    if not isinstance(schema, dict):
+        return None
+    missing = [key for key in schema.get("required", ()) if key not in arguments]
+    if missing:
+        return f"Missing required argument(s) for {tool.name}: {', '.join(missing)}."
+    properties = schema.get("properties", {})
+    unknown = [key for key in arguments if key not in properties]
+    if unknown and schema.get("additionalProperties") is False:
+        return f"Unknown argument(s) for {tool.name}: {', '.join(unknown)}."
+    return None
+
+
+def _with_calls(message: AIMessage, change: Callable[[ToolCall], ToolCall]) -> AIMessage:
+    """Return `message` with `change` applied to its tool calls and their content blocks."""
+    if not message.tool_calls:
+        return message
+    calls = [change(call) for call in message.tool_calls]
+    changed: dict[str | None, ToolCall] = {
+        c["id"]: c
+        for c, old in zip(calls, message.tool_calls, strict=True)
+        if c is not old and c["id"]
+    }
+    if not changed:
+        return message
+    content = message.content
+    if isinstance(content, list):
+        content = [_with_call_block(block, changed) for block in content]
+    return message.model_copy(update={"tool_calls": calls, "content": content})
+
+
+def _with_call_block(block: Any, changed: dict[str | None, ToolCall]) -> Any:
+    """Mirror a changed tool call into a provider or standard tool-call content block."""
+    if not isinstance(block, dict) or "name" not in block:
+        return block
+    call = changed.get(block.get("call_id")) or changed.get(block.get("id"))
+    if call is None:
+        return block
+    updated = {**block, "name": call["name"]}
+    for key in ("input", "args"):
+        if key in block:
+            updated[key] = call["args"]
+    if "arguments" in block:
+        updated["arguments"] = json.dumps(call["args"])
+    return updated
 
 
 def _found_in(messages: Sequence[AnyMessage]) -> dict[str, str]:
