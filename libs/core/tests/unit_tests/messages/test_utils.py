@@ -3193,7 +3193,7 @@ def test_convert_to_messages_without_id_sets_id_explicitly(
     message_like: MessageLikeRepresentation,
 ) -> None:
     [message] = convert_to_messages([message_like])
-    assert message == HumanMessage("hi")
+    assert message == HumanMessage("hi", id=None)
     assert "id" in message.model_fields_set
 
 
@@ -3215,7 +3215,7 @@ def test_messages_from_dict_without_id_sets_id_explicitly() -> None:
             {"type": "remove", "data": {"id": "1"}},
         ]
     )
-    assert message == HumanMessage("hi")
+    assert message == HumanMessage("hi", id=None)
     assert "id" in message.model_fields_set
     assert removal == RemoveMessage(id="1")
 
