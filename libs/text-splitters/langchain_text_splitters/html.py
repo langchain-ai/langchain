@@ -265,7 +265,7 @@ class HTMLHeaderTextSplitter:
         Raises:
             ImportError: If BeautifulSoup is not installed.
         """
-        beautiful_soup, tag_cls, _ = _import_bs4(
+        beautiful_soup, _, _ = _import_bs4(
             import_error_message=(
                 "Unable to import BeautifulSoup. Please install via `pip install bs4`."
             )
@@ -294,58 +294,68 @@ class HTMLHeaderTextSplitter:
             return Document(page_content=final_text, metadata=final_meta)
 
         # We'll use a stack for DFS traversal
-        stack = [body]
+        stack: list[Any] = [body]
         while stack:
             node = stack.pop()
-            children = list(node.children)
-
-            stack.extend(
-                child for child in reversed(children) if isinstance(child, tag_cls)
-            )
-
             tag = getattr(node, "name", None)
-            if not tag:
-                continue
 
-            text_elements = [
-                str(child).strip() for child in _find_all_strings(node, recursive=False)
-            ]
-            node_text = " ".join(elem for elem in text_elements if elem)
-            if not node_text:
-                continue
+            if tag:
+                # If this node is one of our headers
+                if tag in self.header_tags:
+                    # If we're aggregating, finalize whatever chunk we had
+                    if not self.return_each_element:
+                        doc = finalize_chunk()
+                        if doc:
+                            yield doc
 
-            dom_depth = len(list(node.parents))
+                    # Extract header text recursively (including any inline markup)
+                    text_elements = [
+                        str(child).strip()
+                        for child in _find_all_strings(node, recursive=True)
+                    ]
+                    node_text = " ".join(elem for elem in text_elements if elem)
+                    dom_depth = len(list(getattr(node, "parents", [])))
 
-            # If this node is one of our headers
-            if tag in self.header_tags:
-                # If we're aggregating, finalize whatever chunk we had
-                if not self.return_each_element:
-                    doc = finalize_chunk()
-                    if doc:
-                        yield doc
+                    # Determine numeric level (h1->1, h2->2, etc.)
+                    try:
+                        level = int(tag[1:])
+                    except ValueError:
+                        level = 9999
 
-                # Determine numeric level (h1->1, h2->2, etc.)
-                try:
-                    level = int(tag[1:])
-                except ValueError:
-                    level = 9999
+                    # Remove active headers at or deeper than this level
+                    headers_to_remove = [
+                        k for k, (_, lvl, d) in active_headers.items() if lvl >= level
+                    ]
+                    for key in headers_to_remove:
+                        del active_headers[key]
 
-                # Remove any active headers that are at or deeper than this new level
-                headers_to_remove = [
-                    k for k, (_, lvl, d) in active_headers.items() if lvl >= level
-                ]
-                for key in headers_to_remove:
-                    del active_headers[key]
+                    # Add/Update the active header
+                    header_name = self.header_mapping[tag]
+                    active_headers[header_name] = (node_text, level, dom_depth)
 
-                # Add/Update the active header
-                header_name = self.header_mapping[tag]
-                active_headers[header_name] = (node_text, level, dom_depth)
+                    # Always yield a Document for the header
+                    header_meta = {k: v[0] for k, v in active_headers.items()}
+                    yield Document(page_content=node_text, metadata=header_meta)
+                    # Descendants were included in node_text; do not re-traverse
+                    continue
 
-                # Always yield a Document for the header
-                header_meta = {k: v[0] for k, v in active_headers.items()}
-                yield Document(page_content=node_text, metadata=header_meta)
+                # For non-header elements, push children in reverse order
+                # so that text nodes and child tags are visited in document order
+                children = list(node.children)
+                stack.extend(reversed(children))
 
             else:
+                # Text node (NavigableString)
+                node_text = str(node).strip()
+                if not node_text:
+                    continue
+
+                # The DOM depth of the text is the depth of its containing element
+                dom_depth = (
+                    len(list(getattr(node.parent, "parents", [])))
+                    if node.parent
+                    else len(list(getattr(node, "parents", [])))
+                )
                 headers_out_of_scope = [
                     k for k, (_, _, d) in active_headers.items() if dom_depth < d
                 ]

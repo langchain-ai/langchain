@@ -3094,6 +3094,50 @@ def test_html_no_headers_with_multiple_splitters(
         )
 
 
+@pytest.mark.requires("bs4")
+def test_html_header_text_splitter_inline_tags_order() -> None:
+    """Test that inline tags preserve paragraph word order (Issue #42048)."""
+    splitter = HTMLHeaderTextSplitter([("h1", "title")])
+    docs = splitter.split_text("<h1>Manual</h1><p>A <strong>B</strong> C</p>")
+    assert len(docs) == 2
+    assert docs[0].page_content == "Manual"
+    assert docs[0].metadata == {"title": "Manual"}
+    assert docs[1].page_content.split() == ["A", "B", "C"]
+    assert docs[1].metadata == {"title": "Manual"}
+
+
+@pytest.mark.requires("bs4")
+def test_html_header_text_splitter_inline_tags_return_each_element() -> None:
+    """Test that inline tags preserve document order when return_each_element=True."""
+    splitter = HTMLHeaderTextSplitter([("h1", "title")], return_each_element=True)
+    docs = splitter.split_text("<h1>Manual</h1><p>A <strong>B</strong> C</p>")
+    assert len(docs) == 4
+    assert [d.page_content for d in docs] == ["Manual", "A", "B", "C"]
+    assert all(d.metadata == {"title": "Manual"} for d in docs)
+
+
+@pytest.mark.requires("bs4")
+def test_html_header_text_splitter_heading_inline_tags() -> None:
+    """Test inline tags in headings are preserved in metadata and not duplicated."""
+    splitter = HTMLHeaderTextSplitter([("h1", "title")])
+    docs = splitter.split_text("<h1><code>pkg</code> guide</h1><p>Body text</p>")
+    assert len(docs) == 2
+    assert docs[0].page_content == "pkg guide"
+    assert docs[0].metadata == {"title": "pkg guide"}
+    assert docs[1].page_content == "Body text"
+    assert docs[1].metadata == {"title": "pkg guide"}
+
+
+@pytest.mark.requires("bs4")
+def test_html_header_text_splitter_nested_inline_tags() -> None:
+    """Test nested inline tags preserve document order."""
+    splitter = HTMLHeaderTextSplitter([("h1", "title")])
+    html = "<h1>Manual</h1><p>Start <em>italic <strong>bold</strong></em> end.</p>"
+    docs = splitter.split_text(html)
+    assert len(docs) == 2
+    assert docs[1].page_content.split() == ["Start", "italic", "bold", "end."]
+
+
 def test_split_text_on_tokens() -> None:
     """Test splitting by tokens per chunk."""
     text = "foo bar baz 123"
