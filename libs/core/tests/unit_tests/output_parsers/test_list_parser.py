@@ -312,3 +312,12 @@ async def test_markdown_list_async() -> None:
         assert [
             a async for a in parser.atransform(aiter_from_iter([text]))
         ] == expectedlist
+
+
+def test_list_parsers_strip_crlf_line_endings() -> None:
+    """List parsers should not include trailing CR on CRLF inputs."""
+    numbered = NumberedListOutputParser()
+    assert numbered.parse("1. foo\r\n2. bar\r\n3. baz\r\n") == ["foo", "bar", "baz"]
+
+    markdown = MarkdownListOutputParser()
+    assert markdown.parse("- foo\r\n* bar\r\n- baz\r\n") == ["foo", "bar", "baz"]
