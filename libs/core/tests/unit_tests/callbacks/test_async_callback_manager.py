@@ -5,11 +5,13 @@ that generate traces based on the callbacks. The traces are all verified
 via snapshot testing (e.g., see unit tests for runnables).
 """
 
+import asyncio
 import contextvars
 from contextlib import asynccontextmanager
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
+import pytest
 from typing_extensions import override
 
 from langchain_core.callbacks import (
@@ -210,3 +212,44 @@ async def test_shielded_callback_context_preservation() -> None:
         f"but got {handler.context_values}. "
         f"This indicates the shielded decorator is not preserving context variables."
     )
+
+
+async def test_async_callback_manager_closes_run_on_start_cancellation() -> None:
+    """Cancellation during on_chain_start should still notify on_chain_error."""
+
+    class _CancellingHandler(AsyncCallbackHandler):
+        def __init__(self) -> None:
+            self.dispatched = asyncio.Event()
+            self.events: list[tuple[str, Any]] = []
+
+        async def on_chain_start(
+            self,
+            _serialized: dict[str, Any],
+            _inputs: dict[str, Any],
+            *,
+            run_id: Any = None,
+            **_kwargs: Any,
+        ) -> None:
+            self.events.append(("start", run_id))
+            self.dispatched.set()
+            await asyncio.Event().wait()
+
+        async def on_chain_error(
+            self,
+            _error: BaseException,
+            *,
+            run_id: Any = None,
+            **_kwargs: Any,
+        ) -> None:
+            self.events.append(("error", run_id))
+
+    handler = _CancellingHandler()
+    manager = AsyncCallbackManager(handlers=[handler])
+    run_id = uuid4()
+    task = asyncio.create_task(manager.on_chain_start({}, {"x": 1}, run_id=run_id))
+    await handler.dispatched.wait()
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert handler.events == [("start", run_id), ("error", run_id)]

@@ -2031,18 +2031,34 @@ class AsyncCallbackManager(BaseCallbackManager):
         if run_id is None:
             run_id = uuid7()
 
-        await ahandle_event(
-            self.handlers,
-            "on_chain_start",
-            "ignore_chain",
-            serialized,
-            inputs,
-            run_id=run_id,
-            parent_run_id=self.parent_run_id,
-            tags=self.tags,
-            metadata=self.metadata,
-            **kwargs,
-        )
+        try:
+            await ahandle_event(
+                self.handlers,
+                "on_chain_start",
+                "ignore_chain",
+                serialized,
+                inputs,
+                run_id=run_id,
+                parent_run_id=self.parent_run_id,
+                tags=self.tags,
+                metadata=self.metadata,
+                **kwargs,
+            )
+        except BaseException as exc:
+            await asyncio.shield(
+                ahandle_event(
+                    self.handlers,
+                    "on_chain_error",
+                    "ignore_chain",
+                    exc,
+                    run_id=run_id,
+                    parent_run_id=self.parent_run_id,
+                    tags=self.tags,
+                    metadata=self.metadata,
+                    **kwargs,
+                )
+            )
+            raise
 
         return AsyncCallbackManagerForChainRun(
             run_id=run_id,
