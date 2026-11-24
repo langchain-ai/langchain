@@ -608,7 +608,7 @@ class QdrantVectorStore(VectorStore):
                         using=self.vector_name,
                         query=query_dense_embedding,
                         filter=filter,
-                        limit=k,
+                        limit=k + offset,
                         params=search_params,
                     ),
                     models.Prefetch(
@@ -618,7 +618,7 @@ class QdrantVectorStore(VectorStore):
                             values=query_sparse_embedding.values,
                         ),
                         filter=filter,
-                        limit=k,
+                        limit=k + offset,
                         params=search_params,
                     ),
                 ],
