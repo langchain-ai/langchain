@@ -88,6 +88,7 @@ _BUILTIN_PROVIDERS: dict[str, tuple[str, str, Callable[..., BaseChatModel]]] = {
     "litellm": ("langchain_litellm", "ChatLiteLLM", _call),
     "meta": ("langchain_meta", "ChatMetaModel", _call),
     "mistralai": ("langchain_mistralai", "ChatMistralAI", _call),
+    "modal": ("langchain_modal", "ChatModal", _call),
     "nvidia": ("langchain_nvidia_ai_endpoints", "ChatNVIDIA", _call),
     "ollama": ("langchain_ollama", "ChatOllama", _call),
     "openai": ("langchain_openai", "ChatOpenAI", _call),
@@ -333,6 +334,7 @@ def init_chat_model(
             - `litellm`                 -> [`langchain-litellm`](https://docs.langchain.com/oss/python/integrations/providers/litellm)
             - `meta`                    -> [`langchain-meta`](https://pypi.org/project/langchain-meta)
             - `langsmith`               -> [`langchain-openai`](https://docs.langchain.com/langsmith/llm-gateway)
+            - `modal`                   -> [`langchain-modal`](https://pypi.org/project/langchain-modal)
 
         configurable_fields: Which model parameters are configurable at runtime:
 
