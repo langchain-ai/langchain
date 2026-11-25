@@ -20,10 +20,10 @@ sources:
     resource: repo://libs/partners/openai/tests/unit_tests/chat_models/test_base_standard.py
   - id: openwiki-source-4065d8687d2708ee826c7818
     resource: repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-25T08:17:23.842Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-24T08:17:18.845Z
+    at: 2026-11-25T08:17:23.842Z
 ---
 
 # Partner Pattern Reference
@@ -270,32 +270,44 @@ Reference: [repo://libs/standard-tests/README.md](repo://libs/standard-tests/REA
 
 ### Auto-Generated Profiles (`_profiles.py`)
 
-- [ ] File generated from `models.dev` provider registry
-- [ ] Contains model metadata: name, context window, capabilities
-- [ ] Regenerated when provider releases new models
+Auto-generated from the [models.dev](https://github.com/sst/models.dev) provider registry (MIT License). This file is regenerated when providers release new models. Contains comprehensive model metadata:
+
+- [ ] File structure: `_PROFILES` dictionary mapping model IDs to capability dictionaries
+- [ ] Model capabilities include:
+  - `name`: Human-readable model name
+  - `max_input_tokens`, `max_output_tokens`: Context and output limits
+  - `text_inputs`, `image_inputs`, `audio_inputs`, `video_inputs`: Input modality support
+  - `text_outputs`, `image_outputs`: Output modality support
+  - `tool_calling`, `structured_output`: Feature support
+  - `temperature`, `tool_choice`, `tool_call_streaming`: API parameter support
+  - `release_date`, `last_updated`, `status`: Model lifecycle metadata
+  - `reasoning_output`, `attachment`: Advanced capability flags
+- [ ] Generated periodically; do not edit manually
 
 ### Profile Augmentations (`profile_augmentations.toml`)
 
-Add provider-specific overrides for capabilities not auto-detected:
+Provider-specific overrides and augmentations for auto-generated profiles. Provider-level overrides apply to all models; model-specific overrides in `[overrides."model-id"]` sections override defaults:
 
 ```toml
-[model_profiles]
+provider = "openai"
 
-[model_profiles."model-id"]
-name = "Human-readable model name"
-context_window = 8192
-max_output_tokens = 4096
-supports_vision = true
-supports_tool_calling = true
-supports_structured_output = true
-cost_input_per_1k = 0.003
-cost_output_per_1k = 0.006
+[overrides]
+# Applied to all models unless overridden per-model
+image_url_inputs = true
+tool_choice = true
+
+[overrides."model-id"]
+# Model-specific overrides
+max_input_tokens = 128000
+reasoning_effort_levels = ["none", "low", "medium", "high"]
+mid_conversation_system_messages = true
 ```
 
-- [ ] Define `name` (human-readable)
-- [ ] Set `context_window` (tokens)
-- [ ] Set capability flags: `supports_vision`, `supports_tool_calling`, `supports_structured_output`
-- [ ] Set pricing (cost per 1K tokens)
+- [ ] Define provider name
+- [ ] Add provider-level overrides for capability defaults across models
+- [ ] Model-specific entries for unique configurations (e.g., different reasoning levels)
+- [ ] Include `reasoning_effort_levels` for models with reasoning features
+- [ ] Include `mid_conversation_system_messages` and `mid_conversation_tools` for models supporting these features
 
 ## Error Handling Mapping
 

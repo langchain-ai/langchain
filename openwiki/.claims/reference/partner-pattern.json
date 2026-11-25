@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3f2e7eaf6aa7a98b780f4fe2fa5889e1be5650a92513071cd47866d7eb25e707",
+  "pageVersion": "sha256:e4dcaced0f141037f832aeb85e908f4428babfc4729caefaebeb7dc29c3c4cbb",
   "claims": [
     {
       "id": "claim_3ad3740cfbd545d8ba64cdf277cd6364",
@@ -46,11 +46,11 @@
     },
     {
       "id": "claim_fb80374b41c24bf6957195aa5eb17e34",
-      "statement": "Model profiles are organized in data/_profiles.py (auto-generated from provider registry) and profile_augmentations.toml (provider-specific overrides) defining model capabilities including context_window, supports_vision, supports_tool_calling, supports_structured_output, and pricing information.",
+      "statement": "Model profiles are defined in two files: _profiles.py (auto-generated from models.dev provider registry) containing comprehensive model metadata including max_input_tokens, max_output_tokens, capability flags (tool_calling, structured_output, text/image/audio/video inputs), and lifecycle metadata; and profile_augmentations.toml (provider-specific overrides) with provider-level defaults and model-specific entries for configurations like reasoning_effort_levels and mid-conversation feature support.",
       "evidence": [
         {
           "resource": "repo://libs/partners/openai/langchain_openai/data/_profiles.py",
-          "version": "repo-file-v1:sha256:cd445736b4485527bfd60904eb59b8069737335adb47a08121589df4fdc6c785"
+          "version": "repo-file-v1:sha256:fbe83e9c86c2017b5760f87e77b9f29c3da5579cf2604a70b078274e2003b71b"
         },
         {
           "resource": "repo://libs/partners/openai/langchain_openai/data/profile_augmentations.toml",
@@ -61,6 +61,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-24T08:17:18.845Z"
+    "at": "2026-11-25T08:17:23.842Z"
   }
 }
