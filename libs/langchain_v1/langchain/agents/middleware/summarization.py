@@ -6,7 +6,7 @@ import warnings
 from collections.abc import Awaitable, Callable, Coroutine, Iterable, Mapping
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Literal, TypedDict, cast
+from typing import Any, Generic, Literal, TypedDict, cast
 
 from langchain_core.exceptions import ContextOverflowError
 from langchain_core.language_models import LanguageModelInput
@@ -27,6 +27,7 @@ from langchain_core.messages.utils import (
 from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
 from langchain_core.runnables.base import coerce_to_runnable
 from langgraph.constants import TAG_NOSTREAM
+from langgraph.runtime import Runtime
 from langgraph.types import Command
 from typing_extensions import override
 
@@ -269,6 +270,41 @@ def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
 
 
 @dataclass(frozen=True)
+class ModelResolution(Generic[ContextT]):
+    """What a `model` callable receives to choose the context model for one call.
+
+    See the `model` argument of
+    [`SummarizationMiddleware`][langchain.agents.middleware.summarization.SummarizationMiddleware].
+    """
+
+    runtime: Runtime[ContextT]
+    """Runtime of the current agent run, including its `context`."""
+
+    state: Mapping[str, Any]
+    """Agent state at the time of the call."""
+
+    request: ModelRequest[ContextT] | None = None
+    """The model call being made, when summarization runs as part of one.
+
+    `request.model` is the model the call actually goes to, after any model
+    swaps made by middleware that runs before this one.
+    """
+
+    @property
+    def context(self) -> ContextT:
+        """Shortcut for `runtime.context`."""
+        return self.runtime.context
+
+
+ModelResolver = Callable[[ModelResolution[Any]], BaseChatModel]
+"""Chooses the context model for each model call.
+
+Must return a `BaseChatModel` instance, never a model string, so compaction never
+builds a new (possibly unauthenticated) client on the fly.
+"""
+
+
+@dataclass(frozen=True)
 class _CallModels:
     """Models and token counters resolved for a single model call.
 
@@ -397,7 +433,7 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
     def __init__(
         self,
-        model: str | BaseChatModel | None = None,
+        model: str | BaseChatModel | ModelResolver | None = None,
         *,
         trigger: (ContextSize | TriggerClause | list[ContextSize | TriggerClause] | None) = None,
         keep: ContextSize = ("messages", _DEFAULT_MESSAGES_TO_KEEP),
@@ -421,6 +457,10 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                     one (see "Middleware order" above). Recommended.
                 - A chat model, or a model string resolved with `init_chat_model`:
                     pin the context model, whatever model a call goes to.
+                - A callable taking a
+                    [`ModelResolution`][langchain.agents.middleware.summarization.ModelResolution]
+                    and returning a `BaseChatModel` instance: choose the context
+                    model per call. Returning a model string raises `TypeError`.
 
                 !!! warning "Pinning `model` to choose a summary-writing model"
 
@@ -439,6 +479,12 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                     SummarizationMiddleware(
                         trigger=("fraction", 0.8),
                         summarizer="openai:gpt-6-luna",
+                    )
+
+                    # Choose the context model per call
+                    SummarizationMiddleware(
+                        model=lambda resolution: MODELS[resolution.context.tier],
+                        trigger=("fraction", 0.8),
                     )
                     ```
             trigger: One or more thresholds that trigger summarization.
@@ -507,7 +553,8 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
                 The context model (see `model`) is still used for its profile
                 (fractional limits) and token counting, but is not called to
-                write summaries. `summarizer` takes precedence over `model`.
+                write summaries. `summarizer` takes precedence over every form
+                of `model`.
 
                 - A chat model, or a model string resolved with
                     `init_chat_model`, writes summaries in place of the context
@@ -571,7 +618,19 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         if isinstance(model, str):
             model = init_chat_model(model)
 
-        self.model: BaseChatModel | None = model
+        self._model_resolver: ModelResolver | None = None
+        self.model: BaseChatModel | None = None
+        subject: Any = model
+        if isinstance(subject, BaseChatModel) or hasattr(subject, "invoke"):
+            self.model = subject
+        elif callable(subject):
+            self._model_resolver = subject
+        elif subject is not None:
+            msg = (
+                "`model` must be a model string, a `BaseChatModel`, a callable "
+                f"returning a `BaseChatModel`, or `None`; got {type(subject).__name__}."
+            )
+            raise TypeError(msg)
         # Retry up to 3 attempts total, skipping errors marked non-retryable.
         self._summary_model: Runnable[LanguageModelInput, BaseMessage] | None = (
             self.model.with_retry(retry_if_exception_type=default_retry_on)
@@ -767,11 +826,34 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         return self._call_models_for(self._resolve_context_model(request))
 
     def _resolve_context_model(self, request: ModelRequest[Any]) -> BaseChatModel:
+        if self._model_resolver is not None:
+            resolution = ModelResolution(
+                runtime=request.runtime, state=request.state, request=request
+            )
+            return self._check_resolved_model(self._model_resolver(resolution))
         if self.model is None:
             return request.model
         if not _same_model(self.model, request.model):
             self._warn_pinned_model_differs(request.model)
         return self.model
+
+    @staticmethod
+    def _check_resolved_model(model: object) -> BaseChatModel:
+        if isinstance(model, str):
+            msg = (
+                "The `model` callable passed to `SummarizationMiddleware` returned the "
+                f"string {model!r}. Return a `BaseChatModel` instance instead (for "
+                "example one built once with `init_chat_model`), so summarization "
+                "never constructs a new, possibly unauthenticated, model client."
+            )
+            raise TypeError(msg)
+        if not isinstance(model, BaseChatModel):
+            msg = (
+                "`SummarizationMiddleware` needs a `BaseChatModel` as its context "
+                f"model, got {type(model).__name__}. Pass `model=` to choose one."
+            )
+            raise TypeError(msg)
+        return model
 
     def _warn_pinned_model_differs(self, call_model: BaseChatModel) -> None:
         pinned = cast("BaseChatModel", self.model)
