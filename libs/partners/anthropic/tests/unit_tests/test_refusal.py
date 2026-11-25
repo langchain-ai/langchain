@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from anthropic.types import Message, RawMessageDeltaEvent
-from langchain_core.exceptions import ModelRefusalError
+from langchain_core.exceptions import ModelRefusalError, OutputParserException
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
@@ -142,3 +142,43 @@ def test_structured_output_without_forced_tool_raises_refusal(
         else:
             with pytest.raises(ModelRefusalError, match="category='cyber'"):
                 structured.invoke("hi")
+
+
+@pytest.mark.parametrize(
+    "model_kwargs",
+    [
+        pytest.param({"model": "claude-sonnet-5-5"}, id="no-forced-tool-model"),
+        pytest.param(
+            {
+                "model": "claude-haiku-4-5",
+                "max_tokens": 2048,
+                "thinking": {"type": "enabled", "budget_tokens": 1024},
+            },
+            id="thinking-enabled",
+        ),
+    ],
+)
+@pytest.mark.parametrize("include_raw", [False, True])
+@pytest.mark.filterwarnings("ignore:You are attempting to use structured output")
+def test_structured_output_text_only_reply_without_tool_call(
+    model_kwargs: dict, *, include_raw: bool
+) -> None:
+    """A text-only reply surfaces as `parsing_error` with `include_raw=True`."""
+
+    class Answer(BaseModel):
+        value: int
+
+    model = ChatAnthropic(api_key="test", **model_kwargs)  # type: ignore[arg-type]
+    message = AIMessage(content="42", response_metadata={"stop_reason": "end_turn"})
+    result = ChatResult(generations=[ChatGeneration(message=message)])
+    structured = model.with_structured_output(Answer, include_raw=include_raw)
+    with patch.object(ChatAnthropic, "_generate", return_value=result):
+        if include_raw:
+            output = structured.invoke("6 * 7?")
+            assert isinstance(output, dict)
+            assert output["raw"].content == "42"
+            assert output["parsed"] is None
+            assert isinstance(output["parsing_error"], OutputParserException)
+        else:
+            with pytest.raises(OutputParserException):
+                structured.invoke("6 * 7?")

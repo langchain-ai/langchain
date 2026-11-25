@@ -61,7 +61,12 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.runnables import (
+    Runnable,
+    RunnableLambda,
+    RunnableMap,
+    RunnablePassthrough,
+)
 from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, get_pydantic_field_names
 from langchain_core.utils._gateway import (
@@ -2716,7 +2721,10 @@ class ChatAnthropic(BaseChatModel):
         self,
         schema: dict | type,
         formatted_tool: AnthropicTool,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> tuple[
+        Runnable[LanguageModelInput, AIMessage],
+        Runnable[AIMessage, AIMessage],
+    ]:
         thinking_admonition = (
             "You are attempting to use structured output via forced tool calling, "
             "which is not supported when `thinking` is enabled or on "
@@ -2742,7 +2750,7 @@ class ChatAnthropic(BaseChatModel):
                 raise OutputParserException(thinking_admonition)
             return message
 
-        return llm | _raise_if_no_tool_calls
+        return llm, RunnableLambda(_raise_if_no_tool_calls)
 
     def bind_tools(
         self,
@@ -3002,7 +3010,8 @@ class ChatAnthropic(BaseChatModel):
                     that don't support forced tool use (Claude Opus 5.5, Claude
                     Fable 5.1, Claude Sonnet 5.5), the tool call isn't forced,
                     and a missing tool call raises `OutputParserException`
-                    (`ModelRefusalError` if the model refused).
+                    (`ModelRefusalError` if the model refused), or is returned
+                    as `parsing_error` when `include_raw` is `True`.
                 - `'json_schema'`: Use Claude's dedicated
                     [structured output](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)
                     feature.
@@ -3053,6 +3062,7 @@ class ChatAnthropic(BaseChatModel):
             method = "json_schema"
 
         # TODO: make `method="json_schema"` the default in a future release.
+        no_tool_call_check: Runnable[AIMessage, AIMessage] | None = None
         if method == "function_calling":
             formatted_tool = cast(AnthropicTool, convert_to_anthropic_tool(schema))
             # The result of convert_to_anthropic_tool for 'method=function_calling' will
@@ -3062,10 +3072,15 @@ class ChatAnthropic(BaseChatModel):
                 self.thinking is not None
                 and self.thinking.get("type") in ("enabled", "adaptive")
             ) or not _supports_forced_tool_choice(self.model):
-                llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
-                    schema,
-                    formatted_tool,
+                llm, no_tool_call_check = (
+                    self._get_llm_for_structured_output_when_thinking_is_enabled(
+                        schema,
+                        formatted_tool,
+                    )
                 )
+                if not include_raw:
+                    # Preserve the existing behavior: raise before parsing.
+                    llm = llm | no_tool_call_check
             else:
                 llm = self.bind_tools(
                     [schema],
@@ -3108,8 +3123,14 @@ class ChatAnthropic(BaseChatModel):
             raise ValueError(error_message)
 
         if include_raw:
+            parsing_parser: Runnable[Any, Any] = output_parser
+            if no_tool_call_check is not None:
+                # Run the missing-tool-call check as part of parsing so the
+                # fallback reports it as `parsing_error` instead of raising
+                # before `raw` is returned.
+                parsing_parser = no_tool_call_check | output_parser
             parser_assign = RunnablePassthrough.assign(
-                parsed=itemgetter("raw") | output_parser,
+                parsed=itemgetter("raw") | parsing_parser,
                 parsing_error=lambda _: None,
             )
             parser_none = RunnablePassthrough.assign(parsed=lambda _: None)
