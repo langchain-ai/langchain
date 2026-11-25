@@ -248,6 +248,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "claude-opus-4-5": {
         "name": "Claude Opus 4.5 (latest)",
+        "status": "deprecated",
         "release_date": "2025-11-24",
         "last_updated": "2025-11-24",
         "open_weights": False,
@@ -280,6 +281,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
     },
     "claude-opus-4-5-20251101": {
         "name": "Claude Opus 4.5",
+        "status": "deprecated",
         "release_date": "2025-11-24",
         "last_updated": "2025-11-01",
         "open_weights": False,
