@@ -126,6 +126,57 @@ class TestFilesystemGrepSearch:
 
         assert "Invalid regex pattern" in result
 
+    def test_python_fallback_times_out(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test Python fallback returns no matches when the worker times out."""
+        (tmp_path / "test.py").write_text("needle\n", encoding="utf-8")
+        processes: list[Any] = []
+
+        class TimedOutProcess:
+            exitcode: int | None = None
+
+            def __init__(self, *_args: Any, **_kwargs: Any) -> None:
+                self.closed = False
+                self.join_timeouts: list[float | None] = []
+                self.terminated = False
+                processes.append(self)
+
+            def start(self) -> None:
+                pass
+
+            def join(self, timeout: float | None = None) -> None:
+                self.join_timeouts.append(timeout)
+
+            def is_alive(self) -> bool:
+                return not self.terminated
+
+            def terminate(self) -> None:
+                self.terminated = True
+
+            def close(self) -> None:
+                self.closed = True
+
+        monkeypatch.setattr(
+            "langchain.agents.middleware.file_search.multiprocessing.Process",
+            TimedOutProcess,
+        )
+        monkeypatch.setattr(
+            "langchain.agents.middleware.file_search._PYTHON_SEARCH_TIMEOUT_SECONDS",
+            0.01,
+        )
+
+        middleware = FilesystemFileSearchMiddleware(root_path=str(tmp_path), use_ripgrep=False)
+
+        assert isinstance(middleware.grep_search, StructuredTool)
+        assert middleware.grep_search.func is not None
+        result = middleware.grep_search.func(pattern="needle", output_mode="content")
+
+        assert result == "No matches found"
+        assert processes[0].closed
+        assert processes[0].join_timeouts[0] == 0.01
+        assert processes[0].terminated
+
     def test_grep_no_matches(self, tmp_path: Path) -> None:
         """Test grep search with no matches."""
         (tmp_path / "test.py").write_text("hello\n", encoding="utf-8")
