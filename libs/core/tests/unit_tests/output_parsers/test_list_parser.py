@@ -312,3 +312,14 @@ async def test_markdown_list_async() -> None:
         assert [
             a async for a in parser.atransform(aiter_from_iter([text]))
         ] == expectedlist
+
+
+def test_markdown_list_empty_bullet_does_not_include_next_marker() -> None:
+    """Empty bullets should not cause the next line's bullet marker to be captured."""
+    parser = MarkdownListOutputParser()
+    assert parser.parse("-\n- apple\n- banana") == ["apple", "banana"]
+    assert parser.parse("*\n* apple\n* banana") == ["apple", "banana"]
+    assert list(parser.transform(iter(["-\n- apple\n- banana"]))) == [
+        ["apple"],
+        ["banana"],
+    ]

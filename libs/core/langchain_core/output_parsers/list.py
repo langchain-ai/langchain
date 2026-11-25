@@ -221,7 +221,7 @@ class NumberedListOutputParser(ListOutputParser):
 class MarkdownListOutputParser(ListOutputParser):
     """Parse a Markdown list."""
 
-    pattern: str = r"^\s*[-*]\s([^\n]+)$"
+    pattern: str = r"^[ \t]*[-*][ \t]([^\n]+)$"
     """The pattern to match a Markdown list item."""
 
     @override
