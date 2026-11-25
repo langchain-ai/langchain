@@ -307,3 +307,32 @@ def test_an_unknown_embedded_resource_type_names_itself() -> None:
 
     with pytest.raises(ValueError, match="Unknown embedded resource type: _VideoResource"):
         _convert_content_block(embedded)
+
+
+async def test_mcp_tool_preserves_config_and_run_manager_arguments() -> None:
+    """MCP tool parameters named config or run_manager should reach the server."""
+    from fastmcp import Client, FastMCP
+
+    from langchain.mcp import as_langchain_tool
+
+    server = FastMCP("demo")
+
+    @server.tool
+    def update_settings(config: str, run_manager: str) -> str:
+        return f"config={config!r},run_manager={run_manager!r}"
+
+    client = Client(server)
+    async with client:
+        [mcp_tool] = await client.list_tools()
+    tool = await as_langchain_tool(mcp_tool, client)
+    message = await tool.ainvoke(
+        {
+            "name": "update_settings",
+            "args": {"config": "dark-mode", "run_manager": "custom"},
+            "id": "1",
+            "type": "tool_call",
+        }
+    )
+    assert message.status == "success"
+    assert "config='dark-mode'" in str(message.content)
+    assert "run_manager='custom'" in str(message.content)

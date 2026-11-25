@@ -12,6 +12,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Protocol, TypedDict
 
 from fastmcp.client.group import ClientGroup
+from pydantic import PrivateAttr
 from langchain_core.messages.content import (
     FileContentBlock,
     ImageContentBlock,
@@ -20,7 +21,7 @@ from langchain_core.messages.content import (
     create_image_block,
     create_text_block,
 )
-from langchain_core.tools import BaseTool, StructuredTool, ToolException
+from langchain_core.tools import BaseTool, ToolException
 from mcp.types import (
     AudioContent,
     BlobResourceContents,
@@ -293,15 +294,36 @@ async def as_langchain_tool(
                 result = await client.call_tool(tool.name, arguments, raise_on_error=False)
         return _convert_call_tool_result(result)
 
-    return StructuredTool(
+    return _MCPTool(
         name=tool.name,
         description=tool.description or "",
         args_schema=_normalize_mcp_schema(tool.input_schema),
-        coroutine=call_tool,
+        call_tool=call_tool,
         response_format="content_and_artifact",
         metadata=_tool_metadata(tool, requesting_client),
         handle_tool_error=_handle_mcp_tool_error,
     )
+
+
+class _MCPTool(BaseTool):
+    """LangChain tool backed by an MCP tool without reserved-kwarg shadowing."""
+
+    _call_tool: Any = PrivateAttr()
+
+    def __init__(self, *, call_tool: Any, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self._call_tool = call_tool
+
+    def _run(
+        self, **arguments: Any
+    ) -> tuple[list[ToolMessageContentBlock], MCPToolArtifact | None]:
+        msg = "MCP tools only support async invocation."
+        raise NotImplementedError(msg)
+
+    async def _arun(
+        self, **arguments: Any
+    ) -> tuple[list[ToolMessageContentBlock], MCPToolArtifact | None]:
+        return await self._call_tool(**arguments)
 
 
 __all__ = ["MCPToolArtifact", "as_langchain_tool"]
