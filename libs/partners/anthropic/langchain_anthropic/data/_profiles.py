@@ -283,7 +283,7 @@ _PROFILES: dict[str, dict[str, Any]] = {
         "name": "Claude Opus 4.5",
         "status": "deprecated",
         "release_date": "2025-11-24",
-        "last_updated": "2025-11-01",
+        "last_updated": "2025-11-24",
         "open_weights": False,
         "max_input_tokens": 200000,
         "max_output_tokens": 64000,
