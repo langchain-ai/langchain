@@ -1399,6 +1399,19 @@ def test__create_usage_metadata() -> None:
     )
 
 
+def test__create_usage_metadata_reasoning_missing_from_completion() -> None:
+    """Gemini's OpenAI-compatible API leaves thinking out of `completion_tokens`."""
+    usage_metadata = {"prompt_tokens": 18, "completion_tokens": 5, "total_tokens": 454}
+    result = _create_usage_metadata(usage_metadata)
+    assert result == UsageMetadata(
+        input_tokens=18,
+        output_tokens=436,
+        total_tokens=454,
+        input_token_details={},
+        output_token_details={"reasoning": 431},
+    )
+
+
 def test__create_usage_metadata_zero_total_tokens() -> None:
     """Test that explicit total_tokens=0 is preserved, not replaced by sum."""
     usage_metadata = {
