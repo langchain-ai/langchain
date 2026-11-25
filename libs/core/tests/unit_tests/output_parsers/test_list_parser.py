@@ -312,3 +312,16 @@ async def test_markdown_list_async() -> None:
         assert [
             a async for a in parser.atransform(aiter_from_iter([text]))
         ] == expectedlist
+
+
+def test_list_parsers_crlf_line_endings() -> None:
+    """List parsers should not include trailing CR characters on CRLF inputs."""
+    md_parser = MarkdownListOutputParser()
+    md_text = "- apple\r\n- banana\r\n"
+    assert md_parser.parse(md_text) == ["apple", "banana"]
+    assert list(md_parser.transform(iter([md_text]))) == [["apple"], ["banana"]]
+
+    num_parser = NumberedListOutputParser()
+    num_text = "1. apple\r\n2. banana\r\n"
+    assert num_parser.parse(num_text) == ["apple", "banana"]
+    assert list(num_parser.transform(iter([num_text]))) == [["apple"], ["banana"]]
