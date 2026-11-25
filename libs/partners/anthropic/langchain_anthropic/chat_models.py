@@ -1407,6 +1407,33 @@ class ChatAnthropic(BaseChatModel):
         )
         ```
 
+    Example: Custom HTTP or SDK clients
+        Pass an HTTP client to change how requests are sent (TLS, transports,
+        per-request auth) while the model keeps its own connection settings. Pass
+        an SDK client to take over the connection entirely, for example to call
+        Claude on Bedrock or Vertex AI.
+
+        ```python
+        import anthropic
+        from langchain_anthropic import ChatAnthropic
+
+        # HTTP layer only: base URL, key, timeout and retries still come from here.
+        # anthropic.Default(Async)HttpxClient always matches the HTTP library the
+        # installed SDK uses (httpx2 for anthropic>=1, httpx before).
+        model = ChatAnthropic(
+            model="claude-sonnet-5-5",
+            http_client=anthropic.DefaultHttpxClient(verify="/path/to/ca.pem"),
+            http_async_client=anthropic.DefaultAsyncHttpxClient(verify="/path/to/ca.pem"),
+        )
+
+        # Whole SDK client: connection settings come from the client instead.
+        model = ChatAnthropic(
+            model="anthropic.claude-sonnet-5-5",
+            client=anthropic.AnthropicBedrock(aws_region="us-east-1"),
+            async_client=anthropic.AsyncAnthropicBedrock(aws_region="us-east-1"),
+        )
+        ```
+
     Note:
         Any param which is not explicitly supported will be passed directly to
         [`Anthropic.messages.create(...)`](https://platform.claude.com/docs/en/api/python/messages/create)
@@ -1476,6 +1503,76 @@ class ChatAnthropic(BaseChatModel):
 
     default_headers: Mapping[str, str] | None = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
+
+    http_client: Any | None = Field(default=None, exclude=True)
+    """HTTP client for sync invocations, passed to the Anthropic SDK as is.
+
+    Use it for custom TLS (`verify=`, CA bundles, mTLS), transports, connection
+    limits, or per-request auth through httpx's `auth=` hook. The model's base URL,
+    timeout, retries and headers still apply on top of it.
+
+    The client must come from the HTTP library the installed `anthropic` SDK is
+    built on: `httpx2` for `anthropic>=1`, `httpx` before that. Passing the other
+    one raises a `TypeError` from the SDK. Build it with
+    `anthropic.DefaultHttpxClient(...)`, which always matches the installed SDK
+    and keeps its default connection limits:
+
+    ```python
+    import anthropic
+
+    model = ChatAnthropic(
+        model="claude-sonnet-5-5",
+        http_client=anthropic.DefaultHttpxClient(verify="/path/to/ca.pem"),
+    )
+    ```
+
+    Only used for sync invocations; set `http_async_client` for async ones. The
+    model does not close it. Cannot be combined with `anthropic_proxy` (set the
+    proxy on the client instead) or with `client`.
+    """
+
+    http_async_client: Any | None = Field(default=None, exclude=True)
+    """HTTP client for async invocations, passed to the Anthropic SDK as is.
+
+    Same rules as `http_client`. Build it with
+    `anthropic.DefaultAsyncHttpxClient(...)`. Only used for async invocations; set
+    `http_client` for sync ones. Cannot be combined with `anthropic_proxy` or with
+    `async_client`.
+    """
+
+    client: Any | None = Field(default=None, exclude=True)
+    """Anthropic SDK client for sync invocations, used as is.
+
+    For when the HTTP layer isn't enough: another platform (`AnthropicBedrock`,
+    `AnthropicBedrockMantle`, `AnthropicVertex`, `AnthropicFoundry`), credentials
+    the SDK resolves itself, or a client shared with other code. Pass any client
+    with the `anthropic.Anthropic` interface.
+
+    The model sends every request through this client, so its own connection
+    settings do not apply: `api_key`, `base_url`, `default_headers`,
+    `default_request_timeout`, `max_retries` and `anthropic_proxy` are ignored,
+    as are the LangSmith gateway headers. Configure those on the client.
+
+    ```python
+    from anthropic import AnthropicBedrock
+
+    model = ChatAnthropic(
+        model="anthropic.claude-sonnet-5-5",
+        client=AnthropicBedrock(aws_region="us-east-1"),
+    )
+    ```
+
+    Only used for sync invocations; set `async_client` for async ones. The model
+    does not close it. Cannot be combined with `http_client`.
+    """
+
+    async_client: Any | None = Field(default=None, exclude=True)
+    """Anthropic SDK client for async invocations, used as is.
+
+    Same rules as `client`, for an `anthropic.AsyncAnthropic`-compatible client
+    such as `AsyncAnthropicBedrock`. Only used for async invocations; set `client`
+    for sync ones. Cannot be combined with `http_async_client`.
+    """
 
     _langsmith_gateway_headers: dict[str, str] | None = PrivateAttr(default=None)
     """Headers from `langsmith_gateway`, sent by the client but never serialized."""
@@ -1744,6 +1841,34 @@ class ChatAnthropic(BaseChatModel):
         return self
 
     @model_validator(mode="after")
+    def _check_custom_clients(self) -> Self:
+        """Reject settings a custom client would silently override."""
+        for sdk_field, http_field in (
+            ("client", "http_client"),
+            ("async_client", "http_async_client"),
+        ):
+            if getattr(self, sdk_field) is not None and (
+                getattr(self, http_field) is not None
+            ):
+                msg = (
+                    f"Cannot specify both '{sdk_field}' and '{http_field}'. Pass the "
+                    f"HTTP client to the SDK client instead, e.g. "
+                    f"anthropic.Anthropic(http_client=...)."
+                )
+                raise ValueError(msg)
+        if self.anthropic_proxy and (self.http_client or self.http_async_client):
+            msg = (
+                "Cannot specify 'anthropic_proxy' if one of "
+                "'http_client'/'http_async_client' is already specified. Configure "
+                "the proxy on the client instead. Received:\n"
+                f"anthropic_proxy={self.anthropic_proxy!r}\n"
+                f"http_client={self.http_client!r}\n"
+                f"http_async_client={self.http_async_client!r}"
+            )
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
     def _set_langsmith_gateway_headers(self) -> Self:
         """Keep `langsmith_gateway` headers for the lazily built clients."""
         if self._langsmith_gateway_headers is None:
@@ -1815,7 +1940,11 @@ class ChatAnthropic(BaseChatModel):
 
     @cached_property
     def _client(self) -> anthropic.Client:
+        if self.client is not None:
+            return self.client
         client_params = self._client_params
+        if self.http_client is not None:
+            return anthropic.Client(**client_params, http_client=self.http_client)
         http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
@@ -1830,7 +1959,13 @@ class ChatAnthropic(BaseChatModel):
 
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
+        if self.async_client is not None:
+            return self.async_client
         client_params = self._client_params
+        if self.http_async_client is not None:
+            return anthropic.AsyncClient(
+                **client_params, http_client=self.http_async_client
+            )
         http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
