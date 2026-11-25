@@ -128,5 +128,12 @@ def extract_sub_links(
             if not path.startswith(base_url_to_use):
                 continue
 
+            # Require a path boundary so a base of "/docs" does not also
+            # match siblings such as "/docsite" or "/docs-internal".
+            if not base_url_to_use.endswith("/"):
+                next_char = path[len(base_url_to_use) :][:1]
+                if next_char not in ("", "/", "?", "#"):
+                    continue
+
         results.append(path)
     return results
