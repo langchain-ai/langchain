@@ -207,3 +207,27 @@ def test_extract_sub_links_with_query() -> None:
         )
     )
     assert actual == expected, f"Expected {expected}, but got {actual}"
+
+
+def test_prevent_outside_respects_path_boundary() -> None:
+    """A base URL of /docs must not match sibling paths like /docsite."""
+    html = (
+        '<a href="/docs/intro">OK</a>'
+        '<a href="/docs?page=2">OK</a>'
+        '<a href="/docsite/secret">BAD</a>'
+        '<a href="/docs-internal">BAD</a>'
+        '<a href="/docs.old">BAD</a>'
+    )
+    actual = sorted(
+        extract_sub_links(
+            html,
+            "https://example.com/docs",
+            base_url="https://example.com/docs",
+        )
+    )
+    assert actual == sorted(
+        [
+            "https://example.com/docs/intro",
+            "https://example.com/docs?page=2",
+        ]
+    )
