@@ -6808,3 +6808,96 @@ def test_message_delta_finish_reason() -> None:
     assert chunk.response_metadata["finish_reason"] == "pause_turn"
     assert chunk.response_metadata["normalized_finish_reason"] == "other"
     assert chunk.response_metadata["finish_state"] == "suspended"
+
+
+# Annotated `Any`: `httpx` here is whichever library the installed SDK is built on.
+def _recording_handler(seen: list[Any]) -> Callable[[Any], Any]:
+    def handler(request: Any) -> Any:
+        seen.append(request)
+        return httpx.Response(200, json=_MESSAGE_RESPONSE)
+
+    return handler
+
+
+def _per_request_bearer() -> Callable[[Any], Any]:
+    """Auth that mints a new bearer token per request, like short-lived OAuth."""
+    calls = 0
+
+    def auth(request: Any) -> Any:
+        nonlocal calls
+        calls += 1
+        request.headers["Authorization"] = f"Bearer token-{calls}"
+        return request
+
+    return auth
+
+
+def test_http_client_is_used_for_sync_requests() -> None:
+    seen: list[Any] = []
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="sk-placeholder",
+        base_url="https://gateway.example.com",
+        default_headers={"X-Custom": "1"},
+        max_tokens=10,
+        http_client=httpx.Client(
+            transport=httpx.MockTransport(_recording_handler(seen)),
+            auth=_per_request_bearer(),
+        ),
+    )
+
+    llm.invoke("hi")
+    llm.invoke("hi again")
+
+    assert llm._client._client is llm.http_client
+    assert [r.headers["Authorization"] for r in seen] == [
+        "Bearer token-1",
+        "Bearer token-2",
+    ]
+    # The model's base URL and headers still apply over a custom client.
+    assert seen[0].url.host == "gateway.example.com"
+    assert seen[0].headers["X-Custom"] == "1"
+
+
+async def test_http_async_client_is_used_for_async_requests() -> None:
+    seen: list[Any] = []
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="sk-placeholder",
+        max_tokens=10,
+        http_async_client=httpx.AsyncClient(
+            transport=httpx.MockTransport(_recording_handler(seen)),
+            auth=_per_request_bearer(),
+        ),
+    )
+
+    await llm.ainvoke("hi")
+    await llm.ainvoke("hi again")
+
+    assert llm._async_client._client is llm.http_async_client
+    assert [r.headers["Authorization"] for r in seen] == [
+        "Bearer token-1",
+        "Bearer token-2",
+    ]
+    # The sync path keeps building its own client.
+    assert llm._client._client is not llm.http_async_client
+
+
+def test_http_client_with_anthropic_proxy_raises() -> None:
+    with pytest.raises(ValueError, match="anthropic_proxy"):
+        ChatAnthropic(
+            model=MODEL_NAME,
+            anthropic_proxy="http://proxy.example.com:8080",
+            http_async_client=httpx.AsyncClient(),
+        )
+
+
+def test_http_clients_are_not_serialized() -> None:
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        http_client=httpx.Client(),
+        http_async_client=httpx.AsyncClient(),
+    )
+    dumped = llm.model_dump()
+    assert "http_client" not in dumped
+    assert "http_async_client" not in dumped

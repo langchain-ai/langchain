@@ -1477,6 +1477,26 @@ class ChatAnthropic(BaseChatModel):
     default_headers: Mapping[str, str] | None = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
+    http_client: Any | None = Field(default=None, exclude=True)
+    """Optional `httpx.Client` for sync invocations.
+
+    Passed to the Anthropic SDK as-is, so it must come from the HTTP library the
+    installed `anthropic` SDK is built on (`anthropic.DefaultHttpxClient` and its
+    base class). Use it for custom TLS, transports, or per-request auth via
+    `auth=`. Base URL, timeout, retries, and headers still come from this model.
+
+    Only used for sync invocations. Pass `http_async_client` as well for a custom
+    client on the async path. Cannot be combined with `anthropic_proxy`; set the
+    proxy on the client instead.
+    """
+
+    http_async_client: Any | None = Field(default=None, exclude=True)
+    """Optional `httpx.AsyncClient` for async invocations.
+
+    Same rules as `http_client`. Only used for async invocations. Pass
+    `http_client` as well for a custom client on the sync path.
+    """
+
     _langsmith_gateway_headers: dict[str, str] | None = PrivateAttr(default=None)
     """Headers from `langsmith_gateway`, sent by the client but never serialized."""
 
@@ -1744,6 +1764,21 @@ class ChatAnthropic(BaseChatModel):
         return self
 
     @model_validator(mode="after")
+    def _check_http_client_proxy(self) -> Self:
+        """Reject a proxy alongside a custom client, which would silently ignore it."""
+        if self.anthropic_proxy and (self.http_client or self.http_async_client):
+            msg = (
+                "Cannot specify 'anthropic_proxy' if one of "
+                "'http_client'/'http_async_client' is already specified. Configure "
+                "the proxy on the client instead. Received:\n"
+                f"anthropic_proxy={self.anthropic_proxy!r}\n"
+                f"http_client={self.http_client!r}\n"
+                f"http_async_client={self.http_async_client!r}"
+            )
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
     def _set_langsmith_gateway_headers(self) -> Self:
         """Keep `langsmith_gateway` headers for the lazily built clients."""
         if self._langsmith_gateway_headers is None:
@@ -1816,6 +1851,8 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _client(self) -> anthropic.Client:
         client_params = self._client_params
+        if self.http_client is not None:
+            return anthropic.Client(**client_params, http_client=self.http_client)
         http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
@@ -1831,6 +1868,10 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
         client_params = self._client_params
+        if self.http_async_client is not None:
+            return anthropic.AsyncClient(
+                **client_params, http_client=self.http_async_client
+            )
         http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
