@@ -19,7 +19,7 @@ sources:
 generated: { by: "openwiki/0.5.0", at: "2026-11-06T08:17:28.425Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-18T08:17:15.497Z
+    at: 2026-11-24T08:17:18.845Z
 ---
 
 # Partner Pattern: Provider Integration Framework

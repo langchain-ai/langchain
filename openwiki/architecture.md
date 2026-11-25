@@ -34,10 +34,10 @@ sources:
     resource: repo://libs/partners/README.md
   - id: openwiki-source-7da6afe7fe64c6589cf1fed0
     resource: repo://libs/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-11-18T08:17:15.497Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-24T08:17:18.845Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-18T08:17:15.497Z
+    at: 2026-11-24T08:17:18.845Z
 ---
 
 ## Overview
@@ -60,8 +60,8 @@ Users typically import from `langchain` (the actively maintained package) to acc
 graph TB
     User["User Applications"]
     
-    User -->|imports from| LangChain["langchain<br/>(Orchestration & Agents)<br/>v1.5.0"]
-    User -->|may use directly| Core["langchain-core<br/>(Base Abstractions)<br/>v1.8.2"]
+    User -->|imports from| LangChain["langchain<br/>(Orchestration & Agents)<br/>v1.5.2"]
+    User -->|may use directly| Core["langchain-core<br/>(Base Abstractions)<br/>v1.8.4"]
     
     LangChain -->|depends on| Core
     LangChain -->|depends on| LangGraph["LangGraph<br/>(State Graph Engine)"]
@@ -72,7 +72,7 @@ graph TB
     User -->|optionally imports| Partners
     LangChain -->|uses| Partners
     
-    Classic["langchain-classic<br/>(Legacy)<br/>v1.0.8"]
+    Classic["langchain-classic<br/>(Legacy)<br/>v1.1.0"]
     Classic -->|depends on| Core
     
     style Core fill:#2d5016,stroke:#4a7c2c,color:#fff
@@ -292,11 +292,11 @@ The core layer (langchain-core) is intentionally minimal and stable. Orchestrati
 
 ## Versioning and Release Policy
 
-- **langchain-core** (`v1.8.2`): Stable base abstractions. Major version bumps are rare and announced in advance. Deprecations carry multiple minor versions of notice. This is the "least-moving" part of the ecosystem.
+- **langchain-core** (`v1.8.4`): Stable base abstractions. Major version bumps are rare and announced in advance. Deprecations carry multiple minor versions of notice. This is the "least-moving" part of the ecosystem.
 
-- **langchain** (`v1.5.0`): Main user-facing package. Minor versions may add new agent patterns, middleware types, or orchestration improvements. Patch versions fix bugs. Requires specific langchain-core version (e.g., `>=1.8.0,<2.0.0`).
+- **langchain** (`v1.5.2`): Main user-facing package. Minor versions may add new agent patterns, middleware types, or orchestration improvements. Patch versions fix bugs. Requires specific langchain-core version (e.g., `>=1.8.0,<2.0.0`) and LangGraph version (e.g., `>=1.2.16,<1.3.0`).
 
-- **langchain-classic** (`v1.0.8`): Legacy package for backward compatibility. Provides old chains, `langchain-community` re-exports, and deprecated APIs. New projects should use `langchain` instead.
+- **langchain-classic** (`v1.1.0`): Legacy package for backward compatibility. Provides old chains, `langchain-community` re-exports, and deprecated APIs. New projects should use `langchain` instead.
 
 - **Partner packages**: Independent versioning. langchain-openai, langchain-anthropic, etc., release on their own schedules. Partners declare dependencies on langchain-core (required) and optionally langchain (optional, only if they provide middleware or agent-specific features).
 

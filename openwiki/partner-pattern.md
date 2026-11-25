@@ -36,10 +36,10 @@ sources:
     resource: repo://libs/partners/openai/tests/unit_tests/chat_models/test_responses_standard.py
   - id: openwiki-source-025cad4ae99967890152b7e0
     resource: repo://libs/standard-tests/README.md
-generated: { by: "openwiki/0.5.0", at: "2026-11-18T08:17:15.497Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-24T08:17:18.845Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-18T08:17:15.497Z
+    at: 2026-11-24T08:17:18.845Z
 ---
 
 ## Overview
@@ -104,11 +104,11 @@ build-backend = "hatchling.build"
 [project]
 name = "langchain-provider-name"              # PyPI package name
 description = "LangChain integration for Provider Name"
-requires-python = ">=3.10.0,<4.0.0"
+requires-python = ">=3.11.0,<4.0.0"
 version = "0.1.0"
 
 dependencies = [
-    "langchain-core>=1.8.2,<2.0.0",           # Required: base LangChain (current minimum)
+    "langchain-core>=1.8.4,<2.0.0",           # Required: base LangChain (current minimum)
     "provider-client-library>=2.45.0",        # Provider's own SDK (pinned minimum version)
     "certifi>=2024.6.2",                      # SSL certificates
 ]

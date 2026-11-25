@@ -14,10 +14,10 @@ sources:
     resource: repo://libs/core/langchain_core/language_models/model_profile.py
   - id: openwiki-source-c479d4fffee5cf62576699e4
     resource: repo://libs/langchain_v1/langchain/chat_models/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-13T08:16:35.902Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-24T08:17:18.845Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-16T08:30:18.041Z
+    at: 2026-11-24T08:17:18.845Z
 ---
 
 ## Overview
@@ -52,7 +52,7 @@ The `_convert_input` method normalizes all input forms to a `PromptValue` for do
 
 ### Synchronous Methods
 
-**`invoke`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L516-L540`) is the primary synchronous entrypoint:
+**`invoke`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L527-L551`) is the primary synchronous entrypoint:
 
 ```python
 def invoke(
@@ -70,7 +70,7 @@ def invoke(
 - Extracts and returns the first generation's message
 - Propagates `run_id`, callbacks, tags, and metadata from config
 
-**`stream`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L770-L899`) yields `AIMessageChunk` objects as they arrive:
+**`stream`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L781-L914`) yields `AIMessageChunk` objects as they arrive:
 
 ```python
 def stream(
@@ -93,7 +93,7 @@ def stream(
 
 ### Asynchronous Methods
 
-**`ainvoke`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L542-L564`) is the async variant:
+**`ainvoke`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L554-L575`) is the async variant:
 
 ```python
 async def ainvoke(
@@ -109,7 +109,7 @@ async def ainvoke(
 - Awaits `agenerate_prompt`
 - Otherwise mirrors `invoke` behavior
 
-**`astream`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L900-L1010`) is the async streaming variant:
+**`astream`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L916-L1053`) is the async streaming variant:
 
 ```python
 async def astream(
@@ -129,7 +129,7 @@ async def astream(
 
 ### Stream Decision Logic
 
-**`_should_stream()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L590-L627`) determines whether to use the streaming code path:
+**`_should_stream()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L601-L637`) determines whether to use the streaming code path:
 
 ```python
 def _should_stream(
@@ -157,7 +157,7 @@ Returns `False` (fallback to non-streaming) if:
 
 ### Stream Implementation Methods
 
-**`_stream()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2298-L2316`) is the sync streaming hook (optional override):
+**`_stream()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2327-L2345`) is the sync streaming hook (optional override):
 
 ```python
 def _stream(
@@ -173,7 +173,7 @@ def _stream(
 - Default raises `NotImplementedError` (fallback to `_generate`)
 - Receives run_manager for per-token callbacks
 
-**`_astream()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2318-L2354`) is the async streaming hook (optional override):
+**`_astream()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2347-L2383`) is the async streaming hook (optional override):
 
 ```python
 async def _astream(
@@ -190,7 +190,7 @@ async def _astream(
 
 ### ChatModelStream and AsyncChatModelStream
 
-**Location**: `repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1190-L1338` (ChatModelStream), `#L1345-L1580` (AsyncChatModelStream)
+**Location**: `repo://libs/core/langchain_core/language_models/chat_model_stream.py#L1200-L1349` (ChatModelStream), `#L1356-L1584` (AsyncChatModelStream)
 
 For the v3 event protocol (`stream_events(version="v3")`), models return a `ChatModelStream` (sync) or `AsyncChatModelStream` (async) that expose **typed projections** for incremental content accumulation:
 
@@ -218,7 +218,7 @@ Each projection can be iterated for deltas or awaited/drained for the final valu
 
 ### Core Generation Methods
 
-**`_generate()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2251-L2269`) is the **required abstract method** all subclasses must implement:
+**`_generate()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2280-L2298`) is the **required abstract method** all subclasses must implement:
 
 ```python
 @abstractmethod
@@ -236,7 +236,7 @@ def _generate(
 - Must handle errors internally or propagate them
 - Receives normalized messages and a run manager for callbacks
 
-**`_agenerate()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2271-L2296`) is the optional async override:
+**`_agenerate()`** (`repo://libs/core/langchain_core/language_models/chat_models.py#L2300-L2325`) is the optional async override:
 
 ```python
 async def _agenerate(
@@ -253,10 +253,10 @@ async def _agenerate(
 
 ### Cached Generation
 
-**`_generate_with_cache()`** and **`_agenerate_with_cache()`** wrap the core methods with:
+**`_generate_with_cache()`** and **`_agenerate_with_cache()`** (located at `repo://libs/core/langchain_core/language_models/chat_models.py#L1956-L2277`) wrap the core methods with:
 
 1. **Prompt caching**: Checks if `self.cache` or global `get_llm_cache()` has cached results for the input
-2. **Cache hits**: Returns cached generations and replays them as v2 events if a v2 handler is attached
+2. **Cache hits**: Returns cached generations and replays them as v2 events if a v2 handler is attached (via `_replay_v2_events_for_cache_hit`)
 3. **Cache misses**: Routes through streaming or non-streaming path
 4. **Protocol routing**: Dispatches to v2 events (`_should_use_protocol_streaming`) or v1 callback path (`_should_stream`)
 
@@ -276,21 +276,34 @@ def generate(
 
 Returns an `LLMResult` with generations grouped by input prompt and combined llm_output.
 
+## Message Handling and IDs
+
+Stream and generate methods normalize messages via `_normalize_messages()` before passing to `_stream()` or `_generate()`. Each streamed chunk and final message receive a unique ID (derived from run_id) via `message.id` assignment for tracing:
+
+- If the chunk message already has an `id` from the provider, that is preserved as the `provider_id`
+- Otherwise, the `id` is set to `{LC_ID_PREFIX}-{run_manager.run_id}` (formatted at `repo://libs/core/langchain_core/language_models/chat_models.py#L844-L852`)
+- A final empty chunk with `chunk_position="last"` is emitted when streaming completes (at `repo://libs/core/langchain_core/language_models/chat_models.py#L872-L890`)
+- Each chunk's `response_metadata` is populated via `_gen_info_and_msg_metadata()`, merging generation_info and message.response_metadata
+
 ## Callback Lifecycle
 
 Chat models integrate with the callback system to emit structured events throughout execution:
 
 ### LLM Run Lifecycle
 
+Chat models emit callbacks throughout execution. The key events are:
+
 1. **`on_chat_model_start`** (or fallback `on_llm_start`):
    - Fires when `invoke`, `stream`, or `generate` begins
    - Receives serialized model config, formatted input messages, invocation params, and batch size
    - Returns run manager(s) bound to the operation
+   - Emitted at `repo://libs/core/langchain_core/language_models/chat_models.py#L827-L835` in stream and similar locations in other methods
    
 2. **`on_llm_new_token`** (streaming only):
    - Fires once per streamed token/chunk
    - Receives token string and `ChatGenerationChunk` metadata
    - Allows real-time output capture
+   - Called at `repo://libs/core/langchain_core/language_models/chat_models.py#L867` and `#L1008`
 
 3. **`on_llm_end`**:
    - Fires when generation completes successfully
@@ -304,6 +317,7 @@ Chat models integrate with the callback system to emit structured events through
 5. **`on_stream_event`** (v2/v3 protocol):
    - Fires for each content-block protocol event during streaming
    - Allows fine-grained event observation for advanced tracing
+   - Dispatched via `run_manager.on_stream_event(event)` in `_iter_v2_events` and `_aiter_v2_events`
 
 ### Callback Configuration
 
@@ -827,17 +841,17 @@ result = executor.invoke(
 
 1. **Input normalization**: All input forms (string, message list, PromptValue) are normalized to messages before `_generate`/`_stream` are called.
 
-2. **Message IDs**: Each streamed message chunk and final message gets a unique ID (derived from run_id) for tracing.
+2. **Message ID assignment**: Each streamed message chunk and final message receives a unique ID derived from run_id for tracing; provider-supplied IDs are preserved when available.
 
-3. **Callback ordering**: Callbacks fire in order: `on_chat_model_start` → `on_llm_new_token` (per chunk) → `on_llm_end` or `on_llm_error`.
+3. **Callback ordering**: Callbacks fire in order: `on_chat_model_start` → `on_llm_new_token` (per chunk) → `on_llm_end` or `on_llm_error`. Protocol v2 events fire via `on_stream_event` during streaming.
 
 4. **Streaming fallback**: If streaming is not implemented or disabled, `stream` seamlessly falls back to `invoke` and yields the result as a single chunk.
 
-5. **Cache transparency**: Cache hits are completely transparent—same lifecycle callbacks fire as for cache misses.
+5. **Cache transparency**: Cache hits are completely transparent—v2 events are replayed via `_replay_v2_events_for_cache_hit` to ensure handlers observe the same event stream as cache misses.
 
-6. **Async/sync equivalence**: Async methods mirror sync behavior; default async implementations run sync methods in an executor.
+6. **Async/sync equivalence**: Async methods mirror sync behavior; default async implementations run sync methods in an executor (e.g., `_agenerate`, `_astream`).
 
-7. **Response metadata**: Each generation accumulates metadata (tokens, finish_reason, etc.) in `message.response_metadata`.
+7. **Response metadata**: Each generation accumulates metadata (tokens, finish_reason, etc.) in `message.response_metadata` via `_gen_info_and_msg_metadata()`.
 
 8. **Error handling**: Exceptions during generation trigger `on_llm_error` and propagate to the caller; error metadata is extracted from HTTP responses if available.
 
