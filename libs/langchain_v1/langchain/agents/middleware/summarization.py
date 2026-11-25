@@ -326,6 +326,24 @@ def _ls_params(model: BaseChatModel) -> Mapping[str, Any]:
         return {}
 
 
+def _same_model(first: BaseChatModel, second: BaseChatModel) -> bool:
+    """Whether two model objects target the same provider model.
+
+    Agents often build a fresh model object per call, so identity alone would
+    report false mismatches; fall back to identity only when a model does not
+    report its name.
+    """
+    if first is second:
+        return True
+    first_params, second_params = _ls_params(first), _ls_params(second)
+    first_name = first_params.get("ls_model_name")
+    if not first_name:
+        return False
+    return first_name == second_params.get("ls_model_name") and first_params.get(
+        "ls_provider"
+    ) == second_params.get("ls_provider")
+
+
 class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
     """Summarizes conversation history when token limits are approached.
 
@@ -403,6 +421,13 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
                     one (see "Middleware order" above). Recommended.
                 - A chat model, or a model string resolved with `init_chat_model`:
                     pin the context model, whatever model a call goes to.
+
+                !!! warning "Pinning `model` to choose a summary-writing model"
+
+                    If a pinned `model` differs from the model a call goes to, a
+                    `UserWarning` is emitted, since thresholds then come from the
+                    pinned model. To summarize with a cheaper model while following
+                    the agent's model, pass `summarizer=` instead and omit `model`.
 
                 !!! example
 
@@ -742,7 +767,23 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         return self._call_models_for(self._resolve_context_model(request))
 
     def _resolve_context_model(self, request: ModelRequest[Any]) -> BaseChatModel:
-        return self.model if self.model is not None else request.model
+        if self.model is None:
+            return request.model
+        if not _same_model(self.model, request.model):
+            self._warn_pinned_model_differs(request.model)
+        return self.model
+
+    def _warn_pinned_model_differs(self, call_model: BaseChatModel) -> None:
+        pinned = cast("BaseChatModel", self.model)
+        msg = (
+            f"`SummarizationMiddleware` is pinned to `model={_model_identifier(pinned)}`, "
+            f"but this call goes to `{_model_identifier(call_model)}`. Trigger "
+            "thresholds, token counting and summaries use the pinned model. If you "
+            "only meant to choose the model that writes summaries, pass "
+            "`summarizer=` instead and omit `model=` so thresholds follow each "
+            "call's model."
+        )
+        warnings.warn(msg, UserWarning, stacklevel=3)
 
     def _call_models_for(self, context_model: BaseChatModel) -> _CallModels:
         """Derive token counters and the summary model for a resolved context model.
