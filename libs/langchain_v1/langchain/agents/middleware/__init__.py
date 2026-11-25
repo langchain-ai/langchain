@@ -15,6 +15,7 @@ from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
 from langchain.agents.middleware.model_refusal import ModelRefusalMiddleware
 from langchain.agents.middleware.model_retry import ModelRetryMiddleware
 from langchain.agents.middleware.model_router import ModelChoice, ModelRouterMiddleware
+from langchain.agents.middleware.model_selection import model_spec_from_model
 from langchain.agents.middleware.pii import PIIDetectionError, PIIMatch, PIIMiddleware
 from langchain.agents.middleware.provider_tool_search import ProviderToolSearchMiddleware
 from langchain.agents.middleware.shell_tool import (
@@ -39,6 +40,8 @@ from langchain.agents.middleware.types import (
     ModelCallResult,
     ModelRequest,
     ModelResponse,
+    ModelSelection,
+    ModelSpec,
     OutputAgentState,
     ToolCallRequest,
     TracePolicy,
@@ -78,6 +81,8 @@ __all__ = [
     "ModelResponse",
     "ModelRetryMiddleware",
     "ModelRouterMiddleware",
+    "ModelSelection",
+    "ModelSpec",
     "OutputAgentState",
     "PIIDetectionError",
     "PIIMatch",
@@ -101,6 +106,7 @@ __all__ = [
     "configure_trace_policy",
     "dynamic_prompt",
     "hook_config",
+    "model_spec_from_model",
     "omit_payload",
     "wrap_model_call",
     "wrap_tool_call",
