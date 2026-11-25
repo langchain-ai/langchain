@@ -588,3 +588,22 @@ def test_content_blocks_reasoning_extraction() -> None:
     content_blocks = message.content_blocks
     assert len(content_blocks) == 1
     assert content_blocks[0]["type"] == "text"
+
+
+def test_ai_message_chunk_mixed_content_and_tool_call_chunks() -> None:
+    chunk = AIMessageChunk(
+        content=" One sec.",
+        tool_call_chunks=[
+            {"name": "get_weather", "args": '{"city"', "id": "call_1", "index": 0}
+        ],
+    )
+    assert chunk.content_blocks == [
+        {"type": "text", "text": " One sec."},
+        {
+            "type": "tool_call_chunk",
+            "id": "call_1",
+            "name": "get_weather",
+            "args": '{"city"',
+            "index": 0,
+        },
+    ]

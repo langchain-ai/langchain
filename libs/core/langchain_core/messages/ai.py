@@ -475,7 +475,6 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
         if (
             self.tool_call_chunks
-            and not self.content
             and self.chunk_position != "last"  # keep tool_calls if aggregated
         ):
             blocks = [
