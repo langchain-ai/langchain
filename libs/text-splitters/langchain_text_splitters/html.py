@@ -294,24 +294,47 @@ class HTMLHeaderTextSplitter:
             return Document(page_content=final_text, metadata=final_meta)
 
         # We'll use a stack for DFS traversal
-        stack = [body]
+        stack: list[Any] = [body]
         while stack:
             node = stack.pop()
+            if not isinstance(node, tag_cls):
+                node_text = str(node).strip()
+                if not node_text:
+                    continue
+                dom_depth = len(list(node.parents)) - 1
+                headers_out_of_scope = [
+                    k for k, (_, _, d) in active_headers.items() if dom_depth < d
+                ]
+                for key in headers_out_of_scope:
+                    del active_headers[key]
+                current_chunk.append(node_text)
+                continue
+
             children = list(node.children)
-
-            stack.extend(
-                child for child in reversed(children) if isinstance(child, tag_cls)
-            )
-
             tag = getattr(node, "name", None)
             if not tag:
                 continue
 
-            text_elements = [
-                str(child).strip() for child in _find_all_strings(node, recursive=False)
-            ]
-            node_text = " ".join(elem for elem in text_elements if elem)
-            if not node_text:
+            if tag in self.header_tags or self.return_each_element:
+                stack.extend(
+                    child for child in reversed(children) if isinstance(child, tag_cls)
+                )
+                text_elements = [
+                    str(child).strip()
+                    for child in _find_all_strings(node, recursive=False)
+                ]
+                node_text = " ".join(elem for elem in text_elements if elem)
+                if not node_text:
+                    continue
+            else:
+                direct_string_ids = {
+                    id(s) for s in _find_all_strings(node, recursive=False)
+                }
+                stack.extend(
+                    child
+                    for child in reversed(children)
+                    if isinstance(child, tag_cls) or id(child) in direct_string_ids
+                )
                 continue
 
             dom_depth = len(list(node.parents))

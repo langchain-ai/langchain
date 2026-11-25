@@ -3094,6 +3094,18 @@ def test_html_no_headers_with_multiple_splitters(
         )
 
 
+@pytest.mark.requires("bs4")
+def test_html_header_splitter_preserves_inline_tag_order() -> None:
+    splitter = HTMLHeaderTextSplitter([("h1", "title")])
+    docs = splitter.split_text(
+        "<h1>Manual</h1><p>A <strong>B</strong> C</p><p>D <em>E <b>F</b> G</em> H</p>"
+    )
+    assert len(docs) == 2
+    assert docs[0].page_content == "Manual"
+    assert docs[1].page_content.split() == ["A", "B", "C", "D", "E", "F", "G", "H"]
+    assert docs[1].metadata == {"title": "Manual"}
+
+
 def test_split_text_on_tokens() -> None:
     """Test splitting by tokens per chunk."""
     text = "foo bar baz 123"
