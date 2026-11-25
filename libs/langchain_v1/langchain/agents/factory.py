@@ -6,6 +6,7 @@ import functools
 import importlib
 import itertools
 import re
+import warnings
 from dataclasses import dataclass, field, fields
 from typing import (
     TYPE_CHECKING,
@@ -45,6 +46,9 @@ from langchain.agents.middleware._trace_policy import (
     _node_trace_policy,
     _resolved_transform,
 )
+from langchain.agents.middleware.model_fallback import ModelFallbackMiddleware
+from langchain.agents.middleware.model_router import ModelRouterMiddleware
+from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -279,6 +283,38 @@ def _build_commands(
     commands: list[Command[Any]] = [Command(update=state)]
     commands.extend(middleware_commands or [])
     return commands
+
+
+def _warn_on_model_swaps_after_summarization(
+    middleware: Sequence[AgentMiddleware[Any, Any, Any]],
+) -> None:
+    """Warn when model-switching middleware sits inside a model-following summarizer.
+
+    `SummarizationMiddleware` without a pinned `model` sizes history for
+    `request.model`, but middleware listed after it wraps inside it, so a model it
+    swaps in is never seen by the summarizer.
+    """
+    summarizer = next(
+        (
+            (index, m)
+            for index, m in enumerate(middleware)
+            if isinstance(m, SummarizationMiddleware) and m.model is None
+        ),
+        None,
+    )
+    if summarizer is None:
+        return
+    index, summarization = summarizer
+    for later in middleware[index + 1 :]:
+        if isinstance(later, (ModelFallbackMiddleware, ModelRouterMiddleware)):
+            msg = (
+                f"`{later.name}` is listed after `{summarization.name}`, so "
+                "summarization sizes the history for the model the call had before "
+                f"`{later.name}` switches it. List `{later.name}` before "
+                f"`{summarization.name}` in `middleware=` so summarization follows "
+                "the model the call actually goes to."
+            )
+            warnings.warn(msg, UserWarning, stacklevel=3)
 
 
 def _chain_model_call_handlers(
@@ -1164,6 +1200,7 @@ def create_agent(
     if len({m.name for m in middleware}) != len(middleware):
         msg = "Please remove duplicate middleware instances."
         raise AssertionError(msg)
+    _warn_on_model_swaps_after_summarization(middleware)
     middleware_w_before_agent = [
         m
         for m in middleware
