@@ -5881,6 +5881,35 @@ def test_unrecognized_block_forwarded_on_chat_completions(role: str) -> None:
     ]
 
 
+def test_chat_completions_drops_foreign_server_tool_blocks() -> None:
+    """Anthropic server tool blocks should be dropped on Chat Completions."""
+    claude_turn = AIMessage(
+        content=[
+            {
+                "type": "server_tool_use",
+                "id": "srvtoolu_01",
+                "name": "web_search",
+                "input": {"query": "weather in Paris"},
+            },
+            {
+                "type": "web_search_tool_result",
+                "tool_use_id": "srvtoolu_01",
+                "content": [],
+            },
+            {"type": "text", "text": "It is sunny in Paris."},
+        ],
+        response_metadata={"model_provider": "anthropic"},
+    )
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=False)
+    payload = llm._get_request_payload(
+        [HumanMessage("Weather in Paris?"), claude_turn, HumanMessage("And tomorrow?")]
+    )
+    assert payload["messages"][1] == {
+        "role": "assistant",
+        "content": [{"type": "text", "text": "It is sunny in Paris."}],
+    }
+
+
 def test_configuration_update_block_becomes_input_item() -> None:
     """A `configuration_update` block is hoisted out of the message content.
 

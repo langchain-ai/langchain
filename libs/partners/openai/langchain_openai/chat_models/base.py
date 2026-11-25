@@ -386,10 +386,16 @@ def _raise_if_additional_tools(content: Any, reason: str) -> None:
             raise ValueError(msg)
 
 
+_CHAT_COMPLETIONS_CONTENT_BLOCK_TYPES = frozenset(
+    {"text", "refusal", "image_url", "input_audio", "file"}
+)
+
+
 def _format_message_content(
     content: Any,
     api: Literal["chat/completions", "responses"] = "chat/completions",
     role: str | None = None,
+    model_provider: str | None = None,
 ) -> Any:
     """Format message content."""
     if _is_ai_role(role):
@@ -470,6 +476,14 @@ def _format_message_content(
                 else:
                     continue
             else:
+                if (
+                    api == "chat/completions"
+                    and model_provider is not None
+                    and model_provider != "openai"
+                    and isinstance(block, dict)
+                    and block.get("type") not in _CHAT_COMPLETIONS_CONTENT_BLOCK_TYPES
+                ):
+                    continue
                 formatted_content.append(block)
     else:
         formatted_content = content
@@ -483,7 +497,12 @@ def _convert_message_to_dict(
 ) -> dict:
     """Convert a LangChain message to dictionary format expected by OpenAI."""
     message_dict: dict[str, Any] = {
-        "content": _format_message_content(message.content, api=api, role=message.type)
+        "content": _format_message_content(
+            message.content,
+            api=api,
+            role=message.type,
+            model_provider=message.response_metadata.get("model_provider"),
+        )
     }
     if (name := message.name or message.additional_kwargs.get("name")) is not None:
         message_dict["name"] = name
