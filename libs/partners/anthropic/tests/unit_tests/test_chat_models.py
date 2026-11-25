@@ -6892,7 +6892,7 @@ def test_http_client_with_anthropic_proxy_raises() -> None:
         )
 
 
-def test_http_clients_are_not_serialized() -> None:
+def test_custom_clients_are_not_serialized() -> None:
     llm = ChatAnthropic(
         model=MODEL_NAME,
         http_client=httpx.Client(),
@@ -6901,3 +6901,81 @@ def test_http_clients_are_not_serialized() -> None:
     dumped = llm.model_dump()
     assert "http_client" not in dumped
     assert "http_async_client" not in dumped
+
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        client=anthropic.Client(api_key="sk-placeholder"),
+        async_client=anthropic.AsyncClient(api_key="sk-placeholder"),
+    )
+    dumped = llm.model_dump()
+    assert "client" not in dumped
+    assert "async_client" not in dumped
+
+
+def test_sdk_client_is_used_as_is() -> None:
+    seen: list[Any] = []
+    client = anthropic.Client(
+        api_key="sk-placeholder",
+        base_url="https://bedrock-like.example.com",
+        default_headers={"X-Client": "sdk"},
+        http_client=httpx.Client(
+            transport=httpx.MockTransport(_recording_handler(seen))
+        ),
+    )
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        base_url="https://ignored.example.com",
+        default_headers={"X-Client": "model"},
+        max_tokens=10,
+        client=client,
+    )
+
+    llm.invoke("hi")
+
+    assert llm._client is client
+    # The client's own connection settings win; the model's are not applied.
+    assert seen[0].url.host == "bedrock-like.example.com"
+    assert seen[0].headers["X-Client"] == "sdk"
+
+
+async def test_async_sdk_client_is_used_as_is() -> None:
+    seen: list[Any] = []
+    async_client = anthropic.AsyncClient(
+        api_key="sk-placeholder",
+        default_headers={"X-Client": "sdk"},
+        http_client=httpx.AsyncClient(
+            transport=httpx.MockTransport(_recording_handler(seen))
+        ),
+    )
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        default_headers={"X-Client": "model"},
+        max_tokens=10,
+        async_client=async_client,
+    )
+
+    await llm.ainvoke("hi")
+
+    assert llm._async_client is async_client
+    assert seen[0].headers["X-Client"] == "sdk"
+    # The sync path keeps building its own client.
+    assert llm._client is not async_client
+
+
+@pytest.mark.parametrize(
+    ("sdk_field", "http_field"),
+    [("client", "http_client"), ("async_client", "http_async_client")],
+)
+def test_sdk_client_with_http_client_raises(sdk_field: str, http_field: str) -> None:
+    http_client: Any = (
+        httpx.Client() if http_field == "http_client" else httpx.AsyncClient()
+    )
+    sdk_client: Any = (
+        anthropic.Client(api_key="sk-placeholder")
+        if sdk_field == "client"
+        else anthropic.AsyncClient(api_key="sk-placeholder")
+    )
+    with pytest.raises(ValueError, match=f"'{sdk_field}' and '{http_field}'"):
+        ChatAnthropic(
+            model=MODEL_NAME, **{sdk_field: sdk_client, http_field: http_client}
+        )
