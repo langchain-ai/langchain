@@ -5841,6 +5841,7 @@ def test_unrecognized_user_block_dropped_silently() -> None:
                     [
                         {"type": "text", "text": "Hello"},
                         {"type": "made_up_block", "foo": "bar"},
+                        {"cachePoint": {"type": "default"}},
                     ]
                 )
             ]
@@ -5850,6 +5851,29 @@ def test_unrecognized_user_block_dropped_silently() -> None:
         {
             "role": "user",
             "content": [{"type": "input_text", "text": "Hello"}],
+            "type": "message",
+        },
+    ]
+
+
+def test_typeless_system_block_dropped_with_warning() -> None:
+    llm = ChatOpenAI(model=OPENAI_TEST_MODEL, use_responses_api=True)
+    with pytest.warns(UserWarning, match="Content block None was dropped"):
+        payload = llm._get_request_payload(
+            [
+                SystemMessage(
+                    [
+                        {"type": "text", "text": "System prompt"},
+                        {"cachePoint": {"type": "default"}},
+                    ]
+                )
+            ]
+        )
+
+    assert payload["input"] == [
+        {
+            "role": "system",
+            "content": [{"type": "input_text", "text": "System prompt"}],
             "type": "message",
         },
     ]

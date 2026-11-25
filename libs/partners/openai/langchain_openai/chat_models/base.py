@@ -5212,15 +5212,16 @@ def _construct_responses_api_input(
                     "configuration_update",
                 )
                 for block in msg["content"]:
-                    if block["type"] in ("text", "image_url", "file"):
+                    block_type = block.get("type") if isinstance(block, dict) else None
+                    if block_type in ("text", "image_url", "file"):
                         new_blocks.append(
                             _convert_chat_completions_blocks_to_responses(block)
                         )
-                    elif block["type"] in ("input_text", "input_image", "input_file"):
+                    elif block_type in ("input_text", "input_image", "input_file"):
                         new_blocks.append(block)
-                    elif block["type"] in non_message_item_types:
+                    elif block_type in non_message_item_types:
                         input_.append(block)
-                    elif block["type"] == _ADDITIONAL_TOOLS_BLOCK_TYPE:
+                    elif block_type == _ADDITIONAL_TOOLS_BLOCK_TYPE:
                         if isinstance(lc_msg, SystemMessage):
                             input_.append(block)
                     elif _is_system_role(msg["role"]):
@@ -5229,7 +5230,7 @@ def _construct_responses_api_input(
                         # User content keeps its long-standing silent drop, where
                         # the set is open and warning would be noise.
                         warnings.warn(
-                            f"Content block {block['type']!r} was dropped from a "
+                            f"Content block {block_type!r} was dropped from a "
                             "system message: the Responses API has no input item "
                             "of that type, so it cannot be placed in the request.",
                             UserWarning,
