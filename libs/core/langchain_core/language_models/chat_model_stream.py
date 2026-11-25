@@ -1158,6 +1158,30 @@ class _ChatModelStreamBase:
         # translator on already-v1 content.
         response_metadata["output_version"] = "v1"
 
+        if (
+            response_metadata.get("finish_reason") == "refusal"
+            or response_metadata.get("stop_reason") == "refusal"
+        ):
+            has_refusal = isinstance(content, list) and any(
+                isinstance(b, dict) and b.get("type") == "refusal" for b in content
+            )
+            if not has_refusal:
+                details = response_metadata.get("stop_details")
+                if not isinstance(details, dict):
+                    details = {}
+                refusal_block: dict[str, Any] = {
+                    "type": "refusal",
+                    "refusal": details.get("explanation") or "",
+                }
+                if category := details.get("category"):
+                    refusal_block["extras"] = {"category": category}
+                if isinstance(content, list):
+                    content = [*content, refusal_block]
+                elif isinstance(content, str) and content:
+                    content = [{"type": "text", "text": content}, refusal_block]
+                else:
+                    content = [refusal_block]
+
         tool_calls = [
             {
                 "id": tc.get("id", ""),

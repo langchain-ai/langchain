@@ -1703,3 +1703,57 @@ async def test_v3_gateway_metadata_traced_on_error_async(
     await stream._producer_task
     assert tracer.runs[0].error
     _assert_gateway_trace(tracer)
+
+
+async def test_v3_astream_events_preserves_refusal_from_finish_metadata() -> None:
+    """v3 assembly should append a refusal block when finish_reason=='refusal'."""
+
+    class _RefusalStreamModel(BaseChatModel):
+        @property
+        def _llm_type(self) -> str:
+            return "refusal-fake"
+
+        def _generate(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: CallbackManagerForLLMRun | None = None,
+            **kwargs: Any,
+        ) -> ChatResult:
+            del messages, stop, run_manager, kwargs
+            raise NotImplementedError
+
+        async def _astream(
+            self,
+            messages: list[BaseMessage],
+            stop: list[str] | None = None,
+            run_manager: Any = None,
+            **kwargs: Any,
+        ) -> Any:
+            del messages, stop, run_manager, kwargs
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content=[{"type": "text", "text": "Partial answer", "index": 0}],
+                )
+            )
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content=[],
+                    response_metadata={
+                        "stop_reason": "refusal",
+                        "stop_details": {
+                            "category": "safety",
+                            "explanation": "Cannot continue",
+                        },
+                    },
+                    chunk_position="last",
+                ),
+                generation_info={"finish_reason": "refusal"},
+            )
+
+    model = _RefusalStreamModel()
+    msg = await (await model.astream_events("hi", version="v3"))
+    assert [b["type"] for b in msg.content_blocks] == ["text", "refusal"]
+    refusal = msg.content_blocks[1]
+    assert refusal["refusal"] == "Cannot continue"
+    assert refusal["extras"] == {"category": "safety"}
