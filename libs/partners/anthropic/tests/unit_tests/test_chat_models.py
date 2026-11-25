@@ -6635,6 +6635,35 @@ def test_with_structured_output_include_raw_reports_refusal(
     assert result["raw"].response_metadata["stop_reason"] == "refusal"
 
 
+@pytest.mark.parametrize("include_raw", [False, True])
+def test_with_structured_output_text_only_reply_when_forced_tools_unsupported(
+    *, include_raw: bool
+) -> None:
+    """Return raw message and parsing_error on text-only reply with include_raw."""
+    from unittest.mock import patch
+
+    from langchain_core.exceptions import OutputParserException
+    from langchain_core.outputs import ChatGeneration, ChatResult
+
+    class Answer(BaseModel):
+        value: int
+
+    message = AIMessage(content="42", response_metadata={"stop_reason": "end_turn"})
+    reply = ChatResult(generations=[ChatGeneration(message=message)])
+    model = ChatAnthropic(model="claude-sonnet-5-5", api_key="unused")
+
+    with patch.object(ChatAnthropic, "_generate", return_value=reply):
+        structured = model.with_structured_output(Answer, include_raw=include_raw)
+        if include_raw:
+            result = structured.invoke("6 * 7?")
+            assert result["raw"].content == "42"
+            assert result["parsed"] is None
+            assert isinstance(result["parsing_error"], OutputParserException)
+        else:
+            with pytest.raises(OutputParserException):
+                structured.invoke("6 * 7?")
+
+
 async def test_with_structured_output_raises_model_refusal_error_async() -> None:
     llm = ChatAnthropic(model=MODEL_NAME)
     structured = llm.with_structured_output(_RefusalSchema, method="json_schema")

@@ -61,7 +61,12 @@ from langchain_core.output_parsers import (
 )
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
+from langchain_core.runnables import (
+    Runnable,
+    RunnableLambda,
+    RunnableMap,
+    RunnablePassthrough,
+)
 from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, get_pydantic_field_names
 from langchain_core.utils._gateway import (
@@ -2712,12 +2717,8 @@ class ChatAnthropic(BaseChatModel):
             await _aparse(raw_response), generation_info=generation_info, **kwargs
         )
 
-    def _get_llm_for_structured_output_when_thinking_is_enabled(
-        self,
-        schema: dict | type,
-        formatted_tool: AnthropicTool,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
-        thinking_admonition = (
+    def _thinking_tool_admonition(self) -> str:
+        return (
             "You are attempting to use structured output via forced tool calling, "
             "which is not supported when `thinking` is enabled or on "
             f"{self.model}. This method will raise an OutputParserException if tool "
@@ -2725,7 +2726,21 @@ class ChatAnthropic(BaseChatModel):
             "`thinking` where supported, or adjusting your prompt to ensure the "
             "tool is called."
         )
-        warnings.warn(thinking_admonition, stacklevel=2)
+
+    def _raise_if_no_tool_calls_for_thinking(self, message: AIMessage) -> AIMessage:
+        refused = message.response_metadata.get("stop_reason") == "refusal"
+        if not message.tool_calls and not refused:
+            raise OutputParserException(self._thinking_tool_admonition())
+        return message
+
+    def _get_llm_for_structured_output_when_thinking_is_enabled(
+        self,
+        schema: dict | type,
+        formatted_tool: AnthropicTool,
+        *,
+        include_raw: bool = False,
+    ) -> Runnable[LanguageModelInput, BaseMessage]:
+        warnings.warn(self._thinking_tool_admonition(), stacklevel=2)
         llm = self.bind_tools(
             [schema],
             # We don't specify tool_choice here since the API will reject attempts to
@@ -2735,14 +2750,9 @@ class ChatAnthropic(BaseChatModel):
                 "schema": formatted_tool,
             },
         )
-
-        def _raise_if_no_tool_calls(message: AIMessage) -> AIMessage:
-            refused = message.response_metadata.get("stop_reason") == "refusal"
-            if not message.tool_calls and not refused:
-                raise OutputParserException(thinking_admonition)
-            return message
-
-        return llm | _raise_if_no_tool_calls
+        if include_raw:
+            return llm
+        return llm | self._raise_if_no_tool_calls_for_thinking
 
     def bind_tools(
         self,
@@ -3058,13 +3068,15 @@ class ChatAnthropic(BaseChatModel):
             # The result of convert_to_anthropic_tool for 'method=function_calling' will
             # always be an AnthropicTool
             tool_name = formatted_tool["name"]
-            if (
+            unforced_tool_calling = (
                 self.thinking is not None
                 and self.thinking.get("type") in ("enabled", "adaptive")
-            ) or not _supports_forced_tool_choice(self.model):
+            ) or not _supports_forced_tool_choice(self.model)
+            if unforced_tool_calling:
                 llm = self._get_llm_for_structured_output_when_thinking_is_enabled(
                     schema,
                     formatted_tool,
+                    include_raw=include_raw,
                 )
             else:
                 llm = self.bind_tools(
@@ -3085,6 +3097,11 @@ class ChatAnthropic(BaseChatModel):
                 output_parser = JsonOutputKeyToolsParser(
                     key_name=tool_name,
                     first_tool_only=True,
+                )
+            if include_raw and unforced_tool_calling:
+                output_parser = (
+                    RunnableLambda(self._raise_if_no_tool_calls_for_thinking)
+                    | output_parser
                 )
         elif method == "json_schema":
             llm = self.bind(
