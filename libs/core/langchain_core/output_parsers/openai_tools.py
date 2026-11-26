@@ -13,6 +13,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, InvalidToolCall
 from langchain_core.messages.tool import invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
+from langchain_core.output_parsers._reasoning import strip_reasoning_tags
 from langchain_core.output_parsers._refusal import raise_if_refused
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
@@ -50,17 +51,23 @@ def parse_tool_call(
 
     arguments = raw_tool_call["function"]["arguments"]
 
+    json_arguments = arguments
+    if isinstance(arguments, str):
+        json_arguments, reasoning_complete = strip_reasoning_tags(arguments)
+        if not reasoning_complete:
+            return None
+
     if partial:
         try:
-            function_args = parse_partial_json(arguments, strict=strict)
+            function_args = parse_partial_json(json_arguments, strict=strict)
         except (JSONDecodeError, TypeError):  # None args raise TypeError
             return None
     # Handle None or empty string arguments for parameter-less tools
-    elif not arguments:
+    elif not json_arguments:
         function_args = {}
     else:
         try:
-            function_args = json.loads(arguments, strict=strict)
+            function_args = json.loads(json_arguments, strict=strict)
         except JSONDecodeError as e:
             msg = (
                 f"Function {raw_tool_call['function']['name']} arguments:\n\n"

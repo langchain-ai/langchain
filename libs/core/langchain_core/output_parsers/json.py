@@ -13,6 +13,7 @@ from pydantic.v1 import BaseModel
 from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
+from langchain_core.output_parsers._reasoning import strip_reasoning_tags
 from langchain_core.output_parsers._refusal import raise_if_refused
 from langchain_core.output_parsers.format_instructions import JSON_FORMAT_INSTRUCTIONS
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
@@ -82,14 +83,20 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             raise_if_refused(result[0].message)
         text = result[0].text
         text = text.strip()
+        json_text, reasoning_complete = strip_reasoning_tags(text)
+        if not reasoning_complete:
+            if partial:
+                return None
+            msg = f"Invalid json output: {text}"
+            raise OutputParserException(msg, llm_output=text)
         if partial:
             try:
-                return parse_json_markdown(text)
+                return parse_json_markdown(json_text)
             except JSONDecodeError:
                 return None
         else:
             try:
-                return parse_json_markdown(text)
+                return parse_json_markdown(json_text)
             except JSONDecodeError as e:
                 msg = f"Invalid json output: {text}"
                 raise OutputParserException(msg, llm_output=text) from e
