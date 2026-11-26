@@ -135,6 +135,7 @@ def parse_tool_calls(
     """
     final_tools: list[dict[str, Any]] = []
     exceptions = []
+    llm_output = None
     for tool_call in raw_tool_calls:
         try:
             parsed = parse_tool_call(
@@ -144,9 +145,11 @@ def parse_tool_calls(
                 final_tools.append(parsed)
         except OutputParserException as e:
             exceptions.append(str(e))
+            if llm_output is None:
+                llm_output = e.llm_output
             continue
     if exceptions:
-        raise OutputParserException("\n\n".join(exceptions))
+        raise OutputParserException("\n\n".join(exceptions), llm_output=llm_output)
     return final_tools
 
 

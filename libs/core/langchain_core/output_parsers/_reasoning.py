@@ -17,9 +17,13 @@ def strip_reasoning_tags(text: str) -> tuple[str, bool]:
 
     Reasoning models (e.g. DeepSeek-R1) sometimes emit their chain of thought in
     `<think>...</think>` tags before the structured payload, which is occasionally
-    wrapped again in `<tool_call>...</tool_call>`. The tags are only stripped when
-    they form a prefix or wrapper of the payload, so JSON strings that merely
-    contain these literals are left untouched.
+    wrapped in `<tool_call>...</tool_call>`. The tags may also be nested, e.g. a
+    `<think>` block inside the `<tool_call>` wrapper; both are stripped.
+
+    Tags are only stripped when they form a prefix or wrapper of the payload, so
+    JSON strings that merely contain these literals are left untouched. When a
+    closed `<tool_call>` wrapper is stripped, only the first JSON value is kept and
+    any trailing text following it is ignored.
 
     Args:
         text: The raw model output.
@@ -31,24 +35,28 @@ def strip_reasoning_tags(text: str) -> tuple[str, bool]:
     """
     text = text.lstrip()
     while True:
-        match = _OPEN_THINK_RE.match(text)
-        if match is None:
-            break
-        close = _CLOSE_THINK_RE.search(text, match.end())
-        if close is None:
-            return "", False
-        text = text[close.end() :].lstrip()
+        think = _OPEN_THINK_RE.match(text)
+        if think is not None:
+            close = _CLOSE_THINK_RE.search(text, think.end())
+            if close is None:
+                return "", False
+            text = text[close.end() :].lstrip()
+            continue
 
-    match = _OPEN_TOOL_CALL_RE.match(text)
-    if match is None:
-        return text, True
+        wrapper = _OPEN_TOOL_CALL_RE.match(text)
+        if wrapper is None:
+            return text, True
 
-    payload = text[match.end() :].lstrip()
-    try:
-        _, end = json.JSONDecoder().raw_decode(payload)
-    except JSONDecodeError:
-        close = _CLOSE_TOOL_CALL_RE.search(payload)
-        if close is None:
-            return payload, True
-        return payload[: close.start()].strip(), True
-    return payload[:end], True
+        payload = text[wrapper.end() :].lstrip()
+        try:
+            _, end = json.JSONDecoder().raw_decode(payload)
+        except JSONDecodeError:
+            close = _CLOSE_TOOL_CALL_RE.search(payload)
+            if close is None:
+                # The wrapper is still streaming; continue stripping any reasoning
+                # prefix from the remaining payload.
+                text = payload
+                continue
+            text = payload[: close.start()].strip()
+            continue
+        return payload[:end], True
