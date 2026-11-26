@@ -17,6 +17,23 @@ class TracerException(LangChainException):
     """Base class for exceptions in tracers module."""
 
 
+class ExpectedCancellation(Exception):  # noqa: N818
+    """Cancel message for a task that is stopped on purpose.
+
+    Pass it to `task.cancel()`. `LangChainTracer` then ends the run with the
+    explicit status `cancelled` instead of a plain error. Subclass it to name a
+    specific reason (user stop, supersede, rollback).
+
+    A bare `CancelledError`, a timeout or a shutdown cancel carry no marker and
+    stay errors. The marker must be the cancel message itself (`args[0]` of the
+    `CancelledError`); one wrapped inside another exception is not detected.
+
+    ```python
+    task.cancel(msg=ExpectedCancellation("user interrupt"))
+    ```
+    """
+
+
 class OutputParserException(ValueError, LangChainException):  # noqa: N818
     """Exception that output parsers should raise to signify a parsing error.
 
