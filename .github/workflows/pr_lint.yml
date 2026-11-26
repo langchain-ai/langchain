@@ -121,6 +121,26 @@ jobs:
             infra
             deps
             partners
+            langchain-core
+            langchain-model-profiles
+            langchain-tests
+            langchain-text-splitters
+            langchain-anthropic
+            langchain-chroma
+            langchain-deepseek
+            langchain-exa
+            langchain-fireworks
+            langchain-groq
+            langchain-huggingface
+            langchain-mistralai
+            langchain-nomic
+            langchain-ollama
+            langchain-openai
+            langchain-openrouter
+            langchain-perplexity
+            langchain-qdrant
+            langchain-typesafe
+            langchain-xai
           requireScope: false
           disallowScopes: |
             release

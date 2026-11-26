@@ -295,37 +295,14 @@ The `echo y |` pipe is required when `--data-dir` is outside the `libs/model-pro
 
 ### Release process
 
-Each partner package is released independently. The full flow is:
+Packages release independently through release-please. See [`.github/RELEASING.md`](.github/RELEASING.md) for setup, normal releases, and recovery.
 
-1. **Version bump PR.** Create a PR that bumps three files by one line each:
-   - `langchain_<partner>/_version.py` — `__version__`
-   - `pyproject.toml` — `version`
-   - `uv.lock` — run `uv lock` from the package directory. If the diff includes unrelated changes (e.g. environment-dependent marker lines from a different local Python version), revert them and keep only the `version = "..."` line for the package being released
+1. Merge package changes into `master`; release-please creates or refreshes a draft release PR with version files, changelog, and lockfiles.
+2. Wait for automation and CI, then inspect the diff. Only the author marks a draft ready.
+3. Merging a generated release PR automatically dispatches the existing Package Release workflow for its exact merge SHA. Do not dispatch a duplicate release manually.
+4. The publisher retains build, release notes, pre-release checks, TestPyPI, PyPI, and GitHub tagging gates. Do not create tags or GitHub releases manually.
 
-   Title follows Conventional Commits: `release(<partner>): <version>` (e.g. `release(openrouter): 0.2.6`). Use the branch name `release/<partner>-<version>`.
-
-   Patch vs. minor bump follows in-repo precedent: within a `0.x` series, fixes and additive features get a patch bump (e.g. `session_id` field → 0.2.1→0.2.2, `parallel_tool_calls` → 0.2.3→0.2.4).
-
-2. **Merge the PR** to `master`.
-
-3. **Trigger the release workflow.** Run `gh workflow run` against the "🚀 Package Release" workflow (`_release.yml`, file ID `63880841`):
-
-   ```bash
-   gh workflow run 63880841 --repo langchain-ai/langchain \
-     -f working-directory=<partner> -f release-version=<version>
-   ```
-
-   `working-directory` is the short partner name from the workflow's dropdown (e.g. `openrouter`, not `libs/partners/openrouter`).
-
-4. **The workflow handles everything else automatically** — do **not** create a GitHub release or tag manually. The `mark-release` job (using `ncipollo/release-action`) creates the GitHub release, tag, and release notes after PyPI publish succeeds. The release notes body is auto-generated from commit history between the previous tag and HEAD.
-
-   Monitor the run:
-
-   ```bash
-   gh run view <run-id> --repo langchain-ai/langchain
-   ```
-
-   The full job chain is: build → release-notes → pre-release-checks → TestPyPI publish → PyPI publish → tag GitHub release.
+Additive features and fixes use patch bumps, including before 1.0. Release PR scopes use package names, such as `release(langchain-openai): 1.8.5`; normal contribution scopes remain unchanged. Pending releases block release PR maintenance until publication and tagging finish. Use the documented manual flow only for hotfixes, prereleases, or recovery.
 
 ### PR labeling and linting
 
