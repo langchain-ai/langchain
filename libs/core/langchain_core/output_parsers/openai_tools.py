@@ -53,8 +53,11 @@ def parse_tool_call(
 
     json_arguments = arguments
     if isinstance(arguments, str):
-        json_arguments, reasoning_complete = strip_reasoning_tags(arguments)
-        if not reasoning_complete:
+        stripped_arguments, reasoning_complete = strip_reasoning_tags(arguments)
+        if reasoning_complete:
+            json_arguments = stripped_arguments
+        elif partial:
+            # Reasoning is still streaming and no payload has started yet.
             return None
 
     if partial:
@@ -74,7 +77,7 @@ def parse_tool_call(
                 f"{arguments}\n\nare not valid JSON. "
                 f"Received JSONDecodeError {e}"
             )
-            raise OutputParserException(msg) from e
+            raise OutputParserException(msg, llm_output=arguments) from e
     parsed = {
         "name": raw_tool_call["function"]["name"] or "",
         "args": function_args or {},

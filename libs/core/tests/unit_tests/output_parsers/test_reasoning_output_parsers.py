@@ -146,6 +146,23 @@ def test_parse_tool_call_invalid_json_preserves_original_arguments() -> None:
         parse_tool_call(raw)
 
     assert arguments in str(exc_info.value)
+    assert exc_info.value.llm_output == arguments
+
+
+def test_parse_tool_call_unclosed_reasoning_partial_returns_none() -> None:
+    raw = {"function": {"name": "F", "arguments": "<think>still thinking"}}
+
+    assert parse_tool_call(raw, partial=True, return_id=False) is None
+
+
+def test_parse_tool_call_unclosed_reasoning_full_raises() -> None:
+    arguments = "<think>still thinking"
+    raw = {"function": {"name": "F", "arguments": arguments}}
+
+    with pytest.raises(OutputParserException) as exc_info:
+        parse_tool_call(raw)
+
+    assert exc_info.value.llm_output == arguments
 
 
 @pytest.mark.parametrize("arguments", WRAPPED_ARGUMENTS)
@@ -199,7 +216,10 @@ def test_json_output_parser_reasoning(arguments: str) -> None:
 
 @pytest.mark.parametrize("arguments", WRAPPED_ARGUMENTS)
 def test_pydantic_output_parser_reasoning(arguments: str) -> None:
-    result = PydanticOutputParser(pydantic_object=AnalysisResult).parse(arguments)
+    parser: PydanticOutputParser[AnalysisResult] = PydanticOutputParser(
+        pydantic_object=AnalysisResult
+    )
+    result: AnalysisResult = parser.parse(arguments)
 
     assert isinstance(result, AnalysisResult)
     assert result.result[0].name == "promo"
@@ -232,7 +252,9 @@ def test_json_output_parser_partial_grows_after_think_closes() -> None:
 
 
 def test_pydantic_output_parser_partial_open_think_returns_none() -> None:
-    parser = PydanticOutputParser(pydantic_object=AnalysisResult)
+    parser: PydanticOutputParser[AnalysisResult] = PydanticOutputParser(
+        pydantic_object=AnalysisResult
+    )
 
     result = parser.parse_result(
         [Generation(text="<think>still thinking")], partial=True
