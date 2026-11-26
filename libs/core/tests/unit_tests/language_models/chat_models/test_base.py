@@ -1,5 +1,6 @@
 """Test base chat model."""
 
+import asyncio
 import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
@@ -12,11 +13,12 @@ from unittest.mock import MagicMock, patch
 import pytest
 from langsmith import Client
 from langsmith.env import get_langchain_env_var_metadata
-from pydantic import Field, model_validator
+from pydantic import Field, PrivateAttr, model_validator
 from typing_extensions import override
 
 from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.callbacks import (
+    AsyncCallbackHandler,
     AsyncCallbackManagerForLLMRun,
     BaseCallbackHandler,
     CallbackManagerForLLMRun,
@@ -74,7 +76,6 @@ from tests.unit_tests.fake.callbacks import (
 from tests.unit_tests.stubs import _any_id_ai_message, _any_id_ai_message_chunk
 
 if TYPE_CHECKING:
-    from langchain_core.outputs.llm_result import LLMResult
     from langchain_core.runnables.config import RunnableConfig
 
 
@@ -2098,3 +2099,293 @@ async def test_astream_events_v3_invocation_params_passed_to_tracer_metadata() -
     assert metadata["_type"] == "fake-chat-model-with-invocation-params"
     assert metadata["stop"] == ["done"]
     assert metadata["temperature"] == 0.7
+
+
+class _RecordingLifecycleHandler(BaseCallbackHandler):
+    def __init__(self) -> None:
+        self.events: list[tuple[str, uuid.UUID, Any]] = []
+
+    @override
+    def on_chat_model_start(
+        self,
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
+        *,
+        run_id: uuid.UUID,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("start", run_id, None))
+
+    @override
+    def on_llm_end(
+        self,
+        response: LLMResult,
+        *,
+        run_id: uuid.UUID,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("end", run_id, response))
+
+    @override
+    def on_llm_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: uuid.UUID,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("error", run_id, error))
+
+
+class _AsyncRecordingLifecycleHandler(AsyncCallbackHandler):
+    def __init__(self) -> None:
+        self.events: list[tuple[str, uuid.UUID, Any]] = []
+
+    @override
+    async def on_chat_model_start(
+        self,
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
+        *,
+        run_id: uuid.UUID,
+        **kwargs: Any,
+    ) -> None:
+        self.events.append(("start", run_id, None))
+
+    @override
+    async def on_llm_end(
+        self,
+        response: LLMResult,
+        *,
+        run_id: uuid.UUID,
+        **kwargs: Any,
+    ) -> None:
+        await asyncio.sleep(0)
+        self.events.append(("end", run_id, response))
+
+    @override
+    async def on_llm_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: uuid.UUID,
+        **kwargs: Any,
+    ) -> None:
+        await asyncio.sleep(0)
+        self.events.append(("error", run_id, error))
+
+
+class _CancellationProbeChatModel(BaseChatModel):
+    fail: bool = False
+    _entered: asyncio.Event = PrivateAttr(default_factory=asyncio.Event)
+    _release: asyncio.Event = PrivateAttr(default_factory=asyncio.Event)
+
+    @property
+    @override
+    def _llm_type(self) -> str:
+        return "cancellation-probe-chat-model"
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        msg = "This test uses async generation only"
+        raise AssertionError(msg)
+
+    @override
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        self._entered.set()
+        await self._release.wait()
+        if self.fail:
+            msg = "synthetic failure"
+            raise RuntimeError(msg)
+        return ChatResult(
+            generations=[ChatGeneration(message=AIMessage(content="synthetic"))]
+        )
+
+
+@pytest.mark.parametrize("outcome", ["success", "error", "cancel"])
+async def test_ainvoke_terminal_callback_on_external_cancellation(
+    outcome: Literal["success", "error", "cancel"],
+) -> None:
+    """External cancellation of `ainvoke` must emit `on_llm_error` and propagate."""
+    model = _CancellationProbeChatModel(fail=outcome == "error")
+    recorder = _RecordingLifecycleHandler()
+    task = asyncio.create_task(
+        model.ainvoke("synthetic", config={"callbacks": [recorder]})
+    )
+    try:
+        await asyncio.wait_for(model._entered.wait(), timeout=5)
+        if outcome == "cancel":
+            task.cancel("external-stop")
+            with pytest.raises(asyncio.CancelledError):
+                await asyncio.wait_for(task, timeout=5)
+        else:
+            model._release.set()
+            if outcome == "error":
+                with pytest.raises(RuntimeError, match="synthetic failure"):
+                    await asyncio.wait_for(task, timeout=5)
+            else:
+                result = await asyncio.wait_for(task, timeout=5)
+                assert result.content == "synthetic"
+    finally:
+        model._release.set()
+        if not task.done():
+            task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+    assert [name for name, _, _ in recorder.events] == [
+        "start",
+        "end" if outcome == "success" else "error",
+    ]
+    if outcome == "cancel":
+        err = recorder.events[1][2]
+        assert isinstance(err, asyncio.CancelledError)
+        assert err.args == ("external-stop",)
+
+
+async def test_ainvoke_async_callback_handler_on_external_cancellation() -> None:
+    """Shielded async `on_llm_error` runs to completion on external cancellation."""
+    model = _CancellationProbeChatModel()
+    recorder = _AsyncRecordingLifecycleHandler()
+    task = asyncio.create_task(
+        model.ainvoke("synthetic", config={"callbacks": [recorder]})
+    )
+    try:
+        await asyncio.wait_for(model._entered.wait(), timeout=5)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await asyncio.wait_for(task, timeout=5)
+    finally:
+        model._release.set()
+        if not task.done():
+            task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+    assert [name for name, _, _ in recorder.events] == ["start", "error"]
+    assert isinstance(recorder.events[1][2], asyncio.CancelledError)
+
+
+class _MixedBatchCancellationChatModel(BaseChatModel):
+    _pending_entered: asyncio.Event = PrivateAttr(default_factory=asyncio.Event)
+    _release: asyncio.Event = PrivateAttr(default_factory=asyncio.Event)
+
+    @property
+    @override
+    def _llm_type(self) -> str:
+        return "mixed-batch-cancellation-chat-model"
+
+    @override
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        msg = "This test uses async generation only"
+        raise AssertionError(msg)
+
+    @override
+    async def _agenerate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: AsyncCallbackManagerForLLMRun | None = None,
+        **kwargs: Any,
+    ) -> ChatResult:
+        content = messages[0].content
+        if content == "succeed":
+            return ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="ok"))]
+            )
+        if content == "fail":
+            msg = "item failed"
+            raise RuntimeError(msg)
+        if content == "internal-cancel":
+            raise asyncio.CancelledError
+        self._pending_entered.set()
+        await self._release.wait()
+        return ChatResult(
+            generations=[ChatGeneration(message=AIMessage(content="late"))]
+        )
+
+
+async def test_agenerate_partial_batch_on_external_cancellation() -> None:
+    """Partially completed batch emits accurate terminal callbacks on cancel."""
+    model = _MixedBatchCancellationChatModel()
+    recorder = _RecordingLifecycleHandler()
+    task = asyncio.create_task(
+        model.agenerate(
+            [
+                [HumanMessage(content="succeed")],
+                [HumanMessage(content="fail")],
+                [HumanMessage(content="wait")],
+            ],
+            callbacks=[recorder],
+        )
+    )
+    try:
+        await asyncio.wait_for(model._pending_entered.wait(), timeout=5)
+        # Allow already-ready tasks ("succeed", "fail") to complete first.
+        await asyncio.sleep(0)
+        task.cancel("batch-cancel")
+        with pytest.raises(asyncio.CancelledError):
+            await asyncio.wait_for(task, timeout=5)
+    finally:
+        model._release.set()
+        if not task.done():
+            task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+    starts = [run_id for name, run_id, _ in recorder.events if name == "start"]
+    assert len(starts) == 3
+    terminal_by_run = {
+        run_id: (name, payload)
+        for name, run_id, payload in recorder.events
+        if name in {"end", "error"}
+    }
+    assert set(terminal_by_run) == set(starts)
+    assert terminal_by_run[starts[0]][0] == "end"
+    assert terminal_by_run[starts[1]][0] == "error"
+    assert isinstance(terminal_by_run[starts[1]][1], RuntimeError)
+    assert terminal_by_run[starts[2]][0] == "error"
+    assert isinstance(terminal_by_run[starts[2]][1], asyncio.CancelledError)
+    assert terminal_by_run[starts[2]][1].args == ("batch-cancel",)
+
+
+async def test_agenerate_partial_batch_with_internal_base_exception() -> None:
+    """Batch where one item raises CancelledError internally handles BaseException."""
+    model = _MixedBatchCancellationChatModel()
+    recorder = _RecordingLifecycleHandler()
+
+    with pytest.raises(asyncio.CancelledError):
+        await model.agenerate(
+            [
+                [HumanMessage(content="succeed")],
+                [HumanMessage(content="internal-cancel")],
+            ],
+            callbacks=[recorder],
+        )
+
+    starts = [run_id for name, run_id, _ in recorder.events if name == "start"]
+    assert len(starts) == 2
+    terminal_by_run = {
+        run_id: (name, payload)
+        for name, run_id, payload in recorder.events
+        if name in {"end", "error"}
+    }
+    assert set(terminal_by_run) == set(starts)
+    assert terminal_by_run[starts[0]][0] == "end"
+    assert terminal_by_run[starts[1]][0] == "error"
+    assert isinstance(terminal_by_run[starts[1]][1], asyncio.CancelledError)

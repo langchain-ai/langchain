@@ -100,7 +100,7 @@ from langchain_core.utils.utils import LC_AUTO_PREFIX, LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
     import uuid
-    from collections.abc import Awaitable
+    from collections.abc import Awaitable, Coroutine
 
     from langchain_protocol.protocol import MessagesData
 
@@ -197,6 +197,55 @@ def _v3_error_response(
                 )
             ]
     return LLMResult(generations=[generations] if generations else [])
+
+
+def _consume_task_exception(task: asyncio.Task[Any]) -> None:
+    """Retrieve any exception on a cancelled task to avoid GC warnings."""
+    if not task.cancelled():
+        task.exception()
+
+
+def _task_outcome(
+    task: asyncio.Task[ChatResult],
+    cancel_exc: asyncio.CancelledError,
+) -> ChatResult | BaseException:
+    """Resolve a task's outcome after outer `agenerate` cancellation."""
+    if task.done() and not task.cancelled():
+        task_exc = task.exception()
+        return task_exc if task_exc is not None else task.result()
+    return cancel_exc
+
+
+async def _dispatch_agenerate_callbacks(
+    run_managers: Sequence[AsyncCallbackManagerForLLMRun],
+    results: Sequence[ChatResult | BaseException],
+    *,
+    return_exceptions: bool = False,
+) -> None:
+    """Dispatch `on_llm_error` and `on_llm_end` for mixed or errored batches."""
+    if not run_managers:
+        return
+    coros: list[Coroutine[Any, Any, Any]] = []
+    for run_manager, res in zip(run_managers, results, strict=False):
+        if isinstance(res, BaseException):
+            generations_with_error_metadata = _generate_response_from_error(res)
+            coros.append(
+                run_manager.on_llm_error(
+                    res,
+                    response=LLMResult(generations=[generations_with_error_metadata]),
+                )
+            )
+        else:
+            coros.append(
+                run_manager.on_llm_end(
+                    LLMResult(
+                        generations=[res.generations],
+                        llm_output=res.llm_output,
+                    )
+                )
+            )
+    if coros:
+        await asyncio.gather(*coros, return_exceptions=return_exceptions)
 
 
 def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
@@ -1869,44 +1918,36 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         input_messages = [
             _normalize_messages(message_list) for message_list in messages
         ]
-        results = await asyncio.gather(
-            *[
+        tasks = [
+            asyncio.create_task(
                 self._agenerate_with_cache(
                     m,
                     stop=stop,
                     run_manager=run_managers[i] if run_managers else None,
                     **kwargs,
                 )
-                for i, m in enumerate(input_messages)
-            ],
-            return_exceptions=True,
-        )
-        exceptions = []
-        for i, res in enumerate(results):
-            if isinstance(res, BaseException):
-                if run_managers:
-                    generations_with_error_metadata = _generate_response_from_error(res)
-                    await run_managers[i].on_llm_error(
-                        res,
-                        response=LLMResult(
-                            generations=[generations_with_error_metadata]
-                        ),
-                    )
-                exceptions.append(res)
-        if exceptions:
+            )
+            for i, m in enumerate(input_messages)
+        ]
+        try:
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+        except asyncio.CancelledError as exc:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+                    task.add_done_callback(_consume_task_exception)
             if run_managers:
-                await asyncio.gather(
-                    *[
-                        run_manager.on_llm_end(
-                            LLMResult(
-                                generations=[res.generations],  # type: ignore[union-attr]
-                                llm_output=res.llm_output,  # type: ignore[union-attr]
-                            )
-                        )
-                        for run_manager, res in zip(run_managers, results, strict=False)
-                        if not isinstance(res, Exception)
-                    ]
+                cancelled_results = [_task_outcome(task, exc) for task in tasks]
+                await _dispatch_agenerate_callbacks(
+                    run_managers,
+                    cancelled_results,
+                    return_exceptions=True,
                 )
+            raise
+
+        exceptions = [res for res in results if isinstance(res, BaseException)]
+        if exceptions:
+            await _dispatch_agenerate_callbacks(run_managers, results)
             raise exceptions[0]
         flattened_outputs = [
             LLMResult(generations=[res.generations], llm_output=res.llm_output)  # type: ignore[union-attr]
