@@ -69,7 +69,7 @@ def parse_tool_call(
         except (JSONDecodeError, TypeError):  # None args raise TypeError
             return None
     # Handle None or empty string arguments for parameter-less tools
-    elif not json_arguments:
+    elif not arguments:
         function_args = {}
     else:
         try:

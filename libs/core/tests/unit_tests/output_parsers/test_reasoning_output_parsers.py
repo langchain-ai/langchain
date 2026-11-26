@@ -284,6 +284,55 @@ def test_pydantic_output_parser_partial_open_think_returns_none() -> None:
     assert result is None
 
 
+def test_pydantic_output_parser_partial_closed_think_returns_result() -> None:
+    parser: PydanticOutputParser[AnalysisResult] = PydanticOutputParser(
+        pydantic_object=AnalysisResult
+    )
+
+    result = parser.parse_result(
+        [Generation(text=f"{REASONING}\n{INNER_JSON}")], partial=True
+    )
+
+    assert isinstance(result, AnalysisResult)
+    assert result.result[0].name == "promo"
+
+
+def test_parse_tool_call_truncated_json_preserves_original_arguments() -> None:
+    arguments = f'{REASONING}\n{{"result": [{{"name": "promo"'
+
+    with pytest.raises(OutputParserException) as exc_info:
+        parse_tool_call({"function": {"name": "F", "arguments": arguments}})
+
+    assert exc_info.value.llm_output == arguments
+
+
+def test_parse_tool_call_closed_reasoning_without_payload_raises() -> None:
+    arguments = REASONING
+
+    with pytest.raises(OutputParserException) as exc_info:
+        parse_tool_call({"function": {"name": "F", "arguments": arguments}})
+
+    assert exc_info.value.llm_output == arguments
+
+
+def test_json_output_parser_closed_think_without_payload_raises() -> None:
+    text = REASONING
+
+    with pytest.raises(OutputParserException) as exc_info:
+        JsonOutputParser().parse(text)
+
+    assert exc_info.value.llm_output == text
+
+
+def test_json_output_parser_unrecoverable_json_preserves_text() -> None:
+    text = '<think>reasoning</think>\n{"a": 1,,}'
+
+    with pytest.raises(OutputParserException) as exc_info:
+        JsonOutputParser().parse(text)
+
+    assert exc_info.value.llm_output == text
+
+
 def test_json_output_parser_preserves_tag_literals_in_json_strings() -> None:
     text = '{"note": "<think>keep</think>", "wrapped": "<tool_call>x</tool_call>"}'
 
