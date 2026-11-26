@@ -138,6 +138,17 @@ def test_parse_tool_call_preserves_tag_literals_in_json_strings() -> None:
     assert parsed["args"] == payload
 
 
+def test_parse_tool_call_wrapped_payload_with_tag_literals() -> None:
+    payload = {"note": "<think>keep</think>", "wrapped": "<tool_call></tool_call>"}
+    arguments = f"<tool_call>{json.dumps(payload)}</tool_call>"
+    raw = {"function": {"name": "F", "arguments": arguments}}
+
+    parsed = parse_tool_call(raw, return_id=False)
+
+    assert parsed is not None
+    assert parsed["args"] == payload
+
+
 def test_parse_tool_call_invalid_json_preserves_original_arguments() -> None:
     arguments = '<think>reasoning</think>\n{"broken": }'
     raw = {"function": {"name": "F", "arguments": arguments}}
@@ -193,6 +204,15 @@ def test_json_output_key_tools_parser_reasoning(arguments: str) -> None:
     result = parser.parse_result([_generation("AnalysisResult", arguments)])
 
     assert result == json.loads(INNER_JSON)
+
+
+def test_json_output_key_tools_parser_reasoning_partial() -> None:
+    parser = JsonOutputKeyToolsParser(key_name="NameOnly", first_tool_only=True)
+    arguments = f'{REASONING}<tool_call>{{"name": "abc'
+
+    result = parser.parse_result([_generation("NameOnly", arguments)], partial=True)
+
+    assert result == {"name": "abc"}
 
 
 def test_with_structured_output_reasoning_model() -> None:
@@ -270,6 +290,14 @@ def test_json_output_parser_preserves_tag_literals_in_json_strings() -> None:
         "note": "<think>keep</think>",
         "wrapped": "<tool_call>x</tool_call>",
     }
+
+
+def test_json_output_parser_wrapped_payload_preserves_tag_literals() -> None:
+    payload = {"note": "<think>keep</think>", "wrapped": "<tool_call></tool_call>"}
+
+    result = JsonOutputParser().parse(f"<tool_call>{json.dumps(payload)}</tool_call>")
+
+    assert result == payload
 
 
 def test_json_output_parser_invalid_json_preserves_text() -> None:

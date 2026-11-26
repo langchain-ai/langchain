@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import re
+from json import JSONDecodeError
 
 _OPEN_THINK_RE = re.compile(r"<think(?:\s[^>]*)?>", re.IGNORECASE)
 _CLOSE_THINK_RE = re.compile(r"</think\s*>", re.IGNORECASE)
@@ -38,10 +40,15 @@ def strip_reasoning_tags(text: str) -> tuple[str, bool]:
         text = text[close.end() :].lstrip()
 
     match = _OPEN_TOOL_CALL_RE.match(text)
-    if match is not None:
-        close = _CLOSE_TOOL_CALL_RE.search(text, match.end())
-        if close is None:
-            return text[match.end() :].lstrip(), True
-        text = text[match.end() : close.start()].strip()
+    if match is None:
+        return text, True
 
-    return text, True
+    payload = text[match.end() :].lstrip()
+    try:
+        _, end = json.JSONDecoder().raw_decode(payload)
+    except JSONDecodeError:
+        close = _CLOSE_TOOL_CALL_RE.search(payload)
+        if close is None:
+            return payload, True
+        return payload[: close.start()].strip(), True
+    return payload[:end], True
