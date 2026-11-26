@@ -1,0 +1,848 @@
+libs/core/langchain_core/tracers/core.py
+  s_ee81ae05343800::t_4be7900a6db1d4 67-74
+  s_ee81ae05343800::t_2257a83e48a312 9,283,314,347,376,397,447,465,518,532,551,589,601,617,647,658
+libs/core/tests/unit_tests/tracers/test_run_status.py
+  s_ee81ae05343800::t_3844c13f17c8dc 127-129
+.github/actions/uv_setup/action.yml
+  s_ee81ae05343800::t_cf9a64af476e6e 24
+.github/scripts/check_diff.py
+  s_ee81ae05343800::t_1f992e414b57bd 150-151,153
+.github/scripts/test_check_diff.py
+  s_ee81ae05343800::t_b79bd3b81ff609 6-16
+.github/workflows/_release.yml
+  s_ee81ae05343800::t_4348e0d4d7a1a5 521-528,531-532,534-540,542-547,564,579,595,597
+.github/workflows/integration_tests.yml
+  s_ee81ae05343800::t_06360db2903519 8,56,87,99,101,144,148,162,305,315,318,332,369
+.github/workflows/pr_lint_trailer.yml
+  s_ee81ae05343800::t_657501f4a605c7 46-56,62,157,159,168
+.pre-commit-config.yaml
+  s_ee81ae05343800::t_f891d7642a6a92 33-38,66-71,120-131,138-149,246-251
+libs/core/langchain_core/_api/beta_decorator.py
+  s_ee81ae05343800::t_47931032fc3322 17,27-31,111-113,121-123,146-148,232-244,246-251,272-274
+libs/core/langchain_core/_api/deprecation.py
+  s_ee81ae05343800::t_e17e50c66a137c 143-145,468-479,482,484-488,503,534-535,537-539,586
+libs/core/langchain_core/callbacks/base.py
+  s_ee81ae05343800::t_a4551df6e68209 10
+libs/core/langchain_core/callbacks/file.py
+  s_ee81ae05343800::t_f8a6dcba501a9f 6,8
+libs/core/langchain_core/callbacks/manager.py
+  s_ee81ae05343800::t_b8320b7a2abec0 15,17,251-253,378-379,382,386-389
+libs/core/langchain_core/decisions/__init__.py
+  s_ee81ae05343800::t_2420284e381121 1-77
+libs/core/langchain_core/decisions/base.py
+  s_ee81ae05343800::t_c4faeeea76cbfa 1-188
+libs/core/langchain_core/decisions/types.py
+  s_ee81ae05343800::t_0ba897bdcbd585 1-427
+libs/core/langchain_core/example_selectors/length_based.py
+  s_ee81ae05343800::t_ed2d7fd1453fb2 5
+libs/core/langchain_core/language_models/_compat_bridge.py
+  s_ee81ae05343800::t_80d453c6293708 57,63,546-547,551-557,576-583,704-705,785-786,840-841
+libs/core/langchain_core/language_models/_finish_reason.py
+  s_ee81ae05343800::t_a156fe5e2cad87 1-45
+libs/core/langchain_core/language_models/chat_model_stream.py
+  s_ee81ae05343800::t_1aef1ee179b2ee 28,47-48,612,1060-1064,1150-1151,1222
+libs/core/langchain_core/language_models/chat_models.py
+  s_ee81ae05343800::t_806cb01ebdf5a1 13,17,99,112-122,845,850,852,883-885,982,991,993,1023-1025,1385-1388,1390-1391,1398,2042,2061,2064,2080-2082,2201,2220,2223,2241-2243
+libs/core/langchain_core/load/serializable.py
+  s_ee81ae05343800::t_f9a8e9b634099a 9,17
+libs/core/langchain_core/messages/ai.py
+  s_ee81ae05343800::t_e606bf5ea10a82 8,11
+libs/core/langchain_core/messages/base.py
+  s_ee81ae05343800::t_9497e01e6537e8 18
+libs/core/langchain_core/messages/content.py
+  s_ee81ae05343800::t_e877dc4dc6ca7a 119,121
+libs/core/langchain_core/messages/notification.py
+  s_ee81ae05343800::t_f56ef273e1d2eb 3,5,9-11,28-29,33-34
+libs/core/langchain_core/messages/tool.py
+  s_ee81ae05343800::t_3046cbd935d37c 4,8
+libs/core/langchain_core/output_parsers/base.py
+  s_ee81ae05343800::t_d459b14b9910f0 289-294,312-315
+libs/core/langchain_core/outputs/chat_generation.py
+  s_ee81ae05343800::t_37e5ccc65a2b9e 14
+libs/core/langchain_core/prompts/base.py
+  s_ee81ae05343800::t_8ce5515e26a6e1 12,16
+libs/core/langchain_core/prompts/chat.py
+  s_ee81ae05343800::t_a572fc33bc1b90 11,24
+libs/core/langchain_core/prompts/few_shot.py
+  s_ee81ae05343800::t_c70ae8b5820e4a 30
+libs/core/langchain_core/prompts/few_shot_with_templates.py
+  s_ee81ae05343800::t_6334b678f9dfea 4
+libs/core/langchain_core/retrievers.py
+  s_ee81ae05343800::t_c2d2c45d4b09f1 11,14
+libs/core/langchain_core/runnables/base.py
+  s_ee81ae05343800::t_6fd8a4bee749b0 1595,1601,1625-1628,1785-1789
+libs/core/langchain_core/runnables/configurable.py
+  s_ee81ae05343800::t_6fd1b38ada43d0 461,552,557,685,690
+libs/core/langchain_core/runnables/schema.py
+  s_ee81ae05343800::t_7eb99c2919bff8 5,7
+libs/core/langchain_core/structured_query.py
+  s_ee81ae05343800::t_a2bb053806a38e 6,99,107
+libs/core/langchain_core/tools/base.py
+  s_ee81ae05343800::t_1deb550ff14e15 18,40
+libs/core/langchain_core/tracers/event_stream.py
+  s_ee81ae05343800::t_32af00a00fff1b 11,17
+libs/core/langchain_core/tracers/langchain.py
+  s_ee81ae05343800::t_ada7524497aa66 7,290
+libs/core/langchain_core/tracers/log_stream.py
+  s_ee81ae05343800::t_f0255791214962 15,21
+libs/core/langchain_core/utils/_gateway.py
+  s_ee81ae05343800::t_ea7ad1446fdfe1 16-17,19,24,43-161,217-219,231-247,259-262,267-271,288-295,320-330
+libs/core/langchain_core/utils/pydantic.py
+  s_ee81ae05343800::t_90ae026342e352 446-451,608-616
+libs/core/langchain_core/vectorstores/base.py
+  s_ee81ae05343800::t_590e4de8761a0f 19,24
+libs/core/langchain_core/version.py
+  s_ee81ae05343800::t_3bf7c3675a2ffe 3
+libs/core/pyproject.toml
+  s_ee81ae05343800::t_366070297a6be7 23-24,37,86
+libs/core/tests/unit_tests/_api/test_deprecation.py
+  s_ee81ae05343800::t_ca167d4e1dcea7 12,79-130
+libs/core/tests/unit_tests/_api/test_warning_suppression.py
+  s_ee81ae05343800::t_1414876188f74f 1-222
+libs/core/tests/unit_tests/decisions/test_base.py
+  s_ee81ae05343800::t_4dbd8173bbc4ed 1-191
+libs/core/tests/unit_tests/decisions/test_types.py
+  s_ee81ae05343800::t_6886f3ec0e32f6 1-172
+libs/core/tests/unit_tests/document_loaders/test_langsmith.py
+  s_ee81ae05343800::t_e6f9aa96188701 42,49,56
+libs/core/tests/unit_tests/indexing/test_in_memory_record_manager.py
+  s_ee81ae05343800::t_c6239bc6d4e48f 1,60,65-69,75,80-86,95,101,105,108,116,122,126,129,172,181,200,208,218,221
+libs/core/tests/unit_tests/indexing/test_indexing.py
+  s_ee81ae05343800::t_3fdbfd9c02cc46 2,171,189,218,246,280,298,327,353,387,417,446,488,518,547,699,718,750,780,825,844,876,906,1051,1070,1091,1136,1155,1176,1213,1233,1266,1303,1323,1356,1393,1420,1458,1506,1542,1596,1623,1676,1704,1732,1771,1810,1865,1892,1930
+libs/core/tests/unit_tests/language_models/chat_models/test_base.py
+  s_ee81ae05343800::t_7e20717eb03041 7,9-10,13,16,50-55,58-61,390,398-404,1153-1298,1667-1674,1690-1697
+libs/core/tests/unit_tests/language_models/test_chat_model_stream.py
+  s_ee81ae05343800::t_d9c6209af4faf2 6
+libs/core/tests/unit_tests/language_models/test_finish_reason.py
+  s_ee81ae05343800::t_c90c3ee1f0f427 1-227
+libs/core/tests/unit_tests/messages/test_notification.py
+  s_ee81ae05343800::t_cb1733dd3abad3 3,28-60
+libs/core/tests/unit_tests/messages/test_utils.py
+  s_ee81ae05343800::t_7d884f6e192279 6,9
+libs/core/tests/unit_tests/runnables/test_configurable.py
+  s_ee81ae05343800::t_91ba46fbfc63de 1,5
+libs/core/tests/unit_tests/tracers/test_async_base_tracer.py
+  s_ee81ae05343800::t_846535a3d6ff9c 5,64-65,67-68,97-98,100-101,133-134,136-137,165-166,168-169,194-195,197-198,225-226,228-229,291-292,294-295,309-310,312-313,329-330,332-333,350-351,353-354,379-380,382-383,411-412,414-415,448-449,451-452,479-480,482-483,552-553,555-556,571-572,574-575,590-591,593-594,609-610,612-613,627-628,630-631
+libs/core/tests/unit_tests/tracers/test_base_tracer.py
+  s_ee81ae05343800::t_dff2d5be93b186 5,69-70,72-73,102-103,105-106,138-139,141-142,170-171,173-174,199-200,202-203,228-229,231-232,294-295,297-298,312-313,315-316,332-333,335-336,353-354,356-357,382-383,385-386,414-415,417-418,451-452,454-455,482-483,485-486,553-554,556-557,572-573,575-576,591-592,594-595,610-611,613-614,628-629,631-632
+libs/core/tests/unit_tests/utils/test_gateway.py
+  s_ee81ae05343800::t_f866c51613fb2b 3,12,16-17,187,195,223-248,253-255,361-496
+libs/core/tests/unit_tests/utils/test_pydantic.py
+  s_ee81ae05343800::t_2f0d2b4b8d24e9 5-6,10-17,19,253-330
+libs/core/uv.lock
+  s_ee81ae05343800::t_5adf162488a7ed 3,5-10,16,207-208,210-213,215,222-228,657,665,713,867,881,959,997,1044,1074,1098,1143,1148,1150,1155,1160,1198,1208,1221,1229,1497,1499,1501,1593-1594,1648,2688,2690,2692,2737,2758-2803
+libs/langchain/langchain_classic/agents/agent.py
+  s_ee81ae05343800::t_d03618c2c3e6b4 16,43,1644,1684
+libs/langchain/langchain_classic/agents/agent_iterator.py
+  s_ee81ae05343800::t_2e7f154be38399 260,307
+libs/langchain/langchain_classic/agents/agent_types.py
+  s_ee81ae05343800::t_0c53d1f94ebe54 3,15
+libs/langchain/langchain_classic/agents/openai_assistant/base.py
+  s_ee81ae05343800::t_0206e73bc6cf4d 11,21
+libs/langchain/langchain_classic/agents/openai_functions_agent/base.py
+  s_ee81ae05343800::t_a71e857d09034e 4
+libs/langchain/langchain_classic/agents/openai_functions_multi_agent/base.py
+  s_ee81ae05343800::t_4ffd893173d749 6
+libs/langchain/langchain_classic/chains/api/base.py
+  s_ee81ae05343800::t_ef63947f2af823 6
+libs/langchain/langchain_classic/chains/combine_documents/map_rerank.py
+  s_ee81ae05343800::t_e1ce7f513f800c 6,14
+libs/langchain/langchain_classic/chains/conversation/base.py
+  s_ee81ae05343800::t_ecd8bc120dbb74 3-4,8
+libs/langchain/langchain_classic/chains/elasticsearch_database/base.py
+  s_ee81ae05343800::t_b29a2b1aa698ba 5
+libs/langchain/langchain_classic/chains/router/llm_router.py
+  s_ee81ae05343800::t_663b3a035508e6 5,18
+libs/langchain/langchain_classic/chains/sequential.py
+  s_ee81ae05343800::t_c9934290eeec96 3
+libs/langchain/langchain_classic/chat_models/__init__.py
+  s_ee81ae05343800::t_5bec5c6c6e2f76 11,21-24
+libs/langchain/langchain_classic/evaluation/criteria/eval_chain.py
+  s_ee81ae05343800::t_780b13696158fe 5,22
+libs/langchain/langchain_classic/evaluation/embedding_distance/base.py
+  s_ee81ae05343800::t_d0aa643ad030b4 5,75
+libs/langchain/langchain_classic/evaluation/schema.py
+  s_ee81ae05343800::t_9e00e7d8138c57 8,21
+libs/langchain/langchain_classic/evaluation/string_distance/base.py
+  s_ee81ae05343800::t_18eb5510fb7a77 4,41
+libs/langchain/langchain_classic/llms/__init__.py
+  s_ee81ae05343800::t_04893867398a16 11,535-538
+libs/langchain/langchain_classic/output_parsers/datetime.py
+  s_ee81ae05343800::t_14d0cee1ad2a29 1,29
+libs/langchain/langchain_classic/retrievers/multi_vector.py
+  s_ee81ae05343800::t_db72a9dadebcb9 1,18
+libs/langchain/langchain_classic/smith/evaluation/runner_utils.py
+  s_ee81ae05343800::t_77d226c170ad7f 14,1281
+libs/langchain/langchain_classic/tools/__init__.py
+  s_ee81ae05343800::t_27dc58b1be154e 11,61-64
+libs/langchain/langchain_classic/utilities/asyncio.py
+  s_ee81ae05343800::t_bef99f4481ab35 1,3
+libs/langchain/pyproject.toml
+  s_ee81ae05343800::t_543435ee36b889 18,23-24,126-127
+libs/langchain/tests/mock_servers/robot/server.py
+  s_ee81ae05343800::t_2aaa84c20bea5f 3,35,58,65,73
+libs/langchain/tests/unit_tests/_api/test_warning_suppression.py
+  s_ee81ae05343800::t_36845fcde1d4af 1-53
+libs/langchain/tests/unit_tests/chat_models/test_base.py
+  s_ee81ae05343800::t_df0163d42d034e 131-132,135
+libs/langchain/tests/unit_tests/indexes/test_indexing.py
+  s_ee81ae05343800::t_0494d1e994e54e 2,173-174,772,942,973,1004,1116
+libs/langchain/tests/unit_tests/output_parsers/test_fix.py
+  s_ee81ae05343800::t_725bde068cec5f 1,159,167,196,204
+libs/langchain/tests/unit_tests/output_parsers/test_retry.py
+  s_ee81ae05343800::t_f17e15ce5f48a3 1,218,246,275,304
+libs/langchain/tests/unit_tests/smith/evaluation/test_runner_utils.py
+  s_ee81ae05343800::t_1f31b9372df53c 5,31
+libs/langchain/uv.lock
+  s_ee81ae05343800::t_566a4adcfcb498 3,5-10,15,17,531-532,534-537,539,546-552,1345-1347,1372-1374,1495-1497,1517-1519,1717-1720,1764-1765,1819-1822,1839-1840,1970,2010,2018,2066,2299,2313,2392,2430,2543,2774,2795,2963,3029,3034,3036,3041,3084,3094,3107,3115,3475,3477,3479,3768-3769,3823,3983,3988,3990,5436,5438,5440,5546,5694-5739
+libs/langchain_v1/examples/mcp/run_graph_factory_demo.py
+  s_ee81ae05343800::t_202158a39e846a 50-51,53,84-90
+libs/langchain_v1/langchain/__init__.py
+  s_ee81ae05343800::t_06123b186dbb56 3
+libs/langchain_v1/langchain/agents/factory.py
+  s_ee81ae05343800::t_046fd03dca2205 15-16,21,41
+libs/langchain_v1/langchain/agents/middleware/__init__.py
+  s_ee81ae05343800::t_f0db537efde7c2 6,17,59,74,80
+libs/langchain_v1/langchain/agents/middleware/auto_mode.py
+  s_ee81ae05343800::t_c16c76d3706d21 1-235
+libs/langchain_v1/langchain/agents/middleware/file_search.py
+  s_ee81ae05343800::t_2798609875382b 16,199
+libs/langchain_v1/langchain/agents/middleware/human_in_the_loop.py
+  s_ee81ae05343800::t_a2942a3345f5ca 12,19,32,281-289
+libs/langchain_v1/langchain/agents/middleware/model_call_limit.py
+  s_ee81ae05343800::t_7a21e86f18d89a 5,9
+libs/langchain_v1/langchain/agents/middleware/model_router.py
+  s_ee81ae05343800::t_a68a9a7d3dcc36 1-198
+libs/langchain_v1/langchain/agents/middleware/provider_tool_search.py
+  s_ee81ae05343800::t_a784f3147ba5d1 6,9,286
+libs/langchain_v1/langchain/agents/middleware/shell_tool.py
+  s_ee81ae05343800::t_5dbe2e8463d097 18,26
+libs/langchain_v1/langchain/agents/middleware/todo.py
+  s_ee81ae05343800::t_676cadd8f33bf4 4,11
+libs/langchain_v1/langchain/agents/middleware/tool_call_limit.py
+  s_ee81ae05343800::t_f7a35e72948e75 5,10
+libs/langchain_v1/langchain/agents/middleware/types.py
+  s_ee81ae05343800::t_0c9e96b8cd9628 15-16,35,148-158
+libs/langchain_v1/langchain/agents/structured_output.py
+  s_ee81ae05343800::t_e78658ef6bcf7c 14,24
+libs/langchain_v1/langchain/chat_models/base.py
+  s_ee81ae05343800::t_7102f785279541 626-637
+libs/langchain_v1/langchain/mcp/__init__.py
+  s_ee81ae05343800::t_6a0badb7febfc9 17,26-32
+libs/langchain_v1/langchain/mcp/adapter.py
+  s_ee81ae05343800::t_bf78980f0dc807 6
+libs/langchain_v1/langchain/mcp/elicitation.py
+  s_ee81ae05343800::t_da0540798edf38 20
+libs/langchain_v1/pyproject.toml
+  s_ee81ae05343800::t_2890a5533f0fbf 23-24,26-27,45-47
+libs/langchain_v1/tests/unit_tests/agents/middleware/core/test_decorators.py
+  s_ee81ae05343800::t_e42e39897dd161 4,18
+libs/langchain_v1/tests/unit_tests/agents/middleware/core/test_overrides.py
+  s_ee81ae05343800::t_5de8c8fa5408f1 3-5,10,25-51
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_auto_mode.py
+  s_ee81ae05343800::t_eca3b17afc3afc 1-248
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_human_in_the_loop.py
+  s_ee81ae05343800::t_46536a212b518d 1975-1977,1987-1993,1998-1999,2002-2006,2229,2231,2254-2258
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_model_router.py
+  s_ee81ae05343800::t_a5d1cb16e0a541 1-185
+libs/langchain_v1/tests/unit_tests/agents/middleware/implementations/test_provider_tool_search.py
+  s_ee81ae05343800::t_64f2d815688d27 5-7,18,20,335-358
+libs/langchain_v1/tests/unit_tests/agents/middleware_typing/test_middleware_typing.py
+  s_ee81ae05343800::t_2153dcf016841c 18,24
+libs/langchain_v1/tests/unit_tests/agents/test_state_schema.py
+  s_ee81ae05343800::t_0289286832fc04 9,13
+libs/langchain_v1/tests/unit_tests/chat_models/test_chat_models.py
+  s_ee81ae05343800::t_a70014526b9e2b 193,196-197,201-236
+libs/langchain_v1/tests/unit_tests/mcp/test_namespace.py
+  s_ee81ae05343800::t_ef7dc3eea2f4fe 8-13,38,51-71
+libs/langchain_v1/uv.lock
+  s_ee81ae05343800::t_5ebe9e8d134080 3,5-9,26,502-505,517,569,1008,1010,1012,1029,1401-1402,1422-1424,1832,2074,2128,2250,2288,2336,2359,2409,2423,2629,2707,2712,2750,2760,2773,2781,3380,3561,3566,3568,3898,4451
+libs/model-profiles/langchain_model_profiles/cli.py
+  s_ee81ae05343800::t_fd5f39a43fe85f 8
+libs/model-profiles/pyproject.toml
+  s_ee81ae05343800::t_f76dda88b67e41 24
+libs/model-profiles/uv.lock
+  s_ee81ae05343800::t_619a848c97d1e3 3,5-7,356,502,537,575,707,836
+libs/partners/anthropic/langchain_anthropic/_client_utils.py
+  s_ee81ae05343800::t_bee378708e479e 3-5,72-78
+libs/partners/anthropic/langchain_anthropic/_version.py
+  s_ee81ae05343800::t_b967a9ad00eade 3
+libs/partners/anthropic/langchain_anthropic/chat_models.py
+  s_ee81ae05343800::t_620af2912e59ba 14,70-71,73,81-89,938-942,1184-1190,1410-1436,1507-1579,1843-1877,1891-1892,1914-1917,1920-1925,1943-1944,1946-1947,1962-1963,1965-1968,2000,2153,2360-2362,2365-2376,2420,2471,2620-2627,2703,2771-2774,3340,3539-3560
+libs/partners/anthropic/langchain_anthropic/data/_profiles.py
+  s_ee81ae05343800::t_88488ecad4cfcf 91-127,228-248,251,284,286,492,519
+libs/partners/anthropic/langchain_anthropic/data/profile_augmentations.toml
+  s_ee81ae05343800::t_b193f9724ff290 103-120
+libs/partners/anthropic/langchain_anthropic/llms.py
+  s_ee81ae05343800::t_86a90efa15dde9 7,97,104
+libs/partners/anthropic/langchain_anthropic/middleware/anthropic_tools.py
+  s_ee81ae05343800::t_102e06b1133741 11,13,25,411,464,511,578
+libs/partners/anthropic/pyproject.toml
+  s_ee81ae05343800::t_5a91105455b0d2 22-23,26
+libs/partners/anthropic/tests/unit_tests/test_chat_models.py
+  s_ee81ae05343800::t_a0a16aad3a9d69 31,47-50,2053-2054,3161-3169,4225-4233,4236-4242,4247-4266,4285-4286,6735-6981
+libs/partners/anthropic/tests/unit_tests/test_client_utils.py
+  s_ee81ae05343800::t_6299a50494e412 5-13,21-22,90-153
+libs/partners/anthropic/tests/unit_tests/test_fable52.py
+  s_ee81ae05343800::t_cd4ea9fcd10977 1-71
+libs/partners/anthropic/tests/unit_tests/test_gateway_headers.py
+  s_ee81ae05343800::t_a5d627cf24052c 1-289
+libs/partners/anthropic/uv.lock
+  s_ee81ae05343800::t_f546e8c8c1ff2b 3,5-8,526,556,594,667,688,733,738,740,745,750,788,798,800
+libs/partners/chroma/langchain_chroma/_version.py
+  s_ee81ae05343800::t_23d0ec62c6a891 3
+libs/partners/chroma/pyproject.toml
+  s_ee81ae05343800::t_7794527ef04d30 7,21
+libs/partners/chroma/scripts/check_imports.py
+  s_ee81ae05343800::t_88a95ed2fdb18d 13
+libs/partners/chroma/uv.lock
+  s_ee81ae05343800::t_3dcb228b0929d5 3,5-9,320-321,631,742,747,768,802,880,885,1301
+libs/partners/deepseek/langchain_deepseek/_version.py
+  s_ee81ae05343800::t_3a38a1e9020164 3
+libs/partners/deepseek/langchain_deepseek/chat_models.py
+  s_ee81ae05343800::t_2dcfd50169e0bc 8,27-31,304-325,329-330,343-345
+libs/partners/deepseek/pyproject.toml
+  s_ee81ae05343800::t_acba38f4433120 22-23,25-26
+libs/partners/deepseek/scripts/check_imports.py
+  s_ee81ae05343800::t_aab35bee2e4d93 13
+libs/partners/deepseek/tests/unit_tests/test_chat_models.py
+  s_ee81ae05343800::t_47693c61e03a8f 5-6,10-11,13,729-848
+libs/partners/deepseek/uv.lock
+  s_ee81ae05343800::t_f5f98af51c39bd 2-3,5-8,465,468,483,500,502,515,524,531,578,619-620,622,643,648,667,676,680,1057-1058,1060,1062,1222,1225,1228,1230
+libs/partners/exa/langchain_exa/_version.py
+  s_ee81ae05343800::t_7fa939a5cce10d 3
+libs/partners/exa/pyproject.toml
+  s_ee81ae05343800::t_e7221678e7b954 7,22
+libs/partners/exa/uv.lock
+  s_ee81ae05343800::t_b6f97b836afec3 2-3,5-8,439,442,457,474,476,489,498,505,568,573,592,601,605,984-985,987,989,1149,1152,1155,1157
+libs/partners/fireworks/langchain_fireworks/_version.py
+  s_ee81ae05343800::t_d6e98cff409708 3
+libs/partners/fireworks/langchain_fireworks/chat_models.py
+  s_ee81ae05343800::t_f38cf6159cf4ee 15
+libs/partners/fireworks/langchain_fireworks/data/_profiles.py
+  s_ee81ae05343800::t_698e8acb9c44f3 38,62,174-197,224,248,295,386-432,457-480,529-552,577-600,670-693,772,826,844-845,850-874,893-895,898
+libs/partners/fireworks/langchain_fireworks/embeddings.py
+  s_ee81ae05343800::t_54324a36369016 1-2
+libs/partners/fireworks/langchain_fireworks/llms.py
+  s_ee81ae05343800::t_9b64156396aa5d 6
+libs/partners/fireworks/pyproject.toml
+  s_ee81ae05343800::t_9e6410845385df 22-23
+libs/partners/fireworks/tests/integration_tests/test_chat_models.py
+  s_ee81ae05343800::t_d226bad6ba67f7 19
+libs/partners/fireworks/tests/integration_tests/test_llms.py
+  s_ee81ae05343800::t_465f8e153811b5 16
+libs/partners/fireworks/tests/integration_tests/test_standard.py
+  s_ee81ae05343800::t_725ad9d63718d5 22
+libs/partners/fireworks/uv.lock
+  s_ee81ae05343800::t_34e8c5cd7b28aa 3,5-8,753,783,821,887,964,969,1007,1017,1019,1037,1043,1045
+libs/partners/groq/langchain_groq/_version.py
+  s_ee81ae05343800::t_51bab28ff3b4f3 3
+libs/partners/groq/langchain_groq/chat_models.py
+  s_ee81ae05343800::t_7824fa008fc346 9,67-71,77-84,500-502,551-571,584-585,587-588,695,716,732,788,840-851
+libs/partners/groq/pyproject.toml
+  s_ee81ae05343800::t_a6cb72166de4ae 22-23,25
+libs/partners/groq/tests/integration_tests/test_chat_models.py
+  s_ee81ae05343800::t_b72c30152a4dae 28,31-32,234,254,387
+libs/partners/groq/tests/integration_tests/test_standard.py
+  s_ee81ae05343800::t_6ca0b4850fa580 25
+libs/partners/groq/tests/unit_tests/test_chat_models.py
+  s_ee81ae05343800::t_28073074d3d34c 13,24-25,1335-1412
+libs/partners/groq/tests/unit_tests/test_gateway_headers.py
+  s_ee81ae05343800::t_c0fe0f3639a952 1-237
+libs/partners/groq/uv.lock
+  s_ee81ae05343800::t_666432877cc6f1 2-3,5-8,369,372,387,404,406,419,428,435,494,499,518,527,531,891-892,894,896,1056,1059,1062,1064
+libs/partners/huggingface/langchain_huggingface/_version.py
+  s_ee81ae05343800::t_3ea147153162d1 3
+libs/partners/huggingface/langchain_huggingface/chat_models/huggingface.py
+  s_ee81ae05343800::t_fd918b1ab0f797 16-17,847,851-852,858,876-886,915,920-921,926-928,947-957,1076-1078
+libs/partners/huggingface/langchain_huggingface/data/_profiles.py
+  s_ee81ae05343800::t_d6ee3624f9b3f6 19-22,24-25,27,36-58,110-111,131,153,175,191-194,197,213-216,218-219,229-250,284,322-343,349,520,542,717,739,756-820,865-929,978,1000-1001,1022,1153,1214-1217,1219-1220,1222,1230-1231,1235-1238,1240-1241,1243,1251,1253,1257-1302,1367-1495,1518-1560,1566-1847,1849,1856,1859-1860,1863-1866,1868-1869,1878-1880,1882,1885-1888,1890-1891,1900,1902,1907-1910,1913,1922,1924,1929-1932,1935,1946,1951-1954,1956,1959,1961,1968-1969,1973-1976,1978-1979,1983,1990,1995-1998,2000-2001,2014,2017-2020,2022,2025,2035-2036,2039-2040,2045,2061-2064,2067-2089,2169-2212,2218-2219,2257-2300,2307,2343-2363,2411,2427-2447,2474,2495,2558
+libs/partners/huggingface/langchain_huggingface/embeddings/huggingface_endpoint.py
+  s_ee81ae05343800::t_b1c12089f57950 4
+libs/partners/huggingface/langchain_huggingface/llms/huggingface_endpoint.py
+  s_ee81ae05343800::t_1b657e1ad62681 7
+libs/partners/huggingface/langchain_huggingface/llms/huggingface_pipeline.py
+  s_ee81ae05343800::t_cee73d58d815df 7
+libs/partners/huggingface/pyproject.toml
+  s_ee81ae05343800::t_a48853575dbddb 22-23
+libs/partners/huggingface/tests/integration_tests/test_chat_models.py
+  s_ee81ae05343800::t_3ec6121ae30b1c 9,11
+libs/partners/huggingface/tests/integration_tests/test_llms.py
+  s_ee81ae05343800::t_f9bd3f92bd4499 22
+libs/partners/huggingface/tests/integration_tests/test_standard.py
+  s_ee81ae05343800::t_39954ed617d1a9 21,23-24,71-80
+libs/partners/huggingface/tests/unit_tests/test_chat_models.py
+  s_ee81ae05343800::t_3f119bda0dd3ee 1,3,210-213,224,228-283
+libs/partners/huggingface/uv.lock
+  s_ee81ae05343800::t_ffc7b1b5133cda 3,5-8,865,905,913,1017,1041,1071,1118,1132,1198,1228,1281,1286,1324,1334,1336,1354,1360,1362,2869-2870,2907,2979,2981,3155,3158,3193-3238,3268
+libs/partners/mistralai/langchain_mistralai/_version.py
+  s_ee81ae05343800::t_a07e6c2582ef4c 3
+libs/partners/mistralai/langchain_mistralai/chat_models.py
+  s_ee81ae05343800::t_4855aeea88b329 16,77,350-358,370-372,680-689,717,795-815,941-942,973-974,1074-1076
+libs/partners/mistralai/langchain_mistralai/data/_profiles.py
+  s_ee81ae05343800::t_d4c774ac2d6520 65,72,82,107-108,110-111,114,118,130-133,136,140,146,148,152-153,180,197-199,202,241-243,246,284-285,307-309,329-330,332,343,351-353,374-376,441,462,579
+libs/partners/mistralai/langchain_mistralai/embeddings.py
+  s_ee81ae05343800::t_3fd45163755302 5,167,223-225
+libs/partners/mistralai/pyproject.toml
+  s_ee81ae05343800::t_2ca7a4990f7276 22-23,25
+libs/partners/mistralai/tests/integration_tests/test_chat_models.py
+  s_ee81ae05343800::t_cf9a7e19e7e317 153-157,183
+libs/partners/mistralai/tests/integration_tests/test_standard.py
+  s_ee81ae05343800::t_e48be180639bbf 25-34
+libs/partners/mistralai/tests/unit_tests/test_chat_models.py
+  s_ee81ae05343800::t_2eb78edf4cf566 4,1165-1363
+libs/partners/mistralai/uv.lock
+  s_ee81ae05343800::t_ce2af5f89d5ad7 3,5-8,362,417,483,545,550
+libs/partners/nomic/Makefile
+  s_ee81ae05343800::t_b4bb1988b43d07 19
+libs/partners/nomic/langchain_nomic/_version.py
+  s_ee81ae05343800::t_c8589d169fe413 3
+libs/partners/nomic/langchain_nomic/embeddings.py
+  s_ee81ae05343800::t_56112fed4e49e3 148
+libs/partners/nomic/pyproject.toml
+  s_ee81ae05343800::t_6fe51fe299335e 7,22
+libs/partners/nomic/uv.lock
+  s_ee81ae05343800::t_7460d70e9d1c7a 3,5-8,427,493,498,558,563,800,802,978
+libs/partners/ollama/langchain_ollama/_version.py
+  s_ee81ae05343800::t_3582f462858f1a 3
+libs/partners/ollama/langchain_ollama/chat_models.py
+  s_ee81ae05343800::t_6b756d7271674b 50,90
+libs/partners/ollama/langchain_ollama/embeddings.py
+  s_ee81ae05343800::t_67f76c82e6b1ed 5
+libs/partners/ollama/langchain_ollama/llms.py
+  s_ee81ae05343800::t_6973aad4a00075 6
+libs/partners/ollama/pyproject.toml
+  s_ee81ae05343800::t_5871b74d4d35b6 22-23
+libs/partners/ollama/uv.lock
+  s_ee81ae05343800::t_1e1287ef9b0847 2-3,5-7,311,314,329,346,348,361,370,377,436,441,460,469,473,704-705,707,709,869,872,875,877
+libs/partners/openai/langchain_openai/_version.py
+  s_ee81ae05343800::t_6e81f7359ba1d9 3
+libs/partners/openai/langchain_openai/chat_models/_client_utils.py
+  s_ee81ae05343800::t_5f9cc895350c03 19,410-430,441,446,536,538-542,544,549,556,668
+libs/partners/openai/langchain_openai/chat_models/azure.py
+  s_ee81ae05343800::t_77fbee3257d4d6 9
+libs/partners/openai/langchain_openai/chat_models/base.py
+  s_ee81ae05343800::t_cf3ba7e3752e0d 41,126-127,130,146,688-709,775-782,849,1056-1058,1471-1474,1512-1514,1714,1779-1780,1798-1799,1855-1856,1878-1879,1961,1972,2118-2126,2202-2212,2279,2294,5445-5455,5471-5556,5580-5591,5602-5603,5664-5669,5678-5693,5734-5742,5746-5747,5751-5756,5794-5797,5824-5832,5870-5874,5876,5879,5881-5883,5945-5953
+libs/partners/openai/langchain_openai/chat_models/codex.py
+  s_ee81ae05343800::t_0b61e23f1e3caa 22,55-61,134,136-140,165-167,184,186-188,251,259-271,316-328,330-349,353,358-359,366,463-466,474,476,481-482,485-491,493,503-504,551
+libs/partners/openai/langchain_openai/chatgpt_oauth.py
+  s_ee81ae05343800::t_8823344e13e9a9 44,108,213,249,262,264
+libs/partners/openai/langchain_openai/data/_profiles.py
+  s_ee81ae05343800::t_a71d23b58b21a3 56,86,126,154,182,210,238,310,346,382,419,644,681,770,861,935,973,1011,1049,1123,1161,1228-1254,1261-1305,1327,1417,1444,1484
+libs/partners/openai/langchain_openai/data/profile_augmentations.toml
+  s_ee81ae05343800::t_1f4bcc5c694bcd 209-218
+libs/partners/openai/langchain_openai/decisions/__init__.py
+  s_ee81ae05343800::t_bea1982ecdd614 4,29
+libs/partners/openai/langchain_openai/decisions/_classifier_input.py
+  s_ee81ae05343800::t_d1abc3ba7a3afe 1-349
+libs/partners/openai/langchain_openai/decisions/base.py
+  s_ee81ae05343800::t_d36b588068f0c9 8,18,106
+libs/partners/openai/langchain_openai/decisions/classifier.py
+  s_ee81ae05343800::t_24310821ac0230 1-374
+libs/partners/openai/langchain_openai/embeddings/azure.py
+  s_ee81ae05343800::t_c73259ca92bf7d 6
+libs/partners/openai/langchain_openai/embeddings/base.py
+  s_ee81ae05343800::t_d7b7792666e3cd 8,235
+libs/partners/openai/langchain_openai/llms/azure.py
+  s_ee81ae05343800::t_7afdddd6621d86 7
+libs/partners/openai/langchain_openai/llms/base.py
+  s_ee81ae05343800::t_bd54f111eadba0 8,204
+libs/partners/openai/langchain_openai/middleware/model_router.py
+  s_ee81ae05343800::t_4cc61ea1202d9c 7,23
+libs/partners/openai/langchain_openai/middleware/openai_moderation.py
+  s_ee81ae05343800::t_b61f4b367d2720 478
+libs/partners/openai/pyproject.toml
+  s_ee81ae05343800::t_bb4d2485530721 22-23,25,101,103,109,114,116,118-120,122,124-126,129-131
+libs/partners/openai/scripts/record_codex_cassettes.sh
+  s_ee81ae05343800::t_7183b689d45158 86-87
+libs/partners/openai/tests/integration_tests/chat_models/conftest.py
+  s_ee81ae05343800::t_b0e78fcf4e3a7d 19,108
+libs/partners/openai/tests/integration_tests/chat_models/test_codex.py
+  s_ee81ae05343800::t_6cc4ebd74b8700 51,111,113-116,130,212-214,219,308-309
+libs/partners/openai/tests/integration_tests/chat_models/test_codex_standard.py
+  s_ee81ae05343800::t_b9e64f7166ac0e 30
+libs/partners/openai/tests/integration_tests/decisions/test_classifier.py
+  s_ee81ae05343800::t_03a8a8aecfd614 1-110
+libs/partners/openai/tests/integration_tests/middleware/test_auto_mode.py
+  s_ee81ae05343800::t_e6ffa480fd91a1 6,14
+libs/partners/openai/tests/integration_tests/middleware/test_model_router.py
+  s_ee81ae05343800::t_dad95ef542017e 30-33
+libs/partners/openai/tests/unit_tests/chat_models/test_base.py
+  s_ee81ae05343800::t_06e869de165baa 10,30,53-56,86,97,5082-5218,6205-6444
+libs/partners/openai/tests/unit_tests/chat_models/test_client_utils.py
+  s_ee81ae05343800::t_625766624cdf98 821-922
+libs/partners/openai/tests/unit_tests/chat_models/test_codex.py
+  s_ee81ae05343800::t_2410155859fdc4 6,22,47,76,175,180-237,352,393,434-439,442-447,450,453-461,464-472,478,482,488-489,491-493,499,501,503-517,519,523,531-533,546-547,550-551,553-554,565-566,571-572,579,582,596,600,750
+libs/partners/openai/tests/unit_tests/chat_models/test_gateway_headers.py
+  s_ee81ae05343800::t_e034a5d173b802 1-235
+libs/partners/openai/tests/unit_tests/chat_models/test_responses_stream.py
+  s_ee81ae05343800::t_4eb7e26e10113f 5,10,56,1133,1234-1504,1678-1724
+libs/partners/openai/tests/unit_tests/chat_models/test_stream_chunk_timeout.py
+  s_ee81ae05343800::t_983ea17d2ea46d 19
+libs/partners/openai/tests/unit_tests/decisions/test_classifier.py
+  s_ee81ae05343800::t_c6cac8fa0f0499 1-505
+libs/partners/openai/tests/unit_tests/middleware/test_auto_mode.py
+  s_ee81ae05343800::t_fae914834bba55 7,16
+libs/partners/openai/tests/unit_tests/test_chatgpt_oauth.py
+  s_ee81ae05343800::t_e8dc9cc9d3cac2 11,13,100,104,120,150,172,216,222,247,291,307,313,332,413,441,467,494,511,959
+libs/partners/openai/uv.lock
+  s_ee81ae05343800::t_3560b22f535b2a 3,5-8,946,976,1014,1035,1080,1103,1116-1118,1172,1177,1179,1184,1189,1227,1237,1239,1257,1263,1265,1730,1740,1742
+libs/partners/openrouter/langchain_openrouter/_version.py
+  s_ee81ae05343800::t_26118440a27bbf 3
+libs/partners/openrouter/langchain_openrouter/chat_models.py
+  s_ee81ae05343800::t_3d9a2b49a146ed 9,1377,1444
+libs/partners/openrouter/langchain_openrouter/data/_profiles.py
+  s_ee81ae05343800::t_6cff75dc79cb9d 331-353,653-659,661,663,671,675-678,680-681,683,685,693,703,923,945,967,989,1033,1077,1099,1121,1143,1165,1187,1209,1253,1481,1526,1732-1801,1824,1934,1956,1978,2110,2165,2219,2231,2236-2242,2244,2251-2252,2254,2258-2259,2280-2284,2295-2296,2302-2308,2412-2415,2428,2440,2462,2484,2566-2588,2595,2617,2640,2686,2732,2755,2799-2800,2821-2822,2844,2866,3065-3067,3087-3089,3264-3285,3359,3381,3403,3425,3447,3507-3528,3573-3594,3623,3666,3689,3733,3754-3755,3799,3955,4957-5048,5122,5144,5361-5382,5609,5653,5697,5763,5829,5873,5895,6049,6072,6182,6314,6336,6440-6483,6512,6620,6631,6633,6794-6802,6804,6806,6812-6813,6815-6816,6824-6825,6846,6951-6954,6956-6957,6959,6968-6969,6973-6977,7088-7089,7105-7148,7193-7214,7259-7280,7303-7324,7421,7444,7467,7490,7507-7510,7512-7513,7529-7532,7534-7535,7556,7575-7576,7734,7822,7844,7899,7905,8134
+libs/partners/openrouter/pyproject.toml
+  s_ee81ae05343800::t_aab63cf508a599 22-23,25
+libs/partners/openrouter/scripts/check_imports.py
+  s_ee81ae05343800::t_a2130c302b795f 13
+libs/partners/openrouter/uv.lock
+  s_ee81ae05343800::t_c036945df74664 2-3,8,397,400,415,432,434,447,456,463,522,527,546,555,559,823,831,833,932-933,935,937,1101,1104,1107,1109
+libs/partners/perplexity/langchain_perplexity/_version.py
+  s_ee81ae05343800::t_aa163d5a8839e1 3
+libs/partners/perplexity/langchain_perplexity/chat_models.py
+  s_ee81ae05343800::t_d5ff99af8824af 9
+libs/partners/perplexity/langchain_perplexity/embeddings.py
+  s_ee81ae05343800::t_8fa5be93314aa6 7
+libs/partners/perplexity/pyproject.toml
+  s_ee81ae05343800::t_69032f0734a39b 22-23
+libs/partners/perplexity/uv.lock
+  s_ee81ae05343800::t_31fc4a35b2e31a 3,5-8,456,459,474,493,506,515,522,547-548,603,608,627,1107-1108,1110,1112,1272,1275,1278,1280
+libs/partners/qdrant/langchain_qdrant/_version.py
+  s_ee81ae05343800::t_4092e768c65479 3
+libs/partners/qdrant/langchain_qdrant/vectorstores.py
+  s_ee81ae05343800::t_ee26675d3b0e14 1444,1791
+libs/partners/qdrant/pyproject.toml
+  s_ee81ae05343800::t_ecc75b5d8e3286 7,22,24
+libs/partners/qdrant/uv.lock
+  s_ee81ae05343800::t_8c5091350c69c2 3,5-9,261,263,276,278,280,487,563,641,651,681,709,714,1135,1771
+libs/partners/typesafe/README.md
+  s_ee81ae05343800::t_d33fcfa553863e 16,62,64,66-75,78-80,82,84-86,90-91,105,117-118,126
+libs/partners/typesafe/langchain_typesafe/__init__.py
+  s_ee81ae05343800::t_58832700cd7fcf 7-9,14,26-28,33
+libs/partners/typesafe/langchain_typesafe/_assets.py
+  s_ee81ae05343800::t_e89b8a382cb0b5 1-113
+libs/partners/typesafe/langchain_typesafe/_version.py
+  s_ee81ae05343800::t_286f5b8a17745a 3
+libs/partners/typesafe/langchain_typesafe/classifier.py
+  s_ee81ae05343800::t_384d0e30da4d1d 5,8,18,20,28-30,38,41-46,65-75,296,298-299,302-303,305,320,322,324,326,341,360-365,368-371,374-376
+libs/partners/typesafe/langchain_typesafe/experimental/middleware/auto_mode.py
+  s_ee81ae05343800::t_c9d7d1abd3f933 6,9-13,22,28-40,42,45-50,53-54,66,93,108,112,114-118
+libs/partners/typesafe/langchain_typesafe/experimental/middleware/model_router.py
+  s_ee81ae05343800::t_f9b69764a214ac 5-6,9-13,22,26-41,44-47,94,100,104-107
+libs/partners/typesafe/langchain_typesafe/types.py
+  s_ee81ae05343800::t_2fef47d765b86e 1,3-4,7-24,28-30,35
+libs/partners/typesafe/pyproject.toml
+  s_ee81ae05343800::t_3a649485a3af38 7,12,22,25,29,49
+libs/partners/typesafe/scripts/check_imports.py
+  s_ee81ae05343800::t_6e197ffe081930 13
+libs/partners/typesafe/tests/integration_tests/experimental/middleware/test_auto_mode.py
+  s_ee81ae05343800::t_a5a7f83fa6072f 6,14
+libs/partners/typesafe/tests/integration_tests/test_classifier.py
+  s_ee81ae05343800::t_fadd5ab1375336 80-82
+libs/partners/typesafe/tests/unit_tests/experimental/middleware/test_auto_mode.py
+  s_ee81ae05343800::t_afcba37be06e29 5,10,16,18,23,31-33,37-42,197-211,228-230
+libs/partners/typesafe/tests/unit_tests/experimental/middleware/test_model_router.py
+  s_ee81ae05343800::t_12481178920025 3,8,10,24-26,29-32,99-120,213
+libs/partners/typesafe/tests/unit_tests/test_classifier.py
+  s_ee81ae05343800::t_26fc85d5c9d574 6,12,17-19,39,180-181,614,647,704-876
+libs/partners/typesafe/tests/unit_tests/test_imports.py
+  s_ee81ae05343800::t_2533f5c5da1796 7-9,14
+libs/partners/typesafe/uv.lock
+  s_ee81ae05343800::t_971bf13c72a155 2-3,9,401,431,437,463,469,472,487,504,506,519,528,547,552,572,581,585,591,645,655,657,675,681,683,929,1389,1395,1397
+libs/partners/xai/langchain_xai/_version.py
+  s_ee81ae05343800::t_1bd8ecc108db68 3
+libs/partners/xai/langchain_xai/chat_models.py
+  s_ee81ae05343800::t_9a044ff28555fe 6,11-15,517-538,542-543,557-559
+libs/partners/xai/pyproject.toml
+  s_ee81ae05343800::t_5b71dc9dcec2a7 22-23,25-26
+libs/partners/xai/tests/unit_tests/test_chat_models.py
+  s_ee81ae05343800::t_6958025885d59b 2,5,14,26,374-486
+libs/partners/xai/uv.lock
+  s_ee81ae05343800::t_4c7a041d265f61 2-3,5-8,422,426,710,713,728,745,747,760,769,776,817-818,820,841,846,865,874,878,884,911,1472-1473,1475,1477,1637,1640,1643,1645
+libs/standard-tests/langchain_tests/integration_tests/sandboxes.py
+  s_ee81ae05343800::t_9b56ad7fbc2231 1933-1944
+libs/standard-tests/pyproject.toml
+  s_ee81ae05343800::t_11c51d024549b7 23-24
+libs/standard-tests/uv.lock
+  s_ee81ae05343800::t_1ef15c79b21c8e 3,8,259,320,398,403,455
+libs/text-splitters/langchain_text_splitters/base.py
+  s_ee81ae05343800::t_2d0826d46ad554 9,14,20,449
+libs/text-splitters/pyproject.toml
+  s_ee81ae05343800::t_3bd1d6f19e829d 24-25,49,68,79-81,84-86
+libs/text-splitters/uv.lock
+  s_ee81ae05343800::t_2f7325c630a6ac 3,5-9,14,17-18,188,633,635,637,758,824,880,1057,1221,1224,1239,1258,1271,1280,1299,1307,1340-1342,1347,1360,1368,1384,1529,1531,1533,1676,1685,1687,2925-2926,2963,3044,3046,3108,3110,3112,3126,3305,3468,3503-3548,3578
+openwiki/.claims/agent-execution.json
+  s_ee81ae05343800::t_2a2ad53a9adaea 3,20-21,24-29,258
+openwiki/.claims/agent-factory.json
+  s_ee81ae05343800::t_4fae2950fc7f4b 3,44,48-49,161,164-165,202-203,206-215,236
+openwiki/.claims/architecture.json
+  s_ee81ae05343800::t_4656d99f7aa92f 3,29,33,37,40-41,47,50-51,54-55,58-59,77,96-97,106-107,113,116-117,123,130-131,152
+openwiki/.claims/callbacks.json
+  s_ee81ae05343800::t_cdbde7ac5b8b91 3,69,129,210
+openwiki/.claims/chat-models.json
+  s_ee81ae05343800::t_5b23cb8cb175ac 3,20-21,24-33,66-67,70-71,100-105,114-119,122-123,218-219,222-223,353,391,412
+openwiki/.claims/ci-workflows.json
+  s_ee81ae05343800::t_a3a32d095fc0e6 3,92-93,109,112-113,116-117,157,249,252-253,262-263,267,303,309,312-313,323,326-327,330-331,338
+openwiki/.claims/composability.json
+  s_ee81ae05343800::t_ac7331a6431bde 3,148
+openwiki/.claims/concepts/callbacks.json
+  s_ee81ae05343800::t_fbbb506459541a 3,90-91,94,132-133,136-137,192-253,258
+openwiki/.claims/concepts/chat-models.json
+  s_ee81ae05343800::t_124ed4cad1b7d2 3,171,174-175,228-273,280
+openwiki/.claims/concepts/messages.json
+  s_ee81ae05343800::t_276b0efa21fabd 3,251,254-259,265,268-273,384
+openwiki/.claims/concepts/prompts.json
+  s_ee81ae05343800::t_c2cff7a95ef47c 3,35,38-51,172
+openwiki/.claims/concepts/runnables.json
+  s_ee81ae05343800::t_5eb1c32328b094 3,10-11,14-15,24-25,28,32,42-43,52-53,82,92,122-123,129,132-133,152-153,172-173,182-187,204
+openwiki/.claims/concepts/tools.json
+  s_ee81ae05343800::t_e8dfd215413783 3,278,283,314
+openwiki/.claims/dev-commands.json
+  s_ee81ae05343800::t_1ea3d01b604071 3,43,46-47,258
+openwiki/.claims/integration-tests.json
+  s_ee81ae05343800::t_55e10f65c97a93 3,107,110-111,114-119,153,161,329,332-333,340
+openwiki/.claims/integrations/mcp-integration.json
+  s_ee81ae05343800::t_8eb809362cd929 3,11,200
+openwiki/.claims/integrations/openai-provider.json
+  s_ee81ae05343800::t_2f7227d5579479 3,10-11,14-15,18-19,25,28-29,32-33,90-91,94-95,98-99,109,140-141,144-145,200
+openwiki/.claims/integrations/partner-pattern.json
+  s_ee81ae05343800::t_c25c0ff3912262 3,42-43,46-47,90-91,94-95,104-105,114-115,134-135,152
+openwiki/.claims/mcp-integration.json
+  s_ee81ae05343800::t_1864d04194fa4e 3,194
+openwiki/.claims/messages.json
+  s_ee81ae05343800::t_fff42b56379bd9 3,218-227,232
+openwiki/.claims/middleware.json
+  s_ee81ae05343800::t_2a42b179872a4a 3,204-209,236
+openwiki/.claims/model-initialization.json
+  s_ee81ae05343800::t_c79080f697e7fc 3,39,43,167,184
+openwiki/.claims/openai-provider.json
+  s_ee81ae05343800::t_1c135df1c8d195 3,25,159,162-167,307,314
+openwiki/.claims/operations/ci-workflows.json
+  s_ee81ae05343800::t_21975e980f5272 3,25,28-29,83,102-103,252
+openwiki/.claims/operations/dev-commands.json
+  s_ee81ae05343800::t_44433489c98945 3,25,28-29,113,116-117,123,126-127,166
+openwiki/.claims/partner-pattern.json
+  s_ee81ae05343800::t_c30062f571bd35 3,20-21,25,48-49,87,91,95,103,148-149,152,160
+openwiki/.claims/prompts.json
+  s_ee81ae05343800::t_847ea12bfc4f00 3,220
+openwiki/.claims/quickstart.json
+  s_ee81ae05343800::t_03565f9519b578 3,15,33,63,67,105,155,186
+openwiki/.claims/reference/agent-execution.json
+  s_ee81ae05343800::t_7d0d973733977a 3,7,11,14-181,188
+openwiki/.claims/reference/agent-factory.json
+  s_ee81ae05343800::t_ed7b2abeb5ca69 3,6-7,10-87,94
+openwiki/.claims/reference/callbacks.json
+  s_ee81ae05343800::t_b45671d6de4458 3,6-7,10-11,14-123,130
+openwiki/.claims/reference/chat-models.json
+  s_ee81ae05343800::t_ec870aa275961b 3,10-19,28-29,32-33,36-41,50-51,54-55,58-59,68-73,76-77,150-155,158-159,198
+openwiki/.claims/reference/ci-workflows.json
+  s_ee81ae05343800::t_3616896af0844e 3,11,19,26
+openwiki/.claims/reference/composability.json
+  s_ee81ae05343800::t_9f31dea65a1d45 3,6-7,10-115,122
+openwiki/.claims/reference/dev-commands.json
+  s_ee81ae05343800::t_0ebb71cd26f26d 3,7,10-15,22
+openwiki/.claims/reference/integration-tests.json
+  s_ee81ae05343800::t_aecae5445527f8 3,11,22
+openwiki/.claims/reference/mcp-integration.json
+  s_ee81ae05343800::t_0abc4e7f75f89f 3,14-121,126
+openwiki/.claims/reference/messages.json
+  s_ee81ae05343800::t_edf27c48d695af 3,18
+openwiki/.claims/reference/middleware.json
+  s_ee81ae05343800::t_bf9e3a22d261e6 3,11,15-93,100
+openwiki/.claims/reference/model-initialization.json
+  s_ee81ae05343800::t_dfc5b468a0bd71 3,15-111,118
+openwiki/.claims/reference/openai-provider.json
+  s_ee81ae05343800::t_c63d41921ecaa0 3,7,10-11,14-129,136
+openwiki/.claims/reference/partner-pattern.json
+  s_ee81ae05343800::t_7d616dc7e9d15f 3,6-7,9-12,18-59,64
+openwiki/.claims/reference/prompts.json
+  s_ee81ae05343800::t_0f3641ab2c8d06 3,6-25,30-165,172
+openwiki/.claims/reference/runnables.json
+  s_ee81ae05343800::t_3dee5315a3e54b 3,10-11,18
+openwiki/.claims/reference/streaming.json
+  s_ee81ae05343800::t_7dd891f1cf44aa 3,10-11,14-15,38-39,45,48-49,52-53,106
+openwiki/.claims/reference/structured-output.json
+  s_ee81ae05343800::t_7cd8b4f1333952 3,11,15,134
+openwiki/.claims/reference/tools.json
+  s_ee81ae05343800::t_e2ffdf240c2504 3,14-133,138
+openwiki/.claims/reference/unit-tests.json
+  s_ee81ae05343800::t_a5e15436a4f636 3,6-7,14-47,54
+openwiki/.claims/runnables.json
+  s_ee81ae05343800::t_b49d517cb0ec09 3,66
+openwiki/.claims/source-map.json
+  s_ee81ae05343800::t_4b8d43e800149f 3,11,21,31,41,61,71,81,91,101,121,131,141,159,167,171,177,180-181,184-185,195,209,248
+openwiki/.claims/streaming.json
+  s_ee81ae05343800::t_eefa8c026ea68b 3,7,10-11,20-21,84-85,104-105,108-109,194-195,216
+openwiki/.claims/structured-output.json
+  s_ee81ae05343800::t_b71ee465d9d102 3,19,200
+openwiki/.claims/testing/integration-tests.json
+  s_ee81ae05343800::t_8638d58bd4a913 3,71,74-75,78-79,83,141,144-145,164-165,171,174-179,193,268-269,280
+openwiki/.claims/testing/unit-tests.json
+  s_ee81ae05343800::t_79b7d6500b7398 3,282-325,330
+openwiki/.claims/tools.json
+  s_ee81ae05343800::t_210e5a96baf94f 3,122-123,191,194,244
+openwiki/.claims/unit-tests.json
+  s_ee81ae05343800::t_8d5060b23b2cba 3,264
+openwiki/.claims/workflows/agent-execution.json
+  s_ee81ae05343800::t_39b057bc4b57da 3,342
+openwiki/.claims/workflows/composability.json
+  s_ee81ae05343800::t_5bfa216c8f3b65 3,108-213,218
+openwiki/.claims/workflows/middleware.json
+  s_ee81ae05343800::t_0f055365de62b2 3,40-41,107,110-111,202-203,206-207,214
+openwiki/.claims/workflows/model-initialization.json
+  s_ee81ae05343800::t_97f9024371f051 3,31,34-35,38-39,154
+openwiki/.claims/workflows/structured-output.json
+  s_ee81ae05343800::t_ae8f934c2961eb 3,184-225,230
+openwiki/.last-update.json
+  s_ee81ae05343800::t_f843527f6a96e5 2,4
+openwiki/.page-manifest.json
+  s_ee81ae05343800::t_da85379641c484 5,7-9,12,14-16,19,21-23,26,28-30,33,35-37,40,42-44,47,49-51,54,56-58,61,63-65,68,70-72,75,77-79,82,84-86,89,91-93,96,98-100,103,105-107,110,112-114,117,119-121,124,126-128,131,133-135,138,140-142,145,147-149,152,154-156,159,161-163,166,168-170,173,175-177,180,182-184,187,189-191,194,196-198,201,203-205,208,210-212,215,217-219,222,224-226,229,231-233,236,238-240,243,245-247,250,252-254,257,259-261,264,266-268,271,273-275,278,280-282,285,287-289,292,294-296,299,301-303,306,308-310,313,315-317,320,322-324,327,329-331,334,336-338,341,343-345,348,350-352,355,357-359,362,364-366,369,371-373,376,378-380,383,385-387,390,392-394,397,399-401,404,406-408,411,413-415,418,420-422,425,427-429
+openwiki/agent-execution.md
+  s_ee81ae05343800::t_aea6794f7e5a6f 8
+openwiki/agent-factory.md
+  s_ee81ae05343800::t_37d67cfbbdc64e 15,18,276-277,298,597-677
+openwiki/architecture.md
+  s_ee81ae05343800::t_60841b17cfa3e2 37,40,63-64,75,295,297,299
+openwiki/callbacks.md
+  s_ee81ae05343800::t_4eee168c9a6b59 6-8,26,73,80-84,86-101,212,219,223,226-231,234,236,238,242,245-247,249,253-259,261,263,266,268-270,273,275,277,279,281-282,285-286,289,291,293-294,297-298,301,303,306-313,316-323,325,327,330,332-333,336,338,340,343-352,354,356-393,396,398-401,403,405-409,412-428,431,433,435-438,440,443,445-446,449,452-456,459,461,463-464,466,468-470,472-474,476-480
+openwiki/chat-models.md
+  s_ee81ae05343800::t_78ac68bb1fdc40 17,20,33,55,73,96,112,132,160,176,193,221,239,252,256,259,279-287,294-295,300,306,320,343,370,440,844,846,850,852,854
+openwiki/ci-workflows.md
+  s_ee81ae05343800::t_bc01d45e1f959a 33,36,71-72,87-88,117,129-130,232,365
+openwiki/composability.md
+  s_ee81ae05343800::t_2eaf79cd3c962b 8
+openwiki/concepts/callbacks.md
+  s_ee81ae05343800::t_2e468955a1d30c 8,14-15,24,53-54,92,94,179-182,225-226,234,237-270,273-274,299-333,345-346,375,380-389,392-393,421,437-438,463-520,523,529,556,564-570,592,594-610,621,626-630,656-670,683-684
+openwiki/concepts/chat-models.md
+  s_ee81ae05343800::t_3e6164a47d1b25 17,20,268,273-275,280-282
+openwiki/concepts/index.md
+  s_ee81ae05343800::t_191a5e9b1fe42f 6
+openwiki/concepts/messages.md
+  s_ee81ae05343800::t_0fe0483969daf8 45,48,582,586,588,627-642
+openwiki/concepts/prompts.md
+  s_ee81ae05343800::t_aae4b071137a99 2-5,19-22,25,161-162
+openwiki/concepts/runnables.md
+  s_ee81ae05343800::t_2f99f3b2474635 17,20,31,47,72,91,109,124,141,220,250,469,556
+openwiki/concepts/tools.md
+  s_ee81ae05343800::t_716a7c3357afa9 28-30
+openwiki/dev-commands.md
+  s_ee81ae05343800::t_be5896afa1ee44 8,26,115,544
+openwiki/index.md
+  s_ee81ae05343800::t_f136b882690758 15
+openwiki/integration-tests.md
+  s_ee81ae05343800::t_5990c71e575f5d 4,39-41,44,552,751
+openwiki/integrations/mcp-integration.md
+  s_ee81ae05343800::t_ba6178fd8920ea 16-18
+openwiki/integrations/openai-provider.md
+  s_ee81ae05343800::t_2ab93f87ad8164 11,14,152-153
+openwiki/integrations/partner-pattern.md
+  s_ee81ae05343800::t_329f079cf9a650 22
+openwiki/mcp-integration.md
+  s_ee81ae05343800::t_a0cf68da40bee7 24
+openwiki/messages.md
+  s_ee81ae05343800::t_1bf5ff588abfb0 23-24,31,34,94-99
+openwiki/middleware.md
+  s_ee81ae05343800::t_7ce08c6925aca1 21-24,311-323
+openwiki/model-initialization.md
+  s_ee81ae05343800::t_19f53ee9277a77 12
+openwiki/openai-provider.md
+  s_ee81ae05343800::t_8a7d741d3f912d 19,22,248,253,401,468,470,472,474,487-491,494,497,499,501,503,508-516,519-520,552,566
+openwiki/operations/ci-workflows.md
+  s_ee81ae05343800::t_f5d64f68a1da73 23,26,96-97,293
+openwiki/operations/dev-commands.md
+  s_ee81ae05343800::t_cc11a58152ac24 21,24,134-135,138
+openwiki/partner-pattern.md
+  s_ee81ae05343800::t_3543dbab5bee14 39,42,107,111
+openwiki/prompts.md
+  s_ee81ae05343800::t_121a53c3d65689 27,30,640,645,653
+openwiki/quickstart.md
+  s_ee81ae05343800::t_ff38b2ddde24cd 43,46,63-65,294,317-320,323-332
+openwiki/reference/agent-execution.md
+  s_ee81ae05343800::t_613c7cd48a0fd5 2-5,11-14,17-309,311,313-319,321,323-326
+openwiki/reference/agent-factory.md
+  s_ee81ae05343800::t_5bcfb0467ff995 2-5,8,12-14,17,19,21-22,24-29,31-384
+openwiki/reference/callbacks.md
+  s_ee81ae05343800::t_3319e273ce5b0e 2-5,8,14,17,19,21-831
+openwiki/reference/chat-models.md
+  s_ee81ae05343800::t_ee3a03fbeef27b 12
+openwiki/reference/ci-workflows.md
+  s_ee81ae05343800::t_9967534a90a7b3 13,16,123,132,134,311-312,318-319,321-322,324-325,357,366-371,379,383-386,390,396-401,403,405-423,434-435,438-441,450,455-460
+openwiki/reference/composability.md
+  s_ee81ae05343800::t_360d1e2571650c 2-5,7-8,11-427,430-463,465-467,469-523,525,527-533
+openwiki/reference/dev-commands.md
+  s_ee81ae05343800::t_b39df4e26fd2ec 2-5,8,12-14,17,19,21,23-555
+openwiki/reference/index.md
+  s_ee81ae05343800::t_0d4204aba4122a 3-5,8-9,11,13-18,21-22
+openwiki/reference/integration-tests.md
+  s_ee81ae05343800::t_5f3b430ef6c66c 11-14,61-62,126
+openwiki/reference/mcp-integration.md
+  s_ee81ae05343800::t_d06af6f1bf2e36 3-5,8,12-14,17,19,21,23-35,37,39-526
+openwiki/reference/messages.md
+  s_ee81ae05343800::t_4bc6d6b155d86b 8,12,25,45-46,49,151,197-198,222-223,336,344-345,360-361,376-377,382-399,402,410-411,416,418,421,423-425,429,431,434,436-438,451,526-584
+openwiki/reference/middleware.md
+  s_ee81ae05343800::t_2f04996f80ead3 2-5,8,14,17,19,21,23-583
+openwiki/reference/model-initialization.md
+  s_ee81ae05343800::t_1b8e72fed33101 2-5,11-14,17-761,763-764,766-771,773,775-784
+openwiki/reference/openai-provider.md
+  s_ee81ae05343800::t_9c680ae75169d0 2-5,9,12,15,17-463
+openwiki/reference/partner-pattern.md
+  s_ee81ae05343800::t_61cde5b57509ad 2-5,7-10,13-26,29-476,478-481,483,485-490
+openwiki/reference/prompts.md
+  s_ee81ae05343800::t_04efafe92b270d 2-5,8,10-17,20-22,25,27,29-741,745-748
+openwiki/reference/runnables.md
+  s_ee81ae05343800::t_3d9cf2b2f4bd84 2-5,8,12,15,17,19,21,23,25,27-609
+openwiki/reference/streaming.md
+  s_ee81ae05343800::t_c716fc92e245c9 15-18,234,247-249,263,293-295
+openwiki/reference/structured-output.md
+  s_ee81ae05343800::t_c13d103c0b2ec4 12-14
+openwiki/reference/tools.md
+  s_ee81ae05343800::t_0dd833ea6463df 2-5,8,12,15,17,19-322
+openwiki/reference/unit-tests.md
+  s_ee81ae05343800::t_be076b9569c886 2-5,8,12-24,27,29,31,33,35-549
+openwiki/runnables.md
+  s_ee81ae05343800::t_4a58c6fa16d931 19-20,31,46,63,84,104,119,138,155,180,208,217,242,417
+openwiki/source-map.md
+  s_ee81ae05343800::t_cecc88e27e8363 61-64,71-72,75-76,132,190,274,310,556-557,567
+openwiki/streaming.md
+  s_ee81ae05343800::t_2ddb4622cfc0fa 32
+openwiki/structured-output.md
+  s_ee81ae05343800::t_33fa76388a24dd 6-8,14,81,395-413
+openwiki/testing/integration-tests.md
+  s_ee81ae05343800::t_c062c6376d5391 35,38,153,203
+openwiki/testing/unit-tests.md
+  s_ee81ae05343800::t_3ab1a929b56e13 5,8,34-36,413-436,745-788,1072-1077
+openwiki/tools.md
+  s_ee81ae05343800::t_3dbea36d258dee 25,28,82,354,357-358,548
+openwiki/unit-tests.md
+  s_ee81ae05343800::t_8e580613951d25 8
+openwiki/workflows/agent-execution.md
+  s_ee81ae05343800::t_dac93744b3bfae 8
+openwiki/workflows/composability.md
+  s_ee81ae05343800::t_42120ee43c5682 3-5,17-25,28,31,33,923-1523,1526-1527,1536-1556
+openwiki/workflows/index.md
+  s_ee81ae05343800::t_e4138ef53318a4 4
+openwiki/workflows/middleware.md
+  s_ee81ae05343800::t_446f091d3f8286 26
+openwiki/workflows/model-initialization.md
+  s_ee81ae05343800::t_ed7326b2e1dd3b 13-16,97,100,103,109-110,122-126,128,132,136,138,148
+openwiki/workflows/structured-output.md
+  s_ee81ae05343800::t_f8c8fdca958d52 25,28,44-69,845-932,938,941-949
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f07d51e2321eb5c51a9b64ae56564ad0aee9cfcc",
+  "prompts": {},
+  "sessions": {
+    "s_ee81ae05343800": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a1453052-17c6-4ec7-aa98-164c7dc795a5",
+        "model": "claude-sonnet-5-5"
+      },
+      "human_author": "Kiewan Villatel <kiewan@langchain.dev>"
+    }
+  }
+}
