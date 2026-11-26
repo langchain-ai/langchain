@@ -69,6 +69,9 @@ class TypeSafeClassifier(BaseDecisionModel):
     `Choice` and `Score` confidence describes how concentrated the probability
     distribution is; it is not the selected label's probability.
 
+    Requests with an empty `questions` mapping raise `ValueError` before any
+    HTTP call.
+
     Requests raise `TypeSafeAPIError` subclasses for unsuccessful HTTP responses,
     `TypeSafeAPIConnectionError` or `TypeSafeAPITimeoutError` when no response is
     received, and `TypeSafeAPIResponseValidationError` for malformed responses.
@@ -360,6 +363,9 @@ class TypeSafeClassifier(BaseDecisionModel):
     def _payload(
         self, state: State, questions: dict[str, Question]
     ) -> dict[str, JsonValue]:
+        if not questions:
+            message = "TypeSafe classifier requests must contain at least one question."
+            raise ValueError(message)
         images = ImageAssets()
         payload: dict[str, JsonValue] = {
             "state": images.replace(serialize_state(state)),
