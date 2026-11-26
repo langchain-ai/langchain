@@ -12,10 +12,11 @@ from typing import (
     NamedTuple,
     Protocol,
     TypedDict,
-    cast,
     overload,
 )
 from uuid import UUID, uuid4
+
+from pydantic import BaseModel
 
 from langchain_core.load.serializable import to_json_not_implemented
 from langchain_core.runnables.base import Runnable, RunnableSerializable
@@ -27,8 +28,6 @@ from langchain_core.utils.pydantic import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
-
-    from pydantic import BaseModel
 
     from langchain_core.runnables.base import Runnable as RunnableType
 
@@ -234,9 +233,11 @@ def node_data_json(
         json = (
             {
                 "type": "schema",
-                "data": cast("type[BaseModel]", node.data).model_json_schema(
+                "data": node.data.model_json_schema(
                     schema_generator=_IgnoreUnserializable
-                ),
+                )
+                if issubclass(node.data, BaseModel)
+                else node.data.schema(),
             }
             if with_schemas
             else {
