@@ -49,9 +49,10 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.tool import ToolCallChunk
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
-from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
+    PydanticToolsParser,
     make_invalid_tool_call,
     parse_tool_call,
 )
@@ -1118,15 +1119,27 @@ class ChatHuggingFace(BaseChatModel):
 
                 - An OpenAI function/tool schema,
                 - A JSON Schema,
-                - A `TypedDict` class
+                - A `TypedDict` class,
+                - A Pydantic class (both Pydantic v2 `BaseModel` and
+                    `pydantic.v1.BaseModel` are supported).
 
-                Pydantic class is currently supported.
+                If `schema` is a Pydantic class then the model output will be a
+                Pydantic instance of that class, and the model-generated fields will be
+                validated by the Pydantic class. Otherwise the model output will be a
+                dict and will not be validated.
 
             method: The method for steering model generation, one of:
 
-                - `'function_calling'`: uses tool-calling features.
-                - `'json_schema'`: uses dedicated structured output features.
-                - `'json_mode'`: uses JSON mode.
+                - `'function_calling'`: uses tool-calling features. Works with all
+                    supported schema types, including Pydantic v1 and v2 models.
+                - `'json_schema'`: sends a JSON schema to the provider via
+                    `response_format` and parses the response with the schema. This
+                    depends on the underlying inference provider supporting a JSON
+                    schema in `response_format`; fall back to `'function_calling'`
+                    when it does not.
+                - `'json_mode'`: uses JSON mode. The schema is not sent to the model,
+                    so include formatting instructions in the prompt to obtain output
+                    that matches the schema.
 
             include_raw:
                 If `False` then only the parsed structured output is returned.
@@ -1180,15 +1193,18 @@ class ChatHuggingFace(BaseChatModel):
                 tool_choice=tool_name,
                 ls_structured_output_format={
                     "kwargs": {"method": "function_calling"},
-                    "schema": formatted_tool,
+                    "schema": convert_to_json_schema(schema),
                 },
             )
             if is_pydantic_schema:
-                msg = "Pydantic schema is not supported for function calling"
-                raise NotImplementedError(msg)
-            output_parser: JsonOutputKeyToolsParser | JsonOutputParser = (
-                JsonOutputKeyToolsParser(key_name=tool_name, first_tool_only=True)
-            )
+                output_parser: Runnable = PydanticToolsParser(
+                    tools=[schema],  # type: ignore[list-item]
+                    first_tool_only=True,
+                )
+            else:
+                output_parser = JsonOutputKeyToolsParser(
+                    key_name=tool_name, first_tool_only=True
+                )
         elif method == "json_schema":
             if schema is None:
                 msg = (
@@ -1201,23 +1217,33 @@ class ChatHuggingFace(BaseChatModel):
                 response_format={"type": "json_object", "schema": formatted_schema},
                 ls_structured_output_format={
                     "kwargs": {"method": "json_schema"},
-                    "schema": schema,
+                    "schema": formatted_schema,
                 },
             )
-            output_parser = JsonOutputParser()  # type: ignore[arg-type]
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
         elif method == "json_mode":
             llm = self.bind(
                 response_format={"type": "json_object"},
                 ls_structured_output_format={
                     "kwargs": {"method": "json_mode"},
-                    "schema": schema,
+                    "schema": (
+                        convert_to_json_schema(schema) if schema is not None else None
+                    ),
                 },
             )
-            output_parser = JsonOutputParser()  # type: ignore[arg-type]
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
         else:
             msg = (
-                f"Unrecognized method argument. Expected one of 'function_calling' or "
-                f"'json_mode'. Received: '{method}'"
+                "Unrecognized method argument. Expected one of 'function_calling', "
+                f"'json_schema', or 'json_mode'. Received: '{method}'"
             )
             raise ValueError(msg)
 

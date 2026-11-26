@@ -1,17 +1,25 @@
-from collections.abc import AsyncIterator
+import json
+from collections.abc import AsyncIterator, Iterator
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     BaseMessage,
     FunctionMessage,
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import ChatResult
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.runnables import RunnableBinding, RunnableSequence
 from langchain_core.tools import BaseTool
+from langchain_core.utils.function_calling import convert_to_json_schema
+from pydantic import BaseModel, Field
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import Field as FieldV1
+from typing_extensions import TypedDict
 
 from langchain_huggingface.chat_models import (  # type: ignore[import]
     ChatHuggingFace,
@@ -461,3 +469,299 @@ def test_init_chat_model_huggingface() -> None:
         # The important part is that the code path doesn't raise ValidationError
         # about missing 'llm' field, which was the original bug
         pytest.skip(f"Skipping test due to model download/initialization error: {e}")
+
+
+class _Joke(BaseModel):
+    """Joke to tell user."""
+
+    setup: str = Field(description="question to set up a joke")
+    punchline: str = Field(description="answer to resolve the joke")
+
+
+class _JokeV1(BaseModelV1):
+    """Joke to tell user."""
+
+    setup: str = FieldV1(description="question to set up a joke")
+    punchline: str = FieldV1(description="answer to resolve the joke")
+
+
+class _OptionalJoke(BaseModel):
+    """Joke with an optional punchline."""
+
+    setup: str = Field(description="question to set up a joke")
+    punchline: str | None = Field(
+        default=None, description="answer to resolve the joke"
+    )
+
+
+class _JokeDict(TypedDict):
+    """Joke to tell user."""
+
+    setup: str
+    punchline: str
+
+
+class _StubChatHuggingFace(ChatHuggingFace):
+    """Chat model that returns a canned response instead of calling a backend."""
+
+    stub_response: AIMessage
+
+    def _generate(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any = None,
+        stream: bool | None = None,  # noqa: FBT001
+        **kwargs: Any,
+    ) -> ChatResult:
+        return ChatResult(
+            generations=[ChatGeneration(message=self.stub_response)],
+        )
+
+    def _stream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any = None,
+        stream: bool | None = None,  # noqa: FBT001
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        if self.stub_response.tool_calls:
+            for index, tool_call in enumerate(self.stub_response.tool_calls):
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content="",
+                        tool_call_chunks=[
+                            {
+                                "name": tool_call["name"],
+                                "args": json.dumps(tool_call["args"]),
+                                "id": tool_call.get("id"),
+                                "index": index,
+                            }
+                        ],
+                    )
+                )
+        else:
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(content=self.stub_response.content)
+            )
+
+
+def _stub_chat(mock_llm: Mock, response: AIMessage) -> ChatHuggingFace:
+    with patch(
+        "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
+    ):
+        return _StubChatHuggingFace(
+            llm=mock_llm,
+            tokenizer=MagicMock(),
+            stub_response=response,
+        )
+
+
+def _tool_call_message(name: str, args: dict[str, Any]) -> AIMessage:
+    return AIMessage(
+        content="",
+        tool_calls=[{"name": name, "args": args, "id": "call_1"}],
+    )
+
+
+def _bound_kwargs(runnable: Any) -> dict[str, Any]:
+    assert isinstance(runnable, RunnableSequence)
+    first = runnable.first
+    assert isinstance(first, RunnableBinding)
+    return first.kwargs
+
+
+def _metadata_schema(runnable: Any) -> Any:
+    return _bound_kwargs(runnable)["ls_structured_output_format"]["schema"]
+
+
+def test_with_structured_output_function_calling_pydantic(mock_llm: Mock) -> None:
+    chat = _stub_chat(
+        mock_llm,
+        _tool_call_message("_Joke", {"setup": "question", "punchline": "answer"}),
+    )
+
+    structured = chat.with_structured_output(_Joke)
+
+    result = structured.invoke("Tell me a joke about cats.")
+    assert isinstance(result, _Joke)
+    assert result == _Joke(setup="question", punchline="answer")
+
+    kwargs = _bound_kwargs(structured)
+    assert kwargs["tools"][0]["function"]["name"] == "_Joke"
+    assert kwargs["tool_choice"]["function"]["name"] == "_Joke"
+    assert kwargs["ls_structured_output_format"]["kwargs"] == {
+        "method": "function_calling"
+    }
+    assert _metadata_schema(structured) == convert_to_json_schema(_Joke)
+
+    chunks = list(structured.stream("Tell me a joke about cats."))
+    assert chunks
+    assert all(isinstance(chunk, _Joke) for chunk in chunks)
+
+
+def test_with_structured_output_function_calling_pydantic_v1(mock_llm: Mock) -> None:
+    chat = _stub_chat(
+        mock_llm,
+        _tool_call_message("_JokeV1", {"setup": "question", "punchline": "answer"}),
+    )
+
+    structured = chat.with_structured_output(_JokeV1)
+
+    result = structured.invoke("Tell me a joke about cats.")
+    assert isinstance(result, _JokeV1)
+    assert result.setup == "question"
+    assert result.punchline == "answer"
+
+    chunks = list(structured.stream("Tell me a joke about cats."))
+    assert chunks
+    assert all(isinstance(chunk, _JokeV1) for chunk in chunks)
+
+
+def test_with_structured_output_optional_param(mock_llm: Mock) -> None:
+    chat = _stub_chat(
+        mock_llm,
+        _tool_call_message("_OptionalJoke", {"setup": "question"}),
+    )
+
+    result = chat.with_structured_output(_OptionalJoke).invoke("Give me a setup.")
+
+    assert isinstance(result, _OptionalJoke)
+    assert result.setup == "question"
+    assert result.punchline is None
+
+
+def test_with_structured_output_pydantic_include_raw(mock_llm: Mock) -> None:
+    chat = _stub_chat(
+        mock_llm,
+        _tool_call_message("_Joke", {"setup": "question", "punchline": "answer"}),
+    )
+
+    result = chat.with_structured_output(_Joke, include_raw=True).invoke("Tell me.")
+
+    assert set(result) == {"raw", "parsed", "parsing_error"}
+    assert isinstance(result["parsed"], _Joke)
+    assert result["parsing_error"] is None
+
+
+def test_with_structured_output_pydantic_include_raw_error(mock_llm: Mock) -> None:
+    # Missing required `punchline` triggers a validation error.
+    chat = _stub_chat(mock_llm, _tool_call_message("_Joke", {"setup": "question"}))
+
+    result = chat.with_structured_output(_Joke, include_raw=True).invoke("Tell me.")
+
+    assert result["parsed"] is None
+    assert result["parsing_error"] is not None
+
+
+def test_with_structured_output_json_schema_pydantic(mock_llm: Mock) -> None:
+    chat = _stub_chat(
+        mock_llm,
+        AIMessage(content='{"setup": "question", "punchline": "answer"}'),
+    )
+
+    structured = chat.with_structured_output(_Joke, method="json_schema")
+
+    result = structured.invoke("Tell me a joke about cats.")
+    assert isinstance(result, _Joke)
+    assert result == _Joke(setup="question", punchline="answer")
+
+    kwargs = _bound_kwargs(structured)
+    assert kwargs["response_format"] == {
+        "type": "json_object",
+        "schema": convert_to_json_schema(_Joke),
+    }
+    assert _metadata_schema(structured) == convert_to_json_schema(_Joke)
+
+    chunks = list(structured.stream("Tell me a joke about cats."))
+    assert chunks
+    assert all(isinstance(chunk, _Joke) for chunk in chunks)
+
+
+def test_with_structured_output_json_schema_pydantic_v1(mock_llm: Mock) -> None:
+    chat = _stub_chat(
+        mock_llm,
+        AIMessage(content='{"setup": "question", "punchline": "answer"}'),
+    )
+
+    result = chat.with_structured_output(
+        _JokeV1, method="json_schema"
+    ).invoke("Tell me a joke about cats.")
+
+    assert isinstance(result, _JokeV1)
+    assert result.setup == "question"
+    assert result.punchline == "answer"
+
+
+def test_with_structured_output_json_mode_pydantic(mock_llm: Mock) -> None:
+    chat = _stub_chat(
+        mock_llm,
+        AIMessage(content='{"setup": "question", "punchline": "answer"}'),
+    )
+
+    structured = chat.with_structured_output(_Joke, method="json_mode")
+
+    result = structured.invoke("Tell me a joke about cats.")
+    assert isinstance(result, _Joke)
+
+    kwargs = _bound_kwargs(structured)
+    assert kwargs["response_format"] == {"type": "json_object"}
+    assert _metadata_schema(structured) == convert_to_json_schema(_Joke)
+
+    chunks = list(structured.stream("Tell me a joke about cats."))
+    assert chunks
+    assert all(isinstance(chunk, _Joke) for chunk in chunks)
+
+
+def test_with_structured_output_json_mode_pydantic_v1(mock_llm: Mock) -> None:
+    chat = _stub_chat(
+        mock_llm,
+        AIMessage(content='{"setup": "question", "punchline": "answer"}'),
+    )
+
+    result = chat.with_structured_output(_JokeV1, method="json_mode").invoke(
+        "Tell me a joke about cats."
+    )
+
+    assert isinstance(result, _JokeV1)
+    assert result.setup == "question"
+
+
+def test_with_structured_output_json_mode_without_schema(mock_llm: Mock) -> None:
+    chat = _stub_chat(mock_llm, AIMessage(content='{"setup": "q", "punchline": "a"}'))
+
+    structured = chat.with_structured_output(method="json_mode")
+
+    result = structured.invoke("Return any JSON object.")
+    assert result == {"setup": "q", "punchline": "a"}
+    assert _metadata_schema(structured) is None
+
+
+def test_with_structured_output_typeddict(mock_llm: Mock) -> None:
+    chat = _stub_chat(
+        mock_llm,
+        _tool_call_message("_JokeDict", {"setup": "question", "punchline": "answer"}),
+    )
+
+    structured = chat.with_structured_output(_JokeDict)
+
+    result = structured.invoke("Tell me a joke about cats.")
+    assert isinstance(result, dict)
+    assert result == {"setup": "question", "punchline": "answer"}
+    assert _metadata_schema(structured) == convert_to_json_schema(_JokeDict)
+
+
+def test_with_structured_output_json_schema_dict(mock_llm: Mock) -> None:
+    schema = _Joke.model_json_schema()
+    chat = _stub_chat(
+        mock_llm,
+        _tool_call_message("_Joke", {"setup": "question", "punchline": "answer"}),
+    )
+
+    structured = chat.with_structured_output(schema)
+
+    result = structured.invoke("Tell me a joke about cats.")
+    assert isinstance(result, dict)
+    assert result == {"setup": "question", "punchline": "answer"}
+    assert _metadata_schema(structured) == convert_to_json_schema(schema)

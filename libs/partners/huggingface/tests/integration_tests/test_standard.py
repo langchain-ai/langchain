@@ -30,10 +30,7 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
     def model(self, request: Any) -> BaseChatModel:
         return self.chat_model_class(**self.chat_model_params)  # type: ignore[call-arg]
 
-    @pytest.mark.xfail(
-        reason=("Overrding, testing only typed dict and json schema structured output")
-    )
-    @pytest.mark.parametrize("schema_type", ["typeddict", "json_schema"])
+    @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
     def test_structured_output(
         self,
         model: BaseChatModel,
@@ -41,10 +38,7 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
     ) -> None:
         super().test_structured_output(model, schema_type)
 
-    @pytest.mark.xfail(
-        reason=("Overrding, testing only typed dict and json schema structured output")
-    )
-    @pytest.mark.parametrize("schema_type", ["typeddict", "json_schema"])
+    @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
     async def test_structured_output_async(
         self,
         model: BaseChatModel,
@@ -52,11 +46,9 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
     ) -> None:
         super().test_structured_output(model, schema_type)
 
-    @pytest.mark.xfail(reason=("Pydantic structured output is not supported"))
     def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
         super().test_structured_output_pydantic_2_v1(model)
 
-    @pytest.mark.xfail(reason=("Pydantic structured output is not supported"))
     def test_structured_output_optional_param(self, model: BaseChatModel) -> None:
         super().test_structured_output_optional_param(model)
 
