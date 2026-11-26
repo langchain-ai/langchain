@@ -3170,3 +3170,15 @@ def test_convert_to_messages_lc_envelope_partial_shape_not_matched() -> None:
     # and dict `kwargs` too. Without all four, we fall through.
     with pytest.raises(ValueError, match="MESSAGE_COERCION_FAILURE"):
         convert_to_messages([{"lc": 1, "content": "missing other fields"}])
+
+
+def test_get_buffer_string_xml_refusal() -> None:
+    """Test XML format renders refusals from content blocks and `additional_kwargs`."""
+    refusal = "I'm sorry, I can't help with that."
+    messages: list[BaseMessage] = [
+        AIMessage(content=[{"type": "refusal", "refusal": refusal}]),
+        AIMessage(content="", additional_kwargs={"refusal": refusal}),
+    ]
+    result = get_buffer_string(messages, format="xml")
+    expected = f'<message type="ai"><refusal>{refusal}</refusal></message>'
+    assert result == f"{expected}\n{expected}"

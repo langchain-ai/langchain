@@ -171,6 +171,11 @@ def _format_content_block_xml(block: dict[str, Any]) -> str | None:
             return f"<reasoning>{escape(reasoning)}</reasoning>"
         return None
 
+    # Refusal blocks
+    if block_type == "refusal":
+        refusal = block.get("refusal", "")
+        return f"<refusal>{escape(refusal)}</refusal>" if refusal else None
+
     # Image blocks (URL only, base64 already filtered)
     if block_type == "image":
         url = block.get("url")
@@ -356,9 +361,12 @@ def get_buffer_string(
         - AI messages with tool calls use nested structure with `<content>` and
             `<tool_call>` elements.
         - For multi-modal content (list of content blocks), supported block types
-            are: `text`, `reasoning`, `image` (URL/file_id only), `image_url`
-            (OpenAI-style, URL only), `audio` (URL/file_id only), `video` (URL/file_id
-            only), `text-plain`, `server_tool_call`, and `server_tool_result`.
+            are: `text`, `reasoning`, `refusal`, `image` (URL/file_id only),
+            `image_url` (OpenAI-style, URL only), `audio` (URL/file_id only), `video`
+            (URL/file_id only), `text-plain`, `server_tool_call`, and
+            `server_tool_result`.
+        - OpenAI-style refusals stored in `additional_kwargs["refusal"]` are
+            rendered as `<refusal>` when the message has no other content.
         - Content blocks with base64-encoded data are skipped (including blocks
             with `base64` field or `data:` URLs).
         - Unknown block types are skipped.
@@ -463,6 +471,14 @@ def get_buffer_string(
                         formatted = _format_content_block_xml(block)
                         if formatted:
                             content_parts.append(formatted)
+
+            # OpenAI-style refusals live in `additional_kwargs` with empty content
+            if (
+                isinstance(m, AIMessage)
+                and not content_parts
+                and (refusal := m.additional_kwargs.get("refusal"))
+            ):
+                content_parts.append(f"<refusal>{escape(str(refusal))}</refusal>")
 
             # Check if this is an AIMessage with tool calls
             has_tool_calls = isinstance(m, AIMessage) and m.tool_calls
