@@ -28,16 +28,14 @@ class _OldRun:
         self.error: str | None = None
 
 
-class GraphBubbleUp(Exception):  # noqa: N818
-    """Same class name as langgraph's, which core matches by name."""
+class GraphInterrupt(Exception):  # noqa: N818
+    """Interrupt tagged with an explicit run status, as LangGraph does."""
+
+    ls_run_status = "interrupted"
 
 
-class GraphDrained(GraphBubbleUp):
-    """Shutdown drain: a `GraphBubbleUp` that is not an interrupt."""
-
-
-class GraphInterrupt(GraphBubbleUp):
-    """Subclass, as in langgraph."""
+class GraphDrained(Exception):  # noqa: N818
+    """Shutdown drain: carries no `ls_run_status`."""
 
 
 def _tracer() -> LangChainTracer:
@@ -86,16 +84,35 @@ async def test_graph_interrupt_sets_interrupted() -> None:
     assert run.error
 
 
-@pytest.mark.parametrize("name", ["NodeInterrupt", "ParentCommand", "GraphDelegate"])
-def test_other_interrupt_errors_set_interrupted(name: str) -> None:
+def test_ls_run_status_attribute_cancelled_is_honored() -> None:
+    class Stopped(Exception):  # noqa: N818
+        ls_run_status = "cancelled"
+
     run = _new_run()
-    _tracer()._record_error(run, type(name, (GraphBubbleUp,), {})())
-    assert run.status == "interrupted"
+    _tracer()._record_error(run, Stopped())
+    assert run.status == "cancelled"
+
+
+@pytest.mark.parametrize("value", ["success", "error", "pending", "", None, 1])
+def test_other_ls_run_status_values_are_ignored(value: object) -> None:
+    error = type("Weird", (Exception,), {"ls_run_status": value})()
+    run = _new_run()
+    _tracer()._record_error(run, error)
+    assert run.status is None
+    assert run.error
 
 
 def test_graph_drained_has_no_status() -> None:
     run = _new_run()
     _tracer()._record_error(run, GraphDrained("shutdown"))
+    assert run.status is None
+    assert run.error
+
+
+def test_class_named_graph_interrupt_without_attribute_is_an_error() -> None:
+    error = type("GraphInterrupt", (Exception,), {})("pause")
+    run = _new_run()
+    _tracer()._record_error(run, error)
     assert run.status is None
     assert run.error
 

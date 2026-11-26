@@ -42,28 +42,24 @@ SCHEMA_FORMAT_TYPE = Literal["original", "streaming_events"]
 _GATEWAY_RUN_METADATA_KEY = "ls_gateway_info"
 
 
-# LangGraph control-flow errors that pause a run for outside input. Matched by
-# class name (including subclasses) so core does not depend on langgraph.
-# `GraphDrained` is a `GraphBubbleUp` too but is a shutdown, so it stays an error.
-_INTERRUPT_ERROR_NAMES = frozenset(
-    {"GraphInterrupt", "NodeInterrupt", "ParentCommand", "GraphDelegate"}
-)
+_RUN_STATUS_ATTR = "ls_run_status"
+_EXPLICIT_RUN_STATUSES = frozenset({"cancelled", "interrupted"})
 
 
 def _run_status_from_error(error: BaseException | None) -> str | None:
     """Return the explicit run status an error asks to be traced with.
 
+    - The `ls_run_status` attribute of the error, when it is `cancelled` or
+        `interrupted` (e.g. set as a class attribute by LangGraph on its
+        interrupt exceptions). Any other value is ignored.
     - `cancelled`: a `CancelledError` cancelled with an `ExpectedCancellation`.
-    - `interrupted`: a langgraph `GraphInterrupt`, `NodeInterrupt`,
-        `ParentCommand` or `GraphDelegate` (or subclass), matched by class name
-        so core does not depend on langgraph. `GraphDrained` (shutdown) is not.
     - `None` otherwise: a bare `CancelledError` or a timeout stays a plain error.
     """
     if error is None:
         return None
-    names = {c.__name__ for c in type(error).__mro__}
-    if "GraphDrained" not in names and names & _INTERRUPT_ERROR_NAMES:
-        return "interrupted"
+    status = getattr(error, _RUN_STATUS_ATTR, None)
+    if isinstance(status, str) and status in _EXPLICIT_RUN_STATUSES:
+        return status
     # The cancel message survives task boundaries, so a bare cancel raised during
     # a marked cancel's cleanup is a separate cancel and stays an error.
     if (
