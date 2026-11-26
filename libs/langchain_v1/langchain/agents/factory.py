@@ -45,6 +45,11 @@ from langchain.agents.middleware._trace_policy import (
     _node_trace_policy,
     _resolved_transform,
 )
+from langchain.agents.middleware.model_selection import (
+    MODEL_SELECTION_KEY,
+    current_model_spec,
+    model_spec_from_model,
+)
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
@@ -279,6 +284,55 @@ def _build_commands(
     commands: list[Command[Any]] = [Command(update=state)]
     commands.extend(middleware_commands or [])
     return commands
+
+
+class _ModelCallRecorder:
+    """Run the innermost model call and remember which models it went to.
+
+    A class rather than a closure inside the model node: LangGraph disassembles
+    node functions, including nested ones, on every compile to find subgraphs, so
+    inner defs there add to every `create_agent` call.
+    """
+
+    __slots__ = ("_execute", "executed")
+
+    def __init__(self, execute: Callable[[ModelRequest[Any]], ModelResponse]) -> None:
+        self._execute = execute
+        self.executed: list[BaseChatModel] = []
+
+    def __call__(self, request: ModelRequest[Any]) -> ModelResponse:
+        self.executed.append(request.model)
+        return self._execute(request)
+
+
+class _AsyncModelCallRecorder:
+    """Async counterpart of `_ModelCallRecorder`."""
+
+    __slots__ = ("_execute", "executed")
+
+    def __init__(self, execute: Callable[[ModelRequest[Any]], Awaitable[ModelResponse]]) -> None:
+        self._execute = execute
+        self.executed: list[BaseChatModel] = []
+
+    async def __call__(self, request: ModelRequest[Any]) -> ModelResponse:
+        self.executed.append(request.model)
+        return await self._execute(request)
+
+
+def _record_model_selection(
+    commands: list[Command[Any]],
+    state: AgentState[Any],
+    executed: list[BaseChatModel],
+) -> list[Command[Any]]:
+    """Record the model the call went to under `model_selection`, if it changed.
+
+    `executed` lists the models the innermost handler ran, in order; the last one
+    produced the response (earlier ones were retried or fell back from).
+    """
+    spec = model_spec_from_model(executed[-1]) if executed else None
+    if spec is None or spec == current_model_spec(state):
+        return commands
+    return [*commands, Command(update={MODEL_SELECTION_KEY: {"current": spec}})]
 
 
 def _chain_model_call_handlers(
@@ -689,6 +743,7 @@ def _invalid_tool_call_message(tool_call: InvalidToolCall) -> ToolMessage | None
         name=name,
         tool_call_id=tool_call_id,
         status="error",
+        id=f"invalid-tool-call-{tool_call_id}",
     )
 
 
@@ -1535,21 +1590,24 @@ def create_agent(
         )
 
         has_structured_output = initial_response_format is not None
+        execute = _ModelCallRecorder(_execute_model_sync)
+
         if wrap_model_call_handler is None:
-            model_response = _execute_model_sync(request)
-            return _build_commands(
+            model_response = execute(request)
+            commands = _build_commands(
                 model_response,
                 has_structured_output=has_structured_output,
                 repaired_messages=messages if messages != state["messages"] else None,
             )
-
-        result = wrap_model_call_handler(request, _execute_model_sync)
-        return _build_commands(
-            result.model_response,
-            result.commands,
-            has_structured_output=has_structured_output,
-            repaired_messages=messages if messages != state["messages"] else None,
-        )
+        else:
+            result = wrap_model_call_handler(request, execute)
+            commands = _build_commands(
+                result.model_response,
+                result.commands,
+                has_structured_output=has_structured_output,
+                repaired_messages=messages if messages != state["messages"] else None,
+            )
+        return _record_model_selection(commands, state, execute.executed)
 
     async def _execute_model_async(request: ModelRequest[ContextT]) -> ModelResponse:
         """Execute model asynchronously and return response.
@@ -1594,21 +1652,24 @@ def create_agent(
         )
 
         has_structured_output = initial_response_format is not None
+        execute = _AsyncModelCallRecorder(_execute_model_async)
+
         if awrap_model_call_handler is None:
-            model_response = await _execute_model_async(request)
-            return _build_commands(
+            model_response = await execute(request)
+            commands = _build_commands(
                 model_response,
                 has_structured_output=has_structured_output,
                 repaired_messages=messages if messages != state["messages"] else None,
             )
-
-        result = await awrap_model_call_handler(request, _execute_model_async)
-        return _build_commands(
-            result.model_response,
-            result.commands,
-            has_structured_output=has_structured_output,
-            repaired_messages=messages if messages != state["messages"] else None,
-        )
+        else:
+            result = await awrap_model_call_handler(request, execute)
+            commands = _build_commands(
+                result.model_response,
+                result.commands,
+                has_structured_output=has_structured_output,
+                repaired_messages=messages if messages != state["messages"] else None,
+            )
+        return _record_model_selection(commands, state, execute.executed)
 
     # Use sync or async based on model capabilities
     graph.add_node("model", RunnableCallable(model_node, amodel_node, trace=False))
