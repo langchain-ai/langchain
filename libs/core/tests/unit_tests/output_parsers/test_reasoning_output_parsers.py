@@ -26,6 +26,10 @@ WRAPPED_ARGUMENTS = [
     pytest.param(f"{REASONING}\n{INNER_JSON}", id="think-prefix"),
     pytest.param(f"<tool_call>\n{INNER_JSON}\n</tool_call>", id="tool-call-wrapper"),
     pytest.param(f"{REASONING}\n<tool_call>\n{INNER_JSON}\n</tool_call>", id="both"),
+    pytest.param(
+        f"<tool_call>\n{REASONING}\n{INNER_JSON}\n</tool_call>",
+        id="think-inside-wrapper",
+    ),
     pytest.param(f"{REASONING}\n<tool_call>\n{INNER_JSON}", id="unclosed-wrapper"),
 ]
 
@@ -366,3 +370,71 @@ def test_pydantic_output_parser_invalid_json_preserves_text() -> None:
         PydanticOutputParser(pydantic_object=AnalysisResult).parse(text)
 
     assert exc_info.value.llm_output == text
+
+
+def test_parse_tool_call_ignores_trailing_text_after_wrapped_payload() -> None:
+    arguments = f'<tool_call>\n{INNER_JSON}\n</tool_call>\n{{"extra": true}}'
+
+    parsed = parse_tool_call(
+        {"function": {"name": "AnalysisResult", "arguments": arguments}},
+        return_id=False,
+    )
+
+    assert parsed is not None
+    assert parsed["args"] == json.loads(INNER_JSON)
+
+
+def test_json_output_parser_ignores_trailing_text_after_wrapped_payload() -> None:
+    text = f'<tool_call>\n{INNER_JSON}\n</tool_call>\n{{"extra": true}}'
+
+    assert JsonOutputParser().parse(text) == json.loads(INNER_JSON)
+
+
+def test_pydantic_tools_parser_partial_open_think_returns_none() -> None:
+    parser = PydanticToolsParser(tools=[NameOnly], first_tool_only=True)
+
+    result = parser.parse_result(
+        [_generation("NameOnly", "<think>still thinking")], partial=True
+    )
+
+    assert result is None
+
+
+def test_pydantic_tools_parser_partial_open_think_returns_empty_list() -> None:
+    parser = PydanticToolsParser(tools=[NameOnly])
+
+    result = parser.parse_result(
+        [_generation("NameOnly", "<think>still thinking")], partial=True
+    )
+
+    assert result == []
+
+
+def test_json_output_key_tools_parser_partial_open_think_returns_none() -> None:
+    parser = JsonOutputKeyToolsParser(key_name="NameOnly", first_tool_only=True)
+
+    result = parser.parse_result(
+        [_generation("NameOnly", "<think>still thinking")], partial=True
+    )
+
+    assert result is None
+
+
+def test_pydantic_tools_parser_preserves_llm_output_on_invalid_json() -> None:
+    arguments = '<think>reasoning</think>\n{"broken": }'
+    parser = PydanticToolsParser(tools=[NameOnly], first_tool_only=True)
+
+    with pytest.raises(OutputParserException) as exc_info:
+        parser.parse_result([_generation("NameOnly", arguments)])
+
+    assert exc_info.value.llm_output == arguments
+
+
+def test_json_output_key_tools_parser_preserves_llm_output_on_invalid_json() -> None:
+    arguments = '<think>reasoning</think>\n{"broken": }'
+    parser = JsonOutputKeyToolsParser(key_name="NameOnly", first_tool_only=True)
+
+    with pytest.raises(OutputParserException) as exc_info:
+        parser.parse_result([_generation("NameOnly", arguments)])
+
+    assert exc_info.value.llm_output == arguments
