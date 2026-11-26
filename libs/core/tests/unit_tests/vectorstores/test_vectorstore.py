@@ -117,6 +117,71 @@ class CustomAddDocumentsVectorstore(VectorStore):
         raise NotImplementedError
 
 
+class CustomAddAndAaddTextsVectorstore(VectorStore):
+    """A `VectorStore` overriding both `add_texts` and `aadd_texts`.
+
+    `ids` is deliberately declared as a positional-or-keyword parameter to
+    mirror legacy stores such as `QdrantVectorStore` (see issue #32283).
+    """
+
+    def __init__(self) -> None:
+        self.store: dict[str, Document] = {}
+
+    @override
+    def add_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: list[dict[str, Any]] | None = None,
+        ids: list[str] | None = None,
+        **kwargs: Any,
+    ) -> list[str]:
+        if not isinstance(texts, list):
+            texts = list(texts)
+        ids_iter = iter(ids or [])
+        metadatas_ = metadatas or [{} for _ in texts]
+        added_ids = []
+        for text, metadata in zip(texts, metadatas_, strict=False):
+            id_ = next(ids_iter, None) or str(uuid.uuid4())
+            self.store[id_] = Document(page_content=text, metadata=metadata, id=id_)
+            added_ids.append(id_)
+        return added_ids
+
+    @override
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: list[dict[str, Any]] | None = None,
+        ids: list[str] | None = None,
+        **kwargs: Any,
+    ) -> list[str]:
+        # `ids` must reach this method through its named parameter exactly once.
+        # If the caller also forwards it inside `**kwargs`, Python raises
+        # `TypeError: got multiple values for keyword argument 'ids'`.
+        assert "ids" not in kwargs
+        return self.add_texts(texts, metadatas, ids=ids, **kwargs)
+
+    def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
+        return [self.store[id_] for id_ in ids if id_ in self.store]
+
+    @classmethod
+    @override
+    def from_texts(
+        cls,
+        texts: list[str],
+        embedding: Embeddings,
+        metadatas: list[dict[str, Any]] | None = None,
+        **kwargs: Any,
+    ) -> CustomAddAndAaddTextsVectorstore:
+        vectorstore = CustomAddAndAaddTextsVectorstore()
+        vectorstore.add_texts(texts, metadatas=metadatas, **kwargs)
+        return vectorstore
+
+    def similarity_search(
+        self, query: str, k: int = 4, **kwargs: Any
+    ) -> list[Document]:
+        raise NotImplementedError
+
+
 @pytest.mark.parametrize(
     "vs_class", [CustomAddTextsVectorstore, CustomAddDocumentsVectorstore]
 )
@@ -233,6 +298,47 @@ async def test_default_aadd_texts(vs_class: type[VectorStore]) -> None:
     assert await store.aget_by_ids(ids_2) == [
         Document(id=ids_2[0], page_content="foo", metadata={"foo": "bar"}),
         Document(id=ids_2[1], page_content="bar", metadata={"foo": "bar"}),
+    ]
+
+
+async def test_aadd_documents_delegates_explicit_ids_to_aadd_texts() -> None:
+    """`aadd_documents` must forward explicit `ids` to `aadd_texts` only once.
+
+    Regression test for issue #32283: legacy stores declaring `ids` as a
+    positional-or-keyword parameter used to raise
+    `TypeError: got multiple values for keyword argument 'ids'`.
+    """
+    store = CustomAddAndAaddTextsVectorstore()
+    documents = [
+        Document(page_content="Hello world"),
+        Document(page_content="Goodbye world"),
+    ]
+    ids = ["doc_1", "doc_2"]
+
+    assert await store.aadd_documents(documents, ids=ids) == ids
+    assert await store.aget_by_ids(ids) == [
+        Document(id="doc_1", page_content="Hello world"),
+        Document(id="doc_2", page_content="Goodbye world"),
+    ]
+
+
+async def test_aadd_documents_delegates_document_ids_to_aadd_texts() -> None:
+    """Without explicit `ids`, document IDs (or generated UUIDs) are forwarded."""
+    store = CustomAddAndAaddTextsVectorstore()
+    documents = [
+        Document(id="doc_1", page_content="Hello world"),
+        Document(page_content="Goodbye world"),
+    ]
+
+    ids = await store.aadd_documents(documents)
+    assert ids[0] == "doc_1"
+    # The second document had no ID, so the store generated one.
+    assert len(ids) == 2
+    assert ids[1]
+
+    assert await store.aget_by_ids(ids) == [
+        Document(id="doc_1", page_content="Hello world"),
+        Document(id=ids[1], page_content="Goodbye world"),
     ]
 
 
