@@ -3,9 +3,6 @@ type: "Integration"
 title: "MCP Integration: Standard Tool Protocol"
 description: "MCPAdapter bridges MCP (Model Context Protocol) servers with LangChain agents through standardized tool discovery, protocol negotiation, and bidirectional communication, including mid-call user input via LangGraph interrupts."
 tags: [mcp, protocol, tools, adapter, integration, langgraph, fastmcp]
-verified:
-  - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
 sources:
   - id: openwiki-source-3f94459a7a8a90bc4757cbfa
     resource: repo://libs/langchain_v1/langchain/mcp/__init__.py
@@ -16,6 +13,9 @@ sources:
   - id: openwiki-source-4715c337e9b93b9d00846133
     resource: repo://libs/langchain_v1/langchain/mcp/tools.py
 generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
+verified:
+  - by: openwiki/0.5.0
+    at: 2026-11-24T08:17:18.845Z
 ---
 
 ## Overview

@@ -518,19 +518,33 @@ jobs:
           PRERELEASE_FLAG: ${{ inputs.allow-prereleases && '--prerelease=allow' || '' }}
         run: |
           VIRTUAL_ENV=.venv uv pip install $PRERELEASE_FLAG --force-reinstall --editable .
-          # `langchain` is a test dependency installed from repo source, which
-          # may need a newer `langchain-core` than the minimum installed here.
-          # Install it from PyPI instead so the resolver picks a release that
-          # works with the minimum versions, as it would for a user.
-          LANGCHAIN_TEST_REQ="$(uv run python -c '
+          # Test dependencies installed from repo source (e.g. `langchain`,
+          # `langchain-openai`) may need a newer `langchain-core` than the
+          # minimum installed here. Install them from PyPI instead so the
+          # resolver picks releases that work with the minimum versions, as it
+          # would for a user. `langchain-core` and the `langchain-tests`
+          # harness keep their repo source.
+          REPO_TEST_REQS="$(uv run python -c '
+          import re
           import tomllib
           from packaging.requirements import Requirement
+          def norm(name):
+              return re.sub(r"[-_.]+", "-", name).lower()
           with open("pyproject.toml", "rb") as f:
-              reqs = tomllib.load(f).get("dependency-groups", {}).get("test", [])
-          print(next((r for r in reqs if isinstance(r, str) and Requirement(r).name == "langchain"), ""))
+              data = tomllib.load(f)
+          sources = data.get("tool", {}).get("uv", {}).get("sources", {})
+          repo_sourced = {norm(k) for k, v in sources.items() if isinstance(v, dict) and "path" in v}
+          repo_sourced -= {"langchain-core", "langchain-tests"}
+          for req in data.get("dependency-groups", {}).get("test", []):
+              if isinstance(req, str) and norm(Requirement(req).name) in repo_sourced:
+                  print(req)
           ')"
-          echo "langchain test requirement: ${LANGCHAIN_TEST_REQ:-<none>}"
-          VIRTUAL_ENV=.venv uv pip install $PRERELEASE_FLAG --force-reinstall $MIN_VERSIONS ${LANGCHAIN_TEST_REQ:+"$LANGCHAIN_TEST_REQ"}
+          TEST_REQS=()
+          if [ -n "$REPO_TEST_REQS" ]; then
+            mapfile -t TEST_REQS <<< "$REPO_TEST_REQS"
+          fi
+          echo "test requirements installed from PyPI: ${TEST_REQS[*]:-<none>}"
+          VIRTUAL_ENV=.venv uv pip install $PRERELEASE_FLAG --force-reinstall $MIN_VERSIONS "${TEST_REQS[@]}"
           make tests PYTEST_EXTRA="-q -k 'not test_serdes'"
         working-directory: ${{ env.EFFECTIVE_WORKING_DIR }}
 
@@ -547,6 +561,7 @@ jobs:
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          MISTRAL_BASE_URL: ${{ secrets.MISTRAL_BASE_URL }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
           TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -561,6 +576,7 @@ jobs:
           GOOGLE_SEARCH_API_KEY: ${{ secrets.GOOGLE_SEARCH_API_KEY }}
           GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_API_BASE: ${{ secrets.GROQ_API_BASE }}
           HUGGINGFACEHUB_API_TOKEN: ${{ secrets.HUGGINGFACEHUB_API_TOKEN }}
           EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
           NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
@@ -576,7 +592,9 @@ jobs:
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          XAI_API_BASE: ${{ secrets.XAI_API_BASE }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_API_BASE: ${{ secrets.DEEPSEEK_API_BASE }}
           PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
           OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}

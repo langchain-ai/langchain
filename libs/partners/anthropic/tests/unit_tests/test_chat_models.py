@@ -28,6 +28,7 @@ from langchain_core.exceptions import (
     ModelRefusalError,
     ModelTimeoutError,
 )
+from langchain_core.load import dumpd
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -43,7 +44,10 @@ from langchain_core.tools import BaseTool, tool
 from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
-from langchain_core.utils._gateway import GATEWAY_METADATA_RESPONSE_KEY
+from langchain_core.utils._gateway import (
+    GATEWAY_METADATA_RESPONSE_KEY,
+    langsmith_gateway,
+)
 from pydantic import BaseModel, Field, RootModel, SecretStr, ValidationError
 from pytest import CaptureFixture, MonkeyPatch
 
@@ -2046,7 +2050,8 @@ def test__format_messages_server_tool_use_preserves_caller(output_version: str) 
 
 
 @pytest.mark.parametrize(
-    "block_type", ["web_search_tool_result", "web_fetch_tool_result"]
+    "block_type",
+    ["web_search_tool_result", "web_fetch_tool_result", "tool_search_tool_result"],
 )
 @pytest.mark.parametrize(
     "caller",
@@ -3153,7 +3158,15 @@ _ANTHROPIC_TOOL_SCHEMA = {
 }
 
 
-@pytest.mark.parametrize("model", ["claude-opus-5-5", "claude-fable-5-1"])
+@pytest.mark.parametrize(
+    "model",
+    [
+        "claude-opus-5-5",
+        "claude-fable-5-1",
+        "claude-fable-5-2",
+        "claude-mythos-5-2",
+    ],
+)
 @pytest.mark.parametrize("schema", [_Person, _ANTHROPIC_TOOL_SCHEMA])
 @pytest.mark.parametrize("thinking", [None, {"type": "adaptive"}])
 def test_with_structured_output_skips_forced_tool_choice_when_unsupported(
@@ -4209,24 +4222,48 @@ def test_thinking_content_block_start_carries_initial_thinking() -> None:
     assert thinking_blocks[0]["signature"] == "sig123"
 
 
-def test_empty_thinking_content_block_start_emits_no_chunk() -> None:
-    """An empty `ThinkingBlock` start must not emit a spurious chunk."""
-    from anthropic.types import RawContentBlockStartEvent, ThinkingBlock
+def test_empty_thinking_content_block_start_emits_thinking_block() -> None:
+    """The start of an omitted thinking block emits a chunk, merged block unchanged."""
+    from anthropic.types import (
+        RawContentBlockDeltaEvent,
+        RawContentBlockStartEvent,
+        RawContentBlockStopEvent,
+        SignatureDelta,
+        ThinkingBlock,
+    )
 
     llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
-    chunk, block_start_event = llm._make_message_chunk_from_anthropic_event(
-        RawContentBlockStartEvent(
-            content_block=ThinkingBlock(thinking="", signature="", type="thinking"),
-            index=0,
-            type="content_block_start",
-        ),
+    start = RawContentBlockStartEvent(
+        content_block=ThinkingBlock(thinking="", signature="", type="thinking"),
+        index=0,
+        type="content_block_start",
+    )
+    chunk, _ = llm._make_message_chunk_from_anthropic_event(
+        start,
         stream_usage=True,
         coerce_content_to_string=False,
         block_start_event=None,
     )
-    assert chunk is None
-    # The block is still tracked so subsequent deltas resolve against it.
-    assert block_start_event is not None
+    assert chunk is not None
+    assert chunk.content == [{"type": "thinking", "thinking": "", "index": 0}]
+
+    aggregate = _aggregate_anthropic_events(
+        llm,
+        [
+            start,
+            RawContentBlockDeltaEvent(
+                delta=SignatureDelta(signature="sig_abc", type="signature_delta"),
+                index=0,
+                type="content_block_delta",
+            ),
+            RawContentBlockStopEvent(index=0, type="content_block_stop"),
+        ],
+        coerce_content_to_string=False,
+    )
+    assert aggregate is not None
+    assert aggregate.content == [
+        {"type": "thinking", "thinking": "", "signature": "sig_abc", "index": 0}
+    ]
 
 
 def test_signature_delta_preserves_empty_thinking_field() -> None:
@@ -4245,8 +4282,8 @@ def test_signature_delta_preserves_empty_thinking_field() -> None:
 
     llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
 
-    # Step 1: process the empty content_block_start (no chunk emitted).
-    chunk, block_start_event = llm._make_message_chunk_from_anthropic_event(
+    # Step 1: process the empty content_block_start.
+    _, block_start_event = llm._make_message_chunk_from_anthropic_event(
         RawContentBlockStartEvent(
             content_block=ThinkingBlock(thinking="", signature="", type="thinking"),
             index=0,
@@ -4256,7 +4293,6 @@ def test_signature_delta_preserves_empty_thinking_field() -> None:
         coerce_content_to_string=False,
         block_start_event=None,
     )
-    assert chunk is None
     assert block_start_event is not None
 
     # Step 2: process the signature_delta with the tracked start event.
@@ -6696,3 +6732,250 @@ def test_with_structured_output_still_streams_partial_json() -> None:
 
     assert len(outputs) > 1
     assert outputs[-1] == {"answer": "42"}
+
+
+def test_langsmith_gateway_context_headers() -> None:
+    """Gateway headers reach the client but are never serialized."""
+    with langsmith_gateway(api_key="placeholder", headers={"X-Service-Key": "svc-key"}):
+        llm = ChatAnthropic(
+            model="claude-sonnet-4-5",
+            api_key=SecretStr("user-key"),
+            default_headers={"x-service-key": "forged", "X-Custom": "kept"},
+            anthropic_proxy="http://proxy:8080",
+        )
+    sent = llm._client.default_headers
+    assert sent["X-Service-Key"] == "svc-key"
+    assert sent["X-Custom"] == "kept"
+    assert "svc-key" not in json.dumps(dumpd(llm))
+    assert llm.anthropic_proxy is None
+
+
+@pytest.mark.parametrize(
+    ("stop_reason", "normalized", "state"),
+    [
+        ("end_turn", "stop", "complete"),
+        ("max_tokens", "length", "complete"),
+        ("tool_use", "tool_call", "complete"),
+        ("refusal", "refusal", "complete"),
+        ("model_context_window_exceeded", "context_exceeded", "complete"),
+        ("pause_turn", "other", "suspended"),
+        ("something_new", "other", "complete"),
+    ],
+)
+def test__format_output_finish_reason(
+    stop_reason: str, normalized: str, state: str
+) -> None:
+    anthropic_msg = Message.model_construct(
+        id="foo",
+        content=[TextBlock(type="text", text="bar")],
+        model="baz",
+        role="assistant",
+        stop_reason=cast("Any", stop_reason),
+        stop_sequence=None,
+        usage=Usage(input_tokens=2, output_tokens=1),
+        type="message",
+    )
+    llm = ChatAnthropic(model=MODEL_NAME, anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
+    metadata = (
+        llm._format_output(anthropic_msg).generations[0].message.response_metadata
+    )
+    assert metadata["finish_reason"] == stop_reason
+    assert metadata["normalized_finish_reason"] == normalized
+    assert metadata["finish_state"] == state
+
+
+def test_message_delta_finish_reason() -> None:
+    from anthropic.types import MessageDeltaUsage
+
+    delta = MagicMock()
+    delta.stop_reason = "pause_turn"
+    delta.stop_sequence = None
+    delta.model_dump.return_value = {}
+    event = MagicMock()
+    event.type = "message_delta"
+    event.usage = MessageDeltaUsage(output_tokens=1)
+    event.delta = delta
+    event.context_management = None
+    delta.container = None
+    llm = ChatAnthropic(model=MODEL_NAME)  # type: ignore[call-arg]
+    chunk, _ = llm._make_message_chunk_from_anthropic_event(
+        event,
+        stream_usage=True,
+        coerce_content_to_string=True,
+        block_start_event=None,
+    )
+    assert chunk is not None
+    assert chunk.response_metadata["finish_reason"] == "pause_turn"
+    assert chunk.response_metadata["normalized_finish_reason"] == "other"
+    assert chunk.response_metadata["finish_state"] == "suspended"
+
+
+# Annotated `Any`: `httpx` here is whichever library the installed SDK is built on.
+def _recording_handler(seen: list[Any]) -> Callable[[Any], Any]:
+    def handler(request: Any) -> Any:
+        seen.append(request)
+        return httpx.Response(200, json=_MESSAGE_RESPONSE)
+
+    return handler
+
+
+def _per_request_bearer() -> Callable[[Any], Any]:
+    """Auth that mints a new bearer token per request, like short-lived OAuth."""
+    calls = 0
+
+    def auth(request: Any) -> Any:
+        nonlocal calls
+        calls += 1
+        request.headers["Authorization"] = f"Bearer token-{calls}"
+        return request
+
+    return auth
+
+
+def test_http_client_is_used_for_sync_requests() -> None:
+    seen: list[Any] = []
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="sk-placeholder",
+        base_url="https://gateway.example.com",
+        default_headers={"X-Custom": "1"},
+        max_tokens=10,
+        http_client=httpx.Client(
+            transport=httpx.MockTransport(_recording_handler(seen)),
+            auth=_per_request_bearer(),
+        ),
+    )
+
+    llm.invoke("hi")
+    llm.invoke("hi again")
+
+    assert llm._client._client is llm.http_client
+    assert [r.headers["Authorization"] for r in seen] == [
+        "Bearer token-1",
+        "Bearer token-2",
+    ]
+    # The model's base URL and headers still apply over a custom client.
+    assert seen[0].url.host == "gateway.example.com"
+    assert seen[0].headers["X-Custom"] == "1"
+
+
+async def test_http_async_client_is_used_for_async_requests() -> None:
+    seen: list[Any] = []
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        api_key="sk-placeholder",
+        max_tokens=10,
+        http_async_client=httpx.AsyncClient(
+            transport=httpx.MockTransport(_recording_handler(seen)),
+            auth=_per_request_bearer(),
+        ),
+    )
+
+    await llm.ainvoke("hi")
+    await llm.ainvoke("hi again")
+
+    assert llm._async_client._client is llm.http_async_client
+    assert [r.headers["Authorization"] for r in seen] == [
+        "Bearer token-1",
+        "Bearer token-2",
+    ]
+    # The sync path keeps building its own client.
+    assert llm._client._client is not llm.http_async_client
+
+
+def test_http_client_with_anthropic_proxy_raises() -> None:
+    with pytest.raises(ValueError, match="anthropic_proxy"):
+        ChatAnthropic(
+            model=MODEL_NAME,
+            anthropic_proxy="http://proxy.example.com:8080",
+            http_async_client=httpx.AsyncClient(),
+        )
+
+
+def test_custom_clients_are_not_serialized() -> None:
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        http_client=httpx.Client(),
+        http_async_client=httpx.AsyncClient(),
+    )
+    dumped = llm.model_dump()
+    assert "http_client" not in dumped
+    assert "http_async_client" not in dumped
+
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        client=anthropic.Client(api_key="sk-placeholder"),
+        async_client=anthropic.AsyncClient(api_key="sk-placeholder"),
+    )
+    dumped = llm.model_dump()
+    assert "client" not in dumped
+    assert "async_client" not in dumped
+
+
+def test_sdk_client_is_used_as_is() -> None:
+    seen: list[Any] = []
+    client = anthropic.Client(
+        api_key="sk-placeholder",
+        base_url="https://bedrock-like.example.com",
+        default_headers={"X-Client": "sdk"},
+        http_client=httpx.Client(
+            transport=httpx.MockTransport(_recording_handler(seen))
+        ),
+    )
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        base_url="https://ignored.example.com",
+        default_headers={"X-Client": "model"},
+        max_tokens=10,
+        client=client,
+    )
+
+    llm.invoke("hi")
+
+    assert llm._client is client
+    # The client's own connection settings win; the model's are not applied.
+    assert seen[0].url.host == "bedrock-like.example.com"
+    assert seen[0].headers["X-Client"] == "sdk"
+
+
+async def test_async_sdk_client_is_used_as_is() -> None:
+    seen: list[Any] = []
+    async_client = anthropic.AsyncClient(
+        api_key="sk-placeholder",
+        default_headers={"X-Client": "sdk"},
+        http_client=httpx.AsyncClient(
+            transport=httpx.MockTransport(_recording_handler(seen))
+        ),
+    )
+    llm = ChatAnthropic(
+        model=MODEL_NAME,
+        default_headers={"X-Client": "model"},
+        max_tokens=10,
+        async_client=async_client,
+    )
+
+    await llm.ainvoke("hi")
+
+    assert llm._async_client is async_client
+    assert seen[0].headers["X-Client"] == "sdk"
+    # The sync path keeps building its own client.
+    assert llm._client is not async_client
+
+
+@pytest.mark.parametrize(
+    ("sdk_field", "http_field"),
+    [("client", "http_client"), ("async_client", "http_async_client")],
+)
+def test_sdk_client_with_http_client_raises(sdk_field: str, http_field: str) -> None:
+    http_client: Any = (
+        httpx.Client() if http_field == "http_client" else httpx.AsyncClient()
+    )
+    sdk_client: Any = (
+        anthropic.Client(api_key="sk-placeholder")
+        if sdk_field == "client"
+        else anthropic.AsyncClient(api_key="sk-placeholder")
+    )
+    with pytest.raises(ValueError, match=f"'{sdk_field}' and '{http_field}'"):
+        ChatAnthropic(
+            model=MODEL_NAME, **{sdk_field: sdk_client, http_field: http_client}
+        )

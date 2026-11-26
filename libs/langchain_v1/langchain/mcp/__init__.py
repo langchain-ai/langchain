@@ -14,7 +14,7 @@ those from `langchain.mcp.elicitation`.
 
 import warnings
 
-from langchain_core._api import LangChainBetaWarning
+from langchain_core._api import LangChainBetaWarning, beta_decorator
 
 from langchain.mcp.adapter import MCPAdapter
 from langchain.mcp.tools import MCPToolArtifact, as_langchain_tool
@@ -23,11 +23,13 @@ from langchain.mcp.tools import MCPToolArtifact, as_langchain_tool
 # class and so only fires once something is called. The status belongs to the
 # whole namespace, and a caller should learn it when they reach for it —
 # including when they import a submodule directly, which runs this module first.
-warnings.warn(
-    "`langchain.mcp` is in beta. It is actively being worked on, so the API may change.",
-    LangChainBetaWarning,
-    stacklevel=2,
-)
+_suppression = getattr(beta_decorator, "_SUPPRESSING_LANGCHAIN_BETA_WARNING", None)
+if _suppression is None or not _suppression.get():
+    warnings.warn(
+        "`langchain.mcp` is in beta. It is actively being worked on, so the API may change.",
+        LangChainBetaWarning,
+        stacklevel=2,
+    )
 
 __all__ = [
     "MCPAdapter",

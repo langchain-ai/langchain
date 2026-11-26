@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import sys
 import traceback
 from abc import ABC, abstractmethod
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -43,8 +42,6 @@ SCHEMA_FORMAT_TYPE = Literal["original", "streaming_events"]
 _GATEWAY_RUN_METADATA_KEY = "ls_gateway_info"
 
 
-_CANCEL_MSG_DROPPED = sys.version_info < (3, 11)
-
 # LangGraph control-flow errors that pause a run for outside input. Matched by
 # class name (including subclasses) so core does not depend on langgraph.
 # `GraphDrained` is a `GraphBubbleUp` too but is a shutdown, so it stays an error.
@@ -67,17 +64,14 @@ def _run_status_from_error(error: BaseException | None) -> str | None:
     names = {c.__name__ for c in type(error).__mro__}
     if "GraphDrained" not in names and names & _INTERRUPT_ERROR_NAMES:
         return "interrupted"
-    seen: set[int] = set()
-    while isinstance(error, asyncio.CancelledError) and id(error) not in seen:
-        seen.add(id(error))
-        if error.args and isinstance(error.args[0], ExpectedCancellation):
-            return "cancelled"
-        # Python < 3.11 drops the cancel message at each task boundary but keeps
-        # the previous error on `__context__`. On 3.11+ the message is kept, so a
-        # bare cancel raised during a marked cancel's cleanup is a separate cancel.
-        if not _CANCEL_MSG_DROPPED:
-            return None
-        error = error.__context__
+    # The cancel message survives task boundaries, so a bare cancel raised during
+    # a marked cancel's cleanup is a separate cancel and stays an error.
+    if (
+        isinstance(error, asyncio.CancelledError)
+        and error.args
+        and isinstance(error.args[0], ExpectedCancellation)
+    ):
+        return "cancelled"
     return None
 
 
@@ -286,7 +280,7 @@ class _TracerCore(ABC):
                 f"for {self._schema_format} format."
             )
             raise NotImplementedError(msg)
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
         return Run(
@@ -317,7 +311,7 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         """Create a llm run."""
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
         return Run(
@@ -350,7 +344,7 @@ class _TracerCore(ABC):
         llm_run.events.append(
             {
                 "name": "new_token",
-                "time": datetime.now(timezone.utc),
+                "time": datetime.now(UTC),
                 "kwargs": event_kwargs,
             },
         )
@@ -379,7 +373,7 @@ class _TracerCore(ABC):
         llm_run.events.append(
             {
                 "name": "retry",
-                "time": datetime.now(timezone.utc),
+                "time": datetime.now(UTC),
                 "kwargs": retry_d,
             },
         )
@@ -400,7 +394,7 @@ class _TracerCore(ABC):
                     output_generation["message"] = dumpd(
                         cast("ChatGeneration", generation).message
                     )
-        llm_run.end_time = datetime.now(timezone.utc)
+        llm_run.end_time = datetime.now(UTC)
         llm_run.events.append({"name": "end", "time": llm_run.end_time})
 
         tool_call_count = 0
@@ -450,7 +444,7 @@ class _TracerCore(ABC):
                             cast("ChatGeneration", generation).message
                         )
             self._attach_gateway_metadata(llm_run, response)
-        llm_run.end_time = datetime.now(timezone.utc)
+        llm_run.end_time = datetime.now(UTC)
         llm_run.events.append({"name": "error", "time": llm_run.end_time})
 
         return llm_run
@@ -468,7 +462,7 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         """Create a chain Run."""
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
         return Run(
@@ -521,7 +515,7 @@ class _TracerCore(ABC):
             cast("dict[str, Any]", chain_run.outputs).update(
                 self._get_chain_outputs(outputs)
             )
-        chain_run.end_time = datetime.now(timezone.utc)
+        chain_run.end_time = datetime.now(UTC)
         chain_run.events.append({"name": "end", "time": chain_run.end_time})
         if inputs is not None:
             chain_run.inputs = self._get_chain_inputs(inputs)
@@ -535,7 +529,7 @@ class _TracerCore(ABC):
     ) -> Run:
         chain_run = self._get_run(run_id)
         self._record_error(chain_run, error)
-        chain_run.end_time = datetime.now(timezone.utc)
+        chain_run.end_time = datetime.now(UTC)
         chain_run.events.append({"name": "error", "time": chain_run.end_time})
         if inputs is not None:
             chain_run.inputs = self._get_chain_inputs(inputs)
@@ -554,7 +548,7 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         """Create a tool run."""
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
 
@@ -592,7 +586,7 @@ class _TracerCore(ABC):
             tool_run.outputs = {}
         if not tool_run.extra.get("__omit_auto_outputs", False):
             cast("dict[str, Any]", tool_run.outputs).update({"output": output})
-        tool_run.end_time = datetime.now(timezone.utc)
+        tool_run.end_time = datetime.now(UTC)
         tool_run.events.append({"name": "end", "time": tool_run.end_time})
         return tool_run
 
@@ -604,7 +598,7 @@ class _TracerCore(ABC):
         """Update a tool run with error and end time."""
         tool_run = self._get_run(run_id, run_type="tool")
         self._record_error(tool_run, error)
-        tool_run.end_time = datetime.now(timezone.utc)
+        tool_run.end_time = datetime.now(UTC)
         tool_run.events.append({"name": "error", "time": tool_run.end_time})
         return tool_run
 
@@ -620,7 +614,7 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         """Create a retrieval run."""
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
         if metadata:
             kwargs.update({"metadata": metadata})
         return Run(
@@ -650,7 +644,7 @@ class _TracerCore(ABC):
             cast("dict[str, Any]", retrieval_run.outputs).update(
                 {"documents": documents}
             )
-        retrieval_run.end_time = datetime.now(timezone.utc)
+        retrieval_run.end_time = datetime.now(UTC)
         retrieval_run.events.append({"name": "end", "time": retrieval_run.end_time})
         return retrieval_run
 
@@ -661,7 +655,7 @@ class _TracerCore(ABC):
     ) -> Run:
         retrieval_run = self._get_run(run_id, run_type="retriever")
         self._record_error(retrieval_run, error)
-        retrieval_run.end_time = datetime.now(timezone.utc)
+        retrieval_run.end_time = datetime.now(UTC)
         retrieval_run.events.append({"name": "error", "time": retrieval_run.end_time})
         return retrieval_run
 

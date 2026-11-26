@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:5c2614eef0e737f96a1dd9788ba46bbaee437b6a3602eec5a4efe2a3ff8c3af4",
+  "pageVersion": "sha256:5145a598e539079ae967593948177c42b68acee3b24647ff1fad0b3222d10159",
   "claims": [
     {
       "id": "claim_e7c4f3b3322d4e87af9595005d380245",
@@ -248,21 +248,29 @@
     },
     {
       "id": "claim_2c22758c318d446089a653c3220adfd0",
-      "statement": "Notification metadata is stored in additional_kwargs with lc_source (string) and lc_data (dict) keys, used to mark system-generated HumanMessage objects such as background task updates, conversation summaries, or async subagent notifications; LangChain chat model integrations do not send these keys to the model.",
+      "statement": "Notification metadata is stored in additional_kwargs with lc_source (string) and lc_data (dict) keys, used to mark system-generated HumanMessage or ToolMessage objects such as background task updates, conversation summaries, middleware-generated tool results, or async subagent notifications; LangChain chat model integrations do not send these keys to the model.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/messages/notification.py#L1-L70",
-          "version": "repo-lines-v1:sha256:56eb4b045bbadd208b05826fa6faba7462fa8dfe6b0c4993ff6a81fd556df3b1:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlOWNmNGE1NjYxNTQ1Mzg1MTMxZGJjNDYwYjMwM2ZjMGY4ZWNjYmUzZjQ0M2Y4OTMyNzI3YTlkZWZlNjZmZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAxYmE0NzE5YzgwYjZmZTkxMWIwOTFhN2MwNTEyNGI2NGVlZWNlOTY0ZTA5YzA1OGVmOGY5ODA1ZGFjYTU0NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjRhZmQwZjJmNDY5YmIwZjQ5Y2NjZGFhNmNiYzE5ZDEwNjRkOGZkNWQ0NWUzNGNiYzMxMWFjMGYxYjVjZjVhYTcifQ"
+          "resource": "repo://libs/core/langchain_core/messages/notification.py#L1-L96",
+          "version": "repo-lines-v1:sha256:9462ed7be2e717a416023129c088eaca596d4482ba342a9dfaa241940966e8ce:eyJzZWxlY3RlZExpbmVDb3VudCI6OTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImRlOWNmNGE1NjYxNTQ1Mzg1MTMxZGJjNDYwYjMwM2ZjMGY4ZWNjYmUzZjQ0M2Y4OTMyNzI3YTlkZWZlNjZmZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2MWRiMjFkN2Y3OWI5ZjhiNmFlNzQ3MDQ1Nzg0ZWI3M2YxMjRmZDU3ZTZjOTkxMTQyNjkyNTAxYmE3YzExNGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/messages/test_notification.py#L28-L58",
+          "version": "repo-lines-v1:sha256:40afd26d7db6a9bef7c3c2c68a88091f65dad670b1aae173bd8b269a48b13da6:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI0YmY2MWQxNGUyYzFmYTgxZjAwNWY4MmY3MmMzNWIwOWI4Nzk4MDNkZTI4Mjg2NmE2ODE4NTg5ZGQyNGY5MzYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjNkNDI1YmRhYjkwOTRmMTFhMDYzN2MyMDMwOTY2NmY2MjI0OTA0YWNkOGJkYWQ1OTllNGQ2N2UzN2EzNzhkZDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBiNmQ5NTdlMzFhNDg2ZmMxOTVjOTdkMDRlZGRhNjE1ODlkMzM1NGQ2NmY5NmQwNzBiNDMzMGZiOTkyYzUyYjQifQ"
         }
       ]
     },
     {
       "id": "claim_0dc2f8de61d9484aa299ba13b82777b7",
-      "statement": "add_notification_metadata(message, source, data=None) returns a shallow copy of a HumanMessage with notification metadata set in additional_kwargs, preserving the message id; get_notification_metadata(message) returns a NotificationMetadata dict with source and optional data fields, or None if message lacks string lc_source.",
+      "statement": "add_notification_metadata(message, source, data=None) returns a shallow copy of a HumanMessage or ToolMessage with notification metadata set in additional_kwargs, preserving the message id; get_notification_metadata(message) returns a NotificationMetadata dict with source and optional data fields, or None if message lacks string lc_source.",
       "evidence": [
         {
-          "resource": "repo://libs/core/langchain_core/messages/notification.py#L24-L92",
-          "version": "repo-lines-v1:sha256:1f67e7cbdadabb4e88fe3d8f24bea3c46cba92c0a0c02d9eae77653597d79ee0:eyJzZWxlY3RlZExpbmVDb3VudCI6NjksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0ZjNjYTg2NWU3MjM0OWFlMWEwODQ5NWRkYzI1ZDQ2NjUxOWJkZGIzMGUwNWJmM2RkNzQ1ODlkNzMyNTgyY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2MWRiMjFkN2Y3OWI5ZjhiNmFlNzQ3MDQ1Nzg0ZWI3M2YxMjRmZDU3ZTZjOTkxMTQyNjkyNTAxYmE3YzExNGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3NDc5MDI4NGI2ZmZiM2M3Y2IzODA3MTJmMzA0ZDUwOGI2ZTM2MjQ3MmNlZDhkODVlM2VhNjk3MWQyM2UyMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+          "resource": "repo://libs/core/langchain_core/messages/notification.py#L27-L96",
+          "version": "repo-lines-v1:sha256:04d3561c9c0bd5d361daa7d243a47eadc8dac92c1b1c3640007bb96c015afec1:eyJzZWxlY3RlZExpbmVDb3VudCI6NzAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0ZjNjYTg2NWU3MjM0OWFlMWEwODQ5NWRkYzI1ZDQ2NjUxOWJkZGIzMGUwNWJmM2RkNzQ1ODlkNzMyNTgyY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2MWRiMjFkN2Y3OWI5ZjhiNmFlNzQ3MDQ1Nzg0ZWI3M2YxMjRmZDU3ZTZjOTkxMTQyNjkyNTAxYmE3YzExNGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjE3NDc5MDI4NGI2ZmZiM2M3Y2IzODA3MTJmMzA0ZDUwOGI2ZTM2MjQ3MmNlZDhkODVlM2VhNjk3MWQyM2UyMDciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://libs/core/tests/unit_tests/messages/test_notification.py#L11-L120",
+          "version": "repo-lines-v1:sha256:b14b640bc4cc8cbac2048cfe56bac3e9f7f35b1bb2ca3bdcdc5d4a775af45f1d:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEwLCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJjZDNmZDBkYzgwNzA3NzBlYWQ1NmFiZGI4Y2M5MmIxZWYwYzBiZThjYThmZTlkM2EyYzk3MTkxNDYwYTYyMTBkIiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiI0ODkzZjQwZTM3ODFlYjg5NmM4MmQwNDZhMDgwNjdhMTFlMzVjZGYyZjFkZmFmMjZmZWE5MGI4ZGI2Njc2NDEzIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MywicHJlY2VkaW5nQ29udGV4dEhhc2giOiJhOThiMDYzZDliNDdlNjUzNzk2MjU1NzJjY2UxOTc2NjlkNTc2N2UxMmMxOGJlMDc1NjUyYjhjZDk4MWNlOGQ1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
         }
       ]
     },
@@ -373,6 +381,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-06T08:17:28.425Z"
+    "at": "2026-11-24T08:17:18.845Z"
   }
 }

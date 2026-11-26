@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:cba50df68584cbcf041e9e05fa6f3d5c194ddbdb0f07bc00def958b039d4efeb",
+  "pageVersion": "sha256:9d236ddd1f225e8f7b408ad4854f9aa68d2f18ed95fdf189086070fc6c77fab6",
   "claims": [
     {
       "id": "claim_347664eb68464142b558791c7a95093f",
@@ -22,7 +22,7 @@
       "evidence": [
         {
           "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L740-L790",
-          "version": "repo-lines-v1:sha256:003a6dab73ea8fde5dc6459b1b513510f5f2edaf2d067675483617e4bbadc10c:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NWZkNDk1ZWU5OWQ1OWFkN2VlNWNlNjc3NzY4NTA2OWZlYzJiMzFlN2VlOWI0ZjlhMjA2M2RlMWRkNjFhNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4YzBjYzA4MjViNjY2MWI1ZmM0YWE1MjQ5NmJhOGM5ODIxNTY3MzFiNTM2NTBlYjhiYTYxYmRmNjI2ZmNlNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyNjAzZjZjNDViZmIxODk0YWE5ZWMzY2U4MDJhMTNlMDA5YzcyNDgyMzZmOWIxMzdjMTNiODFjZmQ1NGNmYmUifQ"
+          "version": "repo-lines-v1:sha256:bf96495a283eac05f6522d00a63dff41926406e63dcdc52005a9e1bffc487d9f:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg0NWZkNDk1ZWU5OWQ1OWFkN2VlNWNlNjc3NzY4NTA2OWZlYzJiMzFlN2VlOWI0ZjlhMjA2M2RlMWRkNjFhNjkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQ4YzBjYzA4MjViNjY2MWI1ZmM0YWE1MjQ5NmJhOGM5ODIxNTY3MzFiNTM2NTBlYjhiYTYxYmRmNjI2ZmNlNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMyNjAzZjZjNDViZmIxODk0YWE5ZWMzY2U4MDJhMTNlMDA5YzcyNDgyMzZmOWIxMzdjMTNiODFjZmQ1NGNmYmUifQ"
         }
       ]
     },
@@ -156,11 +156,15 @@
     },
     {
       "id": "claim_c741b92393a24960933927e07e430816",
-      "statement": "ChatOpenAI maps OpenAI SDK exceptions to LangChain's standardized error hierarchy: AuthenticationError -> ModelAuthenticationError, PermissionDeniedError -> ModelPermissionDeniedError, BadRequestError (context_length_exceeded) -> ContextOverflowError, RateLimitError -> ModelRateLimitError, NotFoundError -> ModelNotFoundError, APIError -> ModelAPIError, APIConnectionError -> ModelConnectionError, APITimeoutError -> ModelTimeoutError.",
+      "statement": "ChatOpenAI maps OpenAI SDK exceptions to LangChain's standardized error hierarchy via two error handling functions: (1) _handle_openai_bad_request handles BadRequestError, detecting context_length_exceeded patterns and raising OpenAIContextOverflowError (inherits ContextOverflowError), and response_format validation issues raising OpenAIInvalidRequestError; (2) _handle_openai_api_error maps AuthenticationError → OpenAIAuthenticationError (inherits ModelAuthenticationError), PermissionDeniedError → OpenAIPermissionDeniedError (inherits ModelPermissionDeniedError), NotFoundError → OpenAIModelNotFoundError (inherits ModelNotFoundError), RateLimitError → OpenAIRateLimitError (inherits ModelRateLimitError), InternalServerError → OpenAIAPIError (inherits ModelAPIError), APITimeoutError → OpenAITimeoutError (inherits ModelTimeoutError), APIConnectionError → OpenAIConnectionError (inherits ModelConnectionError), and APIError with context window message → OpenAIAPIContextOverflowError (inherits ContextOverflowError).",
       "evidence": [
         {
-          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L612-L677",
-          "version": "repo-lines-v1:sha256:14658e6226d5972c8dfcd35ee5e68818fc2fb2d5615c55bf07435c5692bebb20:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkMzYzNjVkODZhZWJmMTI1NzA4NGRjZThlNDUyNmQxNTYyY2QwZmU1NWU0MWU2NmE1ZjdiOTQ2YWM2ZWEwMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYmIyM2Q0ODg5ZjE4NGI1MWM0YThkYjliZDVjOGFhOWQ3NDc5YWJhNDdhMzMzNzcwMzI2M2M4MTZlNzY4YjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYwYWY5NzFkMjcyODdmZjk3NzYzZjBmZGI2MzJmNDZmM2VlMjNhZmNkYjQwNzcyNWUzZTU0OGM4OTg3MTY1Y2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwM2MwYzBjYjJkY2IyZGY2NmRlODQ4OTFmMWYxM2MwMDVkNmJhZGM4ODZlODhmZjI5MzBlMmNkYTU0Yjc0OGIifQ"
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L710-L744",
+          "version": "repo-lines-v1:sha256:93b6ebf0b78bb326ddf08c8cdd2728412fa516ab1f5209a1eb862efbf76a06af:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkMzYzNjVkODZhZWJmMTI1NzA4NGRjZThlNDUyNmQxNTYyY2QwZmU1NWU0MWU2NmE1ZjdiOTQ2YWM2ZWEwMjciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5ZjllNWJhMTRlZjI5MTdmYjdiMDA3YTM5YjlmZDFhMTA2YzY5NDFhNjgzMjJiZWUwNjlmZWQ3NTY4NWFjMWEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImNmNGJhY2UxZWI4ODRjYWE2M2UxMzBiYWFjMTY1MjBiODJjY2NiODZiNmM3NjJjYjhmODg5NDI0M2JkMTkzYTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMwYmU0N2FkNTVjM2YwNGFmOTBiYTc1ZjgyZDk4MjU2YzAwZGU5YzQ3NDQ3YWI0NjYwZmE3MTMwN2FiMDliNWUifQ"
+        },
+        {
+          "resource": "repo://libs/partners/openai/langchain_openai/chat_models/base.py#L747-L783",
+          "version": "repo-lines-v1:sha256:27474a33c4e064b6c09f0bd191abfe55f9b4da4e493e42565752dcfb30e9603e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjM0ZGQ0Mjg3MmM0YTg0NDg0ZjA2YzU4ZTdjZjg4YTMzNmVjZGY4NzViZTJlODIwMWU2MDg4OGZiMTAwZTQ1OWQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmYmIyM2Q0ODg5ZjE4NGI1MWM0YThkYjliZDVjOGFhOWQ3NDc5YWJhNDdhMzMzNzcwMzI2M2M4MTZlNzY4YjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImFmMzIxMjM0YjA5YzY1NGQ0MzFkNWY1NDdhMGJhNGU2YTViOTdmNjJjZGEzN2Q3MWZlOWMzNDM0NTkzZGQxZTYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjEwM2MwYzBjYjJkY2IyZGY2NmRlODQ4OTFmMWYxM2MwMDVkNmJhZGM4ODZlODhmZjI5MzBlMmNkYTU0Yjc0OGIifQ"
         }
       ]
     },
@@ -300,13 +304,13 @@
       "evidence": [
         {
           "resource": "repo://libs/partners/openai/langchain_openai/decisions/base.py#L49-L124",
-          "version": "repo-lines-v1:sha256:ee792a3504662be904b0be937505f2a1ee515f2eb8432695760a22788682bc61:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkODBlMjQ5NGI5OGFlY2UyNjlkYjE5M2NlYjRjYTdjNzhkZTA3NTM5ZjM3MWZiNTY5MzMxY2MwMTk1MWQ3ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyZTkyMzQ5MTk0NGUwYzNjY2U4ZTMwZWU5ZDIyNzE5MzAzYjUyMTViMmE5ZTFjZWY0OWVkNWJkYWVkZDFmZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkNTYzNTRkOThlODM3N2NmZTg0NDNhNTY5Y2MwOTkxNzBjYzNmZGIyMDJhOTM1ZWYyNmJmOTUxYWQ5NDVlMDkifQ"
+          "version": "repo-lines-v1:sha256:33490b80d6dffc36090547f70b0873541658d6f40c29fc2c253331ed6cc7312a:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhkODBlMjQ5NGI5OGFlY2UyNjlkYjE5M2NlYjRjYTdjNzhkZTA3NTM5ZjM3MWZiNTY5MzMxY2MwMTk1MWQ3ODQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE2YTcxNTI1NzJlZTg0ZjEwOTA2Yzc0YjlmMmE5MjQzNGRkYWIwZTNjNDI4MTNiMDRlNTk3ZWZjZWM5NTFiMjYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUyZTkyMzQ5MTk0NGUwYzNjY2U4ZTMwZWU5ZDIyNzE5MzAzYjUyMTViMmE5ZTFjZWY0OWVkNWJkYWVkZDFmZjMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjBkNTYzNTRkOThlODM3N2NmZTg0NDNhNTY5Y2MwOTkxNzBjYzNmZGIyMDJhOTM1ZWYyNmJmOTUxYWQ5NDVlMDkifQ"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-05T08:18:41.280Z"
+    "at": "2026-11-24T08:17:18.845Z"
   }
 }

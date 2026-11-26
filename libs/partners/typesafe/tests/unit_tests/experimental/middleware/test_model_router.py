@@ -1,10 +1,13 @@
 """Tests for `ModelRouterMiddleware`."""
 
+import importlib
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from langchain.agents import create_agent
+from langchain.agents.middleware.model_router import _routing_questions
 from langchain.agents.middleware.types import InputAgentState
+from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import ValidationError
@@ -18,8 +21,14 @@ from langchain_typesafe.experimental.middleware import (
 from langchain_typesafe.experimental.middleware import (
     __all__ as middleware_all,
 )
-from langchain_typesafe.experimental.middleware.model_router import _routing_questions
+from langchain_typesafe.experimental.middleware import (
+    model_router as experimental_model_router,
+)
 from langchain_typesafe.types import ClassifierResponse
+
+pytestmark = pytest.mark.filterwarnings(
+    "ignore::langchain_core._api.LangChainDeprecationWarning"
+)
 
 
 def _response(route: str) -> ClassifierResponse:
@@ -85,6 +94,28 @@ def test_middleware_constructs_classifier_from_routing_configuration() -> None:
         "Choose the least costly model suited to the task."
     )
     assert set(middleware.config.choices) == {"fast", "powerful"}
+
+
+@pytest.mark.filterwarnings("default::langchain_core._api.LangChainDeprecationWarning")
+def test_middleware_is_deprecated() -> None:
+    """Constructing the middleware points to the LangChain class."""
+    # The warning is emitted once per class, so construct a freshly loaded one.
+    module = importlib.reload(experimental_model_router)
+    with pytest.warns(
+        LangChainDeprecationWarning,
+        match=r"Use `langchain\.agents\.middleware\.ModelRouterMiddleware` with "
+        r"`classifier=TypeSafeClassifier\(\)` instead\.",
+    ):
+        module.ModelRouterMiddleware(
+            choices={
+                "fast": ModelChoice(
+                    model=GenericFakeChatModel(messages=iter([])),
+                    criteria="Simple tasks.",
+                )
+            },
+            instructions="Choose a model.",
+            classifier=MagicMock(spec=TypeSafeClassifier),
+        )
 
 
 def test_supplied_classifier_is_used() -> None:
@@ -179,7 +210,7 @@ def test_model_string_is_initialized_once() -> None:
     classifier = MagicMock(spec=TypeSafeClassifier)
     with (
         patch(
-            "langchain_typesafe.experimental.middleware.model_router.init_chat_model",
+            "langchain.agents.middleware.model_router.init_chat_model",
             return_value=initialized_model,
         ) as init_model,
         patch(

@@ -6,17 +6,18 @@ import copy
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    Self,
     TypeVar,
     cast,
 )
 
 from langchain_core.documents import BaseDocumentTransformer, Document
-from typing_extensions import Self, override
+from typing_extensions import override
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Collection, Iterable, Sequence
@@ -445,7 +446,7 @@ class TokenTextSplitter(TextSplitter):
         return split_text_on_tokens(text=text, tokenizer=tokenizer)
 
 
-class Language(str, Enum):
+class Language(StrEnum):
     """Enum of the programming languages."""
 
     CPP = "cpp"

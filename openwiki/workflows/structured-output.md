@@ -22,10 +22,10 @@ sources:
     resource: repo://libs/langchain_v1/langchain/agents/factory.py
   - id: openwiki-source-ec30ab6256dd50cc670919f6
     resource: repo://libs/langchain_v1/langchain/agents/structured_output.py
-generated: { by: "openwiki/0.5.0", at: "2026-10-29T08:20:01.046Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-18T08:17:15.497Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
+    at: 2026-11-18T08:17:15.497Z
 ---
 
 ## Overview
@@ -38,6 +38,32 @@ verified:
 4. **Agent framework strategies**—when building agents with `create_agent()`, use `ToolStrategy`, `ProviderStrategy`, or `AutoStrategy` to enforce structured responses with automatic retry and error handling.
 
 These patterns combine to enable reliable data extraction, API response generation, entity classification, and form filling workflows where the model's output type and shape are known and enforced.
+
+---
+
+## ResponseFormat Abstraction
+
+The agent framework uses **`ResponseFormat`** as a union type that encompasses all strategy options:
+
+```python
+from langchain.agents.structured_output import (
+    ToolStrategy,
+    ProviderStrategy,
+    AutoStrategy,
+)
+
+ResponseFormat = ToolStrategy[SchemaT] | ProviderStrategy[SchemaT] | AutoStrategy[SchemaT]
+```
+
+Each strategy wraps a schema (Pydantic model, dataclass, TypedDict, or JSON Schema dict) and handles binding to the model and parsing responses differently:
+
+| Strategy | Binding | Parsing | Validation | Retry |
+|----------|---------|---------|------------|-------|
+| **ToolStrategy** | Wraps schema as artificial tool, sets `tool_choice="any"` | Extracts tool arguments via TypeAdapter | Full (unless dict schema) | Yes, via `handle_errors` |
+| **ProviderStrategy** | Binds provider-native structured output via `response_format` kwarg | Parses JSON response, validates via TypeAdapter | Full (unless dict schema) | No (provider enforces) |
+| **AutoStrategy** | Defers to runtime—selects ProviderStrategy or ToolStrategy | Delegates to selected strategy | Delegates to selected strategy | Delegates to selected strategy |
+
+**Key Design Principle**: All strategies normalize schemas through the internal `_SchemaSpec` dataclass, which extracts JSON Schema representation and classifies schema kinds (Pydantic, dataclass, TypedDict, or JSON schema dict). This allows consistent handling across strategy types while supporting multiple input formats.
 
 ---
 
@@ -816,16 +842,108 @@ agent = create_agent(
 
 ---
 
+## Fallback Patterns and Middleware Integration
+
+### Automatic Retry on Validation Failure
+
+When structured output validation fails, the agent framework can automatically retry with error context sent back to the model. This is controlled by the `handle_errors` parameter in `ToolStrategy`:
+
+```python
+from langchain.agents import create_agent
+from langchain.agents.structured_output import ToolStrategy
+from pydantic import BaseModel, Field
+
+class StrictPerson(BaseModel):
+    name: str
+    age: int = Field(gt=0, le=150)  # Strict age validation
+
+agent = create_agent(
+    model="openai:gpt-4o",
+    response_format=ToolStrategy(
+        schema=StrictPerson,
+        handle_errors=True,  # Automatically retry with error message
+    ),
+)
+
+# If the model returns invalid data (e.g., age=-5), the validation fails,
+# and the agent automatically retries with a ToolMessage containing the error.
+```
+
+The retry mechanism works as follows:
+
+1. **Validation Failure**: Model returns a tool call with invalid arguments (fails TypeAdapter validation)
+2. **Error Capture**: `StructuredOutputValidationError` is caught by the framework
+3. **Error Message**: A `ToolMessage` with the error details is added to the conversation
+4. **Model Retry**: The model sees the error and attempts to correct its response
+5. **Success**: Valid data is returned or max retries are exhausted
+
+The `handle_errors` configuration controls this behavior:
+
+| Configuration | Behavior |
+|--------------|----------|
+| `True` | Retry all validation errors with default error template |
+| `False` | No retry; raise exception immediately |
+| `str` | Retry with custom error message |
+| `type[Exception]` | Retry only on specific exception types |
+| `Callable[[Exception], str]` | Custom function determines retry message per exception |
+
+**Important**: Raw JSON schema dicts bypass validation and do not trigger retries. Use Pydantic models, dataclasses, or TypedDict schemas for automatic error handling.
+
+### Error Handling in with_structured_output()
+
+For models using `with_structured_output()`, error handling uses the `include_raw` parameter:
+
+```python
+from langchain_openai import ChatOpenAI
+from pydantic import BaseModel
+
+class Response(BaseModel):
+    answer: str
+
+model = ChatOpenAI(model="gpt-4o")
+structured = model.with_structured_output(Response, include_raw=True)
+
+result = structured.invoke("Your question")
+# Returns: {
+#     'raw': AIMessage(...),
+#     'parsed': Response(...) or None,
+#     'parsing_error': ValidationError(...) or None
+# }
+
+# Check for errors without raising exceptions
+if result['parsing_error']:
+    print(f"Validation failed: {result['parsing_error']}")
+    # Can implement custom retry logic here
+else:
+    print(f"Success: {result['parsed']}")
+```
+
+For automatic retry without catching exceptions, compose with `with_fallbacks()`:
+
+```python
+# Fallback to a default or retry function
+safe_structured = structured.with_fallbacks(
+    [lambda _: Response(answer="Unable to generate response")],
+    exception_key="parsing_error"
+)
+```
+
+---
+
 ## References
 
 - **BaseOutputParser**: `repo://libs/core/langchain_core/output_parsers/base.py#L140-L170`
 - **PydanticOutputParser**: `repo://libs/core/langchain_core/output_parsers/pydantic.py#L19-L124`
 - **JsonOutputParser**: `repo://libs/core/langchain_core/output_parsers/json.py#L31-L139`
-- **with_structured_output()**: `repo://libs/core/langchain_core/language_models/chat_models.py#L2385-L2565`
+- **with_structured_output()**: `repo://libs/core/langchain_core/language_models/chat_models.py#L2428-L2565`
 - **BaseCumulativeTransformOutputParser (Streaming)**: `repo://libs/core/langchain_core/output_parsers/transform.py#L99-L180`
 - **Agent Framework Structured Output**: `repo://libs/langchain_v1/langchain/agents/structured_output.py`
-  - `ToolStrategy`: `repo://libs/langchain_v1/langchain/agents/structured_output.py#L195-L268`
-  - `ProviderStrategy`: `repo://libs/langchain_v1/langchain/agents/structured_output.py#L271-L315`
-  - `AutoStrategy`: `repo://libs/langchain_v1/langchain/agents/structured_output.py#L458-L469`
-  - Schema resolution and error handling: `repo://libs/langchain_v1/langchain/agents/structured_output.py#L35-L193`
-- **Agent Framework Strategy Detection**: `repo://libs/langchain_v1/langchain/agents/factory.py#L578-L623` (_supports_provider_strategy), `repo://libs/langchain_v1/langchain/agents/factory.py#L1399-L1422` (strategy selection at invocation)
+  - `ToolStrategy`: `repo://libs/langchain_v1/langchain/agents/structured_output.py#L197-L269`
+  - `ProviderStrategy`: `repo://libs/langchain_v1/langchain/agents/structured_output.py#L272-L316`
+  - `AutoStrategy`: `repo://libs/langchain_v1/langchain/agents/structured_output.py#L459-L470`
+  - Error types and schema resolution: `repo://libs/langchain_v1/langchain/agents/structured_output.py#L37-L194`
+  - `_parse_with_schema()` function: `repo://libs/langchain_v1/langchain/agents/structured_output.py#L79-L105`
+- **Agent Framework Strategy Detection and Binding**: 
+  - `_supports_provider_strategy()`: `repo://libs/langchain_v1/langchain/agents/factory.py#L581-L626`
+  - `_handle_structured_output_error()`: `repo://libs/langchain_v1/langchain/agents/factory.py#L649-L690`
+  - `_get_bound_model()` (strategy selection at invocation): `repo://libs/langchain_v1/langchain/agents/factory.py#L1402-L1494`

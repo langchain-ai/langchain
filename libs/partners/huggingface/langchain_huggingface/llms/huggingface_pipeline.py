@@ -4,13 +4,12 @@ import importlib.util
 import logging
 import warnings
 from collections.abc import Iterator, Mapping
-from typing import Any
+from typing import Any, Self
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from pydantic import ConfigDict, model_validator
-from typing_extensions import Self
 
 from langchain_huggingface._version import __version__
 from langchain_huggingface.utils.import_utils import (

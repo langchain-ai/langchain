@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, assert_type, cast
 
 import pytest
-from typing_extensions import assert_type
 
 from langchain_core.language_models.chat_model_stream import (
     AsyncChatModelStream,

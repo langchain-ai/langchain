@@ -11,7 +11,7 @@ import warnings
 from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Final, Literal, TypeGuard, cast
+from typing import Any, Final, Literal, NotRequired, Self, TypeGuard, cast
 
 import anthropic
 from langchain_core.callbacks import (
@@ -67,7 +67,10 @@ from langchain_core.utils import from_env, get_pydantic_field_names
 from langchain_core.utils._gateway import (
     GATEWAY_METADATA_RESPONSE_KEY,
     _apply_gateway_config,
+    _gateway_headers,
+    _langsmith_gateway_active,
     _parse_gateway_metadata,
+    _with_gateway_headers,
 )
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
@@ -75,8 +78,15 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import NotRequired, Self, TypedDict
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    SecretStr,
+    model_validator,
+)
+from typing_extensions import TypedDict
 
 from langchain_anthropic import __version__
 from langchain_anthropic._client_utils import (
@@ -925,6 +935,11 @@ def _format_messages(
                                         "tool_use_id",
                                         "cache_control",
                                     )
+                                    or (
+                                        k == "caller"
+                                        and v
+                                        and v.get("type") != "direct"
+                                    )
                                 },
                             ),
                         )
@@ -1166,7 +1181,13 @@ def _reasoning_effort_levels(profile: object) -> tuple[str, ...]:
 def _supports_forced_tool_choice(model: str) -> bool:
     """Return whether the model accepts `tool_choice` types `any` and `tool`."""
     return not model.startswith(
-        ("claude-fable-5-1", "claude-opus-5-5", "claude-sonnet-5-5")
+        (
+            "claude-fable-5-1",
+            "claude-fable-5-2",
+            "claude-mythos-5-2",
+            "claude-opus-5-5",
+            "claude-sonnet-5-5",
+        )
     )
 
 
@@ -1386,6 +1407,33 @@ class ChatAnthropic(BaseChatModel):
         )
         ```
 
+    Example: Custom HTTP or SDK clients
+        Pass an HTTP client to change how requests are sent (TLS, transports,
+        per-request auth) while the model keeps its own connection settings. Pass
+        an SDK client to take over the connection entirely, for example to call
+        Claude on Bedrock or Vertex AI.
+
+        ```python
+        import anthropic
+        from langchain_anthropic import ChatAnthropic
+
+        # HTTP layer only: base URL, key, timeout and retries still come from here.
+        # anthropic.Default(Async)HttpxClient always matches the HTTP library the
+        # installed SDK uses (httpx2 for anthropic>=1, httpx before).
+        model = ChatAnthropic(
+            model="claude-sonnet-5-5",
+            http_client=anthropic.DefaultHttpxClient(verify="/path/to/ca.pem"),
+            http_async_client=anthropic.DefaultAsyncHttpxClient(verify="/path/to/ca.pem"),
+        )
+
+        # Whole SDK client: connection settings come from the client instead.
+        model = ChatAnthropic(
+            model="anthropic.claude-sonnet-5-5",
+            client=anthropic.AnthropicBedrock(aws_region="us-east-1"),
+            async_client=anthropic.AsyncAnthropicBedrock(aws_region="us-east-1"),
+        )
+        ```
+
     Note:
         Any param which is not explicitly supported will be passed directly to
         [`Anthropic.messages.create(...)`](https://platform.claude.com/docs/en/api/python/messages/create)
@@ -1455,6 +1503,79 @@ class ChatAnthropic(BaseChatModel):
 
     default_headers: Mapping[str, str] | None = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
+
+    http_client: Any | None = Field(default=None, exclude=True)
+    """HTTP client for sync invocations, passed to the Anthropic SDK as is.
+
+    Use it for custom TLS (`verify=`, CA bundles, mTLS), transports, connection
+    limits, or per-request auth through httpx's `auth=` hook. The model's base URL,
+    timeout, retries and headers still apply on top of it.
+
+    The client must come from the HTTP library the installed `anthropic` SDK is
+    built on: `httpx2` for `anthropic>=1`, `httpx` before that. Passing the other
+    one raises a `TypeError` from the SDK. Build it with
+    `anthropic.DefaultHttpxClient(...)`, which always matches the installed SDK
+    and keeps its default connection limits:
+
+    ```python
+    import anthropic
+
+    model = ChatAnthropic(
+        model="claude-sonnet-5-5",
+        http_client=anthropic.DefaultHttpxClient(verify="/path/to/ca.pem"),
+    )
+    ```
+
+    Only used for sync invocations; set `http_async_client` for async ones. The
+    model does not close it. Cannot be combined with `anthropic_proxy` (set the
+    proxy on the client instead) or with `client`.
+    """
+
+    http_async_client: Any | None = Field(default=None, exclude=True)
+    """HTTP client for async invocations, passed to the Anthropic SDK as is.
+
+    Same rules as `http_client`. Build it with
+    `anthropic.DefaultAsyncHttpxClient(...)`. Only used for async invocations; set
+    `http_client` for sync ones. Cannot be combined with `anthropic_proxy` or with
+    `async_client`.
+    """
+
+    client: Any | None = Field(default=None, exclude=True)
+    """Anthropic SDK client for sync invocations, used as is.
+
+    For when the HTTP layer isn't enough: another platform (`AnthropicBedrock`,
+    `AnthropicBedrockMantle`, `AnthropicVertex`, `AnthropicFoundry`), credentials
+    the SDK resolves itself, or a client shared with other code. Pass any client
+    with the `anthropic.Anthropic` interface.
+
+    The model sends every request through this client, so its own connection
+    settings do not apply: `api_key`, `base_url`, `default_headers`,
+    `default_request_timeout`, `max_retries` and `anthropic_proxy` are ignored,
+    as are the LangSmith gateway headers. Configure those on the client.
+
+    ```python
+    from anthropic import AnthropicBedrock
+
+    model = ChatAnthropic(
+        model="anthropic.claude-sonnet-5-5",
+        client=AnthropicBedrock(aws_region="us-east-1"),
+    )
+    ```
+
+    Only used for sync invocations; set `async_client` for async ones. The model
+    does not close it. Cannot be combined with `http_client`.
+    """
+
+    async_client: Any | None = Field(default=None, exclude=True)
+    """Anthropic SDK client for async invocations, used as is.
+
+    Same rules as `client`, for an `anthropic.AsyncAnthropic`-compatible client
+    such as `AsyncAnthropicBedrock`. Only used for async invocations; set `client`
+    for sync ones. Cannot be combined with `http_async_client`.
+    """
+
+    _langsmith_gateway_headers: dict[str, str] | None = PrivateAttr(default=None)
+    """Headers from `langsmith_gateway`, sent by the client but never serialized."""
 
     betas: list[str] | None = None
     """List of beta features to enable. If specified, invocations will be routed
@@ -1719,6 +1840,41 @@ class ChatAnthropic(BaseChatModel):
         self._add_version("langchain-anthropic", __version__)
         return self
 
+    @model_validator(mode="after")
+    def _check_custom_clients(self) -> Self:
+        """Reject settings a custom client would silently override."""
+        for sdk_field, http_field in (
+            ("client", "http_client"),
+            ("async_client", "http_async_client"),
+        ):
+            if getattr(self, sdk_field) is not None and (
+                getattr(self, http_field) is not None
+            ):
+                msg = (
+                    f"Cannot specify both '{sdk_field}' and '{http_field}'. Pass the "
+                    f"HTTP client to the SDK client instead, e.g. "
+                    f"anthropic.Anthropic(http_client=...)."
+                )
+                raise ValueError(msg)
+        if self.anthropic_proxy and (self.http_client or self.http_async_client):
+            msg = (
+                "Cannot specify 'anthropic_proxy' if one of "
+                "'http_client'/'http_async_client' is already specified. Configure "
+                "the proxy on the client instead. Received:\n"
+                f"anthropic_proxy={self.anthropic_proxy!r}\n"
+                f"http_client={self.http_client!r}\n"
+                f"http_async_client={self.http_async_client!r}"
+            )
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def _set_langsmith_gateway_headers(self) -> Self:
+        """Keep `langsmith_gateway` headers for the lazily built clients."""
+        if self._langsmith_gateway_headers is None:
+            self._langsmith_gateway_headers = _gateway_headers()
+        return self
+
     @model_validator(mode="before")
     @classmethod
     def _resolve_gateway(cls, values: Any) -> Any:
@@ -1732,6 +1888,8 @@ class ChatAnthropic(BaseChatModel):
         when the gateway is enabled.
         """
         if isinstance(values, dict):
+            if _langsmith_gateway_active():
+                values["anthropic_proxy"] = None
             _apply_gateway_config(
                 values,
                 cls,
@@ -1753,9 +1911,18 @@ class ChatAnthropic(BaseChatModel):
     @cached_property
     def _client_params(self) -> dict[str, Any]:
         # Merge User-Agent with user-provided headers (user headers take precedence)
-        default_headers = {"User-Agent": _USER_AGENT}
+        default_headers = {
+            "User-Agent": _USER_AGENT,
+            "anthropic-version": "2023-06-01",
+        }
         if self.default_headers:
             default_headers.update(self.default_headers)
+        default_headers = dict(
+            _with_gateway_headers(
+                default_headers, self._langsmith_gateway_headers or {}
+            )
+            or {}
+        )
 
         client_params: dict[str, Any] = {
             "api_key": self.anthropic_api_key.get_secret_value(),
@@ -1773,7 +1940,11 @@ class ChatAnthropic(BaseChatModel):
 
     @cached_property
     def _client(self) -> anthropic.Client:
+        if self.client is not None:
+            return self.client
         client_params = self._client_params
+        if self.http_client is not None:
+            return anthropic.Client(**client_params, http_client=self.http_client)
         http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
@@ -1788,7 +1959,13 @@ class ChatAnthropic(BaseChatModel):
 
     @cached_property
     def _async_client(self) -> anthropic.AsyncClient:
+        if self.async_client is not None:
+            return self.async_client
         client_params = self._client_params
+        if self.http_async_client is not None:
+            return anthropic.AsyncClient(
+                **client_params, http_client=self.http_async_client
+            )
         http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
@@ -1820,7 +1997,7 @@ class ChatAnthropic(BaseChatModel):
         if effort:
             output_config["effort"] = effort
 
-        is_fable_model = self.model.startswith("claude-fable-5")
+        is_fable_model = self.model.startswith(("claude-fable-5", "claude-mythos-5-2"))
         is_sonnet_55 = self.model.startswith("claude-sonnet-5-5")
         if is_fable_model or is_sonnet_55:
             top_k = request_config.get("top_k", self.top_k)
@@ -1973,7 +2150,7 @@ class ChatAnthropic(BaseChatModel):
             payload["thinking"] = self.thinking
         if self.inference_geo is not None:
             payload["inference_geo"] = self.inference_geo
-        if self.model.startswith("claude-fable-5"):
+        if self.model.startswith(("claude-fable-5", "claude-mythos-5-2")):
             payload.pop("temperature", None)
             payload.pop("top_k", None)
             payload.pop("top_p", None)
@@ -2180,8 +2357,22 @@ class ChatAnthropic(BaseChatModel):
                 payload["betas"] = [required_beta]
 
         return _route_unsupported_sampling_params(
-            {k: v for k, v in payload.items() if v is not None}
+            self._filter_gateway_headers(
+                {k: v for k, v in payload.items() if v is not None}
+            )
         )
+
+    def _filter_gateway_headers(self, params: dict[str, Any]) -> dict[str, Any]:
+        if self._langsmith_gateway_headers and isinstance(
+            params.get("extra_headers"), Mapping
+        ):
+            protected = {name.lower() for name in self._langsmith_gateway_headers}
+            params["extra_headers"] = {
+                name: value
+                for name, value in params["extra_headers"].items()
+                if name.lower() not in protected
+            }
+        return params
 
     def _create(self, payload: dict) -> Any:
         try:
@@ -2226,6 +2417,7 @@ class ChatAnthropic(BaseChatModel):
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
+                and not self.model.startswith(("claude-fable-5", "claude-mythos-5-2"))
                 and not _compact_in_params(payload)
             )
             block_start_event = None
@@ -2276,6 +2468,7 @@ class ChatAnthropic(BaseChatModel):
                 not _tools_in_params(payload)
                 and not _documents_in_params(payload)
                 and not _thinking_in_params(payload)
+                and not self.model.startswith(("claude-fable-5", "claude-mythos-5-2"))
                 and not _compact_in_params(payload)
             )
             block_start_event = None
@@ -2424,13 +2617,14 @@ class ChatAnthropic(BaseChatModel):
                             content_block.pop("citations", None)
                         message_chunk = AIMessageChunk(content=[content_block])
             else:  # thinking
-                thinking = getattr(event.content_block, "thinking", "") or ""
-                signature = getattr(event.content_block, "signature", "") or ""
-                if thinking or signature:
-                    content_block = event.content_block.model_dump()
-                    content_block["index"] = event.index
-                    content_block["type"] = "thinking"
-                    message_chunk = AIMessageChunk(content=[content_block])
+                # Emitted even when empty: under `display: "omitted"` no thinking
+                # text streams, so this start is the first sign of reasoning.
+                content_block = event.content_block.model_dump()
+                if not content_block.get("signature"):
+                    content_block.pop("signature", None)
+                content_block["index"] = event.index
+                content_block["type"] = "thinking"
+                message_chunk = AIMessageChunk(content=[content_block])
 
         # Process incremental content updates
         elif event.type == "content_block_delta":
@@ -2506,6 +2700,7 @@ class ChatAnthropic(BaseChatModel):
             response_metadata = {
                 "stop_reason": event.delta.stop_reason,
                 "stop_sequence": event.delta.stop_sequence,
+                **_finish_reason_fields(event.delta.stop_reason),
             }
             if stop_details := event.delta.model_dump().get("stop_details"):
                 response_metadata["stop_details"] = stop_details
@@ -2573,7 +2768,10 @@ class ChatAnthropic(BaseChatModel):
         ):
             # TODO: dump all `data` with `mode="json"`
             llm_output["container"]["expires_at"] = expires_at.isoformat()
-        response_metadata: dict[str, Any] = {"model_provider": "anthropic"}
+        response_metadata: dict[str, Any] = {
+            "model_provider": "anthropic",
+            **_finish_reason_fields(llm_output.get("stop_reason")),
+        }
         if llm_output.get("stop_reason") == "refusal":
             # Needed on the message itself so `output_version="v1"` content, which
             # is built before `llm_output` is merged, includes the refusal block.
@@ -3139,6 +3337,7 @@ class ChatAnthropic(BaseChatModel):
         if self.context_management is not None:
             kwargs["context_management"] = self.context_management
 
+        kwargs = self._filter_gateway_headers(kwargs)
         if self.betas is not None:
             beta_response = self._client.beta.messages.count_tokens(
                 betas=self.betas,
@@ -3335,6 +3534,28 @@ def _convert_to_anthropic_output_config_format(schema: dict | type) -> dict[str,
         # TypedDict
         json_schema = transform_schema(convert_to_json_schema(schema))
     return {"type": "json_schema", "schema": json_schema}
+
+
+_FINISH_REASONS: dict[str, str] = {
+    "end_turn": "stop",
+    "stop_sequence": "stop",
+    "max_tokens": "length",
+    "tool_use": "tool_call",
+    "refusal": "refusal",
+    "model_context_window_exceeded": "context_exceeded",
+}
+
+
+def _finish_reason_fields(stop_reason: str | None) -> dict[str, str]:
+    """Map `stop_reason` onto the shared finish fields in `response_metadata`."""
+    if not stop_reason:
+        return {}
+    return {
+        "finish_reason": stop_reason,
+        "normalized_finish_reason": _FINISH_REASONS.get(stop_reason, "other"),
+        # `pause_turn` means the caller must send another request to finish.
+        "finish_state": "suspended" if stop_reason == "pause_turn" else "complete",
+    }
 
 
 def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:

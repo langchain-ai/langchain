@@ -13,12 +13,15 @@ from __future__ import annotations
 import json
 import os
 from collections.abc import Mapping
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, NamedTuple
+from urllib.parse import urlsplit
 
 from pydantic import SecretStr
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
 
     from pydantic import BaseModel
 
@@ -36,6 +39,125 @@ _LANGSMITH_GATEWAY_ENV = "LANGSMITH_GATEWAY"
 _LANGSMITH_GATEWAY_API_KEY_ENV = "LANGSMITH_GATEWAY_API_KEY"
 _LANGSMITH_API_KEY_ENV = "LANGSMITH_API_KEY"
 _LANGSMITH_GATEWAY_DEFAULT_BASE = "https://gateway.smith.langchain.com"
+
+
+class _GatewayOverride(NamedTuple):
+    """Gateway settings set for the current context by `langsmith_gateway`."""
+
+    base_url: str
+    api_key: SecretStr
+    headers: Mapping[str, str]
+
+
+_GATEWAY_OVERRIDE: ContextVar[_GatewayOverride | None] = ContextVar(
+    "langchain_gateway_override", default=None
+)
+
+
+@contextmanager
+def langsmith_gateway(
+    *,
+    api_key: str | SecretStr,
+    base_url: str = _LANGSMITH_GATEWAY_DEFAULT_BASE,
+    headers: Mapping[str, str] | None = None,
+) -> Iterator[None]:
+    """Route chat models built in this context through the LangSmith gateway.
+
+    Unlike the `LANGSMITH_GATEWAY` env var, which applies to the whole process,
+    this applies only to the current context (thread or asyncio task), so a
+    server can route some requests through the gateway and not others.
+
+    The gateway is resolved when a model is constructed, so wrap construction
+    (for example `load()` of a serialized model), not invocation.
+
+    While the context is active, the gateway URL and key take precedence over
+    any base URL or API key passed to the model or set in the environment. This
+    lets a caller load an untrusted serialized model without it redirecting the
+    gateway key to another host or bypassing the gateway.
+
+    Treat invocation arguments, including `extra_headers`, as trusted application
+    input; gateway header precedence is not an authorization boundary.
+
+    Args:
+        api_key: Key used to authenticate to the gateway.
+        base_url: Gateway host. The provider's path is appended per model.
+        headers: Headers sent with every request to the gateway, such as a
+            service key. They replace any header of the same name
+            (case-insensitive) set on the model. They are kept in private model
+            state and sent by the HTTP client, but are not serialized or traced.
+
+    Yields:
+        None.
+
+    Raises:
+        ValueError: If `api_key` is empty or `base_url` is not an http(s) URL.
+    """
+    secret = api_key if isinstance(api_key, SecretStr) else SecretStr(api_key)
+    if not secret.get_secret_value():
+        msg = "A gateway API key is required."
+        raise ValueError(msg)
+    parsed = urlsplit(base_url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        msg = f"Invalid gateway base URL: {base_url!r}"
+        raise ValueError(msg)
+    token = _GATEWAY_OVERRIDE.set(
+        _GatewayOverride(base_url.rstrip("/"), secret, dict(headers or {}))
+    )
+    try:
+        yield
+    finally:
+        _GATEWAY_OVERRIDE.reset(token)
+
+
+def _langsmith_gateway_active() -> bool:
+    """Whether a `langsmith_gateway` context is active.
+
+    Integrations ignore their proxy setting while it is, so a serialized model
+    cannot send the gateway key through a proxy.
+    """
+    return _GATEWAY_OVERRIDE.get() is not None
+
+
+def _gateway_headers() -> dict[str, str]:
+    """Return the headers of the active `langsmith_gateway` context, if any.
+
+    Integrations that build their client lazily read these at construction and
+    keep them in a private attribute, so they never reach the serialized model.
+    """
+    override = _GATEWAY_OVERRIDE.get()
+    return dict(override.headers) if override is not None else {}
+
+
+def _with_gateway_headers(
+    headers: Mapping[str, str] | None, gateway_headers: Mapping[str, str]
+) -> Mapping[str, str] | None:
+    """Return ``headers`` with ``gateway_headers`` applied.
+
+    Gateway headers replace any of the same name (case-insensitive), so a model
+    cannot override them. ``headers`` is returned unchanged when there are none.
+    """
+    if not gateway_headers:
+        return headers
+    names = {name.lower() for name in gateway_headers}
+    kept = {k: v for k, v in (headers or {}).items() if k.lower() not in names}
+    return {**kept, **gateway_headers}
+
+
+def _override_base_url(
+    override: _GatewayOverride, base_url: str | None, provider_path: str
+) -> str:
+    """Return the base URL to use while a `langsmith_gateway` context is active.
+
+    An explicit `base_url` is kept only when it is already under the context's
+    gateway host, so a caller that resolved a different gateway path (e.g.
+    `init_chat_model`'s `langsmith` provider uses `/v1`) keeps it. Anything else
+    is replaced with the provider path on the gateway, so a model cannot send
+    the gateway key to another host.
+    """
+    if isinstance(base_url, str) and base_url.startswith(f"{override.base_url}/"):
+        return base_url
+    return f"{override.base_url}/{provider_path}"
+
 
 _TRUE_VALUES = ("true", "1", "yes")
 _FALSE_VALUES = ("false", "0", "no")
@@ -92,6 +214,9 @@ def _resolve_gateway_base_url(provider_path: str) -> str | None:
         The provider base URL on the gateway, or None if the gateway is
         disabled.
     """
+    override = _GATEWAY_OVERRIDE.get()
+    if override is not None:
+        return _override_base_url(override, None, provider_path)
     raw = os.getenv(_LANGSMITH_GATEWAY_ENV)
     if not raw or raw.lower() in _FALSE_VALUES:
         return None
@@ -101,6 +226,23 @@ def _resolve_gateway_base_url(provider_path: str) -> str | None:
         else raw.rstrip("/")
     )
     return f"{base}/{provider_path}"
+
+
+def _same_origin(first: str, second: str) -> bool:
+    """Check whether two HTTP URLs have the same origin."""
+    try:
+        left, right = urlsplit(first), urlsplit(second)
+        if left.scheme not in {"http", "https"} or right.scheme != left.scheme:
+            return False
+        if not left.hostname or not right.hostname:
+            return False
+        default_port = 443 if left.scheme == "https" else 80
+        left_port = left.port if left.port is not None else default_port
+        right_port = right.port if right.port is not None else default_port
+    except ValueError:
+        return False
+    else:
+        return left.hostname == right.hostname and left_port == right_port
 
 
 def _resolve_gateway_config(
@@ -114,21 +256,19 @@ def _resolve_gateway_config(
 ) -> GatewayConfig:
     """Resolve a provider's base URL and API key, applying gateway settings.
 
-    Precedence:
+    Inside `langsmith_gateway`, the context's gateway key is returned, and the
+    base URL is the provider path on the gateway host (an explicit `base_url`
+    already on that host is kept). Everything below is ignored. Otherwise,
+    precedence is:
 
     - **base_url:** explicit ``base_url`` > ``base_url_env`` > LangSmith gateway
       > ``default_base_url``.
     - **api_key:** explicit ``api_key`` (returned unchanged) > the gateway key if
-      the base URL came from the gateway, otherwise the provider key > the other.
-      The gateway key uses ``LANGSMITH_GATEWAY_API_KEY`` when the gateway is
-      enabled, with ``LANGSMITH_API_KEY`` as a fallback only when the base URL came
-      from the gateway.
-
-    The provenance flip on the key means an ``OPENAI_API_KEY``-style provider key
-    is preferred whenever the caller pointed the base URL at a non-gateway
-    endpoint (so a stray gateway key is not sent to the provider), while the
-    gateway key wins for the common "just enable the gateway" setup even if a
-    provider key happens to be present in the environment.
+      the base URL came from the gateway, otherwise the provider key. A gateway
+      key is a fallback for an explicit URL only when it has the same origin as
+      the configured gateway. ``LANGSMITH_GATEWAY_API_KEY`` is used when the
+      gateway is enabled, with ``LANGSMITH_API_KEY`` as a fallback only when the
+      base URL came from the gateway.
 
     Args:
         base_url: Explicitly-provided base URL (e.g. a ``base_url`` kwarg), or
@@ -145,6 +285,14 @@ def _resolve_gateway_config(
     Returns:
         The resolved `GatewayConfig`.
     """
+    override = _GATEWAY_OVERRIDE.get()
+    if override is not None:
+        return GatewayConfig(
+            base_url=_override_base_url(override, base_url, provider_path),
+            api_key=override.api_key,
+            base_url_from_gateway=True,
+        )
+
     gateway_base_url = _resolve_gateway_base_url(provider_path)
 
     resolved_base_url = base_url
@@ -169,11 +317,17 @@ def _resolve_gateway_config(
         if not gateway_api_key and base_url_from_gateway:
             gateway_api_key = os.getenv(_LANGSMITH_API_KEY_ENV)
         provider_api_key = _first_env(api_key_env)
-        chosen = (
-            (gateway_api_key or provider_api_key)
-            if base_url_from_gateway
-            else (provider_api_key or gateway_api_key)
-        )
+        if base_url_from_gateway:
+            chosen = gateway_api_key or provider_api_key
+        elif (
+            gateway_api_key
+            and gateway_base_url
+            and resolved_base_url
+            and _same_origin(gateway_base_url, resolved_base_url)
+        ):
+            chosen = provider_api_key or gateway_api_key
+        else:
+            chosen = provider_api_key
         resolved_api_key = SecretStr(chosen) if chosen else None
 
     return GatewayConfig(resolved_base_url, resolved_api_key, base_url_from_gateway)

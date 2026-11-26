@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:e6c89dc403f3bb1a8ac3c8a0aa404c9f1406c66f2725bb3f252795598beefbc1",
+  "pageVersion": "sha256:02d592bebe009ed9c33ecb5aa646b4763dc4795365f9001678ba9749f08fb086",
   "claims": [
     {
       "id": "claim_7a8fafb1ebef428bb7a8123d6e1e4499",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://libs/langchain_v1/langchain/mcp/__init__.py",
-          "version": "repo-file-v1:sha256:6f4fc76a2d1f0b2129e7598a5f4fd1bc05e389c9b98ad063d757baae27132e83"
+          "version": "repo-file-v1:sha256:2aa46f23b7f5c64ffeaaec9ef67dd4e4616a98111ed5e02e0f652ffe115d6b40"
         },
         {
           "resource": "repo://libs/langchain_v1/langchain/mcp/adapter.py#L125-L172",
@@ -197,6 +197,6 @@
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-06T08:17:28.425Z"
+    "at": "2026-11-24T08:17:18.845Z"
   }
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:1c7140af9cc7dd78e369bbc548685411b66ed167731794c7bb32e7bd6fc76fd0",
+  "pageVersion": "sha256:3d5b2a02783273ecbec5207c8778f45ad9757581fb7e965bb17900cb6191f4a0",
   "claims": [
     {
       "id": "claim_582624e6ba514810bdb789729d4765b2",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://.github/workflows/_release.yml",
-          "version": "repo-file-v1:sha256:dadd11ec102a00319c7ca5e7a121a94ab6acdd12cd02d5d2cd0cf98963b9a1cd"
+          "version": "repo-file-v1:sha256:723bb4c7ea80225b2d365c106e545194ff8147734d48981d7bf76262bb770bd2"
         },
         {
           "resource": "repo://.github/workflows/check_diffs.yml",
@@ -16,13 +16,13 @@
         },
         {
           "resource": "repo://.github/workflows/integration_tests.yml",
-          "version": "repo-file-v1:sha256:859418e2d625a4943f289edae6c9b3a43f1054ae95ef036ab49fbc1e9ae38efa"
+          "version": "repo-file-v1:sha256:aa38d1c78f1d188ca720438011e5d2e9856a9c484c581e7c46fbfdf3a381e29b"
         }
       ]
     }
   ],
   "verification": {
     "by": "openwiki/0.5.0",
-    "at": "2026-11-05T08:18:41.280Z"
+    "at": "2026-11-24T08:17:18.845Z"
   }
 }

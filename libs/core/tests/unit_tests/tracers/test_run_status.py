@@ -1,7 +1,6 @@
 """Tests for the explicit run status `LangChainTracer` sends with an error."""
 
 import asyncio
-import sys
 import unittest.mock
 from collections.abc import Awaitable, Callable
 from typing import Any
@@ -11,7 +10,6 @@ from langsmith import Client
 from langsmith.run_trees import RunTree
 
 from langchain_core.exceptions import ExpectedCancellation
-from langchain_core.tracers.core import _run_status_from_error
 from langchain_core.tracers.langchain import LangChainTracer
 
 
@@ -126,9 +124,9 @@ def test_bare_cancel_during_marked_cancel_cleanup() -> None:
     bare.__context__ = marked
     run = _new_run()
     _tracer()._record_error(run, bare)
-    # On 3.11+ the message survives task boundaries, so the bare cancel is a
-    # separate (unmarked) cancel; before 3.11 the context is the only trace.
-    assert run.status == ("cancelled" if sys.version_info < (3, 11) else None)
+    # The message survives task boundaries, so the bare cancel is a separate
+    # (unmarked) cancel.
+    assert run.status is None
 
 
 async def test_status_follows_the_last_error() -> None:
@@ -147,11 +145,3 @@ async def test_langsmith_without_status_support_keeps_error_only() -> None:
     _tracer()._record_error(run, await _cancel_error(ExpectedCancellation()))  # type: ignore[arg-type]
     assert run.error
     assert not hasattr(run, "status")
-
-
-def test_cyclic_cancel_context_terminates() -> None:
-    a = asyncio.CancelledError()
-    b = asyncio.CancelledError()
-    a.__context__ = b
-    b.__context__ = a
-    assert _run_status_from_error(a) is None

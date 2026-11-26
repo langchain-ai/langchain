@@ -4,13 +4,12 @@ from __future__ import annotations
 
 import base64
 import struct
-from typing import Any
+from typing import Any, Self
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import secret_from_env
 from perplexity import AsyncPerplexity, Perplexity
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
-from typing_extensions import Self
 
 
 def _decode_int8_embedding(b64: str) -> list[float]:

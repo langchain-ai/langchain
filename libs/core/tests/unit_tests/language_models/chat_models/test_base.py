@@ -4,14 +4,16 @@ import uuid
 import warnings
 from collections.abc import AsyncIterator, Iterator
 from contextlib import contextmanager
+from functools import cache
 from importlib.metadata import PackageNotFoundError
-from typing import TYPE_CHECKING, Any, Literal, get_type_hints
-from unittest.mock import patch
+from typing import TYPE_CHECKING, Any, Literal, Self, get_type_hints
+from unittest.mock import MagicMock, patch
 
 import pytest
+from langsmith import Client
 from langsmith.env import get_langchain_env_var_metadata
 from pydantic import Field, model_validator
-from typing_extensions import Self, override
+from typing_extensions import override
 
 from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.callbacks import (
@@ -45,10 +47,18 @@ from langchain_core.messages import (
     HumanMessage,
     SystemMessage,
 )
-from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
+from langchain_core.outputs import (
+    ChatGeneration,
+    ChatGenerationChunk,
+    ChatResult,
+    GenerationChunk,
+)
 from langchain_core.outputs.llm_result import LLMResult
 from langchain_core.tracers import LogStreamCallbackHandler
-from langchain_core.tracers._streaming import _V2StreamingCallbackHandler
+from langchain_core.tracers._streaming import (
+    _StreamingCallbackHandler,
+    _V2StreamingCallbackHandler,
+)
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
@@ -377,7 +387,7 @@ class FakeTracer(BaseTracer):
 
 class LangChainTracerRunCollector:
     def __init__(self) -> None:
-        self.tracer = LangChainTracer()
+        self.tracer = LangChainTracer(client=MagicMock(spec=Client))
         self.runs: list[Run] = []
 
     @contextmanager
@@ -385,7 +395,13 @@ class LangChainTracerRunCollector:
         def collect_tracer_run(_: LangChainTracer, run: Run) -> None:
             self.runs.append(run)
 
-        with patch.object(LangChainTracer, "_persist_run", new=collect_tracer_run):
+        with (
+            patch.object(LangChainTracer, "_persist_run", new=collect_tracer_run),
+            patch(
+                "langchain_core.tracers.langchain.get_runtime_environment",
+                return_value={},
+            ),
+        ):
             yield self.tracer
 
 
@@ -1134,6 +1150,152 @@ class _AnotherFakeChatModel(BaseChatModel):
             yield ChatGenerationChunk(message=chunk)
 
 
+def _provider_id_chunks(*, on_every_chunk: bool) -> list[AIMessageChunk]:
+    """Chunks shaped like OpenAI Responses: the provider id is on the first one."""
+    later_id = "resp_1" if on_every_chunk else None
+    return [
+        AIMessageChunk(content="", id="resp_1"),
+        AIMessageChunk(content="Hello", id=later_id),
+        AIMessageChunk(content=" world", id=later_id),
+    ]
+
+
+_PROVIDER_ID_CASES = pytest.mark.parametrize("on_every_chunk", [False, True])
+_OUTPUT_VERSIONS = pytest.mark.parametrize("output_version", [None, "v1"])
+
+
+class _ChunkIdRecorder(BaseCallbackHandler, _StreamingCallbackHandler[Any]):
+    def __init__(self) -> None:
+        self.chunk_ids: list[str | None] = []
+
+    @override
+    def on_llm_new_token(
+        self,
+        token: str | list[str | dict[str, Any]],
+        *,
+        chunk: GenerationChunk | ChatGenerationChunk | None = None,
+        **kwargs: Any,
+    ) -> None:
+        assert isinstance(chunk, ChatGenerationChunk)
+        self.chunk_ids.append(chunk.message.id)
+
+    @override
+    def tap_output_iter(
+        self, run_id: uuid.UUID, output: Iterator[Any]
+    ) -> Iterator[Any]:
+        return output
+
+    @override
+    def tap_output_aiter(
+        self, run_id: uuid.UUID, output: AsyncIterator[Any]
+    ) -> AsyncIterator[Any]:
+        return output
+
+
+@_PROVIDER_ID_CASES
+@_OUTPUT_VERSIONS
+def test_stream_reuses_provider_id(
+    *, on_every_chunk: bool, output_version: str | None
+) -> None:
+    chunks = _provider_id_chunks(on_every_chunk=on_every_chunk)
+    llm = _AnotherFakeChatModel(
+        responses=iter([]), chunks=iter(chunks), output_version=output_version
+    )
+    streamed = list(llm.stream("hi"))
+    assert streamed[-1].chunk_position == "last"
+    final = streamed[0]
+    for chunk in streamed[1:]:
+        final += chunk
+    assert final.id == "resp_1"
+    assert [chunk.id for chunk in streamed] == ["resp_1"] * len(streamed)
+
+
+@_PROVIDER_ID_CASES
+@_OUTPUT_VERSIONS
+async def test_astream_reuses_provider_id(
+    *, on_every_chunk: bool, output_version: str | None
+) -> None:
+    chunks = _provider_id_chunks(on_every_chunk=on_every_chunk)
+    llm = _AnotherFakeChatModel(
+        responses=iter([]), chunks=iter(chunks), output_version=output_version
+    )
+    streamed = [chunk async for chunk in llm.astream("hi")]
+    assert streamed[-1].chunk_position == "last"
+    final = streamed[0]
+    for chunk in streamed[1:]:
+        final += chunk
+    assert final.id == "resp_1"
+    assert [chunk.id for chunk in streamed] == ["resp_1"] * len(streamed)
+
+
+@_PROVIDER_ID_CASES
+@_OUTPUT_VERSIONS
+def test_invoke_with_streaming_callback_reuses_provider_id(
+    *, on_every_chunk: bool, output_version: str | None
+) -> None:
+    chunks = _provider_id_chunks(on_every_chunk=on_every_chunk)
+    llm = _AnotherFakeChatModel(
+        responses=iter([]), chunks=iter(chunks), output_version=output_version
+    )
+    recorder = _ChunkIdRecorder()
+    result = llm.invoke("hi", config={"callbacks": [recorder]})
+    assert result.id == "resp_1"
+    assert len(recorder.chunk_ids) == len(chunks) + 1
+    assert recorder.chunk_ids == [result.id] * len(recorder.chunk_ids)
+
+
+@_PROVIDER_ID_CASES
+@_OUTPUT_VERSIONS
+async def test_ainvoke_with_streaming_callback_reuses_provider_id(
+    *, on_every_chunk: bool, output_version: str | None
+) -> None:
+    chunks = _provider_id_chunks(on_every_chunk=on_every_chunk)
+    llm = _AnotherFakeChatModel(
+        responses=iter([]), chunks=iter(chunks), output_version=output_version
+    )
+    recorder = _ChunkIdRecorder()
+    result = await llm.ainvoke("hi", config={"callbacks": [recorder]})
+    assert result.id == "resp_1"
+    assert len(recorder.chunk_ids) == len(chunks) + 1
+    assert recorder.chunk_ids == [result.id] * len(recorder.chunk_ids)
+
+
+@_OUTPUT_VERSIONS
+@pytest.mark.parametrize("method", ["stream", "astream", "invoke", "ainvoke"])
+async def test_late_provider_id(method: str, output_version: str | None) -> None:
+    chunks = [
+        AIMessageChunk(content="Hello"),
+        AIMessageChunk(content="", id="resp_1"),
+        AIMessageChunk(content=" world"),
+    ]
+    llm = _AnotherFakeChatModel(
+        responses=iter([]), chunks=iter(chunks), output_version=output_version
+    )
+    recorder = _ChunkIdRecorder()
+    run_id = uuid.uuid4()
+    config: RunnableConfig = {"run_id": run_id, "callbacks": [recorder]}
+    result: BaseMessage
+    expected_ids = [f"lc_run--{run_id}", "resp_1", "resp_1", "resp_1"]
+    if method in ("stream", "astream"):
+        streamed = (
+            list(llm.stream("hi", config=config))
+            if method == "stream"
+            else [chunk async for chunk in llm.astream("hi", config=config)]
+        )
+        assert streamed[-1].chunk_position == "last"
+        assert [chunk.id for chunk in streamed] == expected_ids
+        final = streamed[0]
+        for chunk in streamed[1:]:
+            final += chunk
+        result = final
+    elif method == "invoke":
+        result = llm.invoke("hi", config=config)
+    else:
+        result = await llm.ainvoke("hi", config=config)
+    assert result.id == "resp_1"
+    assert recorder.chunk_ids == expected_ids
+
+
 def test_output_version_stream(monkeypatch: Any) -> None:
     messages = [AIMessage("foo bar")]
 
@@ -1502,14 +1664,14 @@ def test_langchain_version_in_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
         raise PackageNotFoundError(pkg)
 
     monkeypatch.setattr("importlib.metadata.version", _fake_version)
-    _get_langchain_version.cache_clear()
-    try:
-        llm = FakeListChatModel(responses=["x"])
-        assert llm.metadata is not None
-        assert llm.metadata["lc_versions"]["langchain"] == "1.2.13"
-        assert "langchain-core" in llm.metadata["lc_versions"]
-    finally:
-        _get_langchain_version.cache_clear()
+    monkeypatch.setattr(
+        "langchain_core.language_models.base._get_langchain_version",
+        cache(_get_langchain_version.__wrapped__),
+    )
+    llm = FakeListChatModel(responses=["x"])
+    assert llm.metadata is not None
+    assert llm.metadata["lc_versions"]["langchain"] == "1.2.13"
+    assert "langchain-core" in llm.metadata["lc_versions"]
 
 
 def test_langchain_version_missing_when_not_installed(
@@ -1525,14 +1687,14 @@ def test_langchain_version_missing_when_not_installed(
         raise PackageNotFoundError(pkg)
 
     monkeypatch.setattr("importlib.metadata.version", _raise_not_found)
-    _get_langchain_version.cache_clear()
-    try:
-        llm = FakeListChatModel(responses=["x"])
-        assert llm.metadata is not None
-        assert "langchain" not in llm.metadata["lc_versions"]
-        assert "langchain-core" in llm.metadata["lc_versions"]
-    finally:
-        _get_langchain_version.cache_clear()
+    monkeypatch.setattr(
+        "langchain_core.language_models.base._get_langchain_version",
+        cache(_get_langchain_version.__wrapped__),
+    )
+    llm = FakeListChatModel(responses=["x"])
+    assert llm.metadata is not None
+    assert "langchain" not in llm.metadata["lc_versions"]
+    assert "langchain-core" in llm.metadata["lc_versions"]
 
 
 def test_version_validator_coexists_with_core_seed() -> None:

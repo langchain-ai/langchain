@@ -1,8 +1,8 @@
 ---
 type: Workflow
-title: "Composability: Chaining & Piping Runnables"
-description: "Learn how to build complex applications by composing runnables through pipe operators, parallel execution, branching, and fallbacks. Includes composition patterns, type safety, configuration threading, and debugging techniques."
-tags: [composition, runnables, lcel, modular, piping, parallel, branching, fallback, streaming, debugging]
+title: "Composability: Chaining & Piping Runnables & Hierarchical Agents"
+description: "Learn how to build complex applications by composing runnables through pipe operators, parallel execution, branching, and fallbacks. Includes composition patterns, type safety, configuration threading, hierarchical agent delegation, middleware stacking, and debugging techniques."
+tags: [composition, runnables, lcel, modular, piping, parallel, branching, fallback, streaming, hierarchical-agents, subagents, middleware, debugging]
 sources:
   - id: openwiki-source-65071982a626569c8820a34b
     resource: repo://libs/core/langchain_core/runnables/__init__.py
@@ -14,15 +14,23 @@ sources:
     resource: repo://libs/core/langchain_core/runnables/config.py
   - id: openwiki-source-f9f4c1dc4f9cdf80d824ce15
     resource: repo://libs/core/langchain_core/runnables/fallbacks.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-05T08:18:41.280Z" }
+  - id: openwiki-source-2bb5c49861e72a9099b51970
+    resource: repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py
+  - id: openwiki-source-71e882e1ac9757ea8e959a7c
+    resource: repo://libs/langchain_v1/langchain/agents/factory.py
+  - id: openwiki-source-a5eb2874945fdc55df0c578f
+    resource: repo://libs/langchain_v1/langchain/agents/middleware/tool_selection.py
+  - id: openwiki-source-03e8ca0eebe37feda8566793
+    resource: repo://libs/langchain_v1/langchain/agents/middleware/types.py
+generated: { by: "openwiki/0.5.0", at: "2026-11-18T08:17:15.497Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-06T08:17:28.425Z
+    at: 2026-11-18T08:17:15.497Z
 ---
 
-# Composability: Chaining & Piping Runnables
+# Composability: Chaining & Piping Runnables & Hierarchical Agents
 
-LangChain's composition system enables building complex applications from simple, single-purpose components. Every component—prompts, models, parsers, tools, and custom logic—is a **Runnable**, unified by a composable interface. This document explains composition operators, component design, practical patterns, and boundaries for building production systems.
+LangChain's composition system enables building complex applications from simple, single-purpose components. At the **Runnable level**, every component—prompts, models, parsers, tools, and custom logic—implements a unified composable interface. At the **agent level**, multiple agents compose via middleware layers, tool-based delegation, and hierarchical dispatch with observability. This document explains composition operators, component design, practical patterns, hierarchical agent patterns, middleware interactions, and boundaries for building production systems.
 
 ## Philosophy: Small, Single-Purpose Components
 
@@ -912,7 +920,610 @@ Callbacks receive hooks for:
 
 Multiple callbacks can be passed; they execute in order.
 
+## Hierarchical Agent Composition: Building Multi-Agent Systems
+
+Beyond Runnable composition, LangChain enables building hierarchical agent systems where multiple agents coordinate through tool-based delegation and middleware composition. This pattern scales complex tasks across specialized agents while maintaining observability and isolation.
+
+### Multi-Level Agent Hierarchies
+
+A hierarchical system consists of:
+
+1. **Specialist agents** (leaf nodes): Single-purpose agents focused on specific domains (weather lookup, database queries, calculations).
+2. **Coordinator agents** (middle nodes): Route queries to appropriate specialists via tool delegation.
+3. **Supervisor agents** (root): Orchestrate overall flow and maintain user context.
+
+**Agent boundaries** are established via `create_agent(name=...)`, which binds an `lc_agent_name` to the agent's execution context. When a tool function invokes a named `create_agent`, the system detects the boundary and surfaces a typed `SubagentRunStream` handle on `run.subagents`.
+
+**Location**: `repo://libs/langchain_v1/langchain/agents/_subagent_transformer.py#L1-L150`
+
+### Creating and Composing Subagents
+
+#### 1. Define Specialist Agents
+
+```python
+from langchain.agents import create_agent
+from langchain_openai import ChatOpenAI
+from langchain_core.tools import tool
+
+# Specialist agent for weather queries
+@tool
+def get_weather(location: str) -> str:
+    """Get current weather for a location."""
+    return f"Weather in {location}: Sunny, 72°F"
+
+weather_agent = create_agent(
+    model="openai:gpt-4o-mini",
+    name="weather_specialist",
+    tools=[get_weather],
+    system_prompt="You are a weather expert. Always provide accurate weather information.",
+)
+
+# Specialist agent for calculations
+@tool
+def calculate(expression: str) -> str:
+    """Evaluate a mathematical expression."""
+    return str(eval(expression))
+
+math_agent = create_agent(
+    model="openai:gpt-4o-mini",
+    name="math_specialist",
+    tools=[calculate],
+    system_prompt="You are a math expert. Solve problems step by step.",
+)
+```
+
+#### 2. Create Delegation Tools
+
+Wrap specialist agents as tools on the coordinator:
+
+```python
+def weather_query(location: str, *, runtime) -> str:
+    """Delegate weather lookup to weather specialist."""
+    result = weather_agent.invoke({
+        "messages": [{"role": "user", "content": f"What is the weather in {location}?"}]
+    })
+    return result["messages"][-1].content
+
+def solve_math(problem: str, *, runtime) -> str:
+    """Delegate math problem to math specialist."""
+    result = math_agent.invoke({
+        "messages": [{"role": "user", "content": f"Solve: {problem}"}]
+    })
+    return result["messages"][-1].content
+
+coordinator_agent = create_agent(
+    model="openai:gpt-4o",
+    name="coordinator",
+    tools=[weather_query, solve_math],
+    system_prompt="Route queries to appropriate specialists. Ask for clarification if needed.",
+)
+```
+
+#### 3. Invoke the Hierarchy
+
+```python
+# User query enters at the root
+result = coordinator_agent.invoke({
+    "messages": [{
+        "role": "user",
+        "content": "What's the weather in Paris, and what's 2+2?"
+    }]
+})
+
+print(result["messages"][-1].content)
+# Output: "The weather in Paris is Sunny, 72°F. 2+2 equals 4."
+```
+
+### Subagent Boundary Detection and Observability
+
+When a tool function invokes a named agent via `create_agent(name=...)`, the system:
+
+1. **Detects the boundary** via the differing `lc_agent_name` in the execution config.
+2. **Creates a typed handle** on `run.subagents` (a `SubagentRunStream` or `AsyncSubagentRunStream`).
+3. **Tracks the causation edge** — the originating tool call that triggered the subagent, exposed via the handle's `cause` property.
+4. **Isolates execution streams** — events from the subagent flow into a separate mux for independent consumption.
+
+**Streaming Subagent Events**:
+
+```python
+# Enable streaming to observe subagent boundaries
+for event in coordinator_agent.stream_events(
+    {"messages": [{"role": "user", "content": "Check weather in NYC"}]},
+    version="v3",
+):
+    if event["event"] == "on_stream_update":
+        # Subagent handles appear under run.subagents
+        if "subagents" in event.get("data", {}):
+            for subagent_handle in event["data"]["subagents"]:
+                print(f"Subagent: {subagent_handle.name}, triggered by: {subagent_handle.cause}")
+```
+
+**Key Properties of SubagentRunStream**:
+- `name`: The subagent's name (from `create_agent(name=...)`).
+- `cause`: The tool call that triggered this subagent (`{"type": "toolCall", "tool_call_id": ...}`).
+- `status`: Final status (`"success"`, `"failed"`, `"timeout"`).
+- `error`: Error message if status is failed.
+
+### Middleware Composition Across Hierarchies
+
+Middleware stacks at each agent level, and layers compose predictably. When multiple middleware are registered, they wrap in registration order (first in = outermost layer).
+
+**Middleware stacking pattern**:
+
+```python
+from langchain.agents import create_agent
+from langchain.agents.middleware import (
+    ModelRetryMiddleware,
+    ToolErrorMiddleware,
+    HumanInTheLoopMiddleware,
+)
+
+# Tier 2: Coordinator with selective middleware
+coordinator_agent = create_agent(
+    model="openai:gpt-4o",
+    name="coordinator",
+    tools=[weather_query, solve_math],
+    middleware=[
+        HumanInTheLoopMiddleware(),           # Outermost: ask for approval
+        ModelRetryMiddleware(max_retries=2),  # Middle: retry model on failure
+        ToolErrorMiddleware(),                # Inner: convert tool errors to messages
+    ]
+)
+
+# Tier 1: Supervisor with different middleware
+@tool
+def delegate_coordination(query: str, *, runtime) -> str:
+    """Delegate to coordinator."""
+    result = coordinator_agent.invoke({
+        "messages": [{"role": "user", "content": query}]
+    })
+    return result["messages"][-1].content
+
+supervisor_agent = create_agent(
+    model="openai:gpt-4o",
+    name="supervisor",
+    tools=[delegate_coordination],
+    middleware=[
+        ModelRetryMiddleware(max_retries=3),  # Stricter retry at top level
+    ]
+)
+```
+
+**Control flow with middleware stacking:**
+
+```
+supervisor.invoke()
+  ↓ ModelRetryMiddleware.wrap_model_call (outermost)
+    ↓ model decision → delegate_coordination tool
+      ↓ coordinator_agent.invoke() (nested)
+        ↓ HumanInTheLoopMiddleware.wrap_model_call (outermost at this level)
+          ↓ ModelRetryMiddleware.wrap_model_call
+            ↓ ToolErrorMiddleware.wrap_model_call (innermost)
+              ↓ actual model call
+```
+
+**Middleware merging at boundaries**: When a coordinator invokes a specialist agent via a tool, the coordinator's middleware does NOT automatically apply to the specialist. Each agent has its own isolated middleware stack. To propagate behavior (e.g., error handling), use:
+
+1. **Shared middleware in tool delegation**: Wrap the tool function to catch and handle errors.
+2. **Context-aware middleware**: Middleware that reads `runtime.context` to adapt behavior based on parent agent state.
+
+```python
+def resilient_weather_query(location: str, *, runtime) -> str:
+    """Wrap specialist invocation with error handling."""
+    try:
+        result = weather_agent.invoke({
+            "messages": [{"role": "user", "content": f"Weather in {location}"}]
+        })
+        return result["messages"][-1].content
+    except Exception as e:
+        # Graceful fallback instead of propagating error
+        return f"Unable to fetch weather for {location}. Using cached data: Sunny, 65°F"
+```
+
+### State and Context Propagation
+
+State does **not** automatically flow between parent and child agents. Each agent maintains its own `AgentState` (messages, jump_to, custom fields). To share context:
+
+1. **Manual passing**: Coordinator extracts relevant state and includes it in the tool input or system prompt.
+2. **Runtime context**: Use `runtime.context` (if provided) to share application-level data.
+3. **Store integration**: For persistent, shared state, use LangGraph's `Store` (if enabled).
+
+**Example: Context-aware delegation**:
+
+```python
+def weather_query_with_context(location: str, *, runtime) -> str:
+    """Include parent state in specialist invocation."""
+    # Extract parent context if available
+    user_preferences = runtime.context.get("user_preferences", {}) if runtime.context else {}
+    
+    result = weather_agent.invoke({
+        "messages": [{
+            "role": "user",
+            "content": f"Weather in {location}. User prefers Fahrenheit. {user_preferences.get('note', '')}"
+        }]
+    })
+    return result["messages"][-1].content
+
+# Invoke with context
+result = coordinator_agent.invoke(
+    {"messages": [{"role": "user", "content": "Check London weather"}]},
+    config={
+        "context": {
+            "user_preferences": {"temp_unit": "F", "note": "I'm planning a trip."}
+        }
+    }
+)
+```
+
+### Patterns for Common Use Cases
+
+#### Pattern 1: Parallel Specialist Queries
+
+Invoke multiple specialists in parallel for faster results:
+
+```python
+from langchain_core.tools import tool
+
+@tool
+def parallel_queries(query1: str, query2: str, *, runtime) -> str:
+    """Delegate to multiple specialists in parallel."""
+    import asyncio
+    
+    async def run_parallel():
+        results = await asyncio.gather(
+            asyncio.to_thread(lambda: weather_agent.invoke({
+                "messages": [{"role": "user", "content": query1}]
+            })),
+            asyncio.to_thread(lambda: math_agent.invoke({
+                "messages": [{"role": "user", "content": query2}]
+            }))
+        )
+        return [r["messages"][-1].content for r in results]
+    
+    return "\n".join(asyncio.run(run_parallel()))
+
+# Use in coordinator
+coordinator_agent = create_agent(
+    model="openai:gpt-4o",
+    name="coordinator",
+    tools=[parallel_queries, weather_query, solve_math],
+)
+```
+
+#### Pattern 2: Conditional Routing to Specialists
+
+Route based on query analysis:
+
+```python
+from langchain_core.runnables import RunnableBranch, RunnableLambda
+
+def classify_query(query: str) -> str:
+    """Classify query type: weather, math, or general."""
+    if any(word in query.lower() for word in ["weather", "temperature", "rain", "cloud"]):
+        return "weather"
+    elif any(word in query.lower() for word in ["calculate", "math", "plus", "multiply"]):
+        return "math"
+    return "general"
+
+router = RunnableBranch(
+    (
+        lambda x: classify_query(x["query"]) == "weather",
+        RunnableLambda(lambda x: weather_query(x["query"], runtime=None))
+    ),
+    (
+        lambda x: classify_query(x["query"]) == "math",
+        RunnableLambda(lambda x: solve_math(x["query"], runtime=None))
+    ),
+    RunnableLambda(lambda x: f"General response for: {x['query']}")
+)
+
+result = router.invoke({"query": "What's the weather in Tokyo?"})
+```
+
+#### Pattern 3: Hierarchical Retry with Fallback
+
+Retry at specialist level, fallback at coordinator level:
+
+```python
+from langchain.agents.middleware import ModelRetryMiddleware, ModelFallbackMiddleware
+
+weather_agent = create_agent(
+    model="openai:gpt-4o-mini",
+    name="weather_specialist",
+    tools=[get_weather],
+    middleware=[
+        ModelRetryMiddleware(max_retries=2),  # Retry on timeout
+    ]
+)
+
+coordinator_agent = create_agent(
+    model="openai:gpt-4o",
+    name="coordinator",
+    tools=[weather_query],
+    middleware=[
+        ModelFallbackMiddleware(
+            fallback_models=["anthropic:claude-3-5-sonnet"],  # Fallback to Anthropic
+        )
+    ]
+)
+
+# If weather_agent fails after retries, coordinator's fallback model tries the whole query
+```
+
+### Testing Hierarchical Compositions
+
+Test each agent level independently before integration:
+
+```python
+import pytest
+
+def test_weather_specialist():
+    """Test weather agent in isolation."""
+    result = weather_agent.invoke({
+        "messages": [{"role": "user", "content": "Weather in Boston?"}]
+    })
+    assert "weather" in result["messages"][-1].content.lower()
+
+def test_coordinator_routes_correctly():
+    """Test coordinator routing without network calls."""
+    from unittest.mock import patch
+    
+    with patch("weather_query", return_value="Sunny, 75°F"):
+        result = coordinator_agent.invoke({
+            "messages": [{"role": "user", "content": "Check Boston weather"}]
+        })
+        assert "Sunny" in result["messages"][-1].content
+
+def test_hierarchy_end_to_end():
+    """Test full hierarchy (integration test)."""
+    result = supervisor_agent.invoke({
+        "messages": [{"role": "user", "content": "Plan my day: check weather and calculate travel time"}]
+    })
+    # Assert both specialists were engaged
+    assert len(result["messages"]) > 2  # Multiple turns expected
+```
+
+## Tool Selection Strategies: Middleware for Dynamic Tool Filtering
+
+When an agent has many tools, selecting only the most relevant subset reduces token usage and helps the model focus. LangChain provides tool selection as a middleware layer, enabling multiple strategies.
+
+### LLMToolSelectorMiddleware: Dynamic LLM-Based Selection
+
+**LLMToolSelectorMiddleware** uses a secondary LLM to filter tools before the main model is invoked. It analyzes the user's query and selects only the most relevant tools, reducing context window usage.
+
+**Location**: `repo://libs/langchain_v1/langchain/agents/middleware/tool_selection.py#L121-L241`
+
+```python
+from langchain.agents.middleware import LLMToolSelectorMiddleware
+from langchain.agents import create_agent
+from langchain_openai import ChatOpenAI
+
+# Create selector middleware with a lightweight model
+selector = LLMToolSelectorMiddleware(
+    model="openai:gpt-4o-mini",  # Smaller model for selection
+    max_tools=3,                  # Limit to 3 most relevant
+    always_include=["emergency_support"],  # Always include critical tools
+    max_retries=1,                # Retry once on malformed response
+    on_parsing_failure="all",     # Fall back to all tools if selection fails
+)
+
+agent = create_agent(
+    model="openai:gpt-4o",
+    tools=[tool1, tool2, tool3, tool4, tool5],
+    middleware=[selector],
+)
+```
+
+**Key behaviors**:
+
+- **Selection flow**: Selector intercepts `wrap_model_call`, sends the user's latest message and tool descriptions to its selection model, parses the response (a JSON `{"tools": ["tool1", "tool2"]}` structure), and filters the request.
+- **Always include**: Tools in `always_include` are never filtered out and don't count against `max_tools`.
+- **Provider tools**: Provider-specific tool dicts (e.g., OpenAI function schemas) are preserved even after selection.
+- **Parsing resilience**: If the selection model returns malformed JSON, `max_retries` determines retry behavior. `on_parsing_failure` specifies fallback: `"error"` (raise), `"none"` (select nothing), `"all"` (select all), a list of tool names, or a callable.
+- **System prompt**: Can be customized via `system_prompt` parameter (default: "Your goal is to select the most relevant tools for answering the user's query").
+
+**Use cases**:
+
+- **Large tool catalogs**: 20+ tools where most queries use only 2-3.
+- **Multi-domain agents**: Weather, database, calculator, search—each query typically uses one domain.
+- **Cost optimization**: Smaller selection model saves tokens; only relevant tools in context.
+
+**Real-world example: Multi-domain agent with tool selection**:
+
+```python
+from langchain.agents.middleware import LLMToolSelectorMiddleware
+from langchain_core.tools import tool
+
+@tool
+def get_weather(location: str) -> str:
+    """Get weather for a location."""
+    return f"Weather in {location}: Sunny, 72°F"
+
+@tool
+def search_web(query: str) -> str:
+    """Search the web."""
+    return f"Search results for {query}"
+
+@tool
+def calculate(expression: str) -> str:
+    """Perform calculations."""
+    return str(eval(expression))
+
+# Selector uses gpt-4o-mini; main agent uses gpt-4o
+selector = LLMToolSelectorMiddleware(
+    model="openai:gpt-4o-mini",
+    max_tools=2,
+)
+
+agent = create_agent(
+    model="openai:gpt-4o",
+    tools=[get_weather, search_web, calculate],
+    middleware=[selector],
+)
+
+# When user asks "What's the weather in Paris?", selector picks get_weather only
+result = agent.invoke({
+    "messages": [{"role": "user", "content": "What's the weather in Paris?"}]
+})
+```
+
+### Selection Request and Response Processing
+
+**Location**: `repo://libs/langchain_v1/langchain/agents/middleware/tool_selection.py#L52-L110`
+
+The middleware prepares a structured selection request:
+
+1. **Input preparation**: Extracts the last user message and available tools, filters out provider-specific dicts (kept separate), validates `always_include` tools exist.
+2. **Schema generation**: Builds a TypedDict schema with Literal enum for each tool name, including descriptions from tool metadata.
+3. **Model invocation**: Calls the selection model (or main model if no selector specified) with structured output enabled.
+4. **Response validation**: Checks if response is a dict with `tools` list; if malformed, retries or falls back.
+5. **Tool filtering**: Keeps selected tools in original order, enforces `max_tools` limit, appends `always_include` tools, preserves provider dicts.
+
+## Middleware Composition and Layering
+
+Agent middleware provides hooks across the agent lifecycle, composing in predictable layers. Understanding middleware stacking is essential for building modular, testable agents.
+
+### AgentMiddleware: Lifecycle Hooks and Request Interception
+
+**Location**: `repo://libs/langchain_v1/langchain/agents/middleware/types.py#L387-L750`
+
+Every middleware subclass can override these hooks:
+
+**Lifecycle node hooks** (before/after agent and model execution):
+
+- `before_agent()` / `abefore_agent()`: Run before agent starts; can modify state.
+- `before_model()` / `abefore_model()`: Run before model call; can modify state.
+- `wrap_model_call()` / `awrap_model_call()`: Intercept and control the model execution via handler callback. Can retry, short-circuit, or modify request/response. This is the main middleware hook.
+- `after_model()` / `aafter_model()`: Run after model call; can modify state.
+- `after_agent()` / `aafter_agent()`: Run after agent completes; can finalize state.
+
+**Tool execution hook**:
+
+- `wrap_tool_call()` / `awrap_tool_call()`: Intercept tool execution (e.g., for logging, caching, retries).
+
+**Request objects**:
+
+- `ModelRequest[ContextT]`: Encapsulates model call inputs—messages, system message, tools, tool_choice, response_format, state, runtime context, model settings.
+- `ToolCallRequest`: Encapsulates tool execution inputs—the tool call dict, tool instance, state, runtime.
+
+```python
+from langchain.agents.middleware import AgentMiddleware
+from langchain.agents.middleware.types import ModelRequest, ModelResponse
+from langchain_core.messages import AIMessage
+
+class CustomMiddleware(AgentMiddleware):
+    """Custom middleware for logging and retry logic."""
+    
+    def wrap_model_call(self, request: ModelRequest, handler):
+        """Intercept model execution."""
+        print(f"Calling model with {len(request.tools)} tools")
+        
+        # Call handler (the actual model execution)
+        try:
+            response = handler(request)
+            print(f"Model returned: {response.result[0].content[:50]}...")
+            return response
+        except Exception as e:
+            print(f"Model call failed: {e}")
+            # Return fallback response instead of re-raising
+            return ModelResponse(
+                result=[AIMessage(content="I encountered an error. Please try again.")],
+                structured_response=None,
+            )
+    
+    def wrap_tool_call(self, request, handler):
+        """Intercept tool execution."""
+        tool_name = request.tool_call.get("name")
+        print(f"Executing tool: {tool_name}")
+        result = handler(request)
+        print(f"Tool {tool_name} returned: {result}")
+        return result
+```
+
+### Middleware Composition Order and Control Flow
+
+When multiple middleware are registered, they compose in registration order: **first-in = outermost layer**.
+
+```python
+from langchain.agents import create_agent
+from langchain.agents.middleware import LoggingMiddleware, RetryMiddleware, CachingMiddleware
+
+agent = create_agent(
+    model="openai:gpt-4o",
+    tools=[tool1, tool2],
+    middleware=[
+        LoggingMiddleware(),        # Outermost
+        RetryMiddleware(max_retries=2),
+        CachingMiddleware(),        # Innermost
+    ],
+)
+```
+
+**Control flow** during model execution:
+
+```
+agent.invoke()
+  ↓ LoggingMiddleware.wrap_model_call (outermost)
+    ↓ print("Starting model call")
+    ↓ handler (next layer)
+      ↓ RetryMiddleware.wrap_model_call
+        ↓ attempt 1: handler (next layer)
+          ↓ CachingMiddleware.wrap_model_call (innermost)
+            ↓ if cached: return cached
+            ↓ else: handler (actual model call)
+        ↓ if failed: attempt 2, etc.
+    ↓ print("Model call complete")
+  ↓ response returned
+```
+
+**Location**: `repo://libs/langchain_v1/langchain/agents/factory.py#L284-L464`
+
+Middleware handlers are composed using functional wrapping. Inner middleware layers receive a handler callback pointing to the next layer. The composition preserves command accumulation: when middleware returns `ExtendedModelResponse` with a `Command`, those commands are collected and merged (inner-first, then outer) so the graph's reducers apply them in proper order.
+
+### Context and State Management Across Middleware
+
+**ModelRequest** provides access to agent state and runtime context:
+
+```python
+class ContextAwareMiddleware(AgentMiddleware):
+    """Middleware that adapts based on runtime context."""
+    
+    def wrap_model_call(self, request: ModelRequest, handler):
+        # Access agent state
+        messages = request.messages
+        custom_field = request.state.get("custom_data")
+        
+        # Access runtime context (if provided by application)
+        if request.runtime.context:
+            user_id = request.runtime.context.get("user_id")
+            user_preferences = request.runtime.context.get("preferences", {})
+            
+            # Modify request based on context
+            new_messages = [
+                {"role": "system", "content": f"User {user_id} prefers {user_preferences}"}
+            ] + messages
+            request = request.override(messages=new_messages)
+        
+        return handler(request)
+```
+
+**State merging from middleware hooks**: Hooks like `before_model()` return optional state dicts that are merged into agent state using LangGraph reducers. For message fields with `add_messages` reducer, messages accumulate; for other fields, later values override earlier ones.
+
+```python
+class StateUpdatingMiddleware(AgentMiddleware):
+    """Middleware that updates agent state via hooks."""
+    
+    def before_model(self, state, runtime):
+        # This dict is merged into agent state before model execution
+        return {
+            "metadata": {"middleware_step": "before_model"},
+            "messages": [{"role": "system", "content": "Updated by middleware"}],
+        }
+```
+
 ## Summary: Composability Best Practices
+
+### Runnable Composition
 
 1. **Single responsibility**: Each component does one thing.
 2. **Type safety**: Explicit input/output types enable validation and composition.
@@ -922,3 +1533,24 @@ Multiple callbacks can be passed; they execute in order.
 6. **Extract boundaries**: Create named subchains for readability and reusability.
 7. **Test components independently**: Unit-test individual Runnables before composition.
 8. **Monitor execution**: Use callbacks and debugging to understand production behavior.
+
+### Hierarchical Agent Composition
+
+1. **Name agents explicitly**: Use `create_agent(name=...)` to establish agent boundaries and enable observability.
+2. **Isolate middleware stacks**: Each agent has independent middleware; propagate behavior via tool wrappers or context.
+3. **Delegate via tools**: Invoke subagents from tool functions; this triggers SubagentTransformer boundary detection.
+4. **Share context deliberately**: Pass relevant state through tool inputs, system prompts, or `runtime.context`.
+5. **Implement per-level error handling**: Catch and recover from failures at appropriate levels (specialist, coordinator, supervisor).
+6. **Test each level independently**: Verify agent logic before integration into hierarchies.
+7. **Stream subagent events**: Use `stream_events(version="v3")` to observe subagent boundaries and causation.
+8. **Avoid circular delegation**: Ensure agent hierarchies are acyclic (specialists don't delegate back up).
+
+### Middleware Interaction Patterns
+
+1. **Order matters**: Middleware registered first wraps outermost; understand the control flow.
+2. **Compose selectively**: Not all middleware apply across hierarchy levels; explicitly propagate where needed.
+3. **Merge state updates**: Lifecycle hooks return optional state updates; these merge using LangGraph reducers.
+4. **Handle exceptions consistently**: Middleware can convert exceptions to messages; coordinate strategies across levels.
+5. **Leverage context variables**: Use `ContextVar` to pass configuration without function parameters.
+6. **Tool selection as middleware**: Use `LLMToolSelectorMiddleware` to filter tools dynamically before model execution, reducing token usage on large tool sets.
+7. **Request interception patterns**: Leverage `wrap_model_call` for retries, caching, request modification; use `wrap_tool_call` for tool-level observability and error handling.

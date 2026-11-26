@@ -13,6 +13,8 @@ if TYPE_CHECKING:
     from langchain_huggingface.llms.huggingface_endpoint import HuggingFaceEndpoint
     from langchain_huggingface.llms.huggingface_pipeline import HuggingFacePipeline
 
+from typing import Self
+
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -67,7 +69,6 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, model_validator
-from typing_extensions import Self
 
 from langchain_huggingface._version import __version__
 from langchain_huggingface.data._profiles import _PROFILES
@@ -843,27 +844,18 @@ class ChatHuggingFace(BaseChatModel):
             params = {**params, **kwargs, "stream": True}
 
             default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
+            token_usage = None
             for chunk in self.llm.client.chat_completion(
                 messages=message_dicts, **params
             ):
+                if usage := chunk.get("usage"):
+                    token_usage = usage
                 if len(chunk["choices"]) == 0:
-                    if usage := chunk.get("usage"):
-                        usage_msg = AIMessageChunk(
-                            content="",
-                            additional_kwargs={},
-                            response_metadata={},
-                            usage_metadata={
-                                "input_tokens": usage.get("prompt_tokens", 0),
-                                "output_tokens": usage.get("completion_tokens", 0),
-                                "total_tokens": usage.get("total_tokens", 0),
-                            },
-                        )
-                        yield ChatGenerationChunk(message=usage_msg)
                     continue
 
                 choice = chunk["choices"][0]
                 message_chunk = _convert_chunk_to_message_chunk(
-                    chunk, default_chunk_class
+                    {**chunk, "usage": None}, default_chunk_class
                 )
                 generation_info = {}
                 if finish_reason := choice.get("finish_reason"):
@@ -881,6 +873,17 @@ class ChatHuggingFace(BaseChatModel):
                         generation_chunk.text, chunk=generation_chunk, logprobs=logprobs
                     )
                 yield generation_chunk
+            if token_usage:
+                yield ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content="",
+                        usage_metadata={
+                            "input_tokens": token_usage.get("prompt_tokens", 0),
+                            "output_tokens": token_usage.get("completion_tokens", 0),
+                            "total_tokens": token_usage.get("total_tokens", 0),
+                        },
+                    )
+                )
         else:
             llm_input = self._to_chat_prompt(messages)
             stream_iter = self.llm._stream(
@@ -909,27 +912,20 @@ class ChatHuggingFace(BaseChatModel):
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
+        token_usage = None
 
         async for chunk in await self.llm.async_client.chat_completion(
             messages=message_dicts, **params
         ):
+            if usage := chunk.get("usage"):
+                token_usage = usage
             if len(chunk["choices"]) == 0:
-                if usage := chunk.get("usage"):
-                    usage_msg = AIMessageChunk(
-                        content="",
-                        additional_kwargs={},
-                        response_metadata={},
-                        usage_metadata={
-                            "input_tokens": usage.get("prompt_tokens", 0),
-                            "output_tokens": usage.get("completion_tokens", 0),
-                            "total_tokens": usage.get("total_tokens", 0),
-                        },
-                    )
-                    yield ChatGenerationChunk(message=usage_msg)
                 continue
 
             choice = chunk["choices"][0]
-            message_chunk = _convert_chunk_to_message_chunk(chunk, default_chunk_class)
+            message_chunk = _convert_chunk_to_message_chunk(
+                {**chunk, "usage": None}, default_chunk_class
+            )
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
@@ -948,6 +944,17 @@ class ChatHuggingFace(BaseChatModel):
                     logprobs=logprobs,
                 )
             yield generation_chunk
+        if token_usage:
+            yield ChatGenerationChunk(
+                message=AIMessageChunk(
+                    content="",
+                    usage_metadata={
+                        "input_tokens": token_usage.get("prompt_tokens", 0),
+                        "output_tokens": token_usage.get("completion_tokens", 0),
+                        "total_tokens": token_usage.get("total_tokens", 0),
+                    },
+                )
+            )
 
     def _to_chat_prompt(
         self,
@@ -1066,7 +1073,9 @@ class ChatHuggingFace(BaseChatModel):
                 )
                 raise ValueError(msg)
             if isinstance(tool_choice, str):
-                if tool_choice not in ("auto", "none", "required"):
+                if tool_choice == "any":
+                    tool_choice = "required"
+                elif tool_choice not in ("auto", "none", "required"):
                     tool_choice = {
                         "type": "function",
                         "function": {"name": tool_choice},

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Mapping
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from langchain_core.callbacks import Callbacks
@@ -19,7 +19,7 @@ from langchain_classic.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain_classic.schema import RUN_KEY
 
 
-class Criteria(str, Enum):
+class Criteria(StrEnum):
     """A Criteria to evaluate."""
 
     CONCISENESS = "conciseness"

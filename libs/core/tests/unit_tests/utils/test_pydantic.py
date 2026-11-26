@@ -2,11 +2,21 @@
 
 import sys
 import warnings
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 from typing import Any
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    GetCoreSchemaHandler,
+    PydanticDeprecationWarning,
+    RootModel,
+)
 from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic_core import core_schema
 
 from langchain_core.utils.pydantic import (
     _create_subset_model_v2,
@@ -238,6 +248,84 @@ def test_create_model_v2() -> None:
         foo.model_json_schema()
 
     assert list(record) == []
+
+
+@pytest.mark.parametrize(
+    "schema_kind", ["fields", "unhashable_fields", "root", "unhashable_root"]
+)
+def test_create_model_v2_preserves_concurrent_warning_filters(schema_kind: str) -> None:
+    entered = Event()
+    release = Event()
+
+    class PausingType:
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, _source: Any, _handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            entered.set()
+            assert release.wait(timeout=10)
+            return core_schema.list_schema(core_schema.int_schema())
+
+    default: Any = [] if schema_kind.startswith("unhashable") else ...
+    kwargs = (
+        {"root": (PausingType, default)}
+        if schema_kind.endswith("root")
+        else {"field_definitions": {"model_name": (PausingType, default)}}
+    )
+    with warnings.catch_warnings(), ThreadPoolExecutor(max_workers=1) as executor:
+        warnings.simplefilter("error", DeprecationWarning)
+        future = executor.submit(create_model_v2, "ConcurrentSchema", **kwargs)
+        try:
+            assert entered.wait(timeout=10)
+            with pytest.raises(DeprecationWarning, match="unrelated deprecation"):
+                warnings.warn("unrelated deprecation", DeprecationWarning, stacklevel=1)
+            warnings.simplefilter("error", UserWarning)
+        finally:
+            release.set()
+        model = future.result(timeout=10)
+        with pytest.raises(UserWarning, match="concurrent filter update"):
+            warnings.warn("concurrent filter update", UserWarning, stacklevel=1)
+    assert model.__name__ == "ConcurrentSchema"
+    assert model.model_json_schema()["title"] == "ConcurrentSchema"
+
+
+@pytest.mark.parametrize("default", [..., []])
+def test_create_model_v2_preserves_field_names_and_aliases(default: Any) -> None:
+    names = ("model_name", "model_dump", "schema", "_private", "もしもし")
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        model = create_model_v2(
+            "FieldNames", field_definitions=dict.fromkeys(names, (list[int], default))
+        )
+        values = {name: [1] for name in names}
+        assert model.model_validate(values).model_dump(by_alias=True) == values
+        assert set(model.model_json_schema()["properties"]) == set(values)
+
+
+@pytest.mark.skipif(
+    sys.version_info >= (3, 14),
+    reason="pydantic.v1 namespace not supported with Python 3.14+",
+)
+def test_create_model_v2_preserves_v1_root_warnings() -> None:
+    class LegacyModel(BaseModelV1):
+        value: int
+
+    with warnings.catch_warnings(record=True) as expected:
+        warnings.simplefilter("always")
+        type(
+            "ExpectedLegacyRoot",
+            (RootModel,),
+            {"__annotations__": {"root": LegacyModel}},
+        )
+    with warnings.catch_warnings(record=True) as actual:
+        warnings.simplefilter("always")
+        model = create_model_v2("LegacyRoot", root=LegacyModel)
+    assert [(warning.category, str(warning.message)) for warning in actual] == [
+        (warning.category, str(warning.message))
+        for warning in expected
+        if not issubclass(warning.category, PydanticDeprecationWarning)
+    ]
+    assert model.model_fields["root"].annotation is LegacyModel
 
 
 def test_create_subset_model_v2_preserves_default_factory() -> None:
