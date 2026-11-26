@@ -26,6 +26,7 @@ WRAPPED_ARGUMENTS = [
     pytest.param(f"{REASONING}\n{INNER_JSON}", id="think-prefix"),
     pytest.param(f"<tool_call>\n{INNER_JSON}\n</tool_call>", id="tool-call-wrapper"),
     pytest.param(f"{REASONING}\n<tool_call>\n{INNER_JSON}\n</tool_call>", id="both"),
+    pytest.param(f"{REASONING}\n<tool_call>\n{INNER_JSON}", id="unclosed-wrapper"),
 ]
 
 

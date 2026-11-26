@@ -41,6 +41,10 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
 
     In streaming, if `diff` is set to `True`, yields `JSONPatch` operations describing
     the difference between the previous and the current object.
+
+    Leading reasoning blocks (`<think>...</think>`) and `<tool_call>` wrappers around
+    the JSON payload are ignored, so reasoning models that emit their chain of thought
+    before the payload can be parsed directly.
     """
 
     pydantic_object: Annotated[type[TBaseModel] | None, SkipValidation()] = None  # type: ignore[valid-type]

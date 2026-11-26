@@ -34,6 +34,9 @@ def parse_tool_call(
 ) -> dict[str, Any] | None:
     """Parse a single tool call.
 
+    Reasoning blocks (`<think>...</think>`) and `<tool_call>` wrappers emitted around
+    the JSON arguments are ignored.
+
     Args:
         raw_tool_call: The raw tool call to parse.
         partial: Whether to parse partial JSON.
