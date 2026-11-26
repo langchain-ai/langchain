@@ -188,7 +188,7 @@ class CommaSeparatedListOutputParser(ListOutputParser):
 class NumberedListOutputParser(ListOutputParser):
     """Parse a numbered list."""
 
-    pattern: str = r"\d+\.\s([^\n]+)"
+    pattern: str = r"\d+\.\s([^\r\n]+)"
     """The pattern to match a numbered list item."""
 
     @override
@@ -221,7 +221,7 @@ class NumberedListOutputParser(ListOutputParser):
 class MarkdownListOutputParser(ListOutputParser):
     """Parse a Markdown list."""
 
-    pattern: str = r"^\s*[-*]\s([^\n]+)$"
+    pattern: str = r"^\s*[-*]\s([^\r\n]+)$"
     """The pattern to match a Markdown list item."""
 
     @override
