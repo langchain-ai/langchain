@@ -1922,6 +1922,24 @@ def test_experimental_markdown_syntax_text_splitter() -> None:
     assert output == expected_output
 
 
+def test_markdown_splitters_tab_after_header_marker() -> None:
+    """A tab after the opening #s is a valid ATX heading (CommonMark)."""
+    text = "Intro\n\n##\tSetup\nInstall the package.\n"
+    headers = [("#", "Header 1"), ("##", "Header 2")]
+
+    experimental = ExperimentalMarkdownSyntaxTextSplitter(headers_to_split_on=headers)
+    assert experimental.split_text(text) == [
+        Document(page_content="Intro\n\n"),
+        Document(page_content="Install the package.\n", metadata={"Header 2": "Setup"}),
+    ]
+
+    header_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers)
+    assert header_splitter.split_text(text) == [
+        Document(page_content="Intro"),
+        Document(page_content="Install the package.", metadata={"Header 2": "Setup"}),
+    ]
+
+
 def test_experimental_markdown_syntax_text_splitter_header_configuration() -> None:
     """Test experimental markdown syntax splitter."""
     headers_to_split_on = [("#", "Encabezamiento 1")]

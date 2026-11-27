@@ -163,8 +163,11 @@ class MarkdownHeaderTextSplitter:
         for line in lines:
             stripped_line = line.strip()
             # Remove all non-printable characters from the string, keeping only visible
-            # text.
-            stripped_line = "".join(filter(str.isprintable, stripped_line))
+            # text. Tabs become spaces first so they still separate words, and so a
+            # tab after the #s (a valid CommonMark ATX heading) still marks a header.
+            stripped_line = "".join(
+                filter(str.isprintable, stripped_line.replace("\t", " "))
+            )
             if not in_code_block:
                 # Exclude inline code spans
                 if stripped_line.startswith("```") and stripped_line.count("```") == 1:
@@ -463,7 +466,8 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
     # Match methods
     def _match_header(self, line: str) -> re.Match[str] | None:
-        match = re.match(r"^(#{1,6}) (.*)", line)
+        # CommonMark ATX headings allow a space or a tab after the opening #s
+        match = re.match(r"^(#{1,6})[ \t](.*)", line)
         # Only matches on the configured headers
         if match and match.group(1) in self.splittable_headers:
             return match
