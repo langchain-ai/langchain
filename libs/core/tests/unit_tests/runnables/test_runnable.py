@@ -599,6 +599,28 @@ def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
         "required": ["bye", "hello"],
     }
 
+    nested_lambda = lambda x: (  # noqa: E731
+        str(x["name"]),
+        x["nested"]["inner"],
+        x["upper"].upper(),
+        "{}".format(x.get("optional", x["fallback"])),
+    )
+    nested_schema = RunnableLambda(nested_lambda).get_input_jsonschema()
+    assert sorted(nested_schema["properties"]) == [
+        "fallback",
+        "name",
+        "nested",
+        "optional",
+        "upper",
+    ]
+    assert nested_schema["required"] == [
+        "fallback",
+        "name",
+        "nested",
+        "optional",
+        "upper",
+    ]
+
     def get_value(value):  # type: ignore[no-untyped-def] # noqa: ANN001,ANN202
         return value["variable_name"]
 

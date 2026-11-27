@@ -188,6 +188,7 @@ class IsLocalDict(ast.NodeVisitor):
         ):
             # we've found a subscript access on the name we're looking for
             self.keys.add(node.slice.value)
+        self.generic_visit(node)
 
     @override
     def visit_Call(self, node: ast.Call) -> None:
@@ -207,6 +208,7 @@ class IsLocalDict(ast.NodeVisitor):
         ):
             # we've found a .get() call on the name we're looking for
             self.keys.add(node.args[0].value)
+        self.generic_visit(node)
 
 
 class IsFunctionArgDict(ast.NodeVisitor):
