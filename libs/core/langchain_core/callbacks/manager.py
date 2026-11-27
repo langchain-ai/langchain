@@ -1834,7 +1834,7 @@ class CallbackManagerForChainGroup(CallbackManager):
         inheritable_handlers = self.inheritable_handlers + other.inheritable_handlers
 
         for handler in handlers:
-            manager.add_handler(handler)
+            manager.add_handler(handler, inherit=False)
 
         for handler in inheritable_handlers:
             manager.add_handler(handler, inherit=True)
@@ -2364,7 +2364,7 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
         inheritable_handlers = self.inheritable_handlers + other.inheritable_handlers
 
         for handler in handlers:
-            manager.add_handler(handler)
+            manager.add_handler(handler, inherit=False)
 
         for handler in inheritable_handlers:
             manager.add_handler(handler, inherit=True)

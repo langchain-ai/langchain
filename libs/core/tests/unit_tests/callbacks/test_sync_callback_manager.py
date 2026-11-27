@@ -1,4 +1,13 @@
+from uuid import uuid4
+
 from langchain_core.callbacks.base import BaseCallbackHandler, BaseCallbackManager
+from langchain_core.callbacks.manager import (
+    AsyncCallbackManagerForChainGroup,
+    AsyncCallbackManagerForChainRun,
+    CallbackManager,
+    CallbackManagerForChainGroup,
+    CallbackManagerForChainRun,
+)
 
 
 def test_remove_handler() -> None:
@@ -36,3 +45,35 @@ def test_merge_preserves_handler_distinction() -> None:
 
     assert set(merged.handlers) == {h1, h2}
     assert set(merged.inheritable_handlers) == {ih1, ih2}
+
+
+def test_chain_group_merge_preserves_non_inheritable_handler() -> None:
+    handler = BaseCallbackHandler()
+    parent = CallbackManagerForChainRun(
+        run_id=uuid4(), handlers=[], inheritable_handlers=[]
+    )
+    group = CallbackManagerForChainGroup(
+        handlers=[handler], inheritable_handlers=[], parent_run_manager=parent
+    )
+    other = CallbackManager(handlers=[], inheritable_handlers=[])
+
+    merged = group.merge(other)
+
+    assert merged.handlers == [handler]
+    assert merged.inheritable_handlers == []
+
+
+async def test_async_chain_group_merge_preserves_non_inheritable_handler() -> None:
+    handler = BaseCallbackHandler()
+    parent = AsyncCallbackManagerForChainRun(
+        run_id=uuid4(), handlers=[], inheritable_handlers=[]
+    )
+    group = AsyncCallbackManagerForChainGroup(
+        handlers=[handler], inheritable_handlers=[], parent_run_manager=parent
+    )
+    other = CallbackManager(handlers=[], inheritable_handlers=[])
+
+    merged = group.merge(other)
+
+    assert merged.handlers == [handler]
+    assert merged.inheritable_handlers == []
