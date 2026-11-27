@@ -89,16 +89,21 @@ class TestCosineSimilarity:
         x: list[list[float]] = []
         y: list[list[float]] = []
         result = _cosine_similarity(x, y)
-        expected = np.array([[]])
-        np.testing.assert_array_equal(result, expected)
+        assert result.shape == (0, 0)
 
     def test_single_empty_matrix(self) -> None:
         """Test with one empty matrix."""
         x: list[list[float]] = []
         y: list[list[float]] = [[1, 2, 3]]
         result = _cosine_similarity(x, y)
-        expected = np.array([[]])
-        np.testing.assert_array_equal(result, expected)
+        assert result.shape == (0, 1)
+
+    def test_multiple_rows_empty_matrix(self) -> None:
+        """Test with multiple rows and an empty matrix."""
+        x: list[list[float]] = [[1, 2, 3], [4, 5, 6]]
+        y: list[list[float]] = []
+        result = _cosine_similarity(x, y)
+        assert result.shape == (2, 0)
 
     def test_dimension_mismatch_error(self) -> None:
         """Test error when matrices have different number of columns."""

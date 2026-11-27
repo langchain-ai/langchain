@@ -59,7 +59,7 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> npt.NDArray[np.floating]:
         raise ImportError(msg)
 
     if len(x) == 0 or len(y) == 0:
-        return np.array([[]])
+        return np.zeros((len(x), len(y)))
 
     x = np.array(x)
     y = np.array(y)
