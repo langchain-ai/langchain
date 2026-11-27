@@ -150,7 +150,7 @@ class Blob(BaseMedia):
     @classmethod
     def check_blob_is_valid(cls, values: dict[str, Any]) -> Any:
         """Verify that either data or path is provided."""
-        if "data" not in values and "path" not in values:
+        if values.get("data") is None and values.get("path") is None:
             msg = "Either data or path must be provided"
             raise ValueError(msg)
         return values

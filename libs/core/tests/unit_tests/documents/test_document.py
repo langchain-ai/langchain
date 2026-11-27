@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from langchain_core.documents import Document
 from langchain_core.documents.base import Blob
 
@@ -13,6 +15,11 @@ def test_init() -> None:
         Document(page_content="foo", id=1),
     ]:
         assert isinstance(doc, Document)
+
+
+def test_blob_rejects_none_data_and_path() -> None:
+    with pytest.raises(ValueError, match="Either data or path must be provided"):
+        Blob(data=None)
 
 
 def test_metadata_allows_non_string_keys(tmp_path: Path) -> None:
