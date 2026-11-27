@@ -25,3 +25,11 @@ def test_as_import_path() -> None:
         path.as_import_path(__file__, suffix="create_agent", relative_to=ROOT)
         == "tests.unit_tests._api.test_path.create_agent"
     )
+
+
+def test_as_import_path_without_suffix(tmp_path: Path) -> None:
+    """A file without a suffix keeps its full name in the import path."""
+    file = tmp_path / "LICENSE"
+    file.touch()
+
+    assert path.as_import_path(file, relative_to=tmp_path) == "LICENSE"

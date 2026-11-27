@@ -42,7 +42,7 @@ def as_import_path(
     if isinstance(file, str):
         file = Path(file)
     path = get_relative_path(file, relative_to=relative_to)
-    if file.is_file():
+    if file.is_file() and file.suffix:
         path = path[: -len(file.suffix)]
     import_path = path.replace(SEPARATOR, ".")
     if suffix:
