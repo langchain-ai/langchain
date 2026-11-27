@@ -1922,6 +1922,24 @@ def test_experimental_markdown_syntax_text_splitter() -> None:
     assert output == expected_output
 
 
+@pytest.mark.parametrize("strip_headers", [True, False])
+def test_experimental_markdown_syntax_text_splitter_tab_separated_header(
+    *,
+    strip_headers: bool,
+) -> None:
+    splitter = ExperimentalMarkdownSyntaxTextSplitter(strip_headers=strip_headers)
+    heading = "##\t\tSetup\n"
+    body = "Install the package.\n#not-a-heading\n"
+
+    assert splitter.split_text(f"Intro\n{heading}{body}") == [
+        Document(page_content="Intro\n"),
+        Document(
+            page_content=body if strip_headers else heading + body,
+            metadata={"Header 2": "Setup"},
+        ),
+    ]
+
+
 def test_experimental_markdown_syntax_text_splitter_header_configuration() -> None:
     """Test experimental markdown syntax splitter."""
     headers_to_split_on = [("#", "Encabezamiento 1")]
