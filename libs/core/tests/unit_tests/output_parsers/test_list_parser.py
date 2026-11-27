@@ -312,3 +312,13 @@ async def test_markdown_list_async() -> None:
         assert [
             a async for a in parser.atransform(aiter_from_iter([text]))
         ] == expectedlist
+
+
+async def test_streaming_quoted_item_with_embedded_comma() -> None:
+    parser = CommaSeparatedListOutputParser()
+    text = 'a,"b,c",d'
+    expected = parser.parse(text)
+    chunks = [text[:6], text[6:]]
+
+    assert add(parser.transform(iter(chunks))) == expected
+    assert await aadd(parser.atransform(aiter_from_iter(chunks))) == expected

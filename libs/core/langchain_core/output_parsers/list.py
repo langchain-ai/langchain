@@ -72,6 +72,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
     @override
     def _transform(self, input: Iterator[str | BaseMessage]) -> Iterator[list[str]]:
         buffer = ""
+        yielded = 0
         for chunk in input:
             if isinstance(chunk, BaseMessage):
                 # Extract text
@@ -93,12 +94,11 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
             except NotImplementedError:
                 parts = self.parse(buffer)
                 # Yield only complete parts
-                if len(parts) > 1:
-                    for part in parts[:-1]:
-                        yield [part]
-                    buffer = parts[-1]
+                for part in parts[yielded:-1]:
+                    yield [part]
+                yielded = max(yielded, len(parts) - 1)
         # Yield the last part
-        for part in self.parse(buffer):
+        for part in self.parse(buffer)[yielded:]:
             yield [part]
 
     @override
@@ -106,6 +106,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         self, input: AsyncIterator[str | BaseMessage]
     ) -> AsyncIterator[list[str]]:
         buffer = ""
+        yielded = 0
         async for chunk in input:
             if isinstance(chunk, BaseMessage):
                 # Extract text
@@ -127,12 +128,11 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
             except NotImplementedError:
                 parts = self.parse(buffer)
                 # Yield only complete parts
-                if len(parts) > 1:
-                    for part in parts[:-1]:
-                        yield [part]
-                    buffer = parts[-1]
+                for part in parts[yielded:-1]:
+                    yield [part]
+                yielded = max(yielded, len(parts) - 1)
         # Yield the last part
-        for part in self.parse(buffer):
+        for part in self.parse(buffer)[yielded:]:
             yield [part]
 
 
