@@ -813,6 +813,8 @@ def convert_to_messages(
 
     if isinstance(messages, PromptValue):
         return messages.to_messages()
+    if isinstance(messages, str):
+        return [_convert_to_message(messages)]
     return [_convert_to_message(m) for m in messages]
 
 

@@ -3170,3 +3170,16 @@ def test_convert_to_messages_lc_envelope_partial_shape_not_matched() -> None:
     # and dict `kwargs` too. Without all four, we fall through.
     with pytest.raises(ValueError, match="MESSAGE_COERCION_FAILURE"):
         convert_to_messages([{"lc": 1, "content": "missing other fields"}])
+
+
+def test_convert_to_messages_single_str() -> None:
+    """A plain string passed to convert_to_messages becomes a single HumanMessage."""
+    messages = convert_to_messages("hello")
+    assert len(messages) == 1
+    assert isinstance(messages[0], HumanMessage)
+    assert messages[0].content == "hello"
+
+    filtered = filter_messages("hello")
+    assert len(filtered) == 1
+    assert isinstance(filtered[0], HumanMessage)
+    assert filtered[0].content == "hello"
