@@ -37,10 +37,12 @@ For full documentation, see the [API reference](https://reference.langchain.com/
 Update model profile data for a specific provider:
 
 ```bash
+# Run from the integration package directory whose data you want to refresh,
+# e.g. libs/partners/anthropic in the LangChain monorepo
 langchain-profiles refresh --provider anthropic --data-dir ./langchain_anthropic/data
 ```
 
-This downloads the latest model data from models.dev, merges it with any augmentations defined in `profile_augmentations.toml`, and generates a `profiles.py` file.
+This downloads the latest model data from models.dev, merges it with any augmentations defined in `profile_augmentations.toml`, and generates a `_profiles.py` file in the data directory.
 
 ## Resources
 
