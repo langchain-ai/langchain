@@ -802,7 +802,9 @@ def convert_to_messages(
     """Convert a sequence of messages to a list of messages.
 
     Args:
-        messages: Sequence of messages to convert.
+        messages: Sequence of messages to convert. A bare string is treated as
+            a single human message rather than a sequence of one-character
+            messages.
 
     Returns:
         list of messages (BaseMessages).
@@ -813,6 +815,8 @@ def convert_to_messages(
 
     if isinstance(messages, PromptValue):
         return messages.to_messages()
+    if isinstance(messages, str):
+        return [_convert_to_message(messages)]
     return [_convert_to_message(m) for m in messages]
 
 

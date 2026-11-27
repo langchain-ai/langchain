@@ -944,6 +944,15 @@ def test_convert_to_messages() -> None:
     assert expected == actual
 
 
+def test_convert_to_messages_bare_string() -> None:
+    """A bare string is a single human message, not one message per character."""
+    actual = convert_to_messages("hello")
+    assert actual == [HumanMessage(content="hello")]
+    assert len(filter_messages("hello")) == 1
+    assert filter_messages("hello") == [HumanMessage(content="hello")]
+    assert convert_to_messages("") == [HumanMessage(content="")]
+
+
 def test_convert_to_messages_openai_refusal() -> None:
     actual = convert_to_messages(
         [{"role": "assistant", "content": "", "refusal": "9.1"}]
