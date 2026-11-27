@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING, Any
@@ -70,13 +71,8 @@ class Visitor(ABC):
 
 def _to_snake_case(name: str) -> str:
     """Convert a name into snake_case."""
-    snake_case = ""
-    for i, char in enumerate(name):
-        if char.isupper() and i != 0:
-            snake_case += "_" + char.lower()
-        else:
-            snake_case += char.lower()
-    return snake_case
+    snake_case = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", name)
+    return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", snake_case).lower()
 
 
 class Expr(BaseModel):
