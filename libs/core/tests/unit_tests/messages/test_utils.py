@@ -15,6 +15,7 @@ from langchain_core.messages import (
     ChatMessage,
     FunctionMessage,
     HumanMessage,
+    RemoveMessage,
     SystemMessage,
     ToolCall,
     ToolMessage,
@@ -956,6 +957,11 @@ def test_convert_to_messages_openai_refusal() -> None:
         ValueError, match="Message dict must contain 'role' and 'content' keys"
     ):
         convert_to_messages([{"role": "assistant", "refusal": "9.1"}])
+
+
+def test_convert_to_messages_remove_without_content() -> None:
+    actual = convert_to_messages([{"type": "remove", "id": "1"}])
+    assert actual == [RemoveMessage(id="1")]
 
 
 def create_image_data() -> str:
