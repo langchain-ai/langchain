@@ -463,7 +463,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
     # Match methods
     def _match_header(self, line: str) -> re.Match[str] | None:
-        match = re.match(r"^(#{1,6}) (.*)", line)
+        match = re.match(r"^(#{1,6})[ \t]+(.*)", line)
         # Only matches on the configured headers
         if match and match.group(1) in self.splittable_headers:
             return match
