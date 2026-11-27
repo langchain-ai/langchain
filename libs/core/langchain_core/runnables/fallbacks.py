@@ -25,7 +25,6 @@ from langchain_core.runnables.utils import (
     ConfigurableFieldSpec,
     Input,
     Output,
-    coro_with_context,
     get_unique_config_specs,
 )
 from langchain_core.utils.pydantic import TypeBaseModel
@@ -244,7 +243,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 child_config = patch_config(config, callbacks=run_manager.get_child())
                 with set_config_context(child_config) as context:
                     coro = context.run(runnable.ainvoke, input, config, **kwargs)
-                    output = await coro_with_context(coro, context)
+                    output = await asyncio.create_task(coro, context=context)
             except self.exceptions_to_handle as e:
                 if first_error is None:
                     first_error = e
@@ -561,7 +560,10 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                         child_config,
                         **kwargs,
                     )
-                    chunk = await coro_with_context(anext(stream), context)
+                    chunk: Output = await asyncio.create_task(
+                        anext(stream),  # type: ignore[arg-type]
+                        context=context,
+                    )
             except self.exceptions_to_handle as e:
                 first_error = e if first_error is None else first_error
                 last_error = e
