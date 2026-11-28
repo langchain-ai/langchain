@@ -5,7 +5,7 @@ import uuid
 import warnings
 from collections.abc import Callable, Coroutine, Iterable, Mapping
 from functools import partial
-from typing import Any, Literal, TypedDict, cast
+from typing import Any, Literal, TypedDict, TypeGuard, cast
 
 from langchain_core.exceptions import ContextOverflowError
 from langchain_core.messages import (
@@ -113,6 +113,7 @@ treat edits to it accordingly.
 _DEFAULT_MESSAGES_TO_KEEP = 20
 _DEFAULT_TRIM_TOKEN_LIMIT = 4000
 _DEFAULT_FALLBACK_MESSAGE_COUNT = 15
+_CONFIGURATION_UPDATE_TYPE = "configuration_update"
 
 # Some providers tag emitted messages with a `model_provider` string that differs from
 # their LangSmith `ls_provider`. The reported-token check below compares the two, so we
@@ -258,6 +259,70 @@ def _get_approximate_token_counter(model: BaseChatModel) -> TokenCounter:
             count_tokens_approximately, use_usage_metadata_scaling=True, chars_per_token=3.3
         )
     return partial(count_tokens_approximately, use_usage_metadata_scaling=True)
+
+
+def _is_configuration_update(block: object) -> TypeGuard[dict[str, Any]]:
+    """Return whether `block` is a `configuration_update` content block."""
+    return isinstance(block, dict) and block.get("type") == _CONFIGURATION_UPDATE_TYPE
+
+
+def _configuration_settings(messages: list[AnyMessage]) -> dict[str, Any]:
+    """Merge the settings of every `configuration_update` block in `messages`.
+
+    Each top-level setting, such as `reasoning` or `text`, is merged on its own,
+    so a later update to one setting leaves the others in effect.
+    """
+    settings: dict[str, Any] = {}
+    for message in messages:
+        if not isinstance(message.content, list):
+            continue
+        for block in message.content:
+            if _is_configuration_update(block):
+                settings.update({k: v for k, v in block.items() if k not in {"type", "id"}})
+    return settings
+
+
+def _without_configuration_updates(messages: list[AnyMessage]) -> list[AnyMessage]:
+    """Return `messages` without `configuration_update` blocks, dropping messages left empty."""
+    result: list[AnyMessage] = []
+    for message in messages:
+        content = message.content
+        if not isinstance(content, list) or not any(map(_is_configuration_update, content)):
+            result.append(message)
+            continue
+        kept = [block for block in content if not _is_configuration_update(block)]
+        if kept:
+            result.append(message.model_copy(update={"content": kept}))
+    return result
+
+
+def _extract_configuration(
+    summarized: list[AnyMessage],
+    kept: list[AnyMessage],
+) -> tuple[list[AnyMessage], dict[str, Any] | None]:
+    """Split `configuration_update` blocks out of the messages a summary replaces.
+
+    A `configuration_update` block changes settings such as reasoning effort from
+    its message onward, so replacing that message with a summary would silently
+    revert them. The returned block restates the merged settings so the summary
+    message keeps them in effect. Every merged setting is restated, not just the
+    ones `kept` leaves unset, so the block stays complete; later updates in
+    `kept` still override it.
+
+    Args:
+        summarized: Messages about to be replaced by a summary.
+        kept: Messages kept verbatim after the summary.
+
+    Returns:
+        `summarized` without the blocks, which carry no conversation content for
+            the summary, and the block to restate, or `None` when there is
+            nothing to restate or `kept` already overrides every setting.
+    """
+    stripped = _without_configuration_updates(summarized)
+    settings = _configuration_settings(summarized)
+    if not settings or settings.keys() <= _configuration_settings(kept).keys():
+        return stripped, None
+    return stripped, {"type": _CONFIGURATION_UPDATE_TYPE, **settings}
 
 
 class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, ResponseT]):
@@ -504,9 +569,12 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             return None
 
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
+        messages_to_summarize, configuration = _extract_configuration(
+            messages_to_summarize, preserved_messages
+        )
 
         summary = self._create_summary(messages_to_summarize)
-        new_messages = self._build_new_messages(summary)
+        new_messages = self._build_new_messages(summary, configuration=configuration)
 
         return {
             "messages": [
@@ -545,9 +613,12 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             return None
 
         messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
+        messages_to_summarize, configuration = _extract_configuration(
+            messages_to_summarize, preserved_messages
+        )
 
         summary = await self._acreate_summary(messages_to_summarize)
-        new_messages = self._build_new_messages(summary)
+        new_messages = self._build_new_messages(summary, configuration=configuration)
 
         return {
             "messages": [
@@ -833,13 +904,19 @@ class SummarizationMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
         return context
 
     @staticmethod
-    def _build_new_messages(summary: str) -> list[HumanMessage]:
-        return [
-            HumanMessage(
-                content=f"Here is a summary of the conversation to date:\n\n{summary}",
-                additional_kwargs={"lc_source": "summarization"},
-            )
-        ]
+    def _build_new_messages(
+        summary: str, *, configuration: dict[str, Any] | None = None
+    ) -> list[HumanMessage]:
+        """Build the summary message, leading with `configuration` when given.
+
+        The block restates settings from the summarized messages so they stay in
+        effect after the summary replaces them.
+        """
+        text = f"Here is a summary of the conversation to date:\n\n{summary}"
+        content: str | list[str | dict[str, Any]] = text
+        if configuration is not None:
+            content = [configuration, {"type": "text", "text": text}]
+        return [HumanMessage(content=content, additional_kwargs={"lc_source": "summarization"})]
 
     @staticmethod
     def _ensure_message_ids(messages: list[AnyMessage]) -> None:
