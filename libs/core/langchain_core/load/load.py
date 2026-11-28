@@ -566,9 +566,22 @@ class Reviver:
                 msg = f"Invalid namespace: {value}"
                 raise ValueError(msg)
 
+            if "id" not in kwargs and _is_message_class(cls):
+                kwargs = {**kwargs, "id": None}
             return cls(**kwargs)
 
         return value
+
+
+def _is_message_class(cls: type) -> bool:
+    """Return whether `load` should keep a missing id unset for `cls`.
+
+    `RemoveMessage` is skipped because it requires an id.
+    """
+    # Imported here: `langchain_core.messages` imports `langchain_core.load`.
+    from langchain_core.messages import BaseMessage, RemoveMessage  # noqa: PLC0415
+
+    return issubclass(cls, BaseMessage) and not issubclass(cls, RemoveMessage)
 
 
 @beta()

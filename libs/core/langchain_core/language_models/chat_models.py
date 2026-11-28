@@ -120,6 +120,18 @@ def _provider_message_id(message_id: str | None) -> str | None:
     return None
 
 
+def _needs_reply_id(message_id: str | None) -> bool:
+    """Return whether core should set a reply's id.
+
+    Auto-generated ids (`lc_` but not `lc_run-`) count as missing so a reply
+    gets the provider id or `lc_run--<run id>`, its link to the trace.
+    """
+    return message_id is None or (
+        message_id.startswith(LC_AUTO_PREFIX)
+        and not message_id.startswith(LC_ID_PREFIX)
+    )
+
+
 def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
     if hasattr(error, "response"):
         response = error.response
@@ -848,7 +860,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 index_type = ""
                 for chunk in self._stream(input_messages, stop=stop, **kwargs):
                     provider_id = provider_id or _provider_message_id(chunk.message.id)
-                    if chunk.message.id is None:
+                    if _needs_reply_id(chunk.message.id):
                         chunk.message.id = provider_id or run_id
                     chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                     if self.output_version == "v1":
@@ -989,7 +1001,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 **kwargs,
             ):
                 provider_id = provider_id or _provider_message_id(chunk.message.id)
-                if chunk.message.id is None:
+                if _needs_reply_id(chunk.message.id):
                     chunk.message.id = provider_id or run_id
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if self.output_version == "v1":
@@ -2060,7 +2072,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                             block["index"] = index
                 provider_id = provider_id or _provider_message_id(chunk.message.id)
                 if run_manager:
-                    if chunk.message.id is None:
+                    if _needs_reply_id(chunk.message.id):
                         chunk.message.id = provider_id or run_id
                     run_manager.on_llm_new_token(chunk.message.content, chunk=chunk)
                 chunks.append(chunk)
@@ -2102,7 +2114,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
-            if run_manager and generation.message.id is None:
+            if run_manager and _needs_reply_id(generation.message.id):
                 generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
@@ -2219,7 +2231,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                             block["index"] = index
                 provider_id = provider_id or _provider_message_id(chunk.message.id)
                 if run_manager:
-                    if chunk.message.id is None:
+                    if _needs_reply_id(chunk.message.id):
                         chunk.message.id = provider_id or run_id
                     await run_manager.on_llm_new_token(
                         chunk.message.content, chunk=chunk
@@ -2263,7 +2275,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
-            if run_manager and generation.message.id is None:
+            if run_manager and _needs_reply_id(generation.message.id):
                 generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation

@@ -51,6 +51,7 @@ EXPECTED_ALL = [
     "merge_content",
     "message_chunk_to_message",
     "message_to_dict",
+    "messages_equal_ignoring_ids",
     "messages_from_dict",
     "messages_to_dict",
     "filter_messages",
