@@ -12,6 +12,8 @@ from typing import Literal
 
 from langchain_core.exceptions import ModelError
 
+from langchain.agents.middleware._redaction import PIIDetectionError
+
 # Type aliases
 RetryOn = tuple[type[Exception], ...] | Callable[[Exception], bool]
 """Type for specifying which exceptions to retry on.
@@ -68,8 +70,12 @@ def validate_retry_params(
 
 
 def default_retry_on(exc: BaseException) -> bool:
-    """Return whether an exception should be retried by default."""
-    if not isinstance(exc, Exception):
+    """Return whether an exception should be retried by default.
+
+    A `PIIDetectionError` is `PIIMiddleware` blocking a result, not a failed call,
+    so it is not retried.
+    """
+    if not isinstance(exc, Exception) or isinstance(exc, PIIDetectionError):
         return False
     if isinstance(exc, ModelError):
         return exc.is_retryable
