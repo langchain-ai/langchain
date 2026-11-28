@@ -23,7 +23,7 @@ sources:
 generated: { by: "openwiki/0.5.0", at: "2026-11-25T08:17:23.842Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-25T08:17:23.842Z
+    at: 2026-11-28T08:14:57.553Z
 ---
 
 # Partner Pattern Reference
