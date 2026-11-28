@@ -4610,6 +4610,13 @@ def _create_usage_metadata(
     output_tokens = _output if _output is not None else 0
     _total = oai_token_usage.get("total_tokens")
     total_tokens = _total if _total is not None else input_tokens + output_tokens
+    completion_tokens_details = oai_token_usage.get("completion_tokens_details") or {}
+    reasoning_tokens = completion_tokens_details.get("reasoning_tokens")
+    # Some OpenAI-compatible APIs (e.g. Gemini) leave reasoning tokens out of
+    # `completion_tokens` but still count them in `total_tokens`.
+    if reasoning_tokens is None and total_tokens > input_tokens + output_tokens:
+        reasoning_tokens = total_tokens - input_tokens - output_tokens
+        output_tokens += reasoning_tokens
     if service_tier not in {"priority", "flex"}:
         service_tier = None
     service_tier_prefix = f"{service_tier}_" if service_tier else ""
@@ -4622,12 +4629,8 @@ def _create_usage_metadata(
         ),
     }
     output_token_details: dict = {
-        "audio": (oai_token_usage.get("completion_tokens_details") or {}).get(
-            "audio_tokens"
-        ),
-        f"{service_tier_prefix}reasoning": (
-            oai_token_usage.get("completion_tokens_details") or {}
-        ).get("reasoning_tokens"),
+        "audio": completion_tokens_details.get("audio_tokens"),
+        f"{service_tier_prefix}reasoning": reasoning_tokens,
     }
     if service_tier is not None:
         # Avoid counting cache-read and reasoning tokens towards the service tier
