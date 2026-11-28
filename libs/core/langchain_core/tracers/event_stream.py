@@ -168,6 +168,28 @@ class _AstreamEventsCallbackHandler(
         if self.root_event_filter.include_event(event, event_type):
             self.send_stream.send_nowait(event)
 
+    def _send_error(self, error: BaseException, run_id: UUID, inputs: Any) -> None:
+        """End a run that raised with an `on_[run_type]_error` event."""
+        run_info = self.run_map.pop(run_id, None)
+        # A generator closed after its last output raises into a run that ended.
+        if run_info is None:
+            return
+        run_type = run_info["run_type"]
+        if inputs is None:
+            inputs = run_info.get("inputs")
+        self._send(
+            {
+                "event": f"on_{run_type}_error",
+                "data": {"error": error, "input": inputs},
+                "run_id": str(run_id),
+                "name": run_info["name"],
+                "tags": run_info["tags"],
+                "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
+            },
+            run_type,
+        )
+
     def __aiter__(self) -> AsyncIterator[Any]:
         """Iterate over the receive stream.
 
@@ -546,6 +568,16 @@ class _AstreamEventsCallbackHandler(
             run_info["run_type"],
         )
 
+    @override
+    async def on_llm_error(
+        self, error: BaseException, *, run_id: UUID, **kwargs: Any
+    ) -> None:
+        """End a trace for a model run that raised.
+
+        For both chat models and non-chat models (legacy text-completion LLMs).
+        """
+        self._send_error(error, run_id, None)
+
     async def on_chain_start(
         self,
         serialized: dict[str, Any],
@@ -628,6 +660,18 @@ class _AstreamEventsCallbackHandler(
             },
             run_type,
         )
+
+    @override
+    async def on_chain_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: UUID,
+        inputs: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """End a trace for a chain run that raised."""
+        self._send_error(error, run_id, inputs)
 
     def _get_tool_run_info_with_inputs(self, run_id: UUID) -> tuple[RunInfo, Any]:
         """Get run info for a tool and extract inputs, with validation.
@@ -814,6 +858,13 @@ class _AstreamEventsCallbackHandler(
             },
             run_info["run_type"],
         )
+
+    @override
+    async def on_retriever_error(
+        self, error: BaseException, *, run_id: UUID, **kwargs: Any
+    ) -> None:
+        """Run when `Retriever` raises."""
+        self._send_error(error, run_id, None)
 
     def __deepcopy__(
         self, memo: dict[int, Any] | None = None
