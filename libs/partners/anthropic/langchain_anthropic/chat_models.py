@@ -1191,6 +1191,23 @@ def _supports_forced_tool_choice(model: str) -> bool:
     )
 
 
+_CLAUDE_MAJOR_VERSION_PATTERN = re.compile(r"^claude-[a-z]+-(\d+)")
+"""Reads the major version from family-first model ids such as `claude-opus-5-5`.
+
+Legacy `claude-<major>-<minor>-<family>` ids (`claude-3-5-haiku-latest`) don't
+match.
+"""
+
+_THINKING_BINDING_BETA = "thinking-binding-controls-2026-08-01"
+"""Beta that allows `thinking.block_binding` in a request."""
+
+
+def _is_claude_5_or_later(model: str) -> bool:
+    """Return whether the model is Claude 5 or later (preserved thinking)."""
+    match = _CLAUDE_MAJOR_VERSION_PATTERN.match(model)
+    return match is not None and int(match.group(1)) >= 5
+
+
 def _is_direct_anthropic_llm_type(llm_type: object) -> bool:
     """Return whether an `_llm_type` reaches Claude via the direct Anthropic API.
 
@@ -1710,6 +1727,24 @@ class ChatAnthropic(BaseChatModel):
     ```
 
     Can also be passed at call time, which overrides the value set here.
+    """
+
+    drop_stale_thinking: bool = True
+    """Drop stale thinking blocks instead of failing the request.
+
+    Claude 5+ models bind each thinking block to the prompt prefix that
+    produced it (the system prompt, tools, and every earlier message). If that
+    prefix changes while such blocks are still in the history, for example
+    after summarizing or trimming messages or editing the system prompt,
+    accounts under the history-editing check get a 400 on every later request.
+
+    When `True`, requests to Claude 5+ models on the Claude API that use
+    adaptive thinking set `thinking.block_binding.prefix_mismatch_behavior` to
+    `"drop_block"` (with the `thinking-binding-controls-2026-08-01` beta), so
+    the API drops those blocks instead. Requests that set their own
+    `thinking.block_binding` are left as-is. Set to `False` to keep the API's
+    default behavior, or if `base_url` points at a proxy or Anthropic-compatible
+    endpoint that rejects the beta or `thinking.block_binding`.
     """
 
     reuse_last_container: bool | None = None
@@ -2325,6 +2360,25 @@ class ChatAnthropic(BaseChatModel):
             else:
                 payload["betas"] = [required_beta]
 
+        thinking = payload.get("thinking")
+        if (
+            isinstance(thinking, dict)
+            and self.drop_stale_thinking
+            and self._should_bind_thinking(payload)
+        ):
+            payload["thinking"] = thinking = {
+                **thinking,
+                "block_binding": {"prefix_mismatch_behavior": "drop_block"},
+            }
+        # `block_binding` is rejected without its beta, whoever set it.
+        if isinstance(thinking, dict) and "block_binding" in thinking:
+            required_beta = _THINKING_BINDING_BETA
+            if payload.get("betas"):
+                if required_beta not in payload["betas"]:
+                    payload["betas"] = [*payload["betas"], required_beta]
+            else:
+                payload["betas"] = [required_beta]
+
         system_contents = [
             message.get("content")
             for message in (payload.get("messages") or [])
@@ -2360,6 +2414,29 @@ class ChatAnthropic(BaseChatModel):
             self._filter_gateway_headers(
                 {k: v for k, v in payload.items() if v is not None}
             )
+        )
+
+    def _should_bind_thinking(self, payload: dict[str, Any]) -> bool:
+        """Return whether to default `thinking.block_binding` to `drop_block`.
+
+        Only adaptive thinking accepts `block_binding`, and only Claude 5+
+        models bind thinking blocks to the prompt prefix. Skips requests that
+        force a tool call (which can't be combined with thinking), requests
+        that already set `block_binding`, and subclasses that route through
+        another platform.
+        """
+        thinking = payload.get("thinking")
+        tool_choice = payload.get("tool_choice")
+        return (
+            isinstance(thinking, dict)
+            and thinking.get("type") == "adaptive"
+            and "block_binding" not in thinking
+            and not (
+                isinstance(tool_choice, dict)
+                and tool_choice.get("type") in ("any", "tool")
+            )
+            and _is_direct_anthropic_llm_type(getattr(self, "_llm_type", None))
+            and _is_claude_5_or_later(self.model)
         )
 
     def _filter_gateway_headers(self, params: dict[str, Any]) -> dict[str, Any]:
