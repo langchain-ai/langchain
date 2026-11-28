@@ -304,9 +304,15 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
             for item in [
                 "reasoning",
                 "tool_outputs",
-                "refusal",
                 _FUNCTION_CALL_IDS_MAP_KEY,
             ]
+        )
+        or (
+            message.additional_kwargs.get("refusal")
+            and not any(
+                isinstance(block, dict) and block.get("type") == "refusal"
+                for block in message.content
+            )
         )
         or (
             isinstance(message.id, str)
@@ -345,7 +351,10 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
         buckets["reasoning"].append(reasoning)
 
     # Refusal
-    if refusal := message.additional_kwargs.get("refusal"):
+    if (refusal := message.additional_kwargs.get("refusal")) and not any(
+        isinstance(block, dict) and block.get("type") == "refusal"
+        for block in message.content
+    ):
         buckets["refusal"].append({"type": "refusal", "refusal": refusal})
 
     # Text
