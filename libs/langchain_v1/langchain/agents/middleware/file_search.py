@@ -41,9 +41,17 @@ def _is_within_root(candidate: Path, root: Path) -> bool:
         return False
 
 
+_MAX_BRACE_GROUPS = 10
+_MAX_EXPANDED_PATTERNS = 1000
+
+
 def _expand_include_patterns(pattern: str) -> list[str] | None:
     """Expand brace patterns like `*.{py,pyi}` into a list of globs."""
     if "}" in pattern and "{" not in pattern:
+        return None
+
+    # Each recursion level consumes one `{`, so this bounds the recursion depth.
+    if pattern.count("{") > _MAX_BRACE_GROUPS:
         return None
 
     expanded: list[str] = []
@@ -52,6 +60,8 @@ def _expand_include_patterns(pattern: str) -> list[str] | None:
         start = current.find("{")
         if start == -1:
             expanded.append(current)
+            if len(expanded) > _MAX_EXPANDED_PATTERNS:
+                raise ValueError
             return
 
         end = current.find("}", start)
