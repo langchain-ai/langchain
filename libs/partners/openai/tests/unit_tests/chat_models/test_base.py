@@ -93,7 +93,10 @@ from langchain_openai.chat_models._compat import (
     _convert_to_v03_ai_message,
 )
 from langchain_openai.chat_models.base import (
+    OpenAIInvalidRequestError,
+    OpenAIPolicyBlockedError,
     OpenAIRefusalError,
+    OpenAIStreamPolicyBlockedError,
     OpenAIStreamServerError,
     _construct_lc_result_from_responses_api,
     _construct_responses_api_input,
@@ -5214,6 +5217,101 @@ async def test_openai_in_stream_invalid_request_error_is_unchanged(
     for error in (sync_exc.value, async_exc.value):
         assert type(error) is openai.APIError
         assert error.code == "invalid_function_parameters"
+
+
+_CYBER_FLAG = (
+    "This content was flagged for possible cybersecurity risk. If this seems wrong, "
+    "try rephrasing your request."
+)
+_CYBER_POLICY_ERROR = {
+    "message": _CYBER_FLAG,
+    "type": "invalid_request_error",
+    "param": None,
+    "code": "cyber_policy",
+}
+
+
+@pytest.mark.parametrize(
+    "body",
+    [_CYBER_POLICY_ERROR, {**_CYBER_POLICY_ERROR, "code": None}],
+    ids=["code", "message-only"],
+)
+def test_openai_policy_block_is_a_refusal(body: dict[str, Any]) -> None:
+    """A 400 for a policy-blocked request is raised as a refusal."""
+    llm = ChatOpenAI(api_key=SecretStr("test"))
+    error = openai.BadRequestError(
+        message=body["message"], response=MagicMock(status_code=400), body=body
+    )
+
+    with (  # noqa: PT012
+        patch.object(llm.client, "with_raw_response") as mock_client,
+        pytest.raises(ModelRefusalError) as exc_info,
+    ):
+        mock_client.create.side_effect = error
+        llm.invoke("test")
+
+    assert isinstance(exc_info.value, OpenAIPolicyBlockedError)
+    assert isinstance(exc_info.value, OpenAIInvalidRequestError)
+    assert exc_info.value.is_retryable is False
+    assert exc_info.value.__cause__ is error
+
+
+def test_openai_other_bad_request_is_not_a_refusal() -> None:
+    llm = ChatOpenAI(api_key=SecretStr("test"))
+    error = openai.BadRequestError(
+        message=str(_INVALID_REQUEST_ERROR["message"]),
+        response=MagicMock(status_code=400),
+        body=_INVALID_REQUEST_ERROR,
+    )
+
+    with (  # noqa: PT012
+        patch.object(llm.client, "with_raw_response") as mock_client,
+        pytest.raises(OpenAIInvalidRequestError) as exc_info,
+    ):
+        mock_client.create.side_effect = error
+        llm.invoke("test")
+
+    assert not isinstance(exc_info.value, ModelRefusalError)
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+async def test_openai_in_stream_policy_block_is_a_refusal(
+    use_responses_api: bool,
+) -> None:
+    """A policy block sent mid-stream is raised as a refusal."""
+    if use_responses_api:
+        events = [
+            _RESPONSES_CREATED,
+            {"type": "error", "sequence_number": 1, "error": _CYBER_POLICY_ERROR},
+        ]
+    else:
+        events = [_CHAT_CHUNK, {"error": _CYBER_POLICY_ERROR}]
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        return _sse_stream(*events)
+
+    async def arespond(request: httpx.Request) -> httpx.Response:
+        return _sse_stream(*events)
+
+    model = ChatOpenAI(
+        model="gpt-4o-mini",
+        api_key=SecretStr("test"),
+        max_retries=0,
+        use_responses_api=use_responses_api,
+        http_client=httpx.Client(transport=httpx.MockTransport(respond)),
+        http_async_client=httpx.AsyncClient(transport=httpx.MockTransport(arespond)),
+    )
+
+    with pytest.raises(ModelRefusalError) as sync_exc:
+        list(model.stream("test"))
+    with pytest.raises(ModelRefusalError) as async_exc:
+        async for _ in model.astream("test"):
+            pass
+
+    for error in (sync_exc.value, async_exc.value):
+        assert isinstance(error, OpenAIStreamPolicyBlockedError)
+        assert error.message == _CYBER_FLAG
+        assert type(error.__cause__) is openai.APIError
 
 
 def test_metadata_versions() -> None:

@@ -696,6 +696,22 @@ class OpenAIStreamServerError(openai.APIError, ModelAPIError):
     """
 
 
+class OpenAIPolicyBlockedError(OpenAIInvalidRequestError, ModelRefusalError):
+    """Request OpenAI rejected under its usage policies, such as a cybersecurity flag.
+
+    OpenAI reports the block as an HTTP 400 instead of a refusal in a successful
+    response. Subclasses `ModelRefusalError` so callers can handle it like any other
+    refusal, and `OpenAIInvalidRequestError` so existing handlers still catch it.
+    """
+
+
+class OpenAIStreamPolicyBlockedError(openai.APIError, ModelRefusalError):
+    """Policy block OpenAI reported inside a stream it had already accepted.
+
+    The SDK raises these as a bare `openai.APIError` with no status code.
+    """
+
+
 class OpenAIResponsesServerError(ValueError, ModelAPIError):
     """Responses API `response.failed` or `error` event with a server error code.
 
@@ -706,6 +722,22 @@ class OpenAIResponsesServerError(ValueError, ModelAPIError):
 _TRANSIENT_STREAM_ERROR_CODES = frozenset({"server_error"})
 """In-band stream error codes/types that indicate a transient backend failure."""
 
+_POLICY_BLOCK_CODES = frozenset({"cyber_policy", "content_policy_violation"})
+"""Error codes OpenAI returns when it blocks a request under its usage policies."""
+
+_POLICY_BLOCK_MESSAGES = (
+    "flagged for possible cybersecurity risk",
+    "flagged as potentially violating our usage policy",
+)
+"""Policy-block wording, for errors that arrive without a code."""
+
+
+def _is_policy_block(e: openai.APIError) -> bool:
+    if e.code in _POLICY_BLOCK_CODES:
+        return True
+    message = e.message.lower()
+    return any(phrase in message for phrase in _POLICY_BLOCK_MESSAGES)
+
 
 def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
     if (
@@ -715,6 +747,10 @@ def _handle_openai_bad_request(e: openai.BadRequestError) -> None:
         or "ContextWindowExceededError" in e.message
     ):
         raise OpenAIContextOverflowError(
+            message=e.message, response=e.response, body=e.body
+        ) from e
+    if _is_policy_block(e):
+        raise OpenAIPolicyBlockedError(
             message=e.message, response=e.response, body=e.body
         ) from e
     if (
@@ -774,6 +810,10 @@ def _handle_openai_api_error(e: openai.APIError) -> None:
         raise OpenAIConnectionError(message=e.message, request=e.request) from e
     # The SDK raises the exact `APIError` for an error event inside a stream that
     # already returned HTTP 200; subclasses carry their own status-based verdicts.
+    if type(e) is openai.APIError and _is_policy_block(e):
+        raise OpenAIStreamPolicyBlockedError(
+            message=e.message, request=e.request, body=e.body
+        ) from e
     if type(e) is openai.APIError and not _TRANSIENT_STREAM_ERROR_CODES.isdisjoint(
         (e.code, e.type)
     ):
