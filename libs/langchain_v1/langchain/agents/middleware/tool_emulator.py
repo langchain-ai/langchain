@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from langchain.agents.middleware.types import ToolCallRequest
     from langchain.tools import BaseTool
 
-_DEFAULT_EMULATOR_MODEL = "anthropic:claude-sonnet-4-5-20250929"
+_DEFAULT_EMULATOR_MODEL = "anthropic:claude-sonnet-5-5"
 
 
 class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[ContextT]):
@@ -56,9 +56,7 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
         !!! example "Use a custom model for emulation"
 
             ```python
-            middleware = LLMToolEmulator(
-                tools=["get_weather"], model="anthropic:claude-sonnet-4-5-20250929"
-            )
+            middleware = LLMToolEmulator(tools=["get_weather"], model="anthropic:claude-sonnet-5-5")
             ```
 
         !!! example "Emulate specific tools by passing tool instances"
@@ -84,7 +82,7 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
                 If empty list, no tools will be emulated.
             model: Model to use for emulation.
 
-                Defaults to `'anthropic:claude-sonnet-4-5-20250929'`, which requires
+                Defaults to `'anthropic:claude-sonnet-5-5'`, which requires
                 `langchain-anthropic` to be installed.
 
                 !!! warning "Deprecated"
@@ -184,7 +182,7 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
 
         # Short-circuit: return emulated result without executing real tool
         return ToolMessage(
-            content=response.content,
+            content=response.text,
             tool_call_id=request.tool_call["id"],
             name=tool_name,
         )
@@ -242,7 +240,7 @@ class LLMToolEmulator(AgentMiddleware[AgentState[Any], ContextT], Generic[Contex
 
         # Short-circuit: return emulated result without executing real tool
         return ToolMessage(
-            content=response.content,
+            content=response.text,
             tool_call_id=request.tool_call["id"],
             name=tool_name,
         )

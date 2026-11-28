@@ -352,7 +352,7 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
 
         fallback = ModelFallbackMiddleware(
             "openai:gpt-5.5",  # Try first on error
-            "anthropic:claude-sonnet-4-5-20250929",  # Then this
+            "anthropic:claude-sonnet-5-5",  # Then this
         )
 
         agent = create_agent(
@@ -360,7 +360,7 @@ class ModelFallbackMiddleware(AgentMiddleware[AgentState[ResponseT], ContextT, R
             middleware=[fallback],
         )
 
-        # If primary fails: tries gpt-5.5, then claude-sonnet-4-5-20250929
+        # If primary fails: tries gpt-5.5, then claude-sonnet-5-5
         result = await agent.invoke({"messages": [HumanMessage("Hello")]})
         ```
     """

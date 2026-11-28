@@ -463,8 +463,7 @@ async def test_astreaming() -> None:
 
 def test_tool_use() -> None:
     llm = ChatAnthropic(
-        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
-        temperature=0,
+        model="claude-sonnet-5-5",  # type: ignore[call-arg]
     )
     tool_definition = {
         "name": "get_weather",
@@ -487,15 +486,18 @@ def test_tool_use() -> None:
     assert "location" in tool_call["args"]
 
     content_blocks = response.content_blocks
-    assert len(content_blocks) == 2
-    assert content_blocks[0]["type"] == "text"
-    assert content_blocks[0]["text"]
-    assert content_blocks[1]["type"] == "tool_call"
-    assert content_blocks[1]["name"] == "get_weather"
-    assert content_blocks[1]["args"] == tool_call["args"]
+    assert {block["type"] for block in content_blocks} <= {
+        "reasoning",
+        "text",
+        "tool_call",
+    }
+    tool_call_blocks = [b for b in content_blocks if b["type"] == "tool_call"]
+    assert len(tool_call_blocks) == 1
+    assert tool_call_blocks[0]["name"] == "get_weather"
+    assert tool_call_blocks[0]["args"] == tool_call["args"]
 
     # Test streaming
-    llm = ChatAnthropic(model="claude-sonnet-4-5-20250929")  # type: ignore[call-arg]
+    llm = ChatAnthropic(model="claude-sonnet-5-5")  # type: ignore[call-arg]
     llm_with_tools = llm.bind_tools([tool_definition])
     first = True
     chunks: list[BaseMessage | BaseMessageChunk] = []
@@ -507,10 +509,9 @@ def test_tool_use() -> None:
         else:
             gathered = gathered + chunk  # type: ignore[assignment]
         for block in chunk.content_blocks:
-            assert block["type"] in ("text", "tool_call_chunk")
+            assert block["type"] in ("reasoning", "text", "tool_call_chunk")
     assert len(chunks) > 1
     assert isinstance(gathered.content, list)
-    assert len(gathered.content) == 2
     tool_use_block = None
     for content_block in gathered.content:
         assert isinstance(content_block, dict)
@@ -530,12 +531,10 @@ def test_tool_use() -> None:
     assert tool_call["id"] is not None
 
     content_blocks = gathered.content_blocks
-    assert len(content_blocks) == 2
-    assert content_blocks[0]["type"] == "text"
-    assert content_blocks[0]["text"]
-    assert content_blocks[1]["type"] == "tool_call"
-    assert content_blocks[1]["name"] == "get_weather"
-    assert content_blocks[1]["args"]
+    tool_call_blocks = [b for b in content_blocks if b["type"] == "tool_call"]
+    assert len(tool_call_blocks) == 1
+    assert tool_call_blocks[0]["name"] == "get_weather"
+    assert tool_call_blocks[0]["args"]
 
     # Test passing response back to model
     stream = llm_with_tools.stream(
@@ -558,7 +557,7 @@ def test_tool_use() -> None:
 
 
 def test_builtin_tools_text_editor() -> None:
-    llm = ChatAnthropic(model="claude-sonnet-4-5-20250929")  # type: ignore[call-arg]
+    llm = ChatAnthropic(model="claude-sonnet-5-5")  # type: ignore[call-arg]
     tool = {"type": "text_editor_20250728", "name": "str_replace_based_edit_tool"}
     llm_with_tools = llm.bind_tools([tool])
     response = llm_with_tools.invoke(
@@ -567,12 +566,9 @@ def test_builtin_tools_text_editor() -> None:
     assert isinstance(response, AIMessage)
     assert response.tool_calls
 
-    content_blocks = response.content_blocks
-    assert len(content_blocks) == 2
-    assert content_blocks[0]["type"] == "text"
-    assert content_blocks[0]["text"]
-    assert content_blocks[1]["type"] == "tool_call"
-    assert content_blocks[1]["name"] == "str_replace_based_edit_tool"
+    tool_call_blocks = [b for b in response.content_blocks if b["type"] == "tool_call"]
+    assert tool_call_blocks
+    assert tool_call_blocks[0]["name"] == "str_replace_based_edit_tool"
 
 
 def test_builtin_tools_computer_use() -> None:
@@ -582,8 +578,9 @@ def test_builtin_tools_computer_use() -> None:
 
     This test only verifies tool call generation.
     """
+    # Among non-deprecated models, only Claude Haiku 4.5 accepts `computer_20250124`.
     llm = ChatAnthropic(
-        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+        model="claude-haiku-4-5",  # type: ignore[call-arg]
     )
     tool = {
         "type": "computer_20250124",
@@ -719,7 +716,7 @@ class PersonDict(TypedDict):
 @pytest.mark.parametrize("schema", [Person, Person.model_json_schema(), PersonDict])
 def test_response_format(schema: dict | type) -> None:
     model = ChatAnthropic(
-        model="claude-sonnet-4-5",  # type: ignore[call-arg]
+        model="claude-sonnet-5-5",  # type: ignore[call-arg]
     )
     query = "Chester (a.k.a. Chet) is 100 years old."
 
@@ -1274,8 +1271,9 @@ def test_redacted_thinking(output_version: Literal["v0", "v1"]) -> None:
 
 
 def test_structured_output_thinking_enabled() -> None:
+    # Manual `budget_tokens` thinking is rejected by Claude 4.7+ and 5.x models.
     llm = ChatAnthropic(
-        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+        model="claude-haiku-4-5",  # type: ignore[call-arg]
         max_tokens=5_000,  # type: ignore[call-arg]
         thinking={"type": "enabled", "budget_tokens": 2_000},
     )
@@ -1300,10 +1298,11 @@ def test_structured_output_thinking_force_tool_use() -> None:
     # is supported and the workarounds in `with_structured_output` should be removed.
     # Use the client resolved off `ChatAnthropic` so requests honor any
     # configured base URL / credentials (e.g. the LangSmith gateway).
-    client = ChatAnthropic(model="claude-sonnet-4-5-20250929")._client  # type: ignore[call-arg]
+    # Manual `budget_tokens` thinking is rejected by Claude 4.7+ and 5.x models.
+    client = ChatAnthropic(model="claude-haiku-4-5")._client  # type: ignore[call-arg]
     with pytest.raises(anthropic.BadRequestError):
         _ = client.messages.create(
-            model="claude-sonnet-4-5-20250929",
+            model="claude-haiku-4-5",
             max_tokens=5_000,
             thinking={"type": "enabled", "budget_tokens": 2_000},
             tool_choice={"type": "tool", "name": "get_weather"},
@@ -1330,21 +1329,17 @@ def test_structured_output_thinking_force_tool_use() -> None:
 
 
 def test_effort_parameter() -> None:
-    """Test that effort parameter can be passed without errors.
-
-    Only Opus 4.5 supports currently.
-    """
+    """Test that effort parameter can be passed without errors."""
     llm = ChatAnthropic(
-        model="claude-opus-4-5-20251101",
+        model="claude-opus-5-5",
         effort="medium",
-        max_tokens=100,
+        max_tokens=2_000,
     )
 
     result = llm.invoke("Say hello in one sentence")
 
-    # Verify we got a response
-    assert isinstance(result.content, str)
-    assert len(result.content) > 0
+    # Verify we got a response (thinking blocks may precede the text)
+    assert result.text
 
     # Verify response metadata is present
     assert "model_name" in result.response_metadata
@@ -1356,15 +1351,14 @@ def test_effort_parameter() -> None:
 def test_reasoning_effort_parameter() -> None:
     """Test that the standard `reasoning_effort` parameter is accepted by the API."""
     llm = ChatAnthropic(
-        model="claude-opus-4-5-20251101",
+        model="claude-opus-5-5",
         reasoning_effort="medium",
-        max_tokens=100,
+        max_tokens=2_000,
     )
 
     result = llm.invoke("Say hello in one sentence")
 
-    assert isinstance(result.content, str)
-    assert len(result.content) > 0
+    assert result.text
     assert "model_name" in result.response_metadata
     assert result.usage_metadata is not None
     assert result.usage_metadata["input_tokens"] > 0
@@ -1373,12 +1367,11 @@ def test_reasoning_effort_parameter() -> None:
 
 def test_reasoning_effort_call_time_kwarg() -> None:
     """Test that `reasoning_effort` is accepted as a call-time kwarg."""
-    llm = ChatAnthropic(model="claude-opus-4-5-20251101", max_tokens=100)
+    llm = ChatAnthropic(model="claude-opus-5-5", max_tokens=2_000)
 
     result = llm.invoke("Say hello in one sentence", reasoning_effort="low")
 
-    assert isinstance(result.content, str)
-    assert len(result.content) > 0
+    assert result.text
     assert result.usage_metadata is not None
 
 
@@ -2288,7 +2281,7 @@ def test_search_result_top_level() -> None:
 
 def test_memory_tool() -> None:
     llm = ChatAnthropic(
-        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+        model="claude-sonnet-5-5",  # type: ignore[call-arg]
         betas=["context-management-2025-06-27"],
     )
     llm_with_tools = llm.bind_tools([{"type": "memory_20250818", "name": "memory"}])

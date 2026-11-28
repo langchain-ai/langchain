@@ -150,8 +150,7 @@ class ChatOpenRouter(BaseChatModel):
         from langchain_openrouter import ChatOpenRouter
 
         model = ChatOpenRouter(
-            model="anthropic/claude-sonnet-4-5",
-            temperature=0,
+            model="anthropic/claude-sonnet-5.5",
             # api_key="...",
             # openrouter_provider={"order": ["Anthropic"]},
         )
@@ -232,7 +231,7 @@ class ChatOpenRouter(BaseChatModel):
     """
 
     model_name: str = Field(alias="model")
-    """The name of the model, e.g. `'anthropic/claude-sonnet-4-5'`."""
+    """The name of the model, e.g. `'anthropic/claude-sonnet-5.5'`."""
 
     @property
     def model(self) -> str:
