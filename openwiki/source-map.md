@@ -58,17 +58,17 @@ sources:
     resource: repo://libs/partners/openai/langchain_openai/decisions/base.py
   - id: openwiki-source-bd29e79613d5f366a00068f5
     resource: repo://libs/standard-tests/langchain_tests/base.py
-generated: { by: "openwiki/0.5.0", at: "2026-11-24T08:17:18.845Z" }
+generated: { by: "openwiki/0.5.0", at: "2026-11-28T08:14:57.553Z" }
 verified:
   - by: openwiki/0.5.0
-    at: 2026-11-24T08:17:18.845Z
+    at: 2026-11-28T08:14:57.553Z
 ---
 
 ## Overview
 
 This page provides a quick reference for locating code by topic in the LangChain monorepo. The repository is organized as a multi-package workspace with a three-layer architecture:
 
-- **langchain-core** (v1.8.4): Base abstractions for messages, runnables, tools, prompts, language models, callbacks, and refusal handling
+- **langchain-core** (v1.8.5): Base abstractions for messages, runnables, tools, prompts, language models, callbacks, and refusal handling
 - **langchain** (v1.5.2): Orchestration, agent factory, middleware composition, and model initialization
 - **langchain-classic** (v1.0.8): Legacy chains, memory, retrieval abstractions, and backward compatibility
 - **partners** (`langchain-*` packages): Provider-specific implementations (OpenAI, Anthropic, Ollama, etc.)
@@ -187,7 +187,7 @@ Use this map to navigate directly to the code responsible for a given concept, u
 │   ├── Makefile
 │   └── pyproject.toml
 │
-├── langchain_v1/                   # langchain: Orchestration and agents (v1.5.0)
+├── langchain_v1/                   # langchain: Orchestration and agents (v1.5.2)
 │   ├── langchain/
 │   │   ├── agents/
 │   │   │   ├── factory.py          # Agent factory: graph construction, node orchestration
