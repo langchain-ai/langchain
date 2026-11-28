@@ -685,9 +685,9 @@ def test_with_structured_output_json_schema_pydantic_v1(mock_llm: Mock) -> None:
         AIMessage(content='{"setup": "question", "punchline": "answer"}'),
     )
 
-    result = chat.with_structured_output(
-        _JokeV1, method="json_schema"
-    ).invoke("Tell me a joke about cats.")
+    result = chat.with_structured_output(_JokeV1, method="json_schema").invoke(
+        "Tell me a joke about cats."
+    )
 
     assert isinstance(result, _JokeV1)
     assert result.setup == "question"
